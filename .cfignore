@@ -1,0 +1,18 @@
+.git
+.gitignore
+.gitattributes
+.jshintrc
+.eslintrc
+.vscode
+.clinic
+# Logs
+*.log
+# Vim
+# Persistent undo
+[._]*.un~
+# Temporary
+.netrwhist
+*~
+*.orig
+node_modules
+manifest-cf-template.yml

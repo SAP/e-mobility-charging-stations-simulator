@@ -1,0 +1,57 @@
+{
+  "name": "ev-simulator",
+  "version": "1.0.0",
+  "engines": {
+    "node": "12.x.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LucasBrazi06/ev-simulator.git"
+  },
+  "description": "Electric Vehicle charging stations simulator",
+  "author": "SAP E-Mobility Labs France <e-mobility@sap.com>",
+  "license": "Apache-2.0",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:debug": "node --inspect-brk src/index.js",
+    "start:prof": "node --prof src/index.js",
+    "start:doctorprof": "clinic doctor -- node src/index.js",
+    "start:flameprof": "clinic flame -- node src/index.js",
+    "start:bubbleprof": "clinic bubbleprof -- node src/index.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint --fix src",
+    "flow": "flow",
+    "flow:check": "flow check src",
+    "flow:deps": "flow-typed install",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clinic:clean": "clinic clean",
+    "npm-check": "npm-check"
+  },
+  "dependencies": {
+    "uuid": "^7.0.3",
+    "winston": "^3.2.1",
+    "worker-threads-pool": "^2.0.0",
+    "ws": "^7.2.3"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "clinic": "^5.0.1",
+    "eslint": "^6.8.0",
+    "eslint-config-esnext": "^4.0.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-node": "^4.0.0",
+    "eslint-plugin-flowtype": "^4.7.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "flow-bin": "^0.122.0",
+    "flow-typed": "^3.1.0",
+    "npm-check": "^5.9.2"
+  }
+}

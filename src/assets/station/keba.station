@@ -1,0 +1,42 @@
+{
+    "authorizationFile": "./src/assets/templateAuthorization.auth",
+    "baseName": "CS-keba",
+    "chargePointModel": "keba 4321",
+    "chargePointVendor": "keba",
+    "power": 14000,
+    "powerUnit": "W",
+    "numberOfConnectors": 1,
+    "randomConnectors": false,
+    "Configuration": { "configurationKey": [
+            { "key": "NumberOfConnectors", "readonly": true, "value": 2},
+            { "key": "param1", "readonly": false, "value": "test"},
+            { "key": "meterValueInterval", "readonly": false, "value": 30},
+            { "key": "AuthorizeRemoteTxRequests", "readonly": false, "value": false}
+        ]
+    },
+    "AutomaticTransactionGenerator": {
+        "enable": false,
+        "minDuration": 30,
+        "maxDuration": 60,
+        "minDelayBetweenTwoTransaction": 15,
+        "maxDelayBetweenTwoTransaction": 30,
+        "probabilityOfStart": 1,
+        "stopAutomaticTransactionGeneratorAfterHours": 0.3
+    },
+    "Connectors": {
+        "1": {
+            "MeterValues": [ {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "2": {
+            "MeterValues": [ {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        }
+    }
+}

@@ -1,0 +1,36 @@
+version: 0.2
+parameter-store:
+  build_ssh_key: "/CodeBuild/emobility_build_ssh_key"
+phases:
+  install:
+    runtime-versions:
+      docker: 19
+  pre_build:
+    commands:
+      - mkdir -p ~/.ssh
+      - if [ -z ${build_ssh_key} ]; then echo "missing build_ssh_key store parameter, exiting"; exit 1; fi
+      - echo "${build_ssh_key}" > ~/.ssh/id_rsa
+      - chmod 600 ~/.ssh/id_rsa
+      - ssh-keygen -F github.com || ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - git config --global url."git@github.com:".insteadOf "https://github.com/"
+      - git init
+      - git remote remove origin || true
+      - if [ -z ${remote_origin} ]; then echo "missing remote_origin env variable, exiting"; exit 1; fi
+      - git remote add origin ${remote_origin}
+      - git fetch
+      - if [ -z $branch_name ]; then echo "missing branch_name env variable, exiting"; exit 1; fi
+      - git checkout -f ${branch_name}
+      - git branch --set-upstream-to origin/${branch_name}
+      - git reset --hard origin/${branch_name}
+      - git submodule update --init --recursive
+  build:
+    commands:
+      - echo Build and push started on `date`
+      - echo Building and pushing the Docker image...
+      - cd docker && make DOCKER_ECR_ACCOUNT_ID=$AWS_ACCOUNT_ID DOCKER_ECR_REGION=$AWS_DEFAULT_REGION DOCKER_ECR_REGISTRY_NAME=$IMAGE_REPO_NAME DOCKER_ECR_TAG=$IMAGE_TAG docker-push-ecr && cd ..
+  post_build:
+    commands:
+      - echo Build and push completed on `date`
+      - printf '[{"name":"%s","imageUri":"%s"}]' $ECS_CONTAINER_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json

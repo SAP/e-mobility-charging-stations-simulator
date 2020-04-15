@@ -1,0 +1,12 @@
+version: '3.7'
+networks:
+    ev_network:
+      driver: bridge
+
+services:
+    simulator:
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile
+        networks:
+            - ev_network

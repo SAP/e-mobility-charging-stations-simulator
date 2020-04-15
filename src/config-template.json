@@ -1,0 +1,36 @@
+{
+  "supervisionURLs": [
+    "ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"
+  ],
+  "statisticsDisplayInterval": 60,
+  "autoReconnectTimeout": 10,
+  "autoReconnectMaxRetries": 10,
+  "distributeStationToTenantEqually": true,
+  "useWorkerPool": false,
+  "workerPoolSize": 16,
+  "stationTemplateURLs": [
+    {
+      "file": "./src/assets/station/siemens.mougins69.station",
+      "numberOfStation": 1
+    },
+    {
+      "file": "./src/assets/station/keba.station",
+      "numberOfStation": 2
+    },
+    {
+      "file": "./src/assets/station/abb.station",
+      "numberOfStation": 2
+    },
+    {
+      "file": "./src/assets/station/evlink.station",
+      "numberOfStation": 4
+    },
+    {
+      "file": "./src/assets/station/schneider.station",
+      "numberOfStation": 1
+    }
+  ],
+  "consoleLog": false,
+  "logFile": "combined.log",
+  "errorFile": "error.log"
+}

@@ -1,0 +1,12 @@
+applications:
+- name: sap-ev-simulator-qa
+  memory: 1G
+  disk_quota: 1G
+  instances: 1
+  buildpacks:
+  - https://github.com/cloudfoundry/nodejs-buildpack
+  no-route: true
+  health-check-type: process
+  command: node src/index.js
+  env:
+    OPTIMIZE_MEMORY: true

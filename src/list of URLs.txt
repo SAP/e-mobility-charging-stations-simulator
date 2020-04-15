@@ -1,0 +1,6 @@
+        "ws://localhost:8010/OCPP16/5be7fb271014d90008992f06" // slf
+        "ws://localhost:8010/OCPP16/5be99f9186cd8a48683b2371" // slf
+        "ws://localhost:8010/OCPP16/5bef335fbf71cd4bb01d6529" // test
+        "ws://localhost:8010/OCPP16/5bef4fb3bf71cd4bb01d68c2" // test2
+        "ws://localhost:8010/OCPP16/5bf700439327fa2f7c2744f3" // test Data Load
+        "ws://localhost:8010/OCPP16/5bf701a59327fa2f7c2744fa" // test Data Load 2

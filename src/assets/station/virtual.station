@@ -1,0 +1,156 @@
+{
+    "authorizationFile": "./src/assets/templateAuthorization.auth",
+    "baseName": "CS-SIMU",
+    "chargePointModel": "Simu all connectors",
+    "chargePointVendor": "Ovomaltin",
+    "power": 50000,
+    "powerUnit": "W",
+    "numberOfConnectors": 9,
+    "randomConnectors": false,
+    "Configuration": { "configurationKey": [
+            { "key": "NumberOfConnectors", "readonly": true, "value": 9},
+            { "key": "param1", "readonly": false, "value": "test"},
+            { "key": "meterValueInterval", "readonly": false, "value": 30},
+            { "key": "AuthorizeRemoteTxRequests", "readonly": false, "value": false}
+        ]
+    },
+    "AutomaticTransactionGenerator": {
+        "enable": false,
+        "minDuration": 60,
+        "maxDuration": 80,
+        "minDelayBetweenTwoTransaction": 15,
+        "maxDelayBetweenTwoTransaction": 30,
+        "probabilityOfStart": 1,
+        "stopAutomaticTransactionGeneratorAfterHours": 0.3
+    },
+    "Connectors": {
+        "0": {
+        },
+        "1": {
+            "bootStatus": "Available",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+                }
+            ]
+        },
+        "2": {
+            "bootStatus": "Preparing",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "3": {
+            "bootStatus": "SuspendedEVSE",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "4": {
+            "bootStatus": "SuspendedEV",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "5": {
+            "bootStatus": "Finishing",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "6": {
+            "bootStatus": "Reserved",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "7": {
+            "bootStatus": "Charging",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "8": {
+            "bootStatus": "Unavailable",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "9": {
+            "bootStatus": "Faulted",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        }
+    }
+}

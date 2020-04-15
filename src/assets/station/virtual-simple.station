@@ -1,0 +1,74 @@
+{
+    "authorizationFile": "./src/assets/templateAuthorization.auth",
+    "baseName": "CS-BASIC",
+    "chargePointModel": "Simu simple",
+    "chargePointVendor": "Ovomaltin",
+    "power": 50000,
+    "powerUnit": "W",
+    "numberOfConnectors": 3,
+    "randomConnectors": false,
+    "Configuration": { "configurationKey": [
+            { "key": "NumberOfConnectors", "readonly": true, "value": 3},
+            { "key": "param1", "readonly": false, "value": "test"},
+            { "key": "meterValueInterval", "readonly": false, "value": 30},
+            { "key": "AuthorizeRemoteTxRequests", "readonly": false, "value": false}
+        ]
+    },
+    "AutomaticTransactionGenerator": {
+        "enable": false,
+        "minDuration": 60,
+        "maxDuration": 80,
+        "minDelayBetweenTwoTransaction": 15,
+        "maxDelayBetweenTwoTransaction": 30,
+        "probabilityOfStart": 1,
+        "stopAutomaticTransactionGeneratorAfterHours": 0.3
+    },
+    "Connectors": {
+        "0": {
+        },
+        "1": {
+            "bootStatus": "Available",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+                }
+            ]
+        },
+        "2": {
+            "bootStatus": "Preparing",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        },
+        "3": {
+            "bootStatus": "Faulted",
+            "MeterValues": [ {
+                    "unit": "Percent",
+                    "context": "Sample.Periodic",
+                    "measurand": "SoC",
+                    "location": "EV"
+                },
+                {
+                "unit": "Wh",
+                "context": "Sample.Periodic"
+            }
+            ]
+        }
+            
+        
+    }
+}

@@ -1,0 +1,24 @@
+{
+  "parser": "babel-eslint",
+  "extends": [
+    "eslint:recommended",
+    "plugin:flowtype/recommended",
+    "node",
+    "google"
+  ],
+  "plugins": [
+    "flowtype"
+  ],
+  "rules": {
+    "require-jsdoc": 0,
+    "import/no-commonjs": [
+      2,
+      {
+        "allowRequire": true,
+        "allowPrimitiveModules": true
+      }
+    ],
+    "import/no-nodejs-modules": 0,
+    "flowtype/no-types-missing-file-annotation": 0
+  }
+}
