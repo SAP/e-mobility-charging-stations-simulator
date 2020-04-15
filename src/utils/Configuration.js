@@ -1,4 +1,4 @@
-const config = require('../config.json');
+const config = require('../assets/config.json');
 
 class Configuration {
   // Read the config file
