@@ -1,4 +1,4 @@
-module.exports = {
+exports = {
   REST_RESPONSE_SUCCESS: {status: 'Success'},
 
   CONN_STATUS_AVAILABLE: 'Available',
