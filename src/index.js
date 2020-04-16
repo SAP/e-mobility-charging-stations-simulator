@@ -1,5 +1,4 @@
 const Configuration = require('./utils/Configuration');
-const EventEmitter = require('events');
 const Utils = require('./utils/Utils');
 const Wrk = require('./charging-station/Worker');
 const fs = require('fs');
@@ -9,9 +8,6 @@ class Bootstrap {
   static async start() {
     try {
       logger.info('%s Configuration: %j', Utils.basicFormatLog(), Configuration.getConfig());
-      if (Configuration.useWorkerPool && Configuration.getWorkerPoolSize() > 10) {
-        EventEmitter.defaultMaxListeners = Configuration.getWorkerPoolSize() + 1;
-      }
       // Start each ChargingStation object in a worker thread
       if (Configuration.getChargingStationTemplateURLs()) {
         Configuration.getChargingStationTemplateURLs().forEach((stationURL) => {

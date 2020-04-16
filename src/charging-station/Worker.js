@@ -1,4 +1,5 @@
 const Configuration = require('../utils/Configuration');
+const EventEmitter = require('events');
 const {Worker} = require('worker_threads');
 const Pool = require('worker-threads-pool');
 
@@ -59,6 +60,9 @@ class Wrk {
    */
   start() {
     if (Configuration.useWorkerPool()) {
+      if (Configuration.getWorkerPoolSize() > 10) {
+        EventEmitter.defaultMaxListeners = Configuration.getWorkerPoolSize() + 1;
+      }
       return this._startWorkerWithPool();
     }
     return this._startWorker();

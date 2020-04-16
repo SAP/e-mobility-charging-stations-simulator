@@ -1,14 +1,7 @@
 const Configuration = require('../utils/Configuration');
 const logger = require('../utils/Logger');
 const WebSocket = require('ws');
-const {
-  OCPP_JSON_CALL_MESSAGE,
-  OCPP_JSON_CALL_RESULT_MESSAGE,
-  OCPP_JSON_CALL_ERROR_MESSAGE,
-  OCPP_ERROR_INTERNAL_ERROR,
-  OCPP_SOCKET_TIMEOUT,
-  OCPP_ERROR_NOT_IMPLEMENTED,
-} = require('../utils/Constants');
+const Constants = require('../utils/Constants');
 const Utils = require('../utils/Utils');
 const OCPPError = require('./OcppError');
 const {v4: uuid} = require('uuid');
@@ -147,7 +140,7 @@ class ChargingStation {
     } else {
       // At first start, send Bootnotification
       try {
-        this.sendMessage(uuid(), this._bootNotificationMessage, OCPP_JSON_CALL_MESSAGE, 'BootNotification');
+        this.sendMessage(uuid(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
       } catch (error) {
         logger.error(this._basicFormatLog() + ' Send boot notification error: ' + error);
       }
@@ -194,13 +187,13 @@ class ChargingStation {
       // Check the Type of message
       switch (messageType) {
         // Incoming Message
-        case OCPP_JSON_CALL_MESSAGE:
+        case Constants.OCPP_JSON_CALL_MESSAGE:
           // Process the call
           this._statistics.addMessage(commandName);
           await this.handleRequest(messageId, commandName, commandPayload);
           break;
         // Outcome Message
-        case OCPP_JSON_CALL_RESULT_MESSAGE:
+        case Constants.OCPP_JSON_CALL_RESULT_MESSAGE:
           // Respond
           // eslint-disable-next-line no-case-declarations
           let responseCallback; let requestPayload;
@@ -218,7 +211,7 @@ class ChargingStation {
           responseCallback(commandName, requestPayload);
           break;
         // Error Message
-        case OCPP_JSON_CALL_ERROR_MESSAGE:
+        case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
           if (!this._requests[messageId]) {
             // Error
             throw new Error(`Error for unknown message id ${messageId}`);
@@ -270,19 +263,19 @@ class ChargingStation {
     }
   }
 
-  send(command, messageType = OCPP_JSON_CALL_MESSAGE) {
+  send(command, messageType = Constants.OCPP_JSON_CALL_MESSAGE) {
     // Send Message
     return this.sendMessage(uuid(), command, messageType);
   }
 
   sendError(messageId, err) {
     // Check exception: only OCPP error are accepted
-    const error = (err instanceof OCPPError ? err : new OCPPError(OCPP_ERROR_INTERNAL_ERROR, err.message));
+    const error = (err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message));
     // Send error
-    return this.sendMessage(messageId, error, OCPP_JSON_CALL_ERROR_MESSAGE);
+    return this.sendMessage(messageId, error, Constants.OCPP_JSON_CALL_ERROR_MESSAGE);
   }
 
-  sendMessage(messageId, command, messageType = OCPP_JSON_CALL_RESULT_MESSAGE, commandName = '') {
+  sendMessage(messageId, command, messageType = Constants.OCPP_JSON_CALL_RESULT_MESSAGE, commandName = '') {
     // Send a message through wsConnection
     const self = this;
     // Create a promise
@@ -291,19 +284,19 @@ class ChargingStation {
       // Type of message
       switch (messageType) {
         // Request
-        case OCPP_JSON_CALL_MESSAGE:
+        case Constants.OCPP_JSON_CALL_MESSAGE:
           this._statistics.addMessage(commandName);
           // Build request
           this._requests[messageId] = [responseCallback, rejectCallback, command];
           messageToSend = JSON.stringify([messageType, messageId, commandName, command]);
           break;
         // Response
-        case OCPP_JSON_CALL_RESULT_MESSAGE:
+        case Constants.OCPP_JSON_CALL_RESULT_MESSAGE:
           // Build response
           messageToSend = JSON.stringify([messageType, messageId, command]);
           break;
         // Error Message
-        case OCPP_JSON_CALL_ERROR_MESSAGE:
+        case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
           // Build Message
           // eslint-disable-next-line no-case-declarations
           const {
@@ -324,13 +317,13 @@ class ChargingStation {
         this._messageQueue.push(messageToSend);
       }
       // Request?
-      if (messageType !== OCPP_JSON_CALL_MESSAGE) {
+      if (messageType !== Constants.OCPP_JSON_CALL_MESSAGE) {
         // Yes: send Ok
         resolve();
       } else if (this._wsConnection.readyState === WebSocket.OPEN) {
         // Send timeout in case connection is open otherwise wait for ever
         // FIXME: Handle message on timeout
-        setTimeout(() => rejectCallback(`Timeout for message ${messageId}`), OCPP_SOCKET_TIMEOUT);
+        setTimeout(() => rejectCallback(`Timeout for message ${messageId}`), Constants.OCPP_SOCKET_TIMEOUT);
       }
 
       // Function that will receive the request's response
@@ -450,7 +443,7 @@ class ChargingStation {
         errorCode,
         status,
       };
-      await this.sendMessage(uuid(), payload, OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
+      await this.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
     } catch (error) {
       logger.error(this._basicFormatLog() + ' Send status error: ' + error);
     }
@@ -465,7 +458,7 @@ class ChargingStation {
           const payload = {
             currentTime: new Date().toISOString(),
           };
-          self.sendMessage(uuid(), payload, OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
+          self.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
         } catch (error) {
           logger.error(self._basicFormatLog() + ' Send heartbeat error: ' + error);
         }
@@ -491,11 +484,11 @@ class ChargingStation {
       }
     } else {
       // Throw Exception
-      await this.sendError(messageId, new OCPPError(OCPP_ERROR_NOT_IMPLEMENTED, 'Not implemented', {}));
+      await this.sendError(messageId, new OCPPError(Constants.OCPP_ERROR_NOT_IMPLEMENTED, 'Not implemented', {}));
       throw new Error(`${commandName} is not implemented ${JSON.stringify(commandPayload, null, ' ')}`);
     }
     // Send Response
-    await this.sendMessage(messageId, result, OCPP_JSON_CALL_RESULT_MESSAGE);
+    await this.sendMessage(messageId, result, Constants.OCPP_JSON_CALL_RESULT_MESSAGE);
   }
 
   async handleGetConfiguration() {
@@ -546,7 +539,7 @@ class ChargingStation {
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
-      return await this.sendMessage(uuid(), payload, OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
+      return await this.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
     } catch (error) {
       logger.error(this._basicFormatLog() + ' Send start transaction error: ' + error);
       this._resetTransactionOnConnector(connectorID);
@@ -561,7 +554,7 @@ class ChargingStation {
         meterStop: 0,
         timestamp: new Date().toISOString(),
       };
-      await this.sendMessage(uuid(), payload, OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
+      await this.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
       logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connectorID].transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + connectorID);
       this.sendStatusNotification(connectorID, 'Available');
     } catch (error) {
@@ -628,7 +621,7 @@ class ChargingStation {
         transactionId: self._connectors[connectorID].transactionId,
         meterValue: [sampledValueLcl],
       };
-      await self.sendMessage(uuid(), payload, OCPP_JSON_CALL_MESSAGE, 'MeterValues');
+      await self.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
     } catch (error) {
       logger.error(self._basicFormatLog() + ' Send meter values error: ' + error);
     }
