@@ -24,7 +24,6 @@ class Wrk {
    * @param {Number} numConcurrentWorkers
    * @private
    */
-  // eslint-disable-next-line class-methods-use-this
   set _numConcurrentWorkers(numConcurrentWorkers) {
     if (numConcurrentWorkers > 10) {
       EventEmitter.defaultMaxListeners = numConcurrentWorkers + 1;
@@ -32,7 +31,6 @@ class Wrk {
     this._concurrentWorkers = numConcurrentWorkers;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   get _numConcurrentWorkers() {
     return this._concurrentWorkers;
   }
