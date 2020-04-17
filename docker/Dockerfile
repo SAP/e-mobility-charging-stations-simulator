@@ -1,4 +1,4 @@
-FROM node:lts-alpine as builder
+FROM node:alpine as builder
 
 WORKDIR /usr/builder
 
@@ -7,7 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm set progress=false && npm config set depth 0 && npm cache clean --force
 RUN npm install
 
-FROM node:lts-alpine
+FROM node:alpine
 
 WORKDIR /usr/app
 
