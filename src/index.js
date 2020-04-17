@@ -10,6 +10,7 @@ class Bootstrap {
       logger.info('%s Configuration: %j', Utils.basicFormatLog(), Configuration.getConfig());
       // Start each ChargingStation object in a worker thread
       if (Configuration.getChargingStationTemplateURLs()) {
+        let numStationsTotal = 0;
         Configuration.getChargingStationTemplateURLs().forEach((stationURL) => {
           try {
             // load file
@@ -17,11 +18,12 @@ class Bootstrap {
             const stationTemplate = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
             fs.closeSync(fileDescriptor);
             const nbStation = (stationURL.numberOfStation ? stationURL.numberOfStation : 0);
+            numStationsTotal += nbStation;
             for (let index = 1; index <= nbStation; index++) {
               const worker = new Wrk('./src/charging-station/StationWorker.js', {
                 index,
                 template: JSON.parse(JSON.stringify(stationTemplate)),
-              });
+              }, numStationsTotal);
               worker.start();
             }
           } catch (error) {
@@ -35,7 +37,7 @@ class Bootstrap {
           const worker = new Wrk('./src/charging-station/StationWorker.js', {
             index,
             template: JSON.parse(JSON.stringify(Configuration.getChargingStationTemplate())),
-          });
+          }, nbStation);
           worker.start();
         }
       }

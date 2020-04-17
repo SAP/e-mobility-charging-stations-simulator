@@ -9,13 +9,32 @@ class Wrk {
    *
    * @param {String} workerScript
    * @param {Object} workerData
+   * @param {Number} numConcurrentWorkers
    */
-  constructor(workerScript, workerData) {
+  constructor(workerScript, workerData, numConcurrentWorkers) {
+    this._workerData = workerData;
+    this._workerScript = workerScript;
+    this._numConcurrentWorkers = numConcurrentWorkers;
     if (Configuration.useWorkerPool()) {
       this._pool = new Pool({max: Configuration.getWorkerPoolSize()});
     }
-    this._workerData = workerData;
-    this._workerScript = workerScript;
+  }
+
+  /**
+   * @param {Number} numConcurrentWorkers
+   * @private
+   */
+  // eslint-disable-next-line class-methods-use-this
+  set _numConcurrentWorkers(numConcurrentWorkers) {
+    if (numConcurrentWorkers > 10) {
+      EventEmitter.defaultMaxListeners = numConcurrentWorkers + 1;
+    }
+    this._concurrentWorkers = numConcurrentWorkers;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  get _numConcurrentWorkers() {
+    return this._concurrentWorkers;
   }
 
   /**
@@ -60,9 +79,6 @@ class Wrk {
    */
   start() {
     if (Configuration.useWorkerPool()) {
-      if (Configuration.getWorkerPoolSize() > 10) {
-        EventEmitter.defaultMaxListeners = Configuration.getWorkerPoolSize() + 1;
-      }
       return this._startWorkerWithPool();
     }
     return this._startWorker();
