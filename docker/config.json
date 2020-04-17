@@ -1,6 +1,6 @@
 {
   "supervisionURLs": [
-    "ws://server:8010/OCPP16/5c866e81a2d9593de43efdb4/5e8735a80ed182919ac9291e"
+    "ws://server:8010/OCPP16/5c866e81a2d9593de43efdb4"
   ],
   "statisticsDisplayInterval": 60,
   "autoReconnectTimeout": 10,
