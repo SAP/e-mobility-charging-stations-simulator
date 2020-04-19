@@ -499,36 +499,26 @@ class ChargingStation {
     const keyToChange = this._configuration.configurationKey.find((element) => element.key === commandPayload.key);
     if (keyToChange) {
       keyToChange.value = commandPayload.value;
-      return {
-        status: 'Accepted',
-      };
+      return Constants.OCPP_RESPONSE_ACCEPTED;
     }
-    return {
-      status: 'Rejected',
-    };
+    return Constants.OCPP_RESPONSE_REJECTED;
   }
 
   async handleRemoteStartTransaction(commandPayload) {
     const transactionConnectorID = (commandPayload.connectorId ? commandPayload.connectorId : '1');
     if (this.isAuthorizationRequested() && this._authorizeRemoteTxRequests) {
-      // check if authorized
+      // Check if authorized
       if (this._authorizedKeys.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
         setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), 500);
-        return {
-          status: 'Accepted',
-        };
+        return Constants.OCPP_RESPONSE_ACCEPTED;
       }
       // Start authorization checks
-      return {
-        status: 'Rejected',
-      };
+      return Constants.OCPP_RESPONSE_REJECTED;
     }
-    // no local authorization check required => start transaction
+    // No local authorization check required => start transaction
     setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), 500);
-    return {
-      status: 'Accepted',
-    };
+    return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
   async sendStartTransaction(connectorID, idTag) {
@@ -648,9 +638,7 @@ class ChargingStation {
         this.sendStopTransaction(commandPayload.transactionId, connector);
       }
     }
-    return {
-      status: 'Accepted',
-    };
+    return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
   isAuthorizationRequested() {

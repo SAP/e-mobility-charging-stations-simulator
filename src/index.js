@@ -13,7 +13,7 @@ class Bootstrap {
         let numStationsTotal = 0;
         Configuration.getChargingStationTemplateURLs().forEach((stationURL) => {
           try {
-            // load file
+            // Load file
             const fileDescriptor = fs.openSync(stationURL.file, 'r');
             const stationTemplate = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
             fs.closeSync(fileDescriptor);
