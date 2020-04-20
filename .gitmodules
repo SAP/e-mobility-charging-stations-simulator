@@ -1,3 +1,4 @@
 [submodule "src/assets/configs-aws"]
 	path = src/assets/configs-aws
 	url = git@github.com:LucasBrazi06/ev-aws.git
+	branch = master

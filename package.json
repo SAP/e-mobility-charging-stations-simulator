@@ -32,7 +32,10 @@
     "flow:deps": "flow-typed install",
     "test": "echo \"Error: no test specified\" && exit 1",
     "clinic:clean": "clinic clean",
-    "npm-check": "npm-check"
+    "npm-check": "npm-check",
+    "git:sdiff": "!git diff && git submodule foreach 'git diff'",
+    "git:supdate": "git submodule update --remote --merge",
+    "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
     "uuid": "^7.0.3",
