@@ -2,7 +2,7 @@
   "name": "ev-simulator",
   "version": "1.0.0",
   "engines": {
-    "node": "13.x.x"
+    "node": "14.x.x"
   },
   "repository": {
     "type": "git",
