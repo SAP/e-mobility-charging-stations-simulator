@@ -1,6 +1,7 @@
 .git
 .gitignore
 .gitattributes
+.gitmodules
 .jshintrc
 .eslintrc
 .vscode
