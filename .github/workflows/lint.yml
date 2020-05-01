@@ -2,7 +2,7 @@ name: Lint CI
 
 on:
   push:
-    branches-ignore:
+    branches:
       - master
   pull_request:
     branches:
