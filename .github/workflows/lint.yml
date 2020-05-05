@@ -10,9 +10,6 @@ on:
 
 jobs:
   lint:
-    env:
-      CI: true
-
     runs-on: ubuntu-latest
 
     strategy:
