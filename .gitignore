@@ -65,3 +65,7 @@ build/config.gypi
 
 # Clinic
 *.clinic-*
+
+# System Files
+.DS_Store
+Thumbs.db
