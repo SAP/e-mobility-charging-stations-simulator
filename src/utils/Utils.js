@@ -1,8 +1,8 @@
-const uuidV4 = require('uuid/v4');
+const {v4: uuid} = require('uuid');
 
 class Utils {
   static generateGUID() {
-    return uuidV4();
+    return uuid();
   }
 
   static sleep(ms) {

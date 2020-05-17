@@ -38,22 +38,20 @@
     "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
-    "uuid": "^7.0.3",
+    "uuid": "^8.0.0",
     "winston": "^3.2.1",
     "worker-threads-pool": "^2.0.0",
-    "ws": "^7.2.3"
+    "ws": "^7.3.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
     "clinic": "^5.0.1",
-    "eslint": "^6.8.0",
-    "eslint-config-esnext": "^4.0.0",
+    "eslint": "^7.0.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-node": "^4.0.0",
-    "eslint-plugin-flowtype": "^4.7.0",
+    "eslint-plugin-flowtype": "^5.0.3",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.2.1",
-    "flow-bin": "^0.123.0",
+    "flow-bin": "^0.125.1",
     "flow-typed": "^3.1.0",
     "npm-check": "^5.9.2"
   }
