@@ -180,10 +180,11 @@ class ChargingStation {
   }
 
   async onMessage(message) {
-    // Parse the message
-    const [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(message);
-
+    let [messageType, messageId, commandName, commandPayload, errorDetails] = [0, '', Constants.ENTITY_CHARGING_STATION, '', ''];
     try {
+      // Parse the message
+      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(message);
+
       // Check the Type of message
       switch (messageType) {
         // Incoming Message
