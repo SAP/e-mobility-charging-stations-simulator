@@ -38,7 +38,7 @@
     "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
-    "uuid": "^8.0.0",
+    "uuid": "^8.1.0",
     "winston": "^3.2.1",
     "worker-threads-pool": "^2.0.0",
     "ws": "^7.3.0"
@@ -49,8 +49,7 @@
     "eslint": "^7.0.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-node": "^4.0.0",
-    "eslint-plugin-flowtype": "^5.0.3",
-    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-flowtype": "^5.1.0",
     "flow-bin": "^0.125.1",
     "flow-typed": "^3.1.0",
     "npm-check": "^5.9.2"
