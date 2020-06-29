@@ -299,14 +299,8 @@ class ChargingStation {
         // Error Message
         case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
           // Build Message
-          // eslint-disable-next-line no-case-declarations
-          const {
-            code,
-            message,
-            details,
-          } = command;
-          this._statistics.addMessage(`Error ${code}`);
-          messageToSend = JSON.stringify([messageType, messageId, code, message, details]);
+          this._statistics.addMessage(`Error ${command.code}`);
+          messageToSend = JSON.stringify([messageType, messageId, command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {}]);
           break;
       }
       // Check if wsConnection in ready
