@@ -41,17 +41,17 @@
     "uuid": "^8.2.0",
     "winston": "^3.3.3",
     "worker-threads-pool": "^2.0.0",
-    "ws": "^7.3.0"
+    "ws": "^7.3.1"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
     "clinic": "^6.0.2",
-    "eslint": "^7.3.1",
+    "eslint": "^7.4.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-node": "^4.1.0",
     "eslint-plugin-flowtype": "^5.2.0",
-    "flow-bin": "^0.128.0",
-    "flow-typed": "^3.1.0",
+    "flow-bin": "^0.129.0",
+    "flow-typed": "^3.2.0",
     "npm-check": "^5.9.2"
   }
 }
