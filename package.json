@@ -45,12 +45,12 @@
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "clinic": "^6.0.2",
+    "clinic": "^6.0.3",
     "eslint": "^7.5.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-node": "^4.1.0",
     "eslint-plugin-flowtype": "^5.2.0",
-    "flow-bin": "^0.129.0",
+    "flow-bin": "^0.130.0",
     "flow-typed": "^3.2.1",
     "npm-check": "^5.9.2"
   }
