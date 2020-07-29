@@ -38,7 +38,7 @@
     "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
-    "uuid": "^8.2.0",
+    "uuid": "^8.3.0",
     "winston": "^3.3.3",
     "worker-threads-pool": "^2.0.0",
     "ws": "^7.3.1"
