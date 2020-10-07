@@ -1,9 +1,14 @@
-const config = require('../assets/config.json');
+const fs = require('fs');
 
 class Configuration {
+  static configurationFile;
+
   // Read the config file
   static getConfig() {
-    return config;
+    if (!Configuration.configurationFile) {
+      Configuration.configurationFile = JSON.parse(fs.readFileSync('src/assets/config.json', 'utf8'));
+    }
+    return Configuration.configurationFile;
   }
 
   static getStatisticsDisplayInterval() {
