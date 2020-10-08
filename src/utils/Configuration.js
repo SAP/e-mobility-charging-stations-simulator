@@ -6,7 +6,7 @@ class Configuration {
   // Read the config file
   static getConfig() {
     if (!Configuration.configurationFile) {
-      Configuration.configurationFile = JSON.parse(fs.readFileSync('src/assets/config.json', 'utf8'));
+      Configuration.configurationFile = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8'));
     }
     return Configuration.configurationFile;
   }
