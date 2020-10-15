@@ -61,9 +61,9 @@ class Configuration {
     return (Configuration.getConfig().hasOwnProperty('errorFile') ? Configuration.getConfig().errorFile : 'error.log');
   }
 
-  static getMeterValueInterval() {
+  static getMeterValueSampleInterval() {
     // Read conf
-    return (Configuration.getChargingStationConfiguration().hasOwnProperty('meterValueInterval') ? Configuration.getChargingStationConfiguration().meterValueInterval * 1000 : 60000);
+    return (Configuration.getChargingStationConfiguration().hasOwnProperty('MeterValueSampleInterval') ? Configuration.getChargingStationConfiguration().MeterValueSampleInterval * 1000 : 60000);
   }
 
   static getAutomaticTransactionConfiguration() {

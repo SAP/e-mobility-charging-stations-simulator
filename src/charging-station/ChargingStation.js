@@ -72,7 +72,7 @@ class ChargingStation {
 
   _getAuthorizeRemoteTxRequests() {
     const authorizeRemoteTxRequests = this._configuration.configurationKey.find((configElement) => configElement.key === 'AuthorizeRemoteTxRequests');
-    return authorizeRemoteTxRequests ? authorizeRemoteTxRequests.value : false;
+    return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
   }
 
   _buildChargingStation(index, stationTemplate) {
@@ -401,6 +401,7 @@ class ChargingStation {
   }
 
   handleResponseStartTransaction(payload, requestPayload) {
+    // Reset connector transaction related attributes
     this._connectors[requestPayload.connectorId].transactionStarted = false;
     this._connectors[requestPayload.connectorId].idTag = requestPayload.idTag;
 
@@ -413,9 +414,9 @@ class ChargingStation {
           this._connectors[connector].lastSoC = 0;
           logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' with idTag ' + requestPayload.idTag);
           this.sendStatusNotification(requestPayload.connectorId, 'Charging');
-          const configuredMeterInterval = this._configuration.configurationKey.find((value) => value.key === 'meterValueInterval');
+          const configuredMeterValueSampleInterval = this._configuration.configurationKey.find((value) => value.key === 'MeterValueSampleInterval');
           this.startMeterValues(requestPayload.connectorId,
-              (configuredMeterInterval ? configuredMeterInterval.value * 1000 : 60000),
+              (configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000),
               this);
         }
       }
@@ -491,8 +492,9 @@ class ChargingStation {
 
   async handleChangeConfiguration(commandPayload) {
     const keyToChange = this._configuration.configurationKey.find((element) => element.key === commandPayload.key);
-    if (keyToChange) {
-      keyToChange.value = commandPayload.value;
+    if (keyToChange && !Utils.convertToBoolean(keyToChange.readonly)) {
+      const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
+      this._configuration.configurationKey[keyIndex].value = commandPayload.value;
       return Constants.OCPP_RESPONSE_ACCEPTED;
     }
     return Constants.OCPP_RESPONSE_REJECTED;
@@ -586,7 +588,7 @@ class ChargingStation {
           // Persist previous value in connector
           const connector = self._connectors[connectorID];
           let consumption;
-          consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval, 3);
+          consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval, 4);
           if (connector && connector.lastConsumptionValue >= 0) {
             connector.lastConsumptionValue += consumption;
           } else {

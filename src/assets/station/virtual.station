@@ -10,7 +10,7 @@
     "Configuration": { "configurationKey": [
             { "key": "NumberOfConnectors", "readonly": true, "value": 9},
             { "key": "param1", "readonly": false, "value": "test"},
-            { "key": "meterValueInterval", "readonly": false, "value": 30},
+            { "key": "MeterValueSampleInterval", "readonly": false, "value": 30},
             { "key": "AuthorizeRemoteTxRequests", "readonly": false, "value": false}
         ]
     },

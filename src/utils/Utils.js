@@ -100,6 +100,22 @@ class Utils {
     return changedID;
   }
 
+  static convertToBoolean(value) {
+    let result = false;
+    // Check boolean
+    if (value) {
+      // Check the type
+      if (typeof value === 'boolean') {
+        // Already a boolean
+        result = value;
+      } else {
+        // Convert
+        result = (value === 'true');
+      }
+    }
+    return result;
+  }
+
   static getRandomInt(max, min) {
     if (min) {
       return Math.floor((Math.random() * (max - min)) + min);
