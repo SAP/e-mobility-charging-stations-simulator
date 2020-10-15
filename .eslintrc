@@ -19,6 +19,18 @@
       }
     ],
     "import/no-nodejs-modules": 0,
-    "flowtype/no-types-missing-file-annotation": 0
+    "flowtype/no-types-missing-file-annotation": 0,
+    "max-len": [
+      "warn",
+      {
+        "code": 180,
+        "ignoreComments": true,
+        "ignoreUrls": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreRegExpLiterals": true,
+        "ignorePattern": "(^(import|export)|(public|private))\\s.+;"
+      }
+    ]
   }
 }

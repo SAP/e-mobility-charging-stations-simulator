@@ -13,7 +13,8 @@
             "runtimeArgs": [
                 "run-script", "start:debug"
             ],
-            "port": 9229
+            "port": 9229,
+            "stopOnEntry": true
         }
     ]
 }

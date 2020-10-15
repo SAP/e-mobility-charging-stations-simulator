@@ -138,7 +138,7 @@ class ChargingStation {
         });
       }
     } else {
-      // At first start, send Bootnotification
+      // At first start, send BootNotification
       try {
         this.sendMessage(uuid(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
       } catch (error) {
@@ -361,7 +361,7 @@ class ChargingStation {
       // determine number of customized connectors
       let lastConnector;
       for (lastConnector in connectorsConfig) {
-        if (lastConnector === 0 && this._stationInfo.usedConnectorId0) {
+        if (Utils.convertToInt(lastConnector) === 0 && this._stationInfo.usedConnectorId0) {
           this._connectors[lastConnector] = connectorsConfig[lastConnector];
         }
       }
@@ -401,18 +401,17 @@ class ChargingStation {
   }
 
   handleResponseStartTransaction(payload, requestPayload) {
-    this._connectors[requestPayload.connectorId] = {
-      transactionStarted: false,
-      idTag: requestPayload.idTag,
-    };
+    this._connectors[requestPayload.connectorId].transactionStarted = false;
+    this._connectors[requestPayload.connectorId].idTag = requestPayload.idTag;
+
     if (payload.idTagInfo.status === 'Accepted') {
       for (const connector in this._connectors) {
-        if (connector === requestPayload.connectorId) {
+        if (Utils.convertToInt(connector) === requestPayload.connectorId) {
           this._connectors[connector].transactionStarted = true;
           this._connectors[connector].transactionId = payload.transactionId;
           this._connectors[connector].lastConsumptionValue = 0;
           this._connectors[connector].lastSoC = 0;
-          logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId);
+          logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' with idTag ' + requestPayload.idTag);
           this.sendStatusNotification(requestPayload.connectorId, 'Charging');
           const configuredMeterInterval = this._configuration.configurationKey.find((value) => value.key === 'meterValueInterval');
           this.startMeterValues(requestPayload.connectorId,
@@ -423,7 +422,7 @@ class ChargingStation {
     } else {
       logger.error(this._basicFormatLog() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
       for (const connector in this._connectors) {
-        if (connector === requestPayload.connectorId) {
+        if (Utils.convertToInt(connector) === requestPayload.connectorId) {
           this._resetTransactionOnConnector(connector);
         }
       }
@@ -478,11 +477,11 @@ class ChargingStation {
         await this.sendError(messageId, error);
       }
     } else {
-      // Throw Exception
+      // Throw exception
       await this.sendError(messageId, new OCPPError(Constants.OCPP_ERROR_NOT_IMPLEMENTED, 'Not implemented', {}));
       throw new Error(`${commandName} is not implemented ${JSON.stringify(commandPayload, null, ' ')}`);
     }
-    // Send Response
+    // Send response
     await this.sendMessage(messageId, result, Constants.OCPP_JSON_CALL_RESULT_MESSAGE);
   }
 
@@ -506,13 +505,16 @@ class ChargingStation {
       if (this._authorizedKeys.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
         setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), 500);
+        logger.info(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
       // Start authorization checks
+      logger.error(this._basicFormatLog() + ' Remote starting transaction REJECTED with status ' + commandPayload.idTagInfo.status + ', idTag ' + commandPayload.idTag);
       return Constants.OCPP_RESPONSE_REJECTED;
     }
     // No local authorization check required => start transaction
     setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), 500);
+    logger.info(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -613,11 +615,11 @@ class ChargingStation {
   }
 
   async startMeterValues(connectorID, interval, self) {
-    // if (!this._connectors[connectorID].transactionStarted) {
-    //   logger.debug(`${self._basicFormatLog()} Trying to start meter values on connector ID ${connectorID} with no transaction`);
-    // } else if (this._connectors[connectorID].transactionStarted && !this._connectors[connectorID].transactionId) {
-    //   logger.debug(`${self._basicFormatLog()} Trying to start meter values on connector ID ${connectorID} with no transaction id`);
-    // }
+    if (!this._connectors[connectorID].transactionStarted) {
+      logger.debug(`${self._basicFormatLog()} Trying to start meter values on connector ID ${connectorID} with no transaction`);
+    } else if (this._connectors[connectorID].transactionStarted && !this._connectors[connectorID].transactionId) {
+      logger.debug(`${self._basicFormatLog()} Trying to start meter values on connector ID ${connectorID} with no transaction id`);
+    }
     this._connectors[connectorID].transactionInterval = setInterval(async () => {
       const sendMeterValues = performance.timerify(this.sendMeterValues);
       this._performanceObserver.observe({
