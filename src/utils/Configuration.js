@@ -1,4 +1,5 @@
 const fs = require('fs');
+const Utils = require('./Utils');
 
 class Configuration {
   static configurationFile;
@@ -18,12 +19,12 @@ class Configuration {
 
   static getAutoReconnectTimeout() {
     // Read conf
-    return Configuration.getConfig().hasOwnProperty('autoReconnectTimeout') ? Configuration.getConfig().autoReconnectTimeout : 10;
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectTimeout') ? Configuration.getConfig().autoReconnectTimeout : 10;
   }
 
   static getAutoReconnectMaxRetries() {
     // Read conf
-    return Configuration.getConfig().hasOwnProperty('autoReconnectMaxRetries') ? Configuration.getConfig().autoReconnectMaxRetries : -1;
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries') ? Configuration.getConfig().autoReconnectMaxRetries : -1;
   }
 
   static getChargingStationTemplateURLs() {
@@ -38,7 +39,7 @@ class Configuration {
 
   static getNumberofChargingStation() {
     // Read conf
-    return (Configuration.getConfig().numberOfStation ? Configuration.getConfig().numberOfStation : 0);
+    return Configuration.getConfig().numberOfStation ? Configuration.getConfig().numberOfStation : 0;
   }
 
   static useWorkerPool() {
@@ -50,20 +51,15 @@ class Configuration {
   }
 
   static getConsoleLog() {
-    return (Configuration.getConfig().hasOwnProperty('consoleLog') ? Configuration.getConfig().consoleLog : false);
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'consoleLog') ? Configuration.getConfig().consoleLog : false;
   }
 
   static getLogFile() {
-    return (Configuration.getConfig().hasOwnProperty('logFile') ? Configuration.getConfig().logFile : 'combined.log');
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFile') ? Configuration.getConfig().logFile : 'combined.log';
   }
 
   static getErrorFile() {
-    return (Configuration.getConfig().hasOwnProperty('errorFile') ? Configuration.getConfig().errorFile : 'error.log');
-  }
-
-  static getMeterValueSampleInterval() {
-    // Read conf
-    return (Configuration.getChargingStationConfiguration().hasOwnProperty('MeterValueSampleInterval') ? Configuration.getChargingStationConfiguration().MeterValueSampleInterval * 1000 : 60000);
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'errorFile') ? Configuration.getConfig().errorFile : 'error.log';
   }
 
   static getAutomaticTransactionConfiguration() {
@@ -81,11 +77,11 @@ class Configuration {
   }
 
   static getChargingStationConfiguration() {
-    return (Configuration.getChargingStationTemplate().hasOwnProperty('Configuration') ? Configuration.getChargingStationTemplate().Configuration : {});
+    return Utils.objectHasOwnProperty(Configuration.getChargingStationTemplate(), 'Configuration') ? Configuration.getChargingStationTemplate().Configuration : {};
   }
 
   static getChargingStationAuthorizationFile() {
-    return (Configuration.getChargingStationTemplate().hasOwnProperty('authorizationFile') ? Configuration.getChargingStationTemplate().authorizationFile : '');
+    return Utils.objectHasOwnProperty(Configuration.getChargingStationTemplate(), 'authorizationFile') ? Configuration.getChargingStationTemplate().authorizationFile : '';
   }
 
   static getChargingStationConnectors() {

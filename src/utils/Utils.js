@@ -127,6 +127,10 @@ class Utils {
     const date = new Date();
     return date.toISOString().substr(0, 19) + prefixString;
   }
+
+  static objectHasOwnProperty(object, property) {
+    return Object.prototype.hasOwnProperty.call(object, property);
+  }
 }
 
 module.exports = Utils;
