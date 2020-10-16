@@ -9,8 +9,9 @@
     "randomConnectors": false,
     "Configuration": { "configurationKey": [
             { "key": "NumberOfConnectors", "readonly": true, "value": 2},
-            { "key": "param1", "readonly": false, "value": "test"},
             { "key": "MeterValueSampleInterval", "readonly": false, "value": 30},
+            { "key": "SupportedFeatureProfiles", "readonly": true, "value": "Core,LocalAuthListManagement"},
+            { "key": "LocalAuthListEnabled", "readonly": false, "value": false},
             { "key": "AuthorizeRemoteTxRequests", "readonly": false, "value": false}
         ]
     },

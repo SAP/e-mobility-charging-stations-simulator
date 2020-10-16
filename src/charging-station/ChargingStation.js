@@ -75,6 +75,11 @@ class ChargingStation {
     return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
   }
 
+  _getLocalAuthListEnabled() {
+    const localAuthListEnabled = this._configuration.configurationKey.find((configElement) => configElement.key === 'LocalAuthListEnabled');
+    return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
+  }
+
   _buildChargingStation(index, stationTemplate) {
     if (Array.isArray(stationTemplate.power)) {
       stationTemplate.maxPower = stationTemplate.power[Math.floor(Math.random() * stationTemplate.power.length)];
@@ -89,15 +94,12 @@ class ChargingStation {
     logger.info(this._basicFormatLog() + ' Will communicate with ' + this._supervisionUrl);
     this._url = this._supervisionUrl + '/' + this._stationInfo.name;
     this._wsConnection = new WebSocket(this._url, 'ocpp1.6');
-    if (this._authorizationFile !== '') {
+    if (this._authorizationFile) {
       try {
         // load file
         const fileDescriptor = fs.openSync(this._authorizationFile, 'r');
         this._authorizedKeys = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
         fs.closeSync(fileDescriptor);
-        // get remote authorization logic
-        // FIXME: move to the constructor
-        this._authorizeRemoteTxRequests = this._getAuthorizeRemoteTxRequests();
         // monitor authorization file
         // eslint-disable-next-line no-unused-vars
         fs.watchFile(this._authorizationFile, (current, previous) => {
@@ -113,6 +115,8 @@ class ChargingStation {
       } catch (error) {
         logger.error(this._basicFormatLog() + ' Authorization file error: ' + error);
       }
+    } else {
+      logger.info(this._basicFormatLog() + ' No authorization file given in template ' + this._stationInfo.baseName);
     }
     // Handle Socket incoming messages
     this._wsConnection.on('message', this.onMessage.bind(this));
@@ -407,7 +411,7 @@ class ChargingStation {
 
     if (payload.idTagInfo.status === 'Accepted') {
       for (const connector in this._connectors) {
-        if (Utils.convertToInt(connector) === requestPayload.connectorId) {
+        if (Utils.convertToInt(connector) === Utils.convertToInt(requestPayload.connectorId)) {
           this._connectors[connector].transactionStarted = true;
           this._connectors[connector].transactionId = payload.transactionId;
           this._connectors[connector].lastConsumptionValue = 0;
@@ -423,7 +427,7 @@ class ChargingStation {
     } else {
       logger.error(this._basicFormatLog() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
       for (const connector in this._connectors) {
-        if (Utils.convertToInt(connector) === requestPayload.connectorId) {
+        if (Utils.convertToInt(connector) === Utils.convertToInt(requestPayload.connectorId)) {
           this._resetTransactionOnConnector(connector);
         }
       }
@@ -502,7 +506,7 @@ class ChargingStation {
 
   async handleRemoteStartTransaction(commandPayload) {
     const transactionConnectorID = (commandPayload.connectorId ? commandPayload.connectorId : '1');
-    if (this.isAuthorizationRequested() && this._authorizeRemoteTxRequests) {
+    if (this.hasAuthorizationKeys() && this._getLocalAuthListEnabled() && this._getAuthorizeRemoteTxRequests()) {
       // Check if authorized
       if (this._authorizedKeys.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
@@ -640,7 +644,7 @@ class ChargingStation {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  isAuthorizationRequested() {
+  hasAuthorizationKeys() {
     return this._authorizedKeys && this._authorizedKeys.length > 0;
   }
 
