@@ -10,11 +10,11 @@
   "workerPoolSize": 16,
   "stationTemplateURLs": [
     {
-      "file": "./src/assets/station-templates/siemens.mougins69.station-template.json-template.json",
+      "file": "./src/assets/station-templates/siemens.mougins69.station-template.json",
       "numberOfStation": 1
     },
     {
-      "file": "./src/assets/station-templates/keba.station-template.json-template.json",
+      "file": "./src/assets/station-templates/keba.station-template.json",
       "numberOfStation": 2
     },
     {

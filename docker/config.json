@@ -10,27 +10,27 @@
   "workerPoolSize": 16,
   "stationTemplateURLs": [
     {
-      "file": "./src/assets/station/siemens.mougins69.station",
+      "file": "./src/assets/station-templates/siemens.mougins69.station-template.json",
       "numberOfStation": 0
     },
     {
-      "file": "./src/assets/station/keba.station",
+      "file": "./src/assets/station-templates/keba.station-template.json",
       "numberOfStation": 0
     },
     {
-      "file": "./src/assets/station/abb.station",
+      "file": "./src/assets/station-templates/abb.station-template.json",
       "numberOfStation": 0
     },
     {
-      "file": "./src/assets/station/evlink.station",
+      "file": "./src/assets/station-templates/evlink.station-template.json",
       "numberOfStation": 0
     },
     {
-      "file": "./src/assets/station/schneider.station",
+      "file": "./src/assets/station-templates/schneider.station-template.json",
       "numberOfStation": 0
     },
     {
-      "file": "./src/assets/station/virtual-simple-atg.station",
+      "file": "./src/assets/station-templates/virtual-simple-atg.station-template.json",
       "numberOfStation": 10
     }
   ],
