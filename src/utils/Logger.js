@@ -2,7 +2,7 @@ const Configuration = require('./Configuration');
 const Winston = require('winston');
 
 const logger = Winston.createLogger({
-  level: 'info',
+  level: Configuration.getLogLevel(),
   format: Winston.format.combine(Winston.format.splat(), Winston.format.json()),
   defaultMeta: {service: 'user-service'},
   transports: [

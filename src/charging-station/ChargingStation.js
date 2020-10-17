@@ -11,51 +11,100 @@ const fs = require('fs');
 const {performance, PerformanceObserver} = require('perf_hooks');
 
 class ChargingStation {
-  constructor(index, stationTemplate) {
-    this._requests = {};
+  constructor(index, stationTemplateFile) {
+    this._index = index;
+    this._stationTemplateFile = stationTemplateFile;
+    this._initialize();
+
     this._autoReconnectRetryCount = 0;
     this._autoReconnectMaxRetries = Configuration.getAutoReconnectMaxRetries(); // -1 for unlimited
     this._autoReconnectTimeout = Configuration.getAutoReconnectTimeout() * 1000; // ms, zero for disabling
+
+    this._requests = {};
+    this._messageQueue = [];
+
     this._isSocketRestart = false;
-    this._stationInfo = this._buildChargingStation(index, stationTemplate);
+  }
+
+  _initialize() {
+    this._stationInfo = this._buildStationInfo();
+    this._bootNotificationMessage = {
+      chargePointModel: this._stationInfo.chargePointModel,
+      chargePointVendor: this._stationInfo.chargePointVendor,
+    };
+    this._configuration = this._getConfiguration();
+    this._authorizedTags = this._getAuthorizedTags();
+    this._supervisionUrl = this._getSupervisionURL();
     this._statistics = new Statistics(this._stationInfo.name);
     this._performanceObserver = new PerformanceObserver((list) => {
       const entry = list.getEntries()[0];
       this._statistics.logPerformance(entry, 'ChargingStation');
       this._performanceObserver.disconnect();
     });
-    this._index = index;
-    this._messageQueue = [];
-    this._bootNotificationMessage = {
-      chargePointModel: this._stationInfo.chargePointModel,
-      chargePointVendor: this._stationInfo.chargePointVendor,
-    };
-    this._configuration = this._getConfiguration(stationTemplate);
-    this._authorizationFile = this._getAuthorizationFile(stationTemplate);
-    this._supervisionUrl = this._getSupervisionURL(index, stationTemplate);
   }
 
   _basicFormatLog() {
     return Utils.basicFormatLog(` ${this._stationInfo.name}:`);
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  _getConfiguration(stationTemplate) {
-    return stationTemplate.Configuration ? stationTemplate.Configuration : {};
+  _getConfiguration() {
+    return this._stationInfo.Configuration ? this._stationInfo.Configuration : {};
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  _getAuthorizationFile(stationTemplate) {
-    return stationTemplate.authorizationFile ? stationTemplate.authorizationFile : '';
+  _getAuthorizationFile() {
+    return this._stationInfo.authorizationFile ? this._stationInfo.authorizationFile : '';
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  _getSupervisionURL(index, stationTemplate) {
-    const supervisionUrls = JSON.parse(JSON.stringify(stationTemplate.supervisionURL ? stationTemplate.supervisionURL : Configuration.getSupervisionURLs()));
+  _getAuthorizedTags() {
+    let authorizedTags = [];
+    const authorizationFile = this._getAuthorizationFile();
+    if (authorizationFile) {
+      try {
+        // Load authorization file
+        const fileDescriptor = fs.openSync(authorizationFile, 'r');
+        authorizedTags = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
+        fs.closeSync(fileDescriptor);
+      } catch (error) {
+        logger.error(this._basicFormatLog() + ' Authorization file loading error: ' + error);
+      }
+    } else {
+      logger.info(this._basicFormatLog() + ' No authorization file given in template file ' + this._stationTemplateFile);
+    }
+    return authorizedTags;
+  }
+
+  _startAuthorizationFileMonitoring() {
+    // eslint-disable-next-line no-unused-vars
+    fs.watchFile(this._getAuthorizationFile(), (current, previous) => {
+      try {
+        logger.debug(this._basicFormatLog() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
+        // Initialize _authorizedTags
+        this._authorizedTags = this._getAuthorizedTags();
+      } catch (error) {
+        logger.error(this._basicFormatLog() + ' Authorization file monitoring error: ' + error);
+      }
+    });
+  }
+
+  _startStationTemplateFileMonitoring() {
+    // eslint-disable-next-line no-unused-vars
+    fs.watchFile(this._stationTemplateFile, (current, previous) => {
+      try {
+        logger.debug(this._basicFormatLog() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
+        // Initialize
+        this._initialize();
+      } catch (error) {
+        logger.error(this._basicFormatLog() + ' Charging station template file monitoring error: ' + error);
+      }
+    });
+  }
+
+  _getSupervisionURL() {
+    const supervisionUrls = Utils.cloneJSonDocument(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs());
     let indexUrl = 0;
     if (Array.isArray(supervisionUrls)) {
-      if (Configuration.getEquallySupervisionDistribution()) {
-        indexUrl = index % supervisionUrls.length;
+      if (Configuration.getDistributeStationToTenantEqually()) {
+        indexUrl = this._index % supervisionUrls.length;
       } else {
         // Get a random url
         indexUrl = Math.floor(Math.random() * supervisionUrls.length);
@@ -65,9 +114,8 @@ class ChargingStation {
     return supervisionUrls;
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  _getStationName(index, stationTemplate) {
-    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + ('000000000' + index).substr(('000000000' + index).length - 4);
+  _getStationName(stationTemplate) {
+    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + ('000000000' + this._index).substr(('000000000' + this._index).length - 4);
   }
 
   _getAuthorizeRemoteTxRequests() {
@@ -80,44 +128,34 @@ class ChargingStation {
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
   }
 
-  _buildChargingStation(index, stationTemplate) {
-    if (Array.isArray(stationTemplate.power)) {
-      stationTemplate.maxPower = stationTemplate.power[Math.floor(Math.random() * stationTemplate.power.length)];
-    } else {
-      stationTemplate.maxPower = stationTemplate.power;
+  _buildStationInfo() {
+    let stationTemplateFromFile;
+    try {
+      // Load template file
+      const fileDescriptor = fs.openSync(this._stationTemplateFile, 'r');
+      stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
+      fs.closeSync(fileDescriptor);
+    } catch (error) {
+      logger.error(this._basicFormatLog() + ' Template file loading error: ' + error);
     }
-    stationTemplate.name = this._getStationName(index, stationTemplate);
+    const stationTemplate = stationTemplateFromFile || {};
+    if (Array.isArray(stationTemplateFromFile.power)) {
+      stationTemplate.maxPower = stationTemplateFromFile.power[Math.floor(Math.random() * stationTemplateFromFile.power.length)];
+    } else {
+      stationTemplate.maxPower = stationTemplateFromFile.power;
+    }
+    stationTemplate.name = this._getStationName(stationTemplateFromFile);
     return stationTemplate;
   }
 
   async start() {
     logger.info(this._basicFormatLog() + ' Will communicate with ' + this._supervisionUrl);
+    // Monitor authorization file
+    this._startAuthorizationFileMonitoring();
+    // Monitor station template file
+    this._startStationTemplateFileMonitoring();
     this._url = this._supervisionUrl + '/' + this._stationInfo.name;
     this._wsConnection = new WebSocket(this._url, 'ocpp1.6');
-    if (this._authorizationFile) {
-      try {
-        // load file
-        const fileDescriptor = fs.openSync(this._authorizationFile, 'r');
-        this._authorizedKeys = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
-        fs.closeSync(fileDescriptor);
-        // monitor authorization file
-        // eslint-disable-next-line no-unused-vars
-        fs.watchFile(this._authorizationFile, (current, previous) => {
-          try {
-            // reload file
-            const fileDescriptor = fs.openSync(this._authorizationFile, 'r');
-            this._authorizedKeys = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
-            fs.closeSync(fileDescriptor);
-          } catch (error) {
-            logger.error(this._basicFormatLog() + ' Authorization file error: ' + error);
-          }
-        });
-      } catch (error) {
-        logger.error(this._basicFormatLog() + ' Authorization file error: ' + error);
-      }
-    } else {
-      logger.info(this._basicFormatLog() + ' No authorization file given in template ' + this._stationInfo.baseName);
-    }
     // Handle Socket incoming messages
     this._wsConnection.on('message', this.onMessage.bind(this));
     // Handle Socket error
@@ -307,7 +345,7 @@ class ChargingStation {
           messageToSend = JSON.stringify([messageType, messageId, command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {}]);
           break;
       }
-      // Check if wsConnection in ready
+      // Check if wsConnection is ready
       if (this._wsConnection.readyState === WebSocket.OPEN) {
         // Yes: Send Message
         this._wsConnection.send(messageToSend);
@@ -332,7 +370,7 @@ class ChargingStation {
         if (typeof self[responseCallbackFn] === 'function') {
           self[responseCallbackFn](payload, requestPayload, self);
         } else {
-          // logger.error(this._basicFormatLog() + ' Trying to call an undefined callback function: ' + responseCallbackFn)
+          logger.debug(self._basicFormatLog() + ' Trying to call an undefined callback function: ' + responseCallbackFn);
         }
         // Send the response
         resolve(payload);
@@ -354,18 +392,22 @@ class ChargingStation {
     if (payload.status === 'Accepted') {
       this._heartbeatInterval = payload.interval * 1000;
       this.basicStartMessageSequence();
+    } else {
+      logger.info(this._basicFormatLog() + ' Boot Notification rejected');
     }
   }
 
   async basicStartMessageSequence() {
     this._startHeartbeat(this);
-    if (!this._connectors) { // build connectors
+    // build connectors
+    if (!this._connectors) {
       this._connectors = {};
-      const connectorsConfig = JSON.parse(JSON.stringify(this._stationInfo.Connectors));
+      const connectorsConfig = Utils.cloneJSonDocument(this._stationInfo.Connectors);
       // determine number of customized connectors
       let lastConnector;
       for (lastConnector in connectorsConfig) {
-        if (Utils.convertToInt(lastConnector) === 0 && this._stationInfo.usedConnectorId0) {
+        // add connector 0, OCPP specification violation that for example KEBA have
+        if (Utils.convertToInt(lastConnector) === 0 && this._stationInfo.useConnectorId0) {
           this._connectors[lastConnector] = connectorsConfig[lastConnector];
         }
       }
@@ -378,7 +420,7 @@ class ChargingStation {
       }
       // generate all connectors
       for (let index = 1; index <= maxConnectors; index++) {
-        const randConnectorID = (this._stationInfo.randomConnectors ? Utils.getRandomInt(lastConnector, 1) : index);
+        const randConnectorID = this._stationInfo.randomConnectors ? Utils.getRandomInt(maxConnectors, 1) : index;
         this._connectors[index] = connectorsConfig[randConnectorID];
       }
     }
@@ -386,12 +428,12 @@ class ChargingStation {
     for (const connector in this._connectors) {
       if (!this._connectors[connector].transactionStarted) {
         if (this._connectors[connector].bootStatus) {
-          setTimeout(() => this.sendStatusNotification(connector, this._connectors[connector].bootStatus), 500);
+          setTimeout(() => this.sendStatusNotification(connector, this._connectors[connector].bootStatus), Constants.STATUS_NOTIFICATION_TIMEOUT);
         } else {
-          setTimeout(() => this.sendStatusNotification(connector, 'Available'), 500);
+          setTimeout(() => this.sendStatusNotification(connector, 'Available'), Constants.STATUS_NOTIFICATION_TIMEOUT);
         }
       } else {
-        setTimeout(() => this.sendStatusNotification(connector, 'Charging'), 500);
+        setTimeout(() => this.sendStatusNotification(connector, 'Charging'), Constants.STATUS_NOTIFICATION_TIMEOUT);
       }
     }
 
@@ -506,21 +548,20 @@ class ChargingStation {
 
   async handleRemoteStartTransaction(commandPayload) {
     const transactionConnectorID = (commandPayload.connectorId ? commandPayload.connectorId : '1');
-    if (this.hasAuthorizationKeys() && this._getLocalAuthListEnabled() && this._getAuthorizeRemoteTxRequests()) {
+    if (this.hasAuthorizedTags() && this._getLocalAuthListEnabled() && this._getAuthorizeRemoteTxRequests()) {
       // Check if authorized
-      if (this._authorizedKeys.find((value) => value === commandPayload.idTag)) {
+      if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
-        setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), 500);
-        logger.info(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
+        setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), Constants.START_TRANSACTION_TIMEOUT);
+        logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
-      // Start authorization checks
       logger.error(this._basicFormatLog() + ' Remote starting transaction REJECTED with status ' + commandPayload.idTagInfo.status + ', idTag ' + commandPayload.idTag);
       return Constants.OCPP_RESPONSE_REJECTED;
     }
     // No local authorization check required => start transaction
-    setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), 500);
-    logger.info(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
+    setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), Constants.START_TRANSACTION_TIMEOUT);
+    logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -574,7 +615,7 @@ class ChargingStation {
       const sampledValueLcl = {
         timestamp: new Date().toISOString(),
       };
-      const meterValuesClone = JSON.parse(JSON.stringify(self._getConnector(connectorID).MeterValues));
+      const meterValuesClone = Utils.cloneJSonDocument(self._getConnector(connectorID).MeterValues);
       if (Array.isArray(meterValuesClone)) {
         sampledValueLcl.sampledValue = meterValuesClone;
       } else {
@@ -622,7 +663,7 @@ class ChargingStation {
 
   async startMeterValues(connectorID, interval, self) {
     if (!this._connectors[connectorID].transactionStarted) {
-      logger.debug(`${self._basicFormatLog()} Trying to start meter values on connector ID ${connectorID} with no transaction`);
+      logger.debug(`${self._basicFormatLog()} Trying to start meter values on connector ID ${connectorID} with no transaction started`);
     } else if (this._connectors[connectorID].transactionStarted && !this._connectors[connectorID].transactionId) {
       logger.debug(`${self._basicFormatLog()} Trying to start meter values on connector ID ${connectorID} with no transaction id`);
     }
@@ -644,13 +685,13 @@ class ChargingStation {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  hasAuthorizationKeys() {
-    return this._authorizedKeys && this._authorizedKeys.length > 0;
+  hasAuthorizedTags() {
+    return Array.isArray(this._authorizedTags) && this._authorizedTags.length > 0;
   }
 
   getRandomTagId() {
-    const index = Math.round(Math.floor(Math.random() * this._authorizedKeys.length - 1));
-    return this._authorizedKeys[index];
+    const index = Math.round(Math.floor(Math.random() * this._authorizedTags.length - 1));
+    return this._authorizedTags[index];
   }
 
   _getConnector(number) {

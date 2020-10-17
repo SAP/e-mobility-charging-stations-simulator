@@ -88,7 +88,7 @@ class AutomaticTransactionGenerator {
 
   // eslint-disable-next-line class-methods-use-this
   async startTransaction(connectorId, self) {
-    if (self._chargingStation.hasAuthorizationKeys()) {
+    if (self._chargingStation.hasAuthorizedTags()) {
       const tagId = self._chargingStation.getRandomTagId();
       logger.info(self._basicFormatLog(connectorId) + ' start transaction for tagID ' + tagId);
       return self._chargingStation.sendStartTransaction(connectorId, tagId);

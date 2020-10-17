@@ -131,6 +131,10 @@ class Utils {
   static objectHasOwnProperty(object, property) {
     return Object.prototype.hasOwnProperty.call(object, property);
   }
+
+  static cloneJSonDocument(jsonDocument) {
+    return JSON.parse(JSON.stringify(jsonDocument));
+  }
 }
 
 module.exports = Utils;

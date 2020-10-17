@@ -14,7 +14,7 @@ class Configuration {
 
   static getStatisticsDisplayInterval() {
     // Read conf
-    return Configuration.getConfig().statisticsDisplayInterval;
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
   }
 
   static getAutoReconnectTimeout() {
@@ -27,19 +27,9 @@ class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries') ? Configuration.getConfig().autoReconnectMaxRetries : -1;
   }
 
-  static getChargingStationTemplateURLs() {
+  static getStationTemplateURLs() {
     // Read conf
     return Configuration.getConfig().stationTemplateURLs;
-  }
-
-  static getChargingStationTemplate() {
-    // Read conf
-    return Configuration.getConfig().stationTemplate;
-  }
-
-  static getNumberofChargingStation() {
-    // Read conf
-    return Configuration.getConfig().numberOfStation ? Configuration.getConfig().numberOfStation : 0;
   }
 
   static useWorkerPool() {
@@ -54,6 +44,10 @@ class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'consoleLog') ? Configuration.getConfig().consoleLog : false;
   }
 
+  static getLogLevel() {
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel : 'info';
+  }
+
   static getLogFile() {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFile') ? Configuration.getConfig().logFile : 'combined.log';
   }
@@ -62,34 +56,13 @@ class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'errorFile') ? Configuration.getConfig().errorFile : 'error.log';
   }
 
-  static getAutomaticTransactionConfiguration() {
-    // Read conf
-    return Configuration.getChargingStationTemplate().AutomaticTransactionGenerator;
-  }
-
   static getSupervisionURLs() {
     // Read conf
     return Configuration.getConfig().supervisionURLs;
   }
 
-  static getEquallySupervisionDistribution() {
-    return Configuration.getConfig().distributeStationToTenantEqually;
-  }
-
-  static getChargingStationConfiguration() {
-    return Utils.objectHasOwnProperty(Configuration.getChargingStationTemplate(), 'Configuration') ? Configuration.getChargingStationTemplate().Configuration : {};
-  }
-
-  static getChargingStationAuthorizationFile() {
-    return Utils.objectHasOwnProperty(Configuration.getChargingStationTemplate(), 'authorizationFile') ? Configuration.getChargingStationTemplate().authorizationFile : '';
-  }
-
-  static getChargingStationConnectors() {
-    return Configuration.getChargingStationTemplate().Connectors;
-  }
-
-  static getChargingStationConnector(number) {
-    return Configuration.getChargingStationTemplate().Connectors[number];
+  static getDistributeStationToTenantEqually() {
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationToTenantEqually') ? Configuration.getConfig().distributeStationToTenantEqually : true;
   }
 }
 

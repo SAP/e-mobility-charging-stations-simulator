@@ -1,0 +1,66 @@
+{
+  "authorizationFile": "./src/assets/authorization-tags.json",
+  "baseName": "CS-KEBA",
+  "chargePointModel": "KC-P30-ESS400C2-E0R",
+  "chargePointVendor": "Keba AG",
+  "power": 22000,
+  "powerUnit": "W",
+  "numberOfConnectors": 1,
+  "randomConnectors": false,
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "NumberOfConnectors",
+        "readonly": true,
+        "value": 2
+      },
+      {
+        "key": "MeterValueSampleInterval",
+        "readonly": false,
+        "value": 30
+      },
+      {
+        "key": "SupportedFeatureProfiles",
+        "readonly": true,
+        "value": "Core,LocalAuthListManagement"
+      },
+      {
+        "key": "LocalAuthListEnabled",
+        "readonly": false,
+        "value": false
+      },
+      {
+        "key": "AuthorizeRemoteTxRequests",
+        "readonly": false,
+        "value": false
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": false,
+    "minDuration": 30,
+    "maxDuration": 60,
+    "minDelayBetweenTwoTransaction": 15,
+    "maxDelayBetweenTwoTransaction": 30,
+    "probabilityOfStart": 1,
+    "stopAutomaticTransactionGeneratorAfterHours": 0.3
+  },
+  "Connectors": {
+    "1": {
+      "MeterValues": [
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    },
+    "2": {
+      "MeterValues": [
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    }
+  }
+}

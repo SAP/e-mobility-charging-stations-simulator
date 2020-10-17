@@ -1,0 +1,70 @@
+{
+  "authorizationFile": "./src/assets/authorization-tags.json",
+  "baseName": "SAP-Mougins-69",
+  "fixedName": true,
+  "chargePointModel": "SiemensXX213",
+  "chargePointVendor": "SIEMENS",
+  "power": 44000,
+  "powerUnit": "W",
+  "numberOfConnectors": 2,
+  "randomConnectors": false,
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "NumberOfConnectors",
+        "readonly": true,
+        "value": 2
+      },
+      {
+        "key": "MeterValueSampleInterval",
+        "readonly": false,
+        "value": 30
+      },
+      {
+        "key": "SupportedFeatureProfiles",
+        "readonly": true,
+        "value": "Core,LocalAuthListManagement"
+      },
+      {
+        "key": "LocalAuthListEnabled",
+        "readonly": false,
+        "value": false
+      },
+      {
+        "key": "AuthorizeRemoteTxRequests",
+        "readonly": false,
+        "value": false
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": false,
+    "minDuration": 60,
+    "maxDuration": 80,
+    "minDelayBetweenTwoTransaction": 15,
+    "maxDelayBetweenTwoTransaction": 30,
+    "probabilityOfStart": 1,
+    "stopAutomaticTransactionGeneratorAfterHours": 0.3
+  },
+  "Connectors": {
+    "1": {
+      "bootStatus": "Unavailable",
+      "MeterValues": [
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    },
+    "2": {
+      "MeterValues": [
+        {
+          "context": "Sample.Periodic",
+          "format": "Raw",
+          "measurand": "Energey.Active.Import.Register",
+          "unit": "Wh"
+        }
+      ]
+    }
+  }
+}

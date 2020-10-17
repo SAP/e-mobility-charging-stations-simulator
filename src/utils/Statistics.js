@@ -40,7 +40,8 @@ class Statistics {
       startTransaction: 'StartTransaction',
       stopTransaction: 'StopTransaction',
     };
-    if (MAPCOMMAND[command]) { // Get current command statistics
+    // Get current command statistics
+    if (MAPCOMMAND[command]) {
       currentStatistics = this._statistics[MAPCOMMAND[command]];
     } else if (this._statistics[command]) {
       currentStatistics = this._statistics[command];
@@ -65,13 +66,11 @@ class Statistics {
   }
 
   _display() {
-    // logger.info(this._basicFormatLog() + ' STARTING')
     logger.info(this._basicFormatLog() + ' %j', this._statistics);
-    // logger.info(this._basicFormatLog() + ' ENDING')
   }
 
   _displayInterval() {
-    if (Configuration.getStatisticsDisplayInterval()) {
+    if (Configuration.getStatisticsDisplayInterval() !== 0) {
       logger.info(this._basicFormatLog() + ' displayed every ' + Configuration.getStatisticsDisplayInterval() + 's');
       setInterval(() => {
         this._display();

@@ -134,6 +134,9 @@ class Constants {
   static OCPP_VERSION_15 = '1.5';
   static OCPP_VERSION_16 = '1.6';
   static OCPP_VERSION_20 = '2.0';
+
+  static STATUS_NOTIFICATION_TIMEOUT = 500;
+  static START_TRANSACTION_TIMEOUT = 500;
 }
 
 module.exports = Constants;
