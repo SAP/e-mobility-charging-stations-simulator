@@ -44,7 +44,8 @@
     "minDelayBetweenTwoTransaction": 15,
     "maxDelayBetweenTwoTransaction": 30,
     "probabilityOfStart": 1,
-    "stopAutomaticTransactionGeneratorAfterHours": 0.3
+    "stopAfterHours": 0.3,
+    "stopOnConnectionFailure": false
   },
   "Connectors": {
     "1": {

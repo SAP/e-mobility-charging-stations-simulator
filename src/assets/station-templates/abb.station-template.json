@@ -1,11 +1,13 @@
 {
   "authorizationFile": "./src/assets/authorization-tags.json",
   "baseName": "CS-ABB",
-  "chargePointModel": "ABB 5678",
+  "chargePointModel": "MD_TERRA_53",
   "chargePointVendor": "ABB",
+  "firmwareVersion": "4.0.4.22",
   "power": 50000,
   "powerUnit": "W",
   "numberOfConnectors": 2,
+  "useConnectorId0": false,
   "randomConnectors": false,
   "Configuration": {
     "configurationKey": [
@@ -37,13 +39,14 @@
     ]
   },
   "AutomaticTransactionGenerator": {
-    "enable": false,
+    "enable": true,
     "minDuration": 60,
     "maxDuration": 80,
     "minDelayBetweenTwoTransaction": 15,
     "maxDelayBetweenTwoTransaction": 30,
     "probabilityOfStart": 1,
-    "stopAutomaticTransactionGeneratorAfterHours": 0.3
+    "stopAfterHours": 0.3,
+    "stopOnConnectionFailure": true
   },
   "Connectors": {
     "0": {},

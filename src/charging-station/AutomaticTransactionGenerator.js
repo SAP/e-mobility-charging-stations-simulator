@@ -5,7 +5,7 @@ const {performance, PerformanceObserver} = require('perf_hooks');
 class AutomaticTransactionGenerator {
   constructor(chargingStation) {
     this._chargingStation = chargingStation;
-    this._timeToStop = false;
+    this._timeToStop = true;
     this._performanceObserver = new PerformanceObserver((list) => {
       const entry = list.getEntries()[0];
       this._chargingStation._statistics.logPerformance(entry, 'AutomaticTransactionGenerator');
@@ -13,9 +13,13 @@ class AutomaticTransactionGenerator {
     });
   }
 
+  get timeToStop() {
+    return this._timeToStop;
+  }
+
   _basicFormatLog(connectorId = null) {
     if (connectorId) {
-      return Utils.basicFormatLog(' ' + this._chargingStation._stationInfo.name + ' ATG on connector #' + connectorId);
+      return Utils.basicFormatLog(' ' + this._chargingStation._stationInfo.name + ' ATG on connector #' + connectorId + ':');
     }
     return Utils.basicFormatLog(' ' + this._chargingStation._stationInfo.name + ' ATG:');
   }
@@ -33,12 +37,12 @@ class AutomaticTransactionGenerator {
 
   async start() {
     this._timeToStop = false;
-    if (this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAutomaticTransactionGeneratorAfterHours &&
-      this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAutomaticTransactionGeneratorAfterHours > 0) {
-      logger.info(this._basicFormatLog() + ' ATG will stop in ' + Utils.secondstoHHMMSS(this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAutomaticTransactionGeneratorAfterHours * 3600));
+    if (this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
+      this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours > 0) {
+      logger.info(this._basicFormatLog() + ' ATG will stop in ' + Utils.secondstoHHMMSS(this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600));
       setTimeout(() => {
         this.stop();
-      }, this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAutomaticTransactionGeneratorAfterHours * 3600 * 1000);
+      }, this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600 * 1000);
     }
     for (const connector in this._chargingStation._connectors) {
       if (connector > 0) {
@@ -49,7 +53,8 @@ class AutomaticTransactionGenerator {
 
   async startConnector(connectorId) {
     do {
-      const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransaction, this._chargingStation._stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransaction) * 1000;
+      const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransaction,
+          this._chargingStation._stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransaction) * 1000;
       logger.info(this._basicFormatLog(connectorId) + ' wait for ' + Utils.secondstoHHMMSS(wait / 1000));
       await Utils.sleep(wait);
       if (this._timeToStop) break;
@@ -66,7 +71,8 @@ class AutomaticTransactionGenerator {
           await Utils.sleep(2000);
         } else {
           // Wait until end of transaction
-          const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDuration, this._chargingStation._stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
+          const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDuration,
+              this._chargingStation._stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
           logger.info(this._basicFormatLog(connectorId) + ' transaction ' + this._chargingStation._connectors[connectorId].transactionId + ' will stop in ' + Utils.secondstoHHMMSS(wait / 1000));
           await Utils.sleep(wait);
           // Stop transaction
