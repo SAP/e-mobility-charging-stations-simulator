@@ -1,7 +1,7 @@
 const {v4: uuid} = require('uuid');
 
 class Utils {
-  static generateGUID() {
+  static generateUUID() {
     return uuid();
   }
 

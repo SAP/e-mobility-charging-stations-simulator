@@ -58,7 +58,6 @@ class AutomaticTransactionGenerator {
       if (start < this._chargingStation._stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
         skip = 0;
         // Start transaction
-        logger.info(this._basicFormatLog(connectorId) + ' start transaction');
         const startTransaction = performance.timerify(this.startTransaction);
         this._performanceObserver.observe({entryTypes: ['function']});
         const startResponse = await startTransaction(connectorId, this);

@@ -4,7 +4,6 @@ const WebSocket = require('ws');
 const Constants = require('../utils/Constants');
 const Utils = require('../utils/Utils');
 const OCPPError = require('./OcppError');
-const {v4: uuid} = require('uuid');
 const AutomaticTransactionGenerator = require('./AutomaticTransactionGenerator');
 const Statistics = require('../utils/Statistics');
 const fs = require('fs');
@@ -171,7 +170,7 @@ class ChargingStation {
   onOpen() {
     logger.info(`${this._basicFormatLog()} Is connected to server through ${this._url}`);
     if (this._isSocketRestart) {
-      this.basicStartMessageSequence();
+      this._basicStartMessageSequence();
       if (this._messageQueue.length > 0) {
         this._messageQueue.forEach((message) => {
           if (this._wsConnection.readyState === WebSocket.OPEN) {
@@ -182,7 +181,7 @@ class ChargingStation {
     } else {
       // At first start, send BootNotification
       try {
-        this.sendMessage(uuid(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
+        this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
       } catch (error) {
         logger.error(this._basicFormatLog() + ' Send boot notification error: ' + error);
       }
@@ -218,7 +217,7 @@ class ChargingStation {
   }
 
   onPing() {
-    logger.info(this._basicFormatLog() + ' Has received a WS ping (rfc6455) from the server');
+    logger.debug(this._basicFormatLog() + ' Has received a WS ping (rfc6455) from the server');
   }
 
   async onMessage(message) {
@@ -281,6 +280,25 @@ class ChargingStation {
     }
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  async _startHeartbeat(self) {
+    if (self._heartbeatInterval && !self._heartbeatSetInterval) {
+      logger.info(self._basicFormatLog() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
+      self._heartbeatSetInterval = setInterval(() => {
+        try {
+          const payload = {
+            currentTime: new Date().toISOString(),
+          };
+          self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
+        } catch (error) {
+          logger.error(self._basicFormatLog() + ' Send heartbeat error: ' + error);
+        }
+      }, self._heartbeatInterval);
+    } else {
+      logger.error(self._basicFormatLog() + ' Heartbeat interval undefined, not starting the heartbeat');
+    }
+  }
+
   _reconnect(error) {
     logger.error(this._basicFormatLog() + ' Socket: abnormally closed', error);
     // Stop heartbeat interval
@@ -308,7 +326,7 @@ class ChargingStation {
 
   send(command, messageType = Constants.OCPP_JSON_CALL_MESSAGE) {
     // Send Message
-    return this.sendMessage(uuid(), command, messageType);
+    return this.sendMessage(Utils.generateUUID(), command, messageType);
   }
 
   sendError(messageId, err) {
@@ -316,6 +334,23 @@ class ChargingStation {
     const error = (err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message));
     // Send error
     return this.sendMessage(messageId, error, Constants.OCPP_JSON_CALL_ERROR_MESSAGE);
+  }
+
+  async sendStatusNotification(connectorId, status, errorCode = 'NoError') {
+    try {
+      const payload = {
+        connectorId,
+        errorCode,
+        status,
+      };
+      await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
+    } catch (error) {
+      logger.error(this._basicFormatLog() + ' Send status error: ' + error);
+    }
+  }
+
+  async sendStatusNotificationWithTimeout(connectorId, status, errorCode = 'NoError', timeout = Constants.STATUS_NOTIFICATION_TIMEOUT) {
+    setTimeout(() => this.sendStatusNotification(connectorId, status, errorCode), timeout);
   }
 
   sendMessage(messageId, command, messageType = Constants.OCPP_JSON_CALL_RESULT_MESSAGE, commandName = '') {
@@ -388,16 +423,7 @@ class ChargingStation {
     });
   }
 
-  handleResponseBootNotification(payload) {
-    if (payload.status === 'Accepted') {
-      this._heartbeatInterval = payload.interval * 1000;
-      this.basicStartMessageSequence();
-    } else {
-      logger.info(this._basicFormatLog() + ' Boot Notification rejected');
-    }
-  }
-
-  async basicStartMessageSequence() {
+  async _basicStartMessageSequence() {
     this._startHeartbeat(this);
     // build connectors
     if (!this._connectors) {
@@ -428,12 +454,12 @@ class ChargingStation {
     for (const connector in this._connectors) {
       if (!this._connectors[connector].transactionStarted) {
         if (this._connectors[connector].bootStatus) {
-          setTimeout(() => this.sendStatusNotification(connector, this._connectors[connector].bootStatus), Constants.STATUS_NOTIFICATION_TIMEOUT);
+          this.sendStatusNotificationWithTimeout(connector, this._connectors[connector].bootStatus);
         } else {
-          setTimeout(() => this.sendStatusNotification(connector, 'Available'), Constants.STATUS_NOTIFICATION_TIMEOUT);
+          this.sendStatusNotificationWithTimeout(connector, 'Available');
         }
       } else {
-        setTimeout(() => this.sendStatusNotification(connector, 'Charging'), Constants.STATUS_NOTIFICATION_TIMEOUT);
+        this.sendStatusNotificationWithTimeout(connector, 'Charging');
       }
     }
 
@@ -444,6 +470,25 @@ class ChargingStation {
       this._automaticTransactionGeneration.start();
     }
     this._statistics.start();
+  }
+
+  _resetTransactionOnConnector(connectorID) {
+    this._connectors[connectorID].transactionStarted = false;
+    this._connectors[connectorID].transactionId = null;
+    this._connectors[connectorID].lastConsumptionValue = -1;
+    this._connectors[connectorID].lastSoC = -1;
+    if (this._connectors[connectorID].transactionInterval) {
+      clearInterval(this._connectors[connectorID].transactionInterval);
+    }
+  }
+
+  handleResponseBootNotification(payload) {
+    if (payload.status === 'Accepted') {
+      this._heartbeatInterval = payload.interval * 1000;
+      this._basicStartMessageSequence();
+    } else {
+      logger.info(this._basicFormatLog() + ' Boot Notification rejected');
+    }
   }
 
   handleResponseStartTransaction(payload, requestPayload) {
@@ -458,7 +503,7 @@ class ChargingStation {
           this._connectors[connector].transactionId = payload.transactionId;
           this._connectors[connector].lastConsumptionValue = 0;
           this._connectors[connector].lastSoC = 0;
-          logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' with idTag ' + requestPayload.idTag);
+          logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
           this.sendStatusNotification(requestPayload.connectorId, 'Charging');
           const configuredMeterValueSampleInterval = this._configuration.configurationKey.find((value) => value.key === 'MeterValueSampleInterval');
           this.startMeterValues(requestPayload.connectorId,
@@ -477,36 +522,16 @@ class ChargingStation {
     }
   }
 
-  async sendStatusNotification(connectorId, status, errorCode = 'NoError') {
-    try {
-      const payload = {
-        connectorId,
-        errorCode,
-        status,
-      };
-      await this.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
-    } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send status error: ' + error);
-    }
+  handleResponseStatusNotification(payload) {
+    logger.debug(this._basicFormatLog() + ' Status notification response received: %j', payload);
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  async _startHeartbeat(self) {
-    if (self._heartbeatInterval && !self._heartbeatSetInterval) {
-      logger.info(self._basicFormatLog() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
-      self._heartbeatSetInterval = setInterval(() => {
-        try {
-          const payload = {
-            currentTime: new Date().toISOString(),
-          };
-          self.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
-        } catch (error) {
-          logger.error(self._basicFormatLog() + ' Send heartbeat error: ' + error);
-        }
-      }, self._heartbeatInterval);
-    } else {
-      logger.error(self._basicFormatLog() + ' Heartbeat interval undefined, not starting the heartbeat');
-    }
+  handleResponseMeterValues(payload) {
+    logger.debug(this._basicFormatLog() + ' MeterValues response received: %j', payload);
+  }
+
+  handleResponseHeartbeat(payload) {
+    logger.debug(this._basicFormatLog() + ' Heartbeat response received: %j', payload);
   }
 
   async handleRequest(messageId, commandName, commandPayload) {
@@ -553,7 +578,7 @@ class ChargingStation {
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
         setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), Constants.START_TRANSACTION_TIMEOUT);
-        logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
+        logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
       logger.error(this._basicFormatLog() + ' Remote starting transaction REJECTED with status ' + commandPayload.idTagInfo.status + ', idTag ' + commandPayload.idTag);
@@ -561,7 +586,16 @@ class ChargingStation {
     }
     // No local authorization check required => start transaction
     setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), Constants.START_TRANSACTION_TIMEOUT);
-    logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' with idTag ' + commandPayload.idTag);
+    logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
+    return Constants.OCPP_RESPONSE_ACCEPTED;
+  }
+
+  async handleRemoteStopTransaction(commandPayload) {
+    for (const connector in this._connectors) {
+      if (this._connectors[connector].transactionId === commandPayload.transactionId) {
+        this.sendStopTransaction(commandPayload.transactionId, connector);
+      }
+    }
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -573,7 +607,7 @@ class ChargingStation {
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
-      return await this.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
+      return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
     } catch (error) {
       logger.error(this._basicFormatLog() + ' Send start transaction error: ' + error);
       this._resetTransactionOnConnector(connectorID);
@@ -588,7 +622,7 @@ class ChargingStation {
         meterStop: 0,
         timestamp: new Date().toISOString(),
       };
-      await this.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
+      await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
       logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connectorID].transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + connectorID);
       this.sendStatusNotification(connectorID, 'Available');
     } catch (error) {
@@ -596,16 +630,6 @@ class ChargingStation {
       throw error;
     } finally {
       this._resetTransactionOnConnector(connectorID);
-    }
-  }
-
-  _resetTransactionOnConnector(connectorID) {
-    this._connectors[connectorID].transactionStarted = false;
-    this._connectors[connectorID].transactionId = null;
-    this._connectors[connectorID].lastConsumptionValue = -1;
-    this._connectors[connectorID].lastSoC = -1;
-    if (this._connectors[connectorID].transactionInterval) {
-      clearInterval(this._connectors[connectorID].transactionInterval);
     }
   }
 
@@ -627,7 +651,7 @@ class ChargingStation {
           if (sampledValueLcl.sampledValue[index].value > 100) {
             logger.info(self._basicFormatLog() + ' Meter type: ' +
               (sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'default') +
-              ' value: ' + sampledValueLcl.sampledValue[index].value);
+              ', value: ' + sampledValueLcl.sampledValue[index].value);
           }
         } else {
           // Persist previous value in connector
@@ -645,7 +669,7 @@ class ChargingStation {
           if (sampledValueLcl.sampledValue[index].value > (self._stationInfo.maxPower * 3600 / interval) || sampledValueLcl.sampledValue[index].value < 500) {
             logger.info(self._basicFormatLog() + ' Meter type: ' +
               (sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'default') +
-              ' value: ' + sampledValueLcl.sampledValue[index].value + '/' + (self._stationInfo.maxPower * 3600 / interval));
+              ', value: ' + sampledValueLcl.sampledValue[index].value + '/' + (self._stationInfo.maxPower * 3600 / interval));
           }
         }
       }
@@ -655,7 +679,7 @@ class ChargingStation {
         transactionId: self._connectors[connectorID].transactionId,
         meterValue: [sampledValueLcl],
       };
-      await self.sendMessage(uuid(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
+      await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
     } catch (error) {
       logger.error(self._basicFormatLog() + ' Send meter values error: ' + error);
     }
@@ -674,15 +698,6 @@ class ChargingStation {
       });
       await sendMeterValues(connectorID, interval, self);
     }, interval);
-  }
-
-  async handleRemoteStopTransaction(commandPayload) {
-    for (const connector in this._connectors) {
-      if (this._connectors[connector].transactionId === commandPayload.transactionId) {
-        this.sendStopTransaction(commandPayload.transactionId, connector);
-      }
-    }
-    return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
   hasAuthorizedTags() {

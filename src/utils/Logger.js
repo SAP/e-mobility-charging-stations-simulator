@@ -3,8 +3,7 @@ const Winston = require('winston');
 
 const logger = Winston.createLogger({
   level: Configuration.getLogLevel(),
-  format: Winston.format.combine(Winston.format.splat(), Winston.format.json()),
-  defaultMeta: {service: 'user-service'},
+  format: Winston.format.combine(Winston.format.splat(), Winston.format[Configuration.getLogFormat()]()),
   transports: [
     //
     // - Write to all logs with level `info` and below to `combined.log`
@@ -21,7 +20,7 @@ const logger = Winston.createLogger({
 //
 if (Configuration.getConsoleLog()) {
   logger.add(new Winston.transports.Console({
-    format: Winston.format.simple(),
+    format: Winston.format.combine(Winston.format.splat(), Winston.format[Configuration.getLogFormat()]()),
   }));
 }
 
