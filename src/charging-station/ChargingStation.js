@@ -336,7 +336,7 @@ class ChargingStation {
 
   sendError(messageId, err) {
     // Check exception: only OCPP error are accepted
-    const error = (err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message));
+    const error = err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message);
     // Send error
     return this.sendMessage(messageId, error, Constants.OCPP_JSON_CALL_ERROR_MESSAGE);
   }
@@ -514,8 +514,8 @@ class ChargingStation {
           this.sendStatusNotification(requestPayload.connectorId, 'Charging');
           const configuredMeterValueSampleInterval = this._configuration.configurationKey.find((value) => value.key === 'MeterValueSampleInterval');
           this.startMeterValues(requestPayload.connectorId,
-              (configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000),
-              this);
+            configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000,
+            this);
         }
       }
     } else {
@@ -607,7 +607,7 @@ class ChargingStation {
   }
 
   async handleRemoteStartTransaction(commandPayload) {
-    const transactionConnectorID = (commandPayload.connectorId ? commandPayload.connectorId : '1');
+    const transactionConnectorID = commandPayload.connectorId ? commandPayload.connectorId : '1';
     if (this.hasAuthorizedTags() && this._getLocalAuthListEnabled() && this._getAuthorizeRemoteTxRequests()) {
       // Check if authorized
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
@@ -685,7 +685,7 @@ class ChargingStation {
           sampledValueLcl.sampledValue[index].value = Math.floor(Math.random() * 100) + 1;
           if (sampledValueLcl.sampledValue[index].value > 100) {
             logger.info(self._basicFormatLog() + ' MeterValues measurand: ' +
-              (sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'default') +
+              sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register' +
               ', value: ' + sampledValueLcl.sampledValue[index].value);
           }
         } else {
@@ -703,7 +703,7 @@ class ChargingStation {
           sampledValueLcl.sampledValue[index].value = connector.lastConsumptionValue;
           if (sampledValueLcl.sampledValue[index].value > (self._stationInfo.maxPower * 3600 / interval) || sampledValueLcl.sampledValue[index].value < 500) {
             logger.info(self._basicFormatLog() + ' MeterValues measurand: ' +
-              (sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'default') +
+              sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register' +
               ', value: ' + sampledValueLcl.sampledValue[index].value + '/' + (self._stationInfo.maxPower * 3600 / interval));
           }
         }

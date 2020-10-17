@@ -8,7 +8,7 @@ class OCPPError extends Error {
 
     Object.setPrototypeOf(this, OCPPError.prototype); // for instanceof
 
-    Error.captureStackTrace ? (Error.captureStackTrace(this, this.constructor)) : (this.stack = (new Error()).stack);
+    Error.captureStackTrace ? Error.captureStackTrace(this, this.constructor) : (this.stack = (new Error()).stack);
   }
 }
 

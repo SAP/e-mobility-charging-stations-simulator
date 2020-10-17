@@ -32,7 +32,7 @@ class Constants {
   static ENTITY_LOGGING = 'Logging';
   static ENTITY_PRICING = 'Pricing';
 
-  static NOTIF_TYPE_CHARGING_STATION_CONFIGURATION = 'Configuration';
+  static NOTIFICATION_TYPE_CHARGING_STATION_CONFIGURATION = 'Configuration';
 
   static ACTION_READ = 'Read';
   static ACTION_CREATE = 'Create';

@@ -52,10 +52,10 @@ class Statistics {
 
     if (currentStatistics) {
       // Update current statistics timers
-      currentStatistics.countTime = (currentStatistics.countTime ? currentStatistics.countTime + 1 : 1);
-      currentStatistics.minTime = (currentStatistics.minTime ? (currentStatistics.minTime > duration ? duration : currentStatistics.minTime) : duration);
-      currentStatistics.maxTime = (currentStatistics.maxTime ? (currentStatistics.maxTime < duration ? duration : currentStatistics.maxTime) : duration);
-      currentStatistics.totalTime = (currentStatistics.totalTime ? currentStatistics.totalTime + duration : duration);
+      currentStatistics.countTime = currentStatistics.countTime ? currentStatistics.countTime + 1 : 1;
+      currentStatistics.minTime = currentStatistics.minTime ? (currentStatistics.minTime > duration ? duration : currentStatistics.minTime) : duration;
+      currentStatistics.maxTime = currentStatistics.maxTime ? (currentStatistics.maxTime < duration ? duration : currentStatistics.maxTime) : duration;
+      currentStatistics.totalTime = currentStatistics.totalTime ? currentStatistics.totalTime + duration : duration;
       currentStatistics.avgTime = currentStatistics.totalTime / currentStatistics.countTime;
     }
   }

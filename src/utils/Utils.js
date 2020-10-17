@@ -74,30 +74,33 @@ class Utils {
     return changedID;
   }
 
-  static convertToInt(id) {
-    let changedID = id;
-    if (!id) {
+  static convertToInt(value) {
+    let changedValue = value;
+    if (!value) {
       return 0;
     }
-    // Check
-    if (typeof id === 'string') {
-      // Create Object
-      changedID = parseInt(id);
+    if (Number.isSafeInteger(value)) {
+      return value;
     }
-    return changedID;
+    // Check
+    if (typeof value === 'string') {
+      // Create Object
+      changedValue = parseInt(value);
+    }
+    return changedValue;
   }
 
-  static convertToFloat(id) {
-    let changedID = id;
-    if (!id) {
+  static convertToFloat(value) {
+    let changedValue = value;
+    if (!value) {
       return 0;
     }
     // Check
-    if (typeof id === 'string') {
+    if (typeof value === 'string') {
       // Create Object
-      changedID = parseFloat(id);
+      changedValue = parseFloat(value);
     }
-    return changedID;
+    return changedValue;
   }
 
   static convertToBoolean(value) {
