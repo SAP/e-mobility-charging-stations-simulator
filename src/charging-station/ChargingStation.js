@@ -531,22 +531,22 @@ class ChargingStation {
 
   handleResponseStopTransaction(payload, requestPayload) {
     if (payload.idTagInfo && payload.idTagInfo.status) {
-      logger.debug(this._basicFormatLog() + ' Stop transaction ' + requestPayload.transactionId + ' response status: ' + payload.idTagInfo.status );
+      logger.debug(this._basicFormatLog() + ' Stop transaction ' + requestPayload.transactionId + ' response status: ' + payload.idTagInfo.status);
     } else {
       logger.debug(this._basicFormatLog() + ' Stop transaction ' + requestPayload.transactionId + ' response status: Unknown');
     }
   }
 
-  handleResponseStatusNotification(payload) {
-    logger.debug(this._basicFormatLog() + ' Status notification response received: %j', payload);
+  handleResponseStatusNotification(payload, requestPayload) {
+    logger.debug(this._basicFormatLog() + ' Status notification response received: %j to status notification request: %j', payload, requestPayload);
   }
 
-  handleResponseMeterValues(payload) {
-    logger.debug(this._basicFormatLog() + ' MeterValues response received: %j', payload);
+  handleResponseMeterValues(payload, requestPayload) {
+    logger.debug(this._basicFormatLog() + ' MeterValues response received: %j to MeterValues request: %j', payload, requestPayload);
   }
 
-  handleResponseHeartbeat(payload) {
-    logger.debug(this._basicFormatLog() + ' Heartbeat response received: %j', payload);
+  handleResponseHeartbeat(payload, requestPayload) {
+    logger.debug(this._basicFormatLog() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
   }
 
   async handleRequest(messageId, commandName, commandPayload) {
@@ -560,7 +560,7 @@ class ChargingStation {
       } catch (error) {
         // Log
         logger.error(this._basicFormatLog() + ' Handle request error: ' + error);
-        // Send back response to inform back end
+        // Send back response to inform backend
         await this.sendError(messageId, error);
       }
     } else {
@@ -573,7 +573,27 @@ class ChargingStation {
   }
 
   async handleGetConfiguration(commandPayload) {
-    return this._configuration;
+    const configurationKey = [];
+    const unknownKey = [];
+    for (const configuration of this._configuration.configurationKey) {
+      if (Utils.isUndefined(configuration.visible)) {
+        configuration.visible = true;
+      } else {
+        configuration.visible = Utils.convertToBoolean(configuration.visible);
+      }
+      if (!configuration.visible) {
+        continue;
+      }
+      configurationKey.push({
+        key: configuration.key,
+        readonly: configuration.readonly,
+        value: configuration.value,
+      });
+    }
+    return {
+      configurationKey,
+      unknownKey,
+    };
   }
 
   async handleChangeConfiguration(commandPayload) {

@@ -135,6 +135,13 @@ class Utils {
   static cloneJSonDocument(jsonDocument) {
     return JSON.parse(JSON.stringify(jsonDocument));
   }
+
+  static isUndefined(value) {
+    if (typeof value === 'undefined') {
+      return true;
+    }
+    return false;
+  }
 }
 
 module.exports = Utils;

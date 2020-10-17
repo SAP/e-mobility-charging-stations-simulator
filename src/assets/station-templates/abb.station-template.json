@@ -35,6 +35,12 @@
         "key": "AuthorizeRemoteTxRequests",
         "readonly": false,
         "value": false
+      },
+      {
+        "key": "VendorKey",
+        "readonly": false,
+        "value": "VendorValue",
+        "visible": false
       }
     ]
   },
