@@ -35,7 +35,8 @@
         "key": "VendorKey",
         "readonly": false,
         "value": "VendorValue",
-        "visible": false
+        "visible": false,
+        "reboot": true
       }
     ]
   },

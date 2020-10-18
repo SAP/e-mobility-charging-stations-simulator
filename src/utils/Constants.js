@@ -103,6 +103,7 @@ class Constants {
 
   static OCPP_RESPONSE_ACCEPTED = {status: 'Accepted'};
   static OCPP_RESPONSE_REJECTED = {status: 'Rejected'};
+  static OCPP_RESPONSE_REBOOT_REQUIRED = {status: 'RebootRequired'};
   static OCPP_SOCKET_TIMEOUT = 60000; // 60 sec
   static OCPP_JSON_CALL_MESSAGE = 2; // Client-to-Server
   static OCPP_JSON_CALL_RESULT_MESSAGE = 3; // Server-to-Client

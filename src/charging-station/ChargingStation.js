@@ -649,12 +649,18 @@ class ChargingStation {
 
   async handleChangeConfiguration(commandPayload) {
     const keyToChange = this._getConfigurationKey(commandPayload.key);
-    if (keyToChange && !Utils.convertToBoolean(keyToChange.readonly)) {
+    if (!keyToChange) {
+      return {status: Constants.OCPP_ERROR_NOT_SUPPORTED};
+    } else if (keyToChange && Utils.convertToBoolean(keyToChange.readonly)) {
+      return Constants.OCPP_RESPONSE_REJECTED;
+    } else if (keyToChange && !Utils.convertToBoolean(keyToChange.readonly)) {
       const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
       this._configuration.configurationKey[keyIndex].value = commandPayload.value;
+      if (Utils.convertToBoolean(keyToChange.reboot)) {
+        return Constants.OCPP_RESPONSE_REBOOT_REQUIRED;
+      }
       return Constants.OCPP_RESPONSE_ACCEPTED;
     }
-    return Constants.OCPP_RESPONSE_REJECTED;
   }
 
   async handleRemoteStartTransaction(commandPayload) {
