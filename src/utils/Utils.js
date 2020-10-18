@@ -128,7 +128,7 @@ class Utils {
 
   static basicFormatLog(prefixString = '') {
     const date = new Date();
-    return date.toISOString().substr(0, 19) + prefixString;
+    return date.toLocaleString() + prefixString;
   }
 
   static objectHasOwnProperty(object, property) {
