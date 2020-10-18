@@ -4,7 +4,7 @@
   "fixedName": true,
   "chargePointModel": "SiemensXX213",
   "chargePointVendor": "SIEMENS",
-  "power": 44000,
+  "power": 44160,
   "powerUnit": "W",
   "numberOfConnectors": 2,
   "randomConnectors": false,

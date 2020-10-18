@@ -32,7 +32,7 @@ class ChargingStation {
     this._bootNotificationMessage = {
       chargePointModel: this._stationInfo.chargePointModel,
       chargePointVendor: this._stationInfo.chargePointVendor,
-      // chargePointSerialNumber: this._stationInfo.chargePointSerialNumber,
+      chargePointSerialNumber: this._stationInfo.chargePointSerialNumberPrefix ? this._stationInfo.chargePointSerialNumberPrefix : '',
       firmwareVersion: this._stationInfo.firmwareVersion ? this._stationInfo.firmwareVersion : '',
     };
     this._configuration = this._getConfiguration();

@@ -4,7 +4,7 @@
   "chargePointModel": "KC-P30-ESS400C2-E0R",
   "chargePointVendor": "Keba AG",
   "firmwareVersion": "1.10.1",
-  "power": 22000,
+  "power": 22080,
   "powerUnit": "W",
   "numberOfConnectors": 1,
   "randomConnectors": false,

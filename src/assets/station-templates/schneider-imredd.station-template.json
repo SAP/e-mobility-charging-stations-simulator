@@ -3,7 +3,7 @@
   "baseName": "CS-SCHNEIDER",
   "chargePointModel": "SCHNEIDERXX213",
   "chargePointVendor": "SCHNEIDER",
-  "power": 44000,
+  "power": 44160,
   "powerUnit": "W",
   "numberOfConnectors": 2,
   "randomConnectors": false,
