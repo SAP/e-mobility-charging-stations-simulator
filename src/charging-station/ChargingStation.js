@@ -582,7 +582,7 @@ class ChargingStation {
     return this._configuration.configurationKey.find((configElement) => configElement.key === key);
   }
 
-  _addConfigurationKey(key, value, readonly = false, visible = true) {
+  _addConfigurationKey(key, value, readonly = false, visible = true, reboot = false) {
     const keyFound = this._getConfigurationKey(key);
     if (!keyFound) {
       this._configuration.configurationKey.push({
@@ -590,6 +590,7 @@ class ChargingStation {
         readonly,
         value,
         visible,
+        reboot,
       });
     }
   }
