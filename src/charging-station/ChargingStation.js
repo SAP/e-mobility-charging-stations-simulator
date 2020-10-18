@@ -235,7 +235,6 @@ class ChargingStation {
         // Incoming Message
         case Constants.OCPP_JSON_CALL_MESSAGE:
           // Process the call
-          this._statistics.addMessage(commandName);
           await this.handleRequest(messageId, commandName, commandPayload);
           break;
         // Outcome Message
@@ -253,7 +252,6 @@ class ChargingStation {
             throw new Error(`Response for unknown message id ${messageId}`);
           }
           delete this._requests[messageId];
-          // this._statistics.addMessage(commandName)
           responseCallback(commandName, requestPayload);
           break;
         // Error Message
@@ -330,11 +328,6 @@ class ChargingStation {
     }
   }
 
-  send(command, messageType = Constants.OCPP_JSON_CALL_MESSAGE) {
-    // Send Message
-    return this.sendMessage(Utils.generateUUID(), command, messageType);
-  }
-
   sendError(messageId, err) {
     // Check exception: only OCPP error are accepted
     const error = err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message);
@@ -376,13 +369,14 @@ class ChargingStation {
           break;
         // Response
         case Constants.OCPP_JSON_CALL_RESULT_MESSAGE:
+          this._statistics.addMessage(commandName);
           // Build response
           messageToSend = JSON.stringify([messageType, messageId, command]);
           break;
         // Error Message
         case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
           // Build Message
-          this._statistics.addMessage(`Error ${command.code}`);
+          this._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName}`);
           messageToSend = JSON.stringify([messageType, messageId, command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {}]);
           break;
       }
@@ -419,6 +413,7 @@ class ChargingStation {
 
       // Function that will receive the request's rejection
       function rejectCallback(reason) {
+        self._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName}`, true);
         // Build Exception
         // eslint-disable-next-line no-empty-function
         self._requests[messageId] = [() => { }, () => { }, '']; // Properly format the request
@@ -441,7 +436,7 @@ class ChargingStation {
       for (lastConnector in connectorsConfig) {
         // Add connector 0, OCPP specification violation that for example KEBA have
         if (Utils.convertToInt(lastConnector) === 0 && Utils.convertToBoolean(this._stationInfo.useConnectorId0) &&
-            connectorsConfig[lastConnector]) {
+          connectorsConfig[lastConnector]) {
           this._connectors[lastConnector] = connectorsConfig[lastConnector];
         }
       }
@@ -486,10 +481,11 @@ class ChargingStation {
   _resetTransactionOnConnector(connectorID) {
     this._connectors[connectorID].transactionStarted = false;
     this._connectors[connectorID].transactionId = null;
+    this._connectors[connectorID].idTag = null;
     this._connectors[connectorID].lastConsumptionValue = -1;
     this._connectors[connectorID].lastSoC = -1;
-    if (this._connectors[connectorID].transactionInterval) {
-      clearInterval(this._connectors[connectorID].transactionInterval);
+    if (this._connectors[connectorID].transactionSetInterval) {
+      clearInterval(this._connectors[connectorID].transactionSetInterval);
     }
   }
 
@@ -505,19 +501,20 @@ class ChargingStation {
   }
 
   handleResponseStartTransaction(payload, requestPayload) {
-    // Set connector transaction related attributes
-    this._connectors[requestPayload.connectorId].transactionStarted = false;
-    this._connectors[requestPayload.connectorId].idTag = requestPayload.idTag;
+    if (this._connectors[requestPayload.connectorId].transactionStarted) {
+      logger.debug(this._basicFormatLog() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ' by transaction ' + this._connectors[requestPayload.connectorId].transactionId);
+    }
 
-    if (payload.idTagInfo.status === 'Accepted') {
+    if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
       for (const connector in this._connectors) {
         if (Utils.convertToInt(connector) === Utils.convertToInt(requestPayload.connectorId)) {
           this._connectors[connector].transactionStarted = true;
           this._connectors[connector].transactionId = payload.transactionId;
+          this._connectors[connector].idTag = requestPayload.idTag;
           this._connectors[connector].lastConsumptionValue = 0;
           this._connectors[connector].lastSoC = 0;
-          logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
           this.sendStatusNotification(requestPayload.connectorId, 'Charging');
+          logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
           const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
           this.startMeterValues(requestPayload.connectorId,
             configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000,
@@ -536,10 +533,22 @@ class ChargingStation {
   }
 
   handleResponseStopTransaction(payload, requestPayload) {
-    if (payload.idTagInfo && payload.idTagInfo.status) {
-      logger.debug(this._basicFormatLog() + ' Stop transaction ' + requestPayload.transactionId + ' response status: ' + payload.idTagInfo.status);
+    let transactionConnectorId;
+    for (const connector in this._connectors) {
+      if (this._connectors[connector].transactionId === requestPayload.transactionId) {
+        transactionConnectorId = connector;
+        break;
+      }
+    }
+    if (!transactionConnectorId) {
+      logger.debug(this._basicFormatLog() + ' Try to stop a non existing transaction ' + requestPayload.transactionId);
+    }
+    if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
+      this.sendStatusNotification(transactionConnectorId, 'Available');
+      logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[transactionConnectorId].transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId);
+      this._resetTransactionOnConnector(transactionConnectorId);
     } else {
-      logger.debug(this._basicFormatLog() + ' Stop transaction ' + requestPayload.transactionId + ' response status: Unknown');
+      logger.error(this._basicFormatLog() + ' Stopping transaction id ' + this._connectors[transactionConnectorId].transactionId + ' REJECTED with status ' + payload.idTagInfo.status);
     }
   }
 
@@ -598,7 +607,8 @@ class ChargingStation {
   _setConfigurationKeyValue(key, value) {
     const keyFound = this._getConfigurationKey(key);
     if (keyFound) {
-      this._configuration.configurationKey.key = value;
+      const keyIndex = this._configuration.configurationKey.indexOf(keyFound);
+      this._configuration.configurationKey[keyIndex].value = value;
     }
   }
 
@@ -658,7 +668,16 @@ class ChargingStation {
     } else if (keyToChange && !Utils.convertToBoolean(keyToChange.readonly)) {
       const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
       this._configuration.configurationKey[keyIndex].value = commandPayload.value;
-      if (keyToChange.key === 'HeartBeatInterval' || keyToChange === 'HeartbeatInterval') {
+      let triggerHeartbeatRestart = false;
+      if (keyToChange.key === 'HeartBeatInterval') {
+        this._setConfigurationKeyValue('HeartbeatInterval', commandPayload.value);
+        triggerHeartbeatRestart = true;
+      }
+      if (keyToChange.key === 'HeartbeatInterval') {
+        this._setConfigurationKeyValue('HeartBeatInterval', commandPayload.value);
+        triggerHeartbeatRestart = true;
+      }
+      if (triggerHeartbeatRestart) {
         this._heartbeatInterval = Utils.convertToInt(commandPayload.value) * 1000;
         // Stop heartbeat
         if (this._heartbeatSetInterval) {
@@ -697,10 +716,12 @@ class ChargingStation {
   async handleRemoteStopTransaction(commandPayload) {
     for (const connector in this._connectors) {
       if (this._connectors[connector].transactionId === commandPayload.transactionId) {
-        this.sendStopTransaction(commandPayload.transactionId, connector);
+        this.sendStopTransaction(commandPayload.transactionId);
+        return Constants.OCPP_RESPONSE_ACCEPTED;
       }
     }
-    return Constants.OCPP_RESPONSE_ACCEPTED;
+    logger.info(this._basicFormatLog() + ' Try to stop remotely a non existing transaction ' + commandPayload.transactionId);
+    return Constants.OCPP_RESPONSE_REJECTED;
   }
 
   async sendStartTransaction(connectorID, idTag) {
@@ -714,7 +735,6 @@ class ChargingStation {
       return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
     } catch (error) {
       logger.error(this._basicFormatLog() + ' Send start transaction error: ' + error);
-      this._resetTransactionOnConnector(connectorID);
       throw error;
     }
   }
@@ -722,7 +742,7 @@ class ChargingStation {
     setTimeout(() => this.sendStartTransaction(connectorID, idTag), timeout);
   }
 
-  async sendStopTransaction(transactionId, connectorID) {
+  async sendStopTransaction(transactionId) {
     try {
       const payload = {
         transactionId,
@@ -730,13 +750,9 @@ class ChargingStation {
         timestamp: new Date().toISOString(),
       };
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
-      logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connectorID].transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + connectorID);
-      this.sendStatusNotification(connectorID, 'Available');
     } catch (error) {
       logger.error(this._basicFormatLog() + ' Send stop transaction error: ' + error);
       throw error;
-    } finally {
-      this._resetTransactionOnConnector(connectorID);
     }
   }
 
@@ -798,7 +814,7 @@ class ChargingStation {
     } else if (this._connectors[connectorID].transactionStarted && !this._connectors[connectorID].transactionId) {
       logger.debug(`${self._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction id`);
     }
-    this._connectors[connectorID].transactionInterval = setInterval(async () => {
+    this._connectors[connectorID].transactionSetInterval = setInterval(async () => {
       const sendMeterValues = performance.timerify(this.sendMeterValues);
       this._performanceObserver.observe({
         entryTypes: ['function'],

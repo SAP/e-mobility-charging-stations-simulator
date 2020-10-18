@@ -71,10 +71,10 @@ class Statistics {
 
   _displayInterval() {
     if (Configuration.getStatisticsDisplayInterval() !== 0) {
-      logger.info(this._basicFormatLog() + ' displayed every ' + Configuration.getStatisticsDisplayInterval() + 's');
       setInterval(() => {
         this._display();
       }, Configuration.getStatisticsDisplayInterval() * 1000);
+      logger.info(this._basicFormatLog() + ' displayed every ' + Configuration.getStatisticsDisplayInterval() + 's');
     }
   }
 

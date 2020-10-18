@@ -29,7 +29,7 @@ class AutomaticTransactionGenerator {
     for (const connector in this._chargingStation._connectors) {
       if (this._chargingStation._connectors[connector].transactionStarted) {
         logger.info(this._basicFormatLog(connector) + ' ATG OVER. Stop transaction ' + this._chargingStation._connectors[connector].transactionId);
-        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId, connector);
+        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId);
       }
     }
     this._timeToStop = true;
@@ -88,7 +88,7 @@ class AutomaticTransactionGenerator {
         logger.info(this._basicFormatLog(connectorId) + ' transaction skipped ' + skip);
       }
     } while (!this._timeToStop);
-    logger.info(this._basicFormatLog() + ' ATG is STOPPED');
+    logger.info(this._basicFormatLog(connectorId) + ' ATG STOPPED on the connector');
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -103,7 +103,7 @@ class AutomaticTransactionGenerator {
 
   // eslint-disable-next-line class-methods-use-this
   async stopTransaction(connectorId, self) {
-    await self._chargingStation.sendStopTransaction(self._chargingStation._connectors[connectorId].transactionId, connectorId);
+    await self._chargingStation.sendStopTransaction(self._chargingStation._connectors[connectorId].transactionId);
   }
 }
 

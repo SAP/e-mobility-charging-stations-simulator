@@ -27,7 +27,7 @@ class Bootstrap {
           }
         });
       } else {
-        console.log('No stationURLs defined in configuration, exiting');
+        console.log('No stationTemplateURLs defined in configuration, exiting');
       }
     } catch (error) {
       // eslint-disable-next-line no-console
