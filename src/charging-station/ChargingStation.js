@@ -305,7 +305,7 @@ class ChargingStation {
 
   _reconnect(error) {
     logger.error(this._basicFormatLog() + ' Socket: abnormally closed', error);
-    // Stop heartbeat interval
+    // Stop heartbeat
     if (this._heartbeatSetInterval) {
       clearInterval(this._heartbeatSetInterval);
       this._heartbeatSetInterval = null;
@@ -430,6 +430,7 @@ class ChargingStation {
   }
 
   async _basicStartMessageSequence() {
+    // Start heartbeat
     this._startHeartbeat(this);
     // Build connectors
     if (!this._connectors) {
@@ -495,8 +496,8 @@ class ChargingStation {
   handleResponseBootNotification(payload) {
     if (payload.status === 'Accepted') {
       this._heartbeatInterval = payload.interval * 1000;
-      this._addConfigurationKey('HeartBeatInterval', this._heartbeatInterval / 1000);
-      this._addConfigurationKey('HeartbeatInterval', this._heartbeatInterval / 1000, false, false);
+      this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(payload.interval));
+      this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(payload.interval), false, false);
       this._basicStartMessageSequence();
     } else {
       logger.info(this._basicFormatLog() + ' Boot Notification rejected');
@@ -656,6 +657,16 @@ class ChargingStation {
     } else if (keyToChange && !Utils.convertToBoolean(keyToChange.readonly)) {
       const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
       this._configuration.configurationKey[keyIndex].value = commandPayload.value;
+      if (keyToChange.key === 'HeartBeatInterval' || keyToChange === 'HeartbeatInterval') {
+        this._heartbeatInterval = Utils.convertToInt(commandPayload.value) * 1000;
+        // Stop heartbeat
+        if (this._heartbeatSetInterval) {
+          clearInterval(this._heartbeatSetInterval);
+          this._heartbeatSetInterval = null;
+        }
+        // Start heartbeat
+        this._startHeartbeat(this);
+      }
       if (Utils.convertToBoolean(keyToChange.reboot)) {
         return Constants.OCPP_RESPONSE_REBOOT_REQUIRED;
       }
