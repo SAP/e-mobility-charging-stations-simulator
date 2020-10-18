@@ -24,7 +24,7 @@ class ChargingStation {
 
     this._isSocketRestart = false;
 
-    this._authorizedTags = this._getAuthorizedTags();
+    this._authorizedTags = this._loadAndGetAuthorizedTags();
   }
 
   _initialize() {
@@ -57,7 +57,7 @@ class ChargingStation {
     return this._stationInfo.authorizationFile ? this._stationInfo.authorizationFile : '';
   }
 
-  _getAuthorizedTags() {
+  _loadAndGetAuthorizedTags() {
     let authorizedTags = [];
     const authorizationFile = this._getAuthorizationFile();
     if (authorizationFile) {
@@ -81,7 +81,7 @@ class ChargingStation {
       try {
         logger.debug(this._basicFormatLog() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
         // Initialize _authorizedTags
-        this._authorizedTags = this._getAuthorizedTags();
+        this._authorizedTags = this._loadAndGetAuthorizedTags();
       } catch (error) {
         logger.error(this._basicFormatLog() + ' Authorization file monitoring error: ' + error);
       }
