@@ -121,9 +121,9 @@ class Utils {
 
   static getRandomInt(max, min) {
     if (min) {
-      return Math.floor((Math.random() * (max - min)) + min);
+      return Math.floor((Math.random() * (max - min + 1)) + min);
     }
-    return Math.floor((Math.random() * max));
+    return Math.floor((Math.random() * max + 1));
   }
 
   static basicFormatLog(prefixString = '') {

@@ -121,12 +121,12 @@ class ChargingStation {
   }
 
   _getAuthorizeRemoteTxRequests() {
-    const authorizeRemoteTxRequests = this._configuration.configurationKey.find((configElement) => configElement.key === 'AuthorizeRemoteTxRequests');
+    const authorizeRemoteTxRequests = this._getConfigurationKey('AuthorizeRemoteTxRequests');
     return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
   }
 
   _getLocalAuthListEnabled() {
-    const localAuthListEnabled = this._configuration.configurationKey.find((configElement) => configElement.key === 'LocalAuthListEnabled');
+    const localAuthListEnabled = this._getConfigurationKey('LocalAuthListEnabled');
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
   }
 
@@ -411,7 +411,7 @@ class ChargingStation {
         if (typeof self[responseCallbackFn] === 'function') {
           self[responseCallbackFn](payload, requestPayload, self);
         } else {
-          logger.debug(self._basicFormatLog() + ' Trying to call an undefined callback function: ' + responseCallbackFn);
+          logger.debug(self._basicFormatLog() + ' Trying to call an undefined response callback function: ' + responseCallbackFn);
         }
         // Send the response
         resolve(payload);
@@ -431,26 +431,28 @@ class ChargingStation {
 
   async _basicStartMessageSequence() {
     this._startHeartbeat(this);
-    // build connectors
+    // Build connectors
     if (!this._connectors) {
       this._connectors = {};
       const connectorsConfig = Utils.cloneJSonDocument(this._stationInfo.Connectors);
-      // determine number of customized connectors
+      // Determine number of customized connectors
       let lastConnector;
       for (lastConnector in connectorsConfig) {
-        // add connector 0, OCPP specification violation that for example KEBA have
-        if (Utils.convertToInt(lastConnector) === 0 && Utils.convertToBoolean(this._stationInfo.useConnectorId0)) {
+        // Add connector 0, OCPP specification violation that for example KEBA have
+        if (Utils.convertToInt(lastConnector) === 0 && Utils.convertToBoolean(this._stationInfo.useConnectorId0) &&
+            connectorsConfig[lastConnector]) {
           this._connectors[lastConnector] = connectorsConfig[lastConnector];
         }
       }
       let maxConnectors = 0;
       if (Array.isArray(this._stationInfo.numberOfConnectors)) {
-        // generate some connectors
+        // Generate some connectors
         maxConnectors = this._stationInfo.numberOfConnectors[(this._index - 1) % this._stationInfo.numberOfConnectors.length];
       } else {
         maxConnectors = this._stationInfo.numberOfConnectors;
       }
-      // generate all connectors
+      this._addConfigurationKey('NumberOfConnectors', maxConnectors, true);
+      // Generate all connectors
       for (let index = 1; index <= maxConnectors; index++) {
         const randConnectorID = Utils.convertToBoolean(this._stationInfo.randomConnectors) ? Utils.getRandomInt(lastConnector, 1) : index;
         this._connectors[index] = connectorsConfig[randConnectorID];
@@ -493,6 +495,8 @@ class ChargingStation {
   handleResponseBootNotification(payload) {
     if (payload.status === 'Accepted') {
       this._heartbeatInterval = payload.interval * 1000;
+      this._addConfigurationKey('HeartBeatInterval', this._heartbeatInterval / 1000);
+      this._addConfigurationKey('HeartbeatInterval', this._heartbeatInterval / 1000, false, false);
       this._basicStartMessageSequence();
     } else {
       logger.info(this._basicFormatLog() + ' Boot Notification rejected');
@@ -513,7 +517,7 @@ class ChargingStation {
           this._connectors[connector].lastSoC = 0;
           logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
           this.sendStatusNotification(requestPayload.connectorId, 'Charging');
-          const configuredMeterValueSampleInterval = this._configuration.configurationKey.find((value) => value.key === 'MeterValueSampleInterval');
+          const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
           this.startMeterValues(requestPayload.connectorId,
             configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000,
             this);
@@ -573,23 +577,69 @@ class ChargingStation {
     await this.sendMessage(messageId, result, Constants.OCPP_JSON_CALL_RESULT_MESSAGE);
   }
 
+  _getConfigurationKey(key) {
+    return this._configuration.configurationKey.find((configElement) => configElement.key === key);
+  }
+
+  _addConfigurationKey(key, value, readonly = false, visible = true) {
+    const keyFound = this._getConfigurationKey(key);
+    if (!keyFound) {
+      this._configuration.configurationKey.push({
+        key,
+        readonly,
+        value,
+        visible,
+      });
+    }
+  }
+
+  _setConfigurationKeyValue(key, value) {
+    const keyFound = this._getConfigurationKey(key);
+    if (keyFound) {
+      this._configuration.configurationKey.key = value;
+    }
+  }
+
   async handleGetConfiguration(commandPayload) {
     const configurationKey = [];
     const unknownKey = [];
-    for (const configuration of this._configuration.configurationKey) {
-      if (Utils.isUndefined(configuration.visible)) {
-        configuration.visible = true;
-      } else {
-        configuration.visible = Utils.convertToBoolean(configuration.visible);
+    if (Utils.isEmptyArray(commandPayload.key)) {
+      for (const configuration of this._configuration.configurationKey) {
+        if (Utils.isUndefined(configuration.visible)) {
+          configuration.visible = true;
+        } else {
+          configuration.visible = Utils.convertToBoolean(configuration.visible);
+        }
+        if (!configuration.visible) {
+          continue;
+        }
+        configurationKey.push({
+          key: configuration.key,
+          readonly: configuration.readonly,
+          value: configuration.value,
+        });
       }
-      if (!configuration.visible) {
-        continue;
+    } else {
+      for (const configuration of commandPayload.key) {
+        const keyFound = this._getConfigurationKey(configuration);
+        if (keyFound) {
+          if (Utils.isUndefined(keyFound.visible)) {
+            keyFound.visible = true;
+          } else {
+            keyFound.visible = Utils.convertToBoolean(configuration.visible);
+          }
+          if (!keyFound.visible) {
+            continue;
+          }
+          configurationKey.push({
+            key: keyFound.key,
+            readonly: keyFound.readonly,
+            value: keyFound.value,
+          });
+        } else {
+          unknownKey.push(configuration);
+        }
       }
-      configurationKey.push({
-        key: configuration.key,
-        readonly: configuration.readonly,
-        value: configuration.value,
-      });
     }
     return {
       configurationKey,
@@ -598,7 +648,7 @@ class ChargingStation {
   }
 
   async handleChangeConfiguration(commandPayload) {
-    const keyToChange = this._configuration.configurationKey.find((element) => element.key === commandPayload.key);
+    const keyToChange = this._getConfigurationKey(commandPayload.key);
     if (keyToChange && !Utils.convertToBoolean(keyToChange.readonly)) {
       const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
       this._configuration.configurationKey[keyIndex].value = commandPayload.value;
@@ -613,7 +663,7 @@ class ChargingStation {
       // Check if authorized
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
-        setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), Constants.START_TRANSACTION_TIMEOUT);
+        this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag, Constants.START_TRANSACTION_TIMEOUT);
         logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
@@ -621,7 +671,7 @@ class ChargingStation {
       return Constants.OCPP_RESPONSE_REJECTED;
     }
     // No local authorization check required => start transaction
-    setTimeout(() => this.sendStartTransaction(transactionConnectorID, commandPayload.idTag), Constants.START_TRANSACTION_TIMEOUT);
+    this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag, Constants.START_TRANSACTION_TIMEOUT);
     logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
@@ -649,6 +699,9 @@ class ChargingStation {
       this._resetTransactionOnConnector(connectorID);
       throw error;
     }
+  }
+  async sendStartTransactionWithTimeout(connectorID, idTag, timeout) {
+    setTimeout(() => this.sendStartTransaction(connectorID, idTag), timeout);
   }
 
   async sendStopTransaction(transactionId, connectorID) {
@@ -683,7 +736,7 @@ class ChargingStation {
       }
       for (let index = 0; index < sampledValueLcl.sampledValue.length; index++) {
         if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC') {
-          sampledValueLcl.sampledValue[index].value = Math.floor(Math.random() * 100) + 1;
+          sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
           if (sampledValueLcl.sampledValue[index].value > 100) {
             logger.info(self._basicFormatLog() + ' MeterValues measurand: ' +
               sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register' +
@@ -693,7 +746,7 @@ class ChargingStation {
           // Persist previous value in connector
           const connector = self._connectors[connectorID];
           let consumption;
-          consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval, 4);
+          consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
           if (connector && connector.lastConsumptionValue >= 0) {
             connector.lastConsumptionValue += consumption;
           } else {
@@ -741,7 +794,7 @@ class ChargingStation {
   }
 
   getRandomTagId() {
-    const index = Math.round(Math.floor(Math.random() * this._authorizedTags.length - 1));
+    const index = Math.floor(Math.random() * this._authorizedTags.length);
     return this._authorizedTags[index];
   }
 

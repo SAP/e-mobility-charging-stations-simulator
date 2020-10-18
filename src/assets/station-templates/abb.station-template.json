@@ -12,11 +12,6 @@
   "Configuration": {
     "configurationKey": [
       {
-        "key": "NumberOfConnectors",
-        "readonly": true,
-        "value": 2
-      },
-      {
         "key": "MeterValueSampleInterval",
         "readonly": false,
         "value": 30
