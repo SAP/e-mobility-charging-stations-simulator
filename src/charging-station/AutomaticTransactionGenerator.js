@@ -53,8 +53,8 @@ class AutomaticTransactionGenerator {
 
   async startConnector(connectorId) {
     do {
-      const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransaction,
-          this._chargingStation._stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransaction) * 1000;
+      const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
+          this._chargingStation._stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransactions) * 1000;
       logger.info(this._basicFormatLog(connectorId) + ' wait for ' + Utils.secondstoHHMMSS(wait / 1000));
       await Utils.sleep(wait);
       if (this._timeToStop) break;

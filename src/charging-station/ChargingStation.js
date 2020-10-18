@@ -172,6 +172,14 @@ class ChargingStation {
 
   onOpen() {
     logger.info(`${this._basicFormatLog()} Is connected to server through ${this._url}`);
+    if (!this._heartbeatInterval) {
+      // Send BootNotification
+      try {
+        this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
+      } catch (error) {
+        logger.error(this._basicFormatLog() + ' Send boot notification error: ' + error);
+      }
+    }
     if (this._isSocketRestart) {
       this._basicStartMessageSequence();
       if (this._messageQueue.length > 0) {
@@ -180,13 +188,6 @@ class ChargingStation {
             this._wsConnection.send(message);
           }
         });
-      }
-    } else {
-      // At first start, send BootNotification
-      try {
-        this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
-      } catch (error) {
-        logger.error(this._basicFormatLog() + ' Send boot notification error: ' + error);
       }
     }
     this._autoReconnectRetryCount = 0;
@@ -286,7 +287,6 @@ class ChargingStation {
   // eslint-disable-next-line class-methods-use-this
   async _startHeartbeat(self) {
     if (self._heartbeatInterval && !self._heartbeatSetInterval) {
-      logger.info(self._basicFormatLog() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
       self._heartbeatSetInterval = setInterval(() => {
         try {
           const payload = {
@@ -297,6 +297,7 @@ class ChargingStation {
           logger.error(self._basicFormatLog() + ' Send heartbeat error: ' + error);
         }
       }, self._heartbeatInterval);
+      logger.info(self._basicFormatLog() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
     } else {
       logger.error(self._basicFormatLog() + ' Heartbeat interval undefined, not starting the heartbeat');
     }

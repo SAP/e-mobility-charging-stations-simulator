@@ -41,8 +41,8 @@
     "enable": false,
     "minDuration": 30,
     "maxDuration": 60,
-    "minDelayBetweenTwoTransaction": 15,
-    "maxDelayBetweenTwoTransaction": 30,
+    "minDelayBetweenTwoTransactions": 15,
+    "maxDelayBetweenTwoTransactions": 30,
     "probabilityOfStart": 1,
     "stopAfterHours": 0.3,
     "stopOnConnectionFailure": false
