@@ -145,6 +145,13 @@ class Utils {
     }
     return false;
   }
+
+  static isEmptyArray(object) {
+    if (Array.isArray(object) && object.length > 0) {
+      return false;
+    }
+    return true;
+  }
 }
 
 module.exports = Utils;

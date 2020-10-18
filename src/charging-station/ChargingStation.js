@@ -737,7 +737,7 @@ class ChargingStation {
   }
 
   hasAuthorizedTags() {
-    return Array.isArray(this._authorizedTags) && this._authorizedTags.length > 0;
+    return !Utils.isEmptyArray(this._authorizedTags);
   }
 
   getRandomTagId() {
