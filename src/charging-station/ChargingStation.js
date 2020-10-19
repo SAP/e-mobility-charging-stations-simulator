@@ -95,8 +95,8 @@ class ChargingStation {
         logger.debug(this._basicFormatLog() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
         // Initialize
         this._initialize();
-        this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval : 0));
-        this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval : 0), false, false);
+        this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval / 1000 : 0));
+        this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval / 1000 : 0), false, false);
         this._addConfigurationKey('NumberOfConnectors', this._getMaxConnectors(), true);
       } catch (error) {
         logger.error(this._basicFormatLog() + ' Charging station template file monitoring error: ' + error);
