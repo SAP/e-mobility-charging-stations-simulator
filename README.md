@@ -6,7 +6,9 @@ Simple node program to simulate a set of charging stations based on OCPP 1.6 pro
 
 To run the program start: `npm start`.
 
-All the parameters and control of the program are within the src/assets/config.json file. A configuration template file is available at [src/assets/config-template.json](src/assets/config-template.json).
+All the configuration parameters of the program must be within the src/assets/config.json file. A configuration template file is available at [src/assets/config-template.json](src/assets/config-template.json).
+
+All charging station templates are in [src/assets/station-templates](src/assets/station-templates).
 
 ## License
 
