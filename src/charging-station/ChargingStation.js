@@ -635,13 +635,13 @@ class ChargingStation {
         });
       }
     } else {
-      for (const configuration of commandPayload.key) {
-        const keyFound = this._getConfigurationKey(configuration);
+      for (const configurationKey of commandPayload.key) {
+        const keyFound = this._getConfigurationKey(configurationKey);
         if (keyFound) {
           if (Utils.isUndefined(keyFound.visible)) {
             keyFound.visible = true;
           } else {
-            keyFound.visible = Utils.convertToBoolean(configuration.visible);
+            keyFound.visible = Utils.convertToBoolean(configurationKey.visible);
           }
           if (!keyFound.visible) {
             continue;
@@ -652,7 +652,7 @@ class ChargingStation {
             value: keyFound.value,
           });
         } else {
-          unknownKey.push(configuration);
+          unknownKey.push(configurationKey);
         }
       }
     }
