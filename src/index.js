@@ -6,7 +6,7 @@ const logger = require('./utils/Logger');
 class Bootstrap {
   static async start() {
     try {
-      logger.info('%s Configuration: %j', Utils.basicFormatLog(), Configuration.getConfig());
+      logger.debug('%s Configuration: %j', Utils.basicFormatLog(), Configuration.getConfig());
       // Start each ChargingStation object in a worker thread
       if (Configuration.getStationTemplateURLs()) {
         let numStationsTotal = 0;
