@@ -70,7 +70,7 @@ class Statistics {
   }
 
   _displayInterval() {
-    if (Configuration.getStatisticsDisplayInterval() !== 0) {
+    if (Configuration.getStatisticsDisplayInterval() > 0) {
       setInterval(() => {
         this._display();
       }, Configuration.getStatisticsDisplayInterval() * 1000);
