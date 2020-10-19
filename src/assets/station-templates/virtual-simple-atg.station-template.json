@@ -22,12 +22,12 @@
       {
         "key": "LocalAuthListEnabled",
         "readonly": false,
-        "value": false
+        "value": "false"
       },
       {
         "key": "AuthorizeRemoteTxRequests",
         "readonly": false,
-        "value": false
+        "value": "false"
       }
     ]
   },

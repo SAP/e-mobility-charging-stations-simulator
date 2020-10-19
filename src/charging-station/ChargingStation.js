@@ -376,7 +376,7 @@ class ChargingStation {
         // Error Message
         case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
           // Build Message
-          this._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName}`);
+          this._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName || ''}`);
           messageToSend = JSON.stringify([messageType, messageId, command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {}]);
           break;
       }
@@ -413,7 +413,7 @@ class ChargingStation {
 
       // Function that will receive the request's rejection
       function rejectCallback(reason) {
-        self._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName}`, true);
+        self._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName || ''}`, true);
         // Build Exception
         // eslint-disable-next-line no-empty-function
         self._requests[messageId] = [() => { }, () => { }, '']; // Properly format the request
@@ -505,29 +505,31 @@ class ChargingStation {
       logger.debug(this._basicFormatLog() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ' by transaction ' + this._connectors[requestPayload.connectorId].transactionId);
     }
 
-    if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
-      for (const connector in this._connectors) {
-        if (Utils.convertToInt(connector) === Utils.convertToInt(requestPayload.connectorId)) {
-          this._connectors[connector].transactionStarted = true;
-          this._connectors[connector].transactionId = payload.transactionId;
-          this._connectors[connector].idTag = requestPayload.idTag;
-          this._connectors[connector].lastConsumptionValue = 0;
-          this._connectors[connector].lastSoC = 0;
-          this.sendStatusNotification(requestPayload.connectorId, 'Charging');
-          logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[connector].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
-          const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
-          this.startMeterValues(requestPayload.connectorId,
-            configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000,
-            this);
-        }
+    let transactionConnectorId;
+    for (const connector in this._connectors) {
+      if (Utils.convertToInt(connector) === Utils.convertToInt(requestPayload.connectorId)) {
+        transactionConnectorId = connector;
+        break;
       }
+    }
+    if (!transactionConnectorId) {
+      logger.error(this._basicFormatLog() + ' Try to start a transaction on a non existing connector Id ' + requestPayload.connectorId);
+      return;
+    }
+    if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
+      this._connectors[transactionConnectorId].transactionStarted = true;
+      this._connectors[transactionConnectorId].transactionId = payload.transactionId;
+      this._connectors[transactionConnectorId].idTag = requestPayload.idTag;
+      this._connectors[transactionConnectorId].lastConsumptionValue = 0;
+      this._connectors[transactionConnectorId].lastSoC = 0;
+      this.sendStatusNotification(requestPayload.connectorId, 'Charging');
+      logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[transactionConnectorId].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
+      const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
+      this.startMeterValues(requestPayload.connectorId,
+        configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000);
     } else {
       logger.error(this._basicFormatLog() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
-      for (const connector in this._connectors) {
-        if (Utils.convertToInt(connector) === Utils.convertToInt(requestPayload.connectorId)) {
-          this._resetTransactionOnConnector(connector);
-        }
-      }
+      this._resetTransactionOnConnector(transactionConnectorId);
       this.sendStatusNotification(requestPayload.connectorId, 'Available');
     }
   }
@@ -541,7 +543,8 @@ class ChargingStation {
       }
     }
     if (!transactionConnectorId) {
-      logger.debug(this._basicFormatLog() + ' Try to stop a non existing transaction ' + requestPayload.transactionId);
+      logger.error(this._basicFormatLog() + ' Try to stop a non existing transaction ' + requestPayload.transactionId);
+      return;
     }
     if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
       this.sendStatusNotification(transactionConnectorId, 'Available');
@@ -757,7 +760,7 @@ class ChargingStation {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async sendMeterValues(connectorID, interval, self) {
+  async sendMeterValues(connectorID, interval, self, debug = false) {
     try {
       const sampledValueLcl = {
         timestamp: new Date().toISOString(),
@@ -769,30 +772,25 @@ class ChargingStation {
         sampledValueLcl.sampledValue = [meterValuesClone];
       }
       for (let index = 0; index < sampledValueLcl.sampledValue.length; index++) {
+        const connector = self._connectors[connectorID];
         if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC') {
           sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
-          if (sampledValueLcl.sampledValue[index].value > 100) {
-            logger.info(self._basicFormatLog() + ' MeterValues measurand: ' +
-              sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register' +
-              ', value: ' + sampledValueLcl.sampledValue[index].value);
+          if (sampledValueLcl.sampledValue[index].value > 100 || debug) {
+            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}`);
           }
         } else {
           // Persist previous value in connector
-          const connector = self._connectors[connectorID];
-          let consumption;
-          consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
+          const consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
           if (connector && connector.lastConsumptionValue >= 0) {
             connector.lastConsumptionValue += consumption;
           } else {
             connector.lastConsumptionValue = 0;
           }
-          consumption = Math.round(connector.lastConsumptionValue * 3600 / interval);
-          logger.info(self._basicFormatLog() + ' MeterValues: connectorID ' + connectorID + ', transaction ' + connector.transactionId + ', value ' + connector.lastConsumptionValue);
+          const maxConsumption = self._stationInfo.maxPower * 3600 / interval;
+          logger.info(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value ${connector.lastConsumptionValue}`);
           sampledValueLcl.sampledValue[index].value = connector.lastConsumptionValue;
-          if (sampledValueLcl.sampledValue[index].value > (self._stationInfo.maxPower * 3600 / interval) || sampledValueLcl.sampledValue[index].value < 500) {
-            logger.info(self._basicFormatLog() + ' MeterValues measurand: ' +
-              sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register' +
-              ', value: ' + sampledValueLcl.sampledValue[index].value + '/' + (self._stationInfo.maxPower * 3600 / interval));
+          if (sampledValueLcl.sampledValue[index].value > maxConsumption || debug) {
+            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}/${maxConsumption}`);
           }
         }
       }
@@ -808,18 +806,20 @@ class ChargingStation {
     }
   }
 
-  async startMeterValues(connectorID, interval, self) {
+  async startMeterValues(connectorID, interval) {
     if (!this._connectors[connectorID].transactionStarted) {
-      logger.debug(`${self._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction started`);
+      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction started`);
+      return;
     } else if (this._connectors[connectorID].transactionStarted && !this._connectors[connectorID].transactionId) {
-      logger.debug(`${self._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction id`);
+      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction id`);
+      return;
     }
     this._connectors[connectorID].transactionSetInterval = setInterval(async () => {
       const sendMeterValues = performance.timerify(this.sendMeterValues);
       this._performanceObserver.observe({
         entryTypes: ['function'],
       });
-      await sendMeterValues(connectorID, interval, self);
+      await sendMeterValues(connectorID, interval, this);
     }, interval);
   }
 
