@@ -95,6 +95,9 @@ class ChargingStation {
         logger.debug(this._basicFormatLog() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
         // Initialize
         this._initialize();
+        this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval : 0));
+        this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval : 0), false, false);
+        this._addConfigurationKey('NumberOfConnectors', this._getMaxConnectors(), true);
       } catch (error) {
         logger.error(this._basicFormatLog() + ' Charging station template file monitoring error: ' + error);
       }
@@ -440,13 +443,7 @@ class ChargingStation {
           this._connectors[lastConnector] = connectorsConfig[lastConnector];
         }
       }
-      let maxConnectors = 0;
-      if (Array.isArray(this._stationInfo.numberOfConnectors)) {
-        // Generate some connectors
-        maxConnectors = this._stationInfo.numberOfConnectors[(this._index - 1) % this._stationInfo.numberOfConnectors.length];
-      } else {
-        maxConnectors = this._stationInfo.numberOfConnectors;
-      }
+      const maxConnectors = this._getMaxConnectors();
       this._addConfigurationKey('NumberOfConnectors', maxConnectors, true);
       // Generate all connectors
       for (let index = 1; index <= maxConnectors; index++) {
@@ -834,6 +831,17 @@ class ChargingStation {
 
   _getConnector(number) {
     return this._stationInfo.Connectors[number];
+  }
+
+  _getMaxConnectors() {
+    let maxConnectors = 0;
+    if (Array.isArray(this._stationInfo.numberOfConnectors)) {
+      // Generate some connectors
+      maxConnectors = this._stationInfo.numberOfConnectors[(this._index - 1) % this._stationInfo.numberOfConnectors.length];
+    } else {
+      maxConnectors = this._stationInfo.numberOfConnectors;
+    }
+    return maxConnectors;
   }
 }
 
