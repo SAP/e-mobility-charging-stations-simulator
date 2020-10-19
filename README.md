@@ -2,7 +2,7 @@
 
 ## Summary
 
-Simple node program to simulate a set of charging stations based on OCPP-J 1.6 protocol.
+Simple node program to simulate a set of charging stations based on the OCPP-J 1.6 protocol.
 
 To start the program, run: `npm start`.
 
