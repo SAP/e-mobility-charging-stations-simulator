@@ -1,8 +1,8 @@
 {
   "authorizationFile": "./src/assets/authorization-tags.json",
-  "baseName": "SAP-Mougins-69",
+  "baseName": "CS-SIEMENS",
   "fixedName": true,
-  "chargePointModel": "SiemensXX213",
+  "chargePointModel": "SIEMENSXX213",
   "chargePointVendor": "SIEMENS",
   "power": 44160,
   "powerUnit": "W",

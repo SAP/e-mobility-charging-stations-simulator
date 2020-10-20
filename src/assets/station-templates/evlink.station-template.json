@@ -1,8 +1,8 @@
 {
   "authorizationFile": "./src/assets/authorization-tags.json",
   "baseName": "CS-EVLINK",
-  "chargePointModel": "EVLINKXX213",
-  "chargePointVendor": "SCHNEIDER",
+  "chargePointModel": "MONOBLOCK",
+  "chargePointVendor": "Schneider Electric",
   "chargePointSerialNumberPrefix": "EV.2S7P04",
   "firmwareVersion": "3.3.0.10",
   "power": 7360,

@@ -1,8 +1,8 @@
 {
   "authorizationFile": "./src/assets/authorization-tags.json",
   "baseName": "CS-SCHNEIDER",
-  "chargePointModel": "SCHNEIDERXX213",
-  "chargePointVendor": "SCHNEIDER",
+  "chargePointModel": "MONOBLOCK",
+  "chargePointVendor": "Schneider Electric",
   "power": 44160,
   "powerUnit": "W",
   "numberOfConnectors": 2,

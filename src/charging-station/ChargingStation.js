@@ -548,25 +548,29 @@ class ChargingStation {
         const connector = self._connectors[connectorID];
         // SoC measurand
         if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC') {
-          sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
+          sampledValueLcl.sampledValue[index].value = sampledValueLcl.sampledValue[index].value ?
+            sampledValueLcl.sampledValue[index].value :
+            sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
           if (sampledValueLcl.sampledValue[index].value > 100 || debug) {
             logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}`);
           }
         // Voltage measurand
         } else if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'Voltage') {
-          sampledValueLcl.sampledValue[index].value = 230;
+          sampledValueLcl.sampledValue[index].value = sampledValueLcl.sampledValue[index].value ? sampledValueLcl.sampledValue[index].value : 230;
         // Energy.Active.Import.Register measurand (default)
         } else if (!sampledValueLcl.sampledValue[index].measurand || sampledValueLcl.sampledValue[index].measurand === 'Energy.Active.Import.Register') {
-          // Persist previous value in connector
-          const consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
-          if (connector && connector.lastConsumptionValue >= 0) {
-            connector.lastConsumptionValue += consumption;
-          } else {
-            connector.lastConsumptionValue = 0;
+          if (!sampledValueLcl.sampledValue[index].value) {
+            const measurandValue = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
+            // Persist previous value in connector
+            if (connector && connector.lastEnergyActiveImportRegisterValue >= 0) {
+              connector.lastEnergyActiveImportRegisterValue += measurandValue;
+            } else {
+              connector.lastEnergyActiveImportRegisterValue = 0;
+            }
+            sampledValueLcl.sampledValue[index].value = connector.lastEnergyActiveImportRegisterValue;
           }
+          logger.info(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value ${sampledValueLcl.sampledValue[index].value}`);
           const maxConsumption = self._stationInfo.maxPower * 3600 / interval;
-          logger.info(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value ${connector.lastConsumptionValue}`);
-          sampledValueLcl.sampledValue[index].value = connector.lastConsumptionValue;
           if (sampledValueLcl.sampledValue[index].value > maxConsumption || debug) {
             logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}/${maxConsumption}`);
           }
@@ -684,7 +688,7 @@ class ChargingStation {
     this._connectors[connectorID].transactionStarted = false;
     this._connectors[connectorID].transactionId = null;
     this._connectors[connectorID].idTag = null;
-    this._connectors[connectorID].lastConsumptionValue = -1;
+    this._connectors[connectorID].lastEnergyActiveImportRegisterValue = -1;
   }
 
   _resetTransactionOnConnector(connectorID) {
@@ -715,7 +719,7 @@ class ChargingStation {
       this._connectors[transactionConnectorId].transactionStarted = true;
       this._connectors[transactionConnectorId].transactionId = payload.transactionId;
       this._connectors[transactionConnectorId].idTag = requestPayload.idTag;
-      this._connectors[transactionConnectorId].lastConsumptionValue = 0;
+      this._connectors[transactionConnectorId].lastEnergyActiveImportRegisterValue = 0;
       this.sendStatusNotification(requestPayload.connectorId, 'Charging');
       logger.info(this._basicFormatLog() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
       const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
