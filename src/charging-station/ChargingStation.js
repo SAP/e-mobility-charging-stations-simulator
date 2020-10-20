@@ -14,6 +14,7 @@ class ChargingStation {
   constructor(index, stationTemplateFile) {
     this._index = index;
     this._stationTemplateFile = stationTemplateFile;
+    this._connectors = {};
     this._initialize();
 
     this._isSocketRestart = false;
@@ -70,9 +71,6 @@ class ChargingStation {
     // FIXME: Handle shrinking the number of connectors
     if (!this._connectors || (this._connectors && this._connectorsConfigurationHash !== connectorsConfigHash)) {
       this._connectorsConfigurationHash = connectorsConfigHash;
-      if (!this._connectors) {
-        this._connectors = {};
-      }
       // Determine number of customized connectors
       let lastConnector;
       for (lastConnector in connectorsConfig) {
