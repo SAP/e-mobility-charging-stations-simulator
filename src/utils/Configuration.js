@@ -2,14 +2,14 @@ const fs = require('fs');
 const Utils = require('./Utils');
 
 class Configuration {
-  static configurationFile;
+  static configuration;
 
   // Read the config file
   static getConfig() {
-    if (!Configuration.configurationFile) {
-      Configuration.configurationFile = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8'));
+    if (!Configuration.configuration) {
+      Configuration.configuration = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8'));
     }
-    return Configuration.configurationFile;
+    return Configuration.configuration;
   }
 
   static getStatisticsDisplayInterval() {
