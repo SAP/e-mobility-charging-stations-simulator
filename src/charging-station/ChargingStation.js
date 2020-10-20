@@ -268,7 +268,7 @@ class ChargingStation {
         await sendMeterValues(connectorID, interval, this);
       }, interval);
     } else {
-      logger.info(`${this._basicFormatLog()} Charging station MeterValueSampleInterval configuration set to ${interval}ms, not sending MeterValues`);
+      logger.error(`${this._basicFormatLog()} Charging station MeterValueSampleInterval configuration set to ${interval}ms, not sending MeterValues`);
     }
   }
 
@@ -350,7 +350,7 @@ class ChargingStation {
     }
     if (this._isSocketRestart) {
       this._basicStartMessageSequence();
-      if (this._messageQueue.length > 0) {
+      if (!Utils.isEmptyArray(this._messageQueue)) {
         this._messageQueue.forEach((message) => {
           if (this._wsConnection && this._wsConnection.readyState === WebSocket.OPEN) {
             this._wsConnection.send(message);
@@ -740,7 +740,7 @@ class ChargingStation {
   }
 
   handleResponseStatusNotification(payload, requestPayload) {
-    logger.debug(this._basicFormatLog() + ' Status notification response received: %j to status notification request: %j', payload, requestPayload);
+    logger.debug(this._basicFormatLog() + ' Status notification response received: %j to StatusNotification request: %j', payload, requestPayload);
   }
 
   handleResponseMeterValues(payload, requestPayload) {

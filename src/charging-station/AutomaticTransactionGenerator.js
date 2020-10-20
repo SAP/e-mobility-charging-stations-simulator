@@ -1,4 +1,5 @@
 const logger = require('../utils/Logger');
+const Constants = require('../utils/Constants');
 const Utils = require('../utils/Utils');
 const {performance, PerformanceObserver} = require('perf_hooks');
 
@@ -68,7 +69,7 @@ class AutomaticTransactionGenerator {
         const startResponse = await startTransaction(connectorId, this);
         if (startResponse.idTagInfo.status !== 'Accepted') {
           logger.info(this._basicFormatLog(connectorId) + ' transaction rejected');
-          await Utils.sleep(2000);
+          await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
         } else {
           // Wait until end of transaction
           const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDuration,
