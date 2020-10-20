@@ -8,8 +8,8 @@ class Statistics {
     this._statistics = {};
   }
 
-  _basicFormatLog() {
-    return Utils.basicFormatLog(` ${this._objName} Statistics:`);
+  _logPrefix() {
+    return Utils.logPrefix(` ${this._objName} Statistics:`);
   }
 
   addMessage(command, response = false) {
@@ -62,11 +62,11 @@ class Statistics {
 
   logPerformance(entry, className) {
     this.addPerformanceTimer(entry.name, entry.duration);
-    logger.info(`${this._basicFormatLog()} class->${className}, method->${entry.name}, duration->${entry.duration}`);
+    logger.info(`${this._logPrefix()} class->${className}, method->${entry.name}, duration->${entry.duration}`);
   }
 
   _display() {
-    logger.info(this._basicFormatLog() + ' %j', this._statistics);
+    logger.info(this._logPrefix() + ' %j', this._statistics);
   }
 
   _displayInterval() {
@@ -74,7 +74,7 @@ class Statistics {
       setInterval(() => {
         this._display();
       }, Configuration.getStatisticsDisplayInterval() * 1000);
-      logger.info(this._basicFormatLog() + ' displayed every ' + Configuration.getStatisticsDisplayInterval() + 's');
+      logger.info(this._logPrefix() + ' displayed every ' + Configuration.getStatisticsDisplayInterval() + 's');
     }
   }
 

@@ -126,7 +126,7 @@ class Utils {
     return Math.floor((Math.random() * max + 1));
   }
 
-  static basicFormatLog(prefixString = '') {
+  static logPrefix(prefixString = '') {
     const date = new Date();
     return date.toLocaleString() + prefixString;
   }
@@ -140,7 +140,12 @@ class Utils {
   }
 
   static isUndefined(value) {
-    if (typeof value === 'undefined') {
+    return typeof value === 'undefined';
+  }
+
+  static isNullOrUndefined(value) {
+    // eslint-disable-next-line eqeqeq
+    if (value == null) {
       return true;
     }
     return false;

@@ -38,7 +38,7 @@ class ChargingStation {
       stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
       fs.closeSync(fileDescriptor);
     } catch (error) {
-      logger.error(this._basicFormatLog() + ' Template file loading error: ' + error);
+      logger.error(this._logPrefix() + ' Template file loading error: ' + error);
     }
     const stationTemplate = stationTemplateFromFile || {};
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
@@ -98,8 +98,8 @@ class ChargingStation {
     });
   }
 
-  _basicFormatLog() {
-    return Utils.basicFormatLog(` ${this._stationInfo.name}:`);
+  _logPrefix() {
+    return Utils.logPrefix(` ${this._stationInfo.name}:`);
   }
 
   _getConfiguration() {
@@ -120,10 +120,10 @@ class ChargingStation {
         authorizedTags = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
         fs.closeSync(fileDescriptor);
       } catch (error) {
-        logger.error(this._basicFormatLog() + ' Authorization file loading error: ' + error);
+        logger.error(this._logPrefix() + ' Authorization file loading error: ' + error);
       }
     } else {
-      logger.info(this._basicFormatLog() + ' No authorization file given in template file ' + this._stationTemplateFile);
+      logger.info(this._logPrefix() + ' No authorization file given in template file ' + this._stationTemplateFile);
     }
     return authorizedTags;
   }
@@ -210,9 +210,9 @@ class ChargingStation {
       self._heartbeatSetInterval = setInterval(() => {
         this.sendHeartbeat();
       }, self._heartbeatInterval);
-      logger.info(self._basicFormatLog() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
+      logger.info(self._logPrefix() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
     } else {
-      logger.error(`${self._basicFormatLog()} Heartbeat interval set to ${self._heartbeatInterval}, not starting the heartbeat`);
+      logger.error(`${self._logPrefix()} Heartbeat interval set to ${self._heartbeatInterval}, not starting the heartbeat`);
     }
   }
 
@@ -227,11 +227,11 @@ class ChargingStation {
     // eslint-disable-next-line no-unused-vars
     fs.watchFile(this._getAuthorizationFile(), (current, previous) => {
       try {
-        logger.debug(this._basicFormatLog() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
+        logger.debug(this._logPrefix() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
         // Initialize _authorizedTags
         this._authorizedTags = this._loadAndGetAuthorizedTags();
       } catch (error) {
-        logger.error(this._basicFormatLog() + ' Authorization file monitoring error: ' + error);
+        logger.error(this._logPrefix() + ' Authorization file monitoring error: ' + error);
       }
     });
   }
@@ -240,23 +240,23 @@ class ChargingStation {
     // eslint-disable-next-line no-unused-vars
     fs.watchFile(this._stationTemplateFile, (current, previous) => {
       try {
-        logger.debug(this._basicFormatLog() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
+        logger.debug(this._logPrefix() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
         // Initialize
         this._initialize();
         this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval / 1000 : 0));
         this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval / 1000 : 0), false, false);
       } catch (error) {
-        logger.error(this._basicFormatLog() + ' Charging station template file monitoring error: ' + error);
+        logger.error(this._logPrefix() + ' Charging station template file monitoring error: ' + error);
       }
     });
   }
 
   async _startMeterValues(connectorId, interval) {
     if (!this._connectors[connectorId].transactionStarted) {
-      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorId} with no transaction started`);
+      logger.error(`${this._logPrefix()} Trying to start MeterValues on connector ID ${connectorId} with no transaction started`);
       return;
     } else if (this._connectors[connectorId].transactionStarted && !this._connectors[connectorId].transactionId) {
-      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorId} with no transaction id`);
+      logger.error(`${this._logPrefix()} Trying to start MeterValues on connector ID ${connectorId} with no transaction id`);
       return;
     }
     if (interval > 0) {
@@ -268,7 +268,7 @@ class ChargingStation {
         await sendMeterValues(connectorId, interval, this);
       }, interval);
     } else {
-      logger.error(`${this._basicFormatLog()} Charging station MeterValueSampleInterval configuration set to ${interval}ms, not sending MeterValues`);
+      logger.error(`${this._logPrefix()} Charging station MeterValueSampleInterval configuration set to ${interval}ms, not sending MeterValues`);
     }
   }
 
@@ -277,7 +277,7 @@ class ChargingStation {
       this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
     }
     this._wsConnection = new WebSocket(this._wsConnectionUrl, 'ocpp' + Constants.OCPP_VERSION_16);
-    logger.info(this._basicFormatLog() + ' Will communicate through URL ' + this._supervisionUrl);
+    logger.info(this._logPrefix() + ' Will communicate through URL ' + this._supervisionUrl);
     // Monitor authorization file
     this._startAuthorizationFileMonitoring();
     // Monitor station template file
@@ -319,7 +319,7 @@ class ChargingStation {
   }
 
   _reconnect(error) {
-    logger.error(this._basicFormatLog() + ' Socket: abnormally closed', error);
+    logger.error(this._logPrefix() + ' Socket: abnormally closed', error);
     // Stop the ATG if needed
     if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
       Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure) &&
@@ -331,19 +331,19 @@ class ChargingStation {
     this._stopHeartbeat();
     if (this._autoReconnectTimeout !== 0 &&
       (this._autoReconnectRetryCount < this._autoReconnectMaxRetries || this._autoReconnectMaxRetries === -1)) {
-      logger.error(`${this._basicFormatLog()} Socket: connection retry with timeout ${this._autoReconnectTimeout}ms`);
+      logger.error(`${this._logPrefix()} Socket: connection retry with timeout ${this._autoReconnectTimeout}ms`);
       this._autoReconnectRetryCount++;
       setTimeout(() => {
-        logger.error(this._basicFormatLog() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount);
+        logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount);
         this.start();
       }, this._autoReconnectTimeout);
     } else if (this._autoReconnectTimeout !== 0 || this._autoReconnectMaxRetries !== -1) {
-      logger.error(`${this._basicFormatLog()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectTimeout})`);
+      logger.error(`${this._logPrefix()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectTimeout})`);
     }
   }
 
   onOpen() {
-    logger.info(`${this._basicFormatLog()} Is connected to server through ${this._wsConnectionUrl}`);
+    logger.info(`${this._logPrefix()} Is connected to server through ${this._wsConnectionUrl}`);
     if (!this._isSocketRestart) {
       // Send BootNotification
       this.sendBootNotification();
@@ -369,7 +369,7 @@ class ChargingStation {
         this._reconnect(error);
         break;
       default:
-        logger.error(this._basicFormatLog() + ' Socket error: ' + error);
+        logger.error(this._logPrefix() + ' Socket error: ' + error);
         break;
     }
   }
@@ -378,7 +378,7 @@ class ChargingStation {
     switch (error) {
       case 1000: // Normal close
       case 1005:
-        logger.info(this._basicFormatLog() + ' Socket normally closed ' + error);
+        logger.info(this._logPrefix() + ' Socket normally closed ' + error);
         this._autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
@@ -389,7 +389,7 @@ class ChargingStation {
   }
 
   onPing() {
-    logger.debug(this._basicFormatLog() + ' Has received a WS ping (rfc6455) from the server');
+    logger.debug(this._logPrefix() + ' Has received a WS ping (rfc6455) from the server');
   }
 
   async onMessage(message) {
@@ -444,7 +444,7 @@ class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming message %j processing error %s on request content %s', this._basicFormatLog(), message, error, this._requests[messageId]);
+      logger.error('%s Incoming message %j processing error %s on request content %s', this._logPrefix(), message, error, this._requests[messageId]);
       // Send error
       // await this.sendError(messageId, error);
     }
@@ -457,7 +457,7 @@ class ChargingStation {
       };
       this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
     } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send Heartbeat error: ' + error);
+      logger.error(this._logPrefix() + ' Send Heartbeat error: ' + error);
       throw error;
     }
   }
@@ -466,7 +466,7 @@ class ChargingStation {
     try {
       this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
     } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send BootNotification error: ' + error);
+      logger.error(this._logPrefix() + ' Send BootNotification error: ' + error);
       throw error;
     }
   }
@@ -480,7 +480,7 @@ class ChargingStation {
       };
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
     } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send StatusNotification error: ' + error);
+      logger.error(this._logPrefix() + ' Send StatusNotification error: ' + error);
       throw error;
     }
   }
@@ -499,7 +499,7 @@ class ChargingStation {
       };
       return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
     } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send StartTransaction error: ' + error);
+      logger.error(this._logPrefix() + ' Send StartTransaction error: ' + error);
       throw error;
     }
   }
@@ -527,7 +527,7 @@ class ChargingStation {
       }
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
     } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send StopTransaction error: ' + error);
+      logger.error(this._logPrefix() + ' Send StopTransaction error: ' + error);
       throw error;
     }
   }
@@ -552,7 +552,7 @@ class ChargingStation {
             sampledValueLcl.sampledValue[index].value :
             sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
           if (sampledValueLcl.sampledValue[index].value > 100 || debug) {
-            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}`);
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}`);
           }
         // Voltage measurand
         } else if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'Voltage') {
@@ -569,14 +569,14 @@ class ChargingStation {
             }
             sampledValueLcl.sampledValue[index].value = connector.lastEnergyActiveImportRegisterValue;
           }
-          logger.info(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value ${sampledValueLcl.sampledValue[index].value}`);
+          logger.info(`${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value ${sampledValueLcl.sampledValue[index].value}`);
           const maxConsumption = self._stationInfo.maxPower * 3600 / interval;
           if (sampledValueLcl.sampledValue[index].value > maxConsumption || debug) {
-            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}/${maxConsumption}`);
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}/${maxConsumption}`);
           }
         // Unsupported measurand
         } else {
-          logger.info(`${self._basicFormatLog()} Unsupported MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'} on connectorId ${connectorId}`);
+          logger.info(`${self._logPrefix()} Unsupported MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'} on connectorId ${connectorId}`);
         }
       }
 
@@ -587,7 +587,7 @@ class ChargingStation {
       };
       await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
     } catch (error) {
-      logger.error(self._basicFormatLog() + ' Send MeterValues error: ' + error);
+      logger.error(self._logPrefix() + ' Send MeterValues error: ' + error);
       throw error;
     }
   }
@@ -652,7 +652,7 @@ class ChargingStation {
         if (typeof self[responseCallbackFn] === 'function') {
           self[responseCallbackFn](payload, requestPayload, self);
         } else {
-          logger.debug(self._basicFormatLog() + ' Trying to call an undefined response callback function: ' + responseCallbackFn);
+          logger.debug(self._logPrefix() + ' Trying to call an undefined response callback function: ' + responseCallbackFn);
         }
         // Send the response
         resolve(payload);
@@ -678,9 +678,9 @@ class ChargingStation {
       this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(payload.interval), false, false);
       this._basicStartMessageSequence();
     } else if (payload.status === 'Pending') {
-      logger.info(this._basicFormatLog() + ' Charging station pending on the central server');
+      logger.info(this._logPrefix() + ' Charging station pending on the central server');
     } else {
-      logger.info(this._basicFormatLog() + ' Charging station rejected by the central server');
+      logger.info(this._logPrefix() + ' Charging station rejected by the central server');
     }
   }
 
@@ -700,7 +700,7 @@ class ChargingStation {
 
   handleResponseStartTransaction(payload, requestPayload) {
     if (this._connectors[requestPayload.connectorId].transactionStarted) {
-      logger.debug(this._basicFormatLog() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ': %s', this._connectors[requestPayload.connectorId]);
+      logger.debug(this._logPrefix() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ': %s', this._connectors[requestPayload.connectorId]);
       return;
     }
 
@@ -712,7 +712,7 @@ class ChargingStation {
       }
     }
     if (!transactionConnectorId) {
-      logger.error(this._basicFormatLog() + ' Try to start a transaction on a non existing connector Id ' + requestPayload.connectorId);
+      logger.error(this._logPrefix() + ' Try to start a transaction on a non existing connector Id ' + requestPayload.connectorId);
       return;
     }
     if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
@@ -721,12 +721,12 @@ class ChargingStation {
       this._connectors[transactionConnectorId].idTag = requestPayload.idTag;
       this._connectors[transactionConnectorId].lastEnergyActiveImportRegisterValue = 0;
       this.sendStatusNotification(requestPayload.connectorId, 'Charging');
-      logger.info(this._basicFormatLog() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
+      logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
       const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
       this._startMeterValues(requestPayload.connectorId,
         configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000);
     } else {
-      logger.error(this._basicFormatLog() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
+      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
       this._resetTransactionOnConnector(transactionConnectorId);
       this.sendStatusNotification(requestPayload.connectorId, 'Available');
     }
@@ -741,28 +741,28 @@ class ChargingStation {
       }
     }
     if (!transactionConnectorId) {
-      logger.error(this._basicFormatLog() + ' Try to stop a non existing transaction ' + requestPayload.transactionId);
+      logger.error(this._logPrefix() + ' Try to stop a non existing transaction ' + requestPayload.transactionId);
       return;
     }
     if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
       this.sendStatusNotification(transactionConnectorId, 'Available');
-      logger.info(this._basicFormatLog() + ' Transaction ' + requestPayload.transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId);
+      logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId);
       this._resetTransactionOnConnector(transactionConnectorId);
     } else {
-      logger.error(this._basicFormatLog() + ' Stopping transaction id ' + requestPayload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status);
+      logger.error(this._logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status);
     }
   }
 
   handleResponseStatusNotification(payload, requestPayload) {
-    logger.debug(this._basicFormatLog() + ' Status notification response received: %j to StatusNotification request: %j', payload, requestPayload);
+    logger.debug(this._logPrefix() + ' Status notification response received: %j to StatusNotification request: %j', payload, requestPayload);
   }
 
   handleResponseMeterValues(payload, requestPayload) {
-    logger.debug(this._basicFormatLog() + ' MeterValues response received: %j to MeterValues request: %j', payload, requestPayload);
+    logger.debug(this._logPrefix() + ' MeterValues response received: %j to MeterValues request: %j', payload, requestPayload);
   }
 
   handleResponseHeartbeat(payload, requestPayload) {
-    logger.debug(this._basicFormatLog() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
+    logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
   }
 
   async handleRequest(messageId, commandName, commandPayload) {
@@ -775,7 +775,7 @@ class ChargingStation {
         result = await this['handle' + commandName](commandPayload);
       } catch (error) {
         // Log
-        logger.error(this._basicFormatLog() + ' Handle request error: ' + error);
+        logger.error(this._logPrefix() + ' Handle request error: ' + error);
         // Send back response to inform backend
         await this.sendError(messageId, error);
       }
@@ -795,7 +795,7 @@ class ChargingStation {
       await Utils.sleep(this._stationInfo.resetTime);
       await this.start();
     });
-    logger.info(`${this._basicFormatLog()} ${commandPayload.type} reset command received, simulating it. The station will be back online in ${this._stationInfo.resetTime}ms`);
+    logger.info(`${this._logPrefix()} ${commandPayload.type} reset command received, simulating it. The station will be back online in ${this._stationInfo.resetTime}ms`);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -910,15 +910,15 @@ class ChargingStation {
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
         this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag, Constants.START_TRANSACTION_TIMEOUT);
-        logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
+        logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
-      logger.error(this._basicFormatLog() + ' Remote starting transaction REJECTED with status ' + commandPayload.idTagInfo.status + ', idTag ' + commandPayload.idTag);
+      logger.error(this._logPrefix() + ' Remote starting transaction REJECTED with status ' + commandPayload.idTagInfo.status + ', idTag ' + commandPayload.idTag);
       return Constants.OCPP_RESPONSE_REJECTED;
     }
     // No local authorization check required => start transaction
     this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag, Constants.START_TRANSACTION_TIMEOUT);
-    logger.debug(this._basicFormatLog() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
+    logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -929,7 +929,7 @@ class ChargingStation {
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
     }
-    logger.info(this._basicFormatLog() + ' Try to stop remotely a non existing transaction ' + commandPayload.transactionId);
+    logger.info(this._logPrefix() + ' Try to stop remotely a non existing transaction ' + commandPayload.transactionId);
     return Constants.OCPP_RESPONSE_REJECTED;
   }
 }
