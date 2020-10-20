@@ -40,12 +40,12 @@ class AutomaticTransactionGenerator {
     }
   }
 
-  async stop() {
+  async stop(type = '') {
     logger.info(this._basicFormatLog() + ' ATG OVER => STOPPING ALL TRANSACTIONS');
     for (const connector in this._chargingStation._connectors) {
       if (this._chargingStation._connectors[connector].transactionStarted) {
         logger.info(this._basicFormatLog(connector) + ' ATG OVER. Stop transaction ' + this._chargingStation._connectors[connector].transactionId);
-        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId);
+        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId, type ? type + 'Reset' : '');
       }
     }
     this._timeToStop = true;

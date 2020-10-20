@@ -138,6 +138,8 @@ class Constants {
 
   static STATUS_NOTIFICATION_TIMEOUT = 500;
   static START_TRANSACTION_TIMEOUT = 500;
+
+  static CHARGING_STATION_DEFAULT_RESET_TIME = 60000 // ms;
 }
 
 module.exports = Constants;

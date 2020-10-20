@@ -9,6 +9,7 @@
   "numberOfConnectors": 2,
   "useConnectorId0": false,
   "randomConnectors": false,
+  "resetTime": "30",
   "Configuration": {
     "configurationKey": [
       {
@@ -61,6 +62,11 @@
           "location": "EV"
         },
         {
+          "unit": "V",
+          "context": "Sample.Periodic",
+          "measurand": "Voltage"
+        },
+        {
           "unit": "Wh",
           "context": "Sample.Periodic"
         }
@@ -73,6 +79,11 @@
           "context": "Sample.Periodic",
           "measurand": "SoC",
           "location": "EV"
+        },
+        {
+          "unit": "V",
+          "context": "Sample.Periodic",
+          "measurand": "Voltage"
         },
         {
           "unit": "Wh",
