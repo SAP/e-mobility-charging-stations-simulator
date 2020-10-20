@@ -48,7 +48,8 @@
       "MeterValues": [
         {
           "unit": "Wh",
-          "context": "Sample.Periodic"
+          "context": "Sample.Periodic",
+          "value": 0
         }
       ]
     }
