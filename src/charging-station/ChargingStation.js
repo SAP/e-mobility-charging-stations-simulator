@@ -550,7 +550,7 @@ class ChargingStation {
         } else if (!sampledValueLcl.sampledValue[index].measurand || sampledValueLcl.sampledValue[index].measurand === 'Energy.Active.Import.Register') {
           // Persist previous value in connector
           const consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
-          if (connector && connector.lastConsumptionValue && connector.lastConsumptionValue >= 0) {
+          if (connector && connector.lastConsumptionValue >= 0) {
             connector.lastConsumptionValue += consumption;
           } else {
             connector.lastConsumptionValue = 0;
