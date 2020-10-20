@@ -7,6 +7,7 @@ const OCPPError = require('./OcppError');
 const AutomaticTransactionGenerator = require('./AutomaticTransactionGenerator');
 const Statistics = require('../utils/Statistics');
 const fs = require('fs');
+const crypto = require('crypto');
 const {performance, PerformanceObserver} = require('perf_hooks');
 
 class ChargingStation {
@@ -65,9 +66,10 @@ class ChargingStation {
     // Build connectors if needed
     const maxConnectors = this._getMaxConnectors();
     const connectorsConfig = Utils.cloneJSonDocument(this._stationInfo.Connectors);
-    const connectorsConfigLength = Utils.convertToBoolean(this._stationInfo.useConnectorId0) && Object.keys(connectorsConfig).includes('0') ? Object.keys(connectorsConfig).length : Object.keys(connectorsConfig).length - 1;
-    if (!this._connectors || (this._connectors && Object.keys(this._connectors).length !== connectorsConfigLength)) {
-      this._connectors = {};
+    const connectorsConfigHash = crypto.createHash('sha256').update(JSON.stringify(connectorsConfig) + maxConnectors.toString()).digest('hex');
+    // FIXME: Handle shrinking the number of connectors
+    if (!this._connectors || (this._connectors && this._connectorsConfigurationHash !== connectorsConfigHash)) {
+      this._connectorsConfigurationHash = connectorsConfigHash;
       // Determine number of customized connectors
       let lastConnector;
       for (lastConnector in connectorsConfig) {
