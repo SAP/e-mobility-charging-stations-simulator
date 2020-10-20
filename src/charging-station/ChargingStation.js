@@ -92,6 +92,7 @@ class ChargingStation {
         this._initTransactionOnConnector(connector);
       }
     }
+    // FIXME: Conditionally initialize or use singleton design pattern per charging station
     this._statistics = new Statistics(this._stationInfo.name);
     this._performanceObserver = new PerformanceObserver((list) => {
       const entry = list.getEntries()[0];
