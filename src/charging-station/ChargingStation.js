@@ -548,7 +548,7 @@ class ChargingStation {
         const connector = self._connectors[connectorId];
         // SoC measurand
         if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC') {
-          sampledValueLcl.sampledValue[index].value = sampledValueLcl.sampledValue[index].value ?
+          sampledValueLcl.sampledValue[index].value = !Utils.isUndefined(sampledValueLcl.sampledValue[index].value) ?
             sampledValueLcl.sampledValue[index].value :
             sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
           if (sampledValueLcl.sampledValue[index].value > 100 || debug) {
@@ -556,10 +556,10 @@ class ChargingStation {
           }
         // Voltage measurand
         } else if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'Voltage') {
-          sampledValueLcl.sampledValue[index].value = sampledValueLcl.sampledValue[index].value ? sampledValueLcl.sampledValue[index].value : 230;
+          sampledValueLcl.sampledValue[index].value = !Utils.isUndefined(sampledValueLcl.sampledValue[index].value) ? sampledValueLcl.sampledValue[index].value : 230;
         // Energy.Active.Import.Register measurand (default)
         } else if (!sampledValueLcl.sampledValue[index].measurand || sampledValueLcl.sampledValue[index].measurand === 'Energy.Active.Import.Register') {
-          if (!sampledValueLcl.sampledValue[index].value) {
+          if (Utils.isUndefined(sampledValueLcl.sampledValue[index].value)) {
             const measurandValue = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
             // Persist previous value in connector
             if (connector && connector.lastEnergyActiveImportRegisterValue >= 0) {
