@@ -27,6 +27,30 @@ class ChargingStation {
     this._authorizedTags = this._loadAndGetAuthorizedTags();
   }
 
+  _getStationName(stationTemplate) {
+    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + ('000000000' + this._index).substr(('000000000' + this._index).length - 4);
+  }
+
+  _buildStationInfo() {
+    let stationTemplateFromFile;
+    try {
+      // Load template file
+      const fileDescriptor = fs.openSync(this._stationTemplateFile, 'r');
+      stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
+      fs.closeSync(fileDescriptor);
+    } catch (error) {
+      logger.error(this._basicFormatLog() + ' Template file loading error: ' + error);
+    }
+    const stationTemplate = stationTemplateFromFile || {};
+    if (Array.isArray(stationTemplateFromFile.power)) {
+      stationTemplate.maxPower = stationTemplateFromFile.power[Math.floor(Math.random() * stationTemplateFromFile.power.length)];
+    } else {
+      stationTemplate.maxPower = stationTemplateFromFile.power;
+    }
+    stationTemplate.name = this._getStationName(stationTemplateFromFile);
+    return stationTemplate;
+  }
+
   _initialize() {
     this._stationInfo = this._buildStationInfo();
     this._bootNotificationMessage = {
@@ -37,6 +61,7 @@ class ChargingStation {
     };
     this._configuration = this._getConfiguration();
     this._supervisionUrl = this._getSupervisionURL();
+    this._connectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
     this._statistics = new Statistics(this._stationInfo.name);
     this._performanceObserver = new PerformanceObserver((list) => {
       const entry = list.getEntries()[0];
@@ -75,6 +100,122 @@ class ChargingStation {
     return authorizedTags;
   }
 
+  getRandomTagId() {
+    const index = Math.floor(Math.random() * this._authorizedTags.length);
+    return this._authorizedTags[index];
+  }
+
+  hasAuthorizedTags() {
+    return !Utils.isEmptyArray(this._authorizedTags);
+  }
+
+  _getConnector(number) {
+    return this._stationInfo.Connectors[number];
+  }
+
+  _getMaxConnectors() {
+    let maxConnectors = 0;
+    if (Array.isArray(this._stationInfo.numberOfConnectors)) {
+      // Generate some connectors
+      maxConnectors = this._stationInfo.numberOfConnectors[(this._index - 1) % this._stationInfo.numberOfConnectors.length];
+    } else {
+      maxConnectors = this._stationInfo.numberOfConnectors;
+    }
+    return maxConnectors;
+  }
+
+  _getSupervisionURL() {
+    const supervisionUrls = Utils.cloneJSonDocument(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs());
+    let indexUrl = 0;
+    if (Array.isArray(supervisionUrls)) {
+      if (Configuration.getDistributeStationToTenantEqually()) {
+        indexUrl = this._index % supervisionUrls.length;
+      } else {
+        // Get a random url
+        indexUrl = Math.floor(Math.random() * supervisionUrls.length);
+      }
+      return supervisionUrls[indexUrl];
+    }
+    return supervisionUrls;
+  }
+
+  _getAuthorizeRemoteTxRequests() {
+    const authorizeRemoteTxRequests = this._getConfigurationKey('AuthorizeRemoteTxRequests');
+    return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
+  }
+
+  _getLocalAuthListEnabled() {
+    const localAuthListEnabled = this._getConfigurationKey('LocalAuthListEnabled');
+    return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
+  }
+
+  async _basicStartMessageSequence() {
+    // Start heartbeat
+    this._startHeartbeat(this);
+    // Build connectors
+    if (!this._connectors) {
+      this._connectors = {};
+      const connectorsConfig = Utils.cloneJSonDocument(this._stationInfo.Connectors);
+      // Determine number of customized connectors
+      let lastConnector;
+      for (lastConnector in connectorsConfig) {
+        // Add connector 0, OCPP specification violation that for example KEBA have
+        if (Utils.convertToInt(lastConnector) === 0 && Utils.convertToBoolean(this._stationInfo.useConnectorId0) &&
+          connectorsConfig[lastConnector]) {
+          this._connectors[lastConnector] = connectorsConfig[lastConnector];
+        }
+      }
+      const maxConnectors = this._getMaxConnectors();
+      this._addConfigurationKey('NumberOfConnectors', maxConnectors, true);
+      // Generate all connectors
+      for (let index = 1; index <= maxConnectors; index++) {
+        const randConnectorID = Utils.convertToBoolean(this._stationInfo.randomConnectors) ? Utils.getRandomInt(lastConnector, 1) : index;
+        this._connectors[index] = connectorsConfig[randConnectorID];
+      }
+    }
+
+    for (const connector in this._connectors) {
+      if (!this._connectors[connector].transactionStarted) {
+        if (this._connectors[connector].bootStatus) {
+          this.sendStatusNotificationWithTimeout(connector, this._connectors[connector].bootStatus);
+        } else {
+          this.sendStatusNotificationWithTimeout(connector, 'Available');
+        }
+      } else {
+        this.sendStatusNotificationWithTimeout(connector, 'Charging');
+      }
+    }
+
+    if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable)) {
+      if (!this._automaticTransactionGeneration) {
+        this._automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
+      }
+      if (this._automaticTransactionGeneration.timeToStop) {
+        this._automaticTransactionGeneration.start();
+      }
+    }
+    this._statistics.start();
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async _startHeartbeat(self) {
+    if (self._heartbeatInterval && !self._heartbeatSetInterval) {
+      self._heartbeatSetInterval = setInterval(() => {
+        try {
+          const payload = {
+            currentTime: new Date().toISOString(),
+          };
+          self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
+        } catch (error) {
+          logger.error(self._basicFormatLog() + ' Send heartbeat error: ' + error);
+        }
+      }, self._heartbeatInterval);
+      logger.info(self._basicFormatLog() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
+    } else {
+      logger.error(self._basicFormatLog() + ' Heartbeat interval undefined, not starting the heartbeat');
+    }
+  }
+
   _startAuthorizationFileMonitoring() {
     // eslint-disable-next-line no-unused-vars
     fs.watchFile(this._getAuthorizationFile(), (current, previous) => {
@@ -104,58 +245,28 @@ class ChargingStation {
     });
   }
 
-  _getSupervisionURL() {
-    const supervisionUrls = Utils.cloneJSonDocument(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs());
-    let indexUrl = 0;
-    if (Array.isArray(supervisionUrls)) {
-      if (Configuration.getDistributeStationToTenantEqually()) {
-        indexUrl = this._index % supervisionUrls.length;
-      } else {
-        // Get a random url
-        indexUrl = Math.floor(Math.random() * supervisionUrls.length);
-      }
-      return supervisionUrls[indexUrl];
+  async _startMeterValues(connectorID, interval) {
+    if (!this._connectors[connectorID].transactionStarted) {
+      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction started`);
+      return;
+    } else if (this._connectors[connectorID].transactionStarted && !this._connectors[connectorID].transactionId) {
+      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction id`);
+      return;
     }
-    return supervisionUrls;
-  }
-
-  _getStationName(stationTemplate) {
-    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + ('000000000' + this._index).substr(('000000000' + this._index).length - 4);
-  }
-
-  _getAuthorizeRemoteTxRequests() {
-    const authorizeRemoteTxRequests = this._getConfigurationKey('AuthorizeRemoteTxRequests');
-    return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
-  }
-
-  _getLocalAuthListEnabled() {
-    const localAuthListEnabled = this._getConfigurationKey('LocalAuthListEnabled');
-    return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
-  }
-
-  _buildStationInfo() {
-    let stationTemplateFromFile;
-    try {
-      // Load template file
-      const fileDescriptor = fs.openSync(this._stationTemplateFile, 'r');
-      stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
-      fs.closeSync(fileDescriptor);
-    } catch (error) {
-      logger.error(this._basicFormatLog() + ' Template file loading error: ' + error);
-    }
-    const stationTemplate = stationTemplateFromFile || {};
-    if (Array.isArray(stationTemplateFromFile.power)) {
-      stationTemplate.maxPower = stationTemplateFromFile.power[Math.floor(Math.random() * stationTemplateFromFile.power.length)];
-    } else {
-      stationTemplate.maxPower = stationTemplateFromFile.power;
-    }
-    stationTemplate.name = this._getStationName(stationTemplateFromFile);
-    return stationTemplate;
+    this._connectors[connectorID].transactionSetInterval = setInterval(async () => {
+      const sendMeterValues = performance.timerify(this.sendMeterValues);
+      this._performanceObserver.observe({
+        entryTypes: ['function'],
+      });
+      await sendMeterValues(connectorID, interval, this);
+    }, interval);
   }
 
   async start() {
-    this._url = this._supervisionUrl + '/' + this._stationInfo.name;
-    this._wsConnection = new WebSocket(this._url, 'ocpp1.6');
+    if (!this._connectionUrl) {
+      this._connectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
+    }
+    this._wsConnection = new WebSocket(this._connectionUrl, 'ocpp1.6');
     logger.info(this._basicFormatLog() + ' Will communicate with ' + this._supervisionUrl);
     // Monitor authorization file
     this._startAuthorizationFileMonitoring();
@@ -173,9 +284,63 @@ class ChargingStation {
     this._wsConnection.on('ping', this.onPing.bind(this));
   }
 
+  async stop(type = '') {
+    // Stop heartbeat
+    if (this._heartbeatSetInterval) {
+      await clearInterval(this._heartbeatSetInterval);
+      this._heartbeatSetInterval = null;
+    }
+    // Stop the ATG
+    if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
+      this._automaticTransactionGeneration &&
+      !this._automaticTransactionGeneration.timeToStop) {
+      await this._automaticTransactionGeneration.stop();
+    } else {
+      for (const connector in this._connectors) {
+        if (this._connectors[connector].transactionStarted) {
+          await this.sendStopTransaction(this._connectors[connector].transactionId, type ? type + 'Reset' : '');
+        }
+      }
+    }
+    // eslint-disable-next-line guard-for-in
+    for (const connector in this._connectors) {
+      await this.sendStatusNotification(connector, 'Unavailable');
+    }
+    if (this._wsConnection) {
+      await this._wsConnection.close();
+    }
+  }
+
+  _reconnect(error) {
+    logger.error(this._basicFormatLog() + ' Socket: abnormally closed', error);
+    // Stop the ATG if needed
+    if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
+      Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure) &&
+      this._automaticTransactionGeneration &&
+      !this._automaticTransactionGeneration.timeToStop) {
+      this._automaticTransactionGeneration.stop();
+    }
+    // Stop heartbeat
+    if (this._heartbeatSetInterval) {
+      clearInterval(this._heartbeatSetInterval);
+      this._heartbeatSetInterval = null;
+    }
+    if (this._autoReconnectTimeout !== 0 &&
+      (this._autoReconnectRetryCount < this._autoReconnectMaxRetries || this._autoReconnectMaxRetries === -1)) {
+      logger.error(`${this._basicFormatLog()} Socket: connection retry with timeout ${this._autoReconnectTimeout}ms`);
+      this._autoReconnectRetryCount++;
+      setTimeout(() => {
+        logger.error(this._basicFormatLog() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount);
+        this.start();
+      }, this._autoReconnectTimeout);
+    } else if (this._autoReconnectTimeout !== 0 || this._autoReconnectMaxRetries !== -1) {
+      logger.error(`${this._basicFormatLog()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectTimeout})`);
+    }
+  }
+
   onOpen() {
-    logger.info(`${this._basicFormatLog()} Is connected to server through ${this._url}`);
-    if (!this._heartbeatInterval) {
+    logger.info(`${this._basicFormatLog()} Is connected to server through ${this._connectionUrl}`);
+    if (!this._isSocketRestart) {
       // Send BootNotification
       try {
         this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
@@ -285,59 +450,6 @@ class ChargingStation {
     }
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  async _startHeartbeat(self) {
-    if (self._heartbeatInterval && !self._heartbeatSetInterval) {
-      self._heartbeatSetInterval = setInterval(() => {
-        try {
-          const payload = {
-            currentTime: new Date().toISOString(),
-          };
-          self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
-        } catch (error) {
-          logger.error(self._basicFormatLog() + ' Send heartbeat error: ' + error);
-        }
-      }, self._heartbeatInterval);
-      logger.info(self._basicFormatLog() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
-    } else {
-      logger.error(self._basicFormatLog() + ' Heartbeat interval undefined, not starting the heartbeat');
-    }
-  }
-
-  _reconnect(error) {
-    logger.error(this._basicFormatLog() + ' Socket: abnormally closed', error);
-    // Stop heartbeat
-    if (this._heartbeatSetInterval) {
-      clearInterval(this._heartbeatSetInterval);
-      this._heartbeatSetInterval = null;
-    }
-    // Stop the ATG if needed
-    if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
-      Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure) &&
-      this._automaticTransactionGeneration &&
-      !this._automaticTransactionGeneration.timeToStop) {
-      this._automaticTransactionGeneration.stop();
-    }
-    if (this._autoReconnectTimeout !== 0 &&
-      (this._autoReconnectRetryCount < this._autoReconnectMaxRetries || this._autoReconnectMaxRetries === -1)) {
-      logger.error(`${this._basicFormatLog()} Socket: connection retry with timeout ${this._autoReconnectTimeout}ms`);
-      this._autoReconnectRetryCount++;
-      setTimeout(() => {
-        logger.error(this._basicFormatLog() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount);
-        this.start();
-      }, this._autoReconnectTimeout);
-    } else if (this._autoReconnectTimeout !== 0 || this._autoReconnectMaxRetries !== -1) {
-      logger.error(`${this._basicFormatLog()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectTimeout})`);
-    }
-  }
-
-  sendError(messageId, err) {
-    // Check exception: only OCPP error are accepted
-    const error = err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message);
-    // Send error
-    return this.sendMessage(messageId, error, Constants.OCPP_JSON_CALL_ERROR_MESSAGE);
-  }
-
   async sendStatusNotification(connectorId, status, errorCode = 'NoError') {
     try {
       const payload = {
@@ -348,11 +460,100 @@ class ChargingStation {
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
     } catch (error) {
       logger.error(this._basicFormatLog() + ' Send status error: ' + error);
+      throw error;
     }
   }
 
-  async sendStatusNotificationWithTimeout(connectorId, status, errorCode = 'NoError', timeout = Constants.STATUS_NOTIFICATION_TIMEOUT) {
+  sendStatusNotificationWithTimeout(connectorId, status, errorCode = 'NoError', timeout = Constants.STATUS_NOTIFICATION_TIMEOUT) {
     setTimeout(() => this.sendStatusNotification(connectorId, status, errorCode), timeout);
+  }
+
+  async sendStartTransaction(connectorID, idTag) {
+    try {
+      const payload = {
+        connectorId: connectorID,
+        idTag,
+        meterStart: 0,
+        timestamp: new Date().toISOString(),
+      };
+      return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
+    } catch (error) {
+      logger.error(this._basicFormatLog() + ' Send start transaction error: ' + error);
+      throw error;
+    }
+  }
+
+  sendStartTransactionWithTimeout(connectorID, idTag, timeout) {
+    setTimeout(() => this.sendStartTransaction(connectorID, idTag), timeout);
+  }
+
+  async sendStopTransaction(transactionId, reason = '') {
+    try {
+      const payload = {
+        transactionId,
+        meterStop: 0,
+        timestamp: new Date().toISOString(),
+        reason,
+      };
+      await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
+    } catch (error) {
+      logger.error(this._basicFormatLog() + ' Send stop transaction error: ' + error);
+      throw error;
+    }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async sendMeterValues(connectorID, interval, self, debug = false) {
+    try {
+      const sampledValueLcl = {
+        timestamp: new Date().toISOString(),
+      };
+      const meterValuesClone = Utils.cloneJSonDocument(self._getConnector(connectorID).MeterValues);
+      if (Array.isArray(meterValuesClone)) {
+        sampledValueLcl.sampledValue = meterValuesClone;
+      } else {
+        sampledValueLcl.sampledValue = [meterValuesClone];
+      }
+      for (let index = 0; index < sampledValueLcl.sampledValue.length; index++) {
+        const connector = self._connectors[connectorID];
+        if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC') {
+          sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
+          if (sampledValueLcl.sampledValue[index].value > 100 || debug) {
+            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}`);
+          }
+        } else {
+          // Persist previous value in connector
+          const consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
+          if (connector && connector.lastConsumptionValue >= 0) {
+            connector.lastConsumptionValue += consumption;
+          } else {
+            connector.lastConsumptionValue = 0;
+          }
+          const maxConsumption = self._stationInfo.maxPower * 3600 / interval;
+          logger.info(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value ${connector.lastConsumptionValue}`);
+          sampledValueLcl.sampledValue[index].value = connector.lastConsumptionValue;
+          if (sampledValueLcl.sampledValue[index].value > maxConsumption || debug) {
+            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}/${maxConsumption}`);
+          }
+        }
+      }
+
+      const payload = {
+        connectorId: connectorID,
+        transactionId: self._connectors[connectorID].transactionId,
+        meterValue: [sampledValueLcl],
+      };
+      await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
+    } catch (error) {
+      logger.error(self._basicFormatLog() + ' Send MeterValues error: ' + error);
+    }
+  }
+
+  sendError(messageId, err) {
+    // Check exception: only OCPP error are accepted
+    const error = err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message);
+    // Send error
+    return this.sendMessage(messageId, error, Constants.OCPP_JSON_CALL_ERROR_MESSAGE);
   }
 
   sendMessage(messageId, command, messageType = Constants.OCPP_JSON_CALL_RESULT_MESSAGE, commandName = '') {
@@ -427,52 +628,15 @@ class ChargingStation {
     });
   }
 
-  async _basicStartMessageSequence() {
-    // Start heartbeat
-    this._startHeartbeat(this);
-    // Build connectors
-    if (!this._connectors) {
-      this._connectors = {};
-      const connectorsConfig = Utils.cloneJSonDocument(this._stationInfo.Connectors);
-      // Determine number of customized connectors
-      let lastConnector;
-      for (lastConnector in connectorsConfig) {
-        // Add connector 0, OCPP specification violation that for example KEBA have
-        if (Utils.convertToInt(lastConnector) === 0 && Utils.convertToBoolean(this._stationInfo.useConnectorId0) &&
-          connectorsConfig[lastConnector]) {
-          this._connectors[lastConnector] = connectorsConfig[lastConnector];
-        }
-      }
-      const maxConnectors = this._getMaxConnectors();
-      this._addConfigurationKey('NumberOfConnectors', maxConnectors, true);
-      // Generate all connectors
-      for (let index = 1; index <= maxConnectors; index++) {
-        const randConnectorID = Utils.convertToBoolean(this._stationInfo.randomConnectors) ? Utils.getRandomInt(lastConnector, 1) : index;
-        this._connectors[index] = connectorsConfig[randConnectorID];
-      }
+  handleResponseBootNotification(payload) {
+    if (payload.status === 'Accepted') {
+      this._heartbeatInterval = payload.interval * 1000;
+      this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(payload.interval));
+      this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(payload.interval), false, false);
+      this._basicStartMessageSequence();
+    } else {
+      logger.info(this._basicFormatLog() + ' Boot Notification rejected');
     }
-
-    for (const connector in this._connectors) {
-      if (!this._connectors[connector].transactionStarted) {
-        if (this._connectors[connector].bootStatus) {
-          this.sendStatusNotificationWithTimeout(connector, this._connectors[connector].bootStatus);
-        } else {
-          this.sendStatusNotificationWithTimeout(connector, 'Available');
-        }
-      } else {
-        this.sendStatusNotificationWithTimeout(connector, 'Charging');
-      }
-    }
-
-    if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable)) {
-      if (!this._automaticTransactionGeneration) {
-        this._automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
-      }
-      if (this._automaticTransactionGeneration.timeToStop) {
-        this._automaticTransactionGeneration.start();
-      }
-    }
-    this._statistics.start();
   }
 
   _resetTransactionOnConnector(connectorID) {
@@ -483,17 +647,6 @@ class ChargingStation {
     this._connectors[connectorID].lastSoC = -1;
     if (this._connectors[connectorID].transactionSetInterval) {
       clearInterval(this._connectors[connectorID].transactionSetInterval);
-    }
-  }
-
-  handleResponseBootNotification(payload) {
-    if (payload.status === 'Accepted') {
-      this._heartbeatInterval = payload.interval * 1000;
-      this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(payload.interval));
-      this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(payload.interval), false, false);
-      this._basicStartMessageSequence();
-    } else {
-      logger.info(this._basicFormatLog() + ' Boot Notification rejected');
     }
   }
 
@@ -522,7 +675,7 @@ class ChargingStation {
       this.sendStatusNotification(requestPayload.connectorId, 'Charging');
       logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[transactionConnectorId].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
       const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
-      this.startMeterValues(requestPayload.connectorId,
+      this._startMeterValues(requestPayload.connectorId,
         configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000);
     } else {
       logger.error(this._basicFormatLog() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
@@ -585,6 +738,17 @@ class ChargingStation {
     }
     // Send response
     await this.sendMessage(messageId, result, Constants.OCPP_JSON_CALL_RESULT_MESSAGE);
+  }
+
+  async handleReset(commandPayload) {
+    logger.info(`${this._basicFormatLog()} ${commandPayload.type} reset command received, simulating it`);
+    // Simulate charging station restart
+    setImmediate(async () => {
+      await this.stop(commandPayload.type);
+      await Utils.sleep(60000);
+      await this.start();
+    });
+    return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
   _getConfigurationKey(key) {
@@ -722,126 +886,6 @@ class ChargingStation {
     }
     logger.info(this._basicFormatLog() + ' Try to stop remotely a non existing transaction ' + commandPayload.transactionId);
     return Constants.OCPP_RESPONSE_REJECTED;
-  }
-
-  async sendStartTransaction(connectorID, idTag) {
-    try {
-      const payload = {
-        connectorId: connectorID,
-        idTag,
-        meterStart: 0,
-        timestamp: new Date().toISOString(),
-      };
-      return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction');
-    } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send start transaction error: ' + error);
-      throw error;
-    }
-  }
-  async sendStartTransactionWithTimeout(connectorID, idTag, timeout) {
-    setTimeout(() => this.sendStartTransaction(connectorID, idTag), timeout);
-  }
-
-  async sendStopTransaction(transactionId) {
-    try {
-      const payload = {
-        transactionId,
-        meterStop: 0,
-        timestamp: new Date().toISOString(),
-      };
-      await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
-    } catch (error) {
-      logger.error(this._basicFormatLog() + ' Send stop transaction error: ' + error);
-      throw error;
-    }
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  async sendMeterValues(connectorID, interval, self, debug = false) {
-    try {
-      const sampledValueLcl = {
-        timestamp: new Date().toISOString(),
-      };
-      const meterValuesClone = Utils.cloneJSonDocument(self._getConnector(connectorID).MeterValues);
-      if (Array.isArray(meterValuesClone)) {
-        sampledValueLcl.sampledValue = meterValuesClone;
-      } else {
-        sampledValueLcl.sampledValue = [meterValuesClone];
-      }
-      for (let index = 0; index < sampledValueLcl.sampledValue.length; index++) {
-        const connector = self._connectors[connectorID];
-        if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC') {
-          sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
-          if (sampledValueLcl.sampledValue[index].value > 100 || debug) {
-            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}`);
-          }
-        } else {
-          // Persist previous value in connector
-          const consumption = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
-          if (connector && connector.lastConsumptionValue >= 0) {
-            connector.lastConsumptionValue += consumption;
-          } else {
-            connector.lastConsumptionValue = 0;
-          }
-          const maxConsumption = self._stationInfo.maxPower * 3600 / interval;
-          logger.info(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value ${connector.lastConsumptionValue}`);
-          sampledValueLcl.sampledValue[index].value = connector.lastConsumptionValue;
-          if (sampledValueLcl.sampledValue[index].value > maxConsumption || debug) {
-            logger.error(`${self._basicFormatLog()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorID ${connectorID}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}/${maxConsumption}`);
-          }
-        }
-      }
-
-      const payload = {
-        connectorId: connectorID,
-        transactionId: self._connectors[connectorID].transactionId,
-        meterValue: [sampledValueLcl],
-      };
-      await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
-    } catch (error) {
-      logger.error(self._basicFormatLog() + ' Send MeterValues error: ' + error);
-    }
-  }
-
-  async startMeterValues(connectorID, interval) {
-    if (!this._connectors[connectorID].transactionStarted) {
-      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction started`);
-      return;
-    } else if (this._connectors[connectorID].transactionStarted && !this._connectors[connectorID].transactionId) {
-      logger.error(`${this._basicFormatLog()} Trying to start MeterValues on connector ID ${connectorID} with no transaction id`);
-      return;
-    }
-    this._connectors[connectorID].transactionSetInterval = setInterval(async () => {
-      const sendMeterValues = performance.timerify(this.sendMeterValues);
-      this._performanceObserver.observe({
-        entryTypes: ['function'],
-      });
-      await sendMeterValues(connectorID, interval, this);
-    }, interval);
-  }
-
-  hasAuthorizedTags() {
-    return !Utils.isEmptyArray(this._authorizedTags);
-  }
-
-  getRandomTagId() {
-    const index = Math.floor(Math.random() * this._authorizedTags.length);
-    return this._authorizedTags[index];
-  }
-
-  _getConnector(number) {
-    return this._stationInfo.Connectors[number];
-  }
-
-  _getMaxConnectors() {
-    let maxConnectors = 0;
-    if (Array.isArray(this._stationInfo.numberOfConnectors)) {
-      // Generate some connectors
-      maxConnectors = this._stationInfo.numberOfConnectors[(this._index - 1) % this._stationInfo.numberOfConnectors.length];
-    } else {
-      maxConnectors = this._stationInfo.numberOfConnectors;
-    }
-    return maxConnectors;
   }
 }
 

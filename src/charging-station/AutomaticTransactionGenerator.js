@@ -24,17 +24,6 @@ class AutomaticTransactionGenerator {
     return Utils.basicFormatLog(' ' + this._chargingStation._stationInfo.name + ' ATG:');
   }
 
-  async stop() {
-    logger.info(this._basicFormatLog() + ' ATG OVER => STOPPING ALL TRANSACTIONS');
-    for (const connector in this._chargingStation._connectors) {
-      if (this._chargingStation._connectors[connector].transactionStarted) {
-        logger.info(this._basicFormatLog(connector) + ' ATG OVER. Stop transaction ' + this._chargingStation._connectors[connector].transactionId);
-        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId);
-      }
-    }
-    this._timeToStop = true;
-  }
-
   async start() {
     this._timeToStop = false;
     if (this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
@@ -49,6 +38,17 @@ class AutomaticTransactionGenerator {
         this.startConnector(connector);
       }
     }
+  }
+
+  async stop() {
+    logger.info(this._basicFormatLog() + ' ATG OVER => STOPPING ALL TRANSACTIONS');
+    for (const connector in this._chargingStation._connectors) {
+      if (this._chargingStation._connectors[connector].transactionStarted) {
+        logger.info(this._basicFormatLog(connector) + ' ATG OVER. Stop transaction ' + this._chargingStation._connectors[connector].transactionId);
+        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId);
+      }
+    }
+    this._timeToStop = true;
   }
 
   async startConnector(connectorId) {
