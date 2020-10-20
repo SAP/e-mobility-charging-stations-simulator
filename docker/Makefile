@@ -1,5 +1,6 @@
 PROJECT_NAME?=evse
 NAME:=simulator
+SUBMODULES_INIT?=true
 DOCKER_ECR_ACCOUNT_ID?=166296450311
 DOCKER_ECR_REGION?=eu-west-3
 DOCKER_ECR_REGISTRY_NAME?=ev_simulator
@@ -12,10 +13,15 @@ default: all
 submodule-update:
 	git submodule update --init --recursive
 
-$(NAME): submodule-update
+submodules-init=
+ifeq '$(SUBMODULES_INIT)' 'true'
+	submodules-init += submodule-update
+endif
+
+$(NAME): $(submodules-init)
 	docker-compose -p $(PROJECT_NAME) up -d
 
-$(NAME)-force: submodule-update
+$(NAME)-force: $(submodules-init)
 	docker-compose -p $(PROJECT_NAME) up -d --build --force-recreate
 
 all: $(NAME)
