@@ -277,7 +277,7 @@ class ChargingStation {
       this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
     }
     this._wsConnection = new WebSocket(this._wsConnectionUrl, 'ocpp' + Constants.OCPP_VERSION_16);
-    logger.info(this._basicFormatLog() + ' Will communicate with ' + this._supervisionUrl);
+    logger.info(this._basicFormatLog() + ' Will communicate through URL ' + this._supervisionUrl);
     // Monitor authorization file
     this._startAuthorizationFileMonitoring();
     // Monitor station template file
@@ -294,18 +294,18 @@ class ChargingStation {
     this._wsConnection.on('ping', this.onPing.bind(this));
   }
 
-  async stop(type = '') {
+  async stop(reason = '') {
     // Stop heartbeat
     await this._stopHeartbeat();
     // Stop the ATG
     if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
       this._automaticTransactionGeneration &&
       !this._automaticTransactionGeneration.timeToStop) {
-      await this._automaticTransactionGeneration.stop(type ? type + 'Reset' : '');
+      await this._automaticTransactionGeneration.stop(reason);
     } else {
       for (const connector in this._connectors) {
         if (this._connectors[connector].transactionStarted) {
-          await this.sendStopTransaction(this._connectors[connector].transactionId, type ? type + 'Reset' : '');
+          await this.sendStopTransaction(this._connectors[connector].transactionId, reason);
         }
       }
     }
@@ -510,12 +510,21 @@ class ChargingStation {
 
   async sendStopTransaction(transactionId, reason = '') {
     try {
-      const payload = {
-        transactionId,
-        meterStop: 0,
-        timestamp: new Date().toISOString(),
-        reason,
-      };
+      let payload = {};
+      if (reason) {
+        payload = {
+          transactionId,
+          meterStop: 0,
+          timestamp: new Date().toISOString(),
+          reason,
+        };
+      } else {
+        payload = {
+          transactionId,
+          meterStop: 0,
+          timestamp: new Date().toISOString(),
+        };
+      }
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
     } catch (error) {
       logger.error(this._basicFormatLog() + ' Send StopTransaction error: ' + error);
@@ -687,7 +696,8 @@ class ChargingStation {
 
   handleResponseStartTransaction(payload, requestPayload) {
     if (this._connectors[requestPayload.connectorId].transactionStarted) {
-      logger.debug(this._basicFormatLog() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ' by transaction ' + this._connectors[requestPayload.connectorId].transactionId);
+      logger.debug(this._basicFormatLog() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ': %s', this._connectors[requestPayload.connectorId]);
+      return;
     }
 
     let transactionConnectorId;
@@ -707,7 +717,7 @@ class ChargingStation {
       this._connectors[transactionConnectorId].idTag = requestPayload.idTag;
       this._connectors[transactionConnectorId].lastConsumptionValue = 0;
       this.sendStatusNotification(requestPayload.connectorId, 'Charging');
-      logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[transactionConnectorId].transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
+      logger.info(this._basicFormatLog() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
       const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
       this._startMeterValues(requestPayload.connectorId,
         configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000);
@@ -732,10 +742,10 @@ class ChargingStation {
     }
     if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
       this.sendStatusNotification(transactionConnectorId, 'Available');
-      logger.info(this._basicFormatLog() + ' Transaction ' + this._connectors[transactionConnectorId].transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId);
+      logger.info(this._basicFormatLog() + ' Transaction ' + requestPayload.transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId);
       this._resetTransactionOnConnector(transactionConnectorId);
     } else {
-      logger.error(this._basicFormatLog() + ' Stopping transaction id ' + this._connectors[transactionConnectorId].transactionId + ' REJECTED with status ' + payload.idTagInfo.status);
+      logger.error(this._basicFormatLog() + ' Stopping transaction id ' + requestPayload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status);
     }
   }
 
@@ -777,7 +787,7 @@ class ChargingStation {
   async handleReset(commandPayload) {
     // Simulate charging station restart
     setImmediate(async () => {
-      await this.stop(commandPayload.type);
+      await this.stop(commandPayload.type + 'Reset');
       await Utils.sleep(this._stationInfo.resetTime);
       await this.start();
     });

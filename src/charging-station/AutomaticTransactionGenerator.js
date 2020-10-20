@@ -29,7 +29,6 @@ class AutomaticTransactionGenerator {
     this._timeToStop = false;
     if (this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
       this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours > 0) {
-      logger.info(this._basicFormatLog() + ' ATG will stop in ' + Utils.secondstoHHMMSS(this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600));
       setTimeout(() => {
         this.stop();
       }, this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600 * 1000);
@@ -39,14 +38,15 @@ class AutomaticTransactionGenerator {
         this.startConnector(connector);
       }
     }
+    logger.info(this._basicFormatLog() + ' ATG started and will stop in ' + Utils.secondstoHHMMSS(this._chargingStation._stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600));
   }
 
-  async stop(type = '') {
+  async stop(reason = '') {
     logger.info(this._basicFormatLog() + ' ATG OVER => STOPPING ALL TRANSACTIONS');
     for (const connector in this._chargingStation._connectors) {
       if (this._chargingStation._connectors[connector].transactionStarted) {
         logger.info(this._basicFormatLog(connector) + ' ATG OVER. Stop transaction ' + this._chargingStation._connectors[connector].transactionId);
-        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId, type ? type + 'Reset' : '');
+        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId, reason);
       }
     }
     this._timeToStop = true;
