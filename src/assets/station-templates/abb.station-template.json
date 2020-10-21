@@ -5,6 +5,7 @@
   "chargePointVendor": "ABB",
   "firmwareVersion": "4.0.4.22",
   "power": 50000,
+  "powerSharedByConnectors": true,
   "powerUnit": "W",
   "numberOfConnectors": 2,
   "useConnectorId0": false,
@@ -12,6 +13,11 @@
   "resetTime": "30",
   "Configuration": {
     "configurationKey": [
+      {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "SoC,Energy.Active.Import.Register,Voltage"
+      },
       {
         "key": "MeterValueSampleInterval",
         "readonly": false,

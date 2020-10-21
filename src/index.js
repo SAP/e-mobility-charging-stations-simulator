@@ -7,9 +7,9 @@ class Bootstrap {
   static async start() {
     try {
       logger.debug('%s Configuration: %j', Utils.logPrefix(), Configuration.getConfig());
+      let numStationsTotal = 0;
       // Start each ChargingStation object in a worker thread
       if (Configuration.getStationTemplateURLs()) {
-        let numStationsTotal = 0;
         Configuration.getStationTemplateURLs().forEach((stationURL) => {
           try {
             const nbStation = stationURL.numberOfStation ? stationURL.numberOfStation : 0;
@@ -28,6 +28,9 @@ class Bootstrap {
         });
       } else {
         console.log('No stationTemplateURLs defined in configuration, exiting');
+      }
+      if (numStationsTotal === 0) {
+        console.log('No charging station template enabled in configuration, exiting');
       }
     } catch (error) {
       // eslint-disable-next-line no-console

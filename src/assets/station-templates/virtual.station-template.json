@@ -10,6 +10,11 @@
   "Configuration": {
     "configurationKey": [
       {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "SoC,Energy.Active.Import.Register,Voltage"
+      },
+      {
         "key": "MeterValueSampleInterval",
         "readonly": false,
         "value": 30

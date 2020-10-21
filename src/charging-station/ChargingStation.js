@@ -65,7 +65,12 @@ class ChargingStation {
     this._supervisionUrl = this._getSupervisionURL();
     this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
     // Build connectors if needed
-    const maxConnectors = this._getMaxConnectors();
+    const maxConnectors = this._getMaxNumberOfConnectors();
+    if (maxConnectors <= 0) {
+      const errMsg = `${this._logPrefix()} Charging station template with no connectors`;
+      logger.error(errMsg);
+      throw Error(errMsg);
+    }
     const connectorsConfig = Utils.cloneJSonDocument(this._stationInfo.Connectors);
     const connectorsConfigHash = crypto.createHash('sha256').update(JSON.stringify(connectorsConfig) + maxConnectors.toString()).digest('hex');
     // FIXME: Handle shrinking the number of connectors
@@ -74,13 +79,16 @@ class ChargingStation {
       // Determine number of customized connectors
       let lastConnector;
       for (lastConnector in connectorsConfig) {
-        // Add connector 0, OCPP specification violation that for example KEBA have
+        // Add connector Id 0
         if (Utils.convertToInt(lastConnector) === 0 && Utils.convertToBoolean(this._stationInfo.useConnectorId0) &&
           connectorsConfig[lastConnector]) {
           this._connectors[lastConnector] = connectorsConfig[lastConnector];
         }
       }
       this._addConfigurationKey('NumberOfConnectors', maxConnectors, true);
+      if (!this._getConfigurationKey('MeterValuesSampledData')) {
+        this._addConfigurationKey('MeterValuesSampledData', 'Energy.Active.Import.Register');
+      }
       // Generate all connectors
       for (let index = 1; index <= maxConnectors; index++) {
         const randConnectorID = Utils.convertToBoolean(this._stationInfo.randomConnectors) ? Utils.getRandomInt(lastConnector, 1) : index;
@@ -93,6 +101,7 @@ class ChargingStation {
         this._initTransactionOnConnector(connector);
       }
     }
+    this._stationInfo.powerDivider = this._getPowerDivider();
     // FIXME: Conditionally initialize or use singleton design pattern per charging station
     this._statistics = new Statistics(this._stationInfo.name);
     this._performanceObserver = new PerformanceObserver((list) => {
@@ -141,19 +150,45 @@ class ChargingStation {
     return !Utils.isEmptyArray(this._authorizedTags);
   }
 
-  _getConnector(number) {
+  _getNumberOfRunningTransactions() {
+    let trxCount = 0;
+    for (const connector in this._connectors) {
+      if (this._getConnector(connector).transactionStarted) {
+        trxCount++;
+      }
+    }
+    return trxCount;
+  }
+
+  _getPowerDivider() {
+    let powerDivider = this._getNumberOfConnectors();
+    if (this._stationInfo.powerSharedByConnectors) {
+      powerDivider = this._getNumberOfRunningTransactions();
+    }
+    return powerDivider;
+  }
+
+  _getConnectorFromTemplate(number) {
     return this._stationInfo.Connectors[number];
   }
 
-  _getMaxConnectors() {
+  _getConnector(number) {
+    return this._connectors[number];
+  }
+
+  _getMaxNumberOfConnectors() {
     let maxConnectors = 0;
     if (!Utils.isEmptyArray(this._stationInfo.numberOfConnectors)) {
-      // Get evenly the number of connectors
+      // Distribute evenly the number of connectors
       maxConnectors = this._stationInfo.numberOfConnectors[(this._index - 1) % this._stationInfo.numberOfConnectors.length];
     } else {
       maxConnectors = this._stationInfo.numberOfConnectors;
     }
     return maxConnectors;
+  }
+
+  _getNumberOfConnectors() {
+    return Utils.convertToBoolean(this._stationInfo.useConnectorId0) ? Object.keys(this._connectors).length - 1 : Object.keys(this._connectors).length;
   }
 
   _getSupervisionURL() {
@@ -257,10 +292,10 @@ class ChargingStation {
 
   async _startMeterValues(connectorId, interval) {
     if (!this._connectors[connectorId].transactionStarted) {
-      logger.error(`${this._logPrefix()} Trying to start MeterValues on connector ID ${connectorId} with no transaction started`);
+      logger.error(`${this._logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction started`);
       return;
     } else if (this._connectors[connectorId].transactionStarted && !this._connectors[connectorId].transactionId) {
-      logger.error(`${this._logPrefix()} Trying to start MeterValues on connector ID ${connectorId} with no transaction id`);
+      logger.error(`${this._logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction id`);
       return;
     }
     if (interval > 0) {
@@ -551,7 +586,7 @@ class ChargingStation {
       for (let index = 0; index < sampledValueLcl.sampledValue.length; index++) {
         const connector = self._connectors[connectorId];
         // SoC measurand
-        if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC') {
+        if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC' && self._getConfigurationKey('MeterValuesSampledData').value.includes('SoC')) {
           sampledValueLcl.sampledValue[index].value = !Utils.isUndefined(sampledValueLcl.sampledValue[index].value) ?
             sampledValueLcl.sampledValue[index].value :
             sampledValueLcl.sampledValue[index].value = Utils.getRandomInt(100);
@@ -559,12 +594,21 @@ class ChargingStation {
             logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}`);
           }
         // Voltage measurand
-        } else if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'Voltage') {
+        } else if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'Voltage' && self._getConfigurationKey('MeterValuesSampledData').value.includes('Voltage')) {
           sampledValueLcl.sampledValue[index].value = !Utils.isUndefined(sampledValueLcl.sampledValue[index].value) ? sampledValueLcl.sampledValue[index].value : 230;
         // Energy.Active.Import.Register measurand (default)
         } else if (!sampledValueLcl.sampledValue[index].measurand || sampledValueLcl.sampledValue[index].measurand === 'Energy.Active.Import.Register') {
+          if (Utils.isUndefined(self._stationInfo.powerDivider)) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
+            logger.error(errMsg);
+            throw Error(errMsg);
+          } else if (self._stationInfo.powerDivider && self._stationInfo.powerDivider <= 0) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${self._stationInfo.powerDivider}`;
+            logger.error(errMsg);
+            throw Error(errMsg);
+          }
           if (Utils.isUndefined(sampledValueLcl.sampledValue[index].value)) {
-            const measurandValue = Utils.getRandomInt(self._stationInfo.maxPower / 3600000 * interval);
+            const measurandValue = Utils.getRandomInt(self._stationInfo.maxPower / (self._stationInfo.powerDivider * 3600000) * interval);
             // Persist previous value in connector
             if (connector && connector.lastEnergyActiveImportRegisterValue >= 0) {
               connector.lastEnergyActiveImportRegisterValue += measurandValue;
@@ -574,7 +618,7 @@ class ChargingStation {
             sampledValueLcl.sampledValue[index].value = connector.lastEnergyActiveImportRegisterValue;
           }
           logger.info(`${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value ${sampledValueLcl.sampledValue[index].value}`);
-          const maxConsumption = self._stationInfo.maxPower * 3600 / interval;
+          const maxConsumption = self._stationInfo.maxPower * 3600 / (self._stationInfo.powerDivider * interval);
           if (sampledValueLcl.sampledValue[index].value > maxConsumption || debug) {
             logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValueLcl.sampledValue[index].measurand ? sampledValueLcl.sampledValue[index].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValueLcl.sampledValue[index].value}/${maxConsumption}`);
           }
@@ -726,6 +770,9 @@ class ChargingStation {
       this._connectors[transactionConnectorId].lastEnergyActiveImportRegisterValue = 0;
       this.sendStatusNotification(requestPayload.connectorId, 'Charging');
       logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
+      if (this._stationInfo.powerSharedByConnectors) {
+        this._stationInfo.powerDivider++;
+      }
       const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
       this._startMeterValues(requestPayload.connectorId,
         configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000);
@@ -750,6 +797,9 @@ class ChargingStation {
     }
     if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
       this.sendStatusNotification(transactionConnectorId, 'Available');
+      if (this._stationInfo.powerSharedByConnectors) {
+        this._stationInfo.powerDivider--;
+      }
       logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId);
       this._resetTransactionOnConnector(transactionConnectorId);
     } else {

@@ -3,12 +3,19 @@
   "baseName": "CS-SCHNEIDER",
   "chargePointModel": "MONOBLOCK",
   "chargePointVendor": "Schneider Electric",
-  "power": 44160,
+  "chargePointSerialNumberPrefix": "EV.2S22P04",
+  "firmwareVersion": "3.3.0.10",
+  "power": 22080,
   "powerUnit": "W",
-  "numberOfConnectors": 2,
+  "numberOfConnectors": 1,
   "randomConnectors": false,
   "Configuration": {
     "configurationKey": [
+      {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register"
+      },
       {
         "key": "MeterValueSampleInterval",
         "readonly": false,
@@ -43,14 +50,6 @@
   },
   "Connectors": {
     "1": {
-      "MeterValues": [
-        {
-          "unit": "Wh",
-          "context": "Sample.Periodic"
-        }
-      ]
-    },
-    "2": {
       "MeterValues": [
         {
           "unit": "Wh",

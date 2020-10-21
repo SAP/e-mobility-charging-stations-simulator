@@ -12,6 +12,11 @@
   "Configuration": {
     "configurationKey": [
       {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register"
+      },
+      {
         "key": "MeterValueSampleInterval",
         "readonly": false,
         "value": 20
