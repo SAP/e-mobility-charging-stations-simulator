@@ -44,9 +44,9 @@ class AutomaticTransactionGenerator {
   async stop(reason = '') {
     logger.info(this._logPrefix() + ' ATG OVER => STOPPING ALL TRANSACTIONS');
     for (const connector in this._chargingStation._connectors) {
-      if (this._chargingStation._connectors[connector].transactionStarted) {
-        logger.info(this._logPrefix(connector) + ' ATG OVER. Stop transaction ' + this._chargingStation._connectors[connector].transactionId);
-        await this._chargingStation.sendStopTransaction(this._chargingStation._connectors[connector].transactionId, reason);
+      if (this._chargingStation._getConnector(connector).transactionStarted) {
+        logger.info(this._logPrefix(connector) + ' ATG OVER. Stop transaction ' + this._chargingStation._getConnector(connector).transactionId);
+        await this._chargingStation.sendStopTransaction(this._chargingStation._getConnector(connector).transactionId, reason);
       }
     }
     this._timeToStop = true;
@@ -74,11 +74,11 @@ class AutomaticTransactionGenerator {
           // Wait until end of transaction
           const wait = Utils.getRandomInt(this._chargingStation._stationInfo.AutomaticTransactionGenerator.maxDuration,
               this._chargingStation._stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
-          logger.info(this._logPrefix(connectorId) + ' transaction ' + this._chargingStation._connectors[connectorId].transactionId + ' will stop in ' + Utils.secondstoHHMMSS(wait / 1000));
+          logger.info(this._logPrefix(connectorId) + ' transaction ' + this._chargingStation._getConnector(connectorId).transactionId + ' will stop in ' + Utils.secondstoHHMMSS(wait / 1000));
           await Utils.sleep(wait);
           // Stop transaction
-          if (this._chargingStation._connectors[connectorId].transactionStarted) {
-            logger.info(this._logPrefix(connectorId) + ' stop transaction ' + this._chargingStation._connectors[connectorId].transactionId);
+          if (this._chargingStation._getConnector(connectorId).transactionStarted) {
+            logger.info(this._logPrefix(connectorId) + ' stop transaction ' + this._chargingStation._getConnector(connectorId).transactionId);
             const stopTransaction = performance.timerify(this.stopTransaction);
             this._performanceObserver.observe({entryTypes: ['function']});
             await stopTransaction(connectorId, this);
@@ -104,7 +104,7 @@ class AutomaticTransactionGenerator {
 
   // eslint-disable-next-line class-methods-use-this
   async stopTransaction(connectorId, self) {
-    await self._chargingStation.sendStopTransaction(self._chargingStation._connectors[connectorId].transactionId);
+    await self._chargingStation.sendStopTransaction(self._chargingStation._getConnector(connectorId).transactionId);
   }
 }
 

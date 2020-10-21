@@ -40,7 +40,8 @@ class ChargingStation {
       stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
       fs.closeSync(fileDescriptor);
     } catch (error) {
-      logger.error(this._logPrefix() + ' Template file loading error: ' + error);
+      logger.error('Template file ' + this._stationTemplateFile + ' loading error: ' + error);
+      throw error;
     }
     const stationTemplate = stationTemplateFromFile || {};
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
@@ -99,7 +100,7 @@ class ChargingStation {
     delete this._stationInfo.Connectors;
     // Initialize transaction attributes on connectors
     for (const connector in this._connectors) {
-      if (!this._connectors[connector].transactionStarted) {
+      if (!this._getConnector(connector).transactionStarted) {
         this._initTransactionOnConnector(connector);
       }
     }
@@ -135,7 +136,8 @@ class ChargingStation {
         authorizedTags = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8'));
         fs.closeSync(fileDescriptor);
       } catch (error) {
-        logger.error(this._logPrefix() + ' Authorization file loading error: ' + error);
+        logger.error(this._logPrefix() + ' Authorization file ' + authorizationFile + ' loading error: ' + error);
+        throw error;
       }
     } else {
       logger.info(this._logPrefix() + ' No authorization file given in template file ' + this._stationTemplateFile);
@@ -219,9 +221,9 @@ class ChargingStation {
     this._startHeartbeat(this);
     // Initialize connectors status
     for (const connector in this._connectors) {
-      if (!this._connectors[connector].transactionStarted) {
-        if (this._connectors[connector].bootStatus) {
-          this.sendStatusNotificationWithTimeout(connector, this._connectors[connector].bootStatus);
+      if (!this._getConnector(connector).transactionStarted) {
+        if (this._getConnector(connector).bootStatus) {
+          this.sendStatusNotificationWithTimeout(connector, this._getConnector(connector).bootStatus);
         } else {
           this.sendStatusNotificationWithTimeout(connector, 'Available');
         }
@@ -289,15 +291,15 @@ class ChargingStation {
   }
 
   async _startMeterValues(connectorId, interval) {
-    if (!this._connectors[connectorId].transactionStarted) {
+    if (!this._getConnector(connectorId).transactionStarted) {
       logger.error(`${this._logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction started`);
       return;
-    } else if (this._connectors[connectorId].transactionStarted && !this._connectors[connectorId].transactionId) {
+    } else if (this._getConnector(connectorId).transactionStarted && !this._getConnector(connectorId).transactionId) {
       logger.error(`${this._logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction id`);
       return;
     }
     if (interval > 0) {
-      this._connectors[connectorId].transactionSetInterval = setInterval(async () => {
+      this._getConnector(connectorId).transactionSetInterval = setInterval(async () => {
         const sendMeterValues = performance.timerify(this.sendMeterValues);
         this._performanceObserver.observe({
           entryTypes: ['function'],
@@ -341,8 +343,8 @@ class ChargingStation {
       await this._automaticTransactionGeneration.stop(reason);
     } else {
       for (const connector in this._connectors) {
-        if (this._connectors[connector].transactionStarted) {
-          await this.sendStopTransaction(this._connectors[connector].transactionId, reason);
+        if (this._getConnector(connector).transactionStarted) {
+          await this.sendStopTransaction(this._getConnector(connector).transactionId, reason);
         }
       }
     }
@@ -582,7 +584,7 @@ class ChargingStation {
         sampledValueLcl.sampledValue = [meterValuesClone];
       }
       for (let index = 0; index < sampledValueLcl.sampledValue.length; index++) {
-        const connector = self._connectors[connectorId];
+        const connector = self._getConnector(connectorId);
         // SoC measurand
         if (sampledValueLcl.sampledValue[index].measurand && sampledValueLcl.sampledValue[index].measurand === 'SoC' && self._getConfigurationKey('MeterValuesSampledData').value.includes('SoC')) {
           sampledValueLcl.sampledValue[index].value = !Utils.isUndefined(sampledValueLcl.sampledValue[index].value) ?
@@ -628,7 +630,7 @@ class ChargingStation {
 
       const payload = {
         connectorId,
-        transactionId: self._connectors[connectorId].transactionId,
+        transactionId: self._getConnector(connectorId).transactionId,
         meterValue: [sampledValueLcl],
       };
       await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
@@ -731,22 +733,22 @@ class ChargingStation {
   }
 
   _initTransactionOnConnector(connectorId) {
-    this._connectors[connectorId].transactionStarted = false;
-    this._connectors[connectorId].transactionId = null;
-    this._connectors[connectorId].idTag = null;
-    this._connectors[connectorId].lastEnergyActiveImportRegisterValue = -1;
+    this._getConnector(connectorId).transactionStarted = false;
+    this._getConnector(connectorId).transactionId = null;
+    this._getConnector(connectorId).idTag = null;
+    this._getConnector(connectorId).lastEnergyActiveImportRegisterValue = -1;
   }
 
   _resetTransactionOnConnector(connectorId) {
     this._initTransactionOnConnector(connectorId);
-    if (this._connectors[connectorId].transactionSetInterval) {
-      clearInterval(this._connectors[connectorId].transactionSetInterval);
+    if (this._getConnector(connectorId).transactionSetInterval) {
+      clearInterval(this._getConnector(connectorId).transactionSetInterval);
     }
   }
 
   handleResponseStartTransaction(payload, requestPayload) {
-    if (this._connectors[requestPayload.connectorId].transactionStarted) {
-      logger.debug(this._logPrefix() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ': %s', this._connectors[requestPayload.connectorId]);
+    if (this._getConnector(requestPayload.connectorId).transactionStarted) {
+      logger.debug(this._logPrefix() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ': %s', this._getConnector(requestPayload.connectorId));
       return;
     }
 
@@ -762,10 +764,10 @@ class ChargingStation {
       return;
     }
     if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
-      this._connectors[transactionConnectorId].transactionStarted = true;
-      this._connectors[transactionConnectorId].transactionId = payload.transactionId;
-      this._connectors[transactionConnectorId].idTag = requestPayload.idTag;
-      this._connectors[transactionConnectorId].lastEnergyActiveImportRegisterValue = 0;
+      this._getConnector(requestPayload.connectorId).transactionStarted = true;
+      this._getConnector(requestPayload.connectorId).transactionId = payload.transactionId;
+      this._getConnector(requestPayload.connectorId).idTag = requestPayload.idTag;
+      this._getConnector(requestPayload.connectorId).lastEnergyActiveImportRegisterValue = 0;
       this.sendStatusNotification(requestPayload.connectorId, 'Charging');
       logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
       if (this._stationInfo.powerSharedByConnectors) {
@@ -784,7 +786,7 @@ class ChargingStation {
   handleResponseStopTransaction(payload, requestPayload) {
     let transactionConnectorId;
     for (const connector in this._connectors) {
-      if (this._connectors[connector].transactionId === requestPayload.transactionId) {
+      if (this._getConnector(connector).transactionId === requestPayload.transactionId) {
         transactionConnectorId = connector;
         break;
       }
@@ -976,7 +978,7 @@ class ChargingStation {
 
   async handleRemoteStopTransaction(commandPayload) {
     for (const connector in this._connectors) {
-      if (this._connectors[connector].transactionId === commandPayload.transactionId) {
+      if (this._getConnector(connector).transactionId === commandPayload.transactionId) {
         this.sendStopTransaction(commandPayload.transactionId);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
