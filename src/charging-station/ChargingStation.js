@@ -95,6 +95,8 @@ class ChargingStation {
         this._connectors[index] = connectorsConfig[randConnectorID];
       }
     }
+    // Avoid duplication of connectors related information
+    delete this._stationInfo.Connectors;
     // Initialize transaction attributes on connectors
     for (const connector in this._connectors) {
       if (!this._connectors[connector].transactionStarted) {
@@ -166,10 +168,6 @@ class ChargingStation {
       powerDivider = this._getNumberOfRunningTransactions();
     }
     return powerDivider;
-  }
-
-  _getConnectorFromTemplate(number) {
-    return this._stationInfo.Connectors[number];
   }
 
   _getConnector(number) {

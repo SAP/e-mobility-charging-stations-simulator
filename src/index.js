@@ -31,6 +31,8 @@ class Bootstrap {
       }
       if (numStationsTotal === 0) {
         console.log('No charging station template enabled in configuration, exiting');
+      } else {
+        console.log('Charging station simulator started with ' + numStationsTotal + ' charging stations');
       }
     } catch (error) {
       // eslint-disable-next-line no-console
