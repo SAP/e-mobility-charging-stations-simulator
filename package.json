@@ -17,14 +17,14 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "main": "src/index.js",
+  "main": "src/start.js",
   "scripts": {
-    "start": "node src/index.js",
-    "start:debug": "node --inspect src/index.js",
-    "start:prof": "node --prof src/index.js",
-    "start:doctorprof": "clinic doctor -- node src/index.js",
-    "start:flameprof": "clinic flame -- node src/index.js",
-    "start:bubbleprof": "clinic bubbleprof -- node src/index.js",
+    "start": "node src/start.js",
+    "start:debug": "node --inspect src/start.js",
+    "start:prof": "node --prof src/start.js",
+    "start:doctorprof": "clinic doctor -- node src/start.js",
+    "start:flameprof": "clinic flame -- node src/start.js",
+    "start:bubbleprof": "clinic bubbleprof -- node src/start.js",
     "lint": "eslint src",
     "lint:fix": "eslint --fix src",
     "flow": "flow",

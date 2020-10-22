@@ -19,5 +19,5 @@ COPY docker/config.json ./src/assets/config.json
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN chmod +x /autoconfig.sh
 
-#CMD ["node", "src/index.js"]
-CMD /autoconfig.sh && node src/index.js
+#CMD ["node", "src/start.js"]
+CMD /autoconfig.sh && node src/start.js
