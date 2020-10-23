@@ -194,8 +194,7 @@ class ChargingStation {
     } else if (this._stationInfo.numberOfConnectors) {
       maxConnectors = this._stationInfo.numberOfConnectors;
     } else {
-      maxConnectors = Utils.convertToBoolean(this._stationInfo.useConnectorId0) ? Object.keys(this._stationInfo.Connectors).length - 1 :
-                                              Object.keys(this._stationInfo.Connectors).length;
+      maxConnectors = Object.keys(this._stationInfo.Connectors).length;
     }
     return maxConnectors;
   }
