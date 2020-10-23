@@ -15,18 +15,6 @@ class Utils {
     return date.toISOString().substr(11, 8);
   }
 
-  static convertToDate(date) {
-    // Check
-    if (!date) {
-      return date;
-    }
-    // Check Type
-    if (!(date instanceof Date)) {
-      return new Date(date);
-    }
-    return date;
-  }
-
   static isIterable(obj) {
     if (obj) {
       return typeof obj[Symbol.iterator] === 'function';
@@ -61,6 +49,18 @@ class Utils {
         tab.splice(i - 1, 1);
       }
     }
+  }
+
+  static convertToDate(date) {
+    // Check
+    if (!date) {
+      return date;
+    }
+    // Check Type
+    if (!(date instanceof Date)) {
+      return new Date(date);
+    }
+    return date;
   }
 
   static convertToObjectID(id) {
@@ -119,11 +119,29 @@ class Utils {
     return result;
   }
 
-  static getRandomInt(max, min) {
+  static getRandomFloat(max, min = 0) {
     if (min) {
-      return Math.floor((Math.random() * (max - min + 1)) + min);
+      return Math.random() * (max - min + 1) + min;
     }
-    return Math.floor((Math.random() * max + 1));
+    return Math.random() * max + 1;
+  }
+
+  static getRandomInt(max, min = 0) {
+    if (min) {
+      return Math.floor(Utils.getRandomFloat(max, min));
+    }
+    return Math.floor(Utils.getRandomFloat(max));
+  }
+
+  static roundTo(number, scale) {
+    return Utils.convertToFloat(number.toFixed(scale));
+  }
+
+  static getRandomFloatRounded(max, min = 0, scale = 2) {
+    if (min) {
+      return Utils.roundTo(Utils.getRandomFloat(max, min), scale);
+    }
+    return Utils.roundTo(Utils.getRandomFloat(max), scale);
   }
 
   static logPrefix(prefixString = '') {
@@ -137,6 +155,10 @@ class Utils {
 
   static cloneJSonDocument(jsonDocument) {
     return JSON.parse(JSON.stringify(jsonDocument));
+  }
+
+  static isString(value) {
+    return typeof value === 'string';
   }
 
   static isUndefined(value) {

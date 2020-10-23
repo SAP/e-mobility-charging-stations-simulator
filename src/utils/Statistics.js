@@ -3,9 +3,21 @@ const logger = require('./Logger');
 const Utils = require('./Utils');
 
 class Statistics {
-  constructor(objName) {
-    this._objName = objName;
+  static instance;
+
+  constructor() {
     this._statistics = {};
+  }
+
+  set objName(objName) {
+    this._objName = objName;
+  }
+
+  static getInstance() {
+    if (!Statistics.instance) {
+      Statistics.instance = new Statistics();
+    }
+    return Statistics.instance;
   }
 
   _logPrefix() {

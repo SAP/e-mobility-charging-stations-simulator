@@ -105,8 +105,8 @@ class ChargingStation {
       }
     }
     this._stationInfo.powerDivider = this._getPowerDivider();
-    // FIXME: Conditionally initialize or use singleton design pattern per charging station
-    this._statistics = new Statistics(this._stationInfo.name);
+    this._statistics = Statistics.getInstance();
+    this._statistics.objName = this._stationInfo.name;
     this._performanceObserver = new PerformanceObserver((list) => {
       const entry = list.getEntries()[0];
       this._statistics.logPerformance(entry, 'ChargingStation');
