@@ -68,7 +68,7 @@ class ChargingStation {
     // Build connectors if needed
     const maxConnectors = this._getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
-      const errMsg = `${this._logPrefix()} Charging station template with no connectors`;
+      const errMsg = `${this._logPrefix()} Charging station template ${this._stationTemplateFile} with no connectors`;
       logger.error(errMsg);
       throw Error(errMsg);
     }
@@ -80,14 +80,19 @@ class ChargingStation {
       let lastConnector;
       for (lastConnector in this._stationInfo.Connectors) {
         // Add connector Id 0
-        if (Utils.convertToBoolean(this._stationInfo.useConnectorId0) && Utils.convertToInt(lastConnector) === 0 &&
-        this._stationInfo.Connectors[lastConnector]) {
+        if (Utils.convertToBoolean(this._stationInfo.useConnectorId0) && this._stationInfo.Connectors[lastConnector] &&
+          lastConnector === 0) {
           this._connectors[lastConnector] = Utils.cloneJSonDocument(this._stationInfo.Connectors[lastConnector]);
         }
       }
       this._addConfigurationKey('NumberOfConnectors', maxConnectors, true);
       if (!this._getConfigurationKey('MeterValuesSampledData')) {
         this._addConfigurationKey('MeterValuesSampledData', 'Energy.Active.Import.Register');
+      }
+      // Sanity check
+      if (maxConnectors > lastConnector && !Utils.convertToBoolean(this._stationInfo.randomConnectors)) {
+        logger.warn(`${this._logPrefix()} Number of connectors exceeds the number of connector configurations in template ${this._stationTemplateFile}, forcing random connector configurations affectation`);
+        this._stationInfo.randomConnectors = true;
       }
       // Generate all connectors
       for (let index = 1; index <= maxConnectors; index++) {
@@ -186,8 +191,11 @@ class ChargingStation {
     if (!Utils.isEmptyArray(this._stationInfo.numberOfConnectors)) {
       // Distribute evenly the number of connectors
       maxConnectors = this._stationInfo.numberOfConnectors[(this._index - 1) % this._stationInfo.numberOfConnectors.length];
-    } else {
+    } else if (this._stationInfo.numberOfConnectors) {
       maxConnectors = this._stationInfo.numberOfConnectors;
+    } else {
+      maxConnectors = Utils.convertToBoolean(this._stationInfo.useConnectorId0) ? Object.keys(this._stationInfo.Connectors).length - 1 :
+                                              Object.keys(this._stationInfo.Connectors).length;
     }
     return maxConnectors;
   }
