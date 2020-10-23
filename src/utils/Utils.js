@@ -15,26 +15,6 @@ class Utils {
     return date.toISOString().substr(11, 8);
   }
 
-  static isIterable(obj) {
-    if (obj) {
-      return typeof obj[Symbol.iterator] === 'function';
-    }
-    return false;
-  }
-
-  static isEmptyJSon(document) {
-    // Empty?
-    if (!document) {
-      return true;
-    }
-    // Check type
-    if (typeof document !== 'object') {
-      return true;
-    }
-    // Check
-    return Object.keys(document).length === 0;
-  }
-
   static removeExtraEmptyLines(tab) {
     // Start from the end
     for (let i = tab.length - 1; i > 0; i--) {
@@ -155,6 +135,26 @@ class Utils {
 
   static cloneJSonDocument(jsonDocument) {
     return JSON.parse(JSON.stringify(jsonDocument));
+  }
+
+  static isIterable(obj) {
+    if (obj) {
+      return typeof obj[Symbol.iterator] === 'function';
+    }
+    return false;
+  }
+
+  static isEmptyJSon(document) {
+    // Empty?
+    if (!document) {
+      return true;
+    }
+    // Check type
+    if (typeof document !== 'object') {
+      return true;
+    }
+    // Check
+    return Object.keys(document).length === 0;
   }
 
   static isString(value) {
