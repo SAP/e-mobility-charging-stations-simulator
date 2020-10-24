@@ -80,9 +80,8 @@ class ChargingStation {
       let lastConnector;
       for (lastConnector in this._stationInfo.Connectors) {
         // Add connector Id 0
-        if (Utils.convertToBoolean(this._stationInfo.useConnectorId0) && this._stationInfo.Connectors[lastConnector] &&
-          lastConnector === 0) {
-          this._connectors[lastConnector] = Utils.cloneJSonDocument(this._stationInfo.Connectors[lastConnector]);
+        if (Utils.convertToBoolean(this._stationInfo.useConnectorId0) && this._stationInfo.Connectors[lastConnector] && Utils.convertToInt(lastConnector) === 0) {
+          this._connectors[lastConnector] = Utils.cloneObject(this._stationInfo.Connectors[lastConnector]);
         }
       }
       this._addConfigurationKey('NumberOfConnectors', maxConnectors, true);
@@ -97,7 +96,7 @@ class ChargingStation {
       // Generate all connectors
       for (let index = 1; index <= maxConnectors; index++) {
         const randConnectorID = Utils.convertToBoolean(this._stationInfo.randomConnectors) ? Utils.getRandomInt(lastConnector, 1) : index;
-        this._connectors[index] = Utils.cloneJSonDocument(this._stationInfo.Connectors[randConnectorID]);
+        this._connectors[index] = Utils.cloneObject(this._stationInfo.Connectors[randConnectorID]);
       }
     }
     // Avoid duplication of connectors related information
@@ -161,7 +160,11 @@ class ChargingStation {
   }
 
   getEnableStatistics() {
-    return !Utils.isUndefined(this._stationInfo.enableStatistics) ? this._stationInfo.enableStatistics : true;
+    return !Utils.isUndefined(this._stationInfo.enableStatistics) ? Utils.convertToBoolean(this._stationInfo.enableStatistics) : true;
+  }
+
+  _getNumberOfPhases() {
+    return !Utils.isUndefined(this._stationInfo.numberOfPhases) ? Utils.convertToInt(this._stationInfo.numberOfPhases) : 3;
   }
 
   _getNumberOfRunningTransactions() {
@@ -175,7 +178,7 @@ class ChargingStation {
   }
 
   _getPowerDivider() {
-    let powerDivider = this._getNumberOfConnectors();
+    let powerDivider = Utils.convertToBoolean(this._stationInfo.useConnectorId0) && this._connectors[0] ? this._getNumberOfConnectors() - 1 : this._getNumberOfConnectors();
     if (this._stationInfo.powerSharedByConnectors) {
       powerDivider = this._getNumberOfRunningTransactions();
     }
@@ -200,11 +203,11 @@ class ChargingStation {
   }
 
   _getNumberOfConnectors() {
-    return Utils.convertToBoolean(this._stationInfo.useConnectorId0) ? Object.keys(this._connectors).length - 1 : Object.keys(this._connectors).length;
+    return Object.keys(this._connectors).length;
   }
 
   _getSupervisionURL() {
-    const supervisionUrls = Utils.cloneJSonDocument(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs());
+    const supervisionUrls = Utils.cloneObject(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs());
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
       if (Configuration.getDistributeStationToTenantEqually()) {
@@ -595,7 +598,7 @@ class ChargingStation {
       const sampledValueLcl = {
         timestamp: new Date().toISOString(),
       };
-      const meterValuesClone = Utils.cloneJSonDocument(self.getConnector(connectorId).MeterValues);
+      const meterValuesClone = Utils.cloneObject(self.getConnector(connectorId).MeterValues);
       if (!Utils.isEmptyArray(meterValuesClone)) {
         sampledValueLcl.sampledValue = meterValuesClone;
       } else {

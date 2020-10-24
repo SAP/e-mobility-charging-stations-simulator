@@ -133,8 +133,8 @@ class Utils {
     return Object.prototype.hasOwnProperty.call(object, property);
   }
 
-  static cloneJSonDocument(jsonDocument) {
-    return JSON.parse(JSON.stringify(jsonDocument));
+  static cloneObject(object) {
+    return JSON.parse(JSON.stringify(object));
   }
 
   static isIterable(obj) {
