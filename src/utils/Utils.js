@@ -179,6 +179,10 @@ class Utils {
     }
     return true;
   }
+
+  static isEmptyObject(obj) {
+    return !Object.keys(obj).length;
+  }
 }
 
 module.exports = Utils;
