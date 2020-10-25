@@ -83,7 +83,7 @@ class ChargingStation {
     }
     const connectorsConfigHash = crypto.createHash('sha256').update(JSON.stringify(this._stationInfo.Connectors) + maxConnectors.toString()).digest('hex');
     // FIXME: Handle shrinking the number of connectors
-    if ((!this._connectors || (this._connectors && this._connectorsConfigurationHash !== connectorsConfigHash))) {
+    if (!this._connectors || (this._connectors && this._connectorsConfigurationHash !== connectorsConfigHash)) {
       this._connectorsConfigurationHash = connectorsConfigHash;
       // Add connector Id 0
       let lastConnector = 0;
@@ -679,11 +679,11 @@ class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: connector.lastEnergyActiveImportRegisterValue},
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
+          // const measurandValuePerPhase = Utils.roundTo(sampledValues.sampledValue[sampledValuesIndex].value / self._getNumberOfPhases(), 2);
           // for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
-          //   const measurandValuePerPhase = Utils.roundTo(sampledValues.sampledValue[sampledValuesIndex].value / self._getNumberOfPhases(), 2);
           //   const phaseValue = `L${phase}-N`;
           //   sampledValues.sampledValue.push({
-          //     ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'V'},
+          //     ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'Wh'},
           //     ...!Utils.isUndefined(meterValuesTemplate[index].context) && {context: meterValuesTemplate[index].context},
           //     ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && {measurand: meterValuesTemplate[index].measurand},
           //     ...!Utils.isUndefined(meterValuesTemplate[index].location) && {location: meterValuesTemplate[index].location},
