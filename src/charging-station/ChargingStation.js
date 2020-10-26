@@ -574,7 +574,7 @@ class ChargingStation {
     }
   }
 
-  sendStartTransactionWithTimeout(connectorId, idTag, timeout) {
+  sendStartTransactionWithTimeout(connectorId, idTag, timeout = Constants.START_TRANSACTION_TIMEOUT) {
     setTimeout(() => this.sendStartTransaction(connectorId, idTag), timeout);
   }
 
@@ -1049,7 +1049,7 @@ class ChargingStation {
       // Check if authorized
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
-        this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag, Constants.START_TRANSACTION_TIMEOUT);
+        this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag);
         logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
@@ -1057,7 +1057,7 @@ class ChargingStation {
       return Constants.OCPP_RESPONSE_REJECTED;
     }
     // No local authorization check required => start transaction
-    this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag, Constants.START_TRANSACTION_TIMEOUT);
+    this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag);
     logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
