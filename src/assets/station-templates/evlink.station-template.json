@@ -7,6 +7,7 @@
   "firmwareVersion": "3.3.0.10",
   "power": 7360,
   "powerUnit": "W",
+  "numberOfPhases": 1,
   "numberOfConnectors": 1,
   "randomConnectors": false,
   "Configuration": {
