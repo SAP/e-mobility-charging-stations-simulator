@@ -278,7 +278,7 @@ class ChargingStation {
       }, self._heartbeatInterval);
       logger.info(self._logPrefix() + ' Heartbeat started every ' + self._heartbeatInterval + 'ms');
     } else {
-      logger.error(`${self._logPrefix()} Heartbeat interval set to ${self._heartbeatInterval}, not starting the heartbeat`);
+      logger.error(`${self._logPrefix()} Heartbeat interval set to ${self._heartbeatInterval}ms, not starting the heartbeat`);
     }
   }
 
