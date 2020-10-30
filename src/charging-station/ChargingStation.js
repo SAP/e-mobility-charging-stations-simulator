@@ -672,6 +672,66 @@ export default class ChargingStation {
               phase: phaseValue,
             });
           }
+        // Power.Active.Import measurand
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Power.Active.Import' && self._getConfigurationKey('MeterValuesSampledData').value.includes('Power.Active.Import')) {
+          // FIXME: factor out powerDivider checks
+          if (Utils.isUndefined(self._stationInfo.powerDivider)) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
+            logger.error(errMsg);
+            throw Error(errMsg);
+          } else if (self._stationInfo.powerDivider && self._stationInfo.powerDivider <= 0) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${self._stationInfo.powerDivider}`;
+            logger.error(errMsg);
+            throw Error(errMsg);
+          }
+          const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: Unknown ${self._getPowerOutType()} powerOutType in template file ${self._stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} measurand value`;
+          const powerMeasurandValues = {};
+          const maxPower = Math.round(self._stationInfo.maxPower / self._stationInfo.powerDivider);
+          const maxPowerPerPhase = Math.round((self._stationInfo.maxPower / self._stationInfo.powerDivider) / self._getNumberOfPhases());
+          switch (self._getPowerOutType()) {
+            case 'AC':
+              if (Utils.isUndefined(meterValuesTemplate[index].value)) {
+                powerMeasurandValues.L1 = Utils.getRandomFloatRounded(maxPowerPerPhase);
+                powerMeasurandValues.L2 = 0;
+                powerMeasurandValues.L3 = 0;
+                if (self._getNumberOfPhases() === 3) {
+                  powerMeasurandValues.L2 = Utils.getRandomFloatRounded(maxPowerPerPhase);
+                  powerMeasurandValues.L3 = Utils.getRandomFloatRounded(maxPowerPerPhase);
+                }
+                powerMeasurandValues.all = Utils.roundTo(powerMeasurandValues.L1 + powerMeasurandValues.L2 + powerMeasurandValues.L3, 2);
+              }
+              break;
+            case 'DC':
+              if (Utils.isUndefined(meterValuesTemplate[index].value)) {
+                powerMeasurandValues.all = Utils.getRandomFloatRounded(maxPower);
+              }
+              break;
+            default:
+              logger.error(errMsg);
+              throw Error(errMsg);
+          }
+          sampledValues.sampledValue.push({
+            ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'W'},
+            ...!Utils.isUndefined(meterValuesTemplate[index].context) && {context: meterValuesTemplate[index].context},
+            measurand: meterValuesTemplate[index].measurand,
+            ...!Utils.isUndefined(meterValuesTemplate[index].location) && {location: meterValuesTemplate[index].location},
+            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: powerMeasurandValues.all},
+          });
+          const sampledValuesIndex = sampledValues.sampledValue.length - 1;
+          if (sampledValues.sampledValue[sampledValuesIndex].value > maxPower || debug) {
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxPower}`);
+          }
+          for (let phase = 1; self._getPowerOutType() === 'AC' && self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
+            const phaseValue = `L${phase}-N`;
+            sampledValues.sampledValue.push({
+              ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'W'},
+              ...!Utils.isUndefined(meterValuesTemplate[index].context) && {context: meterValuesTemplate[index].context},
+              ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && {measurand: meterValuesTemplate[index].measurand},
+              ...!Utils.isUndefined(meterValuesTemplate[index].location) && {location: meterValuesTemplate[index].location},
+              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: powerMeasurandValues[`L${phase}`]},
+              phase: phaseValue,
+            });
+          }
         // Current.Import measurand
         } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Current.Import' && self._getConfigurationKey('MeterValuesSampledData').value.includes('Current.Import')) {
           // FIXME: factor out powerDivider checks
@@ -703,7 +763,9 @@ export default class ChargingStation {
               break;
             case 'DC':
               maxAmperage = ElectricUtils.ampTotalFromPower(self._stationInfo.maxPower / self._stationInfo.powerDivider, self._getVoltageOut());
-              currentMeasurandValues.all = Utils.getRandomFloatRounded(maxAmperage);
+              if (Utils.isUndefined(meterValuesTemplate[index].value)) {
+                currentMeasurandValues.all = Utils.getRandomFloatRounded(maxAmperage);
+              }
               break;
             default:
               logger.error(errMsg);

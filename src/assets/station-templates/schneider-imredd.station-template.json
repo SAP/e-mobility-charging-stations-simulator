@@ -9,6 +9,7 @@
   "powerUnit": "W",
   "numberOfConnectors": 1,
   "randomConnectors": false,
+  "voltageOut": 231,
   "Configuration": {
     "configurationKey": [
       {

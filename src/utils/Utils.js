@@ -100,17 +100,14 @@ export default class Utils {
   }
 
   static getRandomFloat(max, min = 0) {
-    if (min) {
-      return Math.random() * (max - min + 1) + min;
-    }
-    return Math.random() * max + 1;
+    return Math.random() < 0.5 ? (1 - Math.random()) * (max - min) + min : Math.random() * (max - min) + min;
   }
 
   static getRandomInt(max, min = 0) {
     if (min) {
-      return Math.floor(Utils.getRandomFloat(max, min));
+      return Math.floor(Math.random() * (max - min + 1) + min);
     }
-    return Math.floor(Utils.getRandomFloat(max));
+    return Math.floor(Math.random() * max + 1);
   }
 
   static roundTo(number, scale) {

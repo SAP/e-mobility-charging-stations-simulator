@@ -8,6 +8,7 @@
   "powerUnit": "W",
   "numberOfConnectors": 2,
   "randomConnectors": false,
+  "voltageOut": 240,
   "Configuration": {
     "configurationKey": [
       {

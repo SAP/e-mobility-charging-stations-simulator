@@ -10,6 +10,7 @@
   "numberOfPhases": 1,
   "numberOfConnectors": 1,
   "randomConnectors": false,
+  "voltageOut": 231,
   "Configuration": {
     "configurationKey": [
       {

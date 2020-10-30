@@ -13,7 +13,7 @@
       {
         "key": "MeterValuesSampledData",
         "readonly": false,
-        "value": "Energy.Active.Import.Register,Current.Import,Voltage"
+        "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
       },
       {
         "key": "MeterValueSampleInterval",
@@ -55,6 +55,10 @@
           "measurand": "Voltage"
         },
         {
+          "unit": "W",
+          "measurand": "Power.Active.Import"
+        },
+        {
           "unit": "A",
           "measurand": "Current.Import"
         },
@@ -68,6 +72,10 @@
         {
           "unit": "V",
           "measurand": "Voltage"
+        },
+        {
+          "unit": "W",
+          "measurand": "Power.Active.Import"
         },
         {
           "unit": "A",

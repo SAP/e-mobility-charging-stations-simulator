@@ -9,12 +9,13 @@
   "powerUnit": "W",
   "numberOfConnectors": 2,
   "randomConnectors": false,
+  "voltageOut": 231,
   "Configuration": {
     "configurationKey": [
       {
         "key": "MeterValuesSampledData",
         "readonly": false,
-        "value": "Energy.Active.Import.Register"
+        "value": "Energy.Active.Import.Register,Current.Import,Voltage"
       },
       {
         "key": "MeterValueSampleInterval",
@@ -52,16 +53,30 @@
     "1": {
       "MeterValues": [
         {
-          "unit": "Wh",
-          "context": "Sample.Periodic"
+          "unit": "V",
+          "measurand": "Voltage"
+        },
+        {
+          "unit": "A",
+          "measurand": "Current.Import"
+        },
+        {
+          "unit": "Wh"
         }
       ]
     },
     "2": {
       "MeterValues": [
         {
-          "unit": "Wh",
-          "context": "Sample.Periodic"
+          "unit": "V",
+          "measurand": "Voltage"
+        },
+        {
+          "unit": "A",
+          "measurand": "Current.Import"
+        },
+        {
+          "unit": "Wh"
         }
       ]
     }
