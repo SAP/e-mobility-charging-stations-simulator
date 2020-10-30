@@ -1,4 +1,7 @@
-
+/**
+ * Targeted to AC related values calculation.
+ * To use for DC, always consider cosPhi = 1 and do not use per phase helpers
+ */
 export default class ElectricUtils {
   static ampTotal(nbOfPhases, Iph) {
     return nbOfPhases * Iph;

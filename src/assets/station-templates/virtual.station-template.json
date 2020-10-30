@@ -5,6 +5,8 @@
   "chargePointVendor": "Ovomaltin",
   "power": 50000,
   "powerUnit": "W",
+  "powerSharedByConnectors": true,
+  "powerOutType": "DC",
   "numberOfConnectors": 9,
   "randomConnectors": false,
   "Configuration": {

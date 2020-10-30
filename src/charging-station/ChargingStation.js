@@ -216,8 +216,25 @@ export default class ChargingStation {
     return this._connectors[0] ? Object.keys(this._connectors).length - 1 : Object.keys(this._connectors).length;
   }
 
-  _getVoltageLineToNeutral() {
-    return !Utils.isUndefined(this._stationInfo.voltageLineToNeutral) ? this._stationInfo.voltageLineToNeutral : 230;
+  _getVoltageOut() {
+    const errMsg = `${this._logPrefix()} Unknown ${this._getPowerOutType()} powerOutType in template file ${this._stationTemplateFile}, cannot define default voltage out`;
+    let defaultVoltageOut;
+    switch (this._getPowerOutType()) {
+      case 'AC':
+        defaultVoltageOut = 230;
+        break;
+      case 'DC':
+        defaultVoltageOut = 400;
+        break;
+      default:
+        logger.error(errMsg);
+        throw Error(errMsg);
+    }
+    return !Utils.isUndefined(this._stationInfo.voltageOut) ? Utils.convertToInt(this._stationInfo.voltageOut) : defaultVoltageOut;
+  }
+
+  _getPowerOutType() {
+    return !Utils.isUndefined(this._stationInfo.powerOutType) ? this._stationInfo.powerOutType : 'AC';
   }
 
   _getSupervisionURL() {
@@ -636,14 +653,14 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && {context: meterValuesTemplate[index].context},
             measurand: meterValuesTemplate[index].measurand,
             ...!Utils.isUndefined(meterValuesTemplate[index].location) && {location: meterValuesTemplate[index].location},
-            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: this._getVoltageLineToNeutral()},
+            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: self._getVoltageOut()},
           });
-          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getPowerOutType() === 'AC' && self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const voltageValue = sampledValues.sampledValue[sampledValues.sampledValue.length - 1].value;
             let phaseValue;
-            if (voltageValue >= 0 && voltageValue <= 240) {
+            if (voltageValue >= 0 && voltageValue <= 250) {
               phaseValue = `L${phase}-N`;
-            } else if (voltageValue > 240) {
+            } else if (voltageValue > 250) {
               phaseValue = `L${phase}-L${(phase + 1) % self._getNumberOfPhases() !== 0 ? (phase + 1) % self._getNumberOfPhases() : self._getNumberOfPhases()}`;
             }
             sampledValues.sampledValue.push({
@@ -651,7 +668,7 @@ export default class ChargingStation {
               ...!Utils.isUndefined(meterValuesTemplate[index].context) && {context: meterValuesTemplate[index].context},
               measurand: meterValuesTemplate[index].measurand,
               ...!Utils.isUndefined(meterValuesTemplate[index].location) && {location: meterValuesTemplate[index].location},
-              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: this._getVoltageLineToNeutral()},
+              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: self._getVoltageOut()},
               phase: phaseValue,
             });
           }
@@ -667,31 +684,43 @@ export default class ChargingStation {
             logger.error(errMsg);
             throw Error(errMsg);
           }
-          const maxAmpPerPhase = ElectricUtils.ampPerPhaseFromPower(self._getNumberOfPhases(), self._stationInfo.maxPower / self._stationInfo.powerDivider,
-              self._getVoltageLineToNeutral());
+          const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: Unknown ${self._getPowerOutType()} powerOutType in template file ${self._stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} measurand value`;
           const currentMeasurandValues = {};
-          if (Utils.isUndefined(meterValuesTemplate[index].value)) {
-            currentMeasurandValues.L1 = Utils.getRandomFloatRounded(maxAmpPerPhase);
-            currentMeasurandValues.L2 = 0;
-            currentMeasurandValues.L3 = 0;
-            if (self._getNumberOfPhases() === 3) {
-              currentMeasurandValues.L2 = Utils.getRandomFloatRounded(maxAmpPerPhase);
-              currentMeasurandValues.L3 = Utils.getRandomFloatRounded(maxAmpPerPhase);
-            }
-            currentMeasurandValues.avg = Utils.roundTo((currentMeasurandValues.L1 + currentMeasurandValues.L2 + currentMeasurandValues.L3) / self._getNumberOfPhases(), 2);
+          let maxAmperage;
+          switch (self._getPowerOutType()) {
+            case 'AC':
+              maxAmperage = ElectricUtils.ampPerPhaseFromPower(self._getNumberOfPhases(), self._stationInfo.maxPower / self._stationInfo.powerDivider, self._getVoltageOut());
+              if (Utils.isUndefined(meterValuesTemplate[index].value)) {
+                currentMeasurandValues.L1 = Utils.getRandomFloatRounded(maxAmperage);
+                currentMeasurandValues.L2 = 0;
+                currentMeasurandValues.L3 = 0;
+                if (self._getNumberOfPhases() === 3) {
+                  currentMeasurandValues.L2 = Utils.getRandomFloatRounded(maxAmperage);
+                  currentMeasurandValues.L3 = Utils.getRandomFloatRounded(maxAmperage);
+                }
+                currentMeasurandValues.all = Utils.roundTo((currentMeasurandValues.L1 + currentMeasurandValues.L2 + currentMeasurandValues.L3) / self._getNumberOfPhases(), 2);
+              }
+              break;
+            case 'DC':
+              maxAmperage = ElectricUtils.ampTotalFromPower(self._stationInfo.maxPower / self._stationInfo.powerDivider, self._getVoltageOut());
+              currentMeasurandValues.all = Utils.getRandomFloatRounded(maxAmperage);
+              break;
+            default:
+              logger.error(errMsg);
+              throw Error(errMsg);
           }
           sampledValues.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'A'},
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && {context: meterValuesTemplate[index].context},
             measurand: meterValuesTemplate[index].measurand,
             ...!Utils.isUndefined(meterValuesTemplate[index].location) && {location: meterValuesTemplate[index].location},
-            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: currentMeasurandValues.avg},
+            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: currentMeasurandValues.all},
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
-          if (sampledValues.sampledValue[sampledValuesIndex].value > maxAmpPerPhase || debug) {
-            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxAmpPerPhase}`);
+          if (sampledValues.sampledValue[sampledValuesIndex].value > maxAmperage || debug) {
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxAmperage}`);
           }
-          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getPowerOutType() === 'AC' && self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}`;
             sampledValues.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'A'},
