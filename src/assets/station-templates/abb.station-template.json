@@ -17,7 +17,7 @@
       {
         "key": "MeterValuesSampledData",
         "readonly": false,
-        "value": "SoC,Energy.Active.Import.Register,Voltage"
+        "value": "SoC,Energy.Active.Import.Register,Current.Import,Voltage"
       },
       {
         "key": "MeterValueSampleInterval",
@@ -74,6 +74,11 @@
           "measurand": "Voltage"
         },
         {
+          "unit": "A",
+          "context": "Sample.Periodic",
+          "measurand": "Current.Import"
+        },
+        {
           "unit": "Wh",
           "context": "Sample.Periodic"
         }
@@ -91,6 +96,11 @@
           "unit": "V",
           "context": "Sample.Periodic",
           "measurand": "Voltage"
+        },
+        {
+          "unit": "A",
+          "context": "Sample.Periodic",
+          "measurand": "Current.Import"
         },
         {
           "unit": "Wh",

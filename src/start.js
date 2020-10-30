@@ -1,7 +1,7 @@
-const Configuration = require('./utils/Configuration');
-const Utils = require('./utils/Utils');
-const Wrk = require('./charging-station/Worker');
-const logger = require('./utils/Logger');
+import Configuration from './utils/Configuration.js';
+import Utils from './utils/Utils.js';
+import Wrk from './charging-station/Worker.js';
+import logger from './utils/Logger.js';
 
 class Bootstrap {
   static async start() {

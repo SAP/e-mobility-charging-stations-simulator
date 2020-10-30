@@ -1,9 +1,10 @@
-const logger = require('../utils/Logger');
-const Constants = require('../utils/Constants');
-const Utils = require('../utils/Utils');
-const {performance, PerformanceObserver} = require('perf_hooks');
+import {PerformanceObserver, performance} from 'perf_hooks';
 
-class AutomaticTransactionGenerator {
+import Constants from '../utils/Constants.js';
+import Utils from '../utils/Utils.js';
+import logger from '../utils/Logger.js';
+
+export default class AutomaticTransactionGenerator {
   constructor(chargingStation) {
     this._chargingStation = chargingStation;
     this._timeToStop = true;
@@ -121,5 +122,3 @@ class AutomaticTransactionGenerator {
     await self._chargingStation.sendStopTransaction(self._chargingStation.getConnector(connectorId).transactionId);
   }
 }
-
-module.exports = AutomaticTransactionGenerator;

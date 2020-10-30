@@ -1,4 +1,4 @@
-class Constants {
+export default class Constants {
   static REST_RESPONSE_SUCCESS = {status: 'Success'};
 
   static CONN_STATUS_AVAILABLE = 'Available';
@@ -142,5 +142,3 @@ class Constants {
   static CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // ms
   static CHARGING_STATION_ATG_WAIT_TIME = 2000; // ms
 }
-
-module.exports = Constants;

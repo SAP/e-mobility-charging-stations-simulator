@@ -1,6 +1,6 @@
-const {v4: uuid} = require('uuid');
+import {v4 as uuid} from 'uuid';
 
-class Utils {
+export default class Utils {
   static generateUUID() {
     return uuid();
   }
@@ -184,5 +184,3 @@ class Utils {
     return !Object.keys(obj).length;
   }
 }
-
-module.exports = Utils;

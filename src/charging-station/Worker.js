@@ -1,9 +1,9 @@
-const Configuration = require('../utils/Configuration');
-const EventEmitter = require('events');
-const {Worker} = require('worker_threads');
-const Pool = require('worker-threads-pool');
+import Configuration from '../utils/Configuration.js';
+import EventEmitter from 'events';
+import Pool from 'worker-threads-pool';
+import {Worker} from 'worker_threads';
 
-class Wrk {
+export default class Wrk {
   /**
    * Create a new `Wrk`.
    *
@@ -82,5 +82,3 @@ class Wrk {
     return this._startWorker();
   }
 }
-
-module.exports = Wrk;

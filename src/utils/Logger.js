@@ -1,5 +1,5 @@
-const Configuration = require('./Configuration');
-const Winston = require('winston');
+import Configuration from './Configuration.js';
+import Winston from 'winston';
 
 const logger = Winston.createLogger({
   level: Configuration.getLogLevel(),
@@ -24,4 +24,4 @@ if (Configuration.getConsoleLog()) {
   }));
 }
 
-module.exports = logger;
+export default logger;

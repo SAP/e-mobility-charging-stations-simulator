@@ -1,7 +1,7 @@
-const fs = require('fs');
-const Utils = require('./Utils');
+import Utils from './Utils.js';
+import fs from 'fs';
 
-class Configuration {
+export default class Configuration {
   static configuration;
 
   // Read the config file
@@ -69,5 +69,3 @@ class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationToTenantEqually') ? Configuration.getConfig().distributeStationToTenantEqually : true;
   }
 }
-
-module.exports = Configuration;

@@ -1,8 +1,8 @@
-const Configuration = require('./Configuration');
-const logger = require('./Logger');
-const Utils = require('./Utils');
+import Configuration from './Configuration.js';
+import Utils from './Utils.js';
+import logger from './Logger.js';
 
-class Statistics {
+export default class Statistics {
   static instance;
 
   constructor() {
@@ -94,5 +94,3 @@ class Statistics {
     this._displayInterval();
   }
 }
-
-module.exports = Statistics;
