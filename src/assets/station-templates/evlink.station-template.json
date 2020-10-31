@@ -3,7 +3,7 @@
   "baseName": "CS-EVLINK",
   "chargePointModel": "MONOBLOCK",
   "chargePointVendor": "Schneider Electric",
-  "chargePointSerialNumberPrefix": "EV.2S7P04",
+  "chargeBoxSerialNumberPrefix": "EV.2S7P04",
   "firmwareVersion": "3.3.0.10",
   "power": 7360,
   "powerUnit": "W",

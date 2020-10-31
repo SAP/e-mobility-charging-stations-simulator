@@ -61,7 +61,7 @@ export default class ChargingStation {
     this._bootNotificationMessage = {
       chargePointModel: this._stationInfo.chargePointModel,
       chargePointVendor: this._stationInfo.chargePointVendor,
-      ...!Utils.isUndefined(this._stationInfo.chargePointSerialNumberPrefix) && {chargePointSerialNumber: this._stationInfo.chargePointSerialNumberPrefix},
+      ...!Utils.isUndefined(this._stationInfo.chargeBoxSerialNumberPrefix) && {chargeBoxSerialNumber: this._stationInfo.chargeBoxSerialNumberPrefix},
       ...!Utils.isUndefined(this._stationInfo.firmwareVersion) && {firmwareVersion: this._stationInfo.firmwareVersion},
     };
     this._configuration = this._getConfiguration();
@@ -941,7 +941,7 @@ export default class ChargingStation {
       this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(payload.interval), false, false);
       this._basicStartMessageSequence();
     } else if (payload.status === 'Pending') {
-      logger.info(this._logPrefix() + ' Charging station pending on the central server');
+      logger.info(this._logPrefix() + ' Charging station in pending state on the central server');
     } else {
       logger.info(this._logPrefix() + ' Charging station rejected by the central server');
     }
@@ -1040,10 +1040,10 @@ export default class ChargingStation {
     }
     let response;
     // Call
-    if (typeof this['handle' + commandName] === 'function') {
+    if (typeof this['handleRequest' + commandName] === 'function') {
       try {
         // Call the method to build the response
-        response = await this['handle' + commandName](commandPayload);
+        response = await this['handleRequest' + commandName](commandPayload);
       } catch (error) {
         // Log
         logger.error(this._logPrefix() + ' Handle request error: ' + error);
@@ -1059,8 +1059,8 @@ export default class ChargingStation {
     await this.sendMessage(messageId, response, Constants.OCPP_JSON_CALL_RESULT_MESSAGE);
   }
 
-  async handleReset(commandPayload) {
-    // Simulate charging station restart
+  // Simulate charging station restart
+  async handleRequestReset(commandPayload) {
     setImmediate(async () => {
       await this.stop(commandPayload.type + 'Reset');
       await Utils.sleep(this._stationInfo.resetTime);
@@ -1095,7 +1095,7 @@ export default class ChargingStation {
     }
   }
 
-  async handleGetConfiguration(commandPayload) {
+  async handleRequestGetConfiguration(commandPayload) {
     const configurationKey = [];
     const unknownKey = [];
     if (Utils.isEmptyArray(commandPayload.key)) {
@@ -1142,7 +1142,7 @@ export default class ChargingStation {
     };
   }
 
-  async handleChangeConfiguration(commandPayload) {
+  async handleRequestChangeConfiguration(commandPayload) {
     const keyToChange = this._getConfigurationKey(commandPayload.key);
     if (!keyToChange) {
       return {status: Constants.OCPP_ERROR_NOT_SUPPORTED};
@@ -1174,9 +1174,9 @@ export default class ChargingStation {
     }
   }
 
-  async handleRemoteStartTransaction(commandPayload) {
+  async handleRequestRemoteStartTransaction(commandPayload) {
     const transactionConnectorID = commandPayload.connectorId ? commandPayload.connectorId : '1';
-    if (this.hasAuthorizedTags() && this._getLocalAuthListEnabled() && this._getAuthorizeRemoteTxRequests()) {
+    if (this._getAuthorizeRemoteTxRequests() && this._getLocalAuthListEnabled() && this.hasAuthorizedTags()) {
       // Check if authorized
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
@@ -1193,7 +1193,7 @@ export default class ChargingStation {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  async handleRemoteStopTransaction(commandPayload) {
+  async handleRequestRemoteStopTransaction(commandPayload) {
     for (const connector in this._connectors) {
       if (this.getConnector(connector).transactionId === commandPayload.transactionId) {
         this.sendStopTransaction(commandPayload.transactionId);

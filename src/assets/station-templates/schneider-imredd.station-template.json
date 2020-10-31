@@ -3,7 +3,7 @@
   "baseName": "CS-SCHNEIDER",
   "chargePointModel": "MONOBLOCK",
   "chargePointVendor": "Schneider Electric",
-  "chargePointSerialNumberPrefix": "EV.2S22P04",
+  "chargeBoxSerialNumberPrefix": "EV.2S22P04",
   "firmwareVersion": "3.3.0.10",
   "power": 22080,
   "powerUnit": "W",
