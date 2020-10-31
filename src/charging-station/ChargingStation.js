@@ -61,8 +61,8 @@ export default class ChargingStation {
     this._bootNotificationMessage = {
       chargePointModel: this._stationInfo.chargePointModel,
       chargePointVendor: this._stationInfo.chargePointVendor,
-      chargePointSerialNumber: this._stationInfo.chargePointSerialNumberPrefix ? this._stationInfo.chargePointSerialNumberPrefix : '',
-      firmwareVersion: this._stationInfo.firmwareVersion ? this._stationInfo.firmwareVersion : '',
+      ...!Utils.isUndefined(this._stationInfo.chargePointSerialNumberPrefix) && {chargePointSerialNumber: this._stationInfo.chargePointSerialNumberPrefix},
+      ...!Utils.isUndefined(this._stationInfo.firmwareVersion) && {firmwareVersion: this._stationInfo.firmwareVersion},
     };
     this._configuration = this._getConfiguration();
     this._supervisionUrl = this._getSupervisionURL();
@@ -601,21 +601,12 @@ export default class ChargingStation {
 
   async sendStopTransaction(transactionId, reason = '') {
     try {
-      let payload;
-      if (reason) {
-        payload = {
-          transactionId,
-          meterStop: 0,
-          timestamp: new Date().toISOString(),
-          reason,
-        };
-      } else {
-        payload = {
-          transactionId,
-          meterStop: 0,
-          timestamp: new Date().toISOString(),
-        };
-      }
+      const payload = {
+        transactionId,
+        meterStop: 0,
+        timestamp: new Date().toISOString(),
+        ...reason && {reason},
+      };
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction');
     } catch (error) {
       logger.error(this._logPrefix() + ' Send StopTransaction error: ' + error);
@@ -795,6 +786,7 @@ export default class ChargingStation {
           }
         // Energy.Active.Import.Register measurand (default)
         } else if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === 'Energy.Active.Import.Register') {
+          // FIXME: factor out powerDivider checks
           if (Utils.isUndefined(self._stationInfo.powerDivider)) {
             const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
             logger.error(errMsg);
@@ -821,7 +813,7 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: connector.lastEnergyActiveImportRegisterValue},
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
-          const maxConsumption = self._stationInfo.maxPower * 3600 / (self._stationInfo.powerDivider * interval);
+          const maxConsumption = Math.round(self._stationInfo.maxPower * 3600 / (self._stationInfo.powerDivider * interval));
           if (sampledValues.sampledValue[sampledValuesIndex].value > maxConsumption || debug) {
             logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxConsumption}`);
           }
@@ -899,7 +891,7 @@ export default class ChargingStation {
       } else if (this._wsConnection && this._wsConnection.readyState === WebSocket.OPEN) {
         // Send timeout in case connection is open otherwise wait for ever
         // FIXME: Handle message on timeout
-        setTimeout(() => rejectCallback(`Timeout for message ${messageId}`), Constants.OCPP_SOCKET_TIMEOUT);
+        setTimeout(() => rejectCallback(new OCPPError(command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {})), Constants.OCPP_SOCKET_TIMEOUT);
       }
 
       // Function that will receive the request's response
@@ -910,14 +902,19 @@ export default class ChargingStation {
       }
 
       // Function that will receive the request's rejection
-      function rejectCallback(reason) {
+      function rejectCallback(error) {
+        if (!(error instanceof OCPPError)) {
+          const errMsg = `${self._logPrefix()} Argument error is not an instance of OCPPError in rejectCallback call`;
+          logger.error(errMsg);
+          throw Error(errMsg);
+        }
+        logger.debug(`${self._logPrefix()} Error %j on commandName %s command %j`, error, commandName, command);
         if (self.getEnableStatistics()) {
-          self._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName}`, true);
+          self._statistics.addMessage(`Error on commandName ${commandName}`, true);
         }
         // Build Exception
         // eslint-disable-next-line no-empty-function
         self._requests[messageId] = [() => { }, () => { }, '']; // Properly format the request
-        const error = reason instanceof OCPPError ? reason : new Error(reason);
         // Send error
         reject(error);
       }
