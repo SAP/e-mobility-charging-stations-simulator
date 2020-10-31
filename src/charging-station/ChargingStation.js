@@ -504,7 +504,7 @@ export default class ChargingStation {
           if (Utils.isIterable(this._requests[messageId])) {
             [responseCallback, , requestPayload] = this._requests[messageId];
           } else {
-            throw new Error(`Response request for unknown message id ${messageId} is not iterable`);
+            throw new Error(`Response request for message id ${messageId} is not iterable`);
           }
           if (!responseCallback) {
             // Error
@@ -524,7 +524,7 @@ export default class ChargingStation {
           if (Utils.isIterable(this._requests[messageId])) {
             [, rejectCallback] = this._requests[messageId];
           } else {
-            throw new Error(`Error request for unknown message id ${messageId} is not iterable`);
+            throw new Error(`Error request for message id ${messageId} is not iterable`);
           }
           delete this._requests[messageId];
           rejectCallback(new OCPPError(commandName, commandPayload, errorDetails));
