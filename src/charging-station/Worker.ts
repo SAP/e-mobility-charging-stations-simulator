@@ -1,9 +1,13 @@
-import Configuration from '../utils/Configuration.js';
-import EventEmitter from 'events';
+import Configuration from '../utils/Configuration';
 import Pool from 'worker-threads-pool';
-import {Worker} from 'worker_threads';
+import { Worker } from 'worker_threads';
 
 export default class Wrk {
+  private _workerData;
+  private _workerScript;
+  private _pool;
+  private _concurrentWorkers: number;
+
   /**
    * Create a new `Wrk`.
    *
@@ -16,7 +20,7 @@ export default class Wrk {
     this._workerScript = workerScript;
     this._numConcurrentWorkers = numConcurrentWorkers;
     if (Configuration.useWorkerPool()) {
-      this._pool = new Pool({max: Configuration.getWorkerPoolSize()});
+      this._pool = new Pool({ max: Configuration.getWorkerPoolSize() });
     }
   }
 
@@ -24,15 +28,24 @@ export default class Wrk {
    * @param {Number} numConcurrentWorkers
    * @private
    */
-  set _numConcurrentWorkers(numConcurrentWorkers) {
-    if (numConcurrentWorkers > 10) {
-      EventEmitter.defaultMaxListeners = numConcurrentWorkers + 1;
-    }
+  set _numConcurrentWorkers(numConcurrentWorkers: number) {
     this._concurrentWorkers = numConcurrentWorkers;
   }
 
-  get _numConcurrentWorkers() {
+  get _numConcurrentWorkers(): number {
     return this._concurrentWorkers;
+  }
+
+  /**
+   *
+   * @return {Promise}
+   * @public
+   */
+  async start(): Promise<unknown> {
+    if (Configuration.useWorkerPool()) {
+      return this._startWorkerWithPool();
+    }
+    return this._startWorker();
   }
 
   /**
@@ -40,9 +53,9 @@ export default class Wrk {
    * @return {Promise}
    * @private
    */
-  _startWorkerWithPool() {
+  private async _startWorkerWithPool() {
     return new Promise((resolve, reject) => {
-      this._pool.acquire(this._workerScript, {workerData: this._workerData}, (err, worker) => {
+      this._pool.acquire(this._workerScript, { workerData: this._workerData }, (err, worker) => {
         if (err) {
           return reject(err);
         }
@@ -57,9 +70,9 @@ export default class Wrk {
    * @return {Promise}
    * @private
    */
-  _startWorker() {
+  private async _startWorker() {
     return new Promise((resolve, reject) => {
-      const worker = new Worker(this._workerScript, {workerData: this._workerData});
+      const worker = new Worker(this._workerScript, { workerData: this._workerData });
       worker.on('message', resolve);
       worker.on('error', reject);
       worker.on('exit', (code) => {
@@ -68,17 +81,5 @@ export default class Wrk {
         }
       });
     });
-  }
-
-  /**
-   *
-   * @return {Promise}
-   * @public
-   */
-  start() {
-    if (Configuration.useWorkerPool()) {
-      return this._startWorkerWithPool();
-    }
-    return this._startWorker();
   }
 }

@@ -1,5 +1,5 @@
 export default class Constants {
-  static REST_RESPONSE_SUCCESS = {status: 'Success'};
+  static REST_RESPONSE_SUCCESS = { status: 'Success' };
 
   static CONN_STATUS_AVAILABLE = 'Available';
   static CONN_STATUS_OCCUPIED = 'Occupied';
@@ -101,9 +101,9 @@ export default class Constants {
 
   static WS_UNSUPPORTED_DATA = 1007;
 
-  static OCPP_RESPONSE_ACCEPTED = {status: 'Accepted'};
-  static OCPP_RESPONSE_REJECTED = {status: 'Rejected'};
-  static OCPP_RESPONSE_REBOOT_REQUIRED = {status: 'RebootRequired'};
+  static OCPP_RESPONSE_ACCEPTED = { status: 'Accepted' };
+  static OCPP_RESPONSE_REJECTED = { status: 'Rejected' };
+  static OCPP_RESPONSE_REBOOT_REQUIRED = { status: 'RebootRequired' };
   static OCPP_SOCKET_TIMEOUT = 60000; // 60 sec
   static OCPP_JSON_CALL_MESSAGE = 2; // Client-to-Server
   static OCPP_JSON_CALL_RESULT_MESSAGE = 3; // Server-to-Client
@@ -139,6 +139,6 @@ export default class Constants {
   static STATUS_NOTIFICATION_TIMEOUT = 500;
   static START_TRANSACTION_TIMEOUT = 500;
 
-  static CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // ms
-  static CHARGING_STATION_ATG_WAIT_TIME = 2000; // ms
+  static CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
+  static CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms
 }

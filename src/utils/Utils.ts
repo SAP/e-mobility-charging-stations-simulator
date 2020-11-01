@@ -1,21 +1,21 @@
-import {v4 as uuid} from 'uuid';
+import { v4 as uuid } from 'uuid';
 
 export default class Utils {
-  static generateUUID() {
+  static generateUUID(): string {
     return uuid();
   }
 
-  static sleep(ms) {
+  static async sleep(ms: number): Promise<NodeJS.Timeout> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  static secondstoHHMMSS(seconds) {
-    const date = new Date(null);
+  static secondstoHHMMSS(seconds): string {
+    const date = new Date();
     date.setSeconds(seconds);
     return date.toISOString().substr(11, 8);
   }
 
-  static removeExtraEmptyLines(tab) {
+  static removeExtraEmptyLines(tab): void {
     // Start from the end
     for (let i = tab.length - 1; i > 0; i--) {
       // Two consecutive empty lines?
@@ -31,30 +31,19 @@ export default class Utils {
     }
   }
 
-  static convertToDate(date) {
+  static convertToDate(value): Date {
     // Check
-    if (!date) {
-      return date;
+    if (!value) {
+      return value;
     }
     // Check Type
-    if (!(date instanceof Date)) {
-      return new Date(date);
+    if (!(value instanceof Date)) {
+      return new Date(value);
     }
-    return date;
+    return value;
   }
 
-  static convertToObjectID(id) {
-    let changedID = id;
-    // Check
-    if (typeof id === 'string') {
-      // Create Object
-      // eslint-disable-next-line no-undef
-      changedID = new ObjectID(id);
-    }
-    return changedID;
-  }
-
-  static convertToInt(value) {
+  static convertToInt(value): number {
     let changedValue = value;
     if (!value) {
       return 0;
@@ -70,7 +59,7 @@ export default class Utils {
     return changedValue;
   }
 
-  static convertToFloat(value) {
+  static convertToFloat(value): number {
     let changedValue = value;
     if (!value) {
       return 0;
@@ -83,7 +72,7 @@ export default class Utils {
     return changedValue;
   }
 
-  static convertToBoolean(value) {
+  static convertToBoolean(value): boolean {
     let result = false;
     // Check boolean
     if (value) {
@@ -99,29 +88,29 @@ export default class Utils {
     return result;
   }
 
-  static getRandomFloat(max, min = 0) {
+  static getRandomFloat(max: number, min = 0): number {
     return Math.random() < 0.5 ? (1 - Math.random()) * (max - min) + min : Math.random() * (max - min) + min;
   }
 
-  static getRandomInt(max, min = 0) {
+  static getRandomInt(max: number, min = 0): number {
     if (min) {
       return Math.floor(Math.random() * (max - min + 1) + min);
     }
     return Math.floor(Math.random() * max + 1);
   }
 
-  static roundTo(number, scale) {
+  static roundTo(number: number, scale: number): number {
     return Utils.convertToFloat(number.toFixed(scale));
   }
 
-  static getRandomFloatRounded(max, min = 0, scale = 2) {
+  static getRandomFloatRounded(max: number, min = 0, scale = 2): number {
     if (min) {
       return Utils.roundTo(Utils.getRandomFloat(max, min), scale);
     }
     return Utils.roundTo(Utils.getRandomFloat(max), scale);
   }
 
-  static logPrefix(prefixString = '') {
+  static logPrefix(prefixString = ''): string {
     const date = new Date();
     return date.toLocaleString() + prefixString;
   }
@@ -134,14 +123,14 @@ export default class Utils {
     return JSON.parse(JSON.stringify(object));
   }
 
-  static isIterable(obj) {
+  static isIterable(obj): boolean {
     if (obj) {
       return typeof obj[Symbol.iterator] === 'function';
     }
     return false;
   }
 
-  static isEmptyJSon(document) {
+  static isEmptyJSon(document): boolean {
     // Empty?
     if (!document) {
       return true;
@@ -154,7 +143,7 @@ export default class Utils {
     return Object.keys(document).length === 0;
   }
 
-  static isString(value) {
+  static isString(value): boolean {
     return typeof value === 'string';
   }
 
@@ -162,22 +151,22 @@ export default class Utils {
     return typeof value === 'undefined';
   }
 
-  static isNullOrUndefined(value) {
-    // eslint-disable-next-line eqeqeq
+  static isNullOrUndefined(value): boolean {
+    // eslint-disable-next-line no-eq-null
     if (value == null) {
       return true;
     }
     return false;
   }
 
-  static isEmptyArray(object) {
+  static isEmptyArray(object): boolean {
     if (Array.isArray(object) && object.length > 0) {
       return false;
     }
     return true;
   }
 
-  static isEmptyObject(obj) {
+  static isEmptyObject(obj): boolean {
     return !Object.keys(obj).length;
   }
 }

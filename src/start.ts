@@ -1,10 +1,10 @@
-import Configuration from './utils/Configuration.js';
-import Utils from './utils/Utils.js';
-import Wrk from './charging-station/Worker.js';
-import logger from './utils/Logger.js';
+import Configuration from './utils/Configuration';
+import Utils from './utils/Utils';
+import Wrk from './charging-station/Worker';
+import logger from './utils/Logger';
 
 class Bootstrap {
-  static async start() {
+  static start() {
     try {
       logger.debug('%s Configuration: %j', Utils.logPrefix(), Configuration.getConfig());
       let numStationsTotal = 0;
@@ -15,11 +15,11 @@ class Bootstrap {
             const nbStation = stationURL.numberOfStation ? stationURL.numberOfStation : 0;
             numStationsTotal += nbStation;
             for (let index = 1; index <= nbStation; index++) {
-              const worker = new Wrk('./src/charging-station/StationWorker.js', {
+              const worker = new Wrk('./dist/charging-station/StationWorker.js', {
                 index,
                 templateFile: stationURL.file,
               }, numStationsTotal);
-              worker.start();
+              worker.start().catch(() => {});
             }
           } catch (error) {
             // eslint-disable-next-line no-console
@@ -32,7 +32,7 @@ class Bootstrap {
       if (numStationsTotal === 0) {
         console.log('No charging station template enabled in configuration, exiting');
       } else {
-        console.log('Charging station simulator started with ' + numStationsTotal + ' charging station(s)');
+        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s)');
       }
     } catch (error) {
       // eslint-disable-next-line no-console

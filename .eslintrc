@@ -1,25 +1,105 @@
 {
-  "parser": "babel-eslint",
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
   "extends": [
     "eslint:recommended",
-    "plugin:flowtype/recommended",
-    "node",
-    "google"
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking"
   ],
   "plugins": [
-    "flowtype"
+    "@typescript-eslint"
   ],
   "rules": {
-    "require-jsdoc": 0,
-    "import/no-commonjs": [
+    "indent": "off",
+    "@typescript-eslint/indent": [
+      "error",
       2,
       {
-        "allowRequire": true,
-        "allowPrimitiveModules": true
+        "SwitchCase": 1
       }
     ],
-    "import/no-nodejs-modules": 0,
-    "flowtype/no-types-missing-file-annotation": 0,
+    "@typescript-eslint/array-type": "off",
+    "semi": "off",
+    "@typescript-eslint/semi": [
+      "error",
+      "always"
+    ],
+    "space-before-blocks": [
+      "error",
+      "always"
+    ],
+    "@typescript-eslint/no-empty-function": [
+      "warn",
+      {
+        "allow": [
+          "arrowFunctions",
+          "methods"
+        ]
+      }
+    ],
+    "@typescript-eslint/member-ordering": "error",
+    "@typescript-eslint/await-thenable": "error",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/promise-function-async": "error",
+    "@typescript-eslint/no-misused-promises": "error",
+    "curly": "error",
+    "brace-style": "error",
+    "eqeqeq": [
+      "error",
+      "always"
+    ],
+    "no-else-return": "error",
+    "no-eq-null": "error",
+    "no-undefined": "error",
+    "no-extra-bind": "error",
+    "no-lone-blocks": "error",
+    "no-multi-spaces": "error",
+    "no-empty": "error",
+    "no-return-assign": [
+      "error",
+      "always"
+    ],
+    "no-useless-catch": "error",
+    "no-useless-return": "error",
+    "no-shadow": "error",
+    "no-multiple-empty-lines": [
+      "error",
+      {
+        "max": 2,
+        "maxEOF": 1
+      }
+    ],
+    "block-spacing": "error",
+    "capitalized-comments": [
+      "error",
+      "always",
+      {
+        "ignoreConsecutiveComments": true,
+        "ignorePattern": "pragma|ignored"
+      }
+    ],
+    "eol-last": [
+      "error",
+      "always"
+    ],
+    "consistent-this": [
+      "error",
+      "self"
+    ],
+    "func-call-spacing": [
+      "error",
+      "never"
+    ],
+    "keyword-spacing": [
+      "error"
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
     "max-len": [
       "warn",
       {
@@ -31,6 +111,69 @@
         "ignoreRegExpLiterals": true,
         "ignorePattern": "(^(import|export)|(public|private))\\s.+;"
       }
+    ],
+    "no-lonely-if": "error",
+    "no-trailing-spaces": "error",
+    "no-whitespace-before-property": "error",
+    "space-before-function-paren": [
+      "error",
+      {
+        "anonymous": "never",
+        "named": "never",
+        "asyncArrow": "always"
+      }
+    ],
+    "space-in-parens": [
+      "error",
+      "never"
+    ],
+    "space-infix-ops": "error",
+    "space-unary-ops": "error",
+    "spaced-comment": [
+      "error",
+      "always"
+    ],
+    "switch-colon-spacing": "error",
+    "arrow-body-style": [
+      "error",
+      "as-needed"
+    ],
+    "arrow-parens": [
+      "error",
+      "always"
+    ],
+    "arrow-spacing": "error",
+    "no-duplicate-imports": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "sort-imports": [
+      "warn",
+      {
+        "ignoreCase": false,
+        "ignoreDeclarationSort": false,
+        "ignoreMemberSort": false,
+        "memberSyntaxSortOrder": [
+          "none",
+          "all",
+          "multiple",
+          "single"
+        ]
+      }
+    ],
+    "object-curly-spacing": [
+      "error",
+      "always"
+    ],
+    "lines-between-class-members": [
+      "error",
+      "always",
+      {
+        "exceptAfterSingleLine": true
+      }
+    ],
+    "quotes": [
+      "error",
+      "single"
     ]
   }
 }

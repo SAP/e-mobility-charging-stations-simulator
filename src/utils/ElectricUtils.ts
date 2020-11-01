@@ -3,11 +3,11 @@
  * To use for DC, always consider cosPhi = 1 and do not use per phase helpers
  */
 export default class ElectricUtils {
-  static ampTotal(nbOfPhases, Iph) {
+  static ampTotal(nbOfPhases: number, Iph: number): number {
     return nbOfPhases * Iph;
   }
 
-  static powerPerPhase(V, Iph, cosPhi = 1) {
+  static powerPerPhase(V: number, Iph: number, cosPhi = 1): number {
     const powerPerPhase = V * Iph * cosPhi;
     if (cosPhi === 1) {
       return powerPerPhase;
@@ -15,11 +15,11 @@ export default class ElectricUtils {
     return Math.round(powerPerPhase);
   }
 
-  static powerTotal(nbOfPhases, V, Iph, cosPhi = 1) {
+  static powerTotal(nbOfPhases: number, V: number, Iph: number, cosPhi = 1): number {
     return nbOfPhases * ElectricUtils.powerPerPhase(V, Iph, cosPhi);
   }
 
-  static ampTotalFromPower(P, V, cosPhi = 1) {
+  static ampTotalFromPower(P: number, V: number, cosPhi = 1): number {
     const power = P / (V * cosPhi);
     if (cosPhi === 1 && P % V === 0) {
       return power;
@@ -27,7 +27,7 @@ export default class ElectricUtils {
     return Math.round(power);
   }
 
-  static ampPerPhaseFromPower(nbOfPhases, P, V, cosPhi = 1) {
+  static ampPerPhaseFromPower(nbOfPhases: number, P: number, V: number, cosPhi = 1): number {
     const power = ElectricUtils.ampTotalFromPower(P, V, cosPhi);
     const powerPerPhase = power / nbOfPhases;
     if (power % nbOfPhases === 0) {

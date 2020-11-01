@@ -1,4 +1,4 @@
-import Configuration from './Configuration.js';
+import Configuration from './Configuration';
 import Winston from 'winston';
 
 const logger = Winston.createLogger({
@@ -9,8 +9,8 @@ const logger = Winston.createLogger({
     // - Write to all logs with level `info` and below to `combined.log`
     // - Write all logs error (and below) to `error.log`.
     //
-    new Winston.transports.File({filename: Configuration.getErrorFile(), level: 'error'}),
-    new Winston.transports.File({filename: Configuration.getLogFile()}),
+    new Winston.transports.File({ filename: Configuration.getErrorFile(), level: 'error' }),
+    new Winston.transports.File({ filename: Configuration.getLogFile() }),
   ],
 });
 

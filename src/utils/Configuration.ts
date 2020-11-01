@@ -1,4 +1,4 @@
-import Utils from './Utils.js';
+import Utils from './Utils';
 import fs from 'fs';
 
 export default class Configuration {

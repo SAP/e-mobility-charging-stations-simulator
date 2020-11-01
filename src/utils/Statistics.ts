@@ -1,27 +1,25 @@
-import Configuration from './Configuration.js';
-import Utils from './Utils.js';
-import logger from './Logger.js';
+import Configuration from './Configuration';
+import Utils from './Utils';
+import logger from './Logger';
 
 export default class Statistics {
-  static instance;
+  private static instance: Statistics;
+  private _statistics;
+  private _objName: string;
 
-  constructor() {
+  private constructor() {
     this._statistics = {};
   }
 
-  set objName(objName) {
+  set objName(objName: string) {
     this._objName = objName;
   }
 
-  static getInstance() {
+  static getInstance(): Statistics {
     if (!Statistics.instance) {
       Statistics.instance = new Statistics();
     }
     return Statistics.instance;
-  }
-
-  _logPrefix() {
-    return Utils.logPrefix(` ${this._objName} Statistics:`);
   }
 
   addMessage(command, response = false) {
@@ -72,16 +70,16 @@ export default class Statistics {
     }
   }
 
-  logPerformance(entry, className) {
+  logPerformance(entry, className: string): void {
     this.addPerformanceTimer(entry.name, entry.duration);
     logger.info(`${this._logPrefix()} class->${className}, method->${entry.name}, duration->${entry.duration}`);
   }
 
-  _display() {
+  _display(): void {
     logger.info(this._logPrefix() + ' %j', this._statistics);
   }
 
-  _displayInterval() {
+  _displayInterval(): void {
     if (Configuration.getStatisticsDisplayInterval() > 0) {
       setInterval(() => {
         this._display();
@@ -90,7 +88,11 @@ export default class Statistics {
     }
   }
 
-  async start() {
+  start(): void {
     this._displayInterval();
+  }
+
+  private _logPrefix(): string {
+    return Utils.logPrefix(` ${this._objName} Statistics:`);
   }
 }
