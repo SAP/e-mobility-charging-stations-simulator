@@ -21,5 +21,5 @@ COPY docker/config.json ./src/assets/config.json
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN chmod +x /autoconfig.sh
 
-#CMD ["node", "src/start.js"]
+#CMD ["node", "dist/start.js"]
 CMD /autoconfig.sh && node -r source-map-support/register dist/start.js
