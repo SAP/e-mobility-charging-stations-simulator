@@ -170,7 +170,12 @@ export default class ChargingStation {
   }
 
   _getNumberOfPhases() {
-    return !Utils.isUndefined(this._stationInfo.numberOfPhases) ? Utils.convertToInt(this._stationInfo.numberOfPhases) : 3;
+    switch (this._getPowerOutType()) {
+      case 'AC':
+        return !Utils.isUndefined(this._stationInfo.numberOfPhases) ? Utils.convertToInt(this._stationInfo.numberOfPhases) : 3;
+      case 'DC':
+        return 0;
+    }
   }
 
   _getNumberOfRunningTransactions() {
@@ -646,7 +651,7 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].location) && {location: meterValuesTemplate[index].location},
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? {value: meterValuesTemplate[index].value} : {value: self._getVoltageOut()},
           });
-          for (let phase = 1; self._getPowerOutType() === 'AC' && self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const voltageValue = sampledValues.sampledValue[sampledValues.sampledValue.length - 1].value;
             let phaseValue;
             if (voltageValue >= 0 && voltageValue <= 250) {
@@ -712,7 +717,7 @@ export default class ChargingStation {
           if (sampledValues.sampledValue[sampledValuesIndex].value > maxPower || debug) {
             logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxPower}`);
           }
-          for (let phase = 1; self._getPowerOutType() === 'AC' && self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}-N`;
             sampledValues.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'W'},
@@ -773,7 +778,7 @@ export default class ChargingStation {
           if (sampledValues.sampledValue[sampledValuesIndex].value > maxAmperage || debug) {
             logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxAmperage}`);
           }
-          for (let phase = 1; self._getPowerOutType() === 'AC' && self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}`;
             sampledValues.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? {unit: meterValuesTemplate[index].unit} : {unit: 'A'},
