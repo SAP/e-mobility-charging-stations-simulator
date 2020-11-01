@@ -19,13 +19,13 @@
   ],
   "main": "dist/start.js",
   "scripts": {
-    "start": "node dist/start.js",
+    "start": "node -r source-map-support/register dist/start.js",
     "prestart": "npm run build",
-    "start:debug": "node --inspect dist/start.js",
-    "start:prof": "node --prof dist/start.js",
-    "start:doctorprof": "clinic doctor -- node dist/start.js",
-    "start:flameprof": "clinic flame -- node dist/start.js",
-    "start:bubbleprof": "clinic bubbleprof -- node dist/start.js",
+    "start:debug": "node -r source-map-support/register --inspect dist/start.js",
+    "start:prof": "node -r source-map-support/register --prof dist/start.js",
+    "start:doctorprof": "clinic doctor -- node -r source-map-support/register dist/start.js",
+    "start:flameprof": "clinic flame -- node -r source-map-support/register dist/start.js",
+    "start:bubbleprof": "clinic bubbleprof -- node -r source-map-support/register dist/start.js",
     "build": "npm run tsc",
     "lint": "cross-env TIMING=1 eslint --ext .js,.ts src",
     "lint:fix": "cross-env TIMING=1 eslint --fix --ext .js,.ts src",
@@ -38,6 +38,7 @@
     "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
+    "source-map-support": "^0.5.19",
     "tslib": "^2.0.3",
     "uuid": "^8.3.1",
     "winston": "^3.3.3",

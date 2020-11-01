@@ -303,19 +303,19 @@ export default class ChargingStation {
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
   }
 
-  _basicStartMessageSequence(): void {
+  _startMessageSequence(): void {
     // Start heartbeat
     this._startHeartbeat();
     // Initialize connectors status
     for (const connector in this._connectors) {
       if (!this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
         if (this.getConnector(Utils.convertToInt(connector)).bootStatus) {
-          this.sendStatusNotificationWithTimeout(connector, this.getConnector(Utils.convertToInt(connector)).bootStatus);
+          this.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).bootStatus);
         } else {
-          this.sendStatusNotificationWithTimeout(connector, 'Available');
+          this.sendStatusNotification(Utils.convertToInt(connector), 'Available');
         }
       } else {
-        this.sendStatusNotificationWithTimeout(connector, 'Charging');
+        this.sendStatusNotification(Utils.convertToInt(connector), 'Charging');
       }
     }
     // Start the ATG
@@ -329,6 +329,23 @@ export default class ChargingStation {
     }
     if (this.getEnableStatistics()) {
       this._statistics.start();
+    }
+  }
+
+  async _stopMessageSequence(reason = '') {
+    // Stop heartbeat
+    this._stopHeartbeat();
+    // Stop the ATG
+    if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
+      this._automaticTransactionGeneration &&
+      !this._automaticTransactionGeneration.timeToStop) {
+      await this._automaticTransactionGeneration.stop(reason);
+    } else {
+      for (const connector in this._connectors) {
+        if (this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+          await this.sendStopTransaction(this.getConnector(Utils.convertToInt(connector)).transactionId, reason);
+        }
+      }
     }
   }
 
@@ -370,8 +387,10 @@ export default class ChargingStation {
         logger.debug(this._logPrefix() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
         // Initialize
         this._initialize();
-        this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval / 1000 : 0));
-        this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(this._heartbeatInterval ? this._heartbeatInterval / 1000 : 0), false, false);
+        if (!Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
+        this._automaticTransactionGeneration) {
+          this._automaticTransactionGeneration.stop().catch(() => {});
+        }
       } catch (error) {
         logger.error(this._logPrefix() + ' Charging station template file monitoring error: ' + error);
       }
@@ -388,14 +407,16 @@ export default class ChargingStation {
     }
     if (interval > 0) {
       this.getConnector(connectorId).transactionSetInterval = setInterval(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this;
         if (this.getEnableStatistics()) {
           const sendMeterValues = performance.timerify(this.sendMeterValues);
           this._performanceObserver.observe({
             entryTypes: ['function'],
           });
-          await sendMeterValues(connectorId, interval);
+          await sendMeterValues(connectorId, interval, self);
         } else {
-          await this.sendMeterValues(connectorId, interval);
+          await this.sendMeterValues(connectorId, interval, self);
         }
       }, interval);
     } else {
@@ -426,20 +447,8 @@ export default class ChargingStation {
   }
 
   async stop(reason = '') {
-    // Stop heartbeat
-    this._stopHeartbeat();
-    // Stop the ATG
-    if (Utils.convertToBoolean(this._stationInfo.AutomaticTransactionGenerator.enable) &&
-      this._automaticTransactionGeneration &&
-      !this._automaticTransactionGeneration.timeToStop) {
-      await this._automaticTransactionGeneration.stop(reason);
-    } else {
-      for (const connector in this._connectors) {
-        if (this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
-          await this.sendStopTransaction(this.getConnector(Utils.convertToInt(connector)).transactionId, reason);
-        }
-      }
-    }
+    // Stop
+    await this._stopMessageSequence();
     // eslint-disable-next-line guard-for-in
     for (const connector in this._connectors) {
       await this.sendStatusNotification(Utils.convertToInt(connector), 'Unavailable');
@@ -480,7 +489,7 @@ export default class ChargingStation {
       this.sendBootNotification();
     }
     if (this._isSocketRestart) {
-      this._basicStartMessageSequence();
+      this._startMessageSequence();
       if (!Utils.isEmptyArray(this._messageQueue)) {
         this._messageQueue.forEach((message) => {
           if (this._wsConnection && this._wsConnection.readyState === WebSocket.OPEN) {
@@ -616,15 +625,11 @@ export default class ChargingStation {
     }
   }
 
-  sendStatusNotificationWithTimeout(connectorId, status, errorCode = 'NoError', timeout = Constants.STATUS_NOTIFICATION_TIMEOUT) {
-    setTimeout(async () => this.sendStatusNotification(connectorId, status, errorCode), timeout);
-  }
-
   async sendStartTransaction(connectorId: number, idTag?: string) {
     try {
       const payload = {
         connectorId,
-        ...!Utils.isUndefined(idTag) && { idTag },
+        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: '' },
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
@@ -633,10 +638,6 @@ export default class ChargingStation {
       logger.error(this._logPrefix() + ' Send StartTransaction error: ' + error);
       throw error;
     }
-  }
-
-  sendStartTransactionWithTimeout(connectorId: number, idTag?: string, timeout = Constants.START_TRANSACTION_TIMEOUT) {
-    setTimeout(async () => this.sendStartTransaction(connectorId, idTag), timeout);
   }
 
   async sendStopTransaction(transactionId, reason = ''): Promise<void> {
@@ -654,17 +655,18 @@ export default class ChargingStation {
     }
   }
 
-  async sendMeterValues(connectorId, interval, debug = false): Promise<void> {
+  // eslint-disable-next-line consistent-this
+  async sendMeterValues(connectorId: number, interval: number, self, debug = false): Promise<void> {
     try {
       const sampledValues = {
         timestamp: new Date().toISOString(),
         sampledValue: [],
       };
-      const meterValuesTemplate = this.getConnector(connectorId).MeterValues;
+      const meterValuesTemplate = self.getConnector(connectorId).MeterValues;
       for (let index = 0; index < meterValuesTemplate.length; index++) {
-        const connector = this.getConnector(connectorId);
+        const connector = self.getConnector(connectorId);
         // SoC measurand
-        if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'SoC' && this._getConfigurationKey('MeterValuesSampledData').value.includes('SoC')) {
+        if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'SoC' && self._getConfigurationKey('MeterValuesSampledData').value.includes('SoC')) {
           sampledValues.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: 'Percent' },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
@@ -674,57 +676,57 @@ export default class ChargingStation {
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
           if (sampledValues.sampledValue[sampledValuesIndex].value > 100 || debug) {
-            logger.error(`${this._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/100`);
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/100`);
           }
         // Voltage measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Voltage' && this._getConfigurationKey('MeterValuesSampledData').value.includes('Voltage')) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Voltage' && self._getConfigurationKey('MeterValuesSampledData').value.includes('Voltage')) {
           sampledValues.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: 'V' },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
             measurand: meterValuesTemplate[index].measurand,
             ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
-            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: this._getVoltageOut() },
+            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: self._getVoltageOut() },
           });
-          for (let phase = 1; this._getNumberOfPhases() === 3 && phase <= this._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const voltageValue = sampledValues.sampledValue[sampledValues.sampledValue.length - 1].value;
             let phaseValue;
             if (voltageValue >= 0 && voltageValue <= 250) {
               phaseValue = `L${phase}-N`;
             } else if (voltageValue > 250) {
-              phaseValue = `L${phase}-L${(phase + 1) % this._getNumberOfPhases() !== 0 ? (phase + 1) % this._getNumberOfPhases() : this._getNumberOfPhases()}`;
+              phaseValue = `L${phase}-L${(phase + 1) % self._getNumberOfPhases() !== 0 ? (phase + 1) % self._getNumberOfPhases() : self._getNumberOfPhases()}`;
             }
             sampledValues.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: 'V' },
               ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
               measurand: meterValuesTemplate[index].measurand,
               ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
-              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: this._getVoltageOut() },
+              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: self._getVoltageOut() },
               phase: phaseValue,
             });
           }
         // Power.Active.Import measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Power.Active.Import' && this._getConfigurationKey('MeterValuesSampledData').value.includes('Power.Active.Import')) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Power.Active.Import' && self._getConfigurationKey('MeterValuesSampledData').value.includes('Power.Active.Import')) {
           // FIXME: factor out powerDivider checks
-          if (Utils.isUndefined(this._stationInfo.powerDivider)) {
-            const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
+          if (Utils.isUndefined(self._stationInfo.powerDivider)) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
             logger.error(errMsg);
             throw Error(errMsg);
-          } else if (this._stationInfo.powerDivider && this._stationInfo.powerDivider <= 0) {
-            const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${this._stationInfo.powerDivider}`;
+          } else if (self._stationInfo.powerDivider && self._stationInfo.powerDivider <= 0) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${self._stationInfo.powerDivider}`;
             logger.error(errMsg);
             throw Error(errMsg);
           }
-          const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: Unknown ${this._getPowerOutType()} powerOutType in template file ${this._stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} measurand value`;
+          const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: Unknown ${self._getPowerOutType()} powerOutType in template file ${self._stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} measurand value`;
           const powerMeasurandValues = {} as MeasurandValues ;
-          const maxPower = Math.round(this._stationInfo.maxPower / this._stationInfo.powerDivider);
-          const maxPowerPerPhase = Math.round((this._stationInfo.maxPower / this._stationInfo.powerDivider) / this._getNumberOfPhases());
-          switch (this._getPowerOutType()) {
+          const maxPower = Math.round(self._stationInfo.maxPower / self._stationInfo.powerDivider);
+          const maxPowerPerPhase = Math.round((self._stationInfo.maxPower / self._stationInfo.powerDivider) / self._getNumberOfPhases());
+          switch (self._getPowerOutType()) {
             case 'AC':
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 powerMeasurandValues.L1 = Utils.getRandomFloatRounded(maxPowerPerPhase);
                 powerMeasurandValues.L2 = 0;
                 powerMeasurandValues.L3 = 0;
-                if (this._getNumberOfPhases() === 3) {
+                if (self._getNumberOfPhases() === 3) {
                   powerMeasurandValues.L2 = Utils.getRandomFloatRounded(maxPowerPerPhase);
                   powerMeasurandValues.L3 = Utils.getRandomFloatRounded(maxPowerPerPhase);
                 }
@@ -749,9 +751,9 @@ export default class ChargingStation {
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
           if (sampledValues.sampledValue[sampledValuesIndex].value > maxPower || debug) {
-            logger.error(`${this._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxPower}`);
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxPower}`);
           }
-          for (let phase = 1; this._getNumberOfPhases() === 3 && phase <= this._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}-N`;
             sampledValues.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: 'W' },
@@ -763,36 +765,36 @@ export default class ChargingStation {
             });
           }
         // Current.Import measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Current.Import' && this._getConfigurationKey('MeterValuesSampledData').value.includes('Current.Import')) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === 'Current.Import' && self._getConfigurationKey('MeterValuesSampledData').value.includes('Current.Import')) {
           // FIXME: factor out powerDivider checks
-          if (Utils.isUndefined(this._stationInfo.powerDivider)) {
-            const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
+          if (Utils.isUndefined(self._stationInfo.powerDivider)) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
             logger.error(errMsg);
             throw Error(errMsg);
-          } else if (this._stationInfo.powerDivider && this._stationInfo.powerDivider <= 0) {
-            const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${this._stationInfo.powerDivider}`;
+          } else if (self._stationInfo.powerDivider && self._stationInfo.powerDivider <= 0) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${self._stationInfo.powerDivider}`;
             logger.error(errMsg);
             throw Error(errMsg);
           }
-          const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: Unknown ${this._getPowerOutType()} powerOutType in template file ${this._stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} measurand value`;
+          const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: Unknown ${self._getPowerOutType()} powerOutType in template file ${self._stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} measurand value`;
           const currentMeasurandValues = {} as MeasurandValues;
           let maxAmperage;
-          switch (this._getPowerOutType()) {
+          switch (self._getPowerOutType()) {
             case 'AC':
-              maxAmperage = ElectricUtils.ampPerPhaseFromPower(this._getNumberOfPhases(), this._stationInfo.maxPower / this._stationInfo.powerDivider, this._getVoltageOut());
+              maxAmperage = ElectricUtils.ampPerPhaseFromPower(self._getNumberOfPhases(), self._stationInfo.maxPower / self._stationInfo.powerDivider, self._getVoltageOut());
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 currentMeasurandValues.L1 = Utils.getRandomFloatRounded(maxAmperage);
                 currentMeasurandValues.L2 = 0;
                 currentMeasurandValues.L3 = 0;
-                if (this._getNumberOfPhases() === 3) {
+                if (self._getNumberOfPhases() === 3) {
                   currentMeasurandValues.L2 = Utils.getRandomFloatRounded(maxAmperage);
                   currentMeasurandValues.L3 = Utils.getRandomFloatRounded(maxAmperage);
                 }
-                currentMeasurandValues.all = Utils.roundTo((currentMeasurandValues.L1 + currentMeasurandValues.L2 + currentMeasurandValues.L3) / this._getNumberOfPhases(), 2);
+                currentMeasurandValues.all = Utils.roundTo((currentMeasurandValues.L1 + currentMeasurandValues.L2 + currentMeasurandValues.L3) / self._getNumberOfPhases(), 2);
               }
               break;
             case 'DC':
-              maxAmperage = ElectricUtils.ampTotalFromPower(this._stationInfo.maxPower / this._stationInfo.powerDivider, this._getVoltageOut());
+              maxAmperage = ElectricUtils.ampTotalFromPower(self._stationInfo.maxPower / self._stationInfo.powerDivider, self._getVoltageOut());
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 currentMeasurandValues.all = Utils.getRandomFloatRounded(maxAmperage);
               }
@@ -810,9 +812,9 @@ export default class ChargingStation {
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
           if (sampledValues.sampledValue[sampledValuesIndex].value > maxAmperage || debug) {
-            logger.error(`${this._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxAmperage}`);
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxAmperage}`);
           }
-          for (let phase = 1; this._getNumberOfPhases() === 3 && phase <= this._getNumberOfPhases(); phase++) {
+          for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}`;
             sampledValues.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: 'A' },
@@ -826,17 +828,17 @@ export default class ChargingStation {
         // Energy.Active.Import.Register measurand (default)
         } else if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === 'Energy.Active.Import.Register') {
           // FIXME: factor out powerDivider checks
-          if (Utils.isUndefined(this._stationInfo.powerDivider)) {
-            const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
+          if (Utils.isUndefined(self._stationInfo.powerDivider)) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider is undefined`;
             logger.error(errMsg);
             throw Error(errMsg);
-          } else if (this._stationInfo.powerDivider && this._stationInfo.powerDivider <= 0) {
-            const errMsg = `${this._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${this._stationInfo.powerDivider}`;
+          } else if (self._stationInfo.powerDivider && self._stationInfo.powerDivider <= 0) {
+            const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'}: powerDivider have zero or below value ${self._stationInfo.powerDivider}`;
             logger.error(errMsg);
             throw Error(errMsg);
           }
           if (Utils.isUndefined(meterValuesTemplate[index].value)) {
-            const measurandValue = Utils.getRandomInt(this._stationInfo.maxPower / (this._stationInfo.powerDivider * 3600000) * interval);
+            const measurandValue = Utils.getRandomInt(self._stationInfo.maxPower / (self._stationInfo.powerDivider * 3600000) * interval);
             // Persist previous value in connector
             if (connector && !Utils.isNullOrUndefined(connector.lastEnergyActiveImportRegisterValue) && connector.lastEnergyActiveImportRegisterValue >= 0) {
               connector.lastEnergyActiveImportRegisterValue += measurandValue;
@@ -852,24 +854,24 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: connector.lastEnergyActiveImportRegisterValue },
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
-          const maxConsumption = Math.round(this._stationInfo.maxPower * 3600 / (this._stationInfo.powerDivider * interval));
+          const maxConsumption = Math.round(self._stationInfo.maxPower * 3600 / (self._stationInfo.powerDivider * interval));
           if (sampledValues.sampledValue[sampledValuesIndex].value > maxConsumption || debug) {
-            logger.error(`${this._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxConsumption}`);
+            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : 'Energy.Active.Import.Register'}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxConsumption}`);
           }
         // Unsupported measurand
         } else {
-          logger.info(`${this._logPrefix()} Unsupported MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} on connectorId ${connectorId}`);
+          logger.info(`${self._logPrefix()} Unsupported MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : 'Energy.Active.Import.Register'} on connectorId ${connectorId}`);
         }
       }
 
       const payload = {
         connectorId,
-        transactionId: this.getConnector(connectorId).transactionId,
+        transactionId: self.getConnector(connectorId).transactionId,
         meterValue: sampledValues,
       };
-      await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
+      await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send MeterValues error: ' + error);
+      logger.error(self._logPrefix() + ' Send MeterValues error: ' + error);
       throw error;
     }
   }
@@ -971,7 +973,7 @@ export default class ChargingStation {
       this._heartbeatInterval = payload.interval * 1000;
       this._addConfigurationKey('HeartBeatInterval', Utils.convertToInt(payload.interval));
       this._addConfigurationKey('HeartbeatInterval', Utils.convertToInt(payload.interval), false, false);
-      this._basicStartMessageSequence();
+      this._startMessageSequence();
     } else if (payload.status === 'Pending') {
       logger.info(this._logPrefix() + ' Charging station in pending state on the central server');
     } else {
@@ -1212,7 +1214,7 @@ export default class ChargingStation {
       // Check if authorized
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
         // Authorization successful start transaction
-        this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag);
+        this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
         logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
@@ -1220,7 +1222,7 @@ export default class ChargingStation {
       return Constants.OCPP_RESPONSE_REJECTED;
     }
     // No local authorization check required => start transaction
-    this.sendStartTransactionWithTimeout(transactionConnectorID, commandPayload.idTag);
+    this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
     logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID + ' for idTag ' + commandPayload.idTag);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
