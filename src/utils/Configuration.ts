@@ -12,60 +12,60 @@ export default class Configuration {
     return Configuration.configuration;
   }
 
-  static getStatisticsDisplayInterval() {
+  static getStatisticsDisplayInterval(): number {
     // Read conf
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
   }
 
-  static getAutoReconnectTimeout() {
+  static getAutoReconnectTimeout(): number {
     // Read conf
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectTimeout') ? Configuration.getConfig().autoReconnectTimeout : 10;
   }
 
-  static getAutoReconnectMaxRetries() {
+  static getAutoReconnectMaxRetries(): number {
     // Read conf
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries') ? Configuration.getConfig().autoReconnectMaxRetries : -1;
   }
 
-  static getStationTemplateURLs() {
+  static getStationTemplateURLs(): any[] {
     // Read conf
     return Configuration.getConfig().stationTemplateURLs;
   }
 
-  static useWorkerPool() {
+  static useWorkerPool(): boolean {
     return Configuration.getConfig().useWorkerPool;
   }
 
-  static getWorkerPoolSize() {
+  static getWorkerPoolSize(): number {
     return Configuration.getConfig().workerPoolSize;
   }
 
-  static getConsoleLog() {
+  static getConsoleLog(): boolean {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'consoleLog') ? Configuration.getConfig().consoleLog : false;
   }
 
-  static getLogFormat() {
+  static getLogFormat(): string {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFormat') ? Configuration.getConfig().logFormat : 'simple';
   }
 
-  static getLogLevel() {
+  static getLogLevel(): string {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel : 'info';
   }
 
-  static getLogFile() {
+  static getLogFile(): string {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFile') ? Configuration.getConfig().logFile : 'combined.log';
   }
 
-  static getErrorFile() {
+  static getErrorFile(): string {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'errorFile') ? Configuration.getConfig().errorFile : 'error.log';
   }
 
-  static getSupervisionURLs() {
+  static getSupervisionURLs(): string {
     // Read conf
     return Configuration.getConfig().supervisionURLs;
   }
 
-  static getDistributeStationToTenantEqually() {
+  static getDistributeStationToTenantEqually(): boolean {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationToTenantEqually') ? Configuration.getConfig().distributeStationToTenantEqually : true;
   }
 }

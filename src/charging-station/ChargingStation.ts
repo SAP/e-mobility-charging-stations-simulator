@@ -15,24 +15,24 @@ import logger from '../utils/Logger';
 
 export default class ChargingStation {
   private _index: number;
-  private _stationTemplateFile;
+  private _stationTemplateFile: string;
   private _stationInfo;
   private _bootNotificationMessage;
   private _connectors;
   private _configuration;
-  private _connectorsConfigurationHash;
+  private _connectorsConfigurationHash: string;
   private _supervisionUrl;
   private _wsConnectionUrl;
-  private _wsConnection;
+  private _wsConnection: WebSocket;
   private _isSocketRestart;
-  private _autoReconnectRetryCount;
-  private _autoReconnectMaxRetries;
-  private _autoReconnectTimeout;
+  private _autoReconnectRetryCount: number;
+  private _autoReconnectMaxRetries: number;
+  private _autoReconnectTimeout: number;
   private _requests;
   private _messageQueue;
   private _automaticTransactionGeneration: AutomaticTransactionGenerator;
   private _authorizedTags: string[];
-  private _heartbeatInterval;
+  private _heartbeatInterval: number;
   private _heartbeatSetInterval;
   private _statistics: Statistics;
   private _performanceObserver: PerformanceObserver;
@@ -332,7 +332,7 @@ export default class ChargingStation {
     }
   }
 
-  async _stopMessageSequence(reason = '') {
+  async _stopMessageSequence(reason = ''): Promise<void> {
     // Stop heartbeat
     this._stopHeartbeat();
     // Stop the ATG

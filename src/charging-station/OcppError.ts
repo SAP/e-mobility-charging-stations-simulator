@@ -1,10 +1,10 @@
 import Constants from '../utils/Constants';
 
 export default class OCPPError extends Error {
-  code;
+  code: string;
   details;
 
-  constructor(code, message, details?) {
+  constructor(code: string, message:string , details?) {
     super(message);
 
     this.code = code || Constants.OCPP_ERROR_GENERIC_ERROR;
