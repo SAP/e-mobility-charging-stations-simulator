@@ -45,13 +45,17 @@
     "worker-threads-pool": "^2.0.0",
     "ws": "^7.3.1"
   },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.2",
+    "utf-8-validate": "^5.0.3"
+  },
   "devDependencies": {
     "@types/node": "^14.14.6",
     "@types/uuid": "^8.3.0",
     "@types/worker-threads-pool": "^2.0.0",
     "@types/ws": "^7.2.9",
-    "@typescript-eslint/eslint-plugin": "^4.6.0",
-    "@typescript-eslint/parser": "^4.6.0",
+    "@typescript-eslint/eslint-plugin": "^4.6.1",
+    "@typescript-eslint/parser": "^4.6.1",
     "clinic": "^7.0.0",
     "cross-env": "^7.0.2",
     "eslint": "^7.12.1",
