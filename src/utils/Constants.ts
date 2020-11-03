@@ -105,9 +105,9 @@ export default class Constants {
   static OCPP_RESPONSE_REJECTED = { status: 'Rejected' };
   static OCPP_RESPONSE_REBOOT_REQUIRED = { status: 'RebootRequired' };
   static OCPP_SOCKET_TIMEOUT = 60000; // 60 sec
-  static OCPP_JSON_CALL_MESSAGE = 2; // Client-to-Server
-  static OCPP_JSON_CALL_RESULT_MESSAGE = 3; // Server-to-Client
-  static OCPP_JSON_CALL_ERROR_MESSAGE = 4; // Server-to-Client
+  static OCPP_JSON_CALL_MESSAGE = 2; // Caller to callee
+  static OCPP_JSON_CALL_RESULT_MESSAGE = 3; // Callee to caller
+  static OCPP_JSON_CALL_ERROR_MESSAGE = 4; // Callee to caller
   // Requested Action is not known by receiver
   static OCPP_ERROR_NOT_IMPLEMENTED = 'NotImplemented';
   // Requested Action is recognized but not supported by the receiver
@@ -122,7 +122,7 @@ export default class Constants {
   static OCPP_ERROR_FORMATION_VIOLATION = 'FormationViolation';
   // Payload is syntactically correct but at least one field contains an invalid value
   static OCPP_ERROR_PROPERTY_RAINT_VIOLATION = 'PropertyraintViolation';
-  // Payload for Action is syntactically correct but at least one of the fields violates occurence raints
+  // Payload for Action is syntactically correct but at least one of the fields violates occurrence raints
   static OCPP_ERROR_OCCURENCE_RAINT_VIOLATION = 'OccurenceraintViolation';
   // Payload for Action is syntactically correct but at least one of the fields violates data type raints (e.g. “somestring” = 12)
   static OCPP_ERROR_TYPERAINT_VIOLATION = 'TyperaintViolation';

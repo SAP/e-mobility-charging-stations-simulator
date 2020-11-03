@@ -2,7 +2,7 @@ import Constants from '../utils/Constants';
 
 export default class OCPPError extends Error {
   code: string;
-  details;
+  details: any;
 
   constructor(code: string, message:string , details?) {
     super(message);

@@ -1,4 +1,5 @@
 import Configuration from './Configuration';
+import Constants from './Constants';
 import Utils from './Utils';
 import logger from './Logger';
 
@@ -22,23 +23,43 @@ export default class Statistics {
     return Statistics.instance;
   }
 
-  addMessage(command, response = false) {
-    if (response) {
-      if (this._statistics[command]) {
-        if (this._statistics[command].countResponse) {
-          this._statistics[command].countResponse++;
+  addMessage(command: string, messageType: number): void {
+    switch (messageType) {
+      case Constants.OCPP_JSON_CALL_MESSAGE:
+        if (this._statistics[command] && this._statistics[command].count) {
+          this._statistics[command].countRequest++;
         } else {
+          this._statistics[command] = {};
+          this._statistics[command].countRequest = 1;
+        }
+        break;
+      case Constants.OCPP_JSON_CALL_RESULT_MESSAGE:
+        if (this._statistics[command]) {
+          if (this._statistics[command].countResponse) {
+            this._statistics[command].countResponse++;
+          } else {
+            this._statistics[command].countResponse = 1;
+          }
+        } else {
+          this._statistics[command] = {};
           this._statistics[command].countResponse = 1;
         }
-      } else {
-        this._statistics[command] = {};
-        this._statistics[command].countResponse = 1;
-      }
-    } else if (this._statistics[command] && this._statistics[command].count) {
-      this._statistics[command].count++;
-    } else {
-      this._statistics[command] = {};
-      this._statistics[command].count = 1;
+        break;
+      case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
+        if (this._statistics[command]) {
+          if (this._statistics[command].countError) {
+            this._statistics[command].countError++;
+          } else {
+            this._statistics[command].countError = 1;
+          }
+        } else {
+          this._statistics[command] = {};
+          this._statistics[command].countError = 1;
+        }
+        break;
+      default:
+        logger.error(`${this._logPrefix()} Wrong message type ${messageType}`);
+        break;
     }
   }
 
