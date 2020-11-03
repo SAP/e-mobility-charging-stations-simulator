@@ -910,7 +910,7 @@ export default class ChargingStation {
         // Error Message
         case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
           if (this.getEnableStatistics()) {
-            this._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName}`);
+            this._statistics.addMessage(commandName + ' error');
           }
           // Build Error Message
           messageToSend = JSON.stringify([messageType, messageId, command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {}]);
@@ -946,7 +946,7 @@ export default class ChargingStation {
       function rejectCallback(error: OCPPError) {
         logger.debug(`${self._logPrefix()} Error %j on commandName %s command %j`, error, commandName, command);
         if (self.getEnableStatistics()) {
-          self._statistics.addMessage(`Error on commandName ${commandName}`, true);
+          self._statistics.addMessage(`${commandName} error`, true);
         }
         // Build Exception
         // eslint-disable-next-line no-empty-function
