@@ -557,7 +557,7 @@ export default class ChargingStation {
           }
           if (!responseCallback) {
             // Error
-            throw new Error(`Response for unknown message id ${messageId}`);
+            throw new Error(`Response request for unknown message id ${messageId}`);
           }
           delete this._requests[messageId];
           responseCallback(commandName, requestPayload);
@@ -566,7 +566,7 @@ export default class ChargingStation {
         case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
           if (!this._requests[messageId]) {
             // Error
-            throw new Error(`Error for unknown message id ${messageId}`);
+            throw new Error(`Error request for unknown message id ${messageId}`);
           }
           // eslint-disable-next-line no-case-declarations
           let rejectCallback;
@@ -586,7 +586,7 @@ export default class ChargingStation {
       // Log
       logger.error('%s Incoming message %j processing error %s on request content %s', this._logPrefix(), message, error, this._requests[messageId]);
       // Send error
-      // await this.sendError(messageId, error);
+      await this.sendError(messageId, error);
     }
   }
 
@@ -912,7 +912,7 @@ export default class ChargingStation {
           if (this.getEnableStatistics()) {
             this._statistics.addMessage(`Error ${command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR} on ${commandName}`);
           }
-          // Build Message
+          // Build Error Message
           messageToSend = JSON.stringify([messageType, messageId, command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {}]);
           break;
       }
@@ -923,21 +923,22 @@ export default class ChargingStation {
       } else {
         // Buffer message until connection is back
         this._messageQueue.push(messageToSend);
+        // Reject it
+        return rejectCallback(new OCPPError(command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : `Web socket closed for message id '${messageId}' with content '${messageToSend}', buffer it`, command.details ? command.details : {}));
       }
-      // Request?
-      if (messageType !== Constants.OCPP_JSON_CALL_MESSAGE) {
+      // Response?
+      if (messageType === Constants.OCPP_JSON_CALL_RESULT_MESSAGE) {
         // Yes: send Ok
         resolve();
-      } else if (this._wsConnection && this._wsConnection.readyState === WebSocket.OPEN) {
-        // Send timeout in case connection is open otherwise wait for ever
-        // FIXME: Handle message on timeout
-        setTimeout(() => rejectCallback(new OCPPError(command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : '', command.details ? command.details : {})), Constants.OCPP_SOCKET_TIMEOUT);
+      } else if (messageType === Constants.OCPP_JSON_CALL_ERROR_MESSAGE) {
+        // Send timeout
+        setTimeout(() => rejectCallback(new OCPPError(command.code ? command.code : Constants.OCPP_ERROR_GENERIC_ERROR, command.message ? command.message : `Timeout for message id '${messageId}' with content '${messageToSend}'`, command.details ? command.details : {})), Constants.OCPP_SOCKET_TIMEOUT);
       }
 
       // Function that will receive the request's response
       function responseCallback(payload, requestPayload) {
-        self.handleResponse(commandName, payload, requestPayload);
         // Send the response
+        self.handleResponse(commandName, payload, requestPayload);
         resolve(payload);
       }
 
