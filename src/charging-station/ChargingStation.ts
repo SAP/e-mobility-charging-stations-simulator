@@ -1097,7 +1097,7 @@ export default class ChargingStation {
       }
     } else {
       // Throw exception
-      await this.sendError(messageId, new OCPPError(Constants.OCPP_ERROR_NOT_IMPLEMENTED, `${commandName} not implemented`, {}), commandName);
+      await this.sendError(messageId, new OCPPError(Constants.OCPP_ERROR_NOT_IMPLEMENTED, `${commandName} is not implemented`, {}), commandName);
       throw new Error(`${commandName} is not implemented ${JSON.stringify(commandPayload, null, ' ')}`);
     }
     // Send response
