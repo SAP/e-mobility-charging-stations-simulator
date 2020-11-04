@@ -644,7 +644,7 @@ export default class ChargingStation {
     }
   }
 
-  async sendStopTransaction(transactionId: string, reason = ''): Promise<void> {
+  async sendStopTransaction(transactionId: number, reason = ''): Promise<void> {
     try {
       const payload = {
         transactionId,
