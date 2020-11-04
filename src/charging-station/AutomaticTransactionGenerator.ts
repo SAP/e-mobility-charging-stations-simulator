@@ -79,9 +79,9 @@ export default class AutomaticTransactionGenerator {
         if (this._chargingStation.getEnableStatistics()) {
           const startTransaction = performance.timerify(this.startTransaction);
           this._performanceObserver.observe({ entryTypes: ['function'] });
-          startResponse = await startTransaction(connectorId);
+          startResponse = await startTransaction(connectorId, this);
         } else {
-          startResponse = await this.startTransaction(connectorId);
+          startResponse = await this.startTransaction(connectorId, this);
         }
         if (startResponse.idTagInfo.status !== 'Accepted') {
           logger.info(this._logPrefix(connectorId) + ' transaction rejected');
@@ -98,31 +98,33 @@ export default class AutomaticTransactionGenerator {
             if (this._chargingStation.getEnableStatistics()) {
               const stopTransaction = performance.timerify(this.stopTransaction);
               this._performanceObserver.observe({ entryTypes: ['function'] });
-              await stopTransaction(connectorId);
+              await stopTransaction(connectorId, this);
             } else {
-              await this.stopTransaction(connectorId);
+              await this.stopTransaction(connectorId, this);
             }
           }
         }
       } else {
         skip++;
-        logger.info(this._logPrefix(connectorId) + ' transaction skipped ' + skip);
+        logger.info(this._logPrefix(connectorId) + ' transaction skipped ' + skip.toString());
       }
     } while (!this._timeToStop);
     logger.info(this._logPrefix(connectorId) + ' ATG STOPPED on the connector');
   }
 
-  async startTransaction(connectorId: number): Promise<unknown> {
-    if (this._chargingStation.hasAuthorizedTags()) {
-      const tagId = this._chargingStation.getRandomTagId();
-      logger.info(this._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
-      return this._chargingStation.sendStartTransaction(connectorId, tagId);
+  // eslint-disable-next-line consistent-this
+  async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<unknown> {
+    if (self._chargingStation.hasAuthorizedTags()) {
+      const tagId = self._chargingStation.getRandomTagId();
+      logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
+      return await self._chargingStation.sendStartTransaction(connectorId, tagId);
     }
-    logger.info(this._logPrefix(connectorId) + ' start transaction without a tagID');
-    return this._chargingStation.sendStartTransaction(connectorId);
+    logger.info(self._logPrefix(connectorId) + ' start transaction without a tagID');
+    return await self._chargingStation.sendStartTransaction(connectorId);
   }
 
-  async stopTransaction(connectorId: number): Promise<void> {
-    await this._chargingStation.sendStopTransaction(this._chargingStation.getConnector(connectorId).transactionId);
+  // eslint-disable-next-line consistent-this
+  async stopTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<void> {
+    await self._chargingStation.sendStopTransaction(self._chargingStation.getConnector(connectorId).transactionId);
   }
 }

@@ -26,7 +26,7 @@ export default class Statistics {
   addMessage(command: string, messageType: number): void {
     switch (messageType) {
       case Constants.OCPP_JSON_CALL_MESSAGE:
-        if (this._statistics[command] && this._statistics[command].count) {
+        if (this._statistics[command] && this._statistics[command].countRequest) {
           this._statistics[command].countRequest++;
         } else {
           this._statistics[command] = {};
@@ -63,32 +63,26 @@ export default class Statistics {
     }
   }
 
-  addPerformanceTimer(command, duration) {
-    let currentStatistics;
+  addPerformanceTimer(command: string, duration: number): void {
     // Map to proper command name
     const MAPCOMMAND = {
       sendMeterValues: 'MeterValues',
       startTransaction: 'StartTransaction',
       stopTransaction: 'StopTransaction',
     };
-    // Get current command statistics
     if (MAPCOMMAND[command]) {
-      currentStatistics = this._statistics[MAPCOMMAND[command]];
-    } else if (this._statistics[command]) {
-      currentStatistics = this._statistics[command];
-    } else {
+      command = MAPCOMMAND[command];
+    }
+    // Initialize command statistics
+    if (!this._statistics[command]) {
       this._statistics[command] = {};
-      currentStatistics = this._statistics[command];
     }
-
-    if (currentStatistics) {
-      // Update current statistics timers
-      currentStatistics.countTime = currentStatistics.countTime ? currentStatistics.countTime + 1 : 1;
-      currentStatistics.minTime = currentStatistics.minTime ? (currentStatistics.minTime > duration ? duration : currentStatistics.minTime) : duration;
-      currentStatistics.maxTime = currentStatistics.maxTime ? (currentStatistics.maxTime < duration ? duration : currentStatistics.maxTime) : duration;
-      currentStatistics.totalTime = currentStatistics.totalTime ? currentStatistics.totalTime + duration : duration;
-      currentStatistics.avgTime = currentStatistics.totalTime / currentStatistics.countTime;
-    }
+    // Update current statistics timers
+    this._statistics[command].countTime = this._statistics[command].countTime ? this._statistics[command].countTime + 1 : 1;
+    this._statistics[command].minTime = this._statistics[command].minTime ? (this._statistics[command].minTime > duration ? duration : this._statistics[command].minTime) : duration;
+    this._statistics[command].maxTime = this._statistics[command].maxTime ? (this._statistics[command].maxTime < duration ? duration : this._statistics[command].maxTime) : duration;
+    this._statistics[command].totalTime = this._statistics[command].totalTime ? this._statistics[command].totalTime + duration : duration;
+    this._statistics[command].avgTime = this._statistics[command].totalTime / this._statistics[command].countTime;
   }
 
   logPerformance(entry, className: string): void {
