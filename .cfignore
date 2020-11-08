@@ -6,6 +6,7 @@
 .eslintrc
 .vscode
 .clinic
+.tscache
 # Logs
 *.log
 # Vim
@@ -15,5 +16,9 @@
 .netrwhist
 *~
 *.orig
+ev-simulator-start.sh
+ev-simulator-start.bat
+README.md
+src
 node_modules
 manifest-cf-template.yml
