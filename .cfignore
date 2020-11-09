@@ -19,6 +19,5 @@
 ev-simulator-start.sh
 ev-simulator-start.bat
 README.md
-src
 node_modules
 manifest-cf-template.yml
