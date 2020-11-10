@@ -1,10 +1,11 @@
 import { PerformanceObserver, performance } from 'perf_hooks';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
+import { ChargePointStatus } from '../types/ChargePointStatus';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants.js';
 import ElectricUtils from '../utils/ElectricUtils';
-import { MeasurandValues } from '../types/MeasurandValues';
+import MeasurandValues from '../types/MeasurandValues';
 import OCPPError from './OcppError.js';
 import Statistics from '../utils/Statistics';
 import Utils from '../utils/Utils';
@@ -309,13 +310,15 @@ export default class ChargingStation {
     // Initialize connectors status
     for (const connector in this._connectors) {
       if (!this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
-        if (this.getConnector(Utils.convertToInt(connector)).bootStatus) {
+        if (!this.getConnector(Utils.convertToInt(connector)).status && this.getConnector(Utils.convertToInt(connector)).bootStatus) {
           this.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).bootStatus);
+        } else if (this.getConnector(Utils.convertToInt(connector)).status) {
+          this.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).status);
         } else {
-          this.sendStatusNotification(Utils.convertToInt(connector), 'Available');
+          this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.AVAILABLE);
         }
       } else {
-        this.sendStatusNotification(Utils.convertToInt(connector), 'Charging');
+        this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.CHARGING);
       }
     }
     // Start the ATG
@@ -449,7 +452,7 @@ export default class ChargingStation {
     await this._stopMessageSequence();
     // eslint-disable-next-line guard-for-in
     for (const connector in this._connectors) {
-      await this.sendStatusNotification(Utils.convertToInt(connector), 'Unavailable');
+      await this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.UNAVAILABLE);
     }
     if (this._wsConnection && this._wsConnection.readyState === WebSocket.OPEN) {
       this._wsConnection.close();
@@ -480,7 +483,7 @@ export default class ChargingStation {
     }
   }
 
-  onOpen() {
+  onOpen(): void {
     logger.info(`${this._logPrefix()} Is connected to server through ${this._wsConnectionUrl}`);
     if (!this._isSocketRestart) {
       // Send BootNotification
@@ -500,7 +503,7 @@ export default class ChargingStation {
     this._isSocketRestart = false;
   }
 
-  onError(error) {
+  onError(error): void {
     switch (error) {
       case 'ECONNREFUSED':
         this._isSocketRestart = true;
@@ -512,7 +515,7 @@ export default class ChargingStation {
     }
   }
 
-  onClose(error) {
+  onClose(error): void {
     switch (error) {
       case 1000: // Normal close
       case 1005:
@@ -526,11 +529,11 @@ export default class ChargingStation {
     }
   }
 
-  onPing() {
+  onPing(): void {
     logger.debug(this._logPrefix() + ' Has received a WS ping (rfc6455) from the server');
   }
 
-  async onMessage(message) {
+  async onMessage(message) : Promise<void> {
     let [messageType, messageId, commandName, commandPayload, errorDetails] = [0, '', Constants.ENTITY_CHARGING_STATION, '', ''];
     try {
       // Parse the message
@@ -594,7 +597,7 @@ export default class ChargingStation {
     }
   }
 
-  async sendHeartbeat() {
+  async sendHeartbeat(): Promise<void> {
     try {
       const payload = {
         currentTime: new Date().toISOString(),
@@ -606,7 +609,7 @@ export default class ChargingStation {
     }
   }
 
-  async sendBootNotification() {
+  async sendBootNotification(): Promise<void> {
     try {
       await this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
     } catch (error) {
@@ -615,7 +618,8 @@ export default class ChargingStation {
     }
   }
 
-  async sendStatusNotification(connectorId: number, status: string, errorCode = 'NoError') {
+  async sendStatusNotification(connectorId: number, status: ChargePointStatus, errorCode = 'NoError'): Promise<void> {
+    this.getConnector(connectorId).status = status;
     try {
       const payload = {
         connectorId,
@@ -1029,7 +1033,7 @@ export default class ChargingStation {
       this.getConnector(requestPayload.connectorId).transactionId = payload.transactionId;
       this.getConnector(requestPayload.connectorId).idTag = requestPayload.idTag;
       this.getConnector(requestPayload.connectorId).lastEnergyActiveImportRegisterValue = 0;
-      this.sendStatusNotification(requestPayload.connectorId, 'Charging');
+      this.sendStatusNotification(requestPayload.connectorId, ChargePointStatus.CHARGING);
       logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider++;
@@ -1040,7 +1044,7 @@ export default class ChargingStation {
     } else {
       logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
       this._resetTransactionOnConnector(requestPayload.connectorId);
-      this.sendStatusNotification(requestPayload.connectorId, 'Available');
+      this.sendStatusNotification(requestPayload.connectorId, ChargePointStatus.AVAILABLE);
     }
   }
 
@@ -1057,7 +1061,7 @@ export default class ChargingStation {
       return;
     }
     if (payload.idTagInfo && payload.idTagInfo.status === 'Accepted') {
-      this.sendStatusNotification(transactionConnectorId, 'Available');
+      this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE);
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider--;
       }
