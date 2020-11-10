@@ -16,7 +16,7 @@ export default class AutomaticTransactionGenerator {
     if (this._chargingStation.getEnableStatistics()) {
       this._performanceObserver = new PerformanceObserver((list) => {
         const entry = list.getEntries()[0];
-        this._chargingStation.statistics.logPerformance(entry, 'AutomaticTransactionGenerator');
+        this._chargingStation.statistics.logPerformance(entry, Constants.ENTITY_AUTOMATIC_TRANSACTION_GENERATOR);
         this._performanceObserver.disconnect();
       });
     }
