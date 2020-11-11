@@ -10,7 +10,7 @@
   "powerOutType": "DC",
   "useConnectorId0": true,
   "randomConnectors": false,
-  "resetTime": "60",
+  "resetTime": 60,
   "enableStatistics": false,
   "voltageOut": 400,
   "Configuration": {

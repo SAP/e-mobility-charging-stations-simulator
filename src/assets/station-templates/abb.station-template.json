@@ -11,7 +11,7 @@
   "numberOfConnectors": 2,
   "useConnectorId0": false,
   "randomConnectors": false,
-  "resetTime": "30",
+  "resetTime": 30,
   "enableStatistics": false,
   "Configuration": {
     "configurationKey": [

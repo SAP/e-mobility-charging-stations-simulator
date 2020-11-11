@@ -5,14 +5,16 @@ export default class Utils {
     return uuid();
   }
 
-  static async sleep(ms: number): Promise<NodeJS.Timeout> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  static async sleep(milliSeconds: number): Promise<NodeJS.Timeout> {
+    return new Promise((resolve) => setTimeout(resolve, milliSeconds));
   }
 
-  static secondstoHHMMSS(seconds): string {
-    const date = new Date();
-    date.setSeconds(seconds);
-    return date.toISOString().substr(11, 8);
+  static secondsToHHMMSS(seconds: number): string {
+    return new Date(seconds * 1000).toISOString().substr(11, 8);
+  }
+
+  static milliSecondsToHHMMSS(milliSeconds: number): string {
+    return new Date(milliSeconds).toISOString().substr(11, 8);
   }
 
   static removeExtraEmptyLines(tab): void {
@@ -115,7 +117,7 @@ export default class Utils {
     return date.toLocaleString() + prefixString;
   }
 
-  static objectHasOwnProperty(object, property) {
+  static objectHasOwnProperty(object, property): boolean {
     return Object.prototype.hasOwnProperty.call(object, property);
   }
 

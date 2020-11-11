@@ -1,12 +1,20 @@
+import { ConfigurationStatus, DefaultResponseStatus, UnlockStatus } from '../types/RequestResponses';
+
 export default class Constants {
   static readonly ENTITY_CHARGING_STATION = 'ChargingStation';
   static readonly ENTITY_AUTOMATIC_TRANSACTION_GENERATOR = 'AutomaticTransactionGenerator';
 
   static readonly WS_UNSUPPORTED_DATA = 1007;
 
-  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: 'Accepted' });
-  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: 'Rejected' });
-  static readonly OCPP_RESPONSE_REBOOT_REQUIRED = Object.freeze({ status: 'RebootRequired' });
+  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: DefaultResponseStatus.ACCEPTED });
+  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: DefaultResponseStatus.REJECTED });
+  static readonly OCPP_CONFIGURATION_RESPONSE_ACCEPTED = Object.freeze({ status: ConfigurationStatus.ACCEPTED });
+  static readonly OCPP_CONFIGURATION_RESPONSE_REJECTED = Object.freeze({ status: ConfigurationStatus.REJECTED });
+  static readonly OCPP_CONFIGURATION_RESPONSE_REBOOT_REQUIRED = Object.freeze({ status: ConfigurationStatus.REBOOT_REQUIRED });
+  static readonly OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED = Object.freeze({ status: ConfigurationStatus.NOT_SUPPORTED });
+  static readonly OCPP_RESPONSE_UNLOCKED = Object.freeze({ status: UnlockStatus.UNLOCKED });
+  static readonly OCPP_RESPONSE_UNLOCK_FAILED = Object.freeze({ status: UnlockStatus.UNLOCK_FAILED });
+  static readonly OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED = Object.freeze({ status: UnlockStatus.NOT_SUPPORTED });
   static readonly OCPP_SOCKET_TIMEOUT = 60000; // 60 sec
   static readonly OCPP_JSON_CALL_MESSAGE = 2; // Caller to callee
   static readonly OCPP_JSON_CALL_RESULT_MESSAGE = 3; // Callee to caller
@@ -41,4 +49,6 @@ export default class Constants {
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms
+
+  static readonly TRANSACTION_DEFAULT_IDTAG = '00000000';
 }
