@@ -1,4 +1,4 @@
-import { AuthorizationStatus, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/Transaction';
+import { AuthorizationStatus, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
 import { PerformanceObserver, performance } from 'perf_hooks';
 
 import ChargingStation from './ChargingStation';

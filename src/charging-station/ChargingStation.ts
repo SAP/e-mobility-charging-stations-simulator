@@ -1,14 +1,14 @@
-import { AuthorizationStatus, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/Transaction';
+import { AuthorizationStatus, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationTemplate';
-import { ConfigurationResponse, DefaultRequestResponse, UnlockResponse } from '../types/RequestResponses';
+import { ConfigurationResponse, DefaultRequestResponse, UnlockResponse } from '../types/ocpp/1.6/RequestResponses';
 import Connectors, { Connector } from '../types/Connectors';
-import MeterValue, { MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit } from '../types/MeterValue';
+import MeterValue, { MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit } from '../types/ocpp/1.6/MeterValue';
 import { PerformanceObserver, performance } from 'perf_hooks';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
-import { ChargePointErrorCode } from '../types/ChargePointErrorCode';
-import { ChargePointStatus } from '../types/ChargePointStatus';
+import { ChargePointErrorCode } from '../types/ocpp/1.6/ChargePointErrorCode';
+import { ChargePointStatus } from '../types/ocpp/1.6/ChargePointStatus';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants.js';

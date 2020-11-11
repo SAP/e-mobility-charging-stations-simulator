@@ -1,4 +1,4 @@
-import { ConfigurationStatus, DefaultResponseStatus, UnlockStatus } from '../types/RequestResponses';
+import { ConfigurationStatus, DefaultResponseStatus, UnlockStatus } from '../types/ocpp/1.6/RequestResponses';
 
 export default class Constants {
   static readonly ENTITY_CHARGING_STATION = 'ChargingStation';

@@ -1,5 +1,5 @@
-import { ChargePointStatus } from './ChargePointStatus';
-import MeterValue from './MeterValue';
+import { ChargePointStatus } from './ocpp/1.6/ChargePointStatus';
+import MeterValue from './ocpp/1.6/MeterValue';
 
 export interface Connector {
   bootStatus?: ChargePointStatus;
