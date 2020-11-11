@@ -1,4 +1,5 @@
 import Configuration from './utils/Configuration';
+import { StationTemplateURL } from './types/ConfigurationData';
 import Utils from './utils/Utils';
 import Wrk from './charging-station/Worker';
 import logger from './utils/Logger';
@@ -10,11 +11,11 @@ class Bootstrap {
       let numStationsTotal = 0;
       // Start each ChargingStation object in a worker thread
       if (Configuration.getStationTemplateURLs()) {
-        Configuration.getStationTemplateURLs().forEach((stationURL) => {
+        Configuration.getStationTemplateURLs().forEach((stationURL: StationTemplateURL) => {
           try {
-            const nbStation = stationURL.numberOfStation ? stationURL.numberOfStation : 0;
-            numStationsTotal += nbStation;
-            for (let index = 1; index <= nbStation; index++) {
+            const nbStations = stationURL.numberOfStations ? stationURL.numberOfStations : 0;
+            numStationsTotal += nbStations;
+            for (let index = 1; index <= nbStations; index++) {
               const worker = new Wrk('./dist/charging-station/StationWorker.js', {
                 index,
                 templateFile: stationURL.file,

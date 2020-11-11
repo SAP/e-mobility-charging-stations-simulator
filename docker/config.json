@@ -11,27 +11,27 @@
   "stationTemplateURLs": [
     {
       "file": "./src/assets/station-templates/siemens.station-template.json",
-      "numberOfStation": 0
+      "numberOfStations": 0
     },
     {
       "file": "./src/assets/station-templates/keba.station-template.json",
-      "numberOfStation": 0
+      "numberOfStations": 0
     },
     {
       "file": "./src/assets/station-templates/abb.station-template.json",
-      "numberOfStation": 0
+      "numberOfStations": 0
     },
     {
       "file": "./src/assets/station-templates/evlink.station-template.json",
-      "numberOfStation": 0
+      "numberOfStations": 0
     },
     {
       "file": "./src/assets/station-templates/schneider.station-template.json",
-      "numberOfStation": 0
+      "numberOfStations": 0
     },
     {
       "file": "./src/assets/station-templates/virtual-simple-atg.station-template.json",
-      "numberOfStation": 10
+      "numberOfStations": 10
     }
   ],
   "consoleLog": false,

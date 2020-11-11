@@ -1,13 +1,15 @@
+import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
+
 import Utils from './Utils';
 import fs from 'fs';
 
 export default class Configuration {
-  static configuration;
+  static configuration: ConfigurationData;
 
   // Read the config file
-  static getConfig() {
+  static getConfig(): ConfigurationData {
     if (!Configuration.configuration) {
-      Configuration.configuration = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8'));
+      Configuration.configuration = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8')) as ConfigurationData;
     }
     return Configuration.configuration;
   }
@@ -27,7 +29,7 @@ export default class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries') ? Configuration.getConfig().autoReconnectMaxRetries : -1;
   }
 
-  static getStationTemplateURLs(): any[] {
+  static getStationTemplateURLs(): StationTemplateURL[] {
     // Read conf
     return Configuration.getConfig().stationTemplateURLs;
   }
@@ -60,7 +62,7 @@ export default class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'errorFile') ? Configuration.getConfig().errorFile : 'error.log';
   }
 
-  static getSupervisionURLs(): string {
+  static getSupervisionURLs(): string[] {
     // Read conf
     return Configuration.getConfig().supervisionURLs;
   }

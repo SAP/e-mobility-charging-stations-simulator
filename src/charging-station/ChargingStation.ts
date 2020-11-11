@@ -1,3 +1,4 @@
+import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import Connectors, { Connector } from '../types/Connectors';
 import MeterValue, { MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit } from '../types/MeterValue';
 import { PerformanceObserver, performance } from 'perf_hooks';
@@ -21,9 +22,15 @@ export default class ChargingStation {
   private _index: number;
   private _stationTemplateFile: string;
   private _stationInfo;
-  private _bootNotificationMessage;
+  private _bootNotificationMessage: {
+    chargePointModel: string,
+    chargePointVendor: string,
+    chargeBoxSerialNumber?: string,
+    firmwareVersion?: string,
+  };
+
   private _connectors: Connectors;
-  private _configuration;
+  private _configuration: ChargingStationConfiguration;
   private _connectorsConfigurationHash: string;
   private _supervisionUrl: string;
   private _wsConnectionUrl: string;
@@ -32,7 +39,7 @@ export default class ChargingStation {
   private _autoReconnectRetryCount: number;
   private _autoReconnectMaxRetries: number;
   private _autoReconnectTimeout: number;
-  private _requests;
+  private _requests: { [id: string]: [(payload?, requestPayload?) => void, (error?: OCPPError) => void, object] };
   private _messageQueue: any[];
   private _automaticTransactionGeneration: AutomaticTransactionGenerator;
   private _authorizedTags: string[];
@@ -169,8 +176,8 @@ export default class ChargingStation {
     return Utils.logPrefix(` ${this._stationInfo.name}:`);
   }
 
-  _getConfiguration() {
-    return this._stationInfo.Configuration ? this._stationInfo.Configuration : {};
+  _getConfiguration(): ChargingStationConfiguration {
+    return this._stationInfo.Configuration ? this._stationInfo.Configuration : {} as ChargingStationConfiguration;
   }
 
   _getAuthorizationFile(): string {
@@ -292,9 +299,9 @@ export default class ChargingStation {
         // Get a random url
         indexUrl = Math.floor(Math.random() * supervisionUrls.length);
       }
-      return supervisionUrls[indexUrl];
+      return supervisionUrls[indexUrl] as string;
     }
-    return supervisionUrls;
+    return supervisionUrls as string;
   }
 
   _getAuthorizeRemoteTxRequests(): boolean {
@@ -478,7 +485,7 @@ export default class ChargingStation {
       logger.error(`${this._logPrefix()} Socket: connection retry with timeout ${this._autoReconnectTimeout}ms`);
       this._autoReconnectRetryCount++;
       setTimeout(() => {
-        logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount);
+        logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount.toString());
         this.start();
       }, this._autoReconnectTimeout);
     } else if (this._autoReconnectTimeout !== 0 || this._autoReconnectMaxRetries !== -1) {
@@ -703,7 +710,7 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: voltageMeasurandValue.toString() },
           });
           for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
-            const voltageValue = Utils.convertToInt(sampledValues.sampledValue[sampledValues.sampledValue.length - 1].value);
+            const voltageValue = Utils.convertToFloat(sampledValues.sampledValue[sampledValues.sampledValue.length - 1].value);
             let phaseValue: string;
             if (voltageValue >= 0 && voltageValue <= 250) {
               phaseValue = `L${phase}-N`;
@@ -720,7 +727,7 @@ export default class ChargingStation {
             });
           }
         // Power.Active.Import measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.POWER_ACTIVE_EXPORT && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.POWER_ACTIVE_EXPORT)) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.POWER_ACTIVE_IMPORT)) {
           // FIXME: factor out powerDivider checks
           if (Utils.isUndefined(self._stationInfo.powerDivider)) {
             const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider is undefined`;
@@ -891,14 +898,14 @@ export default class ChargingStation {
     }
   }
 
-  async sendError(messageId, err: Error | OCPPError, commandName): Promise<unknown> {
+  async sendError(messageId: string, err: Error | OCPPError, commandName: string): Promise<unknown> {
     // Check exception type: only OCPP error are accepted
     const error = err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message, err.stack && err.stack);
     // Send error
     return this.sendMessage(messageId, error, Constants.OCPP_JSON_CALL_ERROR_MESSAGE, commandName);
   }
 
-  async sendMessage(messageId, commandParams, messageType = Constants.OCPP_JSON_CALL_RESULT_MESSAGE, commandName: string): Promise<unknown> {
+  async sendMessage(messageId: string, commandParams, messageType = Constants.OCPP_JSON_CALL_RESULT_MESSAGE, commandName: string): Promise<unknown> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -974,7 +981,7 @@ export default class ChargingStation {
         logger.debug(`${self._logPrefix()} Error %j occurred when calling command %s with parameters %j`, error, commandName, commandParams);
         // Build Exception
         // eslint-disable-next-line no-empty-function
-        self._requests[messageId] = [() => { }, () => { }, '']; // Properly format the request
+        self._requests[messageId] = [() => { }, () => { }, {}]; // Properly format the request
         // Send error
         reject(error);
       }
@@ -1046,7 +1053,7 @@ export default class ChargingStation {
       }
       const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
       this._startMeterValues(requestPayload.connectorId,
-        configuredMeterValueSampleInterval ? configuredMeterValueSampleInterval.value * 1000 : 60000);
+        configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
     } else {
       logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
       this._resetTransactionOnConnector(requestPayload.connectorId);
@@ -1090,7 +1097,7 @@ export default class ChargingStation {
     logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
   }
 
-  async handleRequest(messageId, commandName, commandPayload): Promise<void> {
+  async handleRequest(messageId: string, commandName: string, commandPayload): Promise<void> {
     let response;
     // Call
     if (typeof this['handleRequest' + commandName] === 'function') {
@@ -1124,7 +1131,7 @@ export default class ChargingStation {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  _getConfigurationKey(key: string) {
+  _getConfigurationKey(key: string): ConfigurationKey {
     return this._configuration.configurationKey.find((configElement) => configElement.key === key);
   }
 
@@ -1149,9 +1156,9 @@ export default class ChargingStation {
     }
   }
 
-  handleRequestGetConfiguration(commandPayload) {
-    const configurationKey = [];
-    const unknownKey = [];
+  handleRequestGetConfiguration(commandPayload): { configurationKey: ConfigurationKey[]; unknownKey: string[] } {
+    const configurationKey: ConfigurationKey[] = [];
+    const unknownKey: string[] = [];
     if (Utils.isEmptyArray(commandPayload.key)) {
       for (const configuration of this._configuration.configurationKey) {
         if (Utils.isUndefined(configuration.visible)) {
