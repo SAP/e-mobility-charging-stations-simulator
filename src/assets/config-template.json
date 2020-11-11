@@ -31,6 +31,6 @@
     }
   ],
   "logFile": "combined.log",
-  "errorFile": "error.log",
-  "consoleLog": false
+  "logErrorFile": "error.log",
+  "logConsole": false
 }

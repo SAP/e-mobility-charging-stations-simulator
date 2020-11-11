@@ -83,7 +83,7 @@ export default class ChargingStation {
       stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8')) as ChargingStationTemplate;
       fs.closeSync(fileDescriptor);
     } catch (error) {
-      logger.error('Template file ' + this._stationTemplateFile + ' loading error: ' + error);
+      logger.error('Template file ' + this._stationTemplateFile + ' loading error: %j', error);
       throw error;
     }
     const stationInfo: ChargingStationInfo = stationTemplateFromFile || {} as ChargingStationInfo;
@@ -201,7 +201,7 @@ export default class ChargingStation {
         authorizedTags = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8')) as string[];
         fs.closeSync(fileDescriptor);
       } catch (error) {
-        logger.error(this._logPrefix() + ' Authorization file ' + authorizationFile + ' loading error: ' + error);
+        logger.error(this._logPrefix() + ' Authorization file ' + authorizationFile + ' loading error: %j', error);
         throw error;
       }
     } else {
@@ -263,7 +263,7 @@ export default class ChargingStation {
     if (!Utils.isEmptyArray(this._stationInfo.numberOfConnectors)) {
       const numberOfConnectors = this._stationInfo.numberOfConnectors as number[];
       // Distribute evenly the number of connectors
-      maxConnectors = numberOfConnectors[(this._index - 1) % numberOfConnectors.length] ;
+      maxConnectors = numberOfConnectors[(this._index - 1) % numberOfConnectors.length];
     } else if (!Utils.isUndefined(this._stationInfo.numberOfConnectors)) {
       maxConnectors = this._stationInfo.numberOfConnectors as number;
     } else {
@@ -306,7 +306,7 @@ export default class ChargingStation {
   }
 
   _getSupervisionURL(): string {
-    const supervisionUrls = Utils.cloneObject(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs()) as string|string[];
+    const supervisionUrls = Utils.cloneObject(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs()) as string | string[];
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
       if (Configuration.getDistributeStationToTenantEqually()) {
@@ -315,7 +315,7 @@ export default class ChargingStation {
         // Get a random url
         indexUrl = Math.floor(Math.random() * supervisionUrls.length);
       }
-      return supervisionUrls[indexUrl] ;
+      return supervisionUrls[indexUrl];
     }
     return supervisionUrls as string;
   }
@@ -404,7 +404,7 @@ export default class ChargingStation {
         // Initialize _authorizedTags
         this._authorizedTags = this._loadAndGetAuthorizedTags();
       } catch (error) {
-        logger.error(this._logPrefix() + ' Authorization file monitoring error: ' + error);
+        logger.error(this._logPrefix() + ' Authorization file monitoring error: %j', error);
       }
     });
   }
@@ -421,7 +421,7 @@ export default class ChargingStation {
           this._automaticTransactionGeneration.stop().catch(() => { });
         }
       } catch (error) {
-        logger.error(this._logPrefix() + ' Charging station template file monitoring error: ' + error);
+        logger.error(this._logPrefix() + ' Charging station template file monitoring error: %j', error);
       }
     });
   }
@@ -487,13 +487,13 @@ export default class ChargingStation {
   }
 
   _reconnect(error): void {
-    logger.error(this._logPrefix() + ' Socket: abnormally closed', error);
+    logger.error(this._logPrefix() + ' Socket: abnormally closed %j', error);
     // Stop the ATG if needed
     if (this._stationInfo.AutomaticTransactionGenerator.enable &&
       this._stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure &&
       this._automaticTransactionGeneration &&
       !this._automaticTransactionGeneration.timeToStop) {
-      this._automaticTransactionGeneration.stop().catch(() => {});
+      this._automaticTransactionGeneration.stop().catch(() => { });
     }
     // Stop heartbeat
     this._stopHeartbeat();
@@ -537,7 +537,7 @@ export default class ChargingStation {
         this._reconnect(error);
         break;
       default:
-        logger.error(this._logPrefix() + ' Socket error: ' + error);
+        logger.error(this._logPrefix() + ' Socket error: %j', error);
         break;
     }
   }
@@ -546,7 +546,7 @@ export default class ChargingStation {
     switch (error) {
       case 1000: // Normal close
       case 1005:
-        logger.info(this._logPrefix() + ' Socket normally closed ' + error);
+        logger.info(this._logPrefix() + ' Socket normally closed %j', error);
         this._autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
@@ -631,7 +631,7 @@ export default class ChargingStation {
       };
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send Heartbeat error: ' + error);
+      logger.error(this._logPrefix() + ' Send Heartbeat error: %j', error);
       throw error;
     }
   }
@@ -640,7 +640,7 @@ export default class ChargingStation {
     try {
       await this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send BootNotification error: ' + error);
+      logger.error(this._logPrefix() + ' Send BootNotification error: %j', error);
       throw error;
     }
   }
@@ -655,7 +655,7 @@ export default class ChargingStation {
       };
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StatusNotification error: ' + error);
+      logger.error(this._logPrefix() + ' Send StatusNotification error: %j', error);
       throw error;
     }
   }
@@ -670,7 +670,7 @@ export default class ChargingStation {
       };
       return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction') as StartTransactionResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StartTransaction error: ' + error);
+      logger.error(this._logPrefix() + ' Send StartTransaction error: %j', error);
       throw error;
     }
   }
@@ -687,7 +687,7 @@ export default class ChargingStation {
       };
       return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction') as StartTransactionResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StopTransaction error: ' + error);
+      logger.error(this._logPrefix() + ' Send StopTransaction error: %j', error);
       throw error;
     }
   }
@@ -801,7 +801,7 @@ export default class ChargingStation {
               ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
               ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
               ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
-              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: powerMeasurandValues[`L${phase}`] },
+              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: powerMeasurandValues[`L${phase}`] as string },
               phase: phaseValue as MeterValuePhase,
             });
           }
@@ -862,7 +862,7 @@ export default class ChargingStation {
               ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
               ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
               ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
-              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: currentMeasurandValues[phaseValue] },
+              ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: currentMeasurandValues[phaseValue] as string },
               phase: phaseValue as MeterValuePhase,
             });
           }
@@ -892,7 +892,8 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
             ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
             ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
-            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: connector.lastEnergyActiveImportRegisterValue.toString() },
+            ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } :
+              { value: connector.lastEnergyActiveImportRegisterValue.toString() },
           });
           const sampledValuesIndex = sampledValues.sampledValue.length - 1;
           const maxConsumption = Math.round(self._stationInfo.maxPower * 3600 / (self._stationInfo.powerDivider * interval));
@@ -912,7 +913,7 @@ export default class ChargingStation {
       };
       await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
     } catch (error) {
-      logger.error(self._logPrefix() + ' Send MeterValues error: ' + error);
+      logger.error(self._logPrefix() + ' Send MeterValues error: %j', error);
       throw error;
     }
   }
@@ -1045,46 +1046,47 @@ export default class ChargingStation {
   }
 
   handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload): void {
-    if (this.getConnector(requestPayload.connectorId).transactionStarted) {
-      logger.debug(this._logPrefix() + ' Try to start a transaction on an already used connector ' + requestPayload.connectorId + ': %s', this.getConnector(requestPayload.connectorId));
+    const connectorId = Utils.convertToInt(requestPayload.connectorId);
+    if (this.getConnector(connectorId).transactionStarted) {
+      logger.debug(this._logPrefix() + ' Try to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
       return;
     }
 
     let transactionConnectorId: number;
     for (const connector in this._connectors) {
-      if (Utils.convertToInt(connector) === Utils.convertToInt(requestPayload.connectorId)) {
+      if (Utils.convertToInt(connector) === connectorId) {
         transactionConnectorId = Utils.convertToInt(connector);
         break;
       }
     }
     if (!transactionConnectorId) {
-      logger.error(this._logPrefix() + ' Try to start a transaction on a non existing connector Id ' + requestPayload.connectorId);
+      logger.error(this._logPrefix() + ' Try to start a transaction on a non existing connector Id ' + connectorId.toString());
       return;
     }
     if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-      this.getConnector(requestPayload.connectorId).transactionStarted = true;
-      this.getConnector(requestPayload.connectorId).transactionId = payload.transactionId;
-      this.getConnector(requestPayload.connectorId).idTag = requestPayload.idTag;
-      this.getConnector(requestPayload.connectorId).lastEnergyActiveImportRegisterValue = 0;
-      this.sendStatusNotification(requestPayload.connectorId, ChargePointStatus.CHARGING);
-      logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId + ' STARTED on ' + this._stationInfo.name + '#' + requestPayload.connectorId + ' for idTag ' + requestPayload.idTag);
+      this.getConnector(connectorId).transactionStarted = true;
+      this.getConnector(connectorId).transactionId = payload.transactionId;
+      this.getConnector(connectorId).idTag = requestPayload.idTag;
+      this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = 0;
+      this.sendStatusNotification(connectorId, ChargePointStatus.CHARGING).catch(() => { });
+      logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this._stationInfo.name + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider++;
       }
       const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
-      this._startMeterValues(requestPayload.connectorId,
+      this._startMeterValues(connectorId,
         configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
     } else {
-      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId + ' REJECTED with status ' + payload.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
-      this._resetTransactionOnConnector(requestPayload.connectorId);
-      this.sendStatusNotification(requestPayload.connectorId, ChargePointStatus.AVAILABLE);
+      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
+      this._resetTransactionOnConnector(connectorId);
+      this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE).catch(() => { });
     }
   }
 
   handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload): void {
     let transactionConnectorId: number;
     for (const connector in this._connectors) {
-      if (this.getConnector(Utils.convertToInt(connector)).transactionId === requestPayload.transactionId) {
+      if (this.getConnector(Utils.convertToInt(connector)).transactionId === Utils.convertToInt(requestPayload.transactionId)) {
         transactionConnectorId = Utils.convertToInt(connector);
         break;
       }
@@ -1094,7 +1096,7 @@ export default class ChargingStation {
       return;
     }
     if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-      this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE);
+      this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE).catch(() => { });
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider--;
       }
@@ -1126,7 +1128,7 @@ export default class ChargingStation {
         response = await this['handleRequest' + commandName](commandPayload);
       } catch (error) {
         // Log
-        logger.error(this._logPrefix() + ' Handle request error: ' + error);
+        logger.error(this._logPrefix() + ' Handle request error: %j', error);
         // Send back response to inform backend
         await this.sendError(messageId, error, commandName);
         throw error;
@@ -1295,7 +1297,7 @@ export default class ChargingStation {
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
     }
-    logger.info(this._logPrefix() + ' Try to stop remotely a non existing transaction ' + commandPayload.transactionId);
+    logger.info(this._logPrefix() + ' Try to stop remotely a non existing transaction ' + transactionId.toString());
     return Constants.OCPP_RESPONSE_REJECTED;
   }
 }

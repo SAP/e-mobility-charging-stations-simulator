@@ -67,7 +67,29 @@ export default class Statistics {
     }
   }
 
-  addPerformanceTimer(command: string, duration: number): void {
+  logPerformance(entry: PerformanceEntry, className: string): void {
+    this.addPerformanceTimer(entry.name, entry.duration);
+    logger.info(`${this._logPrefix()} class->${className}, method->${entry.name}, duration->${entry.duration}`);
+  }
+
+  _display(): void {
+    logger.info(this._logPrefix() + ' %j', this._commandsStatistics);
+  }
+
+  _displayInterval(): void {
+    if (Configuration.getStatisticsDisplayInterval() > 0) {
+      setInterval(() => {
+        this._display();
+      }, Configuration.getStatisticsDisplayInterval() * 1000);
+      logger.info(this._logPrefix() + ' displayed every ' + Utils.secondsToHHMMSS(Configuration.getStatisticsDisplayInterval()));
+    }
+  }
+
+  start(): void {
+    this._displayInterval();
+  }
+
+  private addPerformanceTimer(command: string, duration: number): void {
     // Map to proper command name
     const MAPCOMMAND = {
       sendMeterValues: 'MeterValues',
@@ -87,28 +109,6 @@ export default class Statistics {
     this._commandsStatistics[command].maxTime = this._commandsStatistics[command].maxTime ? (this._commandsStatistics[command].maxTime < duration ? duration : this._commandsStatistics[command].maxTime) : duration;
     this._commandsStatistics[command].totalTime = this._commandsStatistics[command].totalTime ? this._commandsStatistics[command].totalTime + duration : duration;
     this._commandsStatistics[command].avgTime = this._commandsStatistics[command].totalTime / this._commandsStatistics[command].countTime;
-  }
-
-  logPerformance(entry: PerformanceEntry, className: string): void {
-    this.addPerformanceTimer(entry.name, entry.duration);
-    logger.info(`${this._logPrefix()} class->${className}, method->${entry.name}, duration->${entry.duration}`);
-  }
-
-  _display(): void {
-    logger.info(this._logPrefix() + ' %j', this._commandsStatistics);
-  }
-
-  _displayInterval(): void {
-    if (Configuration.getStatisticsDisplayInterval() > 0) {
-      setInterval(() => {
-        this._display();
-      }, Configuration.getStatisticsDisplayInterval() * 1000);
-      logger.info(this._logPrefix() + ' displayed every ' + Configuration.getStatisticsDisplayInterval().toString() + 's');
-    }
-  }
-
-  start(): void {
-    this._displayInterval();
   }
 
   private _logPrefix(): string {

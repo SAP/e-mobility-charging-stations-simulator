@@ -149,7 +149,7 @@ export default class Utils {
     return typeof value === 'string';
   }
 
-  static isUndefined(value) {
+  static isUndefined(value): boolean {
     return typeof value === 'undefined';
   }
 
@@ -171,4 +171,6 @@ export default class Utils {
   static isEmptyObject(obj): boolean {
     return !Object.keys(obj).length;
   }
+
+  static insertAt = (str: string, subStr: string, pos: number): string => `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
 }

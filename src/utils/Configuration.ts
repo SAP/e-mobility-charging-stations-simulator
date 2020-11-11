@@ -42,8 +42,8 @@ export default class Configuration {
     return Configuration.getConfig().workerPoolSize;
   }
 
-  static getConsoleLog(): boolean {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'consoleLog') ? Configuration.getConfig().consoleLog : false;
+  static getLogConsole(): boolean {
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logConsole') ? Configuration.getConfig().logConsole : false;
   }
 
   static getLogFormat(): string {
@@ -58,8 +58,8 @@ export default class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFile') ? Configuration.getConfig().logFile : 'combined.log';
   }
 
-  static getErrorFile(): string {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'errorFile') ? Configuration.getConfig().errorFile : 'error.log';
+  static getLogErrorFile(): string {
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile') ? Configuration.getConfig().logErrorFile : 'error.log';
   }
 
   static getSupervisionURLs(): string[] {

@@ -79,3 +79,6 @@ build/config.gypi
 # System Files
 .DS_Store
 Thumbs.db
+
+# Winston
+*-audit.json

@@ -34,7 +34,7 @@
       "numberOfStations": 10
     }
   ],
-  "consoleLog": false,
+  "logConsole": false,
   "logFile": "/dev/stdout",
-  "errorFile": "/dev/stderr"
+  "logErrorFile": "/dev/stderr"
 }

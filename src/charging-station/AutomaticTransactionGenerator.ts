@@ -29,7 +29,7 @@ export default class AutomaticTransactionGenerator {
 
   _logPrefix(connectorId: number = null): string {
     if (connectorId) {
-      return Utils.logPrefix(' ' + this._chargingStation.stationInfo.name + ' ATG on connector #' + connectorId + ':');
+      return Utils.logPrefix(' ' + this._chargingStation.stationInfo.name + ' ATG on connector #' + connectorId.toString() + ':');
     }
     return Utils.logPrefix(' ' + this._chargingStation.stationInfo.name + ' ATG:');
   }
@@ -54,7 +54,7 @@ export default class AutomaticTransactionGenerator {
     logger.info(this._logPrefix() + ' ATG OVER => STOPPING ALL TRANSACTIONS');
     for (const connector in this._chargingStation.connectors) {
       if (this._chargingStation.getConnector(Utils.convertToInt(connector)).transactionStarted) {
-        logger.info(this._logPrefix(Utils.convertToInt(connector)) + ' ATG OVER. Stop transaction ' + this._chargingStation.getConnector(Utils.convertToInt(connector)).transactionId);
+        logger.info(this._logPrefix(Utils.convertToInt(connector)) + ' ATG OVER. Stop transaction ' + this._chargingStation.getConnector(Utils.convertToInt(connector)).transactionId.toString());
         await this._chargingStation.sendStopTransaction(this._chargingStation.getConnector(Utils.convertToInt(connector)).transactionId, reason);
       }
     }
@@ -91,11 +91,11 @@ export default class AutomaticTransactionGenerator {
           // Wait until end of transaction
           const waitTrxEnd = Utils.getRandomInt(this._chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
             this._chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
-          logger.info(this._logPrefix(connectorId) + ' transaction ' + this._chargingStation.getConnector(connectorId).transactionId + ' will stop in ' + Utils.milliSecondsToHHMMSS(waitTrxEnd));
+          logger.info(this._logPrefix(connectorId) + ' transaction ' + this._chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.milliSecondsToHHMMSS(waitTrxEnd));
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
           if (this._chargingStation.getConnector(connectorId).transactionStarted) {
-            logger.info(this._logPrefix(connectorId) + ' stop transaction ' + this._chargingStation.getConnector(connectorId).transactionId);
+            logger.info(this._logPrefix(connectorId) + ' stop transaction ' + this._chargingStation.getConnector(connectorId).transactionId.toString());
             if (this._chargingStation.getEnableStatistics()) {
               const stopTransaction = performance.timerify(this.stopTransaction);
               this._performanceObserver.observe({ entryTypes: ['function'] });

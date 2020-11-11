@@ -48,6 +48,7 @@
     "tslib": "^2.0.3",
     "uuid": "^8.3.1",
     "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.0",
     "worker-threads-pool": "^2.0.0",
     "ws": "^7.4.0"
   },

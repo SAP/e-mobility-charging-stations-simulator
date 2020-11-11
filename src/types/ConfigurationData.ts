@@ -15,6 +15,6 @@ export default interface ConfigurationData {
   logFormat?: string;
   logLevel?: string;
   logFile?: string;
-  errorFile?: string;
-  consoleLog?: boolean;
+  logErrorFile?: string;
+  logConsole?: boolean;
 }
