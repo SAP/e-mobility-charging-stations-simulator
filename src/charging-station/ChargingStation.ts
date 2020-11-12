@@ -530,28 +530,28 @@ export default class ChargingStation {
     this._hasSocketRestarted = false;
   }
 
-  onError(error): void {
-    switch (error) {
+  onError(errorEvent): void {
+    switch (errorEvent) {
       case 'ECONNREFUSED':
         this._hasSocketRestarted = true;
-        this._reconnect(error);
+        this._reconnect(errorEvent);
         break;
       default:
-        logger.error(this._logPrefix() + ' Socket error: %j', error);
+        logger.error(this._logPrefix() + ' Socket error: %j', errorEvent);
         break;
     }
   }
 
-  onClose(error): void {
-    switch (error) {
+  onClose(closeEvent): void {
+    switch (closeEvent) {
       case 1000: // Normal close
       case 1005:
-        logger.info(this._logPrefix() + ' Socket normally closed %j', error);
+        logger.info(this._logPrefix() + ' Socket normally closed %j', closeEvent);
         this._autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
         this._hasSocketRestarted = true;
-        this._reconnect(error);
+        this._reconnect(closeEvent);
         break;
     }
   }
@@ -560,11 +560,11 @@ export default class ChargingStation {
     logger.debug(this._logPrefix() + ' Has received a WS ping (rfc6455) from the server');
   }
 
-  async onMessage(message): Promise<void> {
+  async onMessage(messageEvent): Promise<void> {
     let [messageType, messageId, commandName, commandPayload, errorDetails] = [0, '', Constants.ENTITY_CHARGING_STATION, '', ''];
     try {
       // Parse the message
-      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(message);
+      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent);
 
       // Check the Type of message
       switch (messageType) {
@@ -618,7 +618,7 @@ export default class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming message %j processing error %s on request content type %s', this._logPrefix(), message, error, this._requests[messageId]);
+      logger.error('%s Incoming message %j processing error %s on request content type %s', this._logPrefix(), messageEvent, error, this._requests[messageId]);
       // Send error
       await this.sendError(messageId, error, commandName);
     }
