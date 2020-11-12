@@ -9,7 +9,7 @@ export default interface ConfigurationData {
   statisticsDisplayInterval?: number;
   autoReconnectTimeout?: number;
   autoReconnectMaxRetries?: number;
-  distributeStationToTenantEqually?: boolean;
+  distributeStationsToTenantsEqually?: boolean;
   useWorkerPool?: boolean;
   workerPoolSize?: number;
   logFormat?: string;

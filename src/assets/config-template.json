@@ -5,7 +5,7 @@
   "autoReconnectTimeout": 10,
   "autoReconnectMaxRetries": 10,
   "statisticsDisplayInterval": 60,
-  "distributeStationToTenantEqually": true,
+  "distributeStationsToTenantsEqually": true,
   "useWorkerPool": false,
   "workerPoolSize": 16,
   "stationTemplateURLs": [

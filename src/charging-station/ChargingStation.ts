@@ -309,7 +309,7 @@ export default class ChargingStation {
     const supervisionUrls = Utils.cloneObject(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs()) as string | string[];
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
-      if (Configuration.getDistributeStationToTenantEqually()) {
+      if (Configuration.getDistributeStationsToTenantsEqually()) {
         indexUrl = this._index % supervisionUrls.length;
       } else {
         // Get a random url

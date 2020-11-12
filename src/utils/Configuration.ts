@@ -67,7 +67,7 @@ export default class Configuration {
     return Configuration.getConfig().supervisionURLs;
   }
 
-  static getDistributeStationToTenantEqually(): boolean {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationToTenantEqually') ? Configuration.getConfig().distributeStationToTenantEqually : true;
+  static getDistributeStationsToTenantsEqually(): boolean {
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationsToTenantsEqually') ? Configuration.getConfig().distributeStationsToTenantsEqually : true;
   }
 }
