@@ -103,11 +103,12 @@ export default class Statistics {
       this._commandsStatistics[command] = {} as CommandStatisticsData;
     }
     // Update current statistics timers
-    this._commandsStatistics[command].countTime = this._commandsStatistics[command].countTime ? this._commandsStatistics[command].countTime + 1 : 1;
+    this._commandsStatistics[command].countTimeMeasurement = this._commandsStatistics[command].countTimeMeasurement ? this._commandsStatistics[command].countTimeMeasurement + 1 : 1;
+    this._commandsStatistics[command].currentTime = duration;
     this._commandsStatistics[command].minTime = this._commandsStatistics[command].minTime ? (this._commandsStatistics[command].minTime > duration ? duration : this._commandsStatistics[command].minTime) : duration;
     this._commandsStatistics[command].maxTime = this._commandsStatistics[command].maxTime ? (this._commandsStatistics[command].maxTime < duration ? duration : this._commandsStatistics[command].maxTime) : duration;
     this._commandsStatistics[command].totalTime = this._commandsStatistics[command].totalTime ? this._commandsStatistics[command].totalTime + duration : duration;
-    this._commandsStatistics[command].avgTime = this._commandsStatistics[command].totalTime / this._commandsStatistics[command].countTime;
+    this._commandsStatistics[command].avgTime = this._commandsStatistics[command].totalTime / this._commandsStatistics[command].countTimeMeasurement;
   }
 
   private _logPrefix(): string {
