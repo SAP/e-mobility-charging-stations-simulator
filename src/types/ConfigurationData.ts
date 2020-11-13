@@ -14,6 +14,8 @@ export default interface ConfigurationData {
   workerPoolSize?: number;
   logFormat?: string;
   logLevel?: string;
+  logRotate?: boolean;
+  logMaxFiles?: number;
   logFile?: string;
   logErrorFile?: string;
   logConsole?: boolean;

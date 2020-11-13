@@ -488,7 +488,7 @@ export default class ChargingStation {
   }
 
   _reconnect(error): void {
-    logger.error(this._logPrefix() + ' Socket: abnormally closed %j', error);
+    logger.error(this._logPrefix() + ' Socket: abnormally closed: %j', error);
     // Stop the ATG if needed
     if (this._stationInfo.AutomaticTransactionGenerator.enable &&
       this._stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure &&
@@ -548,7 +548,7 @@ export default class ChargingStation {
     switch (closeEvent) {
       case 1000: // Normal close
       case 1005:
-        logger.info(this._logPrefix() + ' Socket normally closed %j', closeEvent);
+        logger.info(this._logPrefix() + ' Socket normally closed: %j', closeEvent);
         this._autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
@@ -1000,7 +1000,7 @@ export default class ChargingStation {
         if (self.getEnableStatistics()) {
           self._statistics.addMessage(commandName, messageType);
         }
-        logger.debug(`${self._logPrefix()} Error %j occurred when calling command %s with parameters %j`, error, commandName, commandParams);
+        logger.debug(`${self._logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception
         // eslint-disable-next-line no-empty-function
         self._requests[messageId] = [() => { }, () => { }, {}]; // Properly format the request

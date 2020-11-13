@@ -1,4 +1,4 @@
-import CommandStatistics, { CommandStatisticsData } from '../types/CommandStatistics';
+import CommandStatistics, { CommandStatisticsData, PerfEntry } from '../types/CommandStatistics';
 
 import Configuration from './Configuration';
 import Constants from './Constants';
@@ -68,7 +68,12 @@ export default class Statistics {
 
   logPerformance(entry: PerformanceEntry, className: string): void {
     this.addPerformanceTimer(entry.name, entry.duration);
-    logger.info(`${this._logPrefix()} class->${className}, method->${entry.name}, duration->${entry.duration}`);
+    const perfEntry: PerfEntry = {} as PerfEntry;
+    perfEntry.name = entry.name;
+    perfEntry.entryType = entry.entryType;
+    perfEntry.startTime = entry.startTime;
+    perfEntry.duration = entry.duration;
+    logger.info(`${this._logPrefix()} object ${className} method performance entry: %j`, perfEntry);
   }
 
   _display(): void {
@@ -88,6 +93,18 @@ export default class Statistics {
     this._displayInterval();
   }
 
+  private median(dataSet: number[]): number {
+    if (Array.isArray(dataSet) && dataSet.length === 1) {
+      return dataSet[0];
+    }
+    const sortedDataSet = dataSet.slice().sort();
+    const middleIndex = Math.floor(sortedDataSet.length / 2);
+    if (sortedDataSet.length % 2) {
+      return sortedDataSet[middleIndex / 2];
+    }
+    return (sortedDataSet[(middleIndex - 1)] + sortedDataSet[middleIndex]) / 2;
+  }
+
   private addPerformanceTimer(command: string, duration: number): void {
     // Map to proper command name
     const MAPCOMMAND = {
@@ -104,11 +121,13 @@ export default class Statistics {
     }
     // Update current statistics timers
     this._commandsStatistics[command].countTimeMeasurement = this._commandsStatistics[command].countTimeMeasurement ? this._commandsStatistics[command].countTimeMeasurement + 1 : 1;
-    this._commandsStatistics[command].currentTime = duration;
-    this._commandsStatistics[command].minTime = this._commandsStatistics[command].minTime ? (this._commandsStatistics[command].minTime > duration ? duration : this._commandsStatistics[command].minTime) : duration;
-    this._commandsStatistics[command].maxTime = this._commandsStatistics[command].maxTime ? (this._commandsStatistics[command].maxTime < duration ? duration : this._commandsStatistics[command].maxTime) : duration;
-    this._commandsStatistics[command].totalTime = this._commandsStatistics[command].totalTime ? this._commandsStatistics[command].totalTime + duration : duration;
-    this._commandsStatistics[command].avgTime = this._commandsStatistics[command].totalTime / this._commandsStatistics[command].countTimeMeasurement;
+    this._commandsStatistics[command].currentTimeMeasurement = duration;
+    this._commandsStatistics[command].minTimeMeasurement = this._commandsStatistics[command].minTimeMeasurement ? (this._commandsStatistics[command].minTimeMeasurement > duration ? duration : this._commandsStatistics[command].minTimeMeasurement) : duration;
+    this._commandsStatistics[command].maxTimeMeasurement = this._commandsStatistics[command].maxTimeMeasurement ? (this._commandsStatistics[command].maxTimeMeasurement < duration ? duration : this._commandsStatistics[command].maxTimeMeasurement) : duration;
+    this._commandsStatistics[command].totalTimeMeasurement = this._commandsStatistics[command].totalTimeMeasurement ? this._commandsStatistics[command].totalTimeMeasurement + duration : duration;
+    this._commandsStatistics[command].avgTimeMeasurement = this._commandsStatistics[command].totalTimeMeasurement / this._commandsStatistics[command].countTimeMeasurement;
+    Array.isArray(this._commandsStatistics[command].timeMeasurementSeries) ? this._commandsStatistics[command].timeMeasurementSeries.push(duration) : this._commandsStatistics[command].timeMeasurementSeries = [duration];
+    this._commandsStatistics[command].medTimeMeasurement = this.median(this._commandsStatistics[command].timeMeasurementSeries);
   }
 
   private _logPrefix(): string {

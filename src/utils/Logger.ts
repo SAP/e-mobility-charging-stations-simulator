@@ -1,22 +1,28 @@
 import 'winston-daily-rotate-file';
 
+import winston, { transport } from 'winston';
+
 import Configuration from './Configuration';
 import Utils from './Utils';
-import winston from 'winston';
 
-const maxLogFiles = 7;
+let transports: transport[];
+if (Configuration.getLogRotate()) {
+  const logMaxFiles = Configuration.getLogMaxFiles();
+  transports = [
+    new winston.transports.DailyRotateFile({ filename: Utils.insertAt(Configuration.getLogErrorFile(), '-%DATE%', Configuration.getLogErrorFile().indexOf('.log')), level: 'error', maxFiles: logMaxFiles }),
+    new winston.transports.DailyRotateFile({ filename: Utils.insertAt(Configuration.getLogFile(), '-%DATE%', Configuration.getLogFile().indexOf('.log')), maxFiles: logMaxFiles }),
+  ];
+} else {
+  transports = [
+    new winston.transports.File({ filename: Configuration.getLogErrorFile(), level: 'error' }),
+    new winston.transports.File({ filename: Configuration.getLogFile() }),
+  ];
+}
 
 const logger = winston.createLogger({
   level: Configuration.getLogLevel(),
   format: winston.format.combine(winston.format.splat(), winston.format[Configuration.getLogFormat()]()),
-  transports: [
-    //
-    // - Write to all logs with level `info` and below to `combined.log`
-    // - Write all logs error (and below) to `error.log`.
-    //
-    new winston.transports.DailyRotateFile({ filename: Utils.insertAt(Configuration.getLogErrorFile(), '-%DATE%', Configuration.getLogErrorFile().indexOf('.log')), level: 'error', maxFiles: maxLogFiles }),
-    new winston.transports.DailyRotateFile({ filename: Utils.insertAt(Configuration.getLogFile(), '-%DATE%', Configuration.getLogFile().indexOf('.log')), maxFiles: maxLogFiles }),
-  ],
+  transports: transports,
 });
 
 //

@@ -50,6 +50,14 @@ export default class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFormat') ? Configuration.getConfig().logFormat : 'simple';
   }
 
+  static getLogRotate(): boolean {
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logRotate') ? Configuration.getConfig().logRotate : true;
+  }
+
+  static getLogMaxFiles(): number {
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') ? Configuration.getConfig().logMaxFiles : 7;
+  }
+
   static getLogLevel(): string {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel : 'info';
   }
