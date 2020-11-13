@@ -4,7 +4,7 @@ export enum DefaultResponseStatus {
 }
 
 export interface DefaultRequestResponse {
-  status: DefaultResponseStatus
+  status: DefaultResponseStatus;
 }
 
 export enum UnlockStatus {
@@ -25,5 +25,5 @@ export enum ConfigurationStatus {
 }
 
 export interface ConfigurationResponse {
-  status: ConfigurationStatus
+  status: ConfigurationStatus;
 }

@@ -1,4 +1,4 @@
-export default interface CommandStatisticsData {
+export interface CommandStatisticsData {
   countRequest: number;
   countResponse: number;
   countError: number;
@@ -7,4 +7,8 @@ export default interface CommandStatisticsData {
   maxTime: number;
   totalTime: number;
   avgTime: number;
+}
+
+export default interface CommandStatistics {
+  [command: string]: CommandStatisticsData;
 }

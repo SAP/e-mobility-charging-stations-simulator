@@ -11,10 +11,11 @@ import { ChargePointErrorCode } from '../types/ocpp/1.6/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/1.6/ChargePointStatus';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
-import Constants from '../utils/Constants.js';
+import Constants from '../utils/Constants';
 import ElectricUtils from '../utils/ElectricUtils';
 import MeasurandValues from '../types/MeasurandValues';
-import OCPPError from './OcppError.js';
+import OCPPError from './OcppError';
+import Requests from '../types/ocpp/1.6/Requests';
 import Statistics from '../utils/Statistics';
 import Utils from '../utils/Utils';
 import WebSocket from 'ws';
@@ -44,8 +45,8 @@ export default class ChargingStation {
   private _autoReconnectRetryCount: number;
   private _autoReconnectMaxRetries: number;
   private _autoReconnectTimeout: number;
-  private _requests: { [id: string]: [(payload?, requestPayload?) => void, (error?: OCPPError) => void, object] };
-  private _messageQueue: any[];
+  private _requests: Requests;
+  private _messageQueue: string[];
   private _automaticTransactionGeneration: AutomaticTransactionGenerator;
   private _authorizedTags: string[];
   private _heartbeatInterval: number;
@@ -56,7 +57,7 @@ export default class ChargingStation {
   constructor(index: number, stationTemplateFile: string) {
     this._index = index;
     this._stationTemplateFile = stationTemplateFile;
-    this._connectors = {};
+    this._connectors = {} as Connectors;
     this._initialize();
 
     this._hasStopped = false;
@@ -65,8 +66,8 @@ export default class ChargingStation {
     this._autoReconnectMaxRetries = Configuration.getAutoReconnectMaxRetries(); // -1 for unlimited
     this._autoReconnectTimeout = Configuration.getAutoReconnectTimeout() * 1000; // Ms, zero for disabling
 
-    this._requests = {};
-    this._messageQueue = [];
+    this._requests = {} as Requests;
+    this._messageQueue = [] as string[];
 
     this._authorizedTags = this._loadAndGetAuthorizedTags();
   }
@@ -519,8 +520,9 @@ export default class ChargingStation {
     if (this._hasSocketRestarted) {
       this._startMessageSequence();
       if (!Utils.isEmptyArray(this._messageQueue)) {
-        this._messageQueue.forEach((message) => {
+        this._messageQueue.forEach((message, index) => {
           if (this._wsConnection && this._wsConnection.readyState === WebSocket.OPEN) {
+            this._messageQueue.splice(index, 1);
             this._wsConnection.send(message);
           }
         });

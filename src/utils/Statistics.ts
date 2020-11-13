@@ -1,4 +1,5 @@
-import CommandStatisticsData from '../types/CommandStatisticsData';
+import CommandStatistics, { CommandStatisticsData } from '../types/CommandStatistics';
+
 import Configuration from './Configuration';
 import Constants from './Constants';
 import { PerformanceEntry } from 'perf_hooks';
@@ -8,12 +9,10 @@ import logger from './Logger';
 export default class Statistics {
   private static instance: Statistics;
   private _objName: string;
-  private _commandsStatistics: {
-    [command: string]: CommandStatisticsData
-  };
+  private _commandsStatistics: CommandStatistics;
 
   private constructor() {
-    this._commandsStatistics = {};
+    this._commandsStatistics = {} as CommandStatistics;
   }
 
   set objName(objName: string) {
