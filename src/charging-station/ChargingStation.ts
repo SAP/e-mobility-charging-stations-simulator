@@ -1050,7 +1050,7 @@ export default class ChargingStation {
   handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload): void {
     const connectorId = Utils.convertToInt(requestPayload.connectorId);
     if (this.getConnector(connectorId).transactionStarted) {
-      logger.debug(this._logPrefix() + ' Try to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
+      logger.debug(this._logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
       return;
     }
 
@@ -1062,7 +1062,7 @@ export default class ChargingStation {
       }
     }
     if (!transactionConnectorId) {
-      logger.error(this._logPrefix() + ' Try to start a transaction on a non existing connector Id ' + connectorId.toString());
+      logger.error(this._logPrefix() + ' Trying to start a transaction on a non existing connector Id ' + connectorId.toString());
       return;
     }
     if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
@@ -1094,7 +1094,7 @@ export default class ChargingStation {
       }
     }
     if (!transactionConnectorId) {
-      logger.error(this._logPrefix() + ' Try to stop a non existing transaction ' + requestPayload.transactionId);
+      logger.error(this._logPrefix() + ' Trying to stop a non existing transaction ' + requestPayload.transactionId);
       return;
     }
     if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
@@ -1158,7 +1158,7 @@ export default class ChargingStation {
   async handleRequestUnlockConnector(commandPayload): Promise<UnlockResponse> {
     const connectorId = Utils.convertToInt(commandPayload.connectorId);
     if (connectorId === 0) {
-      logger.error(this._logPrefix() + ' Try to unlock connector ' + connectorId.toString());
+      logger.error(this._logPrefix() + ' Trying to unlock connector ' + connectorId.toString());
       return Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
     if (this.getConnector(connectorId).transactionStarted) {
@@ -1299,7 +1299,7 @@ export default class ChargingStation {
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
     }
-    logger.info(this._logPrefix() + ' Try to stop remotely a non existing transaction ' + transactionId.toString());
+    logger.info(this._logPrefix() + ' Trying to remote stop a non existing transaction ' + transactionId.toString());
     return Constants.OCPP_RESPONSE_REJECTED;
   }
 }
