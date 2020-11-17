@@ -162,6 +162,9 @@ export default class Utils {
   }
 
   static isEmptyArray(object): boolean {
+    if (!object) {
+      return true;
+    }
     if (Array.isArray(object) && object.length > 0) {
       return false;
     }
