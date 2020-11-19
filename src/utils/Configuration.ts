@@ -4,17 +4,10 @@ import Utils from './Utils';
 import fs from 'fs';
 
 export default class Configuration {
-  static configuration: ConfigurationData;
-
-  // Read the config file
-  static getConfig(): ConfigurationData {
-    if (!Configuration.configuration) {
-      Configuration.configuration = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8')) as ConfigurationData;
-    }
-    return Configuration.configuration;
-  }
+  private static configuration: ConfigurationData;
 
   static getStatisticsDisplayInterval(): number {
+    Configuration.deprecateConfigurationKey('');
     // Read conf
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
   }
@@ -30,6 +23,11 @@ export default class Configuration {
   }
 
   static getStationTemplateURLs(): StationTemplateURL[] {
+    Configuration.getConfig().stationTemplateURLs.forEach((stationURL: StationTemplateURL) => {
+      if (!Utils.isUndefined(stationURL['numberOfStation'])) {
+        console.error(`Deprecated configuration key 'numberOfStation' usage for template file '${stationURL.file}' in 'stationTemplateURLs'. Use 'numberOfStations' instead`);
+      }
+    });
     // Read conf
     return Configuration.getConfig().stationTemplateURLs;
   }
@@ -43,6 +41,7 @@ export default class Configuration {
   }
 
   static getLogConsole(): boolean {
+    Configuration.deprecateConfigurationKey('consoleLog', 'Use \'logConsole\' instead');
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logConsole') ? Configuration.getConfig().logConsole : false;
   }
 
@@ -67,6 +66,7 @@ export default class Configuration {
   }
 
   static getLogErrorFile(): string {
+    Configuration.deprecateConfigurationKey('errorFile', 'Use \'logErrorFile\' instead');
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile') ? Configuration.getConfig().logErrorFile : 'error.log';
   }
 
@@ -76,6 +76,21 @@ export default class Configuration {
   }
 
   static getDistributeStationsToTenantsEqually(): boolean {
+    Configuration.deprecateConfigurationKey('distributeStationToTenantEqually', 'Use \'distributeStationsToTenantsEqually\' instead');
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationsToTenantsEqually') ? Configuration.getConfig().distributeStationsToTenantsEqually : true;
+  }
+
+  private static deprecateConfigurationKey(key: string, logMsgToAppend = '') {
+    if (!Utils.isUndefined(Configuration.getConfig()[key])) {
+      console.error(`Deprecated configuration key '${key}' usage${logMsgToAppend && '. ' + logMsgToAppend}`);
+    }
+  }
+
+  // Read the config file
+  private static getConfig(): ConfigurationData {
+    if (!Configuration.configuration) {
+      Configuration.configuration = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8')) as ConfigurationData;
+    }
+    return Configuration.configuration;
   }
 }

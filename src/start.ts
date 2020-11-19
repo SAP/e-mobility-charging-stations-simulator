@@ -1,13 +1,10 @@
 import Configuration from './utils/Configuration';
 import { StationTemplateURL } from './types/ConfigurationData';
-import Utils from './utils/Utils';
 import Wrk from './charging-station/Worker';
-import logger from './utils/Logger';
 
 class Bootstrap {
   static start() {
     try {
-      logger.debug('%s Configuration: %j', Utils.logPrefix(), Configuration.getConfig());
       let numStationsTotal = 0;
       // Start each ChargingStation object in a worker thread
       if (Configuration.getStationTemplateURLs()) {
