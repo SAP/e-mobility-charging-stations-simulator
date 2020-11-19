@@ -7,7 +7,6 @@ export default class Configuration {
   private static configuration: ConfigurationData;
 
   static getStatisticsDisplayInterval(): number {
-    Configuration.deprecateConfigurationKey('');
     // Read conf
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
   }
