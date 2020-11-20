@@ -1,5 +1,6 @@
 import CommandStatistics, { CommandStatisticsData, PerfEntry } from '../types/CommandStatistics';
 
+import CircularArray from './CircularArray';
 import Configuration from './Configuration';
 import Constants from './Constants';
 import { PerformanceEntry } from 'perf_hooks';
@@ -126,7 +127,7 @@ export default class Statistics {
     this._commandsStatistics[command].maxTimeMeasurement = this._commandsStatistics[command].maxTimeMeasurement ? (this._commandsStatistics[command].maxTimeMeasurement < duration ? duration : this._commandsStatistics[command].maxTimeMeasurement) : duration;
     this._commandsStatistics[command].totalTimeMeasurement = this._commandsStatistics[command].totalTimeMeasurement ? this._commandsStatistics[command].totalTimeMeasurement + duration : duration;
     this._commandsStatistics[command].avgTimeMeasurement = this._commandsStatistics[command].totalTimeMeasurement / this._commandsStatistics[command].countTimeMeasurement;
-    Array.isArray(this._commandsStatistics[command].timeMeasurementSeries) ? this._commandsStatistics[command].timeMeasurementSeries.push(duration) : this._commandsStatistics[command].timeMeasurementSeries = [duration];
+    Array.isArray(this._commandsStatistics[command].timeMeasurementSeries) ? this._commandsStatistics[command].timeMeasurementSeries.push(duration) : this._commandsStatistics[command].timeMeasurementSeries = [duration] as CircularArray<number>;
     this._commandsStatistics[command].medTimeMeasurement = this.median(this._commandsStatistics[command].timeMeasurementSeries);
   }
 

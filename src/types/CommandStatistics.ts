@@ -1,3 +1,4 @@
+import CircularArray from '../utils/CircularArray';
 import { EntryType } from 'perf_hooks';
 
 export interface PerfEntry {
@@ -12,7 +13,7 @@ export interface CommandStatisticsData {
   countResponse: number;
   countError: number;
   countTimeMeasurement: number;
-  timeMeasurementSeries: number[];
+  timeMeasurementSeries: CircularArray<number>;
   currentTimeMeasurement: number;
   minTimeMeasurement: number;
   maxTimeMeasurement: number;
