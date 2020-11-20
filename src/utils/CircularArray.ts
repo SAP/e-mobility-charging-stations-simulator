@@ -9,15 +9,15 @@ export default class CircularArray<T> extends Array<T> {
   }
 
   push(...items: T[]): number {
-    while (this.length > this.size) {
-      this.shift();
+    if (this.length + items.length > this.size) {
+      super.splice(0, (this.length + items.length) - this.size);
     }
     return super.push(...items);
   }
 
   unshift(...items: T[]): number {
-    while (this.length > this.size) {
-      this.pop();
+    if (this.length + items.length > this.size) {
+      super.splice(this.size - items.length, (this.length + items.length) - this.size);
     }
     return super.unshift(...items);
   }
