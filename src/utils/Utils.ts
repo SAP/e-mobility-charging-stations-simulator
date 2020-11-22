@@ -176,4 +176,14 @@ export default class Utils {
   }
 
   static insertAt = (str: string, subStr: string, pos: number): string => `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
+
+  /**
+   * @param  {number} [retryNumber=0]
+   * @return {number} - delay in milliseconds
+   */
+  static exponentialDelay(retryNumber = 0): number {
+    const delay = Math.pow(2, retryNumber) * 100;
+    const randomSum = delay * 0.2 * Math.random(); // 0-20% of the delay
+    return delay + randomSum;
+  }
 }

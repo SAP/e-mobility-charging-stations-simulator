@@ -11,9 +11,10 @@ export default class Configuration {
     return Utils.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
   }
 
-  static getAutoReconnectTimeout(): number {
+  static getConnectionTimeout(): number {
+    Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'connectionTimeout\' instead');
     // Read conf
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectTimeout') ? Configuration.getConfig().autoReconnectTimeout : 10;
+    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'connectionTimeout') ? Configuration.getConfig().connectionTimeout : 10;
   }
 
   static getAutoReconnectMaxRetries(): number {

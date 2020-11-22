@@ -42,9 +42,9 @@ export default class ChargingStation {
   private _wsConnection: WebSocket;
   private _hasStopped: boolean;
   private _hasSocketRestarted: boolean;
+  private _connectionTimeout: number;
   private _autoReconnectRetryCount: number;
   private _autoReconnectMaxRetries: number;
-  private _autoReconnectTimeout: number;
   private _requests: Requests;
   private _messageQueue: string[];
   private _automaticTransactionGeneration: AutomaticTransactionGenerator;
@@ -63,9 +63,9 @@ export default class ChargingStation {
 
     this._hasStopped = false;
     this._hasSocketRestarted = false;
+    this._connectionTimeout = Configuration.getConnectionTimeout() * 1000; // Ms, zero for disabling
     this._autoReconnectRetryCount = 0;
     this._autoReconnectMaxRetries = Configuration.getAutoReconnectMaxRetries(); // -1 for unlimited
-    this._autoReconnectTimeout = Configuration.getAutoReconnectTimeout() * 1000; // Ms, zero for disabling
 
     this._requests = {} as Requests;
     this._messageQueue = [] as string[];
@@ -295,7 +295,7 @@ export default class ChargingStation {
     return !Utils.isUndefined(this._stationInfo.voltageOut) ? Utils.convertToInt(this._stationInfo.voltageOut) : defaultVoltageOut;
   }
 
-  _getTransactionidTag(transactionId: number): string {
+  _getTransactionIdTag(transactionId: number): string {
     for (const connector in this._connectors) {
       if (this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
         return this.getConnector(Utils.convertToInt(connector)).idTag;
@@ -320,6 +320,10 @@ export default class ChargingStation {
       return supervisionUrls[indexUrl];
     }
     return supervisionUrls as string;
+  }
+
+  _getReconnectExponentialDelay(): boolean {
+    return !Utils.isUndefined(this._stationInfo.reconnectExponentialDelay) ? this._stationInfo.reconnectExponentialDelay : false;
   }
 
   _getAuthorizeRemoteTxRequests(): boolean {
@@ -499,8 +503,14 @@ export default class ChargingStation {
     }
   }
 
-  _openWSConnection(): void {
-    this._wsConnection = new WebSocket(this._wsConnectionUrl, 'ocpp' + Constants.OCPP_VERSION_16);
+  _openWSConnection(options?: WebSocket.ClientOptions): void {
+    if (Utils.isUndefined(options)) {
+      options = {} as WebSocket.ClientOptions;
+    }
+    if (Utils.isUndefined(options.handshakeTimeout)) {
+      options.handshakeTimeout = this._connectionTimeout;
+    }
+    this._wsConnection = new WebSocket(this._wsConnectionUrl, 'ocpp' + Constants.OCPP_VERSION_16, options);
     logger.info(this._logPrefix() + ' Will communicate through URL ' + this._supervisionUrl);
   }
 
@@ -537,7 +547,7 @@ export default class ChargingStation {
     this._hasStopped = true;
   }
 
-  _reconnect(error): void {
+  async _reconnect(error): Promise<void> {
     logger.error(this._logPrefix() + ' Socket: abnormally closed: %j', error);
     // Stop heartbeat
     this._stopHeartbeat();
@@ -548,16 +558,15 @@ export default class ChargingStation {
       !this._automaticTransactionGeneration.timeToStop) {
       this._automaticTransactionGeneration.stop().catch(() => { });
     }
-    if (this._autoReconnectTimeout !== 0 &&
-      (this._autoReconnectRetryCount < this._autoReconnectMaxRetries || this._autoReconnectMaxRetries === -1)) {
-      logger.error(`${this._logPrefix()} Socket: connection retry with timeout ${this._autoReconnectTimeout}ms`);
+    if (this._autoReconnectRetryCount < this._autoReconnectMaxRetries || this._autoReconnectMaxRetries === -1) {
       this._autoReconnectRetryCount++;
-      setTimeout(() => {
-        logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount.toString());
-        this._openWSConnection();
-      }, this._autoReconnectTimeout);
-    } else if (this._autoReconnectTimeout !== 0 || this._autoReconnectMaxRetries !== -1) {
-      logger.error(`${this._logPrefix()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectTimeout})`);
+      const reconnectDelay = (this._getReconnectExponentialDelay() ? Utils.exponentialDelay(this._autoReconnectRetryCount) : this._connectionTimeout);
+      logger.error(`${this._logPrefix()} Socket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectDelay - 100}ms`);
+      await Utils.sleep(reconnectDelay);
+      logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount.toString());
+      this._openWSConnection({ handshakeTimeout : reconnectDelay - 100 });
+    } else if (this._autoReconnectMaxRetries !== -1) {
+      logger.error(`${this._logPrefix()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectMaxRetries})`);
     }
   }
 
@@ -578,15 +587,15 @@ export default class ChargingStation {
         });
       }
     }
-    this._hasSocketRestarted = false;
     this._autoReconnectRetryCount = 0;
+    this._hasSocketRestarted = false;
   }
 
-  onError(errorEvent): void {
+  async onError(errorEvent): Promise<void> {
     switch (errorEvent.code) {
       case 'ECONNREFUSED':
         this._hasSocketRestarted = true;
-        this._reconnect(errorEvent);
+        await this._reconnect(errorEvent);
         break;
       default:
         logger.error(this._logPrefix() + ' Socket error: %j', errorEvent);
@@ -594,7 +603,7 @@ export default class ChargingStation {
     }
   }
 
-  onClose(closeEvent): void {
+  async onClose(closeEvent): Promise<void> {
     switch (closeEvent) {
       case 1000: // Normal close
       case 1005:
@@ -603,7 +612,7 @@ export default class ChargingStation {
         break;
       default: // Abnormal close
         this._hasSocketRestarted = true;
-        this._reconnect(closeEvent);
+        await this._reconnect(closeEvent);
         break;
     }
   }
@@ -732,7 +741,7 @@ export default class ChargingStation {
   }
 
   async sendStopTransaction(transactionId: number, reason: StopTransactionReason = StopTransactionReason.NONE): Promise<StopTransactionResponse> {
-    const idTag = this._getTransactionidTag(transactionId);
+    const idTag = this._getTransactionIdTag(transactionId);
     try {
       const payload = {
         transactionId,

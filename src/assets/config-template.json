@@ -2,7 +2,7 @@
   "supervisionURLs": [
     "ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"
   ],
-  "autoReconnectTimeout": 10,
+  "connectionTimeout": 10,
   "autoReconnectMaxRetries": 10,
   "statisticsDisplayInterval": 60,
   "distributeStationsToTenantsEqually": true,

@@ -40,6 +40,7 @@ export default interface ChargingStationTemplate {
   useConnectorId0?: boolean;
   randomConnectors?: boolean;
   resetTime?: number;
+  reconnectExponentialDelay?: boolean;
   enableStatistics?: boolean;
   voltageOut?: number;
   Configuration?: ChargingStationConfiguration;
