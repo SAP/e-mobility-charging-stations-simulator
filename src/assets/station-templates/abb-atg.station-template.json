@@ -41,6 +41,11 @@
         "value": "false"
       },
       {
+        "key": "WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
         "key": "VendorKey",
         "readonly": false,
         "value": "VendorValue",

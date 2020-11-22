@@ -74,24 +74,24 @@ export default class Statistics {
     perfEntry.entryType = entry.entryType;
     perfEntry.startTime = entry.startTime;
     perfEntry.duration = entry.duration;
-    logger.info(`${this._logPrefix()} object ${className} method performance entry: %j`, perfEntry);
+    logger.info(`${this._logPrefix()} object ${className} method(s) performance entry: %j`, perfEntry);
   }
 
-  _display(): void {
+  start(): void {
+    this._displayInterval();
+  }
+
+  private _display(): void {
     logger.info(this._logPrefix() + ' %j', this._commandsStatistics);
   }
 
-  _displayInterval(): void {
+  private _displayInterval(): void {
     if (Configuration.getStatisticsDisplayInterval() > 0) {
       setInterval(() => {
         this._display();
       }, Configuration.getStatisticsDisplayInterval() * 1000);
       logger.info(this._logPrefix() + ' displayed every ' + Utils.secondsToHHMMSS(Configuration.getStatisticsDisplayInterval()));
     }
-  }
-
-  start(): void {
-    this._displayInterval();
   }
 
   private median(dataSet: number[]): number {
