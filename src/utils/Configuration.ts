@@ -1,6 +1,5 @@
 import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
 
-import Utils from './Utils';
 import fs from 'fs';
 
 export default class Configuration {
@@ -8,14 +7,14 @@ export default class Configuration {
 
   static getStatisticsDisplayInterval(): number {
     // Read conf
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
   }
 
   static getConnectionTimeout(): number {
     Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'connectionTimeout\' in charging station instead');
     Configuration.deprecateConfigurationKey('connectionTimeout', 'Use it in charging station template instead');
     // Read conf
-    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'connectionTimeout')) {
+    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'connectionTimeout')) {
       return Configuration.getConfig().connectionTimeout;
     }
   }
@@ -23,14 +22,14 @@ export default class Configuration {
   static getAutoReconnectMaxRetries(): number {
     Configuration.deprecateConfigurationKey('autoReconnectMaxRetries', 'Use it in charging station template instead');
     // Read conf
-    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
+    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
       return Configuration.getConfig().autoReconnectMaxRetries;
     }
   }
 
   static getStationTemplateURLs(): StationTemplateURL[] {
     Configuration.getConfig().stationTemplateURLs.forEach((stationURL: StationTemplateURL) => {
-      if (!Utils.isUndefined(stationURL['numberOfStation'])) {
+      if (!Configuration.isUndefined(stationURL['numberOfStation'])) {
         console.error(`Deprecated configuration key 'numberOfStation' usage for template file '${stationURL.file}' in 'stationTemplateURLs'. Use 'numberOfStations' instead`);
       }
     });
@@ -48,32 +47,32 @@ export default class Configuration {
 
   static getLogConsole(): boolean {
     Configuration.deprecateConfigurationKey('consoleLog', 'Use \'logConsole\' instead');
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logConsole') ? Configuration.getConfig().logConsole : false;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logConsole') ? Configuration.getConfig().logConsole : false;
   }
 
   static getLogFormat(): string {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFormat') ? Configuration.getConfig().logFormat : 'simple';
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logFormat') ? Configuration.getConfig().logFormat : 'simple';
   }
 
   static getLogRotate(): boolean {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logRotate') ? Configuration.getConfig().logRotate : true;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logRotate') ? Configuration.getConfig().logRotate : true;
   }
 
   static getLogMaxFiles(): number {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') ? Configuration.getConfig().logMaxFiles : 7;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') ? Configuration.getConfig().logMaxFiles : 7;
   }
 
   static getLogLevel(): string {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel : 'info';
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel : 'info';
   }
 
   static getLogFile(): string {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFile') ? Configuration.getConfig().logFile : 'combined.log';
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logFile') ? Configuration.getConfig().logFile : 'combined.log';
   }
 
   static getLogErrorFile(): string {
     Configuration.deprecateConfigurationKey('errorFile', 'Use \'logErrorFile\' instead');
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile') ? Configuration.getConfig().logErrorFile : 'error.log';
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile') ? Configuration.getConfig().logErrorFile : 'error.log';
   }
 
   static getSupervisionURLs(): string[] {
@@ -83,11 +82,11 @@ export default class Configuration {
 
   static getDistributeStationsToTenantsEqually(): boolean {
     Configuration.deprecateConfigurationKey('distributeStationToTenantEqually', 'Use \'distributeStationsToTenantsEqually\' instead');
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationsToTenantsEqually') ? Configuration.getConfig().distributeStationsToTenantsEqually : true;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationsToTenantsEqually') ? Configuration.getConfig().distributeStationsToTenantsEqually : true;
   }
 
   private static deprecateConfigurationKey(key: string, logMsgToAppend = '') {
-    if (!Utils.isUndefined(Configuration.getConfig()[key])) {
+    if (!Configuration.isUndefined(Configuration.getConfig()[key])) {
       console.error(`Deprecated configuration key '${key}' usage${logMsgToAppend && '. ' + logMsgToAppend}`);
     }
   }
@@ -98,5 +97,13 @@ export default class Configuration {
       Configuration.configuration = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8')) as ConfigurationData;
     }
     return Configuration.configuration;
+  }
+
+  private static objectHasOwnProperty(object: any, property: string): boolean {
+    return Object.prototype.hasOwnProperty.call(object, property);
+  }
+
+  private static isUndefined(obj: any): boolean {
+    return typeof obj === 'undefined';
   }
 }

@@ -117,10 +117,6 @@ export default class Utils {
     return date.toLocaleString() + prefixString;
   }
 
-  static objectHasOwnProperty(object, property): boolean {
-    return Object.prototype.hasOwnProperty.call(object, property);
-  }
-
   static cloneObject(object) {
     return JSON.parse(JSON.stringify(object));
   }
