@@ -1,11 +1,11 @@
-import Constants from './Constants';
 
 export default class CircularArray<T> extends Array<T> {
   public size: number;
+  private readonly MAXIMUM_CIRCULAR_ARRAY_SIZE = 2000;
 
-  constructor(size: number = Constants.MAXIMUM_MEASUREMENTS_NUMBER) {
+  constructor(size?: number) {
     super();
-    this.size = size;
+    this.size = size && size <= this.MAXIMUM_CIRCULAR_ARRAY_SIZE ? size : this.MAXIMUM_CIRCULAR_ARRAY_SIZE;
   }
 
   push(...items: T[]): number {
