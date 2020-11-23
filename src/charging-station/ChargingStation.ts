@@ -1014,7 +1014,7 @@ export default class ChargingStation {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve: (value?: any | PromiseLike<any>) => void, reject: (reason?: any) => void) => {
       let messageToSend;
       // Type of message
       switch (messageType) {

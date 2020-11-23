@@ -61,8 +61,8 @@
     "@types/uuid": "^8.3.0",
     "@types/worker-threads-pool": "^2.0.0",
     "@types/ws": "^7.4.0",
-    "@typescript-eslint/eslint-plugin": "^4.8.1",
-    "@typescript-eslint/parser": "^4.8.1",
+    "@typescript-eslint/eslint-plugin": "^4.8.2",
+    "@typescript-eslint/parser": "^4.8.2",
     "clinic": "^7.0.0",
     "cross-env": "^7.0.2",
     "eslint": "^7.14.0",
@@ -71,6 +71,6 @@
     "npm-check": "^5.9.2",
     "rimraf": "^3.0.2",
     "ts-node-dev": "^1.0.0",
-    "typescript": "^4.0.5"
+    "typescript": "^4.1.2"
   }
 }
