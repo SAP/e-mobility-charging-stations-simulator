@@ -63,9 +63,7 @@ export default class ChargingStation {
 
     this._hasStopped = false;
     this._hasSocketRestarted = false;
-    this._connectionTimeout = Configuration.getConnectionTimeout() * 1000; // Ms, zero for disabling
     this._autoReconnectRetryCount = 0;
-    this._autoReconnectMaxRetries = Configuration.getAutoReconnectMaxRetries(); // -1 for unlimited
 
     this._requests = {} as Requests;
     this._messageQueue = [] as string[];
@@ -115,6 +113,8 @@ export default class ChargingStation {
     this._configuration = this._getTemplateChargingStationConfiguration();
     this._supervisionUrl = this._getSupervisionURL();
     this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
+    this._connectionTimeout = this._getConnectionTimeout() * 1000; // Ms, zero for disabling
+    this._autoReconnectMaxRetries = this._getAutoReconnectMaxRetries(); // -1 for unlimited
     // Build connectors if needed
     const maxConnectors = this._getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -242,6 +242,26 @@ export default class ChargingStation {
       }
     }
     return trxCount;
+  }
+
+  _getConnectionTimeout(): number {
+    if (!Utils.isUndefined(this._stationInfo.connectionTimeout)) {
+      return this._stationInfo.connectionTimeout;
+    }
+    if (!Utils.isUndefined(Configuration.getConnectionTimeout())) {
+      return Configuration.getConnectionTimeout();
+    }
+    return 30;
+  }
+
+  _getAutoReconnectMaxRetries(): number {
+    if (!Utils.isUndefined(this._stationInfo.autoReconnectMaxRetries)) {
+      return this._stationInfo.autoReconnectMaxRetries;
+    }
+    if (!Utils.isUndefined(Configuration.getAutoReconnectMaxRetries())) {
+      return Configuration.getAutoReconnectMaxRetries();
+    }
+    return -1;
   }
 
   _getPowerDivider(): number {
@@ -395,7 +415,7 @@ export default class ChargingStation {
     if (webSocketPingInterval > 0 && !this._webSocketPingSetInterval) {
       this._webSocketPingSetInterval = setInterval(() => {
         if (this._wsConnection?.readyState === WebSocket.OPEN) {
-          this._wsConnection.ping((): void => {});
+          this._wsConnection.ping((): void => { });
         }
       }, webSocketPingInterval * 1000);
       logger.info(this._logPrefix() + ' WebSocket ping started every ' + Utils.secondsToHHMMSS(webSocketPingInterval));
@@ -564,7 +584,7 @@ export default class ChargingStation {
       logger.error(`${this._logPrefix()} Socket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectDelay - 100}ms`);
       await Utils.sleep(reconnectDelay);
       logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount.toString());
-      this._openWSConnection({ handshakeTimeout : reconnectDelay - 100 });
+      this._openWSConnection({ handshakeTimeout: reconnectDelay - 100 });
     } else if (this._autoReconnectMaxRetries !== -1) {
       logger.error(`${this._logPrefix()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectMaxRetries})`);
     }

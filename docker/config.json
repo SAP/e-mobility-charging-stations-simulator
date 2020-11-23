@@ -2,10 +2,8 @@
   "supervisionURLs": [
     "ws://server:8010/OCPP16/5c866e81a2d9593de43efdb4"
   ],
-  "statisticsDisplayInterval": 60,
-  "connectionTimeout": 10,
-  "autoReconnectMaxRetries": 10,
   "distributeStationsToTenantsEqually": true,
+  "statisticsDisplayInterval": 60,
   "useWorkerPool": false,
   "workerPoolSize": 16,
   "stationTemplateURLs": [

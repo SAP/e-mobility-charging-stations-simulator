@@ -12,14 +12,20 @@ export default class Configuration {
   }
 
   static getConnectionTimeout(): number {
-    Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'connectionTimeout\' instead');
+    Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'connectionTimeout\' in charging station instead');
+    Configuration.deprecateConfigurationKey('connectionTimeout', 'Use it in charging station template instead');
     // Read conf
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'connectionTimeout') ? Configuration.getConfig().connectionTimeout : 10;
+    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'connectionTimeout')) {
+      return Configuration.getConfig().connectionTimeout;
+    }
   }
 
   static getAutoReconnectMaxRetries(): number {
+    Configuration.deprecateConfigurationKey('autoReconnectMaxRetries', 'Use it in charging station template instead');
     // Read conf
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries') ? Configuration.getConfig().autoReconnectMaxRetries : -1;
+    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
+      return Configuration.getConfig().autoReconnectMaxRetries;
+    }
   }
 
   static getStationTemplateURLs(): StationTemplateURL[] {
