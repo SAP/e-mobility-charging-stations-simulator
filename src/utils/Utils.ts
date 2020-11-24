@@ -102,7 +102,8 @@ export default class Utils {
   }
 
   static roundTo(number: number, scale: number): number {
-    return Utils.convertToFloat(number.toFixed(scale));
+    const roundPower = Math.pow(10, scale);
+    return Math.round(number * roundPower) / roundPower;
   }
 
   static getRandomFloatRounded(max: number, min = 0, scale = 2): number {

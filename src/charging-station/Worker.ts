@@ -1,38 +1,37 @@
 import Configuration from '../utils/Configuration';
 import Pool from 'worker-threads-pool';
 import { Worker } from 'worker_threads';
+import WorkerData from '../types/WorkerData';
 
 export default class Wrk {
-  private _workerData;
-  private _workerScript;
-  private _pool;
+  private _workerScript: string;
+  private _workerData: WorkerData;
+  private _pool: Pool;
   private _concurrentWorkers: number;
 
   /**
    * Create a new `Wrk`.
    *
-   * @param {String} workerScript
-   * @param {Object} workerData
-   * @param {Number} numConcurrentWorkers
+   * @param {string} workerScript
+   * @param {WorkerData} workerData
+   * @param {number} numConcurrentWorkers
    */
-  constructor(workerScript, workerData, numConcurrentWorkers) {
+  constructor(workerScript: string, workerData: WorkerData, numConcurrentWorkers: number) {
     this._workerData = workerData;
     this._workerScript = workerScript;
-    this._numConcurrentWorkers = numConcurrentWorkers;
     if (Configuration.useWorkerPool()) {
+      this._concurrentWorkers = Configuration.getWorkerPoolSize();
       this._pool = new Pool({ max: Configuration.getWorkerPoolSize() });
+    } else {
+      this._concurrentWorkers = numConcurrentWorkers;
     }
   }
 
   /**
-   * @param {Number} numConcurrentWorkers
-   * @private
+   * @return {number}
+   * @public
    */
-  set _numConcurrentWorkers(numConcurrentWorkers: number) {
-    this._concurrentWorkers = numConcurrentWorkers;
-  }
-
-  get _numConcurrentWorkers(): number {
+  public get concurrentWorkers(): number {
     return this._concurrentWorkers;
   }
 

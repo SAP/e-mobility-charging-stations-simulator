@@ -6,6 +6,7 @@ class Bootstrap {
   static start() {
     try {
       let numStationsTotal = 0;
+      let numConcurrentWorkers = 0;
       // Start each ChargingStation object in a worker thread
       if (Configuration.getStationTemplateURLs()) {
         Configuration.getStationTemplateURLs().forEach((stationURL: StationTemplateURL) => {
@@ -18,6 +19,7 @@ class Bootstrap {
                 templateFile: stationURL.file,
               }, numStationsTotal);
               worker.start().catch(() => {});
+              numConcurrentWorkers = worker.concurrentWorkers;
             }
           } catch (error) {
             // eslint-disable-next-line no-console
@@ -30,7 +32,7 @@ class Bootstrap {
       if (numStationsTotal === 0) {
         console.log('No charging station template enabled in configuration, exiting');
       } else {
-        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s)');
+        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) of ' + numConcurrentWorkers.toString() + ' concurrently running');
       }
     } catch (error) {
       // eslint-disable-next-line no-console
