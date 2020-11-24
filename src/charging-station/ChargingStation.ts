@@ -1238,6 +1238,10 @@ export default class ChargingStation {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
+  handleRequestClearCache(): DefaultRequestResponse {
+    return Constants.OCPP_RESPONSE_ACCEPTED;
+  }
+
   async handleRequestUnlockConnector(commandPayload): Promise<UnlockResponse> {
     const connectorId = Utils.convertToInt(commandPayload.connectorId);
     if (connectorId === 0) {
