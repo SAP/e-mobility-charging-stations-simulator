@@ -18,7 +18,7 @@
       {
         "key": "MeterValueSampleInterval",
         "readonly": false,
-        "value": 30
+        "value": "30"
       },
       {
         "key": "SupportedFeatureProfiles",

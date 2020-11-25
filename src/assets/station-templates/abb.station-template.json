@@ -23,7 +23,7 @@
       {
         "key": "MeterValueSampleInterval",
         "readonly": false,
-        "value": 30
+        "value": "30"
       },
       {
         "key": "SupportedFeatureProfiles",
@@ -39,6 +39,11 @@
         "key": "AuthorizeRemoteTxRequests",
         "readonly": false,
         "value": "false"
+      },
+      {
+        "key": "WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
       },
       {
         "key": "VendorKey",
