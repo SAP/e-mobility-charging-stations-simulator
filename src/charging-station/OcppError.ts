@@ -4,7 +4,7 @@ export default class OCPPError extends Error {
   code: string;
   details: any;
 
-  constructor(code: string, message: string, details?) {
+  constructor(code: string, message: string, details?: any) {
     super(message);
 
     this.code = code || Constants.OCPP_ERROR_GENERIC_ERROR;
