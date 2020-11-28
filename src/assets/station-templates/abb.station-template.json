@@ -9,7 +9,7 @@
   "powerUnit": "W",
   "powerOutType": "DC",
   "numberOfConnectors": 2,
-  "useConnectorId0": false,
+  "useConnectorId0": true,
   "randomConnectors": false,
   "resetTime": 30,
   "enableStatistics": false,

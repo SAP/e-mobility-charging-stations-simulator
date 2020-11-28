@@ -50,6 +50,7 @@
     "stopOnConnectionFailure": false
   },
   "Connectors": {
+    "0": {},
     "1": {
       "MeterValues": [
         {

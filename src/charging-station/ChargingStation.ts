@@ -118,7 +118,10 @@ export default class ChargingStation {
     }
     const templateMaxConnectors = this._getTemplateMaxNumberOfConnectors();
     if (templateMaxConnectors <= 0) {
-      logger.warn(`${this._logPrefix()} Charging station template ${this._stationTemplateFile} with no connector configurations`);
+      logger.warn(`${this._logPrefix()} Charging station template ${this._stationTemplateFile} with no connector configuration`);
+    }
+    if (!this._stationInfo.Connectors[0]) {
+      logger.warn(`${this._logPrefix()} Charging station template ${this._stationTemplateFile} with no connector Id 0 configuration`);
     }
     // Sanity check
     if (maxConnectors > (this._stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) && !this._stationInfo.randomConnectors) {
@@ -132,7 +135,7 @@ export default class ChargingStation {
       // Add connector Id 0
       let lastConnector = '0';
       for (lastConnector in this._stationInfo.Connectors) {
-        if (Utils.convertToInt(lastConnector) === 0 && this._stationInfo.useConnectorId0 && this._stationInfo.Connectors[lastConnector]) {
+        if (Utils.convertToInt(lastConnector) === 0 && this._getUseConnectorId0() && this._stationInfo.Connectors[lastConnector]) {
           this._connectors[lastConnector] = Utils.cloneObject(this._stationInfo.Connectors[lastConnector]) as Connector;
         }
       }
@@ -148,7 +151,7 @@ export default class ChargingStation {
     delete this._stationInfo.Connectors;
     // Initialize transaction attributes on connectors
     for (const connector in this._connectors) {
-      if (!this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+      if (Utils.convertToInt(connector) > 0 && !this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
         this._initTransactionOnConnector(Utils.convertToInt(connector));
       }
     }
@@ -187,6 +190,10 @@ export default class ChargingStation {
 
   _getAuthorizationFile(): string {
     return this._stationInfo.authorizationFile && this._stationInfo.authorizationFile;
+  }
+
+  _getUseConnectorId0(): boolean {
+    return !Utils.isUndefined(this._stationInfo.useConnectorId0) ? this._stationInfo.useConnectorId0 : true;
   }
 
   _loadAndGetAuthorizedTags(): string[] {
@@ -233,7 +240,7 @@ export default class ChargingStation {
   _getNumberOfRunningTransactions(): number {
     let trxCount = 0;
     for (const connector in this._connectors) {
-      if (this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
         trxCount++;
       }
     }
@@ -313,7 +320,7 @@ export default class ChargingStation {
 
   _getTransactionIdTag(transactionId: number): string {
     for (const connector in this._connectors) {
-      if (this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
         return this.getConnector(Utils.convertToInt(connector)).idTag;
       }
     }
@@ -321,7 +328,7 @@ export default class ChargingStation {
 
   _getTransactionMeterStop(transactionId: number): number {
     for (const connector in this._connectors) {
-      if (this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
         return this.getConnector(Utils.convertToInt(connector)).lastEnergyActiveImportRegisterValue;
       }
     }
@@ -367,7 +374,9 @@ export default class ChargingStation {
     this._startHeartbeat();
     // Initialize connectors status
     for (const connector in this._connectors) {
-      if (!this._hasStopped && !this.getConnector(Utils.convertToInt(connector)).status && this.getConnector(Utils.convertToInt(connector)).bootStatus) {
+      if (Utils.convertToInt(connector) === 0) {
+        continue;
+      } else if (!this._hasStopped && !this.getConnector(Utils.convertToInt(connector)).status && this.getConnector(Utils.convertToInt(connector)).bootStatus) {
         // Send status in template at startup
         await this.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).bootStatus);
       } else if (this._hasStopped && this.getConnector(Utils.convertToInt(connector)).bootStatus) {
@@ -407,7 +416,7 @@ export default class ChargingStation {
       await this._automaticTransactionGeneration.stop(reason);
     } else {
       for (const connector in this._connectors) {
-        if (this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+        if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
           await this.sendStopTransaction(this.getConnector(Utils.convertToInt(connector)).transactionId, reason);
         }
       }
@@ -561,9 +570,10 @@ export default class ChargingStation {
   async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
     // Stop message sequence
     await this._stopMessageSequence(reason);
-    // eslint-disable-next-line guard-for-in
     for (const connector in this._connectors) {
-      await this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.UNAVAILABLE);
+      if (Utils.convertToInt(connector) > 0) {
+        await this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.UNAVAILABLE);
+      }
     }
     if (this._wsConnection?.readyState === WebSocket.OPEN) {
       this._wsConnection.close();
@@ -822,11 +832,10 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: voltageMeasurandValue.toString() },
           });
           for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
-            const voltageValue = Utils.convertToFloat(meterValue.sampledValue[meterValue.sampledValue.length - 1].value);
             let phaseValue: string;
-            if (voltageValue >= 0 && voltageValue <= 250) {
+            if (self._getVoltageOut() >= 0 && self._getVoltageOut() <= 250) {
               phaseValue = `L${phase}-N`;
-            } else if (voltageValue > 250) {
+            } else if (self._getVoltageOut() > 250) {
               phaseValue = `L${phase}-L${(phase + 1) % self._getNumberOfPhases() !== 0 ? (phase + 1) % self._getNumberOfPhases() : self._getNumberOfPhases()}`;
             }
             meterValue.sampledValue.push({
@@ -1146,7 +1155,7 @@ export default class ChargingStation {
 
     let transactionConnectorId: number;
     for (const connector in this._connectors) {
-      if (Utils.convertToInt(connector) === connectorId) {
+      if (Utils.convertToInt(connector) > 0 && Utils.convertToInt(connector) === connectorId) {
         transactionConnectorId = Utils.convertToInt(connector);
         break;
       }
@@ -1178,7 +1187,7 @@ export default class ChargingStation {
   handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload: StopTransactionRequest): void {
     let transactionConnectorId: number;
     for (const connector in this._connectors) {
-      if (this.getConnector(Utils.convertToInt(connector)).transactionId === Utils.convertToInt(requestPayload.transactionId)) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === Utils.convertToInt(requestPayload.transactionId)) {
         transactionConnectorId = Utils.convertToInt(connector);
         break;
       }
@@ -1411,7 +1420,7 @@ export default class ChargingStation {
   async handleRequestRemoteStopTransaction(commandPayload: RemoteStopTransactionRequest): Promise<DefaultResponse> {
     const transactionId = Utils.convertToInt(commandPayload.transactionId);
     for (const connector in this._connectors) {
-      if (this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
         await this.sendStopTransaction(transactionId);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
