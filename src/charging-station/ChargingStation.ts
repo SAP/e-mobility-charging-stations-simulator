@@ -1,11 +1,12 @@
 import { AuthorizationStatus, StartTransactionRequest, StartTransactionResponse, StopTransactionReason, StopTransactionRequest, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
-import { BootNotificationResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
+import { BootNotificationResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
+import { ChargingProfile, ChargingProfilePurposeType } from '../types/ocpp/1.6/ChargingProfile';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationTemplate';
 import Connectors, { Connector } from '../types/Connectors';
 import { MeterValue, MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit, MeterValuesRequest, MeterValuesResponse, SampledValue } from '../types/ocpp/1.6/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
-import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
+import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
 import WebSocket, { MessageEvent } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
@@ -1367,6 +1368,25 @@ export default class ChargingStation {
       }
       return Constants.OCPP_CONFIGURATION_RESPONSE_ACCEPTED;
     }
+  }
+
+  handleRequestSetChargingProfile(commandPayload: SetChargingProfileRequest): SetChargingProfileResponse {
+    if (!this.getConnector(commandPayload.connectorId)) {
+      logger.error(`${this._logPrefix()} Trying to set a charging profile to a non existing connector Id ${commandPayload.connectorId}`);
+      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
+    }
+    if (commandPayload.csChargingProfiles.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE && !this.getConnector(commandPayload.connectorId)?.transactionStarted) {
+      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
+    }
+    this.getConnector(commandPayload.connectorId).chargingProfiles.forEach((chargingProfile: ChargingProfile, index: number) => {
+      if (chargingProfile.chargingProfileId === commandPayload.csChargingProfiles.chargingProfileId
+        || (chargingProfile.stackLevel === commandPayload.csChargingProfiles.stackLevel && chargingProfile.chargingProfilePurpose === commandPayload.csChargingProfiles.chargingProfilePurpose)) {
+        this.getConnector(commandPayload.connectorId).chargingProfiles[index] = chargingProfile;
+        return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+      }
+    });
+    this.getConnector(commandPayload.connectorId).chargingProfiles.push(commandPayload.csChargingProfiles);
+    return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
   }
 
   async handleRequestRemoteStartTransaction(commandPayload: RemoteStartTransactionRequest): Promise<DefaultResponse> {

@@ -53,3 +53,13 @@ export interface GetConfigurationResponse {
   configurationKey: ConfigurationKey[];
   unknownKey: string[];
 }
+
+export enum ChargingProfileStatus {
+  ACCEPTED = 'Accepted',
+  REJECTED = 'Rejected',
+  NOT_SUPPORTED = 'NotSupported',
+}
+
+export interface SetChargingProfileResponse {
+  status: ChargingProfileStatus;
+}

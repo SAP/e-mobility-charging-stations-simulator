@@ -63,3 +63,8 @@ export enum ResetType {
 export interface ResetRequest {
   type: ResetType;
 }
+
+export interface SetChargingProfileRequest {
+  connectorId: number;
+  csChargingProfiles: ChargingProfile;
+}
