@@ -1,3 +1,5 @@
+import { MeterValue } from './MeterValues';
+
 export enum StopTransactionReason {
   NONE = '',
   EMERGENCY_STOP = 'EmergencyStop',
@@ -27,9 +29,26 @@ export interface IdTagInfo {
   expiryDate?: Date;
 }
 
+export interface StartTransactionRequest {
+  connectorId: number;
+  idTag: string;
+  meterStart: number;
+  reservationId?: number;
+  timestamp: string;
+}
+
 export interface StartTransactionResponse {
   idTagInfo: IdTagInfo;
   transactionId: number;
+}
+
+export interface StopTransactionRequest {
+  idTag?: string;
+  meterStop: number;
+  timestamp: string;
+  transactionId: number;
+  reason?: StopTransactionReason;
+  transactionData?: MeterValue[];
 }
 
 export interface StopTransactionResponse {

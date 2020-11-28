@@ -1,10 +1,16 @@
-export enum DefaultResponseStatus {
+import { ConfigurationKey } from '../../ChargingStationConfiguration';
+
+export interface HeartbeatResponse {
+  currentTime: string;
+}
+
+export enum DefaultStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected'
 }
 
-export interface DefaultRequestResponse {
-  status: DefaultResponseStatus;
+export interface DefaultResponse {
+  status: DefaultStatus;
 }
 
 export enum UnlockStatus {
@@ -13,7 +19,7 @@ export enum UnlockStatus {
   NOT_SUPPORTED = 'NotSupported'
 }
 
-export interface UnlockResponse {
+export interface UnlockConnectorResponse {
   status: UnlockStatus;
 }
 
@@ -24,6 +30,26 @@ export enum ConfigurationStatus {
   NOT_SUPPORTED = 'NotSupported'
 }
 
-export interface ConfigurationResponse {
+export interface ChangeConfigurationResponse {
   status: ConfigurationStatus;
+}
+
+export enum RegistrationStatus {
+  ACCEPTED = 'Accepted',
+  PENDING = 'Pending',
+  REJECTED = 'Rejected'
+}
+
+export interface BootNotificationResponse {
+  status: RegistrationStatus;
+  currentTime: string;
+  interval: number;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface StatusNotificationResponse {}
+
+export interface GetConfigurationResponse {
+  configurationKey: ConfigurationKey[];
+  unknownKey: string[];
 }

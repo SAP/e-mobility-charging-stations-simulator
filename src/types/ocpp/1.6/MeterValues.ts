@@ -79,7 +79,7 @@ export enum MeterValueFormat {
   SIGNED_DATA = 'SignedData',
 }
 
-export default interface MeterValue {
+export interface SampledValue {
   value?: string;
   unit?: MeterValueUnit;
   context?: MeterValueContext;
@@ -88,4 +88,18 @@ export default interface MeterValue {
   location?: MeterValueLocation;
   format?: MeterValueFormat;
 }
+
+export interface MeterValue {
+  timestamp: string;
+  sampledValue: SampledValue[];
+}
+
+export interface MeterValuesRequest {
+  connectorId: number;
+  transactionId?: number;
+  meterValue: MeterValue | MeterValue[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface MeterValuesResponse {}
 

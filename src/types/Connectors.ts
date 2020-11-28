@@ -1,10 +1,10 @@
 import { ChargePointStatus } from './ocpp/1.6/ChargePointStatus';
-import MeterValue from './ocpp/1.6/MeterValue';
+import { SampledValue } from './ocpp/1.6/MeterValues';
 
 export interface Connector {
   bootStatus?: ChargePointStatus;
   status?: ChargePointStatus;
-  MeterValues: MeterValue[];
+  MeterValues: SampledValue[];
   transactionStarted?: boolean;
   transactionId?: number;
   transactionSetInterval?: NodeJS.Timeout;

@@ -1,10 +1,11 @@
-import { AuthorizationStatus, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
+import { AuthorizationStatus, StartTransactionRequest, StartTransactionResponse, StopTransactionReason, StopTransactionRequest, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
+import { BootNotificationResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationTemplate';
-import { ConfigurationResponse, DefaultRequestResponse, UnlockResponse } from '../types/ocpp/1.6/RequestResponses';
 import Connectors, { Connector } from '../types/Connectors';
-import MeterValue, { MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit } from '../types/ocpp/1.6/MeterValue';
+import { MeterValue, MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit, MeterValuesRequest, MeterValuesResponse, SampledValue } from '../types/ocpp/1.6/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
+import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
 import WebSocket, { MessageEvent } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
@@ -16,7 +17,6 @@ import Constants from '../utils/Constants';
 import ElectricUtils from '../utils/ElectricUtils';
 import MeasurandValues from '../types/MeasurandValues';
 import OCPPError from './OcppError';
-import Requests from '../types/ocpp/1.6/Requests';
 import Statistics from '../utils/Statistics';
 import Utils from '../utils/Utils';
 import crypto from 'crypto';
@@ -27,13 +27,8 @@ export default class ChargingStation {
   private _index: number;
   private _stationTemplateFile: string;
   private _stationInfo: ChargingStationInfo;
-  private _bootNotificationMessage: {
-    chargePointModel: string,
-    chargePointVendor: string,
-    chargeBoxSerialNumber?: string,
-    firmwareVersion?: string,
-  };
-
+  private _bootNotificationRequest: BootNotificationRequest;
+  private _bootNotificationResponse: BootNotificationResponse;
   private _connectors: Connectors;
   private _configuration: ChargingStationConfiguration;
   private _connectorsConfigurationHash: string;
@@ -104,7 +99,7 @@ export default class ChargingStation {
 
   _initialize(): void {
     this._stationInfo = this._buildStationInfo();
-    this._bootNotificationMessage = {
+    this._bootNotificationRequest = {
       chargePointModel: this._stationInfo.chargePointModel,
       chargePointVendor: this._stationInfo.chargePointVendor,
       ...!Utils.isUndefined(this._stationInfo.chargeBoxSerialNumberPrefix) && { chargeBoxSerialNumber: this._stationInfo.chargeBoxSerialNumberPrefix },
@@ -564,6 +559,7 @@ export default class ChargingStation {
     if (this._wsConnection?.readyState === WebSocket.OPEN) {
       this._wsConnection.close();
     }
+    this._bootNotificationResponse = null;
     this._hasStopped = true;
   }
 
@@ -594,10 +590,18 @@ export default class ChargingStation {
     logger.info(`${this._logPrefix()} Is connected to server through ${this._wsConnectionUrl}`);
     if (!this._hasSocketRestarted || this._hasStopped) {
       // Send BootNotification
-      await this.sendBootNotification();
+      this._bootNotificationResponse = await this.sendBootNotification();
     }
-    await this._startMessageSequence();
-    if (this._hasSocketRestarted) {
+    if (this._bootNotificationResponse.status === RegistrationStatus.ACCEPTED) {
+      await this._startMessageSequence();
+    } else {
+      do {
+        await Utils.sleep(this._bootNotificationResponse.interval * 1000);
+        // Resend BootNotification
+        this._bootNotificationResponse = await this.sendBootNotification();
+      } while (this._bootNotificationResponse.status !== RegistrationStatus.ACCEPTED);
+    }
+    if (this._hasSocketRestarted && this._bootNotificationResponse.status === RegistrationStatus.ACCEPTED) {
       if (!Utils.isEmptyArray(this._messageQueue)) {
         this._messageQueue.forEach((message, index) => {
           if (this._wsConnection?.readyState === WebSocket.OPEN) {
@@ -711,9 +715,7 @@ export default class ChargingStation {
 
   async sendHeartbeat(): Promise<void> {
     try {
-      const payload = {
-        currentTime: new Date().toISOString(),
-      };
+      const payload: HeartbeatRequest = {};
       await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
     } catch (error) {
       logger.error(this._logPrefix() + ' Send Heartbeat error: %j', error);
@@ -721,9 +723,9 @@ export default class ChargingStation {
     }
   }
 
-  async sendBootNotification(): Promise<void> {
+  async sendBootNotification(): Promise<BootNotificationResponse> {
     try {
-      await this.sendMessage(Utils.generateUUID(), this._bootNotificationMessage, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification');
+      return await this.sendMessage(Utils.generateUUID(), this._bootNotificationRequest, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification') as BootNotificationResponse;
     } catch (error) {
       logger.error(this._logPrefix() + ' Send BootNotification error: %j', error);
       throw error;
@@ -733,7 +735,7 @@ export default class ChargingStation {
   async sendStatusNotification(connectorId: number, status: ChargePointStatus, errorCode: ChargePointErrorCode = ChargePointErrorCode.NO_ERROR): Promise<void> {
     this.getConnector(connectorId).status = status;
     try {
-      const payload = {
+      const payload: StatusNotificationRequest = {
         connectorId,
         errorCode,
         status,
@@ -747,7 +749,7 @@ export default class ChargingStation {
 
   async sendStartTransaction(connectorId: number, idTag?: string): Promise<StartTransactionResponse> {
     try {
-      const payload = {
+      const payload: StartTransactionRequest = {
         connectorId,
         ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
         meterStart: 0,
@@ -763,7 +765,7 @@ export default class ChargingStation {
   async sendStopTransaction(transactionId: number, reason: StopTransactionReason = StopTransactionReason.NONE): Promise<StopTransactionResponse> {
     const idTag = this._getTransactionIdTag(transactionId);
     try {
-      const payload = {
+      const payload: StopTransactionRequest = {
         transactionId,
         ...!Utils.isUndefined(idTag) && { idTag: idTag },
         meterStop: 0,
@@ -780,33 +782,30 @@ export default class ChargingStation {
   // eslint-disable-next-line consistent-this
   async sendMeterValues(connectorId: number, interval: number, self: ChargingStation, debug = false): Promise<void> {
     try {
-      const sampledValues: {
-        timestamp: string;
-        sampledValue: MeterValue[];
-      } = {
+      const meterValue: MeterValue = {
         timestamp: new Date().toISOString(),
         sampledValue: [],
       };
-      const meterValuesTemplate = self.getConnector(connectorId).MeterValues;
+      const meterValuesTemplate: SampledValue[] = self.getConnector(connectorId).MeterValues;
       for (let index = 0; index < meterValuesTemplate.length; index++) {
         const connector = self.getConnector(connectorId);
         // SoC measurand
         if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.STATE_OF_CHARGE && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.STATE_OF_CHARGE)) {
-          sampledValues.sampledValue.push({
+          meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.PERCENT },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
             measurand: meterValuesTemplate[index].measurand,
             ...!Utils.isUndefined(meterValuesTemplate[index].location) ? { location: meterValuesTemplate[index].location } : { location: MeterValueLocation.EV },
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: Utils.getRandomInt(100).toString() },
           });
-          const sampledValuesIndex = sampledValues.sampledValue.length - 1;
-          if (Utils.convertToInt(sampledValues.sampledValue[sampledValuesIndex].value) > 100 || debug) {
-            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/100`);
+          const sampledValuesIndex = meterValue.sampledValue.length - 1;
+          if (Utils.convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > 100 || debug) {
+            logger.error(`${self._logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ? meterValue.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/100`);
           }
         // Voltage measurand
         } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.VOLTAGE && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.VOLTAGE)) {
           const voltageMeasurandValue = Utils.getRandomFloatRounded(self._getVoltageOut() + self._getVoltageOut() * 0.1, self._getVoltageOut() - self._getVoltageOut() * 0.1);
-          sampledValues.sampledValue.push({
+          meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.VOLT },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
             measurand: meterValuesTemplate[index].measurand,
@@ -814,14 +813,14 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: voltageMeasurandValue.toString() },
           });
           for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
-            const voltageValue = Utils.convertToFloat(sampledValues.sampledValue[sampledValues.sampledValue.length - 1].value);
+            const voltageValue = Utils.convertToFloat(meterValue.sampledValue[meterValue.sampledValue.length - 1].value);
             let phaseValue: string;
             if (voltageValue >= 0 && voltageValue <= 250) {
               phaseValue = `L${phase}-N`;
             } else if (voltageValue > 250) {
               phaseValue = `L${phase}-L${(phase + 1) % self._getNumberOfPhases() !== 0 ? (phase + 1) % self._getNumberOfPhases() : self._getNumberOfPhases()}`;
             }
-            sampledValues.sampledValue.push({
+            meterValue.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.VOLT },
               ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
               measurand: meterValuesTemplate[index].measurand,
@@ -868,20 +867,20 @@ export default class ChargingStation {
               logger.error(errMsg);
               throw Error(errMsg);
           }
-          sampledValues.sampledValue.push({
+          meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.WATT },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
             measurand: meterValuesTemplate[index].measurand,
             ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: powerMeasurandValues.allPhases.toString() },
           });
-          const sampledValuesIndex = sampledValues.sampledValue.length - 1;
-          if (Utils.convertToFloat(sampledValues.sampledValue[sampledValuesIndex].value) > maxPower || debug) {
-            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxPower}`);
+          const sampledValuesIndex = meterValue.sampledValue.length - 1;
+          if (Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxPower || debug) {
+            logger.error(`${self._logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ? meterValue.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/${maxPower}`);
           }
           for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}-N`;
-            sampledValues.sampledValue.push({
+            meterValue.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.WATT },
               ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
               ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
@@ -929,20 +928,20 @@ export default class ChargingStation {
               logger.error(errMsg);
               throw Error(errMsg);
           }
-          sampledValues.sampledValue.push({
+          meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.AMP },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
             measurand: meterValuesTemplate[index].measurand,
             ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } : { value: currentMeasurandValues.allPhases.toString() },
           });
-          const sampledValuesIndex = sampledValues.sampledValue.length - 1;
-          if (Utils.convertToFloat(sampledValues.sampledValue[sampledValuesIndex].value) > maxAmperage || debug) {
-            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxAmperage}`);
+          const sampledValuesIndex = meterValue.sampledValue.length - 1;
+          if (Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxAmperage || debug) {
+            logger.error(`${self._logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ? meterValue.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/${maxAmperage}`);
           }
           for (let phase = 1; self._getNumberOfPhases() === 3 && phase <= self._getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}`;
-            sampledValues.sampledValue.push({
+            meterValue.sampledValue.push({
               ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.AMP },
               ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
               ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
@@ -972,7 +971,7 @@ export default class ChargingStation {
               connector.lastEnergyActiveImportRegisterValue = 0;
             }
           }
-          sampledValues.sampledValue.push({
+          meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.WATT_HOUR },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
             ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
@@ -980,21 +979,20 @@ export default class ChargingStation {
             ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } :
               { value: connector.lastEnergyActiveImportRegisterValue.toString() },
           });
-          const sampledValuesIndex = sampledValues.sampledValue.length - 1;
+          const sampledValuesIndex = meterValue.sampledValue.length - 1;
           const maxConsumption = Math.round(self._stationInfo.maxPower * 3600 / (self._stationInfo.powerDivider * interval));
-          if (Utils.convertToFloat(sampledValues.sampledValue[sampledValuesIndex].value) > maxConsumption || debug) {
-            logger.error(`${self._logPrefix()} MeterValues measurand ${sampledValues.sampledValue[sampledValuesIndex].measurand ? sampledValues.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${sampledValues.sampledValue[sampledValuesIndex].value}/${maxConsumption}`);
+          if (Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxConsumption || debug) {
+            logger.error(`${self._logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ? meterValue.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/${maxConsumption}`);
           }
         // Unsupported measurand
         } else {
           logger.info(`${self._logPrefix()} Unsupported MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} on connectorId ${connectorId}`);
         }
       }
-
-      const payload = {
+      const payload: MeterValuesRequest = {
         connectorId,
         transactionId: self.getConnector(connectorId).transactionId,
-        meterValue: sampledValues,
+        meterValue: meterValue,
       };
       await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
     } catch (error) {
@@ -1102,14 +1100,14 @@ export default class ChargingStation {
     }
   }
 
-  handleResponseBootNotification(payload, requestPayload): void {
-    if (payload.status === 'Accepted') {
+  handleResponseBootNotification(payload: BootNotificationResponse, requestPayload: BootNotificationRequest): void {
+    if (payload.status === RegistrationStatus.ACCEPTED) {
       this._heartbeatInterval = Utils.convertToInt(payload.interval) * 1000;
       this._heartbeatSetInterval ? this._restartHeartbeat() : this._startHeartbeat();
-      this._addConfigurationKey('HeartBeatInterval', payload.interval);
-      this._addConfigurationKey('HeartbeatInterval', payload.interval, false, false);
+      this._addConfigurationKey('HeartBeatInterval', payload.interval.toString());
+      this._addConfigurationKey('HeartbeatInterval', payload.interval.toString(), false, false);
       this._hasStopped && (this._hasStopped = false);
-    } else if (payload.status === 'Pending') {
+    } else if (payload.status === RegistrationStatus.PENDING) {
       logger.info(this._logPrefix() + ' Charging station in pending state on the central server');
     } else {
       logger.info(this._logPrefix() + ' Charging station rejected by the central server');
@@ -1130,7 +1128,7 @@ export default class ChargingStation {
     }
   }
 
-  handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload): void {
+  handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload: StartTransactionRequest): void {
     const connectorId = Utils.convertToInt(requestPayload.connectorId);
     if (this.getConnector(connectorId).transactionStarted) {
       logger.debug(this._logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
@@ -1162,13 +1160,13 @@ export default class ChargingStation {
       this._startMeterValues(connectorId,
         configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
     } else {
-      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
+      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
       this._resetTransactionOnConnector(connectorId);
       this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE).catch(() => { });
     }
   }
 
-  handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload): void {
+  handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload: StopTransactionRequest): void {
     let transactionConnectorId: number;
     for (const connector in this._connectors) {
       if (this.getConnector(Utils.convertToInt(connector)).transactionId === Utils.convertToInt(requestPayload.transactionId)) {
@@ -1177,7 +1175,7 @@ export default class ChargingStation {
       }
     }
     if (!transactionConnectorId) {
-      logger.error(this._logPrefix() + ' Trying to stop a non existing transaction ' + requestPayload.transactionId);
+      logger.error(this._logPrefix() + ' Trying to stop a non existing transaction ' + requestPayload.transactionId.toString());
       return;
     }
     if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
@@ -1185,22 +1183,22 @@ export default class ChargingStation {
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider--;
       }
-      logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId.toString());
+      logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId.toString() + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId.toString());
       this._resetTransactionOnConnector(transactionConnectorId);
     } else {
-      logger.error(this._logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId + ' REJECTED with status ' + payload.idTagInfo?.status);
+      logger.error(this._logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status);
     }
   }
 
-  handleResponseStatusNotification(payload, requestPayload): void {
+  handleResponseStatusNotification(payload: StatusNotificationRequest, requestPayload: StatusNotificationResponse): void {
     logger.debug(this._logPrefix() + ' Status notification response received: %j to StatusNotification request: %j', payload, requestPayload);
   }
 
-  handleResponseMeterValues(payload, requestPayload): void {
+  handleResponseMeterValues(payload: MeterValuesRequest, requestPayload: MeterValuesResponse): void {
     logger.debug(this._logPrefix() + ' MeterValues response received: %j to MeterValues request: %j', payload, requestPayload);
   }
 
-  handleResponseHeartbeat(payload, requestPayload): void {
+  handleResponseHeartbeat(payload: HeartbeatResponse, requestPayload: HeartbeatRequest): void {
     logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
   }
 
@@ -1228,7 +1226,7 @@ export default class ChargingStation {
   }
 
   // Simulate charging station restart
-  handleRequestReset(commandPayload): DefaultRequestResponse {
+  handleRequestReset(commandPayload: ResetRequest): DefaultResponse {
     setImmediate(async () => {
       await this.stop(commandPayload.type + 'Reset' as StopTransactionReason);
       await Utils.sleep(this._stationInfo.resetTime);
@@ -1238,11 +1236,11 @@ export default class ChargingStation {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  handleRequestClearCache(): DefaultRequestResponse {
+  handleRequestClearCache(): DefaultResponse {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  async handleRequestUnlockConnector(commandPayload): Promise<UnlockResponse> {
+  async handleRequestUnlockConnector(commandPayload: UnlockConnectorRequest): Promise<UnlockConnectorResponse> {
     const connectorId = Utils.convertToInt(commandPayload.connectorId);
     if (connectorId === 0) {
       logger.error(this._logPrefix() + ' Trying to unlock connector ' + connectorId.toString());
@@ -1284,7 +1282,7 @@ export default class ChargingStation {
     }
   }
 
-  handleRequestGetConfiguration(commandPayload): { configurationKey: ConfigurationKey[]; unknownKey: string[] } {
+  handleRequestGetConfiguration(commandPayload: GetConfigurationRequest): GetConfigurationResponse {
     const configurationKey: ConfigurationKey[] = [];
     const unknownKey: string[] = [];
     if (Utils.isEmptyArray(commandPayload.key)) {
@@ -1302,7 +1300,7 @@ export default class ChargingStation {
         });
       }
     } else {
-      for (const key of commandPayload.key as string[]) {
+      for (const key of commandPayload.key) {
         const keyFound = this._getConfigurationKey(key);
         if (keyFound) {
           if (Utils.isUndefined(keyFound.visible)) {
@@ -1327,7 +1325,7 @@ export default class ChargingStation {
     };
   }
 
-  handleRequestChangeConfiguration(commandPayload): ConfigurationResponse {
+  handleRequestChangeConfiguration(commandPayload: ChangeConfigurationRequest): ChangeConfigurationResponse {
     const keyToChange = this._getConfigurationKey(commandPayload.key);
     if (!keyToChange) {
       return Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED;
@@ -1337,7 +1335,7 @@ export default class ChargingStation {
       const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
       let valueChanged = false;
       if (this._configuration.configurationKey[keyIndex].value !== commandPayload.value) {
-        this._configuration.configurationKey[keyIndex].value = commandPayload.value as string;
+        this._configuration.configurationKey[keyIndex].value = commandPayload.value;
         valueChanged = true;
       }
       let triggerHeartbeatRestart = false;
@@ -1363,7 +1361,7 @@ export default class ChargingStation {
     }
   }
 
-  async handleRequestRemoteStartTransaction(commandPayload): Promise<DefaultRequestResponse> {
+  async handleRequestRemoteStartTransaction(commandPayload: RemoteStartTransactionRequest): Promise<DefaultResponse> {
     const transactionConnectorID: number = commandPayload.connectorId ? Utils.convertToInt(commandPayload.connectorId) : 1;
     if (this._getAuthorizeRemoteTxRequests() && this._getLocalAuthListEnabled() && this.hasAuthorizedTags()) {
       // Check if authorized
@@ -1373,7 +1371,7 @@ export default class ChargingStation {
         logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
-      logger.error(this._logPrefix() + ' Remote starting transaction REJECTED with status ' + commandPayload.idTagInfo?.status + ', idTag ' + commandPayload.idTag);
+      logger.error(this._logPrefix() + ' Remote starting transaction REJECTED, idTag ' + commandPayload.idTag);
       return Constants.OCPP_RESPONSE_REJECTED;
     }
     // No local authorization check required => start transaction
@@ -1382,7 +1380,7 @@ export default class ChargingStation {
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  async handleRequestRemoteStopTransaction(commandPayload): Promise<DefaultRequestResponse> {
+  async handleRequestRemoteStopTransaction(commandPayload: RemoteStopTransactionRequest): Promise<DefaultResponse> {
     const transactionId = Utils.convertToInt(commandPayload.transactionId);
     for (const connector in this._connectors) {
       if (this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {

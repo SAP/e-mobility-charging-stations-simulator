@@ -1,4 +1,4 @@
-import { ConfigurationStatus, DefaultResponseStatus, UnlockStatus } from '../types/ocpp/1.6/RequestResponses';
+import { ConfigurationStatus, DefaultStatus, UnlockStatus } from '../types/ocpp/1.6/RequestResponses';
 
 export default class Constants {
   static readonly ENTITY_CHARGING_STATION = 'ChargingStation';
@@ -6,8 +6,8 @@ export default class Constants {
 
   static readonly WS_UNSUPPORTED_DATA = 1007;
 
-  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: DefaultResponseStatus.ACCEPTED });
-  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: DefaultResponseStatus.REJECTED });
+  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: DefaultStatus.ACCEPTED });
+  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: DefaultStatus.REJECTED });
   static readonly OCPP_CONFIGURATION_RESPONSE_ACCEPTED = Object.freeze({ status: ConfigurationStatus.ACCEPTED });
   static readonly OCPP_CONFIGURATION_RESPONSE_REJECTED = Object.freeze({ status: ConfigurationStatus.REJECTED });
   static readonly OCPP_CONFIGURATION_RESPONSE_REBOOT_REQUIRED = Object.freeze({ status: ConfigurationStatus.REBOOT_REQUIRED });
