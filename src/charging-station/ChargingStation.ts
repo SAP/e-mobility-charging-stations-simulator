@@ -318,6 +318,14 @@ export default class ChargingStation {
     }
   }
 
+  _getTransactionMeterStop(transactionId: number): number {
+    for (const connector in this._connectors) {
+      if (this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
+        return this.getConnector(Utils.convertToInt(connector)).lastEnergyActiveImportRegisterValue;
+      }
+    }
+  }
+
   _getPowerOutType(): PowerOutType {
     return !Utils.isUndefined(this._stationInfo.powerOutType) ? this._stationInfo.powerOutType : PowerOutType.AC;
   }
@@ -768,7 +776,7 @@ export default class ChargingStation {
       const payload: StopTransactionRequest = {
         transactionId,
         ...!Utils.isUndefined(idTag) && { idTag: idTag },
-        meterStop: 0,
+        meterStop: this._getTransactionMeterStop(transactionId),
         timestamp: new Date().toISOString(),
         ...reason && { reason },
       };
