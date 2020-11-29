@@ -1085,12 +1085,12 @@ export default class ChargingStation {
       }
 
       // Function that will receive the request's response
-      function responseCallback(payload, requestPayload): void {
+      async function responseCallback(payload, requestPayload): Promise<void> {
         if (self.getEnableStatistics()) {
           self._statistics.addMessage(commandName, messageType);
         }
         // Send the response
-        self.handleResponse(commandName, payload, requestPayload);
+        await self.handleResponse(commandName, payload, requestPayload);
         resolve(payload);
       }
 
@@ -1109,10 +1109,10 @@ export default class ChargingStation {
     });
   }
 
-  handleResponse(commandName: string, payload, requestPayload): void {
+  async handleResponse(commandName: string, payload, requestPayload): Promise<void> {
     const responseCallbackFn = 'handleResponse' + commandName;
     if (typeof this[responseCallbackFn] === 'function') {
-      this[responseCallbackFn](payload, requestPayload);
+      await this[responseCallbackFn](payload, requestPayload);
     } else {
       logger.error(this._logPrefix() + ' Trying to call an undefined response callback function: ' + responseCallbackFn);
     }
@@ -1146,7 +1146,7 @@ export default class ChargingStation {
     }
   }
 
-  handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload: StartTransactionRequest): void {
+  async handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload: StartTransactionRequest): Promise<void> {
     const connectorId = Utils.convertToInt(requestPayload.connectorId);
     if (this.getConnector(connectorId).transactionStarted) {
       logger.debug(this._logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
@@ -1169,7 +1169,7 @@ export default class ChargingStation {
       this.getConnector(connectorId).transactionId = payload.transactionId;
       this.getConnector(connectorId).idTag = requestPayload.idTag;
       this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = 0;
-      this.sendStatusNotification(connectorId, ChargePointStatus.CHARGING).catch(() => { });
+      await this.sendStatusNotification(connectorId, ChargePointStatus.CHARGING);
       logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this._stationInfo.name + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider++;
@@ -1180,11 +1180,11 @@ export default class ChargingStation {
     } else {
       logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
       this._resetTransactionOnConnector(connectorId);
-      this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE).catch(() => { });
+      await this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE);
     }
   }
 
-  handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload: StopTransactionRequest): void {
+  async handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload: StopTransactionRequest): Promise<void> {
     let transactionConnectorId: number;
     for (const connector in this._connectors) {
       if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === Utils.convertToInt(requestPayload.transactionId)) {
@@ -1197,7 +1197,7 @@ export default class ChargingStation {
       return;
     }
     if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-      this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE).catch(() => { });
+      await this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE);
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider--;
       }
