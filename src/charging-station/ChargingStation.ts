@@ -615,7 +615,7 @@ export default class ChargingStation {
       await this._startMessageSequence();
     } else {
       do {
-        await Utils.sleep(Utils.convertToInt(this._bootNotificationResponse.interval) * 1000);
+        await Utils.sleep(this._bootNotificationResponse.interval * 1000);
         // Resend BootNotification
         this._bootNotificationResponse = await this.sendBootNotification();
       } while (this._bootNotificationResponse.status !== RegistrationStatus.ACCEPTED);
@@ -1122,8 +1122,8 @@ export default class ChargingStation {
     if (payload.status === RegistrationStatus.ACCEPTED) {
       this._heartbeatInterval = Utils.convertToInt(payload.interval) * 1000;
       this._heartbeatSetInterval ? this._restartHeartbeat() : this._startHeartbeat();
-      this._addConfigurationKey('HeartBeatInterval', payload.interval);
-      this._addConfigurationKey('HeartbeatInterval', payload.interval, false, false);
+      this._addConfigurationKey('HeartBeatInterval', payload.interval.toString());
+      this._addConfigurationKey('HeartbeatInterval', payload.interval.toString(), false, false);
       this._hasStopped && (this._hasStopped = false);
     } else if (payload.status === RegistrationStatus.PENDING) {
       logger.info(this._logPrefix() + ' Charging station in pending state on the central server');

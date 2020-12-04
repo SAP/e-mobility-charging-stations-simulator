@@ -43,7 +43,7 @@ export enum RegistrationStatus {
 export interface BootNotificationResponse {
   status: RegistrationStatus;
   currentTime: string;
-  interval: string;
+  interval: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
