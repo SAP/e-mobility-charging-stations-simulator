@@ -1120,7 +1120,7 @@ export default class ChargingStation {
 
   handleResponseBootNotification(payload: BootNotificationResponse, requestPayload: BootNotificationRequest): void {
     if (payload.status === RegistrationStatus.ACCEPTED) {
-      this._heartbeatInterval = Utils.convertToInt(payload.interval) * 1000;
+      this._heartbeatInterval = payload.interval * 1000;
       this._heartbeatSetInterval ? this._restartHeartbeat() : this._startHeartbeat();
       this._addConfigurationKey('HeartBeatInterval', payload.interval.toString());
       this._addConfigurationKey('HeartbeatInterval', payload.interval.toString(), false, false);
