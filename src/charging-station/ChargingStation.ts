@@ -231,7 +231,7 @@ export default class ChargingStation {
   _getNumberOfPhases(): number {
     switch (this._getPowerOutType()) {
       case PowerOutType.AC:
-        return !Utils.isUndefined(this._stationInfo.numberOfPhases) ? Utils.convertToInt(this._stationInfo.numberOfPhases) : 3;
+        return !Utils.isUndefined(this._stationInfo.numberOfPhases) ? this._stationInfo.numberOfPhases : 3;
       case PowerOutType.DC:
         return 0;
     }
@@ -315,7 +315,7 @@ export default class ChargingStation {
         logger.error(errMsg);
         throw Error(errMsg);
     }
-    return !Utils.isUndefined(this._stationInfo.voltageOut) ? Utils.convertToInt(this._stationInfo.voltageOut) : defaultVoltageOut;
+    return !Utils.isUndefined(this._stationInfo.voltageOut) ? this._stationInfo.voltageOut : defaultVoltageOut;
   }
 
   _getTransactionIdTag(transactionId: number): string {
@@ -1147,7 +1147,7 @@ export default class ChargingStation {
   }
 
   async handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload: StartTransactionRequest): Promise<void> {
-    const connectorId = Utils.convertToInt(requestPayload.connectorId);
+    const connectorId = requestPayload.connectorId;
     if (this.getConnector(connectorId).transactionStarted) {
       logger.debug(this._logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
       return;
@@ -1187,7 +1187,7 @@ export default class ChargingStation {
   async handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload: StopTransactionRequest): Promise<void> {
     let transactionConnectorId: number;
     for (const connector in this._connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === Utils.convertToInt(requestPayload.transactionId)) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === requestPayload.transactionId) {
         transactionConnectorId = Utils.convertToInt(connector);
         break;
       }
@@ -1259,7 +1259,7 @@ export default class ChargingStation {
   }
 
   async handleRequestUnlockConnector(commandPayload: UnlockConnectorRequest): Promise<UnlockConnectorResponse> {
-    const connectorId = Utils.convertToInt(commandPayload.connectorId);
+    const connectorId = commandPayload.connectorId;
     if (connectorId === 0) {
       logger.error(this._logPrefix() + ' Trying to unlock connector ' + connectorId.toString());
       return Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
@@ -1344,6 +1344,13 @@ export default class ChargingStation {
   }
 
   handleRequestChangeConfiguration(commandPayload: ChangeConfigurationRequest): ChangeConfigurationResponse {
+    // JSON request fields type sanity check
+    if (!Utils.isString(commandPayload.key)) {
+      logger.error(`${this._logPrefix()} ChangeConfiguration request key field is not a string:`, commandPayload);
+    }
+    if (!Utils.isString(commandPayload.value)) {
+      logger.error(`${this._logPrefix()} ChangeConfiguration request value field is not a string:`, commandPayload);
+    }
     const keyToChange = this._getConfigurationKey(commandPayload.key);
     if (!keyToChange) {
       return Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED;
@@ -1399,7 +1406,7 @@ export default class ChargingStation {
   }
 
   async handleRequestRemoteStartTransaction(commandPayload: RemoteStartTransactionRequest): Promise<DefaultResponse> {
-    const transactionConnectorID: number = commandPayload.connectorId ? Utils.convertToInt(commandPayload.connectorId) : 1;
+    const transactionConnectorID: number = commandPayload.connectorId ? commandPayload.connectorId : 1;
     if (this._getAuthorizeRemoteTxRequests() && this._getLocalAuthListEnabled() && this.hasAuthorizedTags()) {
       // Check if authorized
       if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
@@ -1418,7 +1425,7 @@ export default class ChargingStation {
   }
 
   async handleRequestRemoteStopTransaction(commandPayload: RemoteStopTransactionRequest): Promise<DefaultResponse> {
-    const transactionId = Utils.convertToInt(commandPayload.transactionId);
+    const transactionId = commandPayload.transactionId;
     for (const connector in this._connectors) {
       if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
         await this.sendStopTransaction(transactionId);

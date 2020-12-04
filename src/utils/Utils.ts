@@ -106,6 +106,11 @@ export default class Utils {
     return Math.round(number * roundPower) / roundPower;
   }
 
+  static truncTo(number: number, scale: number): number {
+    const truncPower = Math.pow(10, scale);
+    return Math.trunc(number * truncPower) / truncPower;
+  }
+
   static getRandomFloatRounded(max: number, min = 0, scale = 2): number {
     if (min) {
       return Utils.roundTo(Utils.getRandomFloat(max, min), scale);
