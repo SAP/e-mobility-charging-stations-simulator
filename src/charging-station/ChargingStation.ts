@@ -536,12 +536,15 @@ export default class ChargingStation {
     }
   }
 
-  _openWSConnection(options?: WebSocket.ClientOptions): void {
+  _openWSConnection(options?: WebSocket.ClientOptions, forceCloseOpened = false): void {
     if (Utils.isUndefined(options)) {
       options = {} as WebSocket.ClientOptions;
     }
     if (Utils.isUndefined(options.handshakeTimeout)) {
       options.handshakeTimeout = this._connectionTimeout;
+    }
+    if (this._wsConnection?.readyState === WebSocket.OPEN && forceCloseOpened) {
+      this._wsConnection.close();
     }
     this._wsConnection = new WebSocket(this._wsConnectionUrl, 'ocpp' + Constants.OCPP_VERSION_16, options);
     logger.info(this._logPrefix() + ' Will communicate through URL ' + this._supervisionUrl);
@@ -600,6 +603,7 @@ export default class ChargingStation {
       await Utils.sleep(reconnectDelay);
       logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount.toString());
       this._openWSConnection({ handshakeTimeout: reconnectDelay - 100 });
+      this._hasSocketRestarted = true;
     } else if (this._autoReconnectMaxRetries !== -1) {
       logger.error(`${this._logPrefix()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectMaxRetries})`);
     }
@@ -637,7 +641,6 @@ export default class ChargingStation {
   async onError(errorEvent): Promise<void> {
     switch (errorEvent.code) {
       case 'ECONNREFUSED':
-        this._hasSocketRestarted = true;
         await this._reconnect(errorEvent);
         break;
       default:
@@ -654,7 +657,6 @@ export default class ChargingStation {
         this._autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
-        this._hasSocketRestarted = true;
         await this._reconnect(closeEvent);
         break;
     }
