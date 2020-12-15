@@ -57,12 +57,12 @@
     "utf-8-validate": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "^14.14.13",
+    "@types/node": "^14.14.14",
     "@types/uuid": "^8.3.0",
     "@types/worker-threads-pool": "^2.0.0",
     "@types/ws": "^7.4.0",
-    "@typescript-eslint/eslint-plugin": "^4.9.1",
-    "@typescript-eslint/parser": "^4.9.1",
+    "@typescript-eslint/eslint-plugin": "^4.10.0",
+    "@typescript-eslint/parser": "^4.10.0",
     "clinic": "^8.0.1",
     "cross-env": "^7.0.3",
     "eslint": "^7.15.0",
