@@ -1,0 +1,20 @@
+ID: ev-simulator
+_schema-version: '3.3'
+version: 0.0.1
+
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm install
+        - npm run build:prod
+
+resources:
+  - name: dynatrace-service
+    type: user-provided-service
+    optional: true
+
+modules:
+  - name: ev-simulator
+    type: nodejs
+    path: dist
