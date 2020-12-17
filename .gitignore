@@ -82,3 +82,7 @@ Thumbs.db
 
 # Winston
 *-audit.json
+
+# MTA
+*.mta
+mta_archives/
