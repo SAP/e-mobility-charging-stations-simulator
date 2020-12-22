@@ -123,8 +123,8 @@ export default class Utils {
     return date.toLocaleString() + prefixString;
   }
 
-  static cloneObject(object) {
-    return JSON.parse(JSON.stringify(object));
+  static cloneObject<T>(object: T): T {
+    return JSON.parse(JSON.stringify(object)) as T;
   }
 
   static isIterable(obj): boolean {

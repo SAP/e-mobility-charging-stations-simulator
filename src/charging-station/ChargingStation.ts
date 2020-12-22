@@ -136,14 +136,14 @@ export default class ChargingStation {
       let lastConnector = '0';
       for (lastConnector in this._stationInfo.Connectors) {
         if (Utils.convertToInt(lastConnector) === 0 && this._getUseConnectorId0() && this._stationInfo.Connectors[lastConnector]) {
-          this._connectors[lastConnector] = Utils.cloneObject(this._stationInfo.Connectors[lastConnector]) as Connector;
+          this._connectors[lastConnector] = Utils.cloneObject<Connector>(this._stationInfo.Connectors[lastConnector]);
         }
       }
       // Generate all connectors
       if ((this._stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
         for (let index = 1; index <= maxConnectors; index++) {
           const randConnectorID = this._stationInfo.randomConnectors ? Utils.getRandomInt(Utils.convertToInt(lastConnector), 1) : index;
-          this._connectors[index] = Utils.cloneObject(this._stationInfo.Connectors[randConnectorID]) as Connector;
+          this._connectors[index] = Utils.cloneObject<Connector>(this._stationInfo.Connectors[randConnectorID]) ;
         }
       }
     }
@@ -339,7 +339,7 @@ export default class ChargingStation {
   }
 
   _getSupervisionURL(): string {
-    const supervisionUrls = Utils.cloneObject(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs()) as string | string[];
+    const supervisionUrls = Utils.cloneObject<string|string[]>(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs()) ;
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
       if (Configuration.getDistributeStationsToTenantsEqually()) {
