@@ -17,7 +17,7 @@ export default class Utils {
     return new Date(milliSeconds).toISOString().substr(11, 8);
   }
 
-  static removeExtraEmptyLines(tab): void {
+  static removeExtraEmptyLines(tab: string[]): void {
     // Start from the end
     for (let i = tab.length - 1; i > 0; i--) {
       // Two consecutive empty lines?
