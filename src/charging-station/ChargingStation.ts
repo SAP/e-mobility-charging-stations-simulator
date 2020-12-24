@@ -1277,8 +1277,13 @@ export default class ChargingStation {
     return Constants.OCPP_RESPONSE_UNLOCKED;
   }
 
-  _getConfigurationKey(key: string): ConfigurationKey {
-    return this._configuration.configurationKey.find((configElement) => configElement.key === key);
+  _getConfigurationKey(key: string, caseInsensitive = false): ConfigurationKey {
+    return this._configuration.configurationKey.find((configElement) => {
+      if (caseInsensitive) {
+        return configElement.key.toLowerCase() === key.toLowerCase();
+      }
+      return configElement.key === key;
+    });
   }
 
   _addConfigurationKey(key: string, value: string, readonly = false, visible = true, reboot = false): void {
@@ -1353,7 +1358,7 @@ export default class ChargingStation {
     if (!Utils.isString(commandPayload.value)) {
       logger.error(`${this._logPrefix()} ChangeConfiguration request value field is not a string:`, commandPayload);
     }
-    const keyToChange = this._getConfigurationKey(commandPayload.key);
+    const keyToChange = this._getConfigurationKey(commandPayload.key, true);
     if (!keyToChange) {
       return Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED;
     } else if (keyToChange && keyToChange.readonly) {
