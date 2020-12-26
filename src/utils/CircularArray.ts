@@ -1,11 +1,11 @@
 
 export default class CircularArray<T> extends Array<T> {
   public size: number;
-  private readonly MAXIMUM_CIRCULAR_ARRAY_SIZE = 2000;
+  private readonly maximumCircularArraySize = 2000;
 
   constructor(size?: number) {
     super();
-    this.size = size && size <= this.MAXIMUM_CIRCULAR_ARRAY_SIZE ? size : this.MAXIMUM_CIRCULAR_ARRAY_SIZE;
+    this.size = size && size <= this.maximumCircularArraySize ? size : this.maximumCircularArraySize;
   }
 
   push(...items: T[]): number {
