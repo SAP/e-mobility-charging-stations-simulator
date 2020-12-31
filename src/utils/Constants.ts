@@ -4,8 +4,6 @@ export default class Constants {
   static readonly ENTITY_CHARGING_STATION = 'ChargingStation';
   static readonly ENTITY_AUTOMATIC_TRANSACTION_GENERATOR = 'AutomaticTransactionGenerator';
 
-  static readonly WS_UNSUPPORTED_DATA = 1007;
-
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: DefaultStatus.ACCEPTED });
   static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: DefaultStatus.REJECTED });
   static readonly OCPP_CONFIGURATION_RESPONSE_ACCEPTED = Object.freeze({ status: ConfigurationStatus.ACCEPTED });

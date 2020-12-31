@@ -51,19 +51,19 @@
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
     "worker-threads-pool": "^2.0.0",
-    "ws": "^7.4.1"
+    "ws": "^7.4.2"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.2",
     "utf-8-validate": "^5.0.3"
   },
   "devDependencies": {
-    "@types/node": "^14.14.16",
+    "@types/node": "^14.14.17",
     "@types/uuid": "^8.3.0",
     "@types/worker-threads-pool": "^2.0.0",
     "@types/ws": "^7.4.0",
-    "@typescript-eslint/eslint-plugin": "^4.11.0",
-    "@typescript-eslint/parser": "^4.11.0",
+    "@typescript-eslint/eslint-plugin": "^4.11.1",
+    "@typescript-eslint/parser": "^4.11.1",
     "clinic": "^8.0.1",
     "cross-env": "^7.0.3",
     "eslint": "^7.16.0",

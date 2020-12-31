@@ -20,6 +20,7 @@ import MeasurandValues from '../types/MeasurandValues';
 import OCPPError from './OcppError';
 import Statistics from '../utils/Statistics';
 import Utils from '../utils/Utils';
+import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
@@ -109,8 +110,8 @@ export default class ChargingStation {
     this._configuration = this._getTemplateChargingStationConfiguration();
     this._supervisionUrl = this._getSupervisionURL();
     this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
-    this._connectionTimeout = this._getConnectionTimeout() * 1000; // Ms, zero for disabling
-    this._autoReconnectMaxRetries = this._getAutoReconnectMaxRetries(); // -1 for unlimited
+    this._connectionTimeout = this._getConnectionTimeout() * 1000; // Ms, 0 for disabling
+    this._autoReconnectMaxRetries = this._getAutoReconnectMaxRetries(); // -1 for unlimited, 0 for disabling
     // Build connectors if needed
     const maxConnectors = this._getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -143,7 +144,7 @@ export default class ChargingStation {
       if ((this._stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
         for (let index = 1; index <= maxConnectors; index++) {
           const randConnectorID = this._stationInfo.randomConnectors ? Utils.getRandomInt(Utils.convertToInt(lastConnector), 1) : index;
-          this._connectors[index] = Utils.cloneObject<Connector>(this._stationInfo.Connectors[randConnectorID]) ;
+          this._connectors[index] = Utils.cloneObject<Connector>(this._stationInfo.Connectors[randConnectorID]);
         }
       }
     }
@@ -182,6 +183,14 @@ export default class ChargingStation {
 
   _logPrefix(): string {
     return Utils.logPrefix(` ${this._stationInfo.name}:`);
+  }
+
+  _isWebSocketOpen(): boolean {
+    return this._wsConnection?.readyState === WebSocket.OPEN;
+  }
+
+  _isRegistered(): boolean {
+    return this._bootNotificationResponse?.status === RegistrationStatus.ACCEPTED;
   }
 
   _getTemplateChargingStationConfiguration(): ChargingStationConfiguration {
@@ -267,6 +276,13 @@ export default class ChargingStation {
     return -1;
   }
 
+  _getRegistrationMaxRetries(): number {
+    if (!Utils.isUndefined(this._stationInfo.registrationMaxRetries)) {
+      return this._stationInfo.registrationMaxRetries;
+    }
+    return -1;
+  }
+
   _getPowerDivider(): number {
     let powerDivider = this._getNumberOfConnectors();
     if (this._stationInfo.powerSharedByConnectors) {
@@ -339,7 +355,7 @@ export default class ChargingStation {
   }
 
   _getSupervisionURL(): string {
-    const supervisionUrls = Utils.cloneObject<string|string[]>(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs()) ;
+    const supervisionUrls = Utils.cloneObject<string | string[]>(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs());
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
       if (Configuration.getDistributeStationsToTenantsEqually()) {
@@ -427,7 +443,7 @@ export default class ChargingStation {
     const webSocketPingInterval: number = this._getConfigurationKey('WebSocketPingInterval') ? Utils.convertToInt(this._getConfigurationKey('WebSocketPingInterval').value) : 0;
     if (webSocketPingInterval > 0 && !this._webSocketPingSetInterval) {
       this._webSocketPingSetInterval = setInterval(() => {
-        if (this._wsConnection?.readyState === WebSocket.OPEN) {
+        if (this._isWebSocketOpen()) {
           this._wsConnection.ping((): void => { });
         }
       }, webSocketPingInterval * 1000);
@@ -543,7 +559,7 @@ export default class ChargingStation {
     if (Utils.isUndefined(options.handshakeTimeout)) {
       options.handshakeTimeout = this._connectionTimeout;
     }
-    if (this._wsConnection?.readyState === WebSocket.OPEN && forceCloseOpened) {
+    if (this._isWebSocketOpen() && forceCloseOpened) {
       this._wsConnection.close();
     }
     this._wsConnection = new WebSocket(this._wsConnectionUrl, 'ocpp' + Constants.OCPP_VERSION_16, options);
@@ -578,7 +594,7 @@ export default class ChargingStation {
         await this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.UNAVAILABLE);
       }
     }
-    if (this._wsConnection?.readyState === WebSocket.OPEN) {
+    if (this._isWebSocketOpen()) {
       this._wsConnection.close();
     }
     this._bootNotificationResponse = null;
@@ -586,7 +602,6 @@ export default class ChargingStation {
   }
 
   async _reconnect(error): Promise<void> {
-    logger.error(this._logPrefix() + ' Socket: abnormally closed: %j', error);
     // Stop heartbeat
     this._stopHeartbeat();
     // Stop the ATG if needed
@@ -611,52 +626,52 @@ export default class ChargingStation {
 
   async onOpen(): Promise<void> {
     logger.info(`${this._logPrefix()} Is connected to server through ${this._wsConnectionUrl}`);
-    if (!this._hasSocketRestarted || this._hasStopped) {
+    if (!this._isRegistered()) {
       // Send BootNotification
-      this._bootNotificationResponse = await this.sendBootNotification();
-    }
-    if (this._bootNotificationResponse.status === RegistrationStatus.ACCEPTED) {
-      await this._startMessageSequence();
-    } else {
+      let registrationRetryCount = 0;
       do {
-        await Utils.sleep(this._bootNotificationResponse.interval * 1000);
-        // Resend BootNotification
         this._bootNotificationResponse = await this.sendBootNotification();
-      } while (this._bootNotificationResponse.status !== RegistrationStatus.ACCEPTED);
+        if (!this._isRegistered()) {
+          registrationRetryCount++;
+          await Utils.sleep(this._bootNotificationResponse.interval * 1000);
+        }
+      } while (!this._isRegistered() && (registrationRetryCount <= this._getRegistrationMaxRetries() || this._getRegistrationMaxRetries() === -1));
     }
-    if (this._hasSocketRestarted && this._bootNotificationResponse.status === RegistrationStatus.ACCEPTED) {
-      if (!Utils.isEmptyArray(this._messageQueue)) {
-        this._messageQueue.forEach((message, index) => {
-          if (this._wsConnection?.readyState === WebSocket.OPEN) {
+    if (this._isRegistered()) {
+      await this._startMessageSequence();
+      if (this._hasSocketRestarted && this._isWebSocketOpen()) {
+        if (!Utils.isEmptyArray(this._messageQueue)) {
+          this._messageQueue.forEach((message, index) => {
             this._messageQueue.splice(index, 1);
             this._wsConnection.send(message);
-          }
-        });
+          });
+        }
       }
+    } else {
+      logger.error(`${this._logPrefix()} Registration: max retries reached (${this._getRegistrationMaxRetries()}) or retry disabled (${this._getRegistrationMaxRetries()})`);
     }
     this._autoReconnectRetryCount = 0;
     this._hasSocketRestarted = false;
   }
 
   async onError(errorEvent): Promise<void> {
-    switch (errorEvent.code) {
-      case 'ECONNREFUSED':
-        await this._reconnect(errorEvent);
-        break;
-      default:
-        logger.error(this._logPrefix() + ' Socket error: %j', errorEvent);
-        break;
-    }
+    logger.error(this._logPrefix() + ' Socket error: %j', errorEvent);
+    // pragma switch (errorEvent.code) {
+    //   case 'ECONNREFUSED':
+    //     await this._reconnect(errorEvent);
+    //     break;
+    // }
   }
 
   async onClose(closeEvent): Promise<void> {
     switch (closeEvent) {
-      case 1000: // Normal close
-      case 1005:
-        logger.info(this._logPrefix() + ' Socket normally closed: %j', closeEvent);
+      case WebSocketCloseEventStatusCode.CLOSE_NORMAL: // Normal close
+      case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
+        logger.info(`${this._logPrefix()} Socket normally closed with status '${Utils.getWebSocketCloseEventStatusString(closeEvent)}'`);
         this._autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
+        logger.error(`${this._logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(closeEvent)}'`);
         await this._reconnect(closeEvent);
         break;
     }
@@ -1053,8 +1068,8 @@ export default class ChargingStation {
           messageToSend = JSON.stringify([messageType, messageId, commandParams.code ? commandParams.code : Constants.OCPP_ERROR_GENERIC_ERROR, commandParams.message ? commandParams.message : '', commandParams.details ? commandParams.details : {}]);
           break;
       }
-      // Check if wsConnection is ready
-      if (this._wsConnection?.readyState === WebSocket.OPEN) {
+      // Check if wsConnection opened and charging station registered
+      if (this._isWebSocketOpen() && (this._isRegistered() || commandName === 'BootNotification')) {
         if (this.getEnableStatistics()) {
           this._statistics.addMessage(commandName, messageType);
         }
