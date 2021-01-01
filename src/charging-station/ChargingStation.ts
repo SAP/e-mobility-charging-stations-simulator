@@ -619,7 +619,7 @@ export default class ChargingStation {
       this._openWSConnection({ handshakeTimeout: reconnectDelay - 100 });
       this._hasSocketRestarted = true;
     } else if (this._getAutoReconnectMaxRetries() !== -1) {
-      logger.error(`${this._logPrefix()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._getAutoReconnectMaxRetries()})`);
+      logger.error(`${this._logPrefix()} Socket reconnect failure: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._getAutoReconnectMaxRetries()})`);
     }
   }
 
@@ -647,7 +647,7 @@ export default class ChargingStation {
         }
       }
     } else {
-      logger.error(`${this._logPrefix()} Registration: max retries reached (${this._getRegistrationMaxRetries()}) or retry disabled (${this._getRegistrationMaxRetries()})`);
+      logger.error(`${this._logPrefix()} Registration failure: max retries reached (${this._getRegistrationMaxRetries()}) or retry disabled (${this._getRegistrationMaxRetries()})`);
     }
     this._autoReconnectRetryCount = 0;
     this._hasSocketRestarted = false;
