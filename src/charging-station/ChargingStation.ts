@@ -6,7 +6,7 @@ import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationT
 import Connectors, { Connector } from '../types/Connectors';
 import { MeterValue, MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit, MeterValuesRequest, MeterValuesResponse, SampledValue } from '../types/ocpp/1.6/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
-import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
+import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, Request, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
 import WebSocket, { MessageEvent } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
@@ -687,20 +687,20 @@ export default class ChargingStation {
   }
 
   async onMessage(messageEvent: MessageEvent): Promise<void> {
-    let [messageType, messageId, commandName, commandPayload, errorDetails] = [0, '', Constants.ENTITY_CHARGING_STATION, '', ''];
+    let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, '', ''];
     try {
       // Parse the message
-      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent.toString());
+      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent.toString()) as IncomingRequest;
 
       // Check the Type of message
       switch (messageType) {
         // Incoming Message
         case MessageType.CALL_MESSAGE:
           if (this.getEnableStatistics()) {
-            this._statistics.addMessage(commandName as IncomingRequestCommand, messageType);
+            this._statistics.addMessage(commandName , messageType);
           }
           // Process the call
-          await this.handleRequest(messageId, commandName as IncomingRequestCommand, commandPayload);
+          await this.handleRequest(messageId, commandName , commandPayload);
           break;
         // Outcome Message
         case MessageType.CALL_RESULT_MESSAGE:
@@ -744,9 +744,9 @@ export default class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming message %j processing error %s on request content type %s', this._logPrefix(), messageEvent, error, this._requests[messageId]);
+      logger.error('%s Incoming message %j processing error %j on request content type %j', this._logPrefix(), messageEvent, error, this._requests[messageId]);
       // Send error
-      messageType !== MessageType.CALL_ERROR_MESSAGE && await this.sendError(messageId, error, commandName as IncomingRequestCommand);
+      messageType !== MessageType.CALL_ERROR_MESSAGE && await this.sendError(messageId, error, commandName);
     }
   }
 
@@ -1049,7 +1049,7 @@ export default class ChargingStation {
         // Request
         case MessageType.CALL_MESSAGE:
           // Build request
-          this._requests[messageId] = [responseCallback, rejectCallback, commandParams];
+          this._requests[messageId] = [responseCallback, rejectCallback, commandParams] as Request;
           messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
           break;
         // Response

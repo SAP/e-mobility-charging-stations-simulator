@@ -1,11 +1,16 @@
 import { ChargePointErrorCode } from './ChargePointErrorCode';
 import { ChargePointStatus } from './ChargePointStatus';
 import { ChargingProfile } from './ChargingProfile';
+import { MessageType } from '../MessageType';
 import OCPPError from '../../../charging-station/OcppError';
 
 export default interface Requests {
-  [id: string]: [(payload?, requestPayload?) => void, (error?: OCPPError) => void, Record<string, unknown>];
+  [id: string]: Request;
 }
+
+export type Request = [(payload?, requestPayload?) => void, (error?: OCPPError) => void, Record<string, unknown>];
+
+export type IncomingRequest = [MessageType, string, IncomingRequestCommand, string, string];
 
 export enum RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
