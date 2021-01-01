@@ -274,6 +274,7 @@ export default class ChargingStation {
     return -1;
   }
 
+  // 0 for disabling
   _getRegistrationMaxRetries(): number {
     if (!Utils.isUndefined(this._stationInfo.registrationMaxRetries)) {
       return this._stationInfo.registrationMaxRetries;
