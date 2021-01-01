@@ -1043,7 +1043,7 @@ export default class ChargingStation {
     const self = this;
     // Send a message through wsConnection
     return new Promise((resolve: (value?: any | PromiseLike<any>) => void, reject: (reason?: any) => void) => {
-      let messageToSend;
+      let messageToSend: string;
       // Type of message
       switch (messageType) {
         // Request
@@ -1075,7 +1075,7 @@ export default class ChargingStation {
         // Handle dups in buffer
         for (const message of this._messageQueue) {
           // Same message
-          if (JSON.stringify(messageToSend) === JSON.stringify(message)) {
+          if (messageToSend === message) {
             dups = true;
             break;
           }
