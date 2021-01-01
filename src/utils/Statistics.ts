@@ -2,7 +2,7 @@ import CommandStatistics, { CommandStatisticsData, PerfEntry } from '../types/Co
 
 import CircularArray from './CircularArray';
 import Configuration from './Configuration';
-import Constants from './Constants';
+import { MessageType } from '../types/ocpp/MessageType';
 import { PerformanceEntry } from 'perf_hooks';
 import Utils from './Utils';
 import logger from './Logger';
@@ -29,7 +29,7 @@ export default class Statistics {
 
   addMessage(command: string, messageType: number): void {
     switch (messageType) {
-      case Constants.OCPP_JSON_CALL_MESSAGE:
+      case MessageType.CALL_MESSAGE:
         if (this._commandsStatistics[command] && this._commandsStatistics[command].countRequest) {
           this._commandsStatistics[command].countRequest++;
         } else {
@@ -37,7 +37,7 @@ export default class Statistics {
           this._commandsStatistics[command].countRequest = 1;
         }
         break;
-      case Constants.OCPP_JSON_CALL_RESULT_MESSAGE:
+      case MessageType.CALL_RESULT_MESSAGE:
         if (this._commandsStatistics[command]) {
           if (this._commandsStatistics[command].countResponse) {
             this._commandsStatistics[command].countResponse++;
@@ -49,7 +49,7 @@ export default class Statistics {
           this._commandsStatistics[command].countResponse = 1;
         }
         break;
-      case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
+      case MessageType.CALL_ERROR_MESSAGE:
         if (this._commandsStatistics[command]) {
           if (this._commandsStatistics[command].countError) {
             this._commandsStatistics[command].countError++;
