@@ -6,7 +6,7 @@ import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationT
 import Connectors, { Connector } from '../types/Connectors';
 import { MeterValue, MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit, MeterValuesRequest, MeterValuesResponse, SampledValue } from '../types/ocpp/1.6/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
-import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
+import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
 import WebSocket, { MessageEvent } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
@@ -697,10 +697,10 @@ export default class ChargingStation {
         // Incoming Message
         case MessageType.CALL_MESSAGE:
           if (this.getEnableStatistics()) {
-            this._statistics.addMessage(commandName, messageType);
+            this._statistics.addMessage(commandName as IncomingRequestCommand, messageType);
           }
           // Process the call
-          await this.handleRequest(messageId, commandName, commandPayload);
+          await this.handleRequest(messageId, commandName as IncomingRequestCommand, commandPayload);
           break;
         // Outcome Message
         case MessageType.CALL_RESULT_MESSAGE:
@@ -746,26 +746,24 @@ export default class ChargingStation {
       // Log
       logger.error('%s Incoming message %j processing error %s on request content type %s', this._logPrefix(), messageEvent, error, this._requests[messageId]);
       // Send error
-      messageType !== MessageType.CALL_ERROR_MESSAGE && await this.sendError(messageId, error, commandName);
+      messageType !== MessageType.CALL_ERROR_MESSAGE && await this.sendError(messageId, error, commandName as IncomingRequestCommand);
     }
   }
 
   async sendHeartbeat(): Promise<void> {
     try {
       const payload: HeartbeatRequest = {};
-      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, 'Heartbeat');
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.HEARTBEAT);
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send Heartbeat error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.HEARTBEAT, error);
     }
   }
 
   async sendBootNotification(): Promise<BootNotificationResponse> {
     try {
-      return await this.sendMessage(Utils.generateUUID(), this._bootNotificationRequest, MessageType.CALL_MESSAGE, 'BootNotification') as BootNotificationResponse;
+      return await this.sendMessage(Utils.generateUUID(), this._bootNotificationRequest, MessageType.CALL_MESSAGE, RequestCommand.BOOT_NOTIFICATION) as BootNotificationResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send BootNotification error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.BOOT_NOTIFICATION, error);
     }
   }
 
@@ -777,10 +775,9 @@ export default class ChargingStation {
         errorCode,
         status,
       };
-      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, 'StatusNotification');
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.STATUS_NOTIFICATION);
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StatusNotification error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.STATUS_NOTIFICATION, error);
     }
   }
 
@@ -792,10 +789,9 @@ export default class ChargingStation {
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
-      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, 'StartTransaction') as StartTransactionResponse;
+      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.START_TRANSACTION) as StartTransactionResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StartTransaction error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.START_TRANSACTION, error);
     }
   }
 
@@ -809,10 +805,9 @@ export default class ChargingStation {
         timestamp: new Date().toISOString(),
         ...reason && { reason },
       };
-      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, 'StopTransaction') as StartTransactionResponse;
+      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.STOP_TRANSACTION) as StartTransactionResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StopTransaction error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.STOP_TRANSACTION, error);
     }
   }
 
@@ -1030,21 +1025,20 @@ export default class ChargingStation {
         transactionId: self.getConnector(connectorId).transactionId,
         meterValue: meterValue,
       };
-      await self.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, 'MeterValues');
+      await self.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.METERVALUES);
     } catch (error) {
-      logger.error(self._logPrefix() + ' Send MeterValues error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.METERVALUES, error);
     }
   }
 
-  async sendError(messageId: string, err: Error | OCPPError, commandName: string): Promise<unknown> {
+  async sendError(messageId: string, err: Error | OCPPError, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown> {
     // Check exception type: only OCPP error are accepted
     const error = err instanceof OCPPError ? err : new OCPPError(ErrorType.INTERNAL_ERROR, err.message, err.stack && err.stack);
     // Send error
     return this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
   }
 
-  async sendMessage(messageId: string, commandParams, messageType = MessageType.CALL_RESULT_MESSAGE, commandName: string): Promise<any> {
+  async sendMessage(messageId: string, commandParams, messageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -1070,7 +1064,7 @@ export default class ChargingStation {
           break;
       }
       // Check if wsConnection opened and charging station registered
-      if (this._isWebSocketOpen() && (this._isRegistered() || commandName === 'BootNotification')) {
+      if (this._isWebSocketOpen() && (this._isRegistered() || commandName === RequestCommand.BOOT_NOTIFICATION)) {
         if (this.getEnableStatistics()) {
           this._statistics.addMessage(commandName, messageType);
         }
@@ -1108,7 +1102,7 @@ export default class ChargingStation {
           self._statistics.addMessage(commandName, messageType);
         }
         // Send the response
-        await self.handleResponse(commandName, payload, requestPayload);
+        await self.handleResponse(commandName as RequestCommand, payload, requestPayload);
         resolve(payload);
       }
 
@@ -1127,7 +1121,7 @@ export default class ChargingStation {
     });
   }
 
-  async handleResponse(commandName: string, payload, requestPayload): Promise<void> {
+  async handleResponse(commandName: RequestCommand, payload, requestPayload): Promise<void> {
     const responseCallbackFn = 'handleResponse' + commandName;
     if (typeof this[responseCallbackFn] === 'function') {
       await this[responseCallbackFn](payload, requestPayload);
@@ -1238,7 +1232,7 @@ export default class ChargingStation {
     logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
   }
 
-  async handleRequest(messageId: string, commandName: string, commandPayload): Promise<void> {
+  async handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload): Promise<void> {
     let response;
     // Call
     if (typeof this['handleRequest' + commandName] === 'function') {
@@ -1457,6 +1451,11 @@ export default class ChargingStation {
     }
     logger.info(this._logPrefix() + ' Trying to remote stop a non existing transaction ' + transactionId.toString());
     return Constants.OCPP_RESPONSE_REJECTED;
+  }
+
+  private handleRequestError(commandName: RequestCommand, error: Error) {
+    logger.error(this._logPrefix() + ' Send ' + commandName + ' error: %j', error);
+    throw error;
   }
 }
 

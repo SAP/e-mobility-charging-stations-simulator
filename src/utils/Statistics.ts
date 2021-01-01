@@ -1,4 +1,5 @@
 import CommandStatistics, { CommandStatisticsData, PerfEntry } from '../types/CommandStatistics';
+import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/1.6/Requests';
 
 import CircularArray from './CircularArray';
 import Configuration from './Configuration';
@@ -27,7 +28,7 @@ export default class Statistics {
     return Statistics.instance;
   }
 
-  addMessage(command: string, messageType: number): void {
+  addMessage(command: RequestCommand | IncomingRequestCommand, messageType: MessageType): void {
     switch (messageType) {
       case MessageType.CALL_MESSAGE:
         if (this._commandsStatistics[command] && this._commandsStatistics[command].countRequest) {
@@ -68,7 +69,7 @@ export default class Statistics {
   }
 
   logPerformance(entry: PerformanceEntry, className: string): void {
-    this.addPerformanceTimer(entry.name, entry.duration);
+    this.addPerformanceTimer(entry.name as RequestCommand | IncomingRequestCommand, entry.duration);
     const perfEntry: PerfEntry = {} as PerfEntry;
     perfEntry.name = entry.name;
     perfEntry.entryType = entry.entryType;
@@ -106,7 +107,7 @@ export default class Statistics {
     return (sortedDataSet[(middleIndex - 1)] + sortedDataSet[middleIndex]) / 2;
   }
 
-  private addPerformanceTimer(command: string, duration: number): void {
+  private addPerformanceTimer(command: RequestCommand | IncomingRequestCommand, duration: number): void {
     // Map to proper command name
     const MAPCOMMAND = {
       sendMeterValues: 'MeterValues',
@@ -114,7 +115,7 @@ export default class Statistics {
       stopTransaction: 'StopTransaction',
     };
     if (MAPCOMMAND[command]) {
-      command = MAPCOMMAND[command] as string;
+      command = MAPCOMMAND[command] as RequestCommand | IncomingRequestCommand;
     }
     // Initialize command statistics
     if (!this._commandsStatistics[command]) {

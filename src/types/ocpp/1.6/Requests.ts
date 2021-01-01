@@ -7,6 +7,27 @@ export default interface Requests {
   [id: string]: [(payload?, requestPayload?) => void, (error?: OCPPError) => void, Record<string, unknown>];
 }
 
+export enum RequestCommand {
+  BOOT_NOTIFICATION = 'BootNotification',
+  HEARTBEAT = 'Heartbeat',
+  STATUS_NOTIFICATION = 'StatusNotification',
+  CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  START_TRANSACTION = 'StartTransaction',
+  STOP_TRANSACTION = 'StopTransaction',
+  METERVALUES = 'MeterValues'
+}
+
+export enum IncomingRequestCommand {
+  RESET = 'Reset',
+  CLEAR_CACHE = 'ClearCache',
+  UNLOCK_CONNECTOR = 'UnlockConnector',
+  GET_CONFIGURATION = 'GetConfiguration',
+  CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  SET_CHARGING_PROFILE = 'SetChargingProfile',
+  REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
+  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction'
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface HeartbeatRequest {}
 
