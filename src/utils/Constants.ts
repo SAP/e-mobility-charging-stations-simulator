@@ -24,7 +24,7 @@ export default class Constants {
   static readonly OCPP_VERSION_16 = '1.6';
   static readonly OCPP_VERSION_20 = '2.0';
 
-  static readonly OCPP_WEBSOCKET_TIMEOUT = 60000; // 60 sec
+  static readonly OCPP_ERROR_TIMEOUT = 60000; // 60 sec
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms
