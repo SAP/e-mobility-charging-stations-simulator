@@ -22,7 +22,7 @@ export default class CircularArray<T> extends Array<T> {
     return super.unshift(...items);
   }
 
-  concat(...items: (T|ConcatArray<T>)[]): T[] {
+  concat(...items: (T | ConcatArray<T>)[]): T[] {
     if (this.length + items.length > this.size) {
       super.splice(0, (this.length + items.length) - this.size);
     }

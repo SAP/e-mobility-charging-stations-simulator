@@ -34,7 +34,7 @@ export enum IncomingRequestCommand {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface HeartbeatRequest {}
+export interface HeartbeatRequest { }
 
 export interface BootNotificationRequest {
   chargeBoxSerialNumber?: string;

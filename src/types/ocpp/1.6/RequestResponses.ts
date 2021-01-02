@@ -47,7 +47,7 @@ export interface BootNotificationResponse {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface StatusNotificationResponse {}
+export interface StatusNotificationResponse { }
 
 export interface GetConfigurationResponse {
   configurationKey: ConfigurationKey[];

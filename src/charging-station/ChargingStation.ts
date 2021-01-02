@@ -688,6 +688,10 @@ export default class ChargingStation {
 
   async onMessage(messageEvent: MessageEvent): Promise<void> {
     let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, '', ''];
+    let responseCallback: (payload?, requestPayload?) => void;
+    let rejectCallback: (error: OCPPError) => void;
+    let requestPayload: Record<string, unknown>;
+    let errMsg: string;
     try {
       // Parse the message
       [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent.toString()) as IncomingRequest;
@@ -697,16 +701,14 @@ export default class ChargingStation {
         // Incoming Message
         case MessageType.CALL_MESSAGE:
           if (this.getEnableStatistics()) {
-            this._statistics.addMessage(commandName , messageType);
+            this._statistics.addMessage(commandName, messageType);
           }
           // Process the call
-          await this.handleRequest(messageId, commandName , commandPayload);
+          await this.handleRequest(messageId, commandName, commandPayload);
           break;
         // Outcome Message
         case MessageType.CALL_RESULT_MESSAGE:
           // Respond
-          // eslint-disable-next-line no-case-declarations
-          let responseCallback; let requestPayload;
           if (Utils.isIterable(this._requests[messageId])) {
             [responseCallback, , requestPayload] = this._requests[messageId];
           } else {
@@ -725,8 +727,6 @@ export default class ChargingStation {
             // Error
             throw new Error(`Error request for unknown message id ${messageId}`);
           }
-          // eslint-disable-next-line no-case-declarations
-          let rejectCallback;
           if (Utils.isIterable(this._requests[messageId])) {
             [, rejectCallback] = this._requests[messageId];
           } else {
@@ -737,8 +737,7 @@ export default class ChargingStation {
           break;
         // Error
         default:
-          // eslint-disable-next-line no-case-declarations
-          const errMsg = `${this._logPrefix()} Wrong message type ${messageType}`;
+          errMsg = `${this._logPrefix()} Wrong message type ${messageType}`;
           logger.error(errMsg);
           throw new Error(errMsg);
       }
