@@ -1,4 +1,5 @@
 import { AuthorizationStatus, StartTransactionRequest, StartTransactionResponse, StopTransactionReason, StopTransactionRequest, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
+import { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
 import { BootNotificationResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
 import { ChargingProfile, ChargingProfilePurposeType } from '../types/ocpp/1.6/ChargingProfile';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
@@ -6,7 +7,7 @@ import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationT
 import Connectors, { Connector } from '../types/Connectors';
 import { MeterValue, MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit, MeterValuesRequest, MeterValuesResponse, SampledValue } from '../types/ocpp/1.6/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
-import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, Request, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
+import Requests, { IncomingRequest, Request } from '../types/ocpp/Requests';
 import WebSocket, { MessageEvent } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
@@ -20,6 +21,7 @@ import { ErrorType } from '../types/ocpp/ErrorType';
 import MeasurandValues from '../types/MeasurandValues';
 import { MessageType } from '../types/ocpp/MessageType';
 import OCPPError from './OcppError';
+import { StandardParametersKey } from '../types/ocpp/1.6/Configuration';
 import Statistics from '../utils/Statistics';
 import Utils from '../utils/Utils';
 import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
@@ -155,9 +157,9 @@ export default class ChargingStation {
       }
     }
     // OCPP parameters
-    this._addConfigurationKey('NumberOfConnectors', this._getNumberOfConnectors().toString(), true);
-    if (!this._getConfigurationKey('MeterValuesSampledData')) {
-      this._addConfigurationKey('MeterValuesSampledData', MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER);
+    this._addConfigurationKey(StandardParametersKey.NumberOfConnectors, this._getNumberOfConnectors().toString(), true);
+    if (!this._getConfigurationKey(StandardParametersKey.MeterValuesSampledData)) {
+      this._addConfigurationKey(StandardParametersKey.MeterValuesSampledData, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER);
     }
     this._stationInfo.powerDivider = this._getPowerDivider();
     if (this.getEnableStatistics()) {
@@ -375,12 +377,12 @@ export default class ChargingStation {
   }
 
   _getAuthorizeRemoteTxRequests(): boolean {
-    const authorizeRemoteTxRequests = this._getConfigurationKey('AuthorizeRemoteTxRequests');
+    const authorizeRemoteTxRequests = this._getConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests);
     return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
   }
 
   _getLocalAuthListEnabled(): boolean {
-    const localAuthListEnabled = this._getConfigurationKey('LocalAuthListEnabled');
+    const localAuthListEnabled = this._getConfigurationKey(StandardParametersKey.LocalAuthListEnabled);
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
   }
 
@@ -441,7 +443,7 @@ export default class ChargingStation {
   }
 
   _startWebSocketPing(): void {
-    const webSocketPingInterval: number = this._getConfigurationKey('WebSocketPingInterval') ? Utils.convertToInt(this._getConfigurationKey('WebSocketPingInterval').value) : 0;
+    const webSocketPingInterval: number = this._getConfigurationKey(StandardParametersKey.WebSocketPingInterval) ? Utils.convertToInt(this._getConfigurationKey(StandardParametersKey.WebSocketPingInterval).value) : 0;
     if (webSocketPingInterval > 0 && !this._webSocketPingSetInterval) {
       this._webSocketPingSetInterval = setInterval(() => {
         if (this._isWebSocketOpen()) {
@@ -821,7 +823,7 @@ export default class ChargingStation {
       for (let index = 0; index < meterValuesTemplate.length; index++) {
         const connector = self.getConnector(connectorId);
         // SoC measurand
-        if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.STATE_OF_CHARGE && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.STATE_OF_CHARGE)) {
+        if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.STATE_OF_CHARGE && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.STATE_OF_CHARGE)) {
           meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.PERCENT },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
@@ -834,7 +836,7 @@ export default class ChargingStation {
             logger.error(`${self._logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ? meterValue.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/100`);
           }
         // Voltage measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.VOLTAGE && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.VOLTAGE)) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.VOLTAGE && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.VOLTAGE)) {
           const voltageMeasurandValue = Utils.getRandomFloatRounded(self._getVoltageOut() + self._getVoltageOut() * 0.1, self._getVoltageOut() - self._getVoltageOut() * 0.1);
           meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.VOLT },
@@ -860,7 +862,7 @@ export default class ChargingStation {
             });
           }
         // Power.Active.Import measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.POWER_ACTIVE_IMPORT)) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.POWER_ACTIVE_IMPORT)) {
           // FIXME: factor out powerDivider checks
           if (Utils.isUndefined(self._stationInfo.powerDivider)) {
             const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider is undefined`;
@@ -920,7 +922,7 @@ export default class ChargingStation {
             });
           }
         // Current.Import measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.CURRENT_IMPORT && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.CURRENT_IMPORT)) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.CURRENT_IMPORT && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.CURRENT_IMPORT)) {
           // FIXME: factor out powerDivider checks
           if (Utils.isUndefined(self._stationInfo.powerDivider)) {
             const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider is undefined`;
@@ -1037,7 +1039,7 @@ export default class ChargingStation {
     return this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
   }
 
-  async sendMessage(messageId: string, commandParams, messageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
+  async sendMessage(messageId: string, commandParams, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -1133,8 +1135,8 @@ export default class ChargingStation {
     if (payload.status === RegistrationStatus.ACCEPTED) {
       this._heartbeatInterval = payload.interval * 1000;
       this._heartbeatSetInterval ? this._restartHeartbeat() : this._startHeartbeat();
-      this._addConfigurationKey('HeartBeatInterval', payload.interval.toString());
-      this._addConfigurationKey('HeartbeatInterval', payload.interval.toString(), false, false);
+      this._addConfigurationKey(StandardParametersKey.HeartBeatInterval, payload.interval.toString());
+      this._addConfigurationKey(StandardParametersKey.HeartbeatInterval, payload.interval.toString(), false, false);
       this._hasStopped && (this._hasStopped = false);
     } else if (payload.status === RegistrationStatus.PENDING) {
       logger.info(this._logPrefix() + ' Charging station in pending state on the central server');
@@ -1185,7 +1187,7 @@ export default class ChargingStation {
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider++;
       }
-      const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
+      const configuredMeterValueSampleInterval = this._getConfigurationKey(StandardParametersKey.MeterValueSampleInterval);
       this._startMeterValues(connectorId,
         configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
     } else {
@@ -1286,7 +1288,7 @@ export default class ChargingStation {
     return Constants.OCPP_RESPONSE_UNLOCKED;
   }
 
-  _getConfigurationKey(key: string, caseInsensitive = false): ConfigurationKey {
+  _getConfigurationKey(key: string | StandardParametersKey, caseInsensitive = false): ConfigurationKey {
     return this._configuration.configurationKey.find((configElement) => {
       if (caseInsensitive) {
         return configElement.key.toLowerCase() === key.toLowerCase();
@@ -1295,7 +1297,7 @@ export default class ChargingStation {
     });
   }
 
-  _addConfigurationKey(key: string, value: string, readonly = false, visible = true, reboot = false): void {
+  _addConfigurationKey(key: string | StandardParametersKey, value: string, readonly = false, visible = true, reboot = false): void {
     const keyFound = this._getConfigurationKey(key);
     if (!keyFound) {
       this._configuration.configurationKey.push({
@@ -1308,7 +1310,7 @@ export default class ChargingStation {
     }
   }
 
-  _setConfigurationKeyValue(key: string, value: string): void {
+  _setConfigurationKeyValue(key: string | StandardParametersKey, value: string): void {
     const keyFound = this._getConfigurationKey(key);
     if (keyFound) {
       const keyIndex = this._configuration.configurationKey.indexOf(keyFound);
@@ -1380,19 +1382,19 @@ export default class ChargingStation {
         valueChanged = true;
       }
       let triggerHeartbeatRestart = false;
-      if (keyToChange.key === 'HeartBeatInterval' && valueChanged) {
-        this._setConfigurationKeyValue('HeartbeatInterval', commandPayload.value);
+      if (keyToChange.key === StandardParametersKey.HeartBeatInterval && valueChanged) {
+        this._setConfigurationKeyValue(StandardParametersKey.HeartbeatInterval, commandPayload.value);
         triggerHeartbeatRestart = true;
       }
-      if (keyToChange.key === 'HeartbeatInterval' && valueChanged) {
-        this._setConfigurationKeyValue('HeartBeatInterval', commandPayload.value);
+      if (keyToChange.key === StandardParametersKey.HeartbeatInterval && valueChanged) {
+        this._setConfigurationKeyValue(StandardParametersKey.HeartBeatInterval, commandPayload.value);
         triggerHeartbeatRestart = true;
       }
       if (triggerHeartbeatRestart) {
         this._heartbeatInterval = Utils.convertToInt(commandPayload.value) * 1000;
         this._restartHeartbeat();
       }
-      if (keyToChange.key === 'WebSocketPingInterval' && valueChanged) {
+      if (keyToChange.key === StandardParametersKey.WebSocketPingInterval && valueChanged) {
         this._restartWebSocketPing();
       }
       if (keyToChange.reboot) {

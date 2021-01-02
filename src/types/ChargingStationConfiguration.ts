@@ -1,5 +1,7 @@
+import { StandardParametersKey } from './ocpp/1.6/Configuration';
+
 export interface ConfigurationKey {
-  key: string;
+  key: string | StandardParametersKey;
   readonly?: boolean;
   value: string;
   visible?: boolean;

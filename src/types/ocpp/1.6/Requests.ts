@@ -1,16 +1,7 @@
 import { ChargePointErrorCode } from './ChargePointErrorCode';
 import { ChargePointStatus } from './ChargePointStatus';
 import { ChargingProfile } from './ChargingProfile';
-import { MessageType } from '../MessageType';
-import OCPPError from '../../../charging-station/OcppError';
-
-export default interface Requests {
-  [id: string]: Request;
-}
-
-export type Request = [(payload?, requestPayload?) => void, (error?: OCPPError) => void, Record<string, unknown>];
-
-export type IncomingRequest = [MessageType, string, IncomingRequestCommand, string, string];
+import { StandardParametersKey } from './Configuration';
 
 export enum RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
@@ -59,7 +50,7 @@ export interface StatusNotificationRequest {
 }
 
 export interface ChangeConfigurationRequest {
-  key: string;
+  key: string | StandardParametersKey;
   value: string;
 }
 
@@ -78,7 +69,7 @@ export interface UnlockConnectorRequest {
 }
 
 export interface GetConfigurationRequest {
-  key?: string[];
+  key?: string | StandardParametersKey[];
 }
 
 export enum ResetType {
