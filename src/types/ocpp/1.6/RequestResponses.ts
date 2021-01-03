@@ -1,4 +1,4 @@
-import { ConfigurationKey } from '../../ChargingStationConfiguration';
+import { OCPPConfigurationKey } from '../Configuration';
 
 export interface HeartbeatResponse {
   currentTime: string;
@@ -50,7 +50,7 @@ export interface BootNotificationResponse {
 export interface StatusNotificationResponse { }
 
 export interface GetConfigurationResponse {
-  configurationKey: ConfigurationKey[];
+  configurationKey: OCPPConfigurationKey[];
   unknownKey: string[];
 }
 

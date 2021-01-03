@@ -1,9 +1,6 @@
-import { StandardParametersKey } from './ocpp/1.6/Configuration';
+import { OCPPConfigurationKey } from './ocpp/Configuration';
 
-export interface ConfigurationKey {
-  key: string | StandardParametersKey;
-  readonly?: boolean;
-  value: string;
+export interface ConfigurationKey extends OCPPConfigurationKey{
   visible?: boolean;
   reboot?: boolean;
 }

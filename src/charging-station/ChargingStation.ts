@@ -20,6 +20,7 @@ import ElectricUtils from '../utils/ElectricUtils';
 import { ErrorType } from '../types/ocpp/ErrorType';
 import MeasurandValues from '../types/MeasurandValues';
 import { MessageType } from '../types/ocpp/MessageType';
+import { OCPPConfigurationKey } from '../types/ocpp/Configuration';
 import OCPPError from './OcppError';
 import { StandardParametersKey } from '../types/ocpp/1.6/Configuration';
 import Statistics from '../utils/Statistics';
@@ -1289,12 +1290,16 @@ export default class ChargingStation {
   }
 
   _getConfigurationKey(key: string | StandardParametersKey, caseInsensitive = false): ConfigurationKey {
-    return this._configuration.configurationKey.find((configElement) => {
+    const configurationKey: ConfigurationKey = this._configuration.configurationKey.find((configElement) => {
       if (caseInsensitive) {
         return configElement.key.toLowerCase() === key.toLowerCase();
       }
       return configElement.key === key;
     });
+    if (configurationKey && Utils.isUndefined(configurationKey.readonly)) {
+      configurationKey.readonly = false;
+    }
+    return configurationKey;
   }
 
   _addConfigurationKey(key: string | StandardParametersKey, value: string, readonly = false, visible = true, reboot = false): void {
@@ -1319,7 +1324,7 @@ export default class ChargingStation {
   }
 
   handleRequestGetConfiguration(commandPayload: GetConfigurationRequest): GetConfigurationResponse {
-    const configurationKey: ConfigurationKey[] = [];
+    const configurationKey: OCPPConfigurationKey[] = [];
     const unknownKey: string[] = [];
     if (Utils.isEmptyArray(commandPayload.key)) {
       for (const configuration of this._configuration.configurationKey) {
