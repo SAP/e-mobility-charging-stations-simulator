@@ -1333,7 +1333,7 @@ export default class ChargingStation {
       const keyIndex = this._configuration.configurationKey.indexOf(keyFound);
       this._configuration.configurationKey[keyIndex].value = value;
     } else {
-      logger.error(`${this._logPrefix()} Trying to set a value on a non existing configuration key: %j`, keyFound);
+      logger.error(`${this._logPrefix()} Trying to set a value on a non existing configuration key: %j`, { key, value });
     }
   }
 
