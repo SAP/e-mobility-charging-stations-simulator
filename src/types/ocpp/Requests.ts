@@ -9,4 +9,3 @@ export default interface Requests {
 export type Request = [(payload?, requestPayload?) => void, (error?: OCPPError) => void, Record<string, unknown>];
 
 export type IncomingRequest = [MessageType, string, IncomingRequestCommand, string, string];
-

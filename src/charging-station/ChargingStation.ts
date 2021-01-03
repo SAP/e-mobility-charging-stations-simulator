@@ -49,7 +49,6 @@ export default class ChargingStation {
   private _messageQueue: string[];
   private _automaticTransactionGeneration: AutomaticTransactionGenerator;
   private _authorizedTags: string[];
-  private _heartbeatInterval: number;
   private _heartbeatSetInterval: NodeJS.Timeout;
   private _webSocketPingSetInterval: NodeJS.Timeout;
   private _statistics: Statistics;
@@ -377,6 +376,18 @@ export default class ChargingStation {
     return !Utils.isUndefined(this._stationInfo.reconnectExponentialDelay) ? this._stationInfo.reconnectExponentialDelay : false;
   }
 
+  _getHeartbeatInterval(): number {
+    const HeartbeatInterval = this._getConfigurationKey(StandardParametersKey.HeartbeatInterval);
+    if (HeartbeatInterval) {
+      return Utils.convertToInt(HeartbeatInterval.value) * 1000;
+    }
+    const HeartBeatInterval = this._getConfigurationKey(StandardParametersKey.HeartBeatInterval);
+    if (HeartBeatInterval) {
+      return Utils.convertToInt(HeartBeatInterval.value) * 1000;
+    }
+    return 0;
+  }
+
   _getAuthorizeRemoteTxRequests(): boolean {
     const authorizeRemoteTxRequests = this._getConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests);
     return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
@@ -474,15 +485,15 @@ export default class ChargingStation {
   }
 
   _startHeartbeat(): void {
-    if (this._heartbeatInterval && this._heartbeatInterval > 0 && !this._heartbeatSetInterval) {
+    if (this._getHeartbeatInterval() && this._getHeartbeatInterval() > 0 && !this._heartbeatSetInterval) {
       this._heartbeatSetInterval = setInterval(async () => {
         await this.sendHeartbeat();
-      }, this._heartbeatInterval);
-      logger.info(this._logPrefix() + ' Heartbeat started every ' + Utils.milliSecondsToHHMMSS(this._heartbeatInterval));
+      }, this._getHeartbeatInterval());
+      logger.info(this._logPrefix() + ' Heartbeat started every ' + Utils.milliSecondsToHHMMSS(this._getHeartbeatInterval()));
     } else if (this._heartbeatSetInterval) {
-      logger.info(this._logPrefix() + ' Heartbeat every ' + Utils.milliSecondsToHHMMSS(this._heartbeatInterval) + ' already started');
+      logger.info(this._logPrefix() + ' Heartbeat every ' + Utils.milliSecondsToHHMMSS(this._getHeartbeatInterval()) + ' already started');
     } else {
-      logger.error(`${this._logPrefix()} Heartbeat interval set to ${this._heartbeatInterval ? Utils.milliSecondsToHHMMSS(this._heartbeatInterval) : this._heartbeatInterval}, not starting the heartbeat`);
+      logger.error(`${this._logPrefix()} Heartbeat interval set to ${this._getHeartbeatInterval() ? Utils.milliSecondsToHHMMSS(this._getHeartbeatInterval()) : this._getHeartbeatInterval()}, not starting the heartbeat`);
     }
   }
 
@@ -1134,7 +1145,6 @@ export default class ChargingStation {
 
   handleResponseBootNotification(payload: BootNotificationResponse, requestPayload: BootNotificationRequest): void {
     if (payload.status === RegistrationStatus.ACCEPTED) {
-      this._heartbeatInterval = payload.interval * 1000;
       this._heartbeatSetInterval ? this._restartHeartbeat() : this._startHeartbeat();
       this._addConfigurationKey(StandardParametersKey.HeartBeatInterval, payload.interval.toString());
       this._addConfigurationKey(StandardParametersKey.HeartbeatInterval, payload.interval.toString(), false, false);
@@ -1312,6 +1322,8 @@ export default class ChargingStation {
         visible,
         reboot,
       });
+    } else {
+      logger.error(`${this._logPrefix()} Trying to add an already existing configuration key: %j`, keyFound);
     }
   }
 
@@ -1320,6 +1332,8 @@ export default class ChargingStation {
     if (keyFound) {
       const keyIndex = this._configuration.configurationKey.indexOf(keyFound);
       this._configuration.configurationKey[keyIndex].value = value;
+    } else {
+      logger.error(`${this._logPrefix()} Trying to set a value on a non existing configuration key: %j`, keyFound);
     }
   }
 
@@ -1396,7 +1410,6 @@ export default class ChargingStation {
         triggerHeartbeatRestart = true;
       }
       if (triggerHeartbeatRestart) {
-        this._heartbeatInterval = Utils.convertToInt(commandPayload.value) * 1000;
         this._restartHeartbeat();
       }
       if (keyToChange.key === StandardParametersKey.WebSocketPingInterval && valueChanged) {
