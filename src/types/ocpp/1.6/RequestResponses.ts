@@ -63,3 +63,13 @@ export enum ChargingProfileStatus {
 export interface SetChargingProfileResponse {
   status: ChargingProfileStatus;
 }
+
+export enum AvailabilityStatus {
+  ACCEPTED = 'Accepted',
+  REJECTED = 'Rejected',
+  SCHEDULED = 'Scheduled'
+}
+
+export interface ChangeAvailabilityResponse {
+  status: AvailabilityStatus;
+}

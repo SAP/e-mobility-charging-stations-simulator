@@ -16,6 +16,7 @@ export enum RequestCommand {
 export enum IncomingRequestCommand {
   RESET = 'Reset',
   CLEAR_CACHE = 'ClearCache',
+  CHANGE_AVAILABILITY = 'ChangeAvailability',
   UNLOCK_CONNECTOR = 'UnlockConnector',
   GET_CONFIGURATION = 'GetConfiguration',
   CHANGE_CONFIGURATION = 'ChangeConfiguration',
@@ -84,4 +85,14 @@ export interface ResetRequest {
 export interface SetChargingProfileRequest {
   connectorId: number;
   csChargingProfiles: ChargingProfile;
+}
+
+export enum AvailabilityType {
+  INOPERATIVE = 'Inoperative',
+  OPERATIVE = 'Operative'
+}
+
+export interface ChangeAvailabilityRequest {
+  connectorId: number;
+  type: AvailabilityType;
 }
