@@ -100,7 +100,7 @@ export default class Configuration {
   }
 
   private static objectHasOwnProperty(object: any, property: string): boolean {
-    return Object.prototype.hasOwnProperty.call(object, property);
+    return Object.prototype.hasOwnProperty.call(object, property) as boolean;
   }
 
   private static isUndefined(obj: any): boolean {

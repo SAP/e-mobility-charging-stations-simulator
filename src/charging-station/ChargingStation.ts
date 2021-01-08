@@ -1,12 +1,13 @@
 import { AuthorizationStatus, StartTransactionRequest, StartTransactionResponse, StopTransactionReason, StopTransactionRequest, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
-import { BootNotificationResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
+import { AvailabilityType, BootNotificationRequest, ChangeAvailabilityRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
+import { BootNotificationResponse, ChangeAvailabilityResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
 import { ChargingProfile, ChargingProfilePurposeType } from '../types/ocpp/1.6/ChargingProfile';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationTemplate';
 import Connectors, { Connector } from '../types/Connectors';
 import { MeterValue, MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit, MeterValuesRequest, MeterValuesResponse, SampledValue } from '../types/ocpp/1.6/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
-import Requests, { BootNotificationRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
+import Requests, { IncomingRequest, Request } from '../types/ocpp/Requests';
 import WebSocket, { MessageEvent } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
@@ -16,10 +17,15 @@ import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import ElectricUtils from '../utils/ElectricUtils';
+import { ErrorType } from '../types/ocpp/ErrorType';
 import MeasurandValues from '../types/MeasurandValues';
+import { MessageType } from '../types/ocpp/MessageType';
+import { OCPPConfigurationKey } from '../types/ocpp/Configuration';
 import OCPPError from './OcppError';
+import { StandardParametersKey } from '../types/ocpp/1.6/Configuration';
 import Statistics from '../utils/Statistics';
 import Utils from '../utils/Utils';
+import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
@@ -38,14 +44,11 @@ export default class ChargingStation {
   private _wsConnection: WebSocket;
   private _hasStopped: boolean;
   private _hasSocketRestarted: boolean;
-  private _connectionTimeout: number;
   private _autoReconnectRetryCount: number;
-  private _autoReconnectMaxRetries: number;
   private _requests: Requests;
   private _messageQueue: string[];
   private _automaticTransactionGeneration: AutomaticTransactionGenerator;
   private _authorizedTags: string[];
-  private _heartbeatInterval: number;
   private _heartbeatSetInterval: NodeJS.Timeout;
   private _webSocketPingSetInterval: NodeJS.Timeout;
   private _statistics: Statistics;
@@ -109,8 +112,6 @@ export default class ChargingStation {
     this._configuration = this._getTemplateChargingStationConfiguration();
     this._supervisionUrl = this._getSupervisionURL();
     this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
-    this._connectionTimeout = this._getConnectionTimeout() * 1000; // Ms, zero for disabling
-    this._autoReconnectMaxRetries = this._getAutoReconnectMaxRetries(); // -1 for unlimited
     // Build connectors if needed
     const maxConnectors = this._getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -136,14 +137,16 @@ export default class ChargingStation {
       let lastConnector = '0';
       for (lastConnector in this._stationInfo.Connectors) {
         if (Utils.convertToInt(lastConnector) === 0 && this._getUseConnectorId0() && this._stationInfo.Connectors[lastConnector]) {
-          this._connectors[lastConnector] = Utils.cloneObject(this._stationInfo.Connectors[lastConnector]) as Connector;
+          this._connectors[lastConnector] = Utils.cloneObject<Connector>(this._stationInfo.Connectors[lastConnector]);
+          this._connectors[lastConnector].availability = AvailabilityType.OPERATIVE;
         }
       }
       // Generate all connectors
       if ((this._stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
         for (let index = 1; index <= maxConnectors; index++) {
           const randConnectorID = this._stationInfo.randomConnectors ? Utils.getRandomInt(Utils.convertToInt(lastConnector), 1) : index;
-          this._connectors[index] = Utils.cloneObject(this._stationInfo.Connectors[randConnectorID]) as Connector;
+          this._connectors[index] = Utils.cloneObject<Connector>(this._stationInfo.Connectors[randConnectorID]);
+          this._connectors[index].availability = AvailabilityType.OPERATIVE;
         }
       }
     }
@@ -156,9 +159,9 @@ export default class ChargingStation {
       }
     }
     // OCPP parameters
-    this._addConfigurationKey('NumberOfConnectors', this._getNumberOfConnectors().toString(), true);
-    if (!this._getConfigurationKey('MeterValuesSampledData')) {
-      this._addConfigurationKey('MeterValuesSampledData', MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER);
+    this._addConfigurationKey(StandardParametersKey.NumberOfConnectors, this._getNumberOfConnectors().toString(), true);
+    if (!this._getConfigurationKey(StandardParametersKey.MeterValuesSampledData)) {
+      this._addConfigurationKey(StandardParametersKey.MeterValuesSampledData, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER);
     }
     this._stationInfo.powerDivider = this._getPowerDivider();
     if (this.getEnableStatistics()) {
@@ -182,6 +185,14 @@ export default class ChargingStation {
 
   _logPrefix(): string {
     return Utils.logPrefix(` ${this._stationInfo.name}:`);
+  }
+
+  _isWebSocketOpen(): boolean {
+    return this._wsConnection?.readyState === WebSocket.OPEN;
+  }
+
+  _isRegistered(): boolean {
+    return this._bootNotificationResponse?.status === RegistrationStatus.ACCEPTED;
   }
 
   _getTemplateChargingStationConfiguration(): ChargingStationConfiguration {
@@ -247,6 +258,7 @@ export default class ChargingStation {
     return trxCount;
   }
 
+  // 0 for disabling
   _getConnectionTimeout(): number {
     if (!Utils.isUndefined(this._stationInfo.connectionTimeout)) {
       return this._stationInfo.connectionTimeout;
@@ -257,12 +269,21 @@ export default class ChargingStation {
     return 30;
   }
 
+  // -1 for unlimited, 0 for disabling
   _getAutoReconnectMaxRetries(): number {
     if (!Utils.isUndefined(this._stationInfo.autoReconnectMaxRetries)) {
       return this._stationInfo.autoReconnectMaxRetries;
     }
     if (!Utils.isUndefined(Configuration.getAutoReconnectMaxRetries())) {
       return Configuration.getAutoReconnectMaxRetries();
+    }
+    return -1;
+  }
+
+  // 0 for disabling
+  _getRegistrationMaxRetries(): number {
+    if (!Utils.isUndefined(this._stationInfo.registrationMaxRetries)) {
+      return this._stationInfo.registrationMaxRetries;
     }
     return -1;
   }
@@ -277,6 +298,10 @@ export default class ChargingStation {
 
   getConnector(id: number): Connector {
     return this._connectors[id];
+  }
+
+  _isConnectorAvailable(id: number): boolean {
+    return this.getConnector(id).availability === AvailabilityType.OPERATIVE;
   }
 
   _getTemplateMaxNumberOfConnectors(): number {
@@ -339,7 +364,7 @@ export default class ChargingStation {
   }
 
   _getSupervisionURL(): string {
-    const supervisionUrls = Utils.cloneObject(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs()) as string | string[];
+    const supervisionUrls = Utils.cloneObject<string | string[]>(this._stationInfo.supervisionURL ? this._stationInfo.supervisionURL : Configuration.getSupervisionURLs());
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
       if (Configuration.getDistributeStationsToTenantsEqually()) {
@@ -357,13 +382,24 @@ export default class ChargingStation {
     return !Utils.isUndefined(this._stationInfo.reconnectExponentialDelay) ? this._stationInfo.reconnectExponentialDelay : false;
   }
 
+  _getHeartbeatInterval(): number {
+    const HeartbeatInterval = this._getConfigurationKey(StandardParametersKey.HeartbeatInterval);
+    if (HeartbeatInterval) {
+      return Utils.convertToInt(HeartbeatInterval.value) * 1000;
+    }
+    const HeartBeatInterval = this._getConfigurationKey(StandardParametersKey.HeartBeatInterval);
+    if (HeartBeatInterval) {
+      return Utils.convertToInt(HeartBeatInterval.value) * 1000;
+    }
+  }
+
   _getAuthorizeRemoteTxRequests(): boolean {
-    const authorizeRemoteTxRequests = this._getConfigurationKey('AuthorizeRemoteTxRequests');
+    const authorizeRemoteTxRequests = this._getConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests);
     return authorizeRemoteTxRequests ? Utils.convertToBoolean(authorizeRemoteTxRequests.value) : false;
   }
 
   _getLocalAuthListEnabled(): boolean {
-    const localAuthListEnabled = this._getConfigurationKey('LocalAuthListEnabled');
+    const localAuthListEnabled = this._getConfigurationKey(StandardParametersKey.LocalAuthListEnabled);
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
   }
 
@@ -376,13 +412,13 @@ export default class ChargingStation {
     for (const connector in this._connectors) {
       if (Utils.convertToInt(connector) === 0) {
         continue;
-      } else if (!this._hasStopped && !this.getConnector(Utils.convertToInt(connector)).status && this.getConnector(Utils.convertToInt(connector)).bootStatus) {
+      } else if (!this._hasStopped && !this.getConnector(Utils.convertToInt(connector))?.status && this.getConnector(Utils.convertToInt(connector))?.bootStatus) {
         // Send status in template at startup
         await this.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).bootStatus);
-      } else if (this._hasStopped && this.getConnector(Utils.convertToInt(connector)).bootStatus) {
+      } else if (this._hasStopped && this.getConnector(Utils.convertToInt(connector))?.bootStatus) {
         // Send status in template after reset
         await this.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).bootStatus);
-      } else if (!this._hasStopped && this.getConnector(Utils.convertToInt(connector)).status) {
+      } else if (!this._hasStopped && this.getConnector(Utils.convertToInt(connector))?.status) {
         // Send previous status at template reload
         await this.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).status);
       } else {
@@ -424,10 +460,10 @@ export default class ChargingStation {
   }
 
   _startWebSocketPing(): void {
-    const webSocketPingInterval: number = this._getConfigurationKey('WebSocketPingInterval') ? Utils.convertToInt(this._getConfigurationKey('WebSocketPingInterval').value) : 0;
+    const webSocketPingInterval: number = this._getConfigurationKey(StandardParametersKey.WebSocketPingInterval) ? Utils.convertToInt(this._getConfigurationKey(StandardParametersKey.WebSocketPingInterval).value) : 0;
     if (webSocketPingInterval > 0 && !this._webSocketPingSetInterval) {
       this._webSocketPingSetInterval = setInterval(() => {
-        if (this._wsConnection?.readyState === WebSocket.OPEN) {
+        if (this._isWebSocketOpen()) {
           this._wsConnection.ping((): void => { });
         }
       }, webSocketPingInterval * 1000);
@@ -454,15 +490,15 @@ export default class ChargingStation {
   }
 
   _startHeartbeat(): void {
-    if (this._heartbeatInterval && this._heartbeatInterval > 0 && !this._heartbeatSetInterval) {
+    if (this._getHeartbeatInterval() && this._getHeartbeatInterval() > 0 && !this._heartbeatSetInterval) {
       this._heartbeatSetInterval = setInterval(async () => {
         await this.sendHeartbeat();
-      }, this._heartbeatInterval);
-      logger.info(this._logPrefix() + ' Heartbeat started every ' + Utils.milliSecondsToHHMMSS(this._heartbeatInterval));
+      }, this._getHeartbeatInterval());
+      logger.info(this._logPrefix() + ' Heartbeat started every ' + Utils.milliSecondsToHHMMSS(this._getHeartbeatInterval()));
     } else if (this._heartbeatSetInterval) {
-      logger.info(this._logPrefix() + ' Heartbeat every ' + Utils.milliSecondsToHHMMSS(this._heartbeatInterval) + ' already started');
+      logger.info(this._logPrefix() + ' Heartbeat every ' + Utils.milliSecondsToHHMMSS(this._getHeartbeatInterval()) + ' already started');
     } else {
-      logger.error(`${this._logPrefix()} Heartbeat interval set to ${this._heartbeatInterval ? Utils.milliSecondsToHHMMSS(this._heartbeatInterval) : this._heartbeatInterval}, not starting the heartbeat`);
+      logger.error(`${this._logPrefix()} Heartbeat interval set to ${this._getHeartbeatInterval() ? Utils.milliSecondsToHHMMSS(this._getHeartbeatInterval()) : this._getHeartbeatInterval()}, not starting the heartbeat`);
     }
   }
 
@@ -512,10 +548,18 @@ export default class ChargingStation {
   }
 
   _startMeterValues(connectorId: number, interval: number): void {
-    if (!this.getConnector(connectorId).transactionStarted) {
+    if (connectorId === 0) {
+      logger.error(`${this._logPrefix()} Trying to start MeterValues on connector Id ${connectorId.toString()}`);
+      return;
+    }
+    if (!this.getConnector(connectorId)) {
+      logger.error(`${this._logPrefix()} Trying to start MeterValues on non existing connector Id ${connectorId.toString()}`);
+      return;
+    }
+    if (!this.getConnector(connectorId)?.transactionStarted) {
       logger.error(`${this._logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction started`);
       return;
-    } else if (this.getConnector(connectorId).transactionStarted && !this.getConnector(connectorId).transactionId) {
+    } else if (this.getConnector(connectorId)?.transactionStarted && !this.getConnector(connectorId)?.transactionId) {
       logger.error(`${this._logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction id`);
       return;
     }
@@ -541,9 +585,9 @@ export default class ChargingStation {
       options = {} as WebSocket.ClientOptions;
     }
     if (Utils.isUndefined(options.handshakeTimeout)) {
-      options.handshakeTimeout = this._connectionTimeout;
+      options.handshakeTimeout = this._getConnectionTimeout() * 1000;
     }
-    if (this._wsConnection?.readyState === WebSocket.OPEN && forceCloseOpened) {
+    if (this._isWebSocketOpen() && forceCloseOpened) {
       this._wsConnection.close();
     }
     this._wsConnection = new WebSocket(this._wsConnectionUrl, 'ocpp' + Constants.OCPP_VERSION_16, options);
@@ -578,7 +622,7 @@ export default class ChargingStation {
         await this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.UNAVAILABLE);
       }
     }
-    if (this._wsConnection?.readyState === WebSocket.OPEN) {
+    if (this._isWebSocketOpen()) {
       this._wsConnection.close();
     }
     this._bootNotificationResponse = null;
@@ -586,7 +630,6 @@ export default class ChargingStation {
   }
 
   async _reconnect(error): Promise<void> {
-    logger.error(this._logPrefix() + ' Socket: abnormally closed: %j', error);
     // Stop heartbeat
     this._stopHeartbeat();
     // Stop the ATG if needed
@@ -596,67 +639,67 @@ export default class ChargingStation {
       !this._automaticTransactionGeneration.timeToStop) {
       this._automaticTransactionGeneration.stop().catch(() => { });
     }
-    if (this._autoReconnectRetryCount < this._autoReconnectMaxRetries || this._autoReconnectMaxRetries === -1) {
+    if (this._autoReconnectRetryCount < this._getAutoReconnectMaxRetries() || this._getAutoReconnectMaxRetries() === -1) {
       this._autoReconnectRetryCount++;
-      const reconnectDelay = (this._getReconnectExponentialDelay() ? Utils.exponentialDelay(this._autoReconnectRetryCount) : this._connectionTimeout);
+      const reconnectDelay = (this._getReconnectExponentialDelay() ? Utils.exponentialDelay(this._autoReconnectRetryCount) : this._getConnectionTimeout() * 1000);
       logger.error(`${this._logPrefix()} Socket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectDelay - 100}ms`);
       await Utils.sleep(reconnectDelay);
       logger.error(this._logPrefix() + ' Socket: reconnecting try #' + this._autoReconnectRetryCount.toString());
       this._openWSConnection({ handshakeTimeout: reconnectDelay - 100 });
       this._hasSocketRestarted = true;
-    } else if (this._autoReconnectMaxRetries !== -1) {
-      logger.error(`${this._logPrefix()} Socket: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._autoReconnectMaxRetries})`);
+    } else if (this._getAutoReconnectMaxRetries() !== -1) {
+      logger.error(`${this._logPrefix()} Socket reconnect failure: max retries reached (${this._autoReconnectRetryCount}) or retry disabled (${this._getAutoReconnectMaxRetries()})`);
     }
   }
 
   async onOpen(): Promise<void> {
     logger.info(`${this._logPrefix()} Is connected to server through ${this._wsConnectionUrl}`);
-    if (!this._hasSocketRestarted || this._hasStopped) {
+    if (!this._isRegistered()) {
       // Send BootNotification
-      this._bootNotificationResponse = await this.sendBootNotification();
-    }
-    if (this._bootNotificationResponse.status === RegistrationStatus.ACCEPTED) {
-      await this._startMessageSequence();
-    } else {
+      let registrationRetryCount = 0;
       do {
-        await Utils.sleep(this._bootNotificationResponse.interval * 1000);
-        // Resend BootNotification
         this._bootNotificationResponse = await this.sendBootNotification();
-      } while (this._bootNotificationResponse.status !== RegistrationStatus.ACCEPTED);
+        if (!this._isRegistered()) {
+          registrationRetryCount++;
+          await Utils.sleep(this._bootNotificationResponse.interval * 1000);
+        }
+      } while (!this._isRegistered() && (registrationRetryCount <= this._getRegistrationMaxRetries() || this._getRegistrationMaxRetries() === -1));
     }
-    if (this._hasSocketRestarted && this._bootNotificationResponse.status === RegistrationStatus.ACCEPTED) {
-      if (!Utils.isEmptyArray(this._messageQueue)) {
-        this._messageQueue.forEach((message, index) => {
-          if (this._wsConnection?.readyState === WebSocket.OPEN) {
+    if (this._isRegistered()) {
+      await this._startMessageSequence();
+      if (this._hasSocketRestarted && this._isWebSocketOpen()) {
+        if (!Utils.isEmptyArray(this._messageQueue)) {
+          this._messageQueue.forEach((message, index) => {
             this._messageQueue.splice(index, 1);
             this._wsConnection.send(message);
-          }
-        });
+          });
+        }
       }
+    } else {
+      logger.error(`${this._logPrefix()} Registration failure: max retries reached (${this._getRegistrationMaxRetries()}) or retry disabled (${this._getRegistrationMaxRetries()})`);
     }
     this._autoReconnectRetryCount = 0;
     this._hasSocketRestarted = false;
   }
 
   async onError(errorEvent): Promise<void> {
-    switch (errorEvent.code) {
-      case 'ECONNREFUSED':
-        await this._reconnect(errorEvent);
-        break;
-      default:
-        logger.error(this._logPrefix() + ' Socket error: %j', errorEvent);
-        break;
-    }
+    logger.error(this._logPrefix() + ' Socket error: %j', errorEvent);
+    // pragma switch (errorEvent.code) {
+    //   case 'ECONNREFUSED':
+    //     await this._reconnect(errorEvent);
+    //     break;
+    // }
   }
 
   async onClose(closeEvent): Promise<void> {
     switch (closeEvent) {
-      case 1000: // Normal close
-      case 1005:
-        logger.info(this._logPrefix() + ' Socket normally closed: %j', closeEvent);
+      case WebSocketCloseEventStatusCode.CLOSE_NORMAL: // Normal close
+      case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
+        logger.info(`${this._logPrefix()} Socket normally closed with status '${Utils.getWebSocketCloseEventStatusString(closeEvent)}'`);
         this._autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
+        logger.error(`${this._logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(closeEvent)}'`);
         await this._reconnect(closeEvent);
         break;
     }
@@ -671,15 +714,19 @@ export default class ChargingStation {
   }
 
   async onMessage(messageEvent: MessageEvent): Promise<void> {
-    let [messageType, messageId, commandName, commandPayload, errorDetails] = [0, '', Constants.ENTITY_CHARGING_STATION, '', ''];
+    let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, '', ''];
+    let responseCallback: (payload?, requestPayload?) => void;
+    let rejectCallback: (error: OCPPError) => void;
+    let requestPayload: Record<string, unknown>;
+    let errMsg: string;
     try {
       // Parse the message
-      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent.toString());
+      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent.toString()) as IncomingRequest;
 
       // Check the Type of message
       switch (messageType) {
         // Incoming Message
-        case Constants.OCPP_JSON_CALL_MESSAGE:
+        case MessageType.CALL_MESSAGE:
           if (this.getEnableStatistics()) {
             this._statistics.addMessage(commandName, messageType);
           }
@@ -687,10 +734,8 @@ export default class ChargingStation {
           await this.handleRequest(messageId, commandName, commandPayload);
           break;
         // Outcome Message
-        case Constants.OCPP_JSON_CALL_RESULT_MESSAGE:
+        case MessageType.CALL_RESULT_MESSAGE:
           // Respond
-          // eslint-disable-next-line no-case-declarations
-          let responseCallback; let requestPayload;
           if (Utils.isIterable(this._requests[messageId])) {
             [responseCallback, , requestPayload] = this._requests[messageId];
           } else {
@@ -704,13 +749,11 @@ export default class ChargingStation {
           responseCallback(commandName, requestPayload);
           break;
         // Error Message
-        case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
+        case MessageType.CALL_ERROR_MESSAGE:
           if (!this._requests[messageId]) {
             // Error
             throw new Error(`Error request for unknown message id ${messageId}`);
           }
-          // eslint-disable-next-line no-case-declarations
-          let rejectCallback;
           if (Utils.isIterable(this._requests[messageId])) {
             [, rejectCallback] = this._requests[messageId];
           } else {
@@ -721,35 +764,32 @@ export default class ChargingStation {
           break;
         // Error
         default:
-          // eslint-disable-next-line no-case-declarations
-          const errMsg = `${this._logPrefix()} Wrong message type ${messageType}`;
+          errMsg = `${this._logPrefix()} Wrong message type ${messageType}`;
           logger.error(errMsg);
           throw new Error(errMsg);
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming message %j processing error %s on request content type %s', this._logPrefix(), messageEvent, error, this._requests[messageId]);
+      logger.error('%s Incoming message %j processing error %j on request content type %j', this._logPrefix(), messageEvent, error, this._requests[messageId]);
       // Send error
-      messageType !== Constants.OCPP_JSON_CALL_ERROR_MESSAGE && await this.sendError(messageId, error, commandName);
+      messageType !== MessageType.CALL_ERROR_MESSAGE && await this.sendError(messageId, error, commandName);
     }
   }
 
   async sendHeartbeat(): Promise<void> {
     try {
       const payload: HeartbeatRequest = {};
-      await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'Heartbeat');
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.HEARTBEAT);
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send Heartbeat error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.HEARTBEAT, error);
     }
   }
 
   async sendBootNotification(): Promise<BootNotificationResponse> {
     try {
-      return await this.sendMessage(Utils.generateUUID(), this._bootNotificationRequest, Constants.OCPP_JSON_CALL_MESSAGE, 'BootNotification') as BootNotificationResponse;
+      return await this.sendMessage(Utils.generateUUID(), this._bootNotificationRequest, MessageType.CALL_MESSAGE, RequestCommand.BOOT_NOTIFICATION) as BootNotificationResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send BootNotification error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.BOOT_NOTIFICATION, error);
     }
   }
 
@@ -761,10 +801,9 @@ export default class ChargingStation {
         errorCode,
         status,
       };
-      await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StatusNotification');
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.STATUS_NOTIFICATION);
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StatusNotification error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.STATUS_NOTIFICATION, error);
     }
   }
 
@@ -776,10 +815,9 @@ export default class ChargingStation {
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
-      return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StartTransaction') as StartTransactionResponse;
+      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.START_TRANSACTION) as StartTransactionResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StartTransaction error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.START_TRANSACTION, error);
     }
   }
 
@@ -793,15 +831,474 @@ export default class ChargingStation {
         timestamp: new Date().toISOString(),
         ...reason && { reason },
       };
-      return await this.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'StopTransaction') as StartTransactionResponse;
+      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.STOP_TRANSACTION) as StartTransactionResponse;
     } catch (error) {
-      logger.error(this._logPrefix() + ' Send StopTransaction error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.STOP_TRANSACTION, error);
     }
   }
 
+  async sendError(messageId: string, err: Error | OCPPError, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown> {
+    // Check exception type: only OCPP error are accepted
+    const error = err instanceof OCPPError ? err : new OCPPError(ErrorType.INTERNAL_ERROR, err.message, err.stack && err.stack);
+    // Send error
+    return this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
+  }
+
+  async sendMessage(messageId: string, commandParams, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    // Send a message through wsConnection
+    return new Promise((resolve: (value?: any | PromiseLike<any>) => void, reject: (reason?: any) => void) => {
+      let messageToSend: string;
+      // Type of message
+      switch (messageType) {
+        // Request
+        case MessageType.CALL_MESSAGE:
+          // Build request
+          this._requests[messageId] = [responseCallback, rejectCallback, commandParams] as Request;
+          messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
+          break;
+        // Response
+        case MessageType.CALL_RESULT_MESSAGE:
+          // Build response
+          messageToSend = JSON.stringify([messageType, messageId, commandParams]);
+          break;
+        // Error Message
+        case MessageType.CALL_ERROR_MESSAGE:
+          // Build Error Message
+          messageToSend = JSON.stringify([messageType, messageId, commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : '', commandParams.details ? commandParams.details : {}]);
+          break;
+      }
+      // Check if wsConnection opened and charging station registered
+      if (this._isWebSocketOpen() && (this._isRegistered() || commandName === RequestCommand.BOOT_NOTIFICATION)) {
+        if (this.getEnableStatistics()) {
+          this._statistics.addMessage(commandName, messageType);
+        }
+        // Yes: Send Message
+        this._wsConnection.send(messageToSend);
+      } else {
+        let dups = false;
+        // Handle dups in buffer
+        for (const message of this._messageQueue) {
+          // Same message
+          if (messageToSend === message) {
+            dups = true;
+            break;
+          }
+        }
+        if (!dups) {
+          // Buffer message
+          this._messageQueue.push(messageToSend);
+        }
+        // Reject it
+        return rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ? commandParams.details : {}));
+      }
+      // Response?
+      if (messageType === MessageType.CALL_RESULT_MESSAGE) {
+        // Yes: send Ok
+        resolve();
+      } else if (messageType === MessageType.CALL_ERROR_MESSAGE) {
+        // Send timeout
+        setTimeout(() => rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams.details ? commandParams.details : {})), Constants.OCPP_ERROR_TIMEOUT);
+      }
+
+      // Function that will receive the request's response
+      async function responseCallback(payload, requestPayload): Promise<void> {
+        if (self.getEnableStatistics()) {
+          self._statistics.addMessage(commandName, messageType);
+        }
+        // Send the response
+        await self.handleResponse(commandName as RequestCommand, payload, requestPayload);
+        resolve(payload);
+      }
+
+      // Function that will receive the request's rejection
+      function rejectCallback(error: OCPPError): void {
+        if (self.getEnableStatistics()) {
+          self._statistics.addMessage(commandName, messageType);
+        }
+        logger.debug(`${self._logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
+        // Build Exception
+        // eslint-disable-next-line no-empty-function
+        self._requests[messageId] = [() => { }, () => { }, {}]; // Properly format the request
+        // Send error
+        reject(error);
+      }
+    });
+  }
+
+  async handleResponse(commandName: RequestCommand, payload, requestPayload): Promise<void> {
+    const responseCallbackFn = 'handleResponse' + commandName;
+    if (typeof this[responseCallbackFn] === 'function') {
+      await this[responseCallbackFn](payload, requestPayload);
+    } else {
+      logger.error(this._logPrefix() + ' Trying to call an undefined response callback function: ' + responseCallbackFn);
+    }
+  }
+
+  handleResponseBootNotification(payload: BootNotificationResponse, requestPayload: BootNotificationRequest): void {
+    if (payload.status === RegistrationStatus.ACCEPTED) {
+      this._heartbeatSetInterval ? this._restartHeartbeat() : this._startHeartbeat();
+      this._addConfigurationKey(StandardParametersKey.HeartBeatInterval, payload.interval.toString());
+      this._addConfigurationKey(StandardParametersKey.HeartbeatInterval, payload.interval.toString(), false, false);
+      this._hasStopped && (this._hasStopped = false);
+    } else if (payload.status === RegistrationStatus.PENDING) {
+      logger.info(this._logPrefix() + ' Charging station in pending state on the central server');
+    } else {
+      logger.info(this._logPrefix() + ' Charging station rejected by the central server');
+    }
+  }
+
+  _initTransactionOnConnector(connectorId: number): void {
+    this.getConnector(connectorId).transactionStarted = false;
+    this.getConnector(connectorId).transactionId = null;
+    this.getConnector(connectorId).idTag = null;
+    this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = -1;
+  }
+
+  _resetTransactionOnConnector(connectorId: number): void {
+    this._initTransactionOnConnector(connectorId);
+    if (this.getConnector(connectorId)?.transactionSetInterval) {
+      clearInterval(this.getConnector(connectorId).transactionSetInterval);
+    }
+  }
+
+  async handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload: StartTransactionRequest): Promise<void> {
+    const connectorId = requestPayload.connectorId;
+
+    let transactionConnectorId: number;
+    for (const connector in this._connectors) {
+      if (Utils.convertToInt(connector) > 0 && Utils.convertToInt(connector) === connectorId) {
+        transactionConnectorId = Utils.convertToInt(connector);
+        break;
+      }
+    }
+    if (!transactionConnectorId) {
+      logger.error(this._logPrefix() + ' Trying to start a transaction on a non existing connector Id ' + connectorId.toString());
+      return;
+    }
+    if (this.getConnector(connectorId)?.transactionStarted) {
+      logger.debug(this._logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
+      return;
+    }
+
+    if (payload.idTagInfo.status === AuthorizationStatus.ACCEPTED) {
+      this.getConnector(connectorId).transactionStarted = true;
+      this.getConnector(connectorId).transactionId = payload.transactionId;
+      this.getConnector(connectorId).idTag = requestPayload.idTag;
+      this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = 0;
+      await this.sendStatusNotification(connectorId, ChargePointStatus.CHARGING);
+      logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this._stationInfo.name + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
+      if (this._stationInfo.powerSharedByConnectors) {
+        this._stationInfo.powerDivider++;
+      }
+      const configuredMeterValueSampleInterval = this._getConfigurationKey(StandardParametersKey.MeterValueSampleInterval);
+      this._startMeterValues(connectorId,
+        configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
+    } else {
+      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
+      this._resetTransactionOnConnector(connectorId);
+      await this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE);
+    }
+  }
+
+  async handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload: StopTransactionRequest): Promise<void> {
+    let transactionConnectorId: number;
+    for (const connector in this._connectors) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector))?.transactionId === requestPayload.transactionId) {
+        transactionConnectorId = Utils.convertToInt(connector);
+        break;
+      }
+    }
+    if (!transactionConnectorId) {
+      logger.error(this._logPrefix() + ' Trying to stop a non existing transaction ' + requestPayload.transactionId.toString());
+      return;
+    }
+    if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+      await this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE);
+      if (this._stationInfo.powerSharedByConnectors) {
+        this._stationInfo.powerDivider--;
+      }
+      logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId.toString() + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId.toString());
+      this._resetTransactionOnConnector(transactionConnectorId);
+    } else {
+      logger.error(this._logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status);
+    }
+  }
+
+  handleResponseStatusNotification(payload: StatusNotificationRequest, requestPayload: StatusNotificationResponse): void {
+    logger.debug(this._logPrefix() + ' Status notification response received: %j to StatusNotification request: %j', payload, requestPayload);
+  }
+
+  handleResponseMeterValues(payload: MeterValuesRequest, requestPayload: MeterValuesResponse): void {
+    logger.debug(this._logPrefix() + ' MeterValues response received: %j to MeterValues request: %j', payload, requestPayload);
+  }
+
+  handleResponseHeartbeat(payload: HeartbeatResponse, requestPayload: HeartbeatRequest): void {
+    logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
+  }
+
+  async handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload): Promise<void> {
+    let response;
+    // Call
+    if (typeof this['handleRequest' + commandName] === 'function') {
+      try {
+        // Call the method to build the response
+        response = await this['handleRequest' + commandName](commandPayload);
+      } catch (error) {
+        // Log
+        logger.error(this._logPrefix() + ' Handle request error: %j', error);
+        // Send back response to inform backend
+        await this.sendError(messageId, error, commandName);
+        throw error;
+      }
+    } else {
+      // Throw exception
+      await this.sendError(messageId, new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented`, {}), commandName);
+      throw new Error(`${commandName} is not implemented ${JSON.stringify(commandPayload, null, ' ')}`);
+    }
+    // Send response
+    await this.sendMessage(messageId, response, MessageType.CALL_RESULT_MESSAGE, commandName);
+  }
+
+  // Simulate charging station restart
+  handleRequestReset(commandPayload: ResetRequest): DefaultResponse {
+    setImmediate(async () => {
+      await this.stop(commandPayload.type + 'Reset' as StopTransactionReason);
+      await Utils.sleep(this._stationInfo.resetTime);
+      await this.start();
+    });
+    logger.info(`${this._logPrefix()} ${commandPayload.type} reset command received, simulating it. The station will be back online in ${Utils.milliSecondsToHHMMSS(this._stationInfo.resetTime)}`);
+    return Constants.OCPP_RESPONSE_ACCEPTED;
+  }
+
+  handleRequestClearCache(): DefaultResponse {
+    return Constants.OCPP_RESPONSE_ACCEPTED;
+  }
+
+  async handleRequestUnlockConnector(commandPayload: UnlockConnectorRequest): Promise<UnlockConnectorResponse> {
+    const connectorId = commandPayload.connectorId;
+    if (connectorId === 0) {
+      logger.error(this._logPrefix() + ' Trying to unlock connector ' + connectorId.toString());
+      return Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
+    }
+    if (this.getConnector(connectorId)?.transactionStarted) {
+      const stopResponse = await this.sendStopTransaction(this.getConnector(connectorId).transactionId, StopTransactionReason.UNLOCK_COMMAND);
+      if (stopResponse.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+        return Constants.OCPP_RESPONSE_UNLOCKED;
+      }
+      return Constants.OCPP_RESPONSE_UNLOCK_FAILED;
+    }
+    await this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE);
+    return Constants.OCPP_RESPONSE_UNLOCKED;
+  }
+
+  _getConfigurationKey(key: string | StandardParametersKey, caseInsensitive = false): ConfigurationKey {
+    const configurationKey: ConfigurationKey = this._configuration.configurationKey.find((configElement) => {
+      if (caseInsensitive) {
+        return configElement.key.toLowerCase() === key.toLowerCase();
+      }
+      return configElement.key === key;
+    });
+    return configurationKey;
+  }
+
+  _addConfigurationKey(key: string | StandardParametersKey, value: string, readonly = false, visible = true, reboot = false): void {
+    const keyFound = this._getConfigurationKey(key);
+    if (!keyFound) {
+      this._configuration.configurationKey.push({
+        key,
+        readonly,
+        value,
+        visible,
+        reboot,
+      });
+    } else {
+      logger.error(`${this._logPrefix()} Trying to add an already existing configuration key: %j`, keyFound);
+    }
+  }
+
+  _setConfigurationKeyValue(key: string | StandardParametersKey, value: string): void {
+    const keyFound = this._getConfigurationKey(key);
+    if (keyFound) {
+      const keyIndex = this._configuration.configurationKey.indexOf(keyFound);
+      this._configuration.configurationKey[keyIndex].value = value;
+    } else {
+      logger.error(`${this._logPrefix()} Trying to set a value on a non existing configuration key: %j`, { key, value });
+    }
+  }
+
+  handleRequestGetConfiguration(commandPayload: GetConfigurationRequest): GetConfigurationResponse {
+    const configurationKey: OCPPConfigurationKey[] = [];
+    const unknownKey: string[] = [];
+    if (Utils.isEmptyArray(commandPayload.key)) {
+      for (const configuration of this._configuration.configurationKey) {
+        if (Utils.isUndefined(configuration.visible)) {
+          configuration.visible = true;
+        }
+        if (!configuration.visible) {
+          continue;
+        }
+        configurationKey.push({
+          key: configuration.key,
+          readonly: configuration.readonly,
+          value: configuration.value,
+        });
+      }
+    } else {
+      for (const key of commandPayload.key) {
+        const keyFound = this._getConfigurationKey(key);
+        if (keyFound) {
+          if (Utils.isUndefined(keyFound.visible)) {
+            keyFound.visible = true;
+          }
+          if (!keyFound.visible) {
+            continue;
+          }
+          configurationKey.push({
+            key: keyFound.key,
+            readonly: keyFound.readonly,
+            value: keyFound.value,
+          });
+        } else {
+          unknownKey.push(key);
+        }
+      }
+    }
+    return {
+      configurationKey,
+      unknownKey,
+    };
+  }
+
+  handleRequestChangeConfiguration(commandPayload: ChangeConfigurationRequest): ChangeConfigurationResponse {
+    // JSON request fields type sanity check
+    if (!Utils.isString(commandPayload.key)) {
+      logger.error(`${this._logPrefix()} ChangeConfiguration request key field is not a string:`, commandPayload);
+    }
+    if (!Utils.isString(commandPayload.value)) {
+      logger.error(`${this._logPrefix()} ChangeConfiguration request value field is not a string:`, commandPayload);
+    }
+    const keyToChange = this._getConfigurationKey(commandPayload.key, true);
+    if (!keyToChange) {
+      return Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED;
+    } else if (keyToChange && keyToChange.readonly) {
+      return Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED;
+    } else if (keyToChange && !keyToChange.readonly) {
+      const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
+      let valueChanged = false;
+      if (this._configuration.configurationKey[keyIndex].value !== commandPayload.value) {
+        this._configuration.configurationKey[keyIndex].value = commandPayload.value;
+        valueChanged = true;
+      }
+      let triggerHeartbeatRestart = false;
+      if (keyToChange.key === StandardParametersKey.HeartBeatInterval && valueChanged) {
+        this._setConfigurationKeyValue(StandardParametersKey.HeartbeatInterval, commandPayload.value);
+        triggerHeartbeatRestart = true;
+      }
+      if (keyToChange.key === StandardParametersKey.HeartbeatInterval && valueChanged) {
+        this._setConfigurationKeyValue(StandardParametersKey.HeartBeatInterval, commandPayload.value);
+        triggerHeartbeatRestart = true;
+      }
+      if (triggerHeartbeatRestart) {
+        this._restartHeartbeat();
+      }
+      if (keyToChange.key === StandardParametersKey.WebSocketPingInterval && valueChanged) {
+        this._restartWebSocketPing();
+      }
+      if (keyToChange.reboot) {
+        return Constants.OCPP_CONFIGURATION_RESPONSE_REBOOT_REQUIRED;
+      }
+      return Constants.OCPP_CONFIGURATION_RESPONSE_ACCEPTED;
+    }
+  }
+
+  handleRequestSetChargingProfile(commandPayload: SetChargingProfileRequest): SetChargingProfileResponse {
+    if (!this.getConnector(commandPayload.connectorId)) {
+      logger.error(`${this._logPrefix()} Trying to set a charging profile to a non existing connector Id ${commandPayload.connectorId}`);
+      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
+    }
+    if (commandPayload.csChargingProfiles.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE && !this.getConnector(commandPayload.connectorId)?.transactionStarted) {
+      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
+    }
+    this.getConnector(commandPayload.connectorId).chargingProfiles.forEach((chargingProfile: ChargingProfile, index: number) => {
+      if (chargingProfile.chargingProfileId === commandPayload.csChargingProfiles.chargingProfileId
+        || (chargingProfile.stackLevel === commandPayload.csChargingProfiles.stackLevel && chargingProfile.chargingProfilePurpose === commandPayload.csChargingProfiles.chargingProfilePurpose)) {
+        this.getConnector(commandPayload.connectorId).chargingProfiles[index] = chargingProfile;
+        return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+      }
+    });
+    this.getConnector(commandPayload.connectorId).chargingProfiles.push(commandPayload.csChargingProfiles);
+    return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+  }
+
+  // FIXME: Handle properly the transaction started case
+  handleRequestChangeAvailability(commandPayload: ChangeAvailabilityRequest): ChangeAvailabilityResponse {
+    const connectorId: number = commandPayload.connectorId;
+    if (!this.getConnector(connectorId)) {
+      logger.error(`${this._logPrefix()} Trying to change the availability of a non existing connector Id ${connectorId.toString()}`);
+      return Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
+    }
+    const chargePointStatus: ChargePointStatus = commandPayload.type === AvailabilityType.OPERATIVE ? ChargePointStatus.AVAILABLE : ChargePointStatus.UNAVAILABLE;
+    if (connectorId === 0) {
+      let response: ChangeAvailabilityResponse = Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
+      for (const connector in this._connectors) {
+        if (this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+          response = Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
+        }
+        this.getConnector(Utils.convertToInt(connector)).availability = commandPayload.type;
+        void this.sendStatusNotification(Utils.convertToInt(connector), chargePointStatus);
+      }
+      return response;
+    } else if (connectorId > 0 && (this.getConnector(0).availability === AvailabilityType.OPERATIVE || (this.getConnector(0).availability === AvailabilityType.INOPERATIVE && commandPayload.type === AvailabilityType.INOPERATIVE))) {
+      if (this.getConnector(connectorId)?.transactionStarted) {
+        this.getConnector(connectorId).availability = commandPayload.type;
+        void this.sendStatusNotification(connectorId, chargePointStatus);
+        return Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
+      }
+      this.getConnector(connectorId).availability = commandPayload.type;
+      void this.sendStatusNotification(connectorId, chargePointStatus);
+      return Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
+    }
+    return Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
+  }
+
+  async handleRequestRemoteStartTransaction(commandPayload: RemoteStartTransactionRequest): Promise<DefaultResponse> {
+    const transactionConnectorID: number = commandPayload.connectorId ? commandPayload.connectorId : 1;
+    if (this._getAuthorizeRemoteTxRequests() && this._getLocalAuthListEnabled() && this.hasAuthorizedTags()) {
+      // Check if authorized
+      if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
+        await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
+        // Authorization successful start transaction
+        await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
+        logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
+        return Constants.OCPP_RESPONSE_ACCEPTED;
+      }
+      logger.error(this._logPrefix() + ' Remote starting transaction REJECTED, idTag ' + commandPayload.idTag);
+      return Constants.OCPP_RESPONSE_REJECTED;
+    }
+    await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
+    // No local authorization check required => start transaction
+    await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
+    logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
+    return Constants.OCPP_RESPONSE_ACCEPTED;
+  }
+
+  async handleRequestRemoteStopTransaction(commandPayload: RemoteStopTransactionRequest): Promise<DefaultResponse> {
+    const transactionId = commandPayload.transactionId;
+    for (const connector in this._connectors) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector))?.transactionId === transactionId) {
+        await this.sendStatusNotification(Utils.convertToInt(connector), ChargePointStatus.FINISHING);
+        await this.sendStopTransaction(transactionId);
+        return Constants.OCPP_RESPONSE_ACCEPTED;
+      }
+    }
+    logger.info(this._logPrefix() + ' Trying to remote stop a non existing transaction ' + transactionId.toString());
+    return Constants.OCPP_RESPONSE_REJECTED;
+  }
+
   // eslint-disable-next-line consistent-this
-  async sendMeterValues(connectorId: number, interval: number, self: ChargingStation, debug = false): Promise<void> {
+  private async sendMeterValues(connectorId: number, interval: number, self: ChargingStation, debug = false): Promise<void> {
     try {
       const meterValue: MeterValue = {
         timestamp: new Date().toISOString(),
@@ -811,7 +1308,7 @@ export default class ChargingStation {
       for (let index = 0; index < meterValuesTemplate.length; index++) {
         const connector = self.getConnector(connectorId);
         // SoC measurand
-        if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.STATE_OF_CHARGE && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.STATE_OF_CHARGE)) {
+        if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.STATE_OF_CHARGE && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.STATE_OF_CHARGE)) {
           meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.PERCENT },
             ...!Utils.isUndefined(meterValuesTemplate[index].context) && { context: meterValuesTemplate[index].context },
@@ -824,7 +1321,7 @@ export default class ChargingStation {
             logger.error(`${self._logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ? meterValue.sampledValue[sampledValuesIndex].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/100`);
           }
         // Voltage measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.VOLTAGE && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.VOLTAGE)) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.VOLTAGE && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.VOLTAGE)) {
           const voltageMeasurandValue = Utils.getRandomFloatRounded(self._getVoltageOut() + self._getVoltageOut() * 0.1, self._getVoltageOut() - self._getVoltageOut() * 0.1);
           meterValue.sampledValue.push({
             ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.VOLT },
@@ -850,7 +1347,7 @@ export default class ChargingStation {
             });
           }
         // Power.Active.Import measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.POWER_ACTIVE_IMPORT)) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.POWER_ACTIVE_IMPORT && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.POWER_ACTIVE_IMPORT)) {
           // FIXME: factor out powerDivider checks
           if (Utils.isUndefined(self._stationInfo.powerDivider)) {
             const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider is undefined`;
@@ -910,7 +1407,7 @@ export default class ChargingStation {
             });
           }
         // Current.Import measurand
-        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.CURRENT_IMPORT && self._getConfigurationKey('MeterValuesSampledData').value.includes(MeterValueMeasurand.CURRENT_IMPORT)) {
+        } else if (meterValuesTemplate[index].measurand && meterValuesTemplate[index].measurand === MeterValueMeasurand.CURRENT_IMPORT && self._getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(MeterValueMeasurand.CURRENT_IMPORT)) {
           // FIXME: factor out powerDivider checks
           if (Utils.isUndefined(self._stationInfo.powerDivider)) {
             const errMsg = `${self._logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider is undefined`;
@@ -1014,428 +1511,15 @@ export default class ChargingStation {
         transactionId: self.getConnector(connectorId).transactionId,
         meterValue: meterValue,
       };
-      await self.sendMessage(Utils.generateUUID(), payload, Constants.OCPP_JSON_CALL_MESSAGE, 'MeterValues');
+      await self.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.METERVALUES);
     } catch (error) {
-      logger.error(self._logPrefix() + ' Send MeterValues error: %j', error);
-      throw error;
+      this.handleRequestError(RequestCommand.METERVALUES, error);
     }
   }
 
-  async sendError(messageId: string, err: Error | OCPPError, commandName: string): Promise<unknown> {
-    // Check exception type: only OCPP error are accepted
-    const error = err instanceof OCPPError ? err : new OCPPError(Constants.OCPP_ERROR_INTERNAL_ERROR, err.message, err.stack && err.stack);
-    // Send error
-    return this.sendMessage(messageId, error, Constants.OCPP_JSON_CALL_ERROR_MESSAGE, commandName);
-  }
-
-  async sendMessage(messageId: string, commandParams, messageType = Constants.OCPP_JSON_CALL_RESULT_MESSAGE, commandName: string): Promise<any> {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
-    // Send a message through wsConnection
-    return new Promise((resolve: (value?: any | PromiseLike<any>) => void, reject: (reason?: any) => void) => {
-      let messageToSend;
-      // Type of message
-      switch (messageType) {
-        // Request
-        case Constants.OCPP_JSON_CALL_MESSAGE:
-          // Build request
-          this._requests[messageId] = [responseCallback, rejectCallback, commandParams];
-          messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
-          break;
-        // Response
-        case Constants.OCPP_JSON_CALL_RESULT_MESSAGE:
-          // Build response
-          messageToSend = JSON.stringify([messageType, messageId, commandParams]);
-          break;
-        // Error Message
-        case Constants.OCPP_JSON_CALL_ERROR_MESSAGE:
-          // Build Error Message
-          messageToSend = JSON.stringify([messageType, messageId, commandParams.code ? commandParams.code : Constants.OCPP_ERROR_GENERIC_ERROR, commandParams.message ? commandParams.message : '', commandParams.details ? commandParams.details : {}]);
-          break;
-      }
-      // Check if wsConnection is ready
-      if (this._wsConnection?.readyState === WebSocket.OPEN) {
-        if (this.getEnableStatistics()) {
-          this._statistics.addMessage(commandName, messageType);
-        }
-        // Yes: Send Message
-        this._wsConnection.send(messageToSend);
-      } else {
-        let dups = false;
-        // Handle dups in buffer
-        for (const message of this._messageQueue) {
-          // Same message
-          if (JSON.stringify(messageToSend) === JSON.stringify(message)) {
-            dups = true;
-            break;
-          }
-        }
-        if (!dups) {
-          // Buffer message
-          this._messageQueue.push(messageToSend);
-        }
-        // Reject it
-        return rejectCallback(new OCPPError(commandParams.code ? commandParams.code : Constants.OCPP_ERROR_GENERIC_ERROR, commandParams.message ? commandParams.message : `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ? commandParams.details : {}));
-      }
-      // Response?
-      if (messageType === Constants.OCPP_JSON_CALL_RESULT_MESSAGE) {
-        // Yes: send Ok
-        resolve();
-      } else if (messageType === Constants.OCPP_JSON_CALL_ERROR_MESSAGE) {
-        // Send timeout
-        setTimeout(() => rejectCallback(new OCPPError(commandParams.code ? commandParams.code : Constants.OCPP_ERROR_GENERIC_ERROR, commandParams.message ? commandParams.message : `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams.details ? commandParams.details : {})), Constants.OCPP_SOCKET_TIMEOUT);
-      }
-
-      // Function that will receive the request's response
-      async function responseCallback(payload, requestPayload): Promise<void> {
-        if (self.getEnableStatistics()) {
-          self._statistics.addMessage(commandName, messageType);
-        }
-        // Send the response
-        await self.handleResponse(commandName, payload, requestPayload);
-        resolve(payload);
-      }
-
-      // Function that will receive the request's rejection
-      function rejectCallback(error: OCPPError): void {
-        if (self.getEnableStatistics()) {
-          self._statistics.addMessage(commandName, messageType);
-        }
-        logger.debug(`${self._logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
-        // Build Exception
-        // eslint-disable-next-line no-empty-function
-        self._requests[messageId] = [() => { }, () => { }, {}]; // Properly format the request
-        // Send error
-        reject(error);
-      }
-    });
-  }
-
-  async handleResponse(commandName: string, payload, requestPayload): Promise<void> {
-    const responseCallbackFn = 'handleResponse' + commandName;
-    if (typeof this[responseCallbackFn] === 'function') {
-      await this[responseCallbackFn](payload, requestPayload);
-    } else {
-      logger.error(this._logPrefix() + ' Trying to call an undefined response callback function: ' + responseCallbackFn);
-    }
-  }
-
-  handleResponseBootNotification(payload: BootNotificationResponse, requestPayload: BootNotificationRequest): void {
-    if (payload.status === RegistrationStatus.ACCEPTED) {
-      this._heartbeatInterval = payload.interval * 1000;
-      this._heartbeatSetInterval ? this._restartHeartbeat() : this._startHeartbeat();
-      this._addConfigurationKey('HeartBeatInterval', payload.interval.toString());
-      this._addConfigurationKey('HeartbeatInterval', payload.interval.toString(), false, false);
-      this._hasStopped && (this._hasStopped = false);
-    } else if (payload.status === RegistrationStatus.PENDING) {
-      logger.info(this._logPrefix() + ' Charging station in pending state on the central server');
-    } else {
-      logger.info(this._logPrefix() + ' Charging station rejected by the central server');
-    }
-  }
-
-  _initTransactionOnConnector(connectorId: number): void {
-    this.getConnector(connectorId).transactionStarted = false;
-    this.getConnector(connectorId).transactionId = null;
-    this.getConnector(connectorId).idTag = null;
-    this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = -1;
-  }
-
-  _resetTransactionOnConnector(connectorId: number): void {
-    this._initTransactionOnConnector(connectorId);
-    if (this.getConnector(connectorId).transactionSetInterval) {
-      clearInterval(this.getConnector(connectorId).transactionSetInterval);
-    }
-  }
-
-  async handleResponseStartTransaction(payload: StartTransactionResponse, requestPayload: StartTransactionRequest): Promise<void> {
-    const connectorId = requestPayload.connectorId;
-    if (this.getConnector(connectorId).transactionStarted) {
-      logger.debug(this._logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.getConnector(connectorId));
-      return;
-    }
-
-    let transactionConnectorId: number;
-    for (const connector in this._connectors) {
-      if (Utils.convertToInt(connector) > 0 && Utils.convertToInt(connector) === connectorId) {
-        transactionConnectorId = Utils.convertToInt(connector);
-        break;
-      }
-    }
-    if (!transactionConnectorId) {
-      logger.error(this._logPrefix() + ' Trying to start a transaction on a non existing connector Id ' + connectorId.toString());
-      return;
-    }
-    if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-      this.getConnector(connectorId).transactionStarted = true;
-      this.getConnector(connectorId).transactionId = payload.transactionId;
-      this.getConnector(connectorId).idTag = requestPayload.idTag;
-      this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = 0;
-      await this.sendStatusNotification(connectorId, ChargePointStatus.CHARGING);
-      logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this._stationInfo.name + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
-      if (this._stationInfo.powerSharedByConnectors) {
-        this._stationInfo.powerDivider++;
-      }
-      const configuredMeterValueSampleInterval = this._getConfigurationKey('MeterValueSampleInterval');
-      this._startMeterValues(connectorId,
-        configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
-    } else {
-      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
-      this._resetTransactionOnConnector(connectorId);
-      await this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE);
-    }
-  }
-
-  async handleResponseStopTransaction(payload: StopTransactionResponse, requestPayload: StopTransactionRequest): Promise<void> {
-    let transactionConnectorId: number;
-    for (const connector in this._connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === requestPayload.transactionId) {
-        transactionConnectorId = Utils.convertToInt(connector);
-        break;
-      }
-    }
-    if (!transactionConnectorId) {
-      logger.error(this._logPrefix() + ' Trying to stop a non existing transaction ' + requestPayload.transactionId.toString());
-      return;
-    }
-    if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-      await this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE);
-      if (this._stationInfo.powerSharedByConnectors) {
-        this._stationInfo.powerDivider--;
-      }
-      logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId.toString() + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId.toString());
-      this._resetTransactionOnConnector(transactionConnectorId);
-    } else {
-      logger.error(this._logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status);
-    }
-  }
-
-  handleResponseStatusNotification(payload: StatusNotificationRequest, requestPayload: StatusNotificationResponse): void {
-    logger.debug(this._logPrefix() + ' Status notification response received: %j to StatusNotification request: %j', payload, requestPayload);
-  }
-
-  handleResponseMeterValues(payload: MeterValuesRequest, requestPayload: MeterValuesResponse): void {
-    logger.debug(this._logPrefix() + ' MeterValues response received: %j to MeterValues request: %j', payload, requestPayload);
-  }
-
-  handleResponseHeartbeat(payload: HeartbeatResponse, requestPayload: HeartbeatRequest): void {
-    logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
-  }
-
-  async handleRequest(messageId: string, commandName: string, commandPayload): Promise<void> {
-    let response;
-    // Call
-    if (typeof this['handleRequest' + commandName] === 'function') {
-      try {
-        // Call the method to build the response
-        response = await this['handleRequest' + commandName](commandPayload);
-      } catch (error) {
-        // Log
-        logger.error(this._logPrefix() + ' Handle request error: %j', error);
-        // Send back response to inform backend
-        await this.sendError(messageId, error, commandName);
-        throw error;
-      }
-    } else {
-      // Throw exception
-      await this.sendError(messageId, new OCPPError(Constants.OCPP_ERROR_NOT_IMPLEMENTED, `${commandName} is not implemented`, {}), commandName);
-      throw new Error(`${commandName} is not implemented ${JSON.stringify(commandPayload, null, ' ')}`);
-    }
-    // Send response
-    await this.sendMessage(messageId, response, Constants.OCPP_JSON_CALL_RESULT_MESSAGE, commandName);
-  }
-
-  // Simulate charging station restart
-  handleRequestReset(commandPayload: ResetRequest): DefaultResponse {
-    setImmediate(async () => {
-      await this.stop(commandPayload.type + 'Reset' as StopTransactionReason);
-      await Utils.sleep(this._stationInfo.resetTime);
-      await this.start();
-    });
-    logger.info(`${this._logPrefix()} ${commandPayload.type} reset command received, simulating it. The station will be back online in ${Utils.milliSecondsToHHMMSS(this._stationInfo.resetTime)}`);
-    return Constants.OCPP_RESPONSE_ACCEPTED;
-  }
-
-  handleRequestClearCache(): DefaultResponse {
-    return Constants.OCPP_RESPONSE_ACCEPTED;
-  }
-
-  async handleRequestUnlockConnector(commandPayload: UnlockConnectorRequest): Promise<UnlockConnectorResponse> {
-    const connectorId = commandPayload.connectorId;
-    if (connectorId === 0) {
-      logger.error(this._logPrefix() + ' Trying to unlock connector ' + connectorId.toString());
-      return Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
-    }
-    if (this.getConnector(connectorId).transactionStarted) {
-      const stopResponse = await this.sendStopTransaction(this.getConnector(connectorId).transactionId, StopTransactionReason.UNLOCK_COMMAND);
-      if (stopResponse.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-        return Constants.OCPP_RESPONSE_UNLOCKED;
-      }
-      return Constants.OCPP_RESPONSE_UNLOCK_FAILED;
-    }
-    await this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE);
-    return Constants.OCPP_RESPONSE_UNLOCKED;
-  }
-
-  _getConfigurationKey(key: string): ConfigurationKey {
-    return this._configuration.configurationKey.find((configElement) => configElement.key === key);
-  }
-
-  _addConfigurationKey(key: string, value: string, readonly = false, visible = true, reboot = false): void {
-    const keyFound = this._getConfigurationKey(key);
-    if (!keyFound) {
-      this._configuration.configurationKey.push({
-        key,
-        readonly,
-        value,
-        visible,
-        reboot,
-      });
-    }
-  }
-
-  _setConfigurationKeyValue(key: string, value: string): void {
-    const keyFound = this._getConfigurationKey(key);
-    if (keyFound) {
-      const keyIndex = this._configuration.configurationKey.indexOf(keyFound);
-      this._configuration.configurationKey[keyIndex].value = value;
-    }
-  }
-
-  handleRequestGetConfiguration(commandPayload: GetConfigurationRequest): GetConfigurationResponse {
-    const configurationKey: ConfigurationKey[] = [];
-    const unknownKey: string[] = [];
-    if (Utils.isEmptyArray(commandPayload.key)) {
-      for (const configuration of this._configuration.configurationKey) {
-        if (Utils.isUndefined(configuration.visible)) {
-          configuration.visible = true;
-        }
-        if (!configuration.visible) {
-          continue;
-        }
-        configurationKey.push({
-          key: configuration.key,
-          readonly: configuration.readonly,
-          value: configuration.value,
-        });
-      }
-    } else {
-      for (const key of commandPayload.key) {
-        const keyFound = this._getConfigurationKey(key);
-        if (keyFound) {
-          if (Utils.isUndefined(keyFound.visible)) {
-            keyFound.visible = true;
-          }
-          if (!keyFound.visible) {
-            continue;
-          }
-          configurationKey.push({
-            key: keyFound.key,
-            readonly: keyFound.readonly,
-            value: keyFound.value,
-          });
-        } else {
-          unknownKey.push(key);
-        }
-      }
-    }
-    return {
-      configurationKey,
-      unknownKey,
-    };
-  }
-
-  handleRequestChangeConfiguration(commandPayload: ChangeConfigurationRequest): ChangeConfigurationResponse {
-    // JSON request fields type sanity check
-    if (!Utils.isString(commandPayload.key)) {
-      logger.error(`${this._logPrefix()} ChangeConfiguration request key field is not a string:`, commandPayload);
-    }
-    if (!Utils.isString(commandPayload.value)) {
-      logger.error(`${this._logPrefix()} ChangeConfiguration request value field is not a string:`, commandPayload);
-    }
-    const keyToChange = this._getConfigurationKey(commandPayload.key);
-    if (!keyToChange) {
-      return Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED;
-    } else if (keyToChange && keyToChange.readonly) {
-      return Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED;
-    } else if (keyToChange && !keyToChange.readonly) {
-      const keyIndex = this._configuration.configurationKey.indexOf(keyToChange);
-      let valueChanged = false;
-      if (this._configuration.configurationKey[keyIndex].value !== commandPayload.value) {
-        this._configuration.configurationKey[keyIndex].value = commandPayload.value;
-        valueChanged = true;
-      }
-      let triggerHeartbeatRestart = false;
-      if (keyToChange.key === 'HeartBeatInterval' && valueChanged) {
-        this._setConfigurationKeyValue('HeartbeatInterval', commandPayload.value);
-        triggerHeartbeatRestart = true;
-      }
-      if (keyToChange.key === 'HeartbeatInterval' && valueChanged) {
-        this._setConfigurationKeyValue('HeartBeatInterval', commandPayload.value);
-        triggerHeartbeatRestart = true;
-      }
-      if (triggerHeartbeatRestart) {
-        this._heartbeatInterval = Utils.convertToInt(commandPayload.value) * 1000;
-        this._restartHeartbeat();
-      }
-      if (keyToChange.key === 'WebSocketPingInterval' && valueChanged) {
-        this._restartWebSocketPing();
-      }
-      if (keyToChange.reboot) {
-        return Constants.OCPP_CONFIGURATION_RESPONSE_REBOOT_REQUIRED;
-      }
-      return Constants.OCPP_CONFIGURATION_RESPONSE_ACCEPTED;
-    }
-  }
-
-  handleRequestSetChargingProfile(commandPayload: SetChargingProfileRequest): SetChargingProfileResponse {
-    if (!this.getConnector(commandPayload.connectorId)) {
-      logger.error(`${this._logPrefix()} Trying to set a charging profile to a non existing connector Id ${commandPayload.connectorId}`);
-      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
-    }
-    if (commandPayload.csChargingProfiles.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE && !this.getConnector(commandPayload.connectorId)?.transactionStarted) {
-      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
-    }
-    this.getConnector(commandPayload.connectorId).chargingProfiles.forEach((chargingProfile: ChargingProfile, index: number) => {
-      if (chargingProfile.chargingProfileId === commandPayload.csChargingProfiles.chargingProfileId
-        || (chargingProfile.stackLevel === commandPayload.csChargingProfiles.stackLevel && chargingProfile.chargingProfilePurpose === commandPayload.csChargingProfiles.chargingProfilePurpose)) {
-        this.getConnector(commandPayload.connectorId).chargingProfiles[index] = chargingProfile;
-        return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
-      }
-    });
-    this.getConnector(commandPayload.connectorId).chargingProfiles.push(commandPayload.csChargingProfiles);
-    return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
-  }
-
-  async handleRequestRemoteStartTransaction(commandPayload: RemoteStartTransactionRequest): Promise<DefaultResponse> {
-    const transactionConnectorID: number = commandPayload.connectorId ? commandPayload.connectorId : 1;
-    if (this._getAuthorizeRemoteTxRequests() && this._getLocalAuthListEnabled() && this.hasAuthorizedTags()) {
-      // Check if authorized
-      if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
-        // Authorization successful start transaction
-        await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
-        logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
-        return Constants.OCPP_RESPONSE_ACCEPTED;
-      }
-      logger.error(this._logPrefix() + ' Remote starting transaction REJECTED, idTag ' + commandPayload.idTag);
-      return Constants.OCPP_RESPONSE_REJECTED;
-    }
-    // No local authorization check required => start transaction
-    await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
-    logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
-    return Constants.OCPP_RESPONSE_ACCEPTED;
-  }
-
-  async handleRequestRemoteStopTransaction(commandPayload: RemoteStopTransactionRequest): Promise<DefaultResponse> {
-    const transactionId = commandPayload.transactionId;
-    for (const connector in this._connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
-        await this.sendStopTransaction(transactionId);
-        return Constants.OCPP_RESPONSE_ACCEPTED;
-      }
-    }
-    logger.info(this._logPrefix() + ' Trying to remote stop a non existing transaction ' + transactionId.toString());
-    return Constants.OCPP_RESPONSE_REJECTED;
+  private handleRequestError(commandName: RequestCommand, error: Error) {
+    logger.error(this._logPrefix() + ' Send ' + commandName + ' error: %j', error);
+    throw error;
   }
 }
 

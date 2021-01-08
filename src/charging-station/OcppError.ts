@@ -1,4 +1,4 @@
-import Constants from '../utils/Constants';
+import { ErrorType } from '../types/ocpp/ErrorType';
 
 export default class OCPPError extends Error {
   code: string;
@@ -7,7 +7,7 @@ export default class OCPPError extends Error {
   constructor(code: string, message: string, details?: any) {
     super(message);
 
-    this.code = code || Constants.OCPP_ERROR_GENERIC_ERROR;
+    this.code = code || ErrorType.GENERIC_ERROR;
     this.message = message || '';
     this.details = details || {};
 

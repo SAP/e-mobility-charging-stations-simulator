@@ -84,7 +84,7 @@ export default class AutomaticTransactionGenerator {
         } else {
           startResponse = await this.startTransaction(connectorId, this);
         }
-        if (startResponse.idTagInfo?.status !== AuthorizationStatus.ACCEPTED) {
+        if (startResponse.idTagInfo.status !== AuthorizationStatus.ACCEPTED) {
           logger.info(this._logPrefix(connectorId) + ' transaction rejected');
           await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
         } else {
@@ -94,7 +94,7 @@ export default class AutomaticTransactionGenerator {
           logger.info(this._logPrefix(connectorId) + ' transaction ' + this._chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.milliSecondsToHHMMSS(waitTrxEnd));
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
-          if (this._chargingStation.getConnector(connectorId).transactionStarted) {
+          if (this._chargingStation.getConnector(connectorId)?.transactionStarted) {
             logger.info(this._logPrefix(connectorId) + ' stop transaction ' + this._chargingStation.getConnector(connectorId).transactionId.toString());
             if (this._chargingStation.getEnableStatistics()) {
               const stopTransaction = performance.timerify(this.stopTransaction);

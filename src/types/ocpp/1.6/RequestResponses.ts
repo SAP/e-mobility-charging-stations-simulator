@@ -1,4 +1,4 @@
-import { ConfigurationKey } from '../../ChargingStationConfiguration';
+import { OCPPConfigurationKey } from '../Configuration';
 
 export interface HeartbeatResponse {
   currentTime: string;
@@ -47,10 +47,10 @@ export interface BootNotificationResponse {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface StatusNotificationResponse {}
+export interface StatusNotificationResponse { }
 
 export interface GetConfigurationResponse {
-  configurationKey: ConfigurationKey[];
+  configurationKey: OCPPConfigurationKey[];
   unknownKey: string[];
 }
 
@@ -62,4 +62,14 @@ export enum ChargingProfileStatus {
 
 export interface SetChargingProfileResponse {
   status: ChargingProfileStatus;
+}
+
+export enum AvailabilityStatus {
+  ACCEPTED = 'Accepted',
+  REJECTED = 'Rejected',
+  SCHEDULED = 'Scheduled'
+}
+
+export interface ChangeAvailabilityResponse {
+  status: AvailabilityStatus;
 }

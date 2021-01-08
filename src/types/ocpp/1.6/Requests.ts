@@ -1,14 +1,32 @@
 import { ChargePointErrorCode } from './ChargePointErrorCode';
 import { ChargePointStatus } from './ChargePointStatus';
 import { ChargingProfile } from './ChargingProfile';
-import OCPPError from '../../../charging-station/OcppError';
+import { StandardParametersKey } from './Configuration';
 
-export default interface Requests {
-  [id: string]: [(payload?, requestPayload?) => void, (error?: OCPPError) => void, Record<string, unknown>];
+export enum RequestCommand {
+  BOOT_NOTIFICATION = 'BootNotification',
+  HEARTBEAT = 'Heartbeat',
+  STATUS_NOTIFICATION = 'StatusNotification',
+  CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  START_TRANSACTION = 'StartTransaction',
+  STOP_TRANSACTION = 'StopTransaction',
+  METERVALUES = 'MeterValues'
+}
+
+export enum IncomingRequestCommand {
+  RESET = 'Reset',
+  CLEAR_CACHE = 'ClearCache',
+  CHANGE_AVAILABILITY = 'ChangeAvailability',
+  UNLOCK_CONNECTOR = 'UnlockConnector',
+  GET_CONFIGURATION = 'GetConfiguration',
+  CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  SET_CHARGING_PROFILE = 'SetChargingProfile',
+  REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
+  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction'
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface HeartbeatRequest {}
+export interface HeartbeatRequest { }
 
 export interface BootNotificationRequest {
   chargeBoxSerialNumber?: string;
@@ -33,7 +51,7 @@ export interface StatusNotificationRequest {
 }
 
 export interface ChangeConfigurationRequest {
-  key: string;
+  key: string | StandardParametersKey;
   value: string;
 }
 
@@ -52,7 +70,7 @@ export interface UnlockConnectorRequest {
 }
 
 export interface GetConfigurationRequest {
-  key?: string[];
+  key?: string | StandardParametersKey[];
 }
 
 export enum ResetType {
@@ -67,4 +85,14 @@ export interface ResetRequest {
 export interface SetChargingProfileRequest {
   connectorId: number;
   csChargingProfiles: ChargingProfile;
+}
+
+export enum AvailabilityType {
+  INOPERATIVE = 'Inoperative',
+  OPERATIVE = 'Operative'
+}
+
+export interface ChangeAvailabilityRequest {
+  connectorId: number;
+  type: AvailabilityType;
 }
