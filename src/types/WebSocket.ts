@@ -1,4 +1,4 @@
-export const WebSocketCloseEventStatusString: Record<number, string> = Object.freeze({
+export const WebSocketCloseEventStatusString: Record<WebSocketCloseEventStatusCode, string> = Object.freeze({
   1000: 'Normal Closure',
   1001: 'Going Away',
   1002: 'Protocol Error',
