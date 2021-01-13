@@ -2,7 +2,7 @@ import { ErrorType } from '../types/ocpp/ErrorType';
 
 export default class OCPPError extends Error {
   code: string;
-  details: any;
+  details?: any;
 
   constructor(code: string, message: string, details?: any) {
     super(message);

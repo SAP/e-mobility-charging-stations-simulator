@@ -714,8 +714,8 @@ export default class ChargingStation {
   }
 
   async onMessage(messageEvent: MessageEvent): Promise<void> {
-    let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, '', ''];
-    let responseCallback: (payload?, requestPayload?) => void;
+    let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, '', {}];
+    let responseCallback: (payload?: Record<string, unknown> | string, requestPayload?: Record<string, unknown>) => void;
     let rejectCallback: (error: OCPPError) => void;
     let requestPayload: Record<string, unknown>;
     let errMsg: string;
@@ -746,7 +746,7 @@ export default class ChargingStation {
             throw new Error(`Response request for unknown message id ${messageId}`);
           }
           delete this._requests[messageId];
-          responseCallback(commandName, requestPayload);
+          responseCallback(commandName.toString(), requestPayload);
           break;
         // Error Message
         case MessageType.CALL_ERROR_MESSAGE:
@@ -760,7 +760,7 @@ export default class ChargingStation {
             throw new Error(`Error request for message id ${messageId} is not iterable`);
           }
           delete this._requests[messageId];
-          rejectCallback(new OCPPError(commandName, commandPayload, errorDetails));
+          rejectCallback(new OCPPError(commandName, commandPayload.toString(), errorDetails));
           break;
         // Error
         default:
@@ -837,14 +837,12 @@ export default class ChargingStation {
     }
   }
 
-  async sendError(messageId: string, err: Error | OCPPError, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown> {
-    // Check exception type: only OCPP error are accepted
-    const error = err instanceof OCPPError ? err : new OCPPError(ErrorType.INTERNAL_ERROR, err.message, err.stack && err.stack);
+  async sendError(messageId: string, error: OCPPError, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown> {
     // Send error
     return this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
   }
 
-  async sendMessage(messageId: string, commandParams, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
+  async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -927,7 +925,7 @@ export default class ChargingStation {
     });
   }
 
-  async handleResponse(commandName: RequestCommand, payload, requestPayload): Promise<void> {
+  async handleResponse(commandName: RequestCommand, payload: Record<string, unknown>, requestPayload: Record<string, unknown>): Promise<void> {
     const responseCallbackFn = 'handleResponse' + commandName;
     if (typeof this[responseCallbackFn] === 'function') {
       await this[responseCallbackFn](payload, requestPayload);
@@ -1038,7 +1036,7 @@ export default class ChargingStation {
     logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
   }
 
-  async handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload): Promise<void> {
+  async handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload: Record<string, unknown> | string): Promise<void> {
     let response;
     // Call
     if (typeof this['handleRequest' + commandName] === 'function') {

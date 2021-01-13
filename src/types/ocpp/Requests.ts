@@ -6,6 +6,6 @@ export default interface Requests {
   [id: string]: Request;
 }
 
-export type Request = [(payload?, requestPayload?) => void, (error?: OCPPError) => void, Record<string, unknown>];
+export type Request = [(payload?: Record<string, unknown>, requestPayload?: Record<string, unknown>) => void, (error?: OCPPError) => void, Record<string, unknown>];
 
-export type IncomingRequest = [MessageType, string, IncomingRequestCommand, string, string];
+export type IncomingRequest = [MessageType, string, IncomingRequestCommand, Record<string, unknown> | string, Record<string, unknown>];
