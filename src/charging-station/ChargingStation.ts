@@ -661,7 +661,7 @@ export default class ChargingStation {
         this._bootNotificationResponse = await this.sendBootNotification();
         if (!this._isRegistered()) {
           registrationRetryCount++;
-          await Utils.sleep(this._bootNotificationResponse.interval * 1000);
+          await Utils.sleep(this._bootNotificationResponse?.interval ? this._bootNotificationResponse.interval * 1000 : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL);
         }
       } while (!this._isRegistered() && (registrationRetryCount <= this._getRegistrationMaxRetries() || this._getRegistrationMaxRetries() === -1));
     }
