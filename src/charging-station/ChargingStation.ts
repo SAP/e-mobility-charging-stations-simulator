@@ -714,7 +714,7 @@ export default class ChargingStation {
   }
 
   async onMessage(messageEvent: MessageEvent): Promise<void> {
-    let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, '', {}];
+    let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, {}, {}];
     let responseCallback: (payload?: Record<string, unknown> | string, requestPayload?: Record<string, unknown>) => void;
     let rejectCallback: (error: OCPPError) => void;
     let requestPayload: Record<string, unknown>;
@@ -746,7 +746,7 @@ export default class ChargingStation {
             throw new Error(`Response request for unknown message id ${messageId}`);
           }
           delete this._requests[messageId];
-          responseCallback(commandName.toString(), requestPayload);
+          responseCallback(commandName, requestPayload);
           break;
         // Error Message
         case MessageType.CALL_ERROR_MESSAGE:
@@ -874,7 +874,7 @@ export default class ChargingStation {
         }
         // Yes: Send Message
         this._wsConnection.send(messageToSend);
-      } else {
+      } else if (commandName !== RequestCommand.BOOT_NOTIFICATION) {
         let dups = false;
         // Handle dups in buffer
         for (const message of this._messageQueue) {
@@ -901,7 +901,7 @@ export default class ChargingStation {
       }
 
       // Function that will receive the request's response
-      async function responseCallback(payload, requestPayload): Promise<void> {
+      async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
         if (self.getEnableStatistics()) {
           self._statistics.addMessage(commandName, messageType);
         }
@@ -925,7 +925,7 @@ export default class ChargingStation {
     });
   }
 
-  async handleResponse(commandName: RequestCommand, payload: Record<string, unknown>, requestPayload: Record<string, unknown>): Promise<void> {
+  async handleResponse(commandName: RequestCommand, payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
     const responseCallbackFn = 'handleResponse' + commandName;
     if (typeof this[responseCallbackFn] === 'function') {
       await this[responseCallbackFn](payload, requestPayload);
@@ -1036,7 +1036,7 @@ export default class ChargingStation {
     logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
   }
 
-  async handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload: Record<string, unknown> | string): Promise<void> {
+  async handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
     let response;
     // Call
     if (typeof this['handleRequest' + commandName] === 'function') {
