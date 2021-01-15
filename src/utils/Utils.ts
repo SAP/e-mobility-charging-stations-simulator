@@ -11,7 +11,7 @@ export default class Utils {
   }
 
   static secondsToHHMMSS(seconds: number): string {
-    return new Date(seconds * 1000).toISOString().substr(11, 8);
+    return Utils.milliSecondsToHHMMSS(seconds * 1000);
   }
 
   static milliSecondsToHHMMSS(milliSeconds: number): string {
