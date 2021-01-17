@@ -63,14 +63,22 @@ export default class AutomaticTransactionGenerator {
 
   async startConnector(connectorId: number): Promise<void> {
     do {
+      if (this._timeToStop) {
+        logger.error(this._logPrefix(connectorId) + ' Entered in transaction loop while a request to stop it was made');
+        break;
+      }
+      if (!this._chargingStation._isRegistered()) {
+        logger.error(this._logPrefix(connectorId) + ' Entered in transaction loop while the charging station is not registered');
+        break;
+      }
+      if (!this._chargingStation._isChargingStationAvailable() || !this._chargingStation._isConnectorAvailable(connectorId)) {
+        logger.error(this._logPrefix(connectorId) + ' Entered in transaction loop while the charging station or connector is unavailable');
+        break;
+      }
       const wait = Utils.getRandomInt(this._chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
         this._chargingStation.stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransactions) * 1000;
       logger.info(this._logPrefix(connectorId) + ' wait for ' + Utils.milliSecondsToHHMMSS(wait));
       await Utils.sleep(wait);
-      if (this._timeToStop) {
-        logger.debug(this._logPrefix(connectorId) + ' Entered in transaction loop while a request to stop it was made');
-        break;
-      }
       const start = Math.random();
       let skip = 0;
       if (start < this._chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
@@ -114,7 +122,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   // eslint-disable-next-line consistent-this
-  async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StartTransactionResponse> {
+  private async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StartTransactionResponse> {
     if (self._chargingStation.hasAuthorizedTags()) {
       const tagId = self._chargingStation.getRandomTagId();
       logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
@@ -125,7 +133,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   // eslint-disable-next-line consistent-this
-  async stopTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StopTransactionResponse> {
+  private async stopTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StopTransactionResponse> {
     return await self._chargingStation.sendStopTransaction(self._chargingStation.getConnector(connectorId).transactionId);
   }
 }

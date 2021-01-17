@@ -304,6 +304,10 @@ export default class ChargingStation {
     return this.getConnector(id).availability === AvailabilityType.OPERATIVE;
   }
 
+  _isChargingStationAvailable(): boolean {
+    return this.getConnector(0).availability === AvailabilityType.OPERATIVE;
+  }
+
   _getTemplateMaxNumberOfConnectors(): number {
     return Object.keys(this._stationInfo.Connectors).length;
   }
@@ -1013,7 +1017,11 @@ export default class ChargingStation {
       return;
     }
     if (payload.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-      await this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE);
+      if (!this._isChargingStationAvailable() || !this._isConnectorAvailable(transactionConnectorId)) {
+        await this.sendStatusNotification(transactionConnectorId, ChargePointStatus.UNAVAILABLE);
+      } else {
+        await this.sendStatusNotification(transactionConnectorId, ChargePointStatus.AVAILABLE);
+      }
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider--;
       }
@@ -1230,7 +1238,6 @@ export default class ChargingStation {
     return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
   }
 
-  // FIXME: Handle properly the transaction started case
   handleRequestChangeAvailability(commandPayload: ChangeAvailabilityRequest): ChangeAvailabilityResponse {
     const connectorId: number = commandPayload.connectorId;
     if (!this.getConnector(connectorId)) {
@@ -1245,13 +1252,12 @@ export default class ChargingStation {
           response = Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
         }
         this.getConnector(Utils.convertToInt(connector)).availability = commandPayload.type;
-        void this.sendStatusNotification(Utils.convertToInt(connector), chargePointStatus);
+        response === Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED && this.sendStatusNotification(Utils.convertToInt(connector), chargePointStatus);
       }
       return response;
     } else if (connectorId > 0 && (this.getConnector(0).availability === AvailabilityType.OPERATIVE || (this.getConnector(0).availability === AvailabilityType.INOPERATIVE && commandPayload.type === AvailabilityType.INOPERATIVE))) {
       if (this.getConnector(connectorId)?.transactionStarted) {
         this.getConnector(connectorId).availability = commandPayload.type;
-        void this.sendStatusNotification(connectorId, chargePointStatus);
         return Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
       }
       this.getConnector(connectorId).availability = commandPayload.type;
@@ -1263,23 +1269,27 @@ export default class ChargingStation {
 
   async handleRequestRemoteStartTransaction(commandPayload: RemoteStartTransactionRequest): Promise<DefaultResponse> {
     const transactionConnectorID: number = commandPayload.connectorId ? commandPayload.connectorId : 1;
-    if (this._getAuthorizeRemoteTxRequests() && this._getLocalAuthListEnabled() && this.hasAuthorizedTags()) {
-      // Check if authorized
-      if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
-        await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
-        // Authorization successful start transaction
-        await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
-        logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
-        return Constants.OCPP_RESPONSE_ACCEPTED;
+    if (this._isChargingStationAvailable() && this._isConnectorAvailable(transactionConnectorID)) {
+      if (this._getAuthorizeRemoteTxRequests() && this._getLocalAuthListEnabled() && this.hasAuthorizedTags()) {
+        // Check if authorized
+        if (this._authorizedTags.find((value) => value === commandPayload.idTag)) {
+          await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
+          // Authorization successful start transaction
+          await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
+          logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
+          return Constants.OCPP_RESPONSE_ACCEPTED;
+        }
+        logger.error(this._logPrefix() + ' Remote starting transaction REJECTED on connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
+        return Constants.OCPP_RESPONSE_REJECTED;
       }
-      logger.error(this._logPrefix() + ' Remote starting transaction REJECTED, idTag ' + commandPayload.idTag);
-      return Constants.OCPP_RESPONSE_REJECTED;
+      await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
+      // No local authorization check required => start transaction
+      await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
+      logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
+      return Constants.OCPP_RESPONSE_ACCEPTED;
     }
-    await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
-    // No local authorization check required => start transaction
-    await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
-    logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
-    return Constants.OCPP_RESPONSE_ACCEPTED;
+    logger.error(this._logPrefix() + ' Remote starting transaction REJECTED on unavailable connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
+    return Constants.OCPP_RESPONSE_REJECTED;
   }
 
   async handleRequestRemoteStopTransaction(commandPayload: RemoteStopTransactionRequest): Promise<DefaultResponse> {

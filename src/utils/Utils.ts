@@ -205,7 +205,7 @@ export default class Utils {
       }
     }
     if (!Utils.isUndefined(WebSocketCloseEventStatusString[code])) {
-      return WebSocketCloseEventStatusString[code];
+      return WebSocketCloseEventStatusString[code] as string;
     }
     return '(Unknown)';
   }
