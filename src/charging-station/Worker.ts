@@ -1,12 +1,13 @@
+import { Worker, WorkerOptions } from 'worker_threads';
+
 import Configuration from '../utils/Configuration';
 import Pool from 'worker-threads-pool';
-import { Worker } from 'worker_threads';
 import WorkerData from '../types/WorkerData';
 
 export default class Wrk {
   private _workerScript: string;
   private _workerData: WorkerData;
-  private _pool: Pool;
+  private _index: number;
   private _concurrentWorkers: number;
 
   /**
@@ -18,10 +19,11 @@ export default class Wrk {
    */
   constructor(workerScript: string, workerData: WorkerData, numConcurrentWorkers: number) {
     this._workerData = workerData;
+    this._index = workerData.index;
     this._workerScript = workerScript;
     if (Configuration.useWorkerPool()) {
       this._concurrentWorkers = Configuration.getWorkerPoolSize();
-      this._pool = new Pool({ max: Configuration.getWorkerPoolSize() });
+      WorkerPool.concurrentWorkers = this._concurrentWorkers;
     } else {
       this._concurrentWorkers = numConcurrentWorkers;
     }
@@ -54,7 +56,7 @@ export default class Wrk {
    */
   private async _startWorkerWithPool() {
     return new Promise((resolve, reject) => {
-      this._pool.acquire(this._workerScript, { workerData: this._workerData }, (err, worker) => {
+      WorkerPool.acquire(this._workerScript, { workerData: this._workerData }, (err, worker) => {
         if (err) {
           return reject(err);
         }
@@ -76,9 +78,27 @@ export default class Wrk {
       worker.on('error', reject);
       worker.on('exit', (code) => {
         if (code !== 0) {
-          reject(new Error(`Worker stopped with exit code ${code}`));
+          reject(new Error(`Worker id ${this._index} stopped with exit code ${code}`));
         }
       });
     });
+  }
+}
+
+class WorkerPool {
+  public static concurrentWorkers: number;
+  private static _instance: Pool;
+
+  private constructor() { }
+
+  public static getInstance(): Pool {
+    if (!WorkerPool._instance) {
+      WorkerPool._instance = new Pool({ max: WorkerPool.concurrentWorkers });
+    }
+    return WorkerPool._instance;
+  }
+
+  public static acquire(filename: string, options: WorkerOptions, callback: (error: Error | null, worker: Worker) => void): void {
+    WorkerPool.getInstance().acquire(filename, options, callback);
   }
 }
