@@ -3,7 +3,7 @@ import { AvailabilityType, BootNotificationRequest, ChangeAvailabilityRequest, C
 import { BootNotificationResponse, ChangeAvailabilityResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
 import { ChargingProfile, ChargingProfilePurposeType } from '../types/ocpp/1.6/ChargingProfile';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
-import ChargingStationTemplate, { PowerOutType } from '../types/ChargingStationTemplate';
+import ChargingStationTemplate, { PowerOutType, VoltageOut } from '../types/ChargingStationTemplate';
 import Connectors, { Connector } from '../types/Connectors';
 import { MeterValue, MeterValueLocation, MeterValueMeasurand, MeterValuePhase, MeterValueUnit, MeterValuesRequest, MeterValuesResponse, SampledValue } from '../types/ocpp/1.6/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
@@ -335,10 +335,10 @@ export default class ChargingStation {
     let defaultVoltageOut: number;
     switch (this._getPowerOutType()) {
       case PowerOutType.AC:
-        defaultVoltageOut = 230;
+        defaultVoltageOut = VoltageOut.VOLTAGE_230;
         break;
       case PowerOutType.DC:
-        defaultVoltageOut = 400;
+        defaultVoltageOut = VoltageOut.VOLTAGE_400;
         break;
       default:
         logger.error(errMsg);
@@ -580,7 +580,7 @@ export default class ChargingStation {
         }
       }, interval);
     } else {
-      logger.error(`${this._logPrefix()} Charging station MeterValueSampleInterval configuration set to ${Utils.milliSecondsToHHMMSS(interval)}, not sending MeterValues`);
+      logger.error(`${this._logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${Utils.milliSecondsToHHMMSS(interval)}, not sending MeterValues`);
     }
   }
 

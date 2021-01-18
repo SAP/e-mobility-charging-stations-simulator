@@ -11,6 +11,12 @@ export enum PowerUnit {
   KILO_WATT = 'kW',
 }
 
+export enum VoltageOut {
+  VOLTAGE_110 = 110,
+  VOLTAGE_230 = 230,
+  VOLTAGE_400 = 400
+}
+
 export interface AutomaticTransactionGenerator {
   enable: boolean;
   minDuration: number;
