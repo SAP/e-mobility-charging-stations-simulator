@@ -39,12 +39,12 @@ export default class AutomaticTransactionGenerator {
     if (this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
       this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours > 0) {
       setTimeout(() => {
-        this.stop();
+        void this.stop();
       }, this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600 * 1000);
     }
     for (const connector in this._chargingStation.connectors) {
       if (Utils.convertToInt(connector) > 0) {
-        this.startConnector(Utils.convertToInt(connector));
+        void this.startConnector(Utils.convertToInt(connector));
       }
     }
     logger.info(this._logPrefix() + ' ATG started and will stop in ' + Utils.secondsToHHMMSS(this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600));
@@ -71,8 +71,13 @@ export default class AutomaticTransactionGenerator {
         logger.error(this._logPrefix(connectorId) + ' Entered in transaction loop while the charging station is not registered');
         break;
       }
-      if (!this._chargingStation._isChargingStationAvailable() || !this._chargingStation._isConnectorAvailable(connectorId)) {
-        logger.error(this._logPrefix(connectorId) + ' Entered in transaction loop while the charging station or connector is unavailable');
+      if (!this._chargingStation._isChargingStationAvailable()) {
+        logger.info(this._logPrefix(connectorId) + ' Entered in transaction loop while the charging station is unavailable');
+        await this.stop();
+        break;
+      }
+      if (!this._chargingStation._isConnectorAvailable(connectorId)) {
+        logger.info(`${this._logPrefix(connectorId)} Entered in transaction loop while the connector ${connectorId} is unavailable, stop it`);
         break;
       }
       const wait = Utils.getRandomInt(this._chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
