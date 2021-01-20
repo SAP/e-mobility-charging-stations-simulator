@@ -3,12 +3,14 @@ import { Worker, WorkerOptions } from 'worker_threads';
 import Configuration from '../utils/Configuration';
 import Pool from 'worker-threads-pool';
 import WorkerData from '../types/WorkerData';
+import Constants from '../utils/Constants';
 
 export default class Wrk {
   private _workerScript: string;
   private _workerData: WorkerData;
   private _index: number;
   private _concurrentWorkers: number;
+  private _worker: Worker;
 
   /**
    * Create a new `Wrk`.
@@ -42,11 +44,25 @@ export default class Wrk {
    * @return {Promise}
    * @public
    */
-  async start(): Promise<unknown> {
+  async start(): Promise<Worker> {
     if (Configuration.useWorkerPool()) {
-      return this._startWorkerWithPool();
+      this._startWorkerWithPool();
+    } else {
+      this._startWorker();
     }
-    return this._startWorker();
+    return this._worker;
+  }
+
+    /**
+   *
+   * @return {Promise}
+   * @public
+   */
+  async startNewChargingStation(workerData: WorkerData, numConcurrentWorkers: number): Promise<void> {
+    this._workerData = workerData;
+    this._index = workerData.index;
+    this._concurrentWorkers = numConcurrentWorkers;
+    this._worker.postMessage({ id : Constants.START_NEW_CHARGING_STATION, workerData: workerData });
   }
 
   /**
@@ -62,6 +78,7 @@ export default class Wrk {
         }
         worker.once('message', resolve);
         worker.once('error', reject);
+        this._worker = worker;
       });
     });
   }
@@ -81,6 +98,7 @@ export default class Wrk {
           reject(new Error(`Worker id ${this._index} stopped with exit code ${code}`));
         }
       });
+      this._worker = worker;
     });
   }
 }
@@ -92,7 +110,7 @@ class WorkerPool {
   private constructor() { }
 
   public static getInstance(): Pool {
-    if (!WorkerPool._instance) {
+    if (!WorkerPool._instance || (WorkerPool._instance?.size === WorkerPool.concurrentWorkers)) {
       WorkerPool._instance = new Pool({ max: WorkerPool.concurrentWorkers });
     }
     return WorkerPool._instance;

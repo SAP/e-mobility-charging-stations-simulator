@@ -34,4 +34,6 @@ export default class Constants {
   static readonly CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms
 
   static readonly TRANSACTION_DEFAULT_IDTAG = '00000000';
+
+  static readonly START_NEW_CHARGING_STATION = 'startNewChargingStation';
 }
