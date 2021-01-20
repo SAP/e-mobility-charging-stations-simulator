@@ -97,7 +97,7 @@ export default class AutomaticTransactionGenerator {
         } else {
           startResponse = await this.startTransaction(connectorId, this);
         }
-        if (startResponse.idTagInfo.status !== AuthorizationStatus.ACCEPTED) {
+        if (startResponse?.idTagInfo?.status !== AuthorizationStatus.ACCEPTED) {
           logger.info(this._logPrefix(connectorId) + ' transaction rejected');
           await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
         } else {
@@ -131,7 +131,14 @@ export default class AutomaticTransactionGenerator {
     if (self._chargingStation.hasAuthorizedTags()) {
       const tagId = self._chargingStation.getRandomTagId();
       logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
-      return await self._chargingStation.sendStartTransaction(connectorId, tagId);
+      // Authorize tagId
+      const authorizeResponse = await self._chargingStation.sendAuthorize(tagId);
+      if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+        // Start transaction
+        return await self._chargingStation.sendStartTransaction(connectorId, tagId);
+      } else {
+        return authorizeResponse as StartTransactionResponse;
+      }
     }
     logger.info(self._logPrefix(connectorId) + ' start transaction without a tagID');
     return await self._chargingStation.sendStartTransaction(connectorId);

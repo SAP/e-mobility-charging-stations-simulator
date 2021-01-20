@@ -29,6 +29,14 @@ export interface IdTagInfo {
   expiryDate?: Date;
 }
 
+export interface AuthorizeRequest {
+  idTag: string;
+
+}
+export interface AuthorizeResponse {
+  idTagInfo: IdTagInfo;
+}
+
 export interface StartTransactionRequest {
   connectorId: number;
   idTag: string;
