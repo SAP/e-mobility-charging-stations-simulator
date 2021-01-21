@@ -43,7 +43,7 @@ export default class Configuration {
 
   static getWorkerPoolMaxSize(): number {
     Configuration.deprecateConfigurationKey('workerPoolSize;', 'Use \'workerPoolMaxSize\' instead');
-    return Configuration.getConfig().workerPoolMaxSize;
+    return Configuration.useWorkerPool() && Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize') ? Configuration.getConfig().workerPoolMaxSize : 16;
   }
 
   static getChargingStationsPerWorker(): number {
