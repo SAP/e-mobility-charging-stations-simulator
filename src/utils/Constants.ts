@@ -38,5 +38,5 @@ export default class Constants {
   static readonly MAX_LISTENERS = 1000;
 
   static readonly START_WORKER_DELAY = 500;
-  static readonly START_CHARGING_STATION = 'startChargingStation';
+  static readonly START_WORKER_ELEMENT = 'startWorkerElement';
 }

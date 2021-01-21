@@ -10,8 +10,6 @@ class Bootstrap {
       let numStationsTotal = 0;
       let numConcurrentWorkers = 0;
       let worker: Wrk;
-      const chargingStationsPerWorker = Configuration.getChargingStationsPerWorker();
-      let counter = 0;
       // Start each ChargingStation object in a worker thread
       if (Configuration.getStationTemplateURLs()) {
         for await (const stationURL of Configuration.getStationTemplateURLs()) {
@@ -23,19 +21,27 @@ class Bootstrap {
                 index,
                 templateFile: stationURL.file
               } as WorkerData;
-              if (counter === 0 || counter === chargingStationsPerWorker) {
-                // Start new worker with one charging station
-                worker = new Wrk('./dist/charging-station/StationWorker.js', workerData, numStationsTotal);
+              if (Configuration.useWorkerPool()) {
+                worker = new Wrk('./dist/charging-station/StationWorker.js', workerData);
                 worker.start().catch(() => { });
-                counter = 0;
-                // Start workers sequentially to optimize memory at start time
-                await Utils.sleep(Constants.START_WORKER_DELAY);
+                numConcurrentWorkers = Configuration.getWorkerPoolSize();
               } else {
-                // Add charging station to existing Worker
-                worker.addChargingStation(workerData, numStationsTotal);
+                const chargingStationsPerWorker = Configuration.getChargingStationsPerWorker();
+                let chargingStationsPerWorkerCounter = 0;
+                if (chargingStationsPerWorkerCounter === 0 || chargingStationsPerWorkerCounter === chargingStationsPerWorker) {
+                  // Start new Wrk with one charging station
+                  worker = new Wrk('./dist/charging-station/StationWorker.js', workerData, chargingStationsPerWorker);
+                  worker.start().catch(() => { });
+                  numConcurrentWorkers++;
+                  chargingStationsPerWorkerCounter = 1;
+                  // Start Wrk sequentially to optimize memory at start time
+                  await Utils.sleep(Constants.START_WORKER_DELAY);
+                } else {
+                  // Add charging station to existing Wrk
+                  worker.addWorkerElement(workerData);
+                  chargingStationsPerWorkerCounter++;
+                }
               }
-              counter++;
-              numConcurrentWorkers = worker.concurrentWorkers;
             }
           } catch (error) {
             // eslint-disable-next-line no-console

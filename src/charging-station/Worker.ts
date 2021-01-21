@@ -9,7 +9,7 @@ export default class Wrk {
   private _workerScript: string;
   private _workerData: WorkerData;
   private _index: number;
-  private _concurrentWorkers: number;
+  private _maxWorkerElements: number;
   private _worker: Worker;
 
   /**
@@ -17,26 +17,24 @@ export default class Wrk {
    *
    * @param {string} workerScript
    * @param {WorkerData} workerData
-   * @param {number} numConcurrentWorkers
+   * @param {number} maxWorkerElements
    */
-  constructor(workerScript: string, workerData: WorkerData, numConcurrentWorkers: number) {
+  constructor(workerScript: string, workerData: WorkerData, maxWorkerElements = 1) {
     this._workerData = workerData;
     this._index = workerData.index;
     this._workerScript = workerScript;
     if (Configuration.useWorkerPool()) {
-      this._concurrentWorkers = Configuration.getWorkerPoolSize();
-      WorkerPool.concurrentWorkers = this._concurrentWorkers;
-    } else {
-      this._concurrentWorkers = numConcurrentWorkers;
+      WorkerPool.maxConcurrentWorkers = Configuration.getWorkerPoolSize();
     }
+    this._maxWorkerElements = maxWorkerElements;
   }
 
   /**
    * @return {number}
    * @public
    */
-  public get concurrentWorkers(): number {
-    return this._concurrentWorkers;
+  public get maxWorkerElements(): number {
+    return this._maxWorkerElements;
   }
 
   /**
@@ -58,11 +56,14 @@ export default class Wrk {
    * @return {void}
    * @public
    */
-  addChargingStation(workerData: WorkerData, numConcurrentWorkers: number): void {
+  addWorkerElement(workerData: WorkerData): void {
+    // FIXME: also forbid to add an element if the current number of elements > max number of elements
+    if (Configuration.useWorkerPool()) {
+      return;
+    }
     this._workerData = workerData;
     this._index = workerData.index;
-    this._concurrentWorkers = numConcurrentWorkers;
-    this._worker.postMessage({ id : Constants.START_CHARGING_STATION, workerData: workerData });
+    this._worker.postMessage({ id : Constants.START_WORKER_ELEMENT, workerData: workerData });
   }
 
   /**
@@ -104,14 +105,14 @@ export default class Wrk {
 }
 
 class WorkerPool {
-  public static concurrentWorkers: number;
+  public static maxConcurrentWorkers: number;
   private static _instance: Pool;
 
   private constructor() { }
 
   public static getInstance(): Pool {
-    if (!WorkerPool._instance || (WorkerPool._instance?.size === WorkerPool.concurrentWorkers)) {
-      WorkerPool._instance = new Pool({ max: WorkerPool.concurrentWorkers });
+    if (!WorkerPool._instance) {
+      WorkerPool._instance = new Pool({ max: WorkerPool.maxConcurrentWorkers });
     }
     return WorkerPool._instance;
   }
