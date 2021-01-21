@@ -25,8 +25,9 @@ class Bootstrap {
               if (Configuration.useWorkerPool()) {
                 worker = new Wrk('./dist/charging-station/StationWorker.js', workerData);
                 worker.start().catch(() => { });
-                numConcurrentWorkers = worker.getPoolSize();
+                numConcurrentWorkers = worker.getWorkerPoolSize();
                 numStationsTotal = numConcurrentWorkers;
+                // Start Wrk sequentially to optimize memory at start time
                 await Utils.sleep(Constants.START_WORKER_DELAY);
               } else if (!Configuration.useWorkerPool() && (chargingStationsPerWorkerCounter === 0 || chargingStationsPerWorkerCounter === chargingStationsPerWorker)) {
                 // Start new Wrk with one charging station
@@ -54,12 +55,10 @@ class Bootstrap {
       }
       if (numStationsTotal === 0) {
         console.log('No charging station template enabled in configuration, exiting');
+      } else if (Configuration.useWorkerPool()) {
+        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + '/' + Configuration.getWorkerPoolMaxSize().toString() + ' worker(s) concurrently running');
       } else {
-        if (Configuration.useWorkerPool()) {
-          console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + '/' + Configuration.getWorkerMaxPoolSize() + ' worker(s) concurrently running');
-        } else {
-          console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + ' worker(s) concurrently running');
-        }
+        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + ' worker(s) concurrently running');
       }
     } catch (error) {
       // eslint-disable-next-line no-console

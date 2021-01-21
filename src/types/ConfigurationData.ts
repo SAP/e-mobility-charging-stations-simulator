@@ -11,7 +11,7 @@ export default interface ConfigurationData {
   autoReconnectMaxRetries?: number;
   distributeStationsToTenantsEqually?: boolean;
   useWorkerPool?: boolean;
-  workerMaxPoolSize?: number;
+  workerPoolMaxSize?: number;
   chargingStationsPerWorker?: number;
   logFormat?: string;
   logLevel?: string;

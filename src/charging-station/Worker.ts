@@ -20,7 +20,7 @@ export default class Wrk {
     this._workerData = workerData;
     this._workerScript = workerScript;
     if (Configuration.useWorkerPool()) {
-      WorkerPool.maxConcurrentWorkers = Configuration.getWorkerMaxPoolSize();
+      WorkerPool.maxConcurrentWorkers = Configuration.getWorkerPoolMaxSize();
     }
   }
 
@@ -49,7 +49,18 @@ export default class Wrk {
       return;
     }
     this._workerData = workerData;
-    this._worker.postMessage({ id : Constants.START_WORKER_ELEMENT, workerData: workerData });
+    this._worker.postMessage({ id: Constants.START_WORKER_ELEMENT, workerData: workerData });
+  }
+
+  /**
+   *
+   * @return {number}
+   * @public
+   */
+  public getWorkerPoolSize(): number {
+    if (Configuration.useWorkerPool()) {
+      return WorkerPool.getPoolSize();
+    }
   }
 
   /**
@@ -88,15 +99,6 @@ export default class Wrk {
       this._worker = worker;
     });
   }
-
-  /**
-   *
-   * @return {number}
-   * @public
-   */
-  public getPoolSize(): number {
-    return WorkerPool.getPoolSize();
-  }
 }
 
 
@@ -118,6 +120,6 @@ class WorkerPool {
   }
 
   public static getPoolSize(): number {
-    return WorkerPool._instance.size;
+    return WorkerPool.getInstance().size;
   }
 }
