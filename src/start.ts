@@ -18,10 +18,10 @@ class Bootstrap {
           try {
             const nbStations = stationURL.numberOfStations ? stationURL.numberOfStations : 0;
             for (let index = 1; index <= nbStations; index++) {
-              const workerData = {
+              const workerData: WorkerData = {
                 index,
                 templateFile: stationURL.file
-              } as WorkerData;
+              };
               if (Configuration.useWorkerPool()) {
                 worker = new Wrk('./dist/charging-station/StationWorker.js', workerData);
                 worker.start().catch(() => { });
