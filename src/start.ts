@@ -17,7 +17,6 @@ class Bootstrap {
         for (const stationURL of Configuration.getStationTemplateURLs()) {
           try {
             const nbStations = stationURL.numberOfStations ? stationURL.numberOfStations : 0;
-            numStationsTotal += nbStations;
             for (let index = 1; index <= nbStations; index++) {
               const workerData = {
                 index,
@@ -26,12 +25,15 @@ class Bootstrap {
               if (Configuration.useWorkerPool()) {
                 worker = new Wrk('./dist/charging-station/StationWorker.js', workerData);
                 worker.start().catch(() => { });
-                numConcurrentWorkers = Configuration.getWorkerPoolSize();
+                numConcurrentWorkers = worker.getPoolSize();
+                numStationsTotal = numConcurrentWorkers;
+                await Utils.sleep(Constants.START_WORKER_DELAY);
               } else if (!Configuration.useWorkerPool() && (chargingStationsPerWorkerCounter === 0 || chargingStationsPerWorkerCounter === chargingStationsPerWorker)) {
                 // Start new Wrk with one charging station
                 worker = new Wrk('./dist/charging-station/StationWorker.js', workerData);
                 worker.start().catch(() => { });
                 numConcurrentWorkers++;
+                numStationsTotal++;
                 chargingStationsPerWorkerCounter = 1;
                 // Start Wrk sequentially to optimize memory at start time
                 await Utils.sleep(Constants.START_WORKER_DELAY);
@@ -39,6 +41,7 @@ class Bootstrap {
                 // Add charging station to existing Wrk
                 worker.addWorkerElement(workerData);
                 chargingStationsPerWorkerCounter++;
+                numStationsTotal++;
               }
             }
           } catch (error) {
@@ -52,7 +55,11 @@ class Bootstrap {
       if (numStationsTotal === 0) {
         console.log('No charging station template enabled in configuration, exiting');
       } else {
-        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) of ' + numConcurrentWorkers.toString() + ' concurrently running');
+        if (Configuration.useWorkerPool()) {
+          console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + '/' + Configuration.getWorkerMaxPoolSize() + ' worker(s) concurrently running');
+        } else {
+          console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + ' worker(s) concurrently running');
+        }
       }
     } catch (error) {
       // eslint-disable-next-line no-console
