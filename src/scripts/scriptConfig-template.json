@@ -1,0 +1,6 @@
+{
+  "publicFlag": true,
+  "tenantIDs": [""],
+  "idPattern": "",
+  "mongoConnectionString": "mongodb://..."
+}

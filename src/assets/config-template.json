@@ -6,6 +6,8 @@
   "statisticsDisplayInterval": 60,
   "useWorkerPool": false,
   "workerPoolSize": 16,
+  "chargingStationsPerWorker": 1,
+  "chargingStationIdSuffix": "",
   "stationTemplateURLs": [
     {
       "file": "./src/assets/station-templates/siemens.station-template.json",

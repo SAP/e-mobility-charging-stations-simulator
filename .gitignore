@@ -86,3 +86,4 @@ Thumbs.db
 # MTA
 *.mta
 mta_archives/
+src/scripts/scriptConfig.json

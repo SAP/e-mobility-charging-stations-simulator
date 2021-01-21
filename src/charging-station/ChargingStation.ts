@@ -1,4 +1,4 @@
-import { AuthorizationStatus, StartTransactionRequest, StartTransactionResponse, StopTransactionReason, StopTransactionRequest, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
+import { AuthorizationStatus, AuthorizeRequest, AuthorizeResponse, StartTransactionRequest, StartTransactionResponse, StopTransactionReason, StopTransactionRequest, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
 import { AvailabilityType, BootNotificationRequest, ChangeAvailabilityRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
 import { BootNotificationResponse, ChangeAvailabilityResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
 import { ChargingProfile, ChargingProfilePurposeType } from '../types/ocpp/1.6/ChargingProfile';
@@ -71,7 +71,13 @@ export default class ChargingStation {
   }
 
   _getStationName(stationTemplate: ChargingStationTemplate): string {
-    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + ('000000000' + this._index.toString()).substr(('000000000' + this._index.toString()).length - 4);
+    // In case of multiple instances: add instance index to charging station id
+    let instanceIndex = process.env.CF_INSTANCE_INDEX ? process.env.CF_INSTANCE_INDEX : 0;
+    instanceIndex = instanceIndex > 0 ? instanceIndex : '';
+
+    const idSuffix = Configuration.getChargingStationIdSuffix();
+
+    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + instanceIndex + ('000000000' + this._index.toString()).substr(('000000000' + this._index.toString()).length - 4) + idSuffix;
   }
 
   _buildStationInfo(): ChargingStationInfo {
@@ -521,8 +527,7 @@ export default class ChargingStation {
   }
 
   _startAuthorizationFileMonitoring(): void {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    fs.watchFile(this._getAuthorizationFile(), (current, previous) => {
+    fs.watch(this._getAuthorizationFile()).on("change", e => {
       try {
         logger.debug(this._logPrefix() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
         // Initialize _authorizedTags
@@ -534,15 +539,24 @@ export default class ChargingStation {
   }
 
   _startStationTemplateFileMonitoring(): void {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    fs.watchFile(this._stationTemplateFile, (current, previous) => {
+    fs.watch(this._stationTemplateFile).on("change", e => {
       try {
         logger.debug(this._logPrefix() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
         // Initialize
         this._initialize();
+        // Stop the ATG
         if (!this._stationInfo.AutomaticTransactionGenerator.enable &&
           this._automaticTransactionGeneration) {
           this._automaticTransactionGeneration.stop().catch(() => { });
+        }
+        // Start the ATG
+        if (this._stationInfo.AutomaticTransactionGenerator.enable) {
+          if (!this._automaticTransactionGeneration) {
+            this._automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
+          }
+          if (this._automaticTransactionGeneration.timeToStop) {
+            this._automaticTransactionGeneration.start();
+          }
         }
         // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
       } catch (error) {
@@ -808,6 +822,17 @@ export default class ChargingStation {
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.STATUS_NOTIFICATION);
     } catch (error) {
       this.handleRequestError(RequestCommand.STATUS_NOTIFICATION, error);
+    }
+  }
+
+  async sendAuthorize(idTag?: string): Promise<AuthorizeResponse> {
+    try {
+      const payload: AuthorizeRequest = {
+        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
+      };
+      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.AUTHORIZE) as AuthorizeResponse;
+    } catch (error) {
+      this.handleRequestError(RequestCommand.AUTHORIZE, error);
     }
   }
 
