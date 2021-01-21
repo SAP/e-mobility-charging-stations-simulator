@@ -20,7 +20,7 @@ export default class Wrk {
     this._workerData = workerData;
     this._workerScript = workerScript;
     if (Configuration.useWorkerPool()) {
-      WorkerPool.maxConcurrentWorkers = Configuration.getWorkerPoolSize();
+      WorkerPool.maxConcurrentWorkers = Configuration.getWorkerMaxPoolSize();
     }
   }
 
@@ -88,7 +88,17 @@ export default class Wrk {
       this._worker = worker;
     });
   }
+
+  /**
+   *
+   * @return {number}
+   * @public
+   */
+  public getPoolSize(): number {
+    return WorkerPool.getPoolSize();
+  }
 }
+
 
 class WorkerPool {
   public static maxConcurrentWorkers: number;
@@ -105,5 +115,9 @@ class WorkerPool {
 
   public static acquire(filename: string, options: WorkerOptions, callback: (error: Error | null, worker: Worker) => void): void {
     WorkerPool.getInstance().acquire(filename, options, callback);
+  }
+
+  public static getPoolSize(): number {
+    return WorkerPool._instance.size;
   }
 }

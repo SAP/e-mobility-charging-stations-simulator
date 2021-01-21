@@ -41,8 +41,8 @@ export default class Configuration {
     return Configuration.getConfig().useWorkerPool;
   }
 
-  static getWorkerPoolSize(): number {
-    return Configuration.getConfig().workerPoolSize;
+  static getWorkerMaxPoolSize(): number {
+    return Configuration.getConfig().workerMaxPoolSize;
   }
 
   static getChargingStationsPerWorker(): number {
