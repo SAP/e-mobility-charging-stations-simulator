@@ -8,8 +8,6 @@ import WorkerData from '../types/WorkerData';
 export default class Wrk {
   private _workerScript: string;
   private _workerData: WorkerData;
-  private _index: number;
-  private _maxWorkerElements: number;
   private _worker: Worker;
 
   /**
@@ -17,24 +15,13 @@ export default class Wrk {
    *
    * @param {string} workerScript
    * @param {WorkerData} workerData
-   * @param {number} maxWorkerElements
    */
-  constructor(workerScript: string, workerData: WorkerData, maxWorkerElements = 1) {
+  constructor(workerScript: string, workerData: WorkerData) {
     this._workerData = workerData;
-    this._index = workerData.index;
     this._workerScript = workerScript;
     if (Configuration.useWorkerPool()) {
       WorkerPool.maxConcurrentWorkers = Configuration.getWorkerPoolSize();
     }
-    this._maxWorkerElements = maxWorkerElements;
-  }
-
-  /**
-   * @return {number}
-   * @public
-   */
-  public get maxWorkerElements(): number {
-    return this._maxWorkerElements;
   }
 
   /**
@@ -62,7 +49,6 @@ export default class Wrk {
       return;
     }
     this._workerData = workerData;
-    this._index = workerData.index;
     this._worker.postMessage({ id : Constants.START_WORKER_ELEMENT, workerData: workerData });
   }
 
@@ -96,7 +82,7 @@ export default class Wrk {
       worker.on('error', reject);
       worker.on('exit', (code) => {
         if (code !== 0) {
-          reject(new Error(`Worker id ${this._index} stopped with exit code ${code}`));
+          reject(new Error(`Worker stopped with exit code ${code}`));
         }
       });
       this._worker = worker;

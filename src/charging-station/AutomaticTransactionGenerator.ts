@@ -1,4 +1,4 @@
-import { AuthorizationStatus, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
+import { AuthorizationStatus, AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
 import { PerformanceObserver, performance } from 'perf_hooks';
 
 import ChargingStation from './ChargingStation';
@@ -89,7 +89,7 @@ export default class AutomaticTransactionGenerator {
       if (start < this._chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
         skip = 0;
         // Start transaction
-        let startResponse: StartTransactionResponse;
+        let startResponse: StartTransactionResponse | AuthorizeResponse;
         if (this._chargingStation.getEnableStatistics()) {
           const startTransaction = performance.timerify(this.startTransaction);
           this._performanceObserver.observe({ entryTypes: ['function'] });
@@ -127,7 +127,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   // eslint-disable-next-line consistent-this
-  private async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StartTransactionResponse> {
+  private async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StartTransactionResponse | AuthorizeResponse> {
     if (self._chargingStation.hasAuthorizedTags()) {
       const tagId = self._chargingStation.getRandomTagId();
       if (self._chargingStation.stationInfo.AutomaticTransactionGenerator.requireAuthorize) {
@@ -138,7 +138,7 @@ export default class AutomaticTransactionGenerator {
           // Start transaction
           return await self._chargingStation.sendStartTransaction(connectorId, tagId);
         }
-        return authorizeResponse as StartTransactionResponse;
+        return authorizeResponse;
       }
       logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
       // Start transaction
