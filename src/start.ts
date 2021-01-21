@@ -29,13 +29,13 @@ class Bootstrap {
                 numStationsTotal = numConcurrentWorkers;
                 // Start Wrk sequentially to optimize memory at start time
                 await Utils.sleep(Constants.START_WORKER_DELAY);
-              } else if (!Configuration.useWorkerPool() && (chargingStationsPerWorkerCounter === 0 || chargingStationsPerWorkerCounter === chargingStationsPerWorker)) {
+              } else if (!Configuration.useWorkerPool() && (chargingStationsPerWorkerCounter === 0 || chargingStationsPerWorkerCounter >= chargingStationsPerWorker)) {
                 // Start new Wrk with one charging station
-                worker = new Wrk('./dist/charging-station/StationWorker.js', workerData);
+                worker = new Wrk('./dist/charging-station/StationWorker.js', workerData, chargingStationsPerWorker);
                 worker.start().catch(() => { });
                 numConcurrentWorkers++;
-                numStationsTotal++;
                 chargingStationsPerWorkerCounter = 1;
+                numStationsTotal++;
                 // Start Wrk sequentially to optimize memory at start time
                 await Utils.sleep(Constants.START_WORKER_DELAY);
               } else if (!Configuration.useWorkerPool()) {

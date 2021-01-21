@@ -9,6 +9,8 @@ export default class Wrk {
   private _workerScript: string;
   private _workerData: WorkerData;
   private _worker: Worker;
+  private _maxWorkerElements: number;
+  private _numWorkerElements: number;
 
   /**
    * Create a new `Wrk`.
@@ -16,9 +18,11 @@ export default class Wrk {
    * @param {string} workerScript
    * @param {WorkerData} workerData
    */
-  constructor(workerScript: string, workerData: WorkerData) {
+  constructor(workerScript: string, workerData: WorkerData, maxWorkerElements = 1) {
     this._workerData = workerData;
     this._workerScript = workerScript;
+    this._maxWorkerElements = maxWorkerElements;
+    this._numWorkerElements = 0;
     if (Configuration.useWorkerPool()) {
       WorkerPool.maxConcurrentWorkers = Configuration.getWorkerPoolMaxSize();
     }
@@ -44,12 +48,15 @@ export default class Wrk {
    * @public
    */
   addWorkerElement(workerData: WorkerData): void {
-    // FIXME: also forbid to add an element if the current number of elements > max number of elements
     if (Configuration.useWorkerPool()) {
-      return;
+      throw Error('Cannot add Wrk element if the worker pool is enabled');
+    }
+    if (this._numWorkerElements >= this._maxWorkerElements) {
+      throw Error('Cannot add Wrk element: max number of elements per worker reached');
     }
     this._workerData = workerData;
     this._worker.postMessage({ id: Constants.START_WORKER_ELEMENT, workerData: workerData });
+    this._numWorkerElements++;
   }
 
   /**
@@ -96,6 +103,7 @@ export default class Wrk {
           reject(new Error(`Worker stopped with exit code ${code}`));
         }
       });
+      this._numWorkerElements++;
       this._worker = worker;
     });
   }
