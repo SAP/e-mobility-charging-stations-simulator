@@ -11,7 +11,6 @@ if (!isMainThread) {
 }
 
 function addListener() {
-  parentPort.setMaxListeners(Constants.MAX_LISTENERS);
   parentPort.on('message', (e) => {
     if (e.id === Constants.START_WORKER_ELEMENT) {
       startChargingStation(e.workerData);
