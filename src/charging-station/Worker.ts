@@ -17,6 +17,7 @@ export default class Wrk {
    *
    * @param {string} workerScript
    * @param {WorkerData} workerData
+   * @param {number} maxWorkerElements
    */
   constructor(workerScript: string, workerData: WorkerData, maxWorkerElements = 1) {
     this._workerData = workerData;
