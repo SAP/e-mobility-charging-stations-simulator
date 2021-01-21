@@ -130,15 +130,19 @@ export default class AutomaticTransactionGenerator {
   private async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StartTransactionResponse> {
     if (self._chargingStation.hasAuthorizedTags()) {
       const tagId = self._chargingStation.getRandomTagId();
-      logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
-      // Authorize tagId
-      const authorizeResponse = await self._chargingStation.sendAuthorize(tagId);
-      if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-        // Start transaction
-        return await self._chargingStation.sendStartTransaction(connectorId, tagId);
-      } else {
+      if (self._chargingStation.stationInfo.AutomaticTransactionGenerator.requireAuthorize) {
+        // Authorize tagId
+        const authorizeResponse = await self._chargingStation.sendAuthorize(tagId);
+        if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+          logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
+          // Start transaction
+          return await self._chargingStation.sendStartTransaction(connectorId, tagId);
+        }
         return authorizeResponse as StartTransactionResponse;
       }
+      logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
+      // Start transaction
+      return await self._chargingStation.sendStartTransaction(connectorId, tagId);
     }
     logger.info(self._logPrefix(connectorId) + ' start transaction without a tagID');
     return await self._chargingStation.sendStartTransaction(connectorId);

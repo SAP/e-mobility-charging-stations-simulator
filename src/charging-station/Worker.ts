@@ -1,9 +1,9 @@
 import { Worker, WorkerOptions } from 'worker_threads';
 
 import Configuration from '../utils/Configuration';
+import Constants from '../utils/Constants';
 import Pool from 'worker-threads-pool';
 import WorkerData from '../types/WorkerData';
-import Constants from '../utils/Constants';
 
 export default class Wrk {
   private _workerScript: string;
@@ -46,23 +46,23 @@ export default class Wrk {
    */
   async start(): Promise<Worker> {
     if (Configuration.useWorkerPool()) {
-      this._startWorkerWithPool();
+      await this._startWorkerWithPool();
     } else {
-      this._startWorker();
+      await this._startWorker();
     }
     return this._worker;
   }
 
-    /**
+  /**
    *
-   * @return {Promise}
+   * @return {void}
    * @public
    */
-  async startNewChargingStation(workerData: WorkerData, numConcurrentWorkers: number): Promise<void> {
+  addChargingStation(workerData: WorkerData, numConcurrentWorkers: number): void {
     this._workerData = workerData;
     this._index = workerData.index;
     this._concurrentWorkers = numConcurrentWorkers;
-    this._worker.postMessage({ id : Constants.START_NEW_CHARGING_STATION, workerData: workerData });
+    this._worker.postMessage({ id : Constants.START_CHARGING_STATION, workerData: workerData });
   }
 
   /**

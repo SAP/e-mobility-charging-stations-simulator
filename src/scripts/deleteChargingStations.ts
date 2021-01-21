@@ -1,5 +1,5 @@
-var MongoClient = require('mongodb');
-var fs = require('fs');
+import MongoClient from 'mongodb';
+import fs from 'fs';
 
 // This script deletes charging stations
 // Filter charging stations by id pattern
@@ -8,19 +8,19 @@ var fs = require('fs');
 // Delete these charging stations all at once
 
 // Config
-var config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
 
 // Mongo Connection and Query
 if (config && config.mongoConnectionString) {
   MongoClient.connect(config.mongoConnectionString, {
     useUnifiedTopology: true,
     useNewUrlParser: true
-    }, async function(err, client) {
+  }, async function(err, client) {
     const db = client.db('evse');
 
     for await (const tenantID of config.tenantIDs) {
-      let response = await db.collection(tenantID + '.chargingstations').deleteMany(
-        { _id: {'$regex': config.idPattern} }
+      const response = await db.collection(tenantID + '.chargingstations').deleteMany(
+        { _id: { '$regex': config.idPattern } }
       );
       console.log(response.deletedCount, `Charging Stations with id = %${config.idPattern}% deleted. TenantID =`, tenantID);
     }

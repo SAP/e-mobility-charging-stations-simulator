@@ -49,10 +49,6 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'chargingStationsPerWorker') ? Configuration.getConfig().chargingStationsPerWorker : 1;
   }
 
-  static getChargingStationIdSuffix(): string {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'chargingStationIdSuffix') ? Configuration.getConfig().chargingStationIdSuffix : '';
-  }
-
   static getLogConsole(): boolean {
     Configuration.deprecateConfigurationKey('consoleLog', 'Use \'logConsole\' instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logConsole') ? Configuration.getConfig().logConsole : false;

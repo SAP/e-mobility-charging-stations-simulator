@@ -1,5 +1,5 @@
-var MongoClient = require('mongodb');
-var fs = require('fs');
+import MongoClient from 'mongodb';
+import fs from 'fs';
 
 // This script sets charging stations public or private
 // Filter charging stations by id pattern
@@ -9,20 +9,20 @@ var fs = require('fs');
 // set public = true
 
 // Config
-var config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
 
 // Mongo Connection and Query
 if (config && config.mongoConnectionString) {
   MongoClient.connect(config.mongoConnectionString, {
     useUnifiedTopology: true,
     useNewUrlParser: true
-    }, async function(err, client) {
+  }, async function(err, client) {
     const db = client.db('evse');
 
     for await (const tenantID of config.tenantIDs) {
-      let response = await db.collection(tenantID + '.chargingstations').updateMany(
-        { _id: {'$regex': config.idPattern} },
-        { $set: { public : config.publicFlag } }
+      const response = await db.collection(tenantID + '.chargingstations').updateMany(
+        { _id: { '$regex': config.idPattern } },
+        { $set: { public: config.publicFlag } }
       );
       console.log(response.modifiedCount, `Charging Stations with id = %${config.idPattern}% updated. TenantID =`, tenantID);
     }

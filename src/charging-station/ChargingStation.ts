@@ -75,9 +75,9 @@ export default class ChargingStation {
     let instanceIndex = process.env.CF_INSTANCE_INDEX ? process.env.CF_INSTANCE_INDEX : 0;
     instanceIndex = instanceIndex > 0 ? instanceIndex : '';
 
-    const idSuffix = Configuration.getChargingStationIdSuffix();
+    const idSuffix = stationTemplate.nameSuffix ? stationTemplate.nameSuffix : '';
 
-    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + instanceIndex + ('000000000' + this._index.toString()).substr(('000000000' + this._index.toString()).length - 4) + idSuffix;
+    return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + instanceIndex.toString() + ('000000000' + this._index.toString()).substr(('000000000' + this._index.toString()).length - 4) + idSuffix;
   }
 
   _buildStationInfo(): ChargingStationInfo {
@@ -527,7 +527,7 @@ export default class ChargingStation {
   }
 
   _startAuthorizationFileMonitoring(): void {
-    fs.watch(this._getAuthorizationFile()).on("change", e => {
+    fs.watch(this._getAuthorizationFile()).on('change', (e) => {
       try {
         logger.debug(this._logPrefix() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
         // Initialize _authorizedTags
@@ -539,7 +539,7 @@ export default class ChargingStation {
   }
 
   _startStationTemplateFileMonitoring(): void {
-    fs.watch(this._stationTemplateFile).on("change", e => {
+    fs.watch(this._stationTemplateFile).on('change', (e) => {
       try {
         logger.debug(this._logPrefix() + ' Template file ' + this._stationTemplateFile + ' have changed, reload');
         // Initialize
@@ -828,7 +828,7 @@ export default class ChargingStation {
   async sendAuthorize(idTag?: string): Promise<AuthorizeResponse> {
     try {
       const payload: AuthorizeRequest = {
-        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
+        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_TAGID },
       };
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, RequestCommand.AUTHORIZE) as AuthorizeResponse;
     } catch (error) {
@@ -840,7 +840,7 @@ export default class ChargingStation {
     try {
       const payload: StartTransactionRequest = {
         connectorId,
-        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
+        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_TAGID },
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
@@ -1009,7 +1009,7 @@ export default class ChargingStation {
       return;
     }
 
-    if (payload.idTagInfo.status === AuthorizationStatus.ACCEPTED) {
+    if (payload?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
       this.getConnector(connectorId).transactionStarted = true;
       this.getConnector(connectorId).transactionId = payload.transactionId;
       this.getConnector(connectorId).idTag = requestPayload.idTag;
@@ -1023,7 +1023,7 @@ export default class ChargingStation {
       this._startMeterValues(connectorId,
         configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
     } else {
-      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo.status + ', idTag ' + requestPayload.idTag);
+      logger.error(this._logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload?.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
       this._resetTransactionOnConnector(connectorId);
       await this.sendStatusNotification(connectorId, ChargePointStatus.AVAILABLE);
     }

@@ -1,7 +1,7 @@
 import { isMainThread, parentPort, workerData } from 'worker_threads';
-import Constants from '../utils/Constants';
 
 import ChargingStation from './ChargingStation';
+import Constants from '../utils/Constants';
 
 if (!isMainThread) {
   const station = new ChargingStation(workerData.index as number, workerData.templateFile as string);
@@ -12,10 +12,10 @@ if (!isMainThread) {
 }
 
 function addListener() {
-  parentPort.setMaxListeners(1000);
-  parentPort.on("message", e => {
-    if (e.id === Constants.START_NEW_CHARGING_STATION) {
-        startChargingStation(e.workerData);
+  parentPort.setMaxListeners(Constants.MAX_LISTENERS);
+  parentPort.on('message', (e) => {
+    if (e.id === Constants.START_CHARGING_STATION) {
+      startChargingStation(e.workerData);
     }
   });
 }

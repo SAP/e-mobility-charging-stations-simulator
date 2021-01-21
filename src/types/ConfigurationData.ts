@@ -12,8 +12,7 @@ export default interface ConfigurationData {
   distributeStationsToTenantsEqually?: boolean;
   useWorkerPool?: boolean;
   workerPoolSize?: number;
-  chargingStationsPerWorker: number;
-  chargingStationIdSuffix: string;
+  chargingStationsPerWorker?: number;
   logFormat?: string;
   logLevel?: string;
   logRotate?: boolean;

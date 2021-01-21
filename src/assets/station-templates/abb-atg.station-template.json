@@ -1,6 +1,7 @@
 {
   "authorizationFile": "./src/assets/authorization-tags.json",
   "baseName": "CS-ABB",
+  "nameSuffix": "Roaming",
   "chargePointModel": "MD_TERRA_53",
   "chargePointVendor": "ABB",
   "firmwareVersion": "4.0.4.22",
@@ -62,7 +63,8 @@
     "maxDelayBetweenTwoTransactions": 30,
     "probabilityOfStart": 1,
     "stopAfterHours": 0.3,
-    "stopOnConnectionFailure": false
+    "stopOnConnectionFailure": false,
+    "requireAuthorize": false
   },
   "Connectors": {
     "0": {},

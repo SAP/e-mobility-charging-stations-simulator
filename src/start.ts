@@ -1,9 +1,8 @@
 import Configuration from './utils/Configuration';
-import { StationTemplateURL } from './types/ConfigurationData';
+import Constants from './utils/Constants';
 import Utils from './utils/Utils';
-import Wrk from './charging-station/Worker';
 import WorkerData from './types/WorkerData';
-import fs from 'fs';
+import Wrk from './charging-station/Worker';
 
 class Bootstrap {
   static async start() {
@@ -11,7 +10,7 @@ class Bootstrap {
       let numStationsTotal = 0;
       let numConcurrentWorkers = 0;
       let worker: Wrk;
-      let chargingStationsPerWorker = Configuration.getChargingStationsPerWorker();
+      const chargingStationsPerWorker = Configuration.getChargingStationsPerWorker();
       let counter = 0;
       // Start each ChargingStation object in a worker thread
       if (Configuration.getStationTemplateURLs()) {
@@ -24,19 +23,18 @@ class Bootstrap {
                 index,
                 templateFile: stationURL.file
               } as WorkerData;
-              if(counter === 0 || counter === chargingStationsPerWorker) {
+              if (counter === 0 || counter === chargingStationsPerWorker) {
                 // Start new worker with one charging station
-                worker = await new Wrk('./dist/charging-station/StationWorker.js', workerData, numStationsTotal);
-                worker.start().catch(() => {});
+                worker = new Wrk('./dist/charging-station/StationWorker.js', workerData, numStationsTotal);
+                worker.start().catch(() => { });
                 counter = 0;
                 // Start workers sequentially to optimize memory at start time
-                await Utils.sleep(500);
+                await Utils.sleep(Constants.START_WORKER_DELAY);
               } else {
-                // Add new charging station to existing Worker
-                worker.startNewChargingStation(workerData, numStationsTotal)
+                // Add charging station to existing Worker
+                worker.addChargingStation(workerData, numStationsTotal);
               }
               counter++;
-              // Start charging station sequentially to optimize memory at start time
               numConcurrentWorkers = worker.concurrentWorkers;
             }
           } catch (error) {

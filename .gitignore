@@ -1,5 +1,6 @@
 # config
 src/assets/config.json
+src/scripts/scriptConfig.json
 manifest.yml
 
 # Logs
@@ -86,4 +87,3 @@ Thumbs.db
 # MTA
 *.mta
 mta_archives/
-src/scripts/scriptConfig.json
