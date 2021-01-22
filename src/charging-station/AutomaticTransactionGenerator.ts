@@ -29,9 +29,9 @@ export default class AutomaticTransactionGenerator {
 
   _logPrefix(connectorId: number = null): string {
     if (connectorId) {
-      return Utils.logPrefix(' ' + this._chargingStation.stationInfo.name + ' ATG on connector #' + connectorId.toString() + ':');
+      return Utils.logPrefix(' ' + this._chargingStation.stationInfo.chargingStationId + ' ATG on connector #' + connectorId.toString() + ':');
     }
-    return Utils.logPrefix(' ' + this._chargingStation.stationInfo.name + ' ATG:');
+    return Utils.logPrefix(' ' + this._chargingStation.stationInfo.chargingStationId + ' ATG:');
   }
 
   start(): void {

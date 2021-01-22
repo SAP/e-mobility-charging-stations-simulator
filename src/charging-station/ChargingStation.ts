@@ -70,7 +70,7 @@ export default class ChargingStation {
     this._authorizedTags = this._loadAndGetAuthorizedTags();
   }
 
-  _getStationName(stationTemplate: ChargingStationTemplate): string {
+  _getChargingStationId(stationTemplate: ChargingStationTemplate): string {
     // In case of multiple instances: add instance index to charging station id
     let instanceIndex = process.env.CF_INSTANCE_INDEX ? process.env.CF_INSTANCE_INDEX : 0;
     instanceIndex = instanceIndex > 0 ? instanceIndex : '';
@@ -98,7 +98,7 @@ export default class ChargingStation {
     } else {
       stationInfo.maxPower = stationTemplateFromFile.power as number;
     }
-    stationInfo.name = this._getStationName(stationTemplateFromFile);
+    stationInfo.chargingStationId = this._getChargingStationId(stationTemplateFromFile);
     stationInfo.resetTime = stationTemplateFromFile.resetTime ? stationTemplateFromFile.resetTime * 1000 : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     return stationInfo;
   }
@@ -117,7 +117,7 @@ export default class ChargingStation {
     };
     this._configuration = this._getTemplateChargingStationConfiguration();
     this._supervisionUrl = this._getSupervisionURL();
-    this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.name;
+    this._wsConnectionUrl = this._supervisionUrl + '/' + this._stationInfo.chargingStationId;
     // Build connectors if needed
     const maxConnectors = this._getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -172,7 +172,7 @@ export default class ChargingStation {
     this._stationInfo.powerDivider = this._getPowerDivider();
     if (this.getEnableStatistics()) {
       this._statistics = Statistics.getInstance();
-      this._statistics.objName = this._stationInfo.name;
+      this._statistics.objName = this._stationInfo.chargingStationId;
       this._performanceObserver = new PerformanceObserver((list) => {
         const entry = list.getEntries()[0];
         this._statistics.logPerformance(entry, Constants.ENTITY_CHARGING_STATION);
@@ -190,7 +190,7 @@ export default class ChargingStation {
   }
 
   _logPrefix(): string {
-    return Utils.logPrefix(` ${this._stationInfo.name}:`);
+    return Utils.logPrefix(` ${this._stationInfo.chargingStationId}:`);
   }
 
   _isWebSocketOpen(): boolean {
@@ -1015,7 +1015,7 @@ export default class ChargingStation {
       this.getConnector(connectorId).idTag = requestPayload.idTag;
       this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = 0;
       await this.sendStatusNotification(connectorId, ChargePointStatus.CHARGING);
-      logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this._stationInfo.name + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
+      logger.info(this._logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this._stationInfo.chargingStationId + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider++;
       }
@@ -1050,7 +1050,7 @@ export default class ChargingStation {
       if (this._stationInfo.powerSharedByConnectors) {
         this._stationInfo.powerDivider--;
       }
-      logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId.toString() + ' STOPPED on ' + this._stationInfo.name + '#' + transactionConnectorId.toString());
+      logger.info(this._logPrefix() + ' Transaction ' + requestPayload.transactionId.toString() + ' STOPPED on ' + this._stationInfo.chargingStationId + '#' + transactionConnectorId.toString());
       this._resetTransactionOnConnector(transactionConnectorId);
     } else {
       logger.error(this._logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status);
@@ -1301,7 +1301,7 @@ export default class ChargingStation {
           await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
           // Authorization successful start transaction
           await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
-          logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
+          logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.chargingStationId + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
           return Constants.OCPP_RESPONSE_ACCEPTED;
         }
         logger.error(this._logPrefix() + ' Remote starting transaction REJECTED on connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
@@ -1310,7 +1310,7 @@ export default class ChargingStation {
       await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
       // No local authorization check required => start transaction
       await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
-      logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.name + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
+      logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this._stationInfo.chargingStationId + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
       return Constants.OCPP_RESPONSE_ACCEPTED;
     }
     logger.error(this._logPrefix() + ' Remote starting transaction REJECTED on unavailable connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
