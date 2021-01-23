@@ -7,92 +7,88 @@ import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
 
 export default class AutomaticTransactionGenerator {
-  private _chargingStation: ChargingStation;
-  private _timeToStop: boolean;
-  private _performanceObserver: PerformanceObserver;
+  public timeToStop: boolean;
+  private chargingStation: ChargingStation;
+  private performanceObserver: PerformanceObserver;
 
   constructor(chargingStation: ChargingStation) {
-    this._chargingStation = chargingStation;
-    this._timeToStop = true;
-    if (this._chargingStation.getEnableStatistics()) {
-      this._performanceObserver = new PerformanceObserver((list) => {
+    this.chargingStation = chargingStation;
+    this.timeToStop = true;
+    if (this.chargingStation.getEnableStatistics()) {
+      this.performanceObserver = new PerformanceObserver((list) => {
         const entry = list.getEntries()[0];
-        this._chargingStation.statistics.logPerformance(entry, Constants.ENTITY_AUTOMATIC_TRANSACTION_GENERATOR);
-        this._performanceObserver.disconnect();
+        this.chargingStation.statistics.logPerformance(entry, Constants.ENTITY_AUTOMATIC_TRANSACTION_GENERATOR);
+        this.performanceObserver.disconnect();
       });
     }
   }
 
-  get timeToStop(): boolean {
-    return this._timeToStop;
-  }
-
   _logPrefix(connectorId: number = null): string {
     if (connectorId) {
-      return Utils.logPrefix(' ' + this._chargingStation.stationInfo.chargingStationId + ' ATG on connector #' + connectorId.toString() + ':');
+      return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' ATG on connector #' + connectorId.toString() + ':');
     }
-    return Utils.logPrefix(' ' + this._chargingStation.stationInfo.chargingStationId + ' ATG:');
+    return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' ATG:');
   }
 
   start(): void {
-    this._timeToStop = false;
-    if (this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
-      this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours > 0) {
+    this.timeToStop = false;
+    if (this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
+      this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours > 0) {
       setTimeout(() => {
         void this.stop();
-      }, this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600 * 1000);
+      }, this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600 * 1000);
     }
-    for (const connector in this._chargingStation.connectors) {
+    for (const connector in this.chargingStation.connectors) {
       if (Utils.convertToInt(connector) > 0) {
         void this.startConnector(Utils.convertToInt(connector));
       }
     }
-    logger.info(this._logPrefix() + ' ATG started and will stop in ' + Utils.secondsToHHMMSS(this._chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600));
+    logger.info(this._logPrefix() + ' ATG started and will stop in ' + Utils.secondsToHHMMSS(this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600));
   }
 
   async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
     logger.info(this._logPrefix() + ' ATG OVER => STOPPING ALL TRANSACTIONS');
-    for (const connector in this._chargingStation.connectors) {
-      if (this._chargingStation.getConnector(Utils.convertToInt(connector)).transactionStarted) {
-        logger.info(this._logPrefix(Utils.convertToInt(connector)) + ' ATG OVER. Stop transaction ' + this._chargingStation.getConnector(Utils.convertToInt(connector)).transactionId.toString());
-        await this._chargingStation.sendStopTransaction(this._chargingStation.getConnector(Utils.convertToInt(connector)).transactionId, reason);
+    for (const connector in this.chargingStation.connectors) {
+      if (this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+        logger.info(this._logPrefix(Utils.convertToInt(connector)) + ' ATG OVER. Stop transaction ' + this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionId.toString());
+        await this.chargingStation.sendStopTransaction(this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionId, reason);
       }
     }
-    this._timeToStop = true;
+    this.timeToStop = true;
   }
 
   async startConnector(connectorId: number): Promise<void> {
     do {
-      if (this._timeToStop) {
+      if (this.timeToStop) {
         logger.error(this._logPrefix(connectorId) + ' Entered in transaction loop while a request to stop it was made');
         break;
       }
-      if (!this._chargingStation._isRegistered()) {
+      if (!this.chargingStation._isRegistered()) {
         logger.error(this._logPrefix(connectorId) + ' Entered in transaction loop while the charging station is not registered');
         break;
       }
-      if (!this._chargingStation._isChargingStationAvailable()) {
+      if (!this.chargingStation._isChargingStationAvailable()) {
         logger.info(this._logPrefix(connectorId) + ' Entered in transaction loop while the charging station is unavailable');
         await this.stop();
         break;
       }
-      if (!this._chargingStation._isConnectorAvailable(connectorId)) {
+      if (!this.chargingStation._isConnectorAvailable(connectorId)) {
         logger.info(`${this._logPrefix(connectorId)} Entered in transaction loop while the connector ${connectorId} is unavailable, stop it`);
         break;
       }
-      const wait = Utils.getRandomInt(this._chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
-        this._chargingStation.stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransactions) * 1000;
+      const wait = Utils.getRandomInt(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
+        this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransactions) * 1000;
       logger.info(this._logPrefix(connectorId) + ' wait for ' + Utils.milliSecondsToHHMMSS(wait));
       await Utils.sleep(wait);
       const start = Math.random();
       let skip = 0;
-      if (start < this._chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
+      if (start < this.chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
         skip = 0;
         // Start transaction
         let startResponse: StartTransactionResponse | AuthorizeResponse;
-        if (this._chargingStation.getEnableStatistics()) {
+        if (this.chargingStation.getEnableStatistics()) {
           const startTransaction = performance.timerify(this.startTransaction);
-          this._performanceObserver.observe({ entryTypes: ['function'] });
+          this.performanceObserver.observe({ entryTypes: ['function'] });
           startResponse = await startTransaction(connectorId, this);
         } else {
           startResponse = await this.startTransaction(connectorId, this);
@@ -102,16 +98,16 @@ export default class AutomaticTransactionGenerator {
           await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
         } else {
           // Wait until end of transaction
-          const waitTrxEnd = Utils.getRandomInt(this._chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
-            this._chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
-          logger.info(this._logPrefix(connectorId) + ' transaction ' + this._chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.milliSecondsToHHMMSS(waitTrxEnd));
+          const waitTrxEnd = Utils.getRandomInt(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
+            this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
+          logger.info(this._logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.milliSecondsToHHMMSS(waitTrxEnd));
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
-          if (this._chargingStation.getConnector(connectorId)?.transactionStarted) {
-            logger.info(this._logPrefix(connectorId) + ' stop transaction ' + this._chargingStation.getConnector(connectorId).transactionId.toString());
-            if (this._chargingStation.getEnableStatistics()) {
+          if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
+            logger.info(this._logPrefix(connectorId) + ' stop transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString());
+            if (this.chargingStation.getEnableStatistics()) {
               const stopTransaction = performance.timerify(this.stopTransaction);
-              this._performanceObserver.observe({ entryTypes: ['function'] });
+              this.performanceObserver.observe({ entryTypes: ['function'] });
               await stopTransaction(connectorId, this);
             } else {
               await this.stopTransaction(connectorId, this);
@@ -122,34 +118,34 @@ export default class AutomaticTransactionGenerator {
         skip++;
         logger.info(this._logPrefix(connectorId) + ' transaction skipped ' + skip.toString());
       }
-    } while (!this._timeToStop);
+    } while (!this.timeToStop);
     logger.info(this._logPrefix(connectorId) + ' ATG STOPPED on the connector');
   }
 
   // eslint-disable-next-line consistent-this
   private async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StartTransactionResponse | AuthorizeResponse> {
-    if (self._chargingStation.hasAuthorizedTags()) {
-      const tagId = self._chargingStation.getRandomTagId();
-      if (self._chargingStation.stationInfo.AutomaticTransactionGenerator.requireAuthorize) {
+    if (self.chargingStation.hasAuthorizedTags()) {
+      const tagId = self.chargingStation.getRandomTagId();
+      if (self.chargingStation.stationInfo.AutomaticTransactionGenerator.requireAuthorize) {
         // Authorize tagId
-        const authorizeResponse = await self._chargingStation.sendAuthorize(tagId);
+        const authorizeResponse = await self.chargingStation.sendAuthorize(tagId);
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
           // Start transaction
-          return await self._chargingStation.sendStartTransaction(connectorId, tagId);
+          return await self.chargingStation.sendStartTransaction(connectorId, tagId);
         }
         return authorizeResponse;
       }
       logger.info(self._logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
       // Start transaction
-      return await self._chargingStation.sendStartTransaction(connectorId, tagId);
+      return await self.chargingStation.sendStartTransaction(connectorId, tagId);
     }
     logger.info(self._logPrefix(connectorId) + ' start transaction without a tagID');
-    return await self._chargingStation.sendStartTransaction(connectorId);
+    return await self.chargingStation.sendStartTransaction(connectorId);
   }
 
   // eslint-disable-next-line consistent-this
   private async stopTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StopTransactionResponse> {
-    return await self._chargingStation.sendStopTransaction(self._chargingStation.getConnector(connectorId).transactionId);
+    return await self.chargingStation.sendStopTransaction(self.chargingStation.getConnector(connectorId).transactionId);
   }
 }
