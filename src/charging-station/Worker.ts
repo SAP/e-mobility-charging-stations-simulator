@@ -5,7 +5,6 @@ import WorkerData from '../types/WorkerData';
 import WorkerPool from './WorkerPool';
 
 export default class Wrk {
-  private static wrkInstances: Wrk[];
   private workerScript: string;
   private workerData: WorkerData;
   private worker: Worker;
@@ -22,10 +21,11 @@ export default class Wrk {
   constructor(workerScript: string, workerData: WorkerData, maxWorkerElements = 1) {
     this.workerData = workerData;
     this.workerScript = workerScript;
-    this.maxWorkerElements = maxWorkerElements;
-    this.numWorkerElements = 0;
     if (Configuration.useWorkerPool()) {
       WorkerPool.maxConcurrentWorkers = Configuration.getWorkerPoolMaxSize();
+    } else {
+      this.maxWorkerElements = maxWorkerElements;
+      this.numWorkerElements = 0;
     }
   }
 
