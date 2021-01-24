@@ -30,7 +30,6 @@ class Bootstrap {
               if (Configuration.useWorkerPool()) {
                 void workerImplementation.addElement(workerData);
                 numConcurrentWorkers = workerImplementation.size;
-                numStationsTotal = workerImplementation.size;
                 // Start worker sequentially to optimize memory at start time
                 await Utils.sleep(Constants.START_WORKER_DELAY);
               } else {
@@ -41,16 +40,15 @@ class Bootstrap {
                   void workerImplementation.start();
                   numConcurrentWorkers++;
                   chargingStationsPerWorkerCounter = 1;
-                  numStationsTotal++;
                   // Start worker sequentially to optimize memory at start time
                   await Utils.sleep(Constants.START_WORKER_DELAY);
                 } else {
                   // Add charging station to existing WorkerGroup
                   void workerImplementation.addElement(workerData);
                   chargingStationsPerWorkerCounter++;
-                  numStationsTotal++;
                 }
               }
+              numStationsTotal++;
             }
           } catch (error) {
             // eslint-disable-next-line no-console
