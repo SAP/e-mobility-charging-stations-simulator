@@ -1,5 +1,7 @@
 import Configuration from '../utils/Configuration';
+import Constants from '../utils/Constants';
 import Pool from 'worker-threads-pool';
+import Utils from '../utils/Utils';
 import WorkerData from '../types/WorkerData';
 import Wrk from './Worker';
 
@@ -20,16 +22,21 @@ export default class WorkerPool extends Wrk {
     return this.pool.size;
   }
 
+  get maxElementsPerWorker(): number {
+    return 1;
+  }
+
   /**
    *
    * @return {Promise<void>}
    * @public
    */
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async start(): Promise<void> { }
 
   /**
    *
-   * @return {Promise}
+   * @return {Promise<void>}
    * @public
    */
   public async addElement(elementData: WorkerData): Promise<void> {
@@ -41,6 +48,8 @@ export default class WorkerPool extends Wrk {
         worker.once('message', resolve);
         worker.once('error', reject);
       });
+      // Start worker sequentially to optimize memory at startup
+      void Utils.sleep(Constants.START_WORKER_DELAY);
     });
   }
 }

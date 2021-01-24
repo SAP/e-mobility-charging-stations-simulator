@@ -3,6 +3,7 @@ import WorkerData from '../types/WorkerData';
 export default abstract class Wrk {
   protected workerScript: string;
   public abstract size: number;
+  public abstract maxElementsPerWorker: number;
 
   /**
    * Create a new `Wrk`.
@@ -14,5 +15,5 @@ export default abstract class Wrk {
   }
 
   public abstract start(): Promise<void>;
-  public abstract addElement(elementData: WorkerData): void;
+  public abstract addElement(elementData: WorkerData): Promise<void>;
 }

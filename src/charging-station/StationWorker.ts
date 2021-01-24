@@ -2,12 +2,14 @@ import { isMainThread, parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
+import Utils from '../utils/Utils';
 
 if (!isMainThread) {
-  startChargingStation({ index: workerData.index as number, templateFile: workerData.templateFile as string });
-
-  // Listener: start new charging station from main thread
+  // Add listener to start charging station from main thread
   addListener();
+  if (!Utils.isUndefined(workerData)) {
+    startChargingStation({ index: workerData.index as number, templateFile: workerData.templateFile as string });
+  }
 }
 
 function addListener() {
