@@ -2,8 +2,8 @@ import Configuration from './utils/Configuration';
 import Constants from './utils/Constants';
 import Utils from './utils/Utils';
 import WorkerData from './types/WorkerData';
-import WorkerGroup from './charging-station/WorkerGroup';
-import WorkerPool from './charging-station/WorkerPool';
+import WorkerGroup from './worker/WorkerGroup';
+import WorkerPool from './worker/WorkerPool';
 
 class Bootstrap {
   static async start() {
@@ -61,9 +61,9 @@ class Bootstrap {
       if (numStationsTotal === 0) {
         console.log('No charging station template enabled in configuration, exiting');
       } else if (Configuration.useWorkerPool()) {
-        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + '/' + Configuration.getWorkerPoolMaxSize().toString() + ' worker(s) concurrently running');
+        console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${numConcurrentWorkers.toString()}/${Configuration.getWorkerPoolMaxSize().toString()} worker(s) concurrently running`);
       } else {
-        console.log('Charging station simulator started with ' + numStationsTotal.toString() + ' charging station(s) and ' + numConcurrentWorkers.toString() + ' worker(s) concurrently running');
+        console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${numConcurrentWorkers.toString()} worker(s) concurrently running (${chargingStationsPerWorker} charging station(s) per worker)`);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
