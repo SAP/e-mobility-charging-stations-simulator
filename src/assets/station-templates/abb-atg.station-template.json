@@ -1,7 +1,7 @@
 {
   "authorizationFile": "./src/assets/authorization-tags.json",
   "baseName": "CS-ABB",
-  "nameSuffix": "Roaming",
+  "nameSuffix": "-Roaming",
   "chargePointModel": "MD_TERRA_53",
   "chargePointVendor": "ABB",
   "firmwareVersion": "4.0.4.22",

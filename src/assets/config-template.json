@@ -4,9 +4,9 @@
   ],
   "distributeStationsToTenantsEqually": true,
   "statisticsDisplayInterval": 60,
+  "chargingStationsPerWorker": 1,
   "useWorkerPool": false,
   "workerPoolMaxSize": 16,
-  "chargingStationsPerWorker": 1,
   "stationTemplateURLs": [
     {
       "file": "./src/assets/station-templates/siemens.station-template.json",

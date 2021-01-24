@@ -141,6 +141,9 @@ export default class ChargingStation {
         if (Utils.convertToInt(lastConnector) === 0 && this._getUseConnectorId0() && this.stationInfo.Connectors[lastConnector]) {
           this.connectors[lastConnector] = Utils.cloneObject<Connector>(this.stationInfo.Connectors[lastConnector]);
           this.connectors[lastConnector].availability = AvailabilityType.OPERATIVE;
+          if (Utils.isUndefined(this.connectors[lastConnector]?.chargingProfiles)) {
+            this.connectors[lastConnector].chargingProfiles = [];
+          }
         }
       }
       // Generate all connectors
@@ -149,6 +152,9 @@ export default class ChargingStation {
           const randConnectorID = this.stationInfo.randomConnectors ? Utils.getRandomInt(Utils.convertToInt(lastConnector), 1) : index;
           this.connectors[index] = Utils.cloneObject<Connector>(this.stationInfo.Connectors[randConnectorID]);
           this.connectors[index].availability = AvailabilityType.OPERATIVE;
+          if (Utils.isUndefined(this.connectors[lastConnector]?.chargingProfiles)) {
+            this.connectors[index].chargingProfiles = [];
+          }
         }
       }
     }
@@ -167,8 +173,7 @@ export default class ChargingStation {
     }
     this.stationInfo.powerDivider = this._getPowerDivider();
     if (this.getEnableStatistics()) {
-      this.statistics = Statistics.getInstance();
-      this.statistics.objName = this.stationInfo.chargingStationId;
+      this.statistics = new Statistics(this.stationInfo.chargingStationId);
       this.performanceObserver = new PerformanceObserver((list) => {
         const entry = list.getEntries()[0];
         this.statistics.logPerformance(entry, Constants.ENTITY_CHARGING_STATION);
@@ -1055,6 +1060,10 @@ export default class ChargingStation {
 
   handleResponseHeartbeat(payload: HeartbeatResponse, requestPayload: HeartbeatRequest): void {
     logger.debug(this._logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
+  }
+
+  handleResponseAuthorize(payload: AuthorizeResponse, requestPayload: AuthorizeRequest): void {
+    logger.debug(this._logPrefix() + ' Authorize response received: %j to Authorize request: %j', payload, requestPayload);
   }
 
   async handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {

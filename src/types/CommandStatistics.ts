@@ -23,5 +23,6 @@ export interface CommandStatisticsData {
 }
 
 export default interface CommandStatistics {
-  [command: string]: CommandStatisticsData;
+  id: string;
+  commandsStatisticsData: Record<string, CommandStatisticsData>;
 }
