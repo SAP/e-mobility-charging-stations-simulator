@@ -36,6 +36,7 @@
     "build:clean": "rimraf ./dist",
     "lint": "cross-env TIMING=1 eslint --ext .js,.ts src",
     "lint:fix": "cross-env TIMING=1 eslint --fix --ext .js,.ts src",
+    "import-sort": "npx import-sort-cli --write 'src/**/*.ts{,x}'",
     "tsc": "tsc",
     "test": "echo \"Error: no tests implemented\" && exit 1",
     "clinic:clean": "clinic clean",

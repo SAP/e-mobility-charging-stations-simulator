@@ -1,5 +1,5 @@
 import Configuration from './utils/Configuration';
-import WorkerData from './types/WorkerData';
+import { WorkerData } from './types/Worker';
 import WorkerFactory from './worker/WorkerFactory';
 import Wrk from './worker/Wrk';
 

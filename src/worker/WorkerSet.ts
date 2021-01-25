@@ -1,14 +1,13 @@
+import { WorkerData, WorkerEvents, WorkerSetElement } from '../types/Worker';
+
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
-import WorkerData from '../types/WorkerData';
-import { WorkerEvents } from '../types/WorkerEvents';
 import Wrk from './Wrk';
 
 export default class WorkerSet extends Wrk {
   public maxElementsPerWorker: number;
-  private workers: Set<Worker>;
-  private lastWorkerNumberOfElements: number;
+  private workers: Set<WorkerSetElement>;
 
   /**
    * Create a new `WorkerSet`.
@@ -18,9 +17,8 @@ export default class WorkerSet extends Wrk {
    */
   constructor(workerScript: string, maxElementsPerWorker = 1) {
     super(workerScript);
-    this.workers = new Set<Worker>();
+    this.workers = new Set<WorkerSetElement>();
     this.maxElementsPerWorker = maxElementsPerWorker;
-    this.lastWorkerNumberOfElements = 0;
   }
 
   get size(): number {
@@ -36,14 +34,13 @@ export default class WorkerSet extends Wrk {
     if (!this.workers) {
       throw Error('Cannot add a WorkerSet element: workers set does not exist');
     }
-    if (this.lastWorkerNumberOfElements >= this.maxElementsPerWorker) {
+    if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
       void this.startWorker();
-      this.lastWorkerNumberOfElements = 0;
       // Start worker sequentially to optimize memory at startup
       void Utils.sleep(Constants.START_WORKER_DELAY);
     }
     this.getLastWorker().postMessage({ id: WorkerEvents.START_WORKER_ELEMENT, workerData: elementData });
-    this.lastWorkerNumberOfElements++;
+    this.getLastWorkerSetElement().numberOfWorkerElements++;
   }
 
   /**
@@ -72,14 +69,18 @@ export default class WorkerSet extends Wrk {
           reject(new Error(`Worker stopped with exit code ${code}`));
         }
       });
-      this.workers.add(worker);
+      this.workers.add({ worker, numberOfWorkerElements: 0 });
     });
   }
 
-  private getLastWorker(): Worker {
-    let worker: Worker;
+  private getLastWorkerSetElement(): WorkerSetElement {
+    let workerSetElement: WorkerSetElement;
     // eslint-disable-next-line no-empty
-    for (worker of this.workers) { }
-    return worker;
+    for (workerSetElement of this.workers) { }
+    return workerSetElement;
+  }
+
+  private getLastWorker(): Worker {
+    return this.getLastWorkerSetElement().worker;
   }
 }

@@ -1,4 +1,4 @@
-import WorkerData from '../types/WorkerData';
+import { WorkerData } from '../types/Worker';
 
 export default abstract class Wrk {
   protected workerScript: string;

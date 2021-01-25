@@ -2,7 +2,7 @@ import { isMainThread, parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
 import Utils from '../utils/Utils';
-import { WorkerEvents } from '../types/WorkerEvents';
+import { WorkerEvents } from '../types/Worker';
 
 if (!isMainThread) {
   // Add listener to start charging station from main thread
