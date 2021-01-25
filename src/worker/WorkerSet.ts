@@ -1,8 +1,8 @@
-import { Worker, threadId } from 'worker_threads';
 import { WorkerData, WorkerEvents, WorkerSetElement } from '../types/Worker';
 
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
+import { Worker } from 'worker_threads';
 import Wrk from './Wrk';
 
 export default class WorkerSet extends Wrk {
@@ -65,8 +65,9 @@ export default class WorkerSet extends Wrk {
     worker.on('error', () => { });
     worker.on('exit', (code) => {
       if (code !== 0) {
-        console.error(`Worker ${threadId} stopped with exit code ${code}`);
+        console.error(`Worker stopped with exit code ${code}`);
       }
+      // FIXME: remove matching worker set element
     });
     this.workers.add({ worker, numberOfWorkerElements: 0 });
   }
@@ -80,5 +81,15 @@ export default class WorkerSet extends Wrk {
 
   private getLastWorker(): Worker {
     return this.getLastWorkerSetElement().worker;
+  }
+
+  private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement {
+    let workerSetElt: WorkerSetElement;
+    this.workers.forEach((workerSetElement) => {
+      if (JSON.stringify(workerSetElement.worker) === JSON.stringify(worker)) {
+        workerSetElt = workerSetElement;
+      }
+    });
+    return workerSetElt;
   }
 }

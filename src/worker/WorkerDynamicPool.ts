@@ -4,7 +4,6 @@ import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { WorkerData } from '../types/Worker';
 import Wrk from './Wrk';
-import { threadId } from 'worker_threads';
 
 export default class WorkerDynamicPool extends Wrk {
   private pool: DynamicPool;
@@ -60,7 +59,7 @@ class DynamicPool extends DynamicThreadPool<WorkerData> {
         {
           exitHandler: (code) => {
             if (code !== 0) {
-              console.error(`Worker ${threadId} stopped with exit code ${code}`);
+              console.error(`Worker stopped with exit code ${code}`);
             }
           }
         }
