@@ -2,6 +2,7 @@ import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerData from '../types/WorkerData';
+import { WorkerEvents } from '../types/WorkerEvents';
 import Wrk from './Wrk';
 
 export default class WorkerSet extends Wrk {
@@ -41,7 +42,7 @@ export default class WorkerSet extends Wrk {
       // Start worker sequentially to optimize memory at startup
       void Utils.sleep(Constants.START_WORKER_DELAY);
     }
-    this.getLastWorker().postMessage({ id: Constants.START_WORKER_ELEMENT, workerData: elementData });
+    this.getLastWorker().postMessage({ id: WorkerEvents.START_WORKER_ELEMENT, workerData: elementData });
     this.lastWorkerNumberOfElements++;
   }
 

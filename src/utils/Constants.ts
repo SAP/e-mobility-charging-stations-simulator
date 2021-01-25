@@ -36,5 +36,4 @@ export default class Constants {
   static readonly TRANSACTION_DEFAULT_TAGID = '00000000';
 
   static readonly START_WORKER_DELAY = 500;
-  static readonly START_WORKER_ELEMENT = 'startWorkerElement';
 }

@@ -1,8 +1,8 @@
 import { isMainThread, parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
-import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
+import { WorkerEvents } from '../types/WorkerEvents';
 
 if (!isMainThread) {
   // Add listener to start charging station from main thread
@@ -13,9 +13,9 @@ if (!isMainThread) {
 }
 
 function addListener() {
-  parentPort.on('message', (e) => {
-    if (e.id === Constants.START_WORKER_ELEMENT) {
-      startChargingStation(e.workerData);
+  parentPort.on('message', (message) => {
+    if (message.id === WorkerEvents.START_WORKER_ELEMENT) {
+      startChargingStation(message.workerData);
     }
   });
 }
