@@ -1,6 +1,7 @@
+import { ChargingProfile, ChargingProfilePurposeType } from './ChargingProfile';
+
 import { ChargePointErrorCode } from './ChargePointErrorCode';
 import { ChargePointStatus } from './ChargePointStatus';
-import { ChargingProfile } from './ChargingProfile';
 import { StandardParametersKey } from './Configuration';
 
 export enum RequestCommand {
@@ -22,6 +23,7 @@ export enum IncomingRequestCommand {
   GET_CONFIGURATION = 'GetConfiguration',
   CHANGE_CONFIGURATION = 'ChangeConfiguration',
   SET_CHARGING_PROFILE = 'SetChargingProfile',
+  CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
   REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction'
 }
@@ -96,4 +98,11 @@ export enum AvailabilityType {
 export interface ChangeAvailabilityRequest {
   connectorId: number;
   type: AvailabilityType;
+}
+
+export interface ClearChargingProfileRequest {
+  id?: number;
+  connectorId?: number;
+  chargingProfilePurpose?: ChargingProfilePurposeType;
+  stackLevel?: number;
 }

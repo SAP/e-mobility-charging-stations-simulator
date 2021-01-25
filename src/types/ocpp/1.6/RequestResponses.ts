@@ -73,3 +73,12 @@ export enum AvailabilityStatus {
 export interface ChangeAvailabilityResponse {
   status: AvailabilityStatus;
 }
+
+export enum ClearChargingProfileStatus {
+  ACCEPTED = 'Accepted',
+  UNKNOWN = 'Unknown'
+}
+
+export interface ClearChargingProfileResponse {
+  status: ClearChargingProfileStatus;
+}

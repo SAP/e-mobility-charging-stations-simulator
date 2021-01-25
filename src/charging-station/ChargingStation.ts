@@ -1,6 +1,6 @@
 import { AuthorizationStatus, AuthorizeRequest, AuthorizeResponse, StartTransactionRequest, StartTransactionResponse, StopTransactionReason, StopTransactionRequest, StopTransactionResponse } from '../types/ocpp/1.6/Transaction';
-import { AvailabilityType, BootNotificationRequest, ChangeAvailabilityRequest, ChangeConfigurationRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
-import { BootNotificationResponse, ChangeAvailabilityResponse, ChangeConfigurationResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
+import { AvailabilityType, BootNotificationRequest, ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingProfileRequest, GetConfigurationRequest, HeartbeatRequest, IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, RequestCommand, ResetRequest, SetChargingProfileRequest, StatusNotificationRequest, UnlockConnectorRequest } from '../types/ocpp/1.6/Requests';
+import { BootNotificationResponse, ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, DefaultResponse, GetConfigurationResponse, HeartbeatResponse, RegistrationStatus, SetChargingProfileResponse, StatusNotificationResponse, UnlockConnectorResponse } from '../types/ocpp/1.6/RequestResponses';
 import { ChargingProfile, ChargingProfilePurposeType } from '../types/ocpp/1.6/ChargingProfile';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { PowerOutType, VoltageOut } from '../types/ChargingStationTemplate';
@@ -1239,23 +1239,74 @@ export default class ChargingStation {
     }
   }
 
+  _setChargingProfile(connectorId: number, cp: ChargingProfile): boolean {
+    if (!Utils.isEmptyArray(this.getConnector(connectorId).chargingProfiles)) {
+      this.getConnector(connectorId).chargingProfiles.forEach((chargingProfile: ChargingProfile, index: number) => {
+        if (chargingProfile.chargingProfileId === cp.chargingProfileId
+          || (chargingProfile.stackLevel === cp.stackLevel && chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)) {
+          this.getConnector(connectorId).chargingProfiles[index] = cp;
+          return true;
+        }
+      });
+    }
+    this.getConnector(connectorId).chargingProfiles.push(cp);
+    return true;
+  }
+
   handleRequestSetChargingProfile(commandPayload: SetChargingProfileRequest): SetChargingProfileResponse {
     if (!this.getConnector(commandPayload.connectorId)) {
       logger.error(`${this._logPrefix()} Trying to set a charging profile to a non existing connector Id ${commandPayload.connectorId}`);
-      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
+      return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
-    if (commandPayload.csChargingProfiles.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE && !this.getConnector(commandPayload.connectorId)?.transactionStarted) {
-      return Constants.OCPP_CHARGING_PROFILE_RESPONSE_REJECTED;
+    if (commandPayload.csChargingProfiles.chargingProfilePurpose === ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE && commandPayload.connectorId !== 0) {
+      return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
-    this.getConnector(commandPayload.connectorId).chargingProfiles.forEach((chargingProfile: ChargingProfile, index: number) => {
-      if (chargingProfile.chargingProfileId === commandPayload.csChargingProfiles.chargingProfileId
-        || (chargingProfile.stackLevel === commandPayload.csChargingProfiles.stackLevel && chargingProfile.chargingProfilePurpose === commandPayload.csChargingProfiles.chargingProfilePurpose)) {
-        this.getConnector(commandPayload.connectorId).chargingProfiles[index] = chargingProfile;
-        return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+    if (commandPayload.csChargingProfiles.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE && (commandPayload.connectorId === 0 || !this.getConnector(commandPayload.connectorId)?.transactionStarted)) {
+      return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
+    }
+    this._setChargingProfile(commandPayload.connectorId, commandPayload.csChargingProfiles);
+    return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+  }
+
+  handleRequestClearChargingProfile(commandPayload: ClearChargingProfileRequest): ClearChargingProfileResponse {
+    if (!this.getConnector(commandPayload.connectorId)) {
+      logger.error(`${this._logPrefix()} Trying to clear a charging profile to a non existing connector Id ${commandPayload.connectorId}`);
+      return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
+    }
+    if (commandPayload.connectorId && !Utils.isEmptyArray(this.getConnector(commandPayload.connectorId).chargingProfiles)) {
+      this.getConnector(commandPayload.connectorId).chargingProfiles = [];
+      return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+    }
+    if (!commandPayload.connectorId) {
+      let clearedCP = false;
+      for (const connector in this.connectors) {
+        if (!Utils.isEmptyArray(this.getConnector(Utils.convertToInt(connector)).chargingProfiles)) {
+          this.getConnector(Utils.convertToInt(connector)).chargingProfiles.forEach((chargingProfile: ChargingProfile, index: number) => {
+            let clearCurrentCP = false;
+            if (chargingProfile.chargingProfileId === commandPayload.id) {
+              clearCurrentCP = true;
+            }
+            if (!commandPayload.chargingProfilePurpose && chargingProfile.stackLevel === commandPayload.stackLevel) {
+              clearCurrentCP = true;
+            }
+            if (!chargingProfile.stackLevel && chargingProfile.chargingProfilePurpose === commandPayload.chargingProfilePurpose) {
+              clearCurrentCP = true;
+            }
+            if (chargingProfile.stackLevel === commandPayload.stackLevel && chargingProfile.chargingProfilePurpose === commandPayload.chargingProfilePurpose) {
+              clearCurrentCP = true;
+            }
+            if (clearCurrentCP) {
+              this.getConnector(commandPayload.connectorId).chargingProfiles[index] = {} as ChargingProfile;
+              clearedCP = true;
+            }
+          });
+        }
       }
-    });
-    this.getConnector(commandPayload.connectorId).chargingProfiles.push(commandPayload.csChargingProfiles);
-    return Constants.OCPP_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+      if (clearedCP) {
+        return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+      }
+    }
+    return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
   }
 
   handleRequestChangeAvailability(commandPayload: ChangeAvailabilityRequest): ChangeAvailabilityResponse {
@@ -1294,6 +1345,11 @@ export default class ChargingStation {
         // Check if authorized
         if (this.authorizedTags.find((value) => value === commandPayload.idTag)) {
           await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
+          if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
+            this._setChargingProfile(transactionConnectorID, commandPayload.chargingProfile);
+          } else {
+            return Constants.OCPP_RESPONSE_REJECTED;
+          }
           // Authorization successful start transaction
           await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
           logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this.stationInfo.chargingStationId + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
@@ -1303,6 +1359,11 @@ export default class ChargingStation {
         return Constants.OCPP_RESPONSE_REJECTED;
       }
       await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
+      if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
+        this._setChargingProfile(transactionConnectorID, commandPayload.chargingProfile);
+      } else {
+        return Constants.OCPP_RESPONSE_REJECTED;
+      }
       // No local authorization check required => start transaction
       await this.sendStartTransaction(transactionConnectorID, commandPayload.idTag);
       logger.debug(this._logPrefix() + ' Transaction remotely STARTED on ' + this.stationInfo.chargingStationId + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
