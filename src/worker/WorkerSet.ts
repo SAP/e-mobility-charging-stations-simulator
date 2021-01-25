@@ -2,7 +2,7 @@ import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerData from '../types/WorkerData';
-import Wrk from './Worker';
+import Wrk from './Wrk';
 
 export default class WorkerSet extends Wrk {
   public maxElementsPerWorker: number;

@@ -1,7 +1,7 @@
 import Configuration from './utils/Configuration';
 import WorkerData from './types/WorkerData';
 import WorkerFactory from './worker/WorkerFactory';
-import Wrk from './worker/Worker';
+import Wrk from './worker/Wrk';
 
 class Bootstrap {
   static start() {

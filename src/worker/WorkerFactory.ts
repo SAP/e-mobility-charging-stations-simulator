@@ -1,7 +1,7 @@
 import Configuration from '../utils/Configuration';
 import WorkerPool from './WorkerPool';
 import WorkerSet from './WorkerSet';
-import Wrk from './Worker';
+import Wrk from './Wrk';
 
 export default class WorkerFactory {
   public static getWorkerImpl(workerScript: string): Wrk {

@@ -3,7 +3,7 @@ import Constants from '../utils/Constants';
 import Pool from 'worker-threads-pool';
 import Utils from '../utils/Utils';
 import WorkerData from '../types/WorkerData';
-import Wrk from './Worker';
+import Wrk from './Wrk';
 
 export default class WorkerPool extends Wrk {
   private pool: Pool;
