@@ -1,4 +1,4 @@
-import { WorkerData, WorkerEvents } from '../types/Worker';
+import { StationWorkerData, WorkerEvents } from '../types/Worker';
 import { isMainThread, parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
@@ -22,7 +22,7 @@ function addListener() {
   });
 }
 
-function startChargingStation(data: WorkerData) {
+function startChargingStation(data: StationWorkerData) {
   const station = new ChargingStation(data.index , data.templateFile);
   station.start();
 }

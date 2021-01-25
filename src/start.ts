@@ -1,6 +1,6 @@
 import Configuration from './utils/Configuration';
+import { StationWorkerData } from './types/Worker';
 import Utils from './utils/Utils';
-import { WorkerData } from './types/Worker';
 import WorkerFactory from './worker/WorkerFactory';
 import Wrk from './worker/Wrk';
 
@@ -16,7 +16,7 @@ class Bootstrap {
           try {
             const nbStations = stationURL.numberOfStations ? stationURL.numberOfStations : 0;
             for (let index = 1; index <= nbStations; index++) {
-              const workerData: WorkerData = {
+              const workerData: StationWorkerData = {
                 index,
                 templateFile: stationURL.file
               };

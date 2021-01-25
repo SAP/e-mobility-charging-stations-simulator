@@ -6,8 +6,9 @@ export enum WorkerProcessType {
   STATIC_POOL = 'staticPool'
 }
 
-// FIXME: make it more generic
-export interface WorkerData {
+export interface WorkerData { }
+
+export interface StationWorkerData extends WorkerData {
   index: number;
   templateFile: string;
 }
