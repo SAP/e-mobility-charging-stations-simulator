@@ -215,4 +215,8 @@ export default class Utils {
   static workerPoolInUse(): boolean {
     return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL || Configuration.getWorkerProcess() === WorkerProcessType.STATIC_POOL;
   }
+
+  static workerDynamicPoolInUse(): boolean {
+    return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL;
+  }
 }
