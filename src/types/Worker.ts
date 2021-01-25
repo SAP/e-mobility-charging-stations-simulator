@@ -1,5 +1,11 @@
 import { Worker } from 'worker_threads';
 
+export enum WorkerProcessType {
+  WORKER_SET = 'workerSet',
+  DYNAMIC_POOL = 'dynamicPool',
+  STATIC_POOL = 'staticPool'
+}
+
 // FIXME: make it more generic
 export interface WorkerData {
   index: number;

@@ -4,8 +4,9 @@
   ],
   "distributeStationsToTenantsEqually": true,
   "statisticsDisplayInterval": 60,
-  "useWorkerPool": false,
-  "workerMaxPoolSize": 16,
+  "workerProcess": "workerSet",
+  "workerPoolMinSize": 4,
+  "workerPoolMaxSize": 16,
   "chargingStationsPerWorker": 1,
   "stationTemplateURLs": [
     {

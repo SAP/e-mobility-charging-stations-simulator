@@ -1,3 +1,5 @@
+import { WorkerProcessType } from './Worker';
+
 export interface StationTemplateURL {
   file: string;
   numberOfStations: number;
@@ -10,7 +12,8 @@ export default interface ConfigurationData {
   connectionTimeout?: number;
   autoReconnectMaxRetries?: number;
   distributeStationsToTenantsEqually?: boolean;
-  useWorkerPool?: boolean;
+  workerProcess?: WorkerProcessType;
+  workerPoolMinSize?: number;
   workerPoolMaxSize?: number;
   chargingStationsPerWorker?: number;
   logFormat?: string;

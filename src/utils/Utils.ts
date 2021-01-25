@@ -1,4 +1,6 @@
+import Configuration from './Configuration';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
+import { WorkerProcessType } from '../types/Worker';
 import { v4 as uuid } from 'uuid';
 
 export default class Utils {
@@ -208,5 +210,9 @@ export default class Utils {
       return WebSocketCloseEventStatusString[code] as string;
     }
     return '(Unknown)';
+  }
+
+  static workerPoolInUse(): boolean {
+    return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL || Configuration.getWorkerProcess() === WorkerProcessType.STATIC_POOL;
   }
 }

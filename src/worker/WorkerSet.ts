@@ -1,8 +1,8 @@
+import { Worker, threadId } from 'worker_threads';
 import { WorkerData, WorkerEvents, WorkerSetElement } from '../types/Worker';
 
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
-import { Worker } from 'worker_threads';
 import Wrk from './Wrk';
 
 export default class WorkerSet extends Wrk {
@@ -32,12 +32,12 @@ export default class WorkerSet extends Wrk {
    */
   public async addElement(elementData: WorkerData): Promise<void> {
     if (!this.workers) {
-      throw Error('Cannot add a WorkerSet element: workers set does not exist');
+      throw Error('Cannot add a WorkerSet element: workers\' set does not exist');
     }
     if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
-      void this.startWorker();
+      this.startWorker();
       // Start worker sequentially to optimize memory at startup
-      void Utils.sleep(Constants.START_WORKER_DELAY);
+      await Utils.sleep(Constants.START_WORKER_DELAY);
     }
     this.getLastWorker().postMessage({ id: WorkerEvents.START_WORKER_ELEMENT, workerData: elementData });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
@@ -49,7 +49,7 @@ export default class WorkerSet extends Wrk {
    * @public
    */
   public async start(): Promise<void> {
-    await this.startWorker();
+    this.startWorker();
     // Start worker sequentially to optimize memory at startup
     await Utils.sleep(Constants.START_WORKER_DELAY);
   }
@@ -59,18 +59,16 @@ export default class WorkerSet extends Wrk {
    * @return {Promise}
    * @private
    */
-  private async startWorker() {
-    return new Promise((resolve, reject) => {
-      const worker = new Worker(this.workerScript);
-      worker.on('message', resolve);
-      worker.on('error', reject);
-      worker.on('exit', (code) => {
-        if (code !== 0) {
-          reject(new Error(`Worker stopped with exit code ${code}`));
-        }
-      });
-      this.workers.add({ worker, numberOfWorkerElements: 0 });
+  private startWorker(): void {
+    const worker = new Worker(this.workerScript);
+    worker.on('message', () => { });
+    worker.on('error', () => { });
+    worker.on('exit', (code) => {
+      if (code !== 0) {
+        console.error(`Worker ${threadId} stopped with exit code ${code}`);
+      }
     });
+    this.workers.add({ worker, numberOfWorkerElements: 0 });
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {

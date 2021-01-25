@@ -38,4 +38,5 @@ export default class Constants {
   static readonly TRANSACTION_DEFAULT_TAGID = '00000000';
 
   static readonly START_WORKER_DELAY = 500;
+  static readonly WORKER_POOL_MAX_INACTIVE_TIME = 60000;
 }

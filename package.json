@@ -48,12 +48,12 @@
   },
   "dependencies": {
     "mongodb": "^3.6.3",
+    "poolifier": "^1.2.1",
     "source-map-support": "^0.5.19",
     "tslib": "^2.1.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
-    "worker-threads-pool": "^2.0.0",
     "ws": "^7.4.2"
   },
   "optionalDependencies": {
@@ -63,7 +63,6 @@
   "devDependencies": {
     "@types/node": "^14.14.22",
     "@types/uuid": "^8.3.0",
-    "@types/worker-threads-pool": "^2.0.0",
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.14.0",
     "@typescript-eslint/parser": "^4.14.0",

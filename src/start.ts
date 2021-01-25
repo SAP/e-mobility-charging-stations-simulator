@@ -1,14 +1,15 @@
 import Configuration from './utils/Configuration';
+import Utils from './utils/Utils';
 import { WorkerData } from './types/Worker';
 import WorkerFactory from './worker/WorkerFactory';
 import Wrk from './worker/Wrk';
 
 class Bootstrap {
-  static start() {
+  static async start() {
     try {
       let numStationsTotal = 0;
       const workerImplementation: Wrk = WorkerFactory.getWorkerImpl('./dist/charging-station/StationWorker.js');
-      void workerImplementation.start();
+      await workerImplementation.start();
       // Start ChargingStation object in worker thread
       if (Configuration.getStationTemplateURLs()) {
         for (const stationURL of Configuration.getStationTemplateURLs()) {
@@ -19,7 +20,7 @@ class Bootstrap {
                 index,
                 templateFile: stationURL.file
               };
-              void workerImplementation.addElement(workerData);
+              await workerImplementation.addElement(workerData);
               numStationsTotal++;
             }
           } catch (error) {
@@ -33,7 +34,7 @@ class Bootstrap {
       if (numStationsTotal === 0) {
         console.log('No charging station template enabled in configuration, exiting');
       } else {
-        console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${workerImplementation.size}${Configuration.useWorkerPool() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running (${workerImplementation.maxElementsPerWorker} charging station(s) per worker)`);
+        console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running (${workerImplementation.maxElementsPerWorker} charging station(s) per worker)`);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -42,4 +43,8 @@ class Bootstrap {
   }
 }
 
-Bootstrap.start();
+Bootstrap.start().catch(
+  (error) => {
+    console.error(error);
+  }
+);

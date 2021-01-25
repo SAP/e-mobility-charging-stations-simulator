@@ -1,8 +1,10 @@
+import { WorkerData, WorkerEvents } from '../types/Worker';
 import { isMainThread, parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
+import Constants from '../utils/Constants';
+import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
-import { WorkerEvents } from '../types/Worker';
 
 if (!isMainThread) {
   // Add listener to start charging station from main thread
@@ -20,7 +22,9 @@ function addListener() {
   });
 }
 
-function startChargingStation(data: any) {
-  const station = new ChargingStation(data.index as number, data.templateFile as string);
+function startChargingStation(data: WorkerData) {
+  const station = new ChargingStation(data.index , data.templateFile);
   station.start();
 }
+
+export default new ThreadWorker(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });

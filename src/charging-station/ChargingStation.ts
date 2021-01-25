@@ -1347,7 +1347,7 @@ export default class ChargingStation {
           await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
           if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
             this._setChargingProfile(transactionConnectorID, commandPayload.chargingProfile);
-          } else {
+          } else if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE) {
             return Constants.OCPP_RESPONSE_REJECTED;
           }
           // Authorization successful start transaction
@@ -1361,7 +1361,7 @@ export default class ChargingStation {
       await this.sendStatusNotification(transactionConnectorID, ChargePointStatus.PREPARING);
       if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
         this._setChargingProfile(transactionConnectorID, commandPayload.chargingProfile);
-      } else {
+      } else if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE) {
         return Constants.OCPP_RESPONSE_REJECTED;
       }
       // No local authorization check required => start transaction

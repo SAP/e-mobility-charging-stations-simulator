@@ -1,5 +1,6 @@
 import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
 
+import { WorkerProcessType } from '../types/Worker';
 import fs from 'fs';
 
 export default class Configuration {
@@ -37,13 +38,18 @@ export default class Configuration {
     return Configuration.getConfig().stationTemplateURLs;
   }
 
-  static useWorkerPool(): boolean {
-    return Configuration.getConfig().useWorkerPool;
+  static getWorkerProcess(): WorkerProcessType {
+    Configuration.deprecateConfigurationKey('useWorkerPool;', 'Use \'workerProcess\' to define the type of worker process to use instead');
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess') ? Configuration.getConfig().workerProcess : WorkerProcessType.WORKER_SET;
+  }
+
+  static getWorkerPoolMinSize(): number {
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMinSize') ? Configuration.getConfig().workerPoolMinSize : 4;
   }
 
   static getWorkerPoolMaxSize(): number {
     Configuration.deprecateConfigurationKey('workerPoolSize;', 'Use \'workerPoolMaxSize\' instead');
-    return Configuration.useWorkerPool() && Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize') ? Configuration.getConfig().workerPoolMaxSize : 16;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize') ? Configuration.getConfig().workerPoolMaxSize : 16;
   }
 
   static getChargingStationsPerWorker(): number {
