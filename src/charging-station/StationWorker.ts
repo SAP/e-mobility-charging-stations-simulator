@@ -6,6 +6,12 @@ import Constants from '../utils/Constants';
 import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
 
+// Conditionally export ThreadWorker instance for pool usage
+export let threadWorker;
+if (Utils.workerPoolInUse()) {
+  threadWorker = new ThreadWorker(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
+}
+
 if (!isMainThread) {
   // Add listener to start charging station from main thread
   addListener();
@@ -26,5 +32,3 @@ function startChargingStation(data: StationWorkerData) {
   const station = new ChargingStation(data.index , data.templateFile);
   station.start();
 }
-
-export default new ThreadWorker(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });

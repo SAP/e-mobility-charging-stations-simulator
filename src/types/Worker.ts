@@ -6,6 +6,12 @@ export enum WorkerProcessType {
   STATIC_POOL = 'staticPool'
 }
 
+export interface WorkerOptions {
+  poolMaxSize?: number;
+  poolMinSize?: number;
+  elementsPerWorker?: number;
+}
+
 export interface WorkerData { }
 
 export interface StationWorkerData extends WorkerData {

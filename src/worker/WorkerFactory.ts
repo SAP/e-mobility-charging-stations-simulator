@@ -1,19 +1,35 @@
-import Configuration from '../utils/Configuration';
+import { WorkerOptions, WorkerProcessType } from '../types/Worker';
+
+import Utils from '../utils/Utils';
 import WorkerDynamicPool from './WorkerDynamicPool';
-import { WorkerProcessType } from '../types/Worker';
 import WorkerSet from './WorkerSet';
 import WorkerStaticPool from './WorkerStaticPool';
 import Wrk from './Wrk';
 
 export default class WorkerFactory {
-  public static getWorkerImpl(workerScript: string): Wrk {
-    switch (Configuration.getWorkerProcess()) {
+  public static getWorkerImpl(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): Wrk {
+    if (Utils.isUndefined(options)) {
+      options = {} as WorkerOptions;
+    }
+    switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
-        return new WorkerSet(workerScript, Configuration.getChargingStationsPerWorker());
+        if (Utils.isUndefined(options.elementsPerWorker)) {
+          options.elementsPerWorker = 1;
+        }
+        return new WorkerSet(workerScript, options.elementsPerWorker);
       case WorkerProcessType.STATIC_POOL:
-        return new WorkerStaticPool(workerScript, Configuration.getWorkerPoolMaxSize());
+        if (Utils.isUndefined(options.poolMaxSize)) {
+          options.elementsPerWorker = 16;
+        }
+        return new WorkerStaticPool(workerScript, options.poolMaxSize);
       case WorkerProcessType.DYNAMIC_POOL:
-        return new WorkerDynamicPool(workerScript, Configuration.getWorkerPoolMinSize(), Configuration.getWorkerPoolMaxSize());
+        if (Utils.isUndefined(options.poolMinSize)) {
+          options.elementsPerWorker = 4;
+        }
+        if (Utils.isUndefined(options.poolMaxSize)) {
+          options.elementsPerWorker = 16;
+        }
+        return new WorkerDynamicPool(workerScript, options.poolMinSize, options.poolMaxSize);
       default:
         return null;
     }

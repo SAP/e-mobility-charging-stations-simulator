@@ -8,7 +8,11 @@ class Bootstrap {
   static async start() {
     try {
       let numStationsTotal = 0;
-      const workerImplementation: Wrk = WorkerFactory.getWorkerImpl('./dist/charging-station/StationWorker.js');
+      const workerImplementation: Wrk = WorkerFactory.getWorkerImpl('./dist/charging-station/StationWorker.js', Configuration.getWorkerProcess(), {
+        poolMaxSize: Configuration.getWorkerPoolMaxSize(),
+        poolMinSize: Configuration.getWorkerPoolMinSize(),
+        elementsPerWorker: Configuration.getChargingStationsPerWorker()
+      });
       await workerImplementation.start();
       // Start ChargingStation object in worker thread
       if (Configuration.getStationTemplateURLs()) {
