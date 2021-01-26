@@ -5,7 +5,7 @@ import Utils from '../utils/Utils';
 import { WorkerData } from '../types/Worker';
 import Wrk from './Wrk';
 
-export default class WorkerDynamicPool extends Wrk {
+export default class WorkerDynamicPool<T> extends Wrk {
   private pool: DynamicPool;
 
   /**
@@ -39,7 +39,7 @@ export default class WorkerDynamicPool extends Wrk {
    * @return {Promise<void>}
    * @public
    */
-  public async addElement(elementData: WorkerData): Promise<void> {
+  public async addElement(elementData: T): Promise<void> {
     await this.pool.execute(elementData);
     // Start worker sequentially to optimize memory at startup
     await Utils.sleep(Constants.START_WORKER_DELAY);

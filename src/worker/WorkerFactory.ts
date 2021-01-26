@@ -7,7 +7,7 @@ import WorkerStaticPool from './WorkerStaticPool';
 import Wrk from './Wrk';
 
 export default class WorkerFactory {
-  public static getWorkerImpl(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): Wrk {
+  public static getWorkerImpl<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): Wrk {
     if (Utils.isUndefined(options)) {
       options = {} as WorkerOptions;
     }
@@ -16,12 +16,12 @@ export default class WorkerFactory {
         if (Utils.isUndefined(options.elementsPerWorker)) {
           options.elementsPerWorker = 1;
         }
-        return new WorkerSet(workerScript, options.elementsPerWorker);
+        return new WorkerSet<T>(workerScript, options.elementsPerWorker);
       case WorkerProcessType.STATIC_POOL:
         if (Utils.isUndefined(options.poolMaxSize)) {
           options.elementsPerWorker = 16;
         }
-        return new WorkerStaticPool(workerScript, options.poolMaxSize);
+        return new WorkerStaticPool<T>(workerScript, options.poolMaxSize);
       case WorkerProcessType.DYNAMIC_POOL:
         if (Utils.isUndefined(options.poolMinSize)) {
           options.elementsPerWorker = 4;
@@ -29,7 +29,7 @@ export default class WorkerFactory {
         if (Utils.isUndefined(options.poolMaxSize)) {
           options.elementsPerWorker = 16;
         }
-        return new WorkerDynamicPool(workerScript, options.poolMinSize, options.poolMaxSize);
+        return new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize);
       default:
         return null;
     }

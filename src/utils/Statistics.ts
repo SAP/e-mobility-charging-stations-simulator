@@ -14,7 +14,7 @@ export default class Statistics {
 
   public constructor(objName: string) {
     this.objId = objName;
-    this.commandsStatistics = { id: this.objId ? this.objId : ' Object id not specified', commandsStatisticsData: {} };
+    this.commandsStatistics = { id: this.objId ? this.objId : 'Object id not specified', commandsStatisticsData: {} };
   }
 
   public addMessage(command: RequestCommand | IncomingRequestCommand, messageType: MessageType): void {

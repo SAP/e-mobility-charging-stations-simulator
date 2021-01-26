@@ -1,11 +1,11 @@
-import { WorkerData, WorkerEvents, WorkerSetElement } from '../types/Worker';
+import { WorkerEvents, WorkerSetElement } from '../types/Worker';
 
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import Wrk from './Wrk';
 
-export default class WorkerSet extends Wrk {
+export default class WorkerSet<T> extends Wrk {
   public maxElementsPerWorker: number;
   private workers: Set<WorkerSetElement>;
 
@@ -30,7 +30,7 @@ export default class WorkerSet extends Wrk {
    * @return {Promise<void>}
    * @public
    */
-  public async addElement(elementData: WorkerData): Promise<void> {
+  public async addElement(elementData: T): Promise<void> {
     if (!this.workers) {
       throw Error('Cannot add a WorkerSet element: workers\' set does not exist');
     }
