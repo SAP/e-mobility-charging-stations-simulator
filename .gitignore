@@ -1,6 +1,7 @@
 # config
 src/assets/config.json
 src/scripts/scriptConfig.json
+src/assets/authorization-tags.json
 manifest.yml
 
 # Logs
