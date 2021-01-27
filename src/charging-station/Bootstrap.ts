@@ -65,7 +65,7 @@ export default class Bootstrap {
   public async stop(): Promise<void> {
     if (isMainThread && this.isStarted) {
       await this.getWorkerImplementation().stop();
-      if (this.workerImplementation) {
+      if (this.getWorkerImplementation()) {
         // Nullify to force worker implementation instance creation
         this.workerImplementation = null;
       }
