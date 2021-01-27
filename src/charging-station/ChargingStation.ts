@@ -67,7 +67,7 @@ export default class ChargingStation {
     this.requests = {} as Requests;
     this.messageQueue = [] as string[];
 
-    this.authorizedTags = this._loadAndGetAuthorizedTags();
+    this.authorizedTags = this._getAuthorizedTags();
   }
 
   _getChargingStationId(stationTemplate: ChargingStationTemplate): string {
@@ -204,7 +204,7 @@ export default class ChargingStation {
     return !Utils.isUndefined(this.stationInfo.useConnectorId0) ? this.stationInfo.useConnectorId0 : true;
   }
 
-  _loadAndGetAuthorizedTags(): string[] {
+  _getAuthorizedTags(): string[] {
     let authorizedTags: string[] = [];
     const authorizationFile = this._getAuthorizationFile();
     if (authorizationFile) {
@@ -522,7 +522,7 @@ export default class ChargingStation {
       try {
         logger.debug(this._logPrefix() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
         // Initialize _authorizedTags
-        this.authorizedTags = this._loadAndGetAuthorizedTags();
+        this.authorizedTags = this._getAuthorizedTags();
       } catch (error) {
         logger.error(this._logPrefix() + ' Authorization file monitoring error: %j', error);
       }
