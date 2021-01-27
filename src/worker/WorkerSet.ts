@@ -7,7 +7,7 @@ import Wrk from './Wrk';
 
 export default class WorkerSet<T> extends Wrk {
   public maxElementsPerWorker: number;
-  private workers: Set<WorkerSetElement>;
+  private workerSet: Set<WorkerSetElement>;
 
   /**
    * Create a new `WorkerSet`.
@@ -17,12 +17,12 @@ export default class WorkerSet<T> extends Wrk {
    */
   constructor(workerScript: string, maxElementsPerWorker = 1) {
     super(workerScript);
-    this.workers = new Set<WorkerSetElement>();
+    this.workerSet = new Set<WorkerSetElement>();
     this.maxElementsPerWorker = maxElementsPerWorker;
   }
 
   get size(): number {
-    return this.workers.size;
+    return this.workerSet.size;
   }
 
   /**
@@ -31,7 +31,7 @@ export default class WorkerSet<T> extends Wrk {
    * @public
    */
   public async addElement(elementData: T): Promise<void> {
-    if (!this.workers) {
+    if (!this.workerSet) {
       throw Error('Cannot add a WorkerSet element: workers\' set does not exist');
     }
     if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
@@ -56,6 +56,18 @@ export default class WorkerSet<T> extends Wrk {
 
   /**
    *
+   * @return {Promise<void>}
+   * @public
+   */
+  public async stop(): Promise<void> {
+    for (const workerSetElement of this.workerSet) {
+      await workerSetElement.worker.terminate();
+    }
+    this.workerSet.clear();
+  }
+
+  /**
+   *
    * @return {Promise}
    * @private
    */
@@ -69,13 +81,13 @@ export default class WorkerSet<T> extends Wrk {
       }
       // FIXME: remove matching worker set element
     });
-    this.workers.add({ worker, numberOfWorkerElements: 0 });
+    this.workerSet.add({ worker, numberOfWorkerElements: 0 });
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {
     let workerSetElement: WorkerSetElement;
     // eslint-disable-next-line no-empty
-    for (workerSetElement of this.workers) { }
+    for (workerSetElement of this.workerSet) { }
     return workerSetElement;
   }
 
@@ -85,7 +97,7 @@ export default class WorkerSet<T> extends Wrk {
 
   private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement {
     let workerSetElt: WorkerSetElement;
-    this.workers.forEach((workerSetElement) => {
+    this.workerSet.forEach((workerSetElement) => {
       if (JSON.stringify(workerSetElement.worker) === JSON.stringify(worker)) {
         workerSetElt = workerSetElement;
       }

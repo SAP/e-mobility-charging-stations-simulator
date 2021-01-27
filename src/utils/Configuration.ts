@@ -1,9 +1,12 @@
 import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
 
+import Bootstrap from '../charging-station/Bootstrap';
 import { WorkerProcessType } from '../types/Worker';
 import fs from 'fs';
 
 export default class Configuration {
+  private static configurationFilePath = './src/assets/config.json';
+  private static configurationFileWatcher: fs.FSWatcher;
   private static configuration: ConfigurationData;
 
   static getStatisticsDisplayInterval(): number {
@@ -105,9 +108,20 @@ export default class Configuration {
   // Read the config file
   private static getConfig(): ConfigurationData {
     if (!Configuration.configuration) {
-      Configuration.configuration = JSON.parse(fs.readFileSync('./src/assets/config.json', 'utf8')) as ConfigurationData;
+      Configuration.configuration = JSON.parse(fs.readFileSync(Configuration.configurationFilePath, 'utf8')) as ConfigurationData;
+      if (!Configuration.configurationFileWatcher) {
+        Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
+      }
     }
     return Configuration.configuration;
+  }
+
+  private static getConfigurationFileWatcher(): fs.FSWatcher {
+    return fs.watch(Configuration.configurationFilePath).on('change', async (e) => {
+      // Nullify to force configuration file reading
+      Configuration.configuration = null;
+      await Bootstrap.getInstance().restart();
+    });
   }
 
   private static objectHasOwnProperty(object: any, property: string): boolean {

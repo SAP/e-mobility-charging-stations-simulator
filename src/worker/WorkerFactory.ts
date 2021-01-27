@@ -5,9 +5,13 @@ import WorkerDynamicPool from './WorkerDynamicPool';
 import WorkerSet from './WorkerSet';
 import WorkerStaticPool from './WorkerStaticPool';
 import Wrk from './Wrk';
+import { isMainThread } from 'worker_threads';
 
 export default class WorkerFactory {
   public static getWorkerImpl<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): Wrk {
+    if (!isMainThread) {
+      throw new Error('Trying to get a worker implementation outside the main thread');
+    }
     if (Utils.isUndefined(options)) {
       options = {} as WorkerOptions;
     }

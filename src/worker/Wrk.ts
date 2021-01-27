@@ -15,5 +15,6 @@ export default abstract class Wrk {
   }
 
   public abstract start(): Promise<void>;
+  public abstract stop(): Promise<void>;
   public abstract addElement(elementData: WorkerData): Promise<void>;
 }

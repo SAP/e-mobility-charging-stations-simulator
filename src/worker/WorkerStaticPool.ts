@@ -39,6 +39,15 @@ export default class WorkerStaticPool<T> extends Wrk {
    * @return {Promise<void>}
    * @public
    */
+  public async stop(): Promise<void> {
+    return this.pool.destroy();
+  }
+
+  /**
+   *
+   * @return {Promise<void>}
+   * @public
+   */
   public async addElement(elementData: T): Promise<void> {
     await this.pool.execute(elementData);
     // Start worker sequentially to optimize memory at startup
