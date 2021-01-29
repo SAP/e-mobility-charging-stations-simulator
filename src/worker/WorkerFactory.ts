@@ -23,15 +23,15 @@ export default class WorkerFactory {
         return new WorkerSet<T>(workerScript, options.elementsPerWorker);
       case WorkerProcessType.STATIC_POOL:
         if (Utils.isUndefined(options.poolMaxSize)) {
-          options.elementsPerWorker = 16;
+          options.poolMaxSize = 16;
         }
         return new WorkerStaticPool<T>(workerScript, options.poolMaxSize);
       case WorkerProcessType.DYNAMIC_POOL:
         if (Utils.isUndefined(options.poolMinSize)) {
-          options.elementsPerWorker = 4;
+          options.poolMinSize = 4;
         }
         if (Utils.isUndefined(options.poolMaxSize)) {
-          options.elementsPerWorker = 16;
+          options.poolMaxSize = 16;
         }
         return new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize);
       default:
