@@ -521,7 +521,7 @@ export default class ChargingStation {
     fs.watch(this._getAuthorizationFile()).on('change', (e) => {
       try {
         logger.debug(this._logPrefix() + ' Authorization file ' + this._getAuthorizationFile() + ' have changed, reload');
-        // Initialize _authorizedTags
+        // Initialize authorizedTags
         this.authorizedTags = this._getAuthorizedTags();
       } catch (error) {
         logger.error(this._logPrefix() + ' Authorization file monitoring error: %j', error);
