@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import MongoClient from 'mongodb';
-import fs from 'fs';
+const MongoClient = require('mongodb');
+const fs = require('fs');
 
 // This script deletes charging stations
 // Filter charging stations by id pattern
