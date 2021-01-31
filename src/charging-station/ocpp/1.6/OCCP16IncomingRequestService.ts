@@ -213,7 +213,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
   }
 
-  private handleRequestChangeAvailability(commandPayload: ChangeAvailabilityRequest): ChangeAvailabilityResponse {
+  private async handleRequestChangeAvailability(commandPayload: ChangeAvailabilityRequest): Promise<ChangeAvailabilityResponse> {
     const connectorId: number = commandPayload.connectorId;
     if (!this.chargingStation.getConnector(connectorId)) {
       logger.error(`${this.chargingStation.logPrefix()} Trying to change the availability of a non existing connector Id ${connectorId.toString()}`);
@@ -228,7 +228,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         }
         this.chargingStation.getConnector(Utils.convertToInt(connector)).availability = commandPayload.type;
         if (response === Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
-          void this.chargingStation.ocppRequestService.sendStatusNotification(Utils.convertToInt(connector), chargePointStatus);
+          await this.chargingStation.ocppRequestService.sendStatusNotification(Utils.convertToInt(connector), chargePointStatus);
           this.chargingStation.getConnector(Utils.convertToInt(connector)).status = chargePointStatus;
         }
       }
@@ -239,7 +239,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         return Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
       }
       this.chargingStation.getConnector(connectorId).availability = commandPayload.type;
-      void this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, chargePointStatus);
+      await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, chargePointStatus);
       this.chargingStation.getConnector(connectorId).status = chargePointStatus;
       return Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
     }

@@ -23,17 +23,17 @@ export default class AutomaticTransactionGenerator {
     }
   }
 
-  public start(): void {
+  public async start(): Promise<void> {
     this.timeToStop = false;
     if (this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
       this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours > 0) {
-      setTimeout(() => {
-        void this.stop();
+      setTimeout(async (): Promise<void> => {
+        await this.stop();
       }, this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600 * 1000);
     }
     for (const connector in this.chargingStation.connectors) {
       if (Utils.convertToInt(connector) > 0) {
-        void this.startConnector(Utils.convertToInt(connector));
+        await this.startConnector(Utils.convertToInt(connector));
       }
     }
     logger.info(this.logPrefix() + ' ATG started and will stop in ' + Utils.secondsToHHMMSS(this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600));

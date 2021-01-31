@@ -703,7 +703,7 @@ export default class ChargingStation {
         this.automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
       }
       if (this.automaticTransactionGeneration.timeToStop) {
-        this.automaticTransactionGeneration.start();
+        await this.automaticTransactionGeneration.start();
       }
     }
     if (this.getEnableStatistics()) {
@@ -823,7 +823,7 @@ export default class ChargingStation {
   }
 
   private startStationTemplateFileMonitoring(): void {
-    fs.watch(this.stationTemplateFile).on('change', (e) => {
+    fs.watch(this.stationTemplateFile).on('change', async (e): Promise<void> => {
       try {
         logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
         // Initialize
@@ -831,7 +831,7 @@ export default class ChargingStation {
         // Stop the ATG
         if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
           this.automaticTransactionGeneration) {
-          this.automaticTransactionGeneration.stop().catch(() => { });
+          await this.automaticTransactionGeneration.stop();
         }
         // Start the ATG
         if (this.stationInfo.AutomaticTransactionGenerator.enable) {
@@ -839,7 +839,7 @@ export default class ChargingStation {
             this.automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
           }
           if (this.automaticTransactionGeneration.timeToStop) {
-            this.automaticTransactionGeneration.start();
+            await this.automaticTransactionGeneration.start();
           }
         }
         // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
