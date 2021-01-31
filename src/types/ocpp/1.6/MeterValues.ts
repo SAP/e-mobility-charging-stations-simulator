@@ -28,7 +28,7 @@ export enum MeterValueContext {
   TRIGGER = 'Trigger'
 }
 
-export enum MeterValueMeasurand {
+export enum OCPP16MeterValueMeasurand {
   CURRENT_EXPORT = 'Current.Export',
   CURRENT_IMPORT = 'Current.Import',
   CURRENT_OFFERED = 'Current.Offered',
@@ -79,11 +79,11 @@ export enum MeterValueFormat {
   SIGNED_DATA = 'SignedData',
 }
 
-export interface SampledValue {
+export interface OCPP16SampledValue {
   value?: string;
   unit?: MeterValueUnit;
   context?: MeterValueContext;
-  measurand?: MeterValueMeasurand;
+  measurand?: OCPP16MeterValueMeasurand;
   phase?: MeterValuePhase;
   location?: MeterValueLocation;
   format?: MeterValueFormat;
@@ -91,7 +91,7 @@ export interface SampledValue {
 
 export interface MeterValue {
   timestamp: string;
-  sampledValue: SampledValue[];
+  sampledValue: OCPP16SampledValue[];
 }
 
 export interface MeterValuesRequest {
@@ -101,5 +101,5 @@ export interface MeterValuesRequest {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface MeterValuesResponse {}
+export interface MeterValuesResponse { }
 

@@ -1,4 +1,4 @@
-export enum ChargePointStatus {
+export enum OCPP16ChargePointStatus {
   AVAILABLE = 'Available',
   PREPARING = 'Preparing',
   CHARGING = 'Charging',

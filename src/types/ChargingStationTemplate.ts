@@ -1,5 +1,7 @@
 import ChargingStationConfiguration from './ChargingStationConfiguration';
 import Connectors from './Connectors';
+import { OCPPProtocol } from './ocpp/OCPPProtocol';
+import { OCPPVersion } from './ocpp/OCPPVersion';
 
 export enum PowerOutType {
   AC = 'AC',
@@ -31,6 +33,8 @@ export interface AutomaticTransactionGenerator {
 
 export default interface ChargingStationTemplate {
   supervisionURL?: string;
+  ocppVersion?: OCPPVersion;
+  ocppProtocol?: OCPPProtocol;
   authorizationFile?: string;
   baseName: string;
   nameSuffix?: string;

@@ -1,5 +1,4 @@
-
-export interface ChargingProfile {
+export interface OCPP16ChargingProfile {
   chargingProfileId: number;
   transactionId?: number;
   stackLevel: number;

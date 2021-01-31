@@ -1,4 +1,4 @@
-export enum StandardParametersKey {
+export enum OCPP16StandardParametersKey {
   AllowOfflineTxForUnknownId = 'AllowOfflineTxForUnknownId',
   AuthorizationCacheEnabled = 'AuthorizationCacheEnabled',
   AuthorizeRemoteTxRequests = 'AuthorizeRemoteTxRequests',

@@ -1,4 +1,4 @@
-export enum ChargePointErrorCode {
+export enum OCPP16ChargePointErrorCode {
   CONNECTOR_LOCK_FAILURE = 'ConnectorLockFailure',
   EV_COMMUNICATION_ERROR = 'EVCommunicationError',
   GROUND_FAILURE = 'GroundFailure',

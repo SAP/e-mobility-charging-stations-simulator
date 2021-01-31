@@ -1,5 +1,5 @@
 import CommandStatistics, { CommandStatisticsData, PerfEntry } from '../types/CommandStatistics';
-import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/1.6/Requests';
+import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 
 import CircularArray from './CircularArray';
 import Configuration from './Configuration';
@@ -12,8 +12,8 @@ export default class Statistics {
   private objId: string;
   private commandsStatistics: CommandStatistics;
 
-  public constructor(objName: string) {
-    this.objId = objName;
+  public constructor(objId: string) {
+    this.objId = objId;
     this.commandsStatistics = { id: this.objId ? this.objId : 'Object id not specified', commandsStatisticsData: {} };
   }
 
@@ -52,7 +52,7 @@ export default class Statistics {
         }
         break;
       default:
-        logger.error(`${this._logPrefix()} Wrong message type ${messageType}`);
+        logger.error(`${this.logPrefix()} Wrong message type ${messageType}`);
         break;
     }
   }
@@ -64,23 +64,23 @@ export default class Statistics {
     perfEntry.entryType = entry.entryType;
     perfEntry.startTime = entry.startTime;
     perfEntry.duration = entry.duration;
-    logger.info(`${this._logPrefix()} object ${className} method(s) performance entry: %j`, perfEntry);
+    logger.info(`${this.logPrefix()} object ${className} method(s) performance entry: %j`, perfEntry);
   }
 
   public start(): void {
-    this._displayInterval();
+    this.displayInterval();
   }
 
-  private _display(): void {
-    logger.info(this._logPrefix() + ' %j', this.commandsStatistics);
+  private display(): void {
+    logger.info(this.logPrefix() + ' %j', this.commandsStatistics);
   }
 
-  private _displayInterval(): void {
+  private displayInterval(): void {
     if (Configuration.getStatisticsDisplayInterval() > 0) {
       setInterval(() => {
-        this._display();
+        this.display();
       }, Configuration.getStatisticsDisplayInterval() * 1000);
-      logger.info(this._logPrefix() + ' displayed every ' + Utils.secondsToHHMMSS(Configuration.getStatisticsDisplayInterval()));
+      logger.info(this.logPrefix() + ' displayed every ' + Utils.secondsToHHMMSS(Configuration.getStatisticsDisplayInterval()));
     }
   }
 
@@ -121,7 +121,7 @@ export default class Statistics {
     this.commandsStatistics.commandsStatisticsData[command].medTimeMeasurement = this.median(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries);
   }
 
-  private _logPrefix(): string {
+  private logPrefix(): string {
     return Utils.logPrefix(` ${this.objId} Statistics:`);
   }
 }

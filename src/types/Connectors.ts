@@ -1,7 +1,7 @@
-import { AvailabilityType } from './ocpp/1.6/Requests';
-import { ChargePointStatus } from './ocpp/1.6/ChargePointStatus';
-import { ChargingProfile } from './ocpp/1.6/ChargingProfile';
-import { SampledValue } from './ocpp/1.6/MeterValues';
+import { AvailabilityType } from './ocpp/Requests';
+import { ChargePointStatus } from './ocpp/ChargePointStatus';
+import { ChargingProfile } from './ocpp/ChargingProfile';
+import { SampledValue } from './ocpp/MeterValues';
 
 export interface Connector {
   availability: AvailabilityType;
