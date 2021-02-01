@@ -461,6 +461,7 @@ export default class ChargingStation {
     }
     if (this.isRegistered()) {
       await this.startMessageSequence();
+      this.hasStopped && (this.hasStopped = false);
       if (this.hasSocketRestarted && this.isWebSocketOpen()) {
         if (!Utils.isEmptyArray(this.messageQueue)) {
           this.messageQueue.forEach((message, index) => {

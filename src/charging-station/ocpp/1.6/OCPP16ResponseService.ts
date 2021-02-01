@@ -24,7 +24,6 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.heartbeatSetInterval ? this.chargingStation.restartHeartbeat() : this.chargingStation.startHeartbeat();
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartBeatInterval, payload.interval.toString());
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartbeatInterval, payload.interval.toString(), false, false);
-      this.chargingStation.hasStopped && (this.chargingStation.hasStopped = false);
     } else if (payload.status === OCPP16RegistrationStatus.PENDING) {
       logger.info(this.chargingStation.logPrefix() + ' Charging station in pending state on the central server');
     } else {
