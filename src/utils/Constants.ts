@@ -22,18 +22,12 @@ export default class Constants {
   static readonly OCPP_AVAILABILITY_RESPONSE_REJECTED = Object.freeze({ status: AvailabilityStatus.REJECTED });
   static readonly OCPP_AVAILABILITY_RESPONSE_SCHEDULED = Object.freeze({ status: AvailabilityStatus.SCHEDULED });
 
-  static readonly OCPP_PROTOCOL_JSON = 'json';
-  static readonly OCPP_PROTOCOL_SOAP = 'soap';
-  static readonly OCPP_VERSION_12 = '1.2';
-  static readonly OCPP_VERSION_15 = '1.5';
-  static readonly OCPP_VERSION_16 = '1.6';
-  static readonly OCPP_VERSION_20 = '2.0';
-
   static readonly OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
   static readonly OCPP_ERROR_TIMEOUT = 60000; // 60 sec
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms
+  static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
 
   static readonly TRANSACTION_DEFAULT_TAGID = '00000000';
 

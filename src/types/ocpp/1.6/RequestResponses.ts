@@ -34,14 +34,14 @@ export interface ChangeConfigurationResponse {
   status: ConfigurationStatus;
 }
 
-export enum RegistrationStatus {
+export enum OCPP16RegistrationStatus {
   ACCEPTED = 'Accepted',
   PENDING = 'Pending',
   REJECTED = 'Rejected'
 }
 
-export interface BootNotificationResponse {
-  status: RegistrationStatus;
+export interface OCPP16BootNotificationResponse {
+  status: OCPP16RegistrationStatus;
   currentTime: string;
   interval: number;
 }

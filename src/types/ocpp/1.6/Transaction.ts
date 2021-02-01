@@ -1,6 +1,6 @@
 import { MeterValue } from './MeterValues';
 
-export enum StopTransactionReason {
+export enum OCPP16StopTransactionReason {
   NONE = '',
   EMERGENCY_STOP = 'EmergencyStop',
   EV_DISCONNECTED = 'EVDisconnected',
@@ -15,7 +15,7 @@ export enum StopTransactionReason {
   DE_AUTHORIZED = 'DeAuthorized'
 }
 
-export enum AuthorizationStatus {
+export enum OCPP16AuthorizationStatus {
   ACCEPTED = 'Accepted',
   BLOCKED = 'Blocked',
   EXPIRED = 'Expired',
@@ -24,7 +24,7 @@ export enum AuthorizationStatus {
 }
 
 export interface IdTagInfo {
-  status: AuthorizationStatus;
+  status: OCPP16AuthorizationStatus;
   parentIdTag?: string;
   expiryDate?: Date;
 }
@@ -33,7 +33,7 @@ export interface AuthorizeRequest {
   idTag: string;
 
 }
-export interface AuthorizeResponse {
+export interface OCPP16AuthorizeResponse {
   idTagInfo: IdTagInfo;
 }
 
@@ -45,7 +45,7 @@ export interface StartTransactionRequest {
   timestamp: string;
 }
 
-export interface StartTransactionResponse {
+export interface OCPP16StartTransactionResponse {
   idTagInfo: IdTagInfo;
   transactionId: number;
 }
@@ -55,10 +55,10 @@ export interface StopTransactionRequest {
   meterStop: number;
   timestamp: string;
   transactionId: number;
-  reason?: StopTransactionReason;
+  reason?: OCPP16StopTransactionReason;
   transactionData?: MeterValue[];
 }
 
-export interface StopTransactionResponse {
+export interface OCPP16StopTransactionResponse {
   idTagInfo?: IdTagInfo;
 }

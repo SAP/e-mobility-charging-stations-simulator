@@ -1,10 +1,10 @@
-import { ChargingProfile, ChargingProfilePurposeType } from './ChargingProfile';
+import { ChargingProfilePurposeType, OCPP16ChargingProfile } from './ChargingProfile';
 
-import { ChargePointErrorCode } from './ChargePointErrorCode';
-import { ChargePointStatus } from './ChargePointStatus';
-import { StandardParametersKey } from './Configuration';
+import { OCPP16ChargePointErrorCode } from './ChargePointErrorCode';
+import { OCPP16ChargePointStatus } from './ChargePointStatus';
+import { OCPP16StandardParametersKey } from './Configuration';
 
-export enum RequestCommand {
+export enum OCPP16RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
   STATUS_NOTIFICATION = 'StatusNotification',
@@ -15,7 +15,7 @@ export enum RequestCommand {
   METERVALUES = 'MeterValues'
 }
 
-export enum IncomingRequestCommand {
+export enum OCPP16IncomingRequestCommand {
   RESET = 'Reset',
   CLEAR_CACHE = 'ClearCache',
   CHANGE_AVAILABILITY = 'ChangeAvailability',
@@ -31,7 +31,7 @@ export enum IncomingRequestCommand {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface HeartbeatRequest { }
 
-export interface BootNotificationRequest {
+export interface OCPP16BootNotificationRequest {
   chargeBoxSerialNumber?: string;
   chargePointModel: string;
   chargePointSerialNumber?: string;
@@ -45,23 +45,23 @@ export interface BootNotificationRequest {
 
 export interface StatusNotificationRequest {
   connectorId: number;
-  errorCode: ChargePointErrorCode;
+  errorCode: OCPP16ChargePointErrorCode;
   info?: string;
-  status: ChargePointStatus;
+  status: OCPP16ChargePointStatus;
   timestamp?: string;
   vendorId?: string;
   vendorErrorCode?: string;
 }
 
 export interface ChangeConfigurationRequest {
-  key: string | StandardParametersKey;
+  key: string | OCPP16StandardParametersKey;
   value: string;
 }
 
 export interface RemoteStartTransactionRequest {
   connectorId: number;
   idTag: string;
-  chargingProfile?: ChargingProfile;
+  chargingProfile?: OCPP16ChargingProfile;
 }
 
 export interface RemoteStopTransactionRequest {
@@ -73,7 +73,7 @@ export interface UnlockConnectorRequest {
 }
 
 export interface GetConfigurationRequest {
-  key?: string | StandardParametersKey[];
+  key?: string | OCPP16StandardParametersKey[];
 }
 
 export enum ResetType {
@@ -87,17 +87,17 @@ export interface ResetRequest {
 
 export interface SetChargingProfileRequest {
   connectorId: number;
-  csChargingProfiles: ChargingProfile;
+  csChargingProfiles: OCPP16ChargingProfile;
 }
 
-export enum AvailabilityType {
+export enum OCPP16AvailabilityType {
   INOPERATIVE = 'Inoperative',
   OPERATIVE = 'Operative'
 }
 
 export interface ChangeAvailabilityRequest {
   connectorId: number;
-  type: AvailabilityType;
+  type: OCPP16AvailabilityType;
 }
 
 export interface ClearChargingProfileRequest {
