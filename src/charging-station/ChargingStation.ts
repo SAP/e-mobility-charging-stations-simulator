@@ -174,7 +174,8 @@ export default class ChargingStation {
 
   public startHeartbeat(): void {
     if (this.getHeartbeatInterval() && this.getHeartbeatInterval() > 0 && !this.heartbeatSetInterval) {
-      this.heartbeatSetInterval = setInterval(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
         await this.ocppRequestService.sendHeartbeat();
       }, this.getHeartbeatInterval());
       logger.info(this.logPrefix() + ' Heartbeat started every ' + Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()));
@@ -209,7 +210,8 @@ export default class ChargingStation {
       return;
     }
     if (interval > 0) {
-      this.getConnector(connectorId).transactionSetInterval = setInterval(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      this.getConnector(connectorId).transactionSetInterval = setInterval(async (): Promise<void> => {
         if (this.getEnableStatistics()) {
           const sendMeterValues = performance.timerify(this.ocppRequestService.sendMeterValues);
           this.performanceObserver.observe({
@@ -824,6 +826,7 @@ export default class ChargingStation {
   }
 
   private startStationTemplateFileMonitoring(): void {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     fs.watch(this.stationTemplateFile).on('change', async (e): Promise<void> => {
       try {
         logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');

@@ -27,6 +27,7 @@ export default class AutomaticTransactionGenerator {
     this.timeToStop = false;
     if (this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours &&
       this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       setTimeout(async (): Promise<void> => {
         await this.stop();
       }, this.chargingStation.stationInfo.AutomaticTransactionGenerator.stopAfterHours * 3600 * 1000);
