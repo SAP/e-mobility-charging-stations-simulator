@@ -25,7 +25,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       } catch (error) {
         // Log
         logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);
-        // Send back response to inform backend
+        // Send back an error response to inform backend
         await this.chargingStation.ocppRequestService.sendError(messageId, error, commandName);
         throw error;
       }
@@ -160,7 +160,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   private handleRequestSetChargingProfile(commandPayload: SetChargingProfileRequest): SetChargingProfileResponse {
     if (!this.chargingStation.getConnector(commandPayload.connectorId)) {
-      logger.error(`${this.chargingStation.logPrefix()} Trying to set a charging profile to a non existing connector Id ${commandPayload.connectorId}`);
+      logger.error(`${this.chargingStation.logPrefix()} Trying to set charging profile(s) to a non existing connector Id ${commandPayload.connectorId}`);
       return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
     if (commandPayload.csChargingProfiles.chargingProfilePurpose === ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE && commandPayload.connectorId !== 0) {
@@ -170,18 +170,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
     this.chargingStation.setChargingProfile(commandPayload.connectorId, commandPayload.csChargingProfiles);
-    logger.debug(`${this.chargingStation.logPrefix()} Charging profile set, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
+    logger.debug(`${this.chargingStation.logPrefix()} Charging profile(s) set, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
     return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_ACCEPTED;
   }
 
   private handleRequestClearChargingProfile(commandPayload: ClearChargingProfileRequest): ClearChargingProfileResponse {
     if (!this.chargingStation.getConnector(commandPayload.connectorId)) {
-      logger.error(`${this.chargingStation.logPrefix()} Trying to clear a charging profile to a non existing connector Id ${commandPayload.connectorId}`);
+      logger.error(`${this.chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector Id ${commandPayload.connectorId}`);
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
     if (commandPayload.connectorId && !Utils.isEmptyArray(this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles)) {
       this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles = [];
-      logger.debug(`${this.chargingStation.logPrefix()} Charging profiles cleared, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
+      logger.debug(`${this.chargingStation.logPrefix()} Charging profile(s) cleared, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED;
     }
     if (!commandPayload.connectorId) {
@@ -204,7 +204,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             }
             if (clearCurrentCP) {
               this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles[index] = {} as OCPP16ChargingProfile;
-              logger.debug(`${this.chargingStation.logPrefix()} Charging profiles cleared, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
+              logger.debug(`${this.chargingStation.logPrefix()} Charging profile(s) cleared, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
               clearedCP = true;
             }
           });
@@ -260,7 +260,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           this.chargingStation.getConnector(transactionConnectorID).status = OCPP16ChargePointStatus.PREPARING;
           if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
             this.chargingStation.setChargingProfile(transactionConnectorID, commandPayload.chargingProfile);
-            logger.debug(`${this.chargingStation.logPrefix()} Charging profile set at start transaction, dump their stack: %j`, this.chargingStation.getConnector(transactionConnectorID).chargingProfiles);
+            logger.debug(`${this.chargingStation.logPrefix()} Charging profile(s) set at start transaction, dump their stack: %j`, this.chargingStation.getConnector(transactionConnectorID).chargingProfiles);
           } else if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE) {
             return Constants.OCPP_RESPONSE_REJECTED;
           }
@@ -276,7 +276,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       this.chargingStation.getConnector(transactionConnectorID).status = OCPP16ChargePointStatus.PREPARING;
       if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
         this.chargingStation.setChargingProfile(transactionConnectorID, commandPayload.chargingProfile);
-        logger.debug(`${this.chargingStation.logPrefix()} Charging profile set at start transaction, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
+        logger.debug(`${this.chargingStation.logPrefix()} Charging profile(s) set at start transaction, dump their stack: %j`, this.chargingStation.getConnector(commandPayload.connectorId).chargingProfiles);
       } else if (commandPayload.chargingProfile && commandPayload.chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE) {
         return Constants.OCPP_RESPONSE_REJECTED;
       }

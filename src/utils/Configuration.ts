@@ -117,6 +117,7 @@ export default class Configuration {
   }
 
   private static getConfigurationFileWatcher(): fs.FSWatcher {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     return fs.watch(Configuration.configurationFilePath).on('change', async (e): Promise<void> => {
       // Nullify to force configuration file reading
       Configuration.configuration = null;

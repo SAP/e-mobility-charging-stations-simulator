@@ -74,7 +74,7 @@ export default class AutomaticTransactionGenerator {
       if (!this.chargingStation?.ocppRequestService) {
         logger.info(`${this.logPrefix(connectorId)} Transaction loop waiting for charging station service to be initialized`);
         do {
-          await Utils.sleep(500);
+          await Utils.sleep(Constants.CHARGING_STATION_ATG_INITIALIZATION_TIME);
         } while (!this.chargingStation?.ocppRequestService);
       }
       const wait = Utils.getRandomInt(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
