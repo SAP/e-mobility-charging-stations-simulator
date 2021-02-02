@@ -1,5 +1,5 @@
 import { ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingProfileRequest, GetConfigurationRequest, OCPP16AvailabilityType, OCPP16IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, UnlockConnectorRequest } from '../../../types/ocpp/1.6/Requests';
-import { ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, DefaultResponse, GetConfigurationResponse, SetChargingProfileResponse, UnlockConnectorResponse } from '../../../types/ocpp/1.6/RequestResponses';
+import { ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, DefaultResponse, GetConfigurationResponse, SetChargingProfileResponse, UnlockConnectorResponse } from '../../../types/ocpp/1.6/Responses';
 import { ChargingProfilePurposeType, OCPP16ChargingProfile } from '../../../types/ocpp/1.6/ChargingProfile';
 import { OCPP16AuthorizationStatus, OCPP16StopTransactionReason } from '../../../types/ocpp/1.6/Transaction';
 

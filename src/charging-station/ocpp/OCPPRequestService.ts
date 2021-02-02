@@ -1,7 +1,7 @@
 import { AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../../types/ocpp/Transaction';
 import { IncomingRequestCommand, Request, RequestCommand } from '../../types/ocpp/Requests';
 
-import { BootNotificationResponse } from '../../types/ocpp/RequestResponses';
+import { BootNotificationResponse } from '../../types/ocpp/Responses';
 import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../../types/ocpp/ChargePointStatus';
 import ChargingStation from '../ChargingStation';

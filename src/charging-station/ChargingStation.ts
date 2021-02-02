@@ -1,4 +1,4 @@
-import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/RequestResponses';
+import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { PowerOutType, VoltageOut } from '../types/ChargingStationTemplate';
 import Connectors, { Connector } from '../types/Connectors';

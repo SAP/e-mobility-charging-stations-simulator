@@ -6,7 +6,7 @@ import Constants from '../../../utils/Constants';
 import ElectricUtils from '../../../utils/ElectricUtils';
 import MeasurandValues from '../../../types/MeasurandValues';
 import { MessageType } from '../../../types/ocpp/MessageType';
-import { OCPP16BootNotificationResponse } from '../../../types/ocpp/1.6/RequestResponses';
+import { OCPP16BootNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
