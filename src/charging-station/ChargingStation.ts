@@ -319,6 +319,22 @@ export default class ChargingStation {
     }
   }
 
+  public addMessageToBuffer(message: string): void {
+    let dups = false;
+    // Handle dups in buffer
+    for (const bufferedMessage of this.messageQueue) {
+      // Same message
+      if (message === bufferedMessage) {
+        dups = true;
+        break;
+      }
+    }
+    if (!dups) {
+      // Buffer message
+      this.messageQueue.push(message);
+    }
+  }
+
   private getChargingStationId(stationTemplate: ChargingStationTemplate): string {
     // In case of multiple instances: add instance index to charging station id
     let instanceIndex = process.env.CF_INSTANCE_INDEX ? process.env.CF_INSTANCE_INDEX : 0;
