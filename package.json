@@ -43,18 +43,18 @@
     "npm-check": "npm-check",
     "git:sinit": "git submodule update --init --recursive --force",
     "git:sdiff": "git diff && git submodule foreach 'git diff'",
-    "git:supdate": "git submodule update --remote --merge",
+    "git:supdate": "git submodule update --remote --recursive --merge",
     "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
-    "mongodb": "^3.6.3",
+    "mongodb": "^3.6.4",
     "poolifier": "^1.2.1",
     "source-map-support": "^0.5.19",
     "tslib": "^2.1.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
-    "ws": "^7.4.2"
+    "ws": "^7.4.3"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.3",
