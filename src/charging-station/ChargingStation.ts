@@ -476,7 +476,8 @@ export default class ChargingStation {
           await Utils.sleep(this.bootNotificationResponse?.interval ? this.bootNotificationResponse.interval * 1000 : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL);
         }
       } while (!this.isRegistered() && (registrationRetryCount <= this.getRegistrationMaxRetries() || this.getRegistrationMaxRetries() === -1));
-    } else if (this.isRegistered()) {
+    }
+    if (this.isRegistered()) {
       await this.startMessageSequence();
       this.hasStopped && (this.hasStopped = false);
       if (this.hasSocketRestarted && this.isWebSocketOpen()) {
