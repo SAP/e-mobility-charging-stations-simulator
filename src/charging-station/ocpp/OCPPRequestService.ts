@@ -24,7 +24,6 @@ export default abstract class OCPPRequestService {
   public async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
-    const chargingStation = this.chargingStation;
     // Send a message through wsConnection
     return new Promise((resolve: (value?: any | PromiseLike<any>) => void, reject: (reason?: any) => void) => {
       let messageToSend: string;
@@ -71,8 +70,8 @@ export default abstract class OCPPRequestService {
 
       // Function that will receive the request's response
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
-        if (chargingStation.getEnableStatistics()) {
-          chargingStation.statistics.addMessage(commandName, messageType);
+        if (self.chargingStation.getEnableStatistics()) {
+          self.chargingStation.statistics.addMessage(commandName, messageType);
         }
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
@@ -81,13 +80,13 @@ export default abstract class OCPPRequestService {
 
       // Function that will receive the request's rejection
       function rejectCallback(error: OCPPError): void {
-        if (chargingStation.getEnableStatistics()) {
-          chargingStation.statistics.addMessage(commandName, messageType);
+        if (self.chargingStation.getEnableStatistics()) {
+          self.chargingStation.statistics.addMessage(commandName, messageType);
         }
-        logger.debug(`${chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
+        logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception
         // eslint-disable-next-line no-empty-function
-        chargingStation.requests[messageId] = [() => { }, () => { }, {}]; // Properly format the request
+        self.chargingStation.requests[messageId] = [() => { }, () => { }, {}];
         // Send error
         reject(error);
       }
