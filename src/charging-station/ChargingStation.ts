@@ -223,7 +223,7 @@ export default class ChargingStation {
         }
       }, interval);
     } else {
-      logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${Utils.milliSecondsToHHMMSS(interval)}, not sending MeterValues`);
+      logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.milliSecondsToHHMMSS(interval) : interval}, not sending MeterValues`);
     }
   }
 
