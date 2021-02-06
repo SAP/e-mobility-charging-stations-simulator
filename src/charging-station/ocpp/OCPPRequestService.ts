@@ -55,7 +55,7 @@ export default abstract class OCPPRequestService {
         this.chargingStation.wsConnection.send(messageToSend);
       } else if (commandName !== RequestCommand.BOOT_NOTIFICATION) {
         // Buffer it
-        this.chargingStation.addMessageToBuffer(messageToSend);
+        this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it
         return rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ? commandParams.details : {}));
       }

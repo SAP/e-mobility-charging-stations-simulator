@@ -319,7 +319,7 @@ export default class ChargingStation {
     }
   }
 
-  public addMessageToBuffer(message: string): void {
+  public addToMessageQueue(message: string): void {
     let dups = false;
     // Handle dups in buffer
     for (const bufferedMessage of this.messageQueue) {
@@ -332,6 +332,15 @@ export default class ChargingStation {
     if (!dups) {
       // Buffer message
       this.messageQueue.push(message);
+    }
+  }
+
+  private flushMessageQueue() {
+    if (!Utils.isEmptyArray(this.messageQueue)) {
+      this.messageQueue.forEach((message, index) => {
+        this.messageQueue.splice(index, 1);
+        this.wsConnection.send(message);
+      });
     }
   }
 
@@ -481,12 +490,7 @@ export default class ChargingStation {
       await this.startMessageSequence();
       this.hasStopped && (this.hasStopped = false);
       if (this.hasSocketRestarted && this.isWebSocketOpen()) {
-        if (!Utils.isEmptyArray(this.messageQueue)) {
-          this.messageQueue.forEach((message, index) => {
-            this.messageQueue.splice(index, 1);
-            this.wsConnection.send(message);
-          });
-        }
+        this.flushMessageQueue();
       }
     } else {
       logger.error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);
