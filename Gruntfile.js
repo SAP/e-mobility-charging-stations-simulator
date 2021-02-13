@@ -6,7 +6,7 @@ module.exports = function(grunt) {
       buildWatch: {
         watch: './src',
       },
-      prod: {}
+      build: {}
     },
     mkdir: {
       assets: {
@@ -33,5 +33,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-mkdir');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-ts');
-  grunt.registerTask('default', ['clean:build', 'ts:prod', 'mkdir:assets', 'copy:assets']);
+  grunt.registerTask('default', ['clean:build', 'ts:build', 'mkdir:assets', 'copy:assets']);
 };
