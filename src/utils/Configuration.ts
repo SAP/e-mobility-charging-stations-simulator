@@ -3,9 +3,10 @@ import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationDat
 import Bootstrap from '../charging-station/Bootstrap';
 import { WorkerProcessType } from '../types/Worker';
 import fs from 'fs';
+import path from 'path';
 
 export default class Configuration {
-  private static configurationFilePath = './src/assets/config.json';
+  private static configurationFilePath = path.join(path.resolve(__dirname, '../'), 'assets', 'config.json');
   private static configurationFileWatcher: fs.FSWatcher;
   private static configuration: ConfigurationData;
 
