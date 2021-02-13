@@ -9,10 +9,11 @@
       "request": "launch",
       "name": "Debug Program via npm",
       "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run-script",
-        "start:dev:debug"
+        "start:debug"
       ],
       "skipFiles": [
         "<node_internals>/**"

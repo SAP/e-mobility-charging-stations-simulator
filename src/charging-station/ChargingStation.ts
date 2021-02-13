@@ -599,7 +599,7 @@ export default class ChargingStation {
   }
 
   private getAuthorizationFile(): string {
-    return this.stationInfo.authorizationFile && path.join(path.resolve(__dirname, '../'), 'assets', this.stationInfo.authorizationFile);
+    return this.stationInfo.authorizationFile && path.join(path.resolve(__dirname, '../'), 'assets', path.basename(this.stationInfo.authorizationFile));
   }
 
   private getAuthorizedTags(): string[] {

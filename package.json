@@ -22,8 +22,6 @@
   "scripts": {
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.js",
-    "start:dev": "cross-env NODE_ENV=development ts-node-dev -- src/start.ts",
-    "start:dev:debug": "cross-env NODE_ENV=development ts-node-dev --inspect -- src/start.ts",
     "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.js",
     "start:prof": "cross-env NODE_ENV=production node -r source-map-support/register --prof dist/start.js",
     "start:doctorprof": "cross-env NODE_ENV=production clinic doctor -- node -r source-map-support/register dist/start.js",
@@ -33,7 +31,7 @@
     "rollup": "rollup --config",
     "build": "npm run grunt",
     "build:mta": "mbt build",
-    "build:clean": "rimraf ./dist",
+    "build:watch": "npm run grunt -- ts:buildWatch",
     "lint": "cross-env TIMING=1 eslint --ext .js,.ts src",
     "lint:fix": "cross-env TIMING=1 eslint --fix --ext .js,.ts src",
     "import-sort": "npx import-sort-cli --write 'src/**/*.ts{,x}'",
@@ -70,15 +68,16 @@
     "cross-env": "^7.0.3",
     "eslint": "^7.20.0",
     "grunt": "^1.3.0",
+    "grunt-contrib-clean": "^2.0.0",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-mkdir": "^1.1.0",
     "grunt-ts": "^6.0.0-beta.22",
     "mbt": "^1.1.0",
     "npm-check": "^5.9.2",
-    "rimraf": "^3.0.2",
     "rollup": "^2.39.0",
     "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-typescript2": "^0.29.0",
-    "ts-node-dev": "^1.1.1",
     "typescript": "^4.1.5"
   }
 }
