@@ -605,7 +605,6 @@ export default class ChargingStation {
   private getAuthorizedTags(): string[] {
     let authorizedTags: string[] = [];
     const authorizationFile = this.getAuthorizationFile();
-    console.log(authorizationFile);
     if (authorizationFile) {
       try {
         // Load authorization file
