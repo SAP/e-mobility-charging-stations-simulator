@@ -1,3 +1,4 @@
+import analyze from 'rollup-plugin-analyzer';
 import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
 import typescript from 'rollup-plugin-typescript2';
@@ -26,6 +27,7 @@ export default {
       targets: [
         { src: 'src/assets', dest: 'dist/' }
       ]
-    })
+    }),
+    isDevelopmentBuild && analyze()
   ]
 };
