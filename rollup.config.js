@@ -1,5 +1,6 @@
+import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
-import ts from '@wessberg/rollup-plugin-ts';
+import typescript from 'rollup-plugin-typescript2';
 
 export default {
   input: ['src/start.ts', 'src/charging-station/StationWorker.ts'],
@@ -11,13 +12,18 @@ export default {
     preserveModules: true,
     preserveModulesRoot: 'src'
   },
-  external: ['crypto', 'perf_hooks', 'fs', 'poolifier', 'uuid', 'ws', 'winston', 'winston-daily-rotate-file', 'worker_threads'],
+  external: ['crypto', 'perf_hooks', 'fs', 'path', 'poolifier', 'uuid', 'ws', 'winston', 'winston-daily-rotate-file', 'worker_threads'],
   plugins: [
-    ts({
+    typescript({
       tsconfig: 'tsconfig.json'
     }),
     del({
       targets: 'dist/*'
+    }),
+    copy({
+      targets: [
+        { src: 'src/assets', dest: 'dist/' }
+      ]
     })
   ]
 };

@@ -4,6 +4,7 @@ import Utils from '../utils/Utils';
 import WorkerFactory from '../worker/WorkerFactory';
 import Wrk from '../worker/Wrk';
 import { isMainThread } from 'worker_threads';
+import path from 'path';
 
 export default class Bootstrap {
   private static instance: Bootstrap;
@@ -13,7 +14,7 @@ export default class Bootstrap {
 
   private constructor() {
     this.started = false;
-    this.workerScript = './dist/charging-station/StationWorker.js';
+    this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'StationWorker.js');
   }
 
   public static getInstance(): Bootstrap {
@@ -36,7 +37,7 @@ export default class Bootstrap {
               for (let index = 1; index <= nbStations; index++) {
                 const workerData: StationWorkerData = {
                   index,
-                  templateFile: stationURL.file
+                  templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
                 await this.getWorkerImplementationInstance().addElement(workerData);
                 numStationsTotal++;

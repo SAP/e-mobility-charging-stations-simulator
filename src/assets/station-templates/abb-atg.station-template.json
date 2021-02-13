@@ -1,5 +1,5 @@
 {
-  "authorizationFile": "./src/assets/authorization-tags.json",
+  "authorizationFile": "authorization-tags.json",
   "baseName": "CS-ABB",
   "nameSuffix": "-Roaming",
   "chargePointModel": "MD_TERRA_53",
