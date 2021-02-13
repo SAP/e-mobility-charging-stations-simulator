@@ -14,10 +14,9 @@ WORKDIR /usr/app
 
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY NOTICE LICENSE ./
-COPY src ./src
 COPY dist ./dist
 COPY *.json ./
-COPY docker/config.json ./src/assets/config.json
+COPY docker/config.json ./dist/assets/config.json
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN chmod +x /autoconfig.sh
 

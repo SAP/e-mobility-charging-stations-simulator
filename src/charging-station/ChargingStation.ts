@@ -29,6 +29,7 @@ import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
+import path from 'path';
 
 export default class ChargingStation {
   public stationTemplateFile: string;
@@ -598,7 +599,7 @@ export default class ChargingStation {
   }
 
   private getAuthorizationFile(): string {
-    return this.stationInfo.authorizationFile && this.stationInfo.authorizationFile;
+    return this.stationInfo.authorizationFile && path.join(path.resolve(__dirname, '../'), 'assets', path.basename(this.stationInfo.authorizationFile));
   }
 
   private getAuthorizedTags(): string[] {
