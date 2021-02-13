@@ -2,6 +2,8 @@ import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
 import typescript from 'rollup-plugin-typescript2';
 
+const isDevelopmentBuild = process.env.BUILD === 'development';
+
 export default {
   input: ['src/start.ts', 'src/charging-station/StationWorker.ts'],
   output: {
@@ -12,7 +14,7 @@ export default {
     preserveModules: true,
     preserveModulesRoot: 'src'
   },
-  external: ['crypto', 'perf_hooks', 'fs', 'path', 'poolifier', 'uuid', 'ws', 'winston', 'winston-daily-rotate-file', 'worker_threads'],
+  external: ['crypto', 'perf_hooks', 'fs', 'path', 'poolifier', 'uuid', 'ws', 'winston-daily-rotate-file', 'winston/lib/winston/transports', 'winston', 'worker_threads'],
   plugins: [
     typescript({
       tsconfig: 'tsconfig.json'
