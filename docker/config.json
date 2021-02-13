@@ -10,27 +10,27 @@
   "chargingStationsPerWorker": 1,
   "stationTemplateURLs": [
     {
-      "file": "./src/assets/station-templates/siemens.station-template.json",
+      "file": "siemens.station-template.json",
       "numberOfStations": 0
     },
     {
-      "file": "./src/assets/station-templates/keba.station-template.json",
+      "file": "keba.station-template.json",
       "numberOfStations": 0
     },
     {
-      "file": "./src/assets/station-templates/abb.station-template.json",
+      "file": "abb.station-template.json",
       "numberOfStations": 0
     },
     {
-      "file": "./src/assets/station-templates/evlink.station-template.json",
+      "file": "evlink.station-template.json",
       "numberOfStations": 0
     },
     {
-      "file": "./src/assets/station-templates/schneider.station-template.json",
+      "file": "schneider.station-template.json",
       "numberOfStations": 0
     },
     {
-      "file": "./src/assets/station-templates/virtual-simple-atg.station-template.json",
+      "file": "virtual-simple-atg.station-template.json",
       "numberOfStations": 10
     }
   ],
