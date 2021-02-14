@@ -5,6 +5,11 @@
       "label": "Build",
       "type": "npm",
       "script": "build"
+    },
+    {
+      "label": "Development Build",
+      "type": "npm",
+      "script": "build:dev"
     }
   ]
 }

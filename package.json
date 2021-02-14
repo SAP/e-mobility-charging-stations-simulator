@@ -23,6 +23,8 @@
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.js",
     "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.js",
+    "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.js",
+    "start:dev:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.js",
     "start:prof": "cross-env NODE_ENV=production node -r source-map-support/register --prof dist/start.js",
     "start:doctorprof": "cross-env NODE_ENV=production clinic doctor -- node -r source-map-support/register dist/start.js",
     "start:flameprof": "cross-env NODE_ENV=production clinic flame -- node -r source-map-support/register dist/start.js",
@@ -59,7 +61,7 @@
     "utf-8-validate": "^5.0.4"
   },
   "devDependencies": {
-    "@types/node": "^14.14.27",
+    "@types/node": "^14.14.28",
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.15.0",
@@ -73,6 +75,7 @@
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-delete": "^2.0.0",
+    "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.29.0",
     "typescript": "^4.1.5"
   }

@@ -7,7 +7,7 @@ build-parameters:
     - builder: custom
       commands:
         - npm install
-        - npm run build:prod
+        - npm run build
 
 resources:
   - name: dynatrace-service
