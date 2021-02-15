@@ -79,7 +79,7 @@ export default class WorkerSet<T> extends Wrk {
       if (code !== 0) {
         console.error(`Worker stopped with exit code ${code}`);
       }
-      // FIXME: remove matching worker set element
+      this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });
   }
