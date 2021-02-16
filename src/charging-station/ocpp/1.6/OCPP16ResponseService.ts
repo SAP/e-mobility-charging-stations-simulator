@@ -1,6 +1,6 @@
 import { AuthorizeRequest, OCPP16AuthorizationStatus, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionResponse, StartTransactionRequest, StopTransactionRequest } from '../../../types/ocpp/1.6/Transaction';
 import { HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
-import { HeartbeatResponse, OCPP16BootNotificationResponse, OCPP16RegistrationStatus, StatusNotificationResponse } from '../../../types/ocpp/1.6/RequestResponses';
+import { HeartbeatResponse, OCPP16BootNotificationResponse, OCPP16RegistrationStatus, StatusNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
 
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';

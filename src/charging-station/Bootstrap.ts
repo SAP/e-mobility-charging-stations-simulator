@@ -4,16 +4,17 @@ import Utils from '../utils/Utils';
 import WorkerFactory from '../worker/WorkerFactory';
 import Wrk from '../worker/Wrk';
 import { isMainThread } from 'worker_threads';
+import path from 'path';
 
 export default class Bootstrap {
   private static instance: Bootstrap;
-  private isStarted: boolean;
+  private started: boolean;
   private workerScript: string;
   private workerImplementationInstance: Wrk;
 
   private constructor() {
-    this.isStarted = false;
-    this.workerScript = './dist/charging-station/StationWorker.js';
+    this.started = false;
+    this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'StationWorker.js');
   }
 
   public static getInstance(): Bootstrap {
@@ -24,7 +25,7 @@ export default class Bootstrap {
   }
 
   public async start(): Promise<void> {
-    if (isMainThread && !this.isStarted) {
+    if (isMainThread && !this.started) {
       try {
         let numStationsTotal = 0;
         await this.getWorkerImplementationInstance().start();
@@ -36,7 +37,7 @@ export default class Bootstrap {
               for (let index = 1; index <= nbStations; index++) {
                 const workerData: StationWorkerData = {
                   index,
-                  templateFile: stationURL.file
+                  templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
                 await this.getWorkerImplementationInstance().addElement(workerData);
                 numStationsTotal++;
@@ -54,7 +55,7 @@ export default class Bootstrap {
         } else {
           console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.getWorkerImplementationInstance().size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode (${this.getWorkerImplementationInstance().maxElementsPerWorker} charging station(s) per worker)`);
         }
-        this.isStarted = true;
+        this.started = true;
       } catch (error) {
       // eslint-disable-next-line no-console
         console.error('Bootstrap start error ', error);
@@ -63,14 +64,14 @@ export default class Bootstrap {
   }
 
   public async stop(): Promise<void> {
-    if (isMainThread && this.isStarted) {
-      await this.getWorkerImplementationInstance().stop();
+    if (isMainThread && this.started) {
       if (this.getWorkerImplementationInstance()) {
+        await this.getWorkerImplementationInstance().stop();
         // Nullify to force worker implementation instance creation
         this.workerImplementationInstance = null;
       }
     }
-    this.isStarted = false;
+    this.started = false;
   }
 
   public async restart(): Promise<void> {

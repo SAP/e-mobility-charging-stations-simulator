@@ -5,16 +5,34 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "node",
+      "type": "pwa-node",
       "request": "launch",
-      "name": "Debug Program via npm",
+      "name": "Debug Simulator via npm",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run-script",
+        "start:debug"
+      ],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "stopOnEntry": true
+    },
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Debug Simulator Development Build via npm",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run-script",
         "start:dev:debug"
       ],
-      "port": 9229,
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "stopOnEntry": true
     }
   ]

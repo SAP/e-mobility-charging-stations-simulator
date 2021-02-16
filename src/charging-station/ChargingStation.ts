@@ -1,4 +1,4 @@
-import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/RequestResponses';
+import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { PowerOutType, VoltageOut } from '../types/ChargingStationTemplate';
 import Connectors, { Connector } from '../types/Connectors';
@@ -29,6 +29,7 @@ import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
+import path from 'path';
 
 export default class ChargingStation {
   public stationTemplateFile: string;
@@ -223,7 +224,7 @@ export default class ChargingStation {
         }
       }, interval);
     } else {
-      logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${Utils.milliSecondsToHHMMSS(interval)}, not sending MeterValues`);
+      logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.milliSecondsToHHMMSS(interval) : interval}, not sending MeterValues`);
     }
   }
 
@@ -316,6 +317,31 @@ export default class ChargingStation {
     this.initTransactionOnConnector(connectorId);
     if (this.getConnector(connectorId)?.transactionSetInterval) {
       clearInterval(this.getConnector(connectorId).transactionSetInterval);
+    }
+  }
+
+  public addToMessageQueue(message: string): void {
+    let dups = false;
+    // Handle dups in buffer
+    for (const bufferedMessage of this.messageQueue) {
+      // Same message
+      if (message === bufferedMessage) {
+        dups = true;
+        break;
+      }
+    }
+    if (!dups) {
+      // Buffer message
+      this.messageQueue.push(message);
+    }
+  }
+
+  private flushMessageQueue() {
+    if (!Utils.isEmptyArray(this.messageQueue)) {
+      this.messageQueue.forEach((message, index) => {
+        this.messageQueue.splice(index, 1);
+        this.wsConnection.send(message);
+      });
     }
   }
 
@@ -460,16 +486,12 @@ export default class ChargingStation {
           await Utils.sleep(this.bootNotificationResponse?.interval ? this.bootNotificationResponse.interval * 1000 : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL);
         }
       } while (!this.isRegistered() && (registrationRetryCount <= this.getRegistrationMaxRetries() || this.getRegistrationMaxRetries() === -1));
-    } else if (this.isRegistered()) {
+    }
+    if (this.isRegistered()) {
       await this.startMessageSequence();
       this.hasStopped && (this.hasStopped = false);
       if (this.hasSocketRestarted && this.isWebSocketOpen()) {
-        if (!Utils.isEmptyArray(this.messageQueue)) {
-          this.messageQueue.forEach((message, index) => {
-            this.messageQueue.splice(index, 1);
-            this.wsConnection.send(message);
-          });
-        }
+        this.flushMessageQueue();
       }
     } else {
       logger.error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);
@@ -577,7 +599,7 @@ export default class ChargingStation {
   }
 
   private getAuthorizationFile(): string {
-    return this.stationInfo.authorizationFile && this.stationInfo.authorizationFile;
+    return this.stationInfo.authorizationFile && path.join(path.resolve(__dirname, '../'), 'assets', path.basename(this.stationInfo.authorizationFile));
   }
 
   private getAuthorizedTags(): string[] {

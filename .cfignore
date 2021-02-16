@@ -2,6 +2,7 @@
 .gitignore
 .gitattributes
 .gitmodules
+.github
 .jshintrc
 .eslintrc
 .vscode
@@ -9,6 +10,8 @@
 .tscache
 # Logs
 *.log
+# Winston
+*-audit.json
 # Vim
 # Persistent undo
 [._]*.un~
@@ -16,8 +19,10 @@
 .netrwhist
 *~
 *.orig
+src
 ev-simulator-start.sh
 ev-simulator-start.bat
 README.md
 node_modules
 manifest-cf-template.yml
+mta.yaml

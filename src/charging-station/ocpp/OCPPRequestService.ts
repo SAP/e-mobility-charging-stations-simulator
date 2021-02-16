@@ -1,7 +1,7 @@
 import { AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../../types/ocpp/Transaction';
 import { IncomingRequestCommand, Request, RequestCommand } from '../../types/ocpp/Requests';
 
-import { BootNotificationResponse } from '../../types/ocpp/RequestResponses';
+import { BootNotificationResponse } from '../../types/ocpp/Responses';
 import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../../types/ocpp/ChargePointStatus';
 import ChargingStation from '../ChargingStation';
@@ -24,7 +24,6 @@ export default abstract class OCPPRequestService {
   public async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
-    const chargingStation = this.chargingStation;
     // Send a message through wsConnection
     return new Promise((resolve: (value?: any | PromiseLike<any>) => void, reject: (reason?: any) => void) => {
       let messageToSend: string;
@@ -55,19 +54,8 @@ export default abstract class OCPPRequestService {
         // Yes: Send Message
         this.chargingStation.wsConnection.send(messageToSend);
       } else if (commandName !== RequestCommand.BOOT_NOTIFICATION) {
-        let dups = false;
-        // Handle dups in buffer
-        for (const message of this.chargingStation.messageQueue) {
-          // Same message
-          if (messageToSend === message) {
-            dups = true;
-            break;
-          }
-        }
-        if (!dups) {
-          // Buffer message
-          this.chargingStation.messageQueue.push(messageToSend);
-        }
+        // Buffer it
+        this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it
         return rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ? commandParams.details : {}));
       }
@@ -82,8 +70,8 @@ export default abstract class OCPPRequestService {
 
       // Function that will receive the request's response
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
-        if (chargingStation.getEnableStatistics()) {
-          chargingStation.statistics.addMessage(commandName, messageType);
+        if (self.chargingStation.getEnableStatistics()) {
+          self.chargingStation.statistics.addMessage(commandName, messageType);
         }
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
@@ -92,13 +80,13 @@ export default abstract class OCPPRequestService {
 
       // Function that will receive the request's rejection
       function rejectCallback(error: OCPPError): void {
-        if (chargingStation.getEnableStatistics()) {
-          chargingStation.statistics.addMessage(commandName, messageType);
+        if (self.chargingStation.getEnableStatistics()) {
+          self.chargingStation.statistics.addMessage(commandName, messageType);
         }
-        logger.debug(`${chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
+        logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception
         // eslint-disable-next-line no-empty-function
-        chargingStation.requests[messageId] = [() => { }, () => { }, {}]; // Properly format the request
+        self.chargingStation.requests[messageId] = [() => { }, () => { }, {}];
         // Send error
         reject(error);
       }

@@ -1,4 +1,4 @@
-import { OCPP16BootNotificationResponse, OCPP16RegistrationStatus } from './1.6/RequestResponses';
+import { OCPP16BootNotificationResponse, OCPP16RegistrationStatus } from './1.6/Responses';
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse;
 
