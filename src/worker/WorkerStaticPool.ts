@@ -1,7 +1,8 @@
-import { FixedThreadPool, FixedThreadPoolOptions } from 'poolifier';
+import { FixedThreadPool, PoolOptions } from 'poolifier';
 
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
+import { Worker } from 'worker_threads';
 import { WorkerData } from '../types/Worker';
 import Wrk from './Wrk';
 
@@ -58,7 +59,7 @@ export default class WorkerStaticPool<T> extends Wrk {
 class StaticPool extends FixedThreadPool<WorkerData> {
   private static instance: StaticPool;
 
-  private constructor(numThreads: number, workerScript: string, opts?: FixedThreadPoolOptions) {
+  private constructor(numThreads: number, workerScript: string, opts?: PoolOptions<Worker>) {
     super(numThreads, workerScript, opts);
   }
 
