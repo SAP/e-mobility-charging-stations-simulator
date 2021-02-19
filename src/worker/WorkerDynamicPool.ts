@@ -59,13 +59,13 @@ export default class WorkerDynamicPool<T> extends Wrk {
 class DynamicPool extends DynamicThreadPool<WorkerData> {
   private static instance: DynamicPool;
 
-  private constructor(min: number, max: number, filename: string, opts?: PoolOptions<Worker>) {
-    super(min, max, filename, opts);
+  private constructor(min: number, max: number, workerScript: string, opts?: PoolOptions<Worker>) {
+    super(min, max, workerScript, opts);
   }
 
-  public static getInstance(min: number, max: number, filename: string): DynamicPool {
+  public static getInstance(min: number, max: number, workerScript: string): DynamicPool {
     if (!DynamicPool.instance) {
-      DynamicPool.instance = new DynamicPool(min, max, filename,
+      DynamicPool.instance = new DynamicPool(min, max, workerScript,
         {
           exitHandler: (code) => {
             if (code !== 0) {
