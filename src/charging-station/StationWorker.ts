@@ -9,7 +9,7 @@ import Utils from '../utils/Utils';
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker;
 if (Utils.workerPoolInUse()) {
-  threadWorker = new ThreadWorker(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
+  threadWorker = new ThreadWorker<StationWorkerData>(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
 }
 
 if (!isMainThread) {
