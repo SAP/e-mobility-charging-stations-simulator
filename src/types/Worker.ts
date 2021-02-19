@@ -1,3 +1,4 @@
+import { JSONValue } from 'poolifier';
 import { Worker } from 'worker_threads';
 
 export enum WorkerProcessType {
@@ -12,7 +13,7 @@ export interface WorkerOptions {
   elementsPerWorker?: number;
 }
 
-export interface WorkerData { }
+export type WorkerData = JSONValue;
 
 export interface StationWorkerData extends WorkerData {
   index: number;

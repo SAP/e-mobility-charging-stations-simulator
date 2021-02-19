@@ -20,7 +20,7 @@ if (!isMainThread) {
   }
 }
 
-function addListener() {
+function addListener(): void {
   parentPort.on('message', (message) => {
     if (message.id === WorkerEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.workerData);
@@ -28,7 +28,7 @@ function addListener() {
   });
 }
 
-function startChargingStation(data: StationWorkerData) {
+function startChargingStation(data: StationWorkerData): void {
   const station = new ChargingStation(data.index , data.templateFile);
   station.start();
 }
