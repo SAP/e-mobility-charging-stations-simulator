@@ -9,7 +9,7 @@ import Utils from '../utils/Utils';
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker;
 if (Utils.workerPoolInUse()) {
-  threadWorker = new ThreadWorker(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
+  threadWorker = new ThreadWorker<StationWorkerData>(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
 }
 
 if (!isMainThread) {
@@ -20,7 +20,7 @@ if (!isMainThread) {
   }
 }
 
-function addListener() {
+function addListener(): void {
   parentPort.on('message', (message) => {
     if (message.id === WorkerEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.workerData);
@@ -28,7 +28,7 @@ function addListener() {
   });
 }
 
-function startChargingStation(data: StationWorkerData) {
+function startChargingStation(data: StationWorkerData): void {
   const station = new ChargingStation(data.index , data.templateFile);
   station.start();
 }

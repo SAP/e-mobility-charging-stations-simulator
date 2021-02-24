@@ -1,7 +1,8 @@
-import { FixedThreadPool, FixedThreadPoolOptions } from 'poolifier';
+import { FixedThreadPool, PoolOptions } from 'poolifier';
 
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
+import { Worker } from 'worker_threads';
 import { WorkerData } from '../types/Worker';
 import Wrk from './Wrk';
 
@@ -13,9 +14,9 @@ export default class WorkerStaticPool<T> extends Wrk {
    *
    * @param {string} workerScript
    */
-  constructor(workerScript: string, numThreads: number) {
+  constructor(workerScript: string, numberOfThreads: number) {
     super(workerScript);
-    this.pool = StaticPool.getInstance(numThreads, this.workerScript);
+    this.pool = StaticPool.getInstance(numberOfThreads, this.workerScript);
   }
 
   get size(): number {
@@ -58,13 +59,13 @@ export default class WorkerStaticPool<T> extends Wrk {
 class StaticPool extends FixedThreadPool<WorkerData> {
   private static instance: StaticPool;
 
-  private constructor(numThreads: number, workerScript: string, opts?: FixedThreadPoolOptions) {
-    super(numThreads, workerScript, opts);
+  private constructor(numberOfThreads: number, workerScript: string, opts?: PoolOptions<Worker>) {
+    super(numberOfThreads, workerScript, opts);
   }
 
-  public static getInstance(numThreads: number, workerScript: string): StaticPool {
+  public static getInstance(numberOfThreads: number, workerScript: string): StaticPool {
     if (!StaticPool.instance) {
-      StaticPool.instance = new StaticPool(numThreads, workerScript,
+      StaticPool.instance = new StaticPool(numberOfThreads, workerScript,
         {
           exitHandler: (code) => {
             if (code !== 0) {
