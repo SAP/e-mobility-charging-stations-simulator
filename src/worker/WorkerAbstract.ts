@@ -1,12 +1,12 @@
 import { WorkerData } from '../types/Worker';
 
-export default abstract class Wrk {
+export default abstract class WorkerAbstract {
   protected workerScript: string;
   public abstract size: number;
   public abstract maxElementsPerWorker: number;
 
   /**
-   * Create a new `Wrk`.
+   * Create a new `Worker` implementation.
    *
    * @param {string} workerScript
    */

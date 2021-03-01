@@ -1,8 +1,8 @@
 import Configuration from '../utils/Configuration';
 import { StationWorkerData } from '../types/Worker';
 import Utils from '../utils/Utils';
+import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
-import Wrk from '../worker/Wrk';
 import { isMainThread } from 'worker_threads';
 import path from 'path';
 
@@ -10,7 +10,7 @@ export default class Bootstrap {
   private static instance: Bootstrap;
   private started: boolean;
   private workerScript: string;
-  private workerImplementationInstance: Wrk;
+  private workerImplementationInstance: WorkerAbstract;
 
   private constructor() {
     this.started = false;
@@ -79,7 +79,7 @@ export default class Bootstrap {
     await this.start();
   }
 
-  private getWorkerImplementationInstance(): Wrk {
+  private getWorkerImplementationInstance(): WorkerAbstract {
     if (!this.workerImplementationInstance) {
       this.workerImplementationInstance = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(), {
         poolMaxSize: Configuration.getWorkerPoolMaxSize(),

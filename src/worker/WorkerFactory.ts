@@ -1,14 +1,14 @@
 import { WorkerOptions, WorkerProcessType } from '../types/Worker';
 
 import Utils from '../utils/Utils';
+import WorkerAbstract from './WorkerAbstract';
 import WorkerDynamicPool from './WorkerDynamicPool';
 import WorkerSet from './WorkerSet';
 import WorkerStaticPool from './WorkerStaticPool';
-import Wrk from './Wrk';
 import { isMainThread } from 'worker_threads';
 
 export default class WorkerFactory {
-  public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): Wrk {
+  public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): WorkerAbstract {
     if (!isMainThread) {
       throw new Error('Trying to get a worker implementation outside the main thread');
     }
