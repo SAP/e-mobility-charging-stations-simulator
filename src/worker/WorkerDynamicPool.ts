@@ -3,10 +3,10 @@ import { DynamicThreadPool, PoolOptions } from 'poolifier';
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
+import WorkerAbstract from './WorkerAbstract';
 import { WorkerData } from '../types/Worker';
-import Wrk from './Wrk';
 
-export default class WorkerDynamicPool<T> extends Wrk {
+export default class WorkerDynamicPool<T> extends WorkerAbstract {
   private pool: DynamicPool;
 
   /**
@@ -40,6 +40,7 @@ export default class WorkerDynamicPool<T> extends Wrk {
    * @return {Promise<void>}
    * @public
    */
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async stop(): Promise<void> {
     return this.pool.destroy();
   }

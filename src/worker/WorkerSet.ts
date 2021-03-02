@@ -3,9 +3,9 @@ import { WorkerEvents, WorkerSetElement } from '../types/Worker';
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
-import Wrk from './Wrk';
+import WorkerAbstract from './WorkerAbstract';
 
-export default class WorkerSet<T> extends Wrk {
+export default class WorkerSet<T> extends WorkerAbstract {
   public maxElementsPerWorker: number;
   private workerSet: Set<WorkerSetElement>;
 

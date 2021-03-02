@@ -3,10 +3,10 @@ import { FixedThreadPool, PoolOptions } from 'poolifier';
 import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
+import WorkerAbstract from './WorkerAbstract';
 import { WorkerData } from '../types/Worker';
-import Wrk from './Wrk';
 
-export default class WorkerStaticPool<T> extends Wrk {
+export default class WorkerStaticPool<T> extends WorkerAbstract {
   private pool: StaticPool;
 
   /**
