@@ -1,6 +1,6 @@
 import { OCPP16AuthorizationStatus, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionReason, OCPP16StopTransactionResponse } from './1.6/Transaction';
 
-export type AuthorizationStatus = typeof AuthorizationStatus;
+export type AuthorizationStatus = OCPP16AuthorizationStatus;
 
 export const AuthorizationStatus = {
   ...OCPP16AuthorizationStatus,
@@ -8,7 +8,7 @@ export const AuthorizationStatus = {
 
 export type AuthorizeResponse = OCPP16AuthorizeResponse;
 
-export type StopTransactionReason = typeof StopTransactionReason;
+export type StopTransactionReason = OCPP16StopTransactionReason;
 
 export const StopTransactionReason = {
   ...OCPP16StopTransactionReason,

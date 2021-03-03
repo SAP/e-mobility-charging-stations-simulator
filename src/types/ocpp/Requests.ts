@@ -9,19 +9,19 @@ export default interface Requests {
 
 export type BootNotificationRequest = OCPP16BootNotificationRequest;
 
-export type AvailabilityType = typeof AvailabilityType;
+export type AvailabilityType = OCPP16AvailabilityType;
 
 export const AvailabilityType = {
   ...OCPP16AvailabilityType
 };
 
-export type RequestCommand = typeof RequestCommand;
+export type RequestCommand = OCPP16RequestCommand;
 
 export const RequestCommand = {
   ...OCPP16RequestCommand
 };
 
-export type IncomingRequestCommand = typeof IncomingRequestCommand;
+export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
 
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand
