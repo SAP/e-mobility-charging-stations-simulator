@@ -54,14 +54,14 @@
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0",
-    "ws": "^7.4.3"
+    "ws": "^7.4.4"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.3",
     "utf-8-validate": "^5.0.4"
   },
   "devDependencies": {
-    "@types/node": "^14.14.31",
+    "@types/node": "^14.14.32",
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
