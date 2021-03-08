@@ -53,7 +53,7 @@ export default class Bootstrap {
         if (numStationsTotal === 0) {
           console.log('No charging station template enabled in configuration, exiting');
         } else {
-          console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.getWorkerImplementationInstance().size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode (${this.getWorkerImplementationInstance().maxElementsPerWorker} charging station(s) per worker)`);
+          console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.getWorkerImplementationInstance().size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.getWorkerImplementationInstance().maxElementsPerWorker ? ` (${this.getWorkerImplementationInstance().maxElementsPerWorker} charging station(s) per worker)` : ''}`);
         }
         this.started = true;
       } catch (error) {
