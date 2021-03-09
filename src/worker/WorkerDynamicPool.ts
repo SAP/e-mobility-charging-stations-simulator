@@ -24,7 +24,7 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
   }
 
   get maxElementsPerWorker(): number {
-    return 1;
+    return null;
   }
 
   /**
