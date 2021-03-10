@@ -1,8 +1,8 @@
 [submodule "src/assets/configs-aws"]
 	path = src/assets/configs-aws
-	url = ../../sap-labs-france/ev-aws.git
+	url = ../../E-Mobility/ev-aws.git
 	branch = master
 [submodule "src/assets/configs-scp"]
 	path = src/assets/configs-scp
-	url = ../../sap-labs-france/ev-scp-config.git
-	branch = master-qa
+	url = ../../E-Mobility/ev-scp-config.git
+  branch = master-qa
