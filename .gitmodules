@@ -5,4 +5,4 @@
 [submodule "src/assets/configs-scp"]
 	path = src/assets/configs-scp
 	url = ../../sap-labs-france/ev-scp-config.git
-       branch = master-qa
+	branch = master-qa
