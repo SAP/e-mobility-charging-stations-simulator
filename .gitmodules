@@ -5,4 +5,4 @@
 [submodule "src/assets/configs-scp"]
 	path = src/assets/configs-scp
 	url = ../../E-Mobility/ev-scp-config.git
-       branch = master
+       branch = master-qa
