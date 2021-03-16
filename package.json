@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "mongodb": "^3.6.4",
-    "poolifier": "^2.0.0",
+    "poolifier": "^2.0.1",
     "source-map-support": "^0.5.19",
     "tslib": "^2.1.0",
     "uuid": "^8.3.2",
@@ -71,7 +71,7 @@
     "eslint": "^7.22.0",
     "mbt": "^1.1.1",
     "npm-check": "^5.9.2",
-    "rollup": "^2.41.3",
+    "rollup": "^2.41.4",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
