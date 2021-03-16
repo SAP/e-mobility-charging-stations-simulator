@@ -47,7 +47,7 @@
     "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
-    "mongodb": "^3.6.4",
+    "mongodb": "^3.6.5",
     "poolifier": "^2.0.1",
     "source-map-support": "^0.5.19",
     "tslib": "^2.1.0",
