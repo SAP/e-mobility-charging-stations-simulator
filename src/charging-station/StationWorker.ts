@@ -1,5 +1,5 @@
 import { StationWorkerData, WorkerEvents } from '../types/Worker';
-import { isMainThread, parentPort, workerData } from 'worker_threads';
+import { parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
@@ -10,9 +10,7 @@ import Utils from '../utils/Utils';
 export let threadWorker;
 if (Utils.workerPoolInUse()) {
   threadWorker = new ThreadWorker<StationWorkerData>(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
-}
-
-if (!isMainThread) {
+} else {
   // Add listener to start charging station from main thread
   addListener();
   if (!Utils.isUndefined(workerData)) {
