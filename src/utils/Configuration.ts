@@ -1,6 +1,5 @@
 import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
 
-import Bootstrap from '../charging-station/Bootstrap';
 import { WorkerProcessType } from '../types/Worker';
 import fs from 'fs';
 import path from 'path';
@@ -9,6 +8,11 @@ export default class Configuration {
   private static configurationFilePath = path.join(path.resolve(__dirname, '../'), 'assets', 'config.json');
   private static configurationFileWatcher: fs.FSWatcher;
   private static configuration: ConfigurationData;
+  private static configurationChangeCallback: () => Promise<void>;
+
+  static setConfigurationChangeCallback(cb: () => Promise<void>): void {
+    Configuration.configurationChangeCallback = cb;
+  }
 
   static getStatisticsDisplayInterval(): number {
     // Read conf
@@ -122,7 +126,9 @@ export default class Configuration {
     return fs.watch(Configuration.configurationFilePath).on('change', async (e): Promise<void> => {
       // Nullify to force configuration file reading
       Configuration.configuration = null;
-      await Bootstrap.getInstance().restart();
+      if (!Configuration.isUndefined(Configuration.configurationChangeCallback)) {
+        await Configuration.configurationChangeCallback();
+      }
     });
   }
 

@@ -15,6 +15,7 @@ export default class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'StationWorker.js');
+    Configuration.setConfigurationChangeCallback(async () => this.restart());
   }
 
   public static getInstance(): Bootstrap {
