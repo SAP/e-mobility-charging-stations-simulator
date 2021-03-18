@@ -73,14 +73,14 @@
       }
     ],
     "block-spacing": "error",
-    "capitalized-comments": [
-      "error",
-      "always",
-      {
-        "ignoreConsecutiveComments": true,
-        "ignorePattern": "pragma|ignored"
-      }
-    ],
+    // "capitalized-comments": [
+    //   "error",
+    //   "always",
+    //   {
+    //     "ignoreConsecutiveComments": true,
+    //     "ignorePattern": "pragma|ignored"
+    //   }
+    // ],
     "eol-last": [
       "error",
       "always"

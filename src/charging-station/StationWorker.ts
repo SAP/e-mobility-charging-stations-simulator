@@ -7,18 +7,18 @@ import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
 
 // Conditionally export ThreadWorker instance for pool usage
-export let threadWorker;
+export let threadWorker: ThreadWorker;
 if (Utils.workerPoolInUse()) {
   threadWorker = new ThreadWorker<StationWorkerData>(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
 } else {
-  // Add listener to start charging station from main thread
-  addListener();
+  // Add message listener to start charging station from main thread
+  addMessageListener();
   if (!Utils.isUndefined(workerData)) {
     startChargingStation({ index: workerData.index as number, templateFile: workerData.templateFile as string });
   }
 }
 
-function addListener(): void {
+function addMessageListener(): void {
   parentPort.on('message', (message) => {
     if (message.id === WorkerEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.workerData);
