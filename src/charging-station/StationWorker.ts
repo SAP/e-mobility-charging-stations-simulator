@@ -27,6 +27,6 @@ function addMessageListener(): void {
 }
 
 function startChargingStation(data: StationWorkerData): void {
-  const station = new ChargingStation(data.index , data.templateFile);
+  const station = new ChargingStation(data.index, data.templateFile);
   station.start();
 }

@@ -44,7 +44,6 @@ export default class Bootstrap {
                 numStationsTotal++;
               }
             } catch (error) {
-            // eslint-disable-next-line no-console
               console.error('Charging station start with template file ' + stationURL.file + ' error ', error);
             }
           }
@@ -58,7 +57,6 @@ export default class Bootstrap {
         }
         this.started = true;
       } catch (error) {
-      // eslint-disable-next-line no-console
         console.error('Bootstrap start error ', error);
       }
     }
