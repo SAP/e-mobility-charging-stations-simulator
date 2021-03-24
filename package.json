@@ -69,6 +69,7 @@
     "clinic": "^8.0.1",
     "cross-env": "^7.0.3",
     "eslint": "^7.22.0",
+    "eslint-plugin-jsdoc": "^32.3.0",
     "mbt": "^1.1.1",
     "npm-check": "^5.9.2",
     "rollup": "^2.42.4",

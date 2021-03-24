@@ -184,7 +184,7 @@ export default class Utils {
 
   /**
    * @param  {number} [retryNumber=0]
-   * @return {number} - delay in milliseconds
+   * @returns {number} - delay in milliseconds
    */
   static exponentialDelay(retryNumber = 0): number {
     const delay = Math.pow(2, retryNumber) * 100;

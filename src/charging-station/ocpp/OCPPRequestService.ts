@@ -68,7 +68,12 @@ export default abstract class OCPPRequestService {
         setTimeout(() => rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams.details ? commandParams.details : {})), Constants.OCPP_ERROR_TIMEOUT);
       }
 
-      // Function that will receive the request's response
+      /**
+       * Function that will receive the request's response
+       *
+       * @param payload
+       * @param requestPayload
+       */
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
         if (self.chargingStation.getEnableStatistics()) {
           self.chargingStation.statistics.addMessage(commandName, messageType);
@@ -78,7 +83,11 @@ export default abstract class OCPPRequestService {
         resolve(payload);
       }
 
-      // Function that will receive the request's rejection
+      /**
+       * Function that will receive the request's rejection
+       *
+       * @param error
+       */
       function rejectCallback(error: OCPPError): void {
         if (self.chargingStation.getEnableStatistics()) {
           self.chargingStation.statistics.addMessage(commandName, messageType);

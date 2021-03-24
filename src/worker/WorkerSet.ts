@@ -27,7 +27,8 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @return {Promise<void>}
+   * @param elementData
+   * @returns {Promise<void>}
    * @public
    */
   public async addElement(elementData: T): Promise<void> {
@@ -45,7 +46,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @return {Promise<void>}
+   * @returns {Promise<void>}
    * @public
    */
   public async start(): Promise<void> {
@@ -56,7 +57,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @return {Promise<void>}
+   * @returns {Promise<void>}
    * @public
    */
   public async stop(): Promise<void> {
@@ -68,7 +69,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @return {Promise}
+   * @returns {Promise}
    * @private
    */
   private startWorker(): void {
