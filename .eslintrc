@@ -8,11 +8,15 @@
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
     "plugin:jsdoc/recommended"
   ],
   "plugins": [
-    "@typescript-eslint",
-    "jsdoc"
+    "import",
+    "jsdoc",
+    "@typescript-eslint"
   ],
   "settings": {
     "jsdoc": {
