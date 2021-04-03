@@ -113,6 +113,20 @@
     "keyword-spacing": [
       "error"
     ],
+    "id-blacklist": [
+      "error",
+      "any",
+      "Number",
+      "number",
+      "String",
+      "string",
+      "Boolean",
+      "boolean",
+      "Undefined",
+      "undefined",
+      "Symbol",
+      "symbol"
+    ],
     "linebreak-style": [
       "error",
       "unix"
