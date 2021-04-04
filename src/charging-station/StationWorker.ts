@@ -19,7 +19,7 @@ if (Utils.workerPoolInUse()) {
 }
 
 /**
- *
+ * Listen messages send by the main thread
  */
 function addMessageListener(): void {
   parentPort.on('message', (message) => {
@@ -30,7 +30,9 @@ function addMessageListener(): void {
 }
 
 /**
- * @param data
+ * Create and start a charging station instance
+ *
+ * @param {StationWorkerData} data workerData
  */
 function startChargingStation(data: StationWorkerData): void {
   const station = new ChargingStation(data.index, data.templateFile);
