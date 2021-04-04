@@ -46,7 +46,8 @@ export default class AutomaticTransactionGenerator {
       const transactionId = this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionId;
       if (this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionStarted) {
         logger.info(this.logPrefix(Utils.convertToInt(connector)) + ' ATG OVER. Stop transaction ' + transactionId.toString());
-        await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId), this.chargingStation.getTransactionIdTag(transactionId), reason);
+        await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId),
+          this.chargingStation.getTransactionIdTag(transactionId), reason);
       }
     }
     this.timeToStop = true;

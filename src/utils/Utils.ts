@@ -104,14 +104,14 @@ export default class Utils {
     return Math.floor(Math.random() * max + 1);
   }
 
-  static roundTo(number: number, scale: number): number {
+  static roundTo(numberValue: number, scale: number): number {
     const roundPower = Math.pow(10, scale);
-    return Math.round(number * roundPower) / roundPower;
+    return Math.round(numberValue * roundPower) / roundPower;
   }
 
-  static truncTo(number: number, scale: number): number {
+  static truncTo(numberValue: number, scale: number): number {
     const truncPower = Math.pow(10, scale);
-    return Math.trunc(number * truncPower) / truncPower;
+    return Math.trunc(numberValue * truncPower) / truncPower;
   }
 
   static getRandomFloatRounded(max: number, min = 0, scale = 2): number {

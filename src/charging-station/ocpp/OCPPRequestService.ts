@@ -21,7 +21,8 @@ export default abstract class OCPPRequestService {
     this.ocppResponseService = ocppResponseService;
   }
 
-  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
+  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE,
+      commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection

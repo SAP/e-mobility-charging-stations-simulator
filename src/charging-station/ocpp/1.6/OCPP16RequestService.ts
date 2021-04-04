@@ -45,7 +45,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendStatusNotification(connectorId: number, status: OCPP16ChargePointStatus, errorCode: OCPP16ChargePointErrorCode = OCPP16ChargePointErrorCode.NO_ERROR): Promise<void> {
+  public async sendStatusNotification(connectorId: number, status: OCPP16ChargePointStatus,
+      errorCode: OCPP16ChargePointErrorCode = OCPP16ChargePointErrorCode.NO_ERROR): Promise<void> {
     try {
       const payload: StatusNotificationRequest = {
         connectorId,
@@ -83,7 +84,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendStopTransaction(transactionId: number, meterStop: number, idTag?: string, reason: OCPP16StopTransactionReason = OCPP16StopTransactionReason.NONE): Promise<OCPP16StopTransactionResponse> {
+  public async sendStopTransaction(transactionId: number, meterStop: number, idTag?: string,
+      reason: OCPP16StopTransactionReason = OCPP16StopTransactionReason.NONE): Promise<OCPP16StopTransactionResponse> {
     try {
       const payload: StopTransactionRequest = {
         transactionId,
