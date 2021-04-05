@@ -17,11 +17,12 @@ import logger from '../../../utils/Logger';
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
     let response;
+    const methodName = `handleRequest${commandName}`;
     // Call
-    if (typeof this['handleRequest' + commandName] === 'function') {
+    if (typeof this[methodName] === 'function') {
       try {
         // Call the method to build the response
-        response = await this['handleRequest' + commandName](commandPayload);
+        response = await this[methodName](commandPayload);
       } catch (error) {
         // Log
         logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);

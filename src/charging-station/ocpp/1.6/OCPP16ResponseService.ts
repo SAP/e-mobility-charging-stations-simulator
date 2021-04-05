@@ -11,11 +11,11 @@ import logger from '../../../utils/Logger';
 
 export default class OCPP16ResponseService extends OCPPResponseService {
   public async handleResponse(commandName: OCPP16RequestCommand, payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
-    const responseCallbackFn = 'handleResponse' + commandName;
-    if (typeof this[responseCallbackFn] === 'function') {
-      await this[responseCallbackFn](payload, requestPayload);
+    const responseCallbackMethodName = `handleResponse${commandName}`;
+    if (typeof this[responseCallbackMethodName] === 'function') {
+      await this[responseCallbackMethodName](payload, requestPayload);
     } else {
-      logger.error(this.chargingStation.logPrefix() + ' Trying to call an undefined response callback function: ' + responseCallbackFn);
+      logger.error(this.chargingStation.logPrefix() + ' Trying to call an undefined response callback method: ' + responseCallbackMethodName);
     }
   }
 
