@@ -47,7 +47,7 @@
     "git:spush": "git push --recurse-submodules=on-demand"
   },
   "dependencies": {
-    "mongodb": "^3.6.5",
+    "mongodb": "^3.6.6",
     "poolifier": "^2.0.1",
     "source-map-support": "^0.5.19",
     "tslib": "^2.2.0",
@@ -79,6 +79,6 @@
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",
-    "typescript": "^4.2.3"
+    "typescript": "^4.2.4"
   }
 }
