@@ -13,8 +13,8 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
    * Create a new `WorkerDynamicPool`.
    *
    * @param {string} workerScript
-   * @param min
-   * @param max
+   * @param {number} min
+   * @param {number} max
    */
   constructor(workerScript: string, min: number, max: number,) {
     super(workerScript);

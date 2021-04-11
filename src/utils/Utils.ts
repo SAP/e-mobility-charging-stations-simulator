@@ -183,8 +183,8 @@ export default class Utils {
   static insertAt = (str: string, subStr: string, pos: number): string => `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
 
   /**
-   * @param  {number} [retryNumber=0]
-   * @returns {number} - delay in milliseconds
+   * @param {number} [retryNumber=0]
+   * @returns {number} delay in milliseconds
    */
   static exponentialDelay(retryNumber = 0): number {
     const delay = Math.pow(2, retryNumber) * 100;
@@ -192,6 +192,12 @@ export default class Utils {
     return delay + randomSum;
   }
 
+  /**
+   * Convert websocket error code to human readable string message
+   *
+   * @param {number} code websocket error code
+   * @returns {string} human readable string message
+   */
   static getWebSocketCloseEventStatusString(code: number): string {
     if (code >= 0 && code <= 999) {
       return '(Unused)';

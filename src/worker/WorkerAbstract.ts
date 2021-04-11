@@ -6,7 +6,7 @@ export default abstract class WorkerAbstract {
   public abstract maxElementsPerWorker: number;
 
   /**
-   * Create a new `Worker` implementation.
+   * `WorkerAbstract` constructor.
    *
    * @param {string} workerScript
    */

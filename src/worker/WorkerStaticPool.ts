@@ -13,7 +13,7 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
    * Create a new `WorkerStaticPool`.
    *
    * @param {string} workerScript
-   * @param numberOfThreads
+   * @param {number} numberOfThreads
    */
   constructor(workerScript: string, numberOfThreads: number) {
     super(workerScript);

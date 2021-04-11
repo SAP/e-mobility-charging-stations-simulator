@@ -69,7 +69,6 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @returns {Promise}
    * @private
    */
   private startWorker(): void {
