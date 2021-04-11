@@ -9,7 +9,7 @@ You want to contribute to ev-simulator? Welcome! Please read this document to un
 
 ## Analyze Issues
 Analyzing issue reports can be a lot of effort. Any help is welcome!
-Go to [the Github issue tracker](https://github.com/LucasBrazi06/ev-simulator/issues?state=open) and find an open issue which needs additional work or a bugfix. Maybe you can even find and [contribute](#contribute-code) a bugfix?
+Go to [the Github issue tracker](https://github.com/sap-labs-france/ev-simulator/issues?state=open) and find an open issue which needs additional work or a bugfix. Maybe you can even find and [contribute](#contribute-code) a bugfix?
 
 ## Issue Handling Process
 When an issue is reported, a committer will look at it and either confirm it as a real issue (by giving the "approved" label), close it if it is not an issue, or ask for more details. Approved issues are then either assigned to a committer in GitHub, reported in our internal issue handling system, or left open as "contribution welcome" for easy or not urgent fixes. An issue that is about a real bug is closed as soon as the fix is committed.
