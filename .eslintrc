@@ -81,7 +81,8 @@
     ],
     "no-useless-catch": "error",
     "no-useless-return": "error",
-    "no-shadow": "error",
+    "no-shadow": "off", // This one is generating false positive no-shadow errors on exported/const enums
+    "@typescript-eslint/no-shadow": "error",
     "no-multiple-empty-lines": [
       "error",
       {
