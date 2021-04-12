@@ -322,16 +322,16 @@ export default class ChargingStation {
 
   public addToMessageQueue(message: string): void {
     let dups = false;
-    // Handle dups in buffer
+    // Handle dups in message queue
     for (const bufferedMessage of this.messageQueue) {
-      // Same message
+      // Message already in the queue
       if (message === bufferedMessage) {
         dups = true;
         break;
       }
     }
     if (!dups) {
-      // Buffer message
+      // Queue message
       this.messageQueue.push(message);
     }
   }
