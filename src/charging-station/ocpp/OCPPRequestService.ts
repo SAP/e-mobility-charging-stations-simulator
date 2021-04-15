@@ -21,7 +21,8 @@ export default abstract class OCPPRequestService {
     this.ocppResponseService = ocppResponseService;
   }
 
-  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
+  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE,
+      commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -68,7 +69,12 @@ export default abstract class OCPPRequestService {
         setTimeout(() => rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams.details ? commandParams.details : {})), Constants.OCPP_ERROR_TIMEOUT);
       }
 
-      // Function that will receive the request's response
+      /**
+       * Function that will receive the request's response
+       *
+       * @param {Record<string, unknown> | string} payload
+       * @param {Record<string, unknown>} requestPayload
+       */
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
         if (self.chargingStation.getEnableStatistics()) {
           self.chargingStation.statistics.addMessage(commandName, messageType);
@@ -78,7 +84,11 @@ export default abstract class OCPPRequestService {
         resolve(payload);
       }
 
-      // Function that will receive the request's rejection
+      /**
+       * Function that will receive the request's rejection
+       *
+       * @param {OCPPError} error
+       */
       function rejectCallback(error: OCPPError): void {
         if (self.chargingStation.getEnableStatistics()) {
           self.chargingStation.statistics.addMessage(commandName, messageType);

@@ -104,14 +104,14 @@ export default class Utils {
     return Math.floor(Math.random() * max + 1);
   }
 
-  static roundTo(number: number, scale: number): number {
+  static roundTo(numberValue: number, scale: number): number {
     const roundPower = Math.pow(10, scale);
-    return Math.round(number * roundPower) / roundPower;
+    return Math.round(numberValue * roundPower) / roundPower;
   }
 
-  static truncTo(number: number, scale: number): number {
+  static truncTo(numberValue: number, scale: number): number {
     const truncPower = Math.pow(10, scale);
-    return Math.trunc(number * truncPower) / truncPower;
+    return Math.trunc(numberValue * truncPower) / truncPower;
   }
 
   static getRandomFloatRounded(max: number, min = 0, scale = 2): number {
@@ -183,8 +183,8 @@ export default class Utils {
   static insertAt = (str: string, subStr: string, pos: number): string => `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
 
   /**
-   * @param  {number} [retryNumber=0]
-   * @return {number} - delay in milliseconds
+   * @param {number} [retryNumber=0]
+   * @returns {number} delay in milliseconds
    */
   static exponentialDelay(retryNumber = 0): number {
     const delay = Math.pow(2, retryNumber) * 100;
@@ -192,6 +192,12 @@ export default class Utils {
     return delay + randomSum;
   }
 
+  /**
+   * Convert websocket error code to human readable string message
+   *
+   * @param {number} code websocket error code
+   * @returns {string} human readable string message
+   */
   static getWebSocketCloseEventStatusString(code: number): string {
     if (code >= 0 && code <= 999) {
       return '(Unused)';
@@ -213,7 +219,7 @@ export default class Utils {
   }
 
   static workerPoolInUse(): boolean {
-    return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL || Configuration.getWorkerProcess() === WorkerProcessType.STATIC_POOL;
+    return [WorkerProcessType.DYNAMIC_POOL, WorkerProcessType.STATIC_POOL].includes(Configuration.getWorkerProcess());
   }
 
   static workerDynamicPoolInUse(): boolean {

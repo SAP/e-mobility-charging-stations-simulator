@@ -1,6 +1,6 @@
 import { OCPPConfigurationKey } from './ocpp/Configuration';
 
-export interface ConfigurationKey extends OCPPConfigurationKey{
+export interface ConfigurationKey extends OCPPConfigurationKey {
   visible?: boolean;
   reboot?: boolean;
 }

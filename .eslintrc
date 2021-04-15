@@ -7,18 +7,35 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking"
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+    "plugin:jsdoc/recommended"
   ],
   "plugins": [
+    "import",
+    "jsdoc",
     "@typescript-eslint"
   ],
+  "settings": {
+    "jsdoc": {
+      "mode": "typescript"
+    }
+  },
   "rules": {
     "indent": "off",
     "@typescript-eslint/indent": [
       "error",
       2,
       {
-        "SwitchCase": 1
+        "SwitchCase": 1,
+        "FunctionDeclaration": {
+          "parameters": 2
+        },
+        "FunctionExpression": {
+          "parameters": 2
+        }
       }
     ],
     "@typescript-eslint/array-type": "off",
@@ -64,7 +81,8 @@
     ],
     "no-useless-catch": "error",
     "no-useless-return": "error",
-    "no-shadow": "error",
+    "no-shadow": "off", // This one is generating false positive no-shadow errors on exported/const enums
+    "@typescript-eslint/no-shadow": "error",
     "no-multiple-empty-lines": [
       "error",
       {
@@ -73,14 +91,14 @@
       }
     ],
     "block-spacing": "error",
-    "capitalized-comments": [
-      "error",
-      "always",
-      {
-        "ignoreConsecutiveComments": true,
-        "ignorePattern": "pragma|ignored"
-      }
-    ],
+    // "capitalized-comments": [
+    //   "error",
+    //   "always",
+    //   {
+    //     "ignoreConsecutiveComments": true,
+    //     "ignorePattern": "pragma|ignored"
+    //   }
+    // ],
     "eol-last": [
       "error",
       "always"
@@ -95,6 +113,20 @@
     ],
     "keyword-spacing": [
       "error"
+    ],
+    "id-blacklist": [
+      "error",
+      "any",
+      "Number",
+      "number",
+      "String",
+      "string",
+      "Boolean",
+      "boolean",
+      "Undefined",
+      "undefined",
+      "Symbol",
+      "symbol"
     ],
     "linebreak-style": [
       "error",

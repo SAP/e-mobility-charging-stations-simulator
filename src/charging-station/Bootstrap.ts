@@ -15,6 +15,7 @@ export default class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'StationWorker.js');
+    Configuration.setConfigurationChangeCallback(async () => this.restart());
   }
 
   public static getInstance(): Bootstrap {
@@ -43,7 +44,6 @@ export default class Bootstrap {
                 numStationsTotal++;
               }
             } catch (error) {
-            // eslint-disable-next-line no-console
               console.error('Charging station start with template file ' + stationURL.file + ' error ', error);
             }
           }
@@ -57,7 +57,6 @@ export default class Bootstrap {
         }
         this.started = true;
       } catch (error) {
-      // eslint-disable-next-line no-console
         console.error('Bootstrap start error ', error);
       }
     }
@@ -65,11 +64,9 @@ export default class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
-      if (this.getWorkerImplementationInstance()) {
-        await this.getWorkerImplementationInstance().stop();
-        // Nullify to force worker implementation instance creation
-        this.workerImplementationInstance = null;
-      }
+      await this.getWorkerImplementationInstance().stop();
+      // Nullify to force worker implementation instance creation
+      this.workerImplementationInstance = null;
     }
     this.started = false;
   }

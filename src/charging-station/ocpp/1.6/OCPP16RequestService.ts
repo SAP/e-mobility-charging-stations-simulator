@@ -2,8 +2,8 @@ import { AuthorizeRequest, OCPP16AuthorizeResponse, OCPP16StartTransactionRespon
 import { HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
 import { MeterValue, MeterValueLocation, MeterValuePhase, MeterValueUnit, MeterValuesRequest, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
 
+import { ACElectricUtils } from '../../../utils/ElectricUtils';
 import Constants from '../../../utils/Constants';
-import ElectricUtils from '../../../utils/ElectricUtils';
 import MeasurandValues from '../../../types/MeasurandValues';
 import { MessageType } from '../../../types/ocpp/MessageType';
 import { OCPP16BootNotificationResponse } from '../../../types/ocpp/1.6/Responses';
@@ -45,7 +45,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendStatusNotification(connectorId: number, status: OCPP16ChargePointStatus, errorCode: OCPP16ChargePointErrorCode = OCPP16ChargePointErrorCode.NO_ERROR): Promise<void> {
+  public async sendStatusNotification(connectorId: number, status: OCPP16ChargePointStatus,
+      errorCode: OCPP16ChargePointErrorCode = OCPP16ChargePointErrorCode.NO_ERROR): Promise<void> {
     try {
       const payload: StatusNotificationRequest = {
         connectorId,
@@ -83,7 +84,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendStopTransaction(transactionId: number, meterStop: number, idTag?: string, reason: OCPP16StopTransactionReason = OCPP16StopTransactionReason.NONE): Promise<OCPP16StopTransactionResponse> {
+  public async sendStopTransaction(transactionId: number, meterStop: number, idTag?: string,
+      reason: OCPP16StopTransactionReason = OCPP16StopTransactionReason.NONE): Promise<OCPP16StopTransactionResponse> {
     try {
       const payload: StopTransactionRequest = {
         transactionId,
@@ -224,7 +226,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           let maxAmperage: number;
           switch (self.chargingStation.getPowerOutType()) {
             case PowerOutType.AC:
-              maxAmperage = ElectricUtils.ampPerPhaseFromPower(self.chargingStation.getNumberOfPhases(), self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
+              maxAmperage = ACElectricUtils.amperagePerPhaseFromPower(self.chargingStation.getNumberOfPhases(), self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 currentMeasurandValues.L1 = Utils.getRandomFloatRounded(maxAmperage);
                 currentMeasurandValues.L2 = 0;
@@ -237,7 +239,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
               }
               break;
             case PowerOutType.DC:
-              maxAmperage = ElectricUtils.ampTotalFromPower(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
+              maxAmperage = ACElectricUtils.amperageTotalFromPower(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 currentMeasurandValues.allPhases = Utils.getRandomFloatRounded(maxAmperage);
               }

@@ -13,6 +13,7 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
    * Create a new `WorkerStaticPool`.
    *
    * @param {string} workerScript
+   * @param {number} numberOfThreads
    */
   constructor(workerScript: string, numberOfThreads: number) {
     super(workerScript);
@@ -29,7 +30,7 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @return {Promise<void>}
+   * @returns {Promise<void>}
    * @public
    */
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -37,7 +38,7 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @return {Promise<void>}
+   * @returns {Promise<void>}
    * @public
    */
   public async stop(): Promise<void> {
@@ -46,7 +47,8 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @return {Promise<void>}
+   * @param elementData
+   * @returns {Promise<void>}
    * @public
    */
   public async addElement(elementData: T): Promise<void> {

@@ -17,11 +17,12 @@ import logger from '../../../utils/Logger';
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
     let response;
+    const methodName = `handleRequest${commandName}`;
     // Call
-    if (typeof this['handleRequest' + commandName] === 'function') {
+    if (typeof this[methodName] === 'function') {
       try {
         // Call the method to build the response
-        response = await this['handleRequest' + commandName](commandPayload);
+        response = await this[methodName](commandPayload);
       } catch (error) {
         // Log
         logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);
@@ -62,7 +63,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
       const transactionId = this.chargingStation.getConnector(connectorId).transactionId;
-      const stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId), this.chargingStation.getTransactionIdTag(transactionId), OCPP16StopTransactionReason.UNLOCK_COMMAND);
+      const stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId),
+        this.chargingStation.getTransactionIdTag(transactionId), OCPP16StopTransactionReason.UNLOCK_COMMAND);
       if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
         return Constants.OCPP_RESPONSE_UNLOCKED;
       }
@@ -295,7 +297,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionId === transactionId) {
         await this.chargingStation.ocppRequestService.sendStatusNotification(Utils.convertToInt(connector), OCPP16ChargePointStatus.FINISHING);
         this.chargingStation.getConnector(Utils.convertToInt(connector)).status = OCPP16ChargePointStatus.FINISHING;
-        await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId), this.chargingStation.getTransactionIdTag(transactionId));
+        await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId),
+          this.chargingStation.getTransactionIdTag(transactionId));
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
     }

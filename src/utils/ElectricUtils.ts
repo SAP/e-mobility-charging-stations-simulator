@@ -1,10 +1,12 @@
 /**
  * Rationale: https://wiki.piment-noir.org/doku.php/en:cs:modelling_multi-phased_electrical_system_interconnexion
- * Targeted to AC related values calculation.
- * To use for DC, always consider cosPhi = 1 and do not use per phase helpers
  */
-export default class ElectricUtils {
-  static ampTotal(nbOfPhases: number, Iph: number): number {
+
+/**
+ * Targeted to AC related values calculation.
+ */
+export class ACElectricUtils {
+  static amperageTotal(nbOfPhases: number, Iph: number): number {
     return nbOfPhases * Iph;
   }
 
@@ -17,23 +19,40 @@ export default class ElectricUtils {
   }
 
   static powerTotal(nbOfPhases: number, V: number, Iph: number, cosPhi = 1): number {
-    return nbOfPhases * ElectricUtils.powerPerPhase(V, Iph, cosPhi);
+    return nbOfPhases * ACElectricUtils.powerPerPhase(V, Iph, cosPhi);
   }
 
-  static ampTotalFromPower(P: number, V: number, cosPhi = 1): number {
-    const power = P / (V * cosPhi);
+  static amperageTotalFromPower(P: number, V: number, cosPhi = 1): number {
+    const amperage = P / (V * cosPhi);
     if (cosPhi === 1 && P % V === 0) {
-      return power;
+      return amperage;
     }
-    return Math.round(power);
+    return Math.round(amperage);
   }
 
-  static ampPerPhaseFromPower(nbOfPhases: number, P: number, V: number, cosPhi = 1): number {
-    const power = ElectricUtils.ampTotalFromPower(P, V, cosPhi);
-    const powerPerPhase = power / nbOfPhases;
-    if (power % nbOfPhases === 0) {
-      return powerPerPhase;
+  static amperagePerPhaseFromPower(nbOfPhases: number, P: number, V: number, cosPhi = 1): number {
+    const amperage = ACElectricUtils.amperageTotalFromPower(P, V, cosPhi);
+    const amperagePerPhase = amperage / nbOfPhases;
+    if (amperage % nbOfPhases === 0) {
+      return amperagePerPhase;
     }
-    return Math.round(powerPerPhase);
+    return Math.round(amperagePerPhase);
+  }
+}
+
+/**
+ * Targeted to DC related values calculation.
+ */
+export class DCElectricUtils {
+  static power(V: number, I: number): number {
+    return V * I;
+  }
+
+  static amperage(P: number, V: number): number {
+    const amperage = P / V;
+    if (P % V === 0) {
+      return amperage;
+    }
+    return Math.round(amperage);
   }
 }
