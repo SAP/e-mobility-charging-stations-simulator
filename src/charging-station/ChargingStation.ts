@@ -480,7 +480,8 @@ export default class ChargingStation {
       // Send BootNotification
       let registrationRetryCount = 0;
       do {
-        this.bootNotificationResponse = await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel, this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
+        this.bootNotificationResponse = await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel,
+          this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
         if (!this.isRegistered()) {
           registrationRetryCount++;
           await Utils.sleep(this.bootNotificationResponse?.interval ? this.bootNotificationResponse.interval * 1000 : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL);
