@@ -73,7 +73,7 @@
     "eslint-plugin-jsdoc": "^32.3.3",
     "mbt": "^1.1.1",
     "npm-check": "^5.9.2",
-    "rollup": "^2.45.2",
+    "rollup": "^2.46.0",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
