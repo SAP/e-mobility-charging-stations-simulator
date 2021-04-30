@@ -78,11 +78,13 @@ export default class Bootstrap {
 
   private getWorkerImplementationInstance(): WorkerAbstract {
     if (!this.workerImplementationInstance) {
-      this.workerImplementationInstance = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(), {
-        poolMaxSize: Configuration.getWorkerPoolMaxSize(),
-        poolMinSize: Configuration.getWorkerPoolMinSize(),
-        elementsPerWorker: Configuration.getChargingStationsPerWorker()
-      });
+      this.workerImplementationInstance = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
+        {
+          startDelay: Configuration.getWorkerStartDelay(),
+          poolMaxSize: Configuration.getWorkerPoolMaxSize(),
+          poolMinSize: Configuration.getWorkerPoolMinSize(),
+          elementsPerWorker: Configuration.getChargingStationsPerWorker()
+        });
     }
     return this.workerImplementationInstance;
   }

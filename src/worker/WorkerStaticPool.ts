@@ -1,6 +1,5 @@
 import { FixedThreadPool, PoolOptions } from 'poolifier';
 
-import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
@@ -14,9 +13,10 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
    *
    * @param {string} workerScript
    * @param {number} numberOfThreads
+   * @param {number} startWorkerDelay
    */
-  constructor(workerScript: string, numberOfThreads: number) {
-    super(workerScript);
+  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number) {
+    super(workerScript, startWorkerDelay);
     this.pool = StaticPool.getInstance(numberOfThreads, this.workerScript);
   }
 
@@ -54,7 +54,7 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
   public async addElement(elementData: T): Promise<void> {
     await this.pool.execute(elementData);
     // Start worker sequentially to optimize memory at startup
-    await Utils.sleep(Constants.START_WORKER_DELAY);
+    await Utils.sleep(this.workerStartDelay);
   }
 }
 

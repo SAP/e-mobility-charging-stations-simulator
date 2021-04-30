@@ -1,6 +1,5 @@
 import { WorkerEvents, WorkerSetElement } from '../types/Worker';
 
-import Constants from '../utils/Constants';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
@@ -14,9 +13,10 @@ export default class WorkerSet<T> extends WorkerAbstract {
    *
    * @param {string} workerScript
    * @param {number} maxElementsPerWorker
+   * @param {number} workerStartDelay
    */
-  constructor(workerScript: string, maxElementsPerWorker = 1) {
-    super(workerScript);
+  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartDelay?: number) {
+    super(workerScript, workerStartDelay);
     this.workerSet = new Set<WorkerSetElement>();
     this.maxElementsPerWorker = maxElementsPerWorker;
   }
@@ -38,7 +38,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
     if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
       this.startWorker();
       // Start worker sequentially to optimize memory at startup
-      await Utils.sleep(Constants.START_WORKER_DELAY);
+      await Utils.sleep(this.workerStartDelay);
     }
     this.getLastWorker().postMessage({ id: WorkerEvents.START_WORKER_ELEMENT, workerData: elementData });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
@@ -52,7 +52,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
   public async start(): Promise<void> {
     this.startWorker();
     // Start worker sequentially to optimize memory at startup
-    await Utils.sleep(Constants.START_WORKER_DELAY);
+    await Utils.sleep(this.workerStartDelay);
   }
 
   /**

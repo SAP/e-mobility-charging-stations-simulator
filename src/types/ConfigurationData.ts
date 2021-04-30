@@ -13,6 +13,7 @@ export default interface ConfigurationData {
   autoReconnectMaxRetries?: number;
   distributeStationsToTenantsEqually?: boolean;
   workerProcess?: WorkerProcessType;
+  workerStartDelay?: number;
   workerPoolMinSize?: number;
   workerPoolMaxSize?: number;
   chargingStationsPerWorker?: number;

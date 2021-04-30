@@ -7,12 +7,14 @@ export enum WorkerProcessType {
 }
 
 export interface WorkerOptions {
+  startDelay?: number;
   poolMaxSize?: number;
   poolMinSize?: number;
   elementsPerWorker?: number;
 }
 
-export interface WorkerData { }
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface WorkerData {}
 
 export interface StationWorkerData extends WorkerData {
   index: number;

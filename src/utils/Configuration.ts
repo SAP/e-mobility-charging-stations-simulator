@@ -1,5 +1,6 @@
 import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
 
+import Constants from './Constants';
 import { WorkerProcessType } from '../types/Worker';
 import fs from 'fs';
 import path from 'path';
@@ -49,6 +50,10 @@ export default class Configuration {
   static getWorkerProcess(): WorkerProcessType {
     Configuration.deprecateConfigurationKey('useWorkerPool;', 'Use \'workerProcess\' to define the type of worker process to use instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess') ? Configuration.getConfig().workerProcess : WorkerProcessType.WORKER_SET;
+  }
+
+  static getWorkerStartDelay(): number {
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerStartDelay') ? Configuration.getConfig().workerStartDelay : Constants.WORKER_START_DELAY;
   }
 
   static getWorkerPoolMinSize(): number {

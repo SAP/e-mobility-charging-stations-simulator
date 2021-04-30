@@ -1,7 +1,9 @@
+import Constants from '../utils/Constants';
 import { WorkerData } from '../types/Worker';
 
 export default abstract class WorkerAbstract {
-  protected workerScript: string;
+  protected readonly workerScript: string;
+  protected readonly workerStartDelay: number;
   public abstract size: number;
   public abstract maxElementsPerWorker: number;
 
@@ -9,9 +11,11 @@ export default abstract class WorkerAbstract {
    * `WorkerAbstract` constructor.
    *
    * @param {string} workerScript
+   * @param {number} workerStartDelay
    */
-  constructor(workerScript: string) {
+  constructor(workerScript: string, workerStartDelay: number = Constants.WORKER_START_DELAY) {
     this.workerScript = workerScript;
+    this.workerStartDelay = workerStartDelay;
   }
 
   public abstract start(): Promise<void>;

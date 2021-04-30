@@ -1,6 +1,6 @@
 import { WorkerOptions, WorkerProcessType } from '../types/Worker';
 
-import Utils from '../utils/Utils';
+import Constants from '../utils/Constants';
 import WorkerAbstract from './WorkerAbstract';
 import WorkerDynamicPool from './WorkerDynamicPool';
 import WorkerSet from './WorkerSet';
@@ -12,20 +12,19 @@ export default class WorkerFactory {
     if (!isMainThread) {
       throw new Error('Trying to get a worker implementation outside the main thread');
     }
-    if (Utils.isUndefined(options)) {
-      options = {} as WorkerOptions;
-    }
+    options = options ?? {} as WorkerOptions;
+    options.startDelay = options.startDelay ?? Constants.WORKER_START_DELAY;
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
         options.elementsPerWorker = options.elementsPerWorker ?? 1;
-        return new WorkerSet<T>(workerScript, options.elementsPerWorker);
+        return new WorkerSet<T>(workerScript, options.elementsPerWorker, options.startDelay);
       case WorkerProcessType.STATIC_POOL:
         options.poolMaxSize = options.poolMaxSize ?? 16;
-        return new WorkerStaticPool<T>(workerScript, options.poolMaxSize);
+        return new WorkerStaticPool<T>(workerScript, options.poolMaxSize, options.startDelay);
       case WorkerProcessType.DYNAMIC_POOL:
         options.poolMinSize = options.poolMinSize ?? 4;
         options.poolMaxSize = options.poolMaxSize ?? 16;
-        return new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize);
+        return new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize, options.startDelay);
       default:
         return null;
     }
