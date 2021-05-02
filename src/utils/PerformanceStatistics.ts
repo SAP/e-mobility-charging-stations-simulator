@@ -8,7 +8,7 @@ import { PerformanceEntry } from 'perf_hooks';
 import Utils from './Utils';
 import logger from './Logger';
 
-export default class Statistics {
+export default class PerformanceStatistics {
   private objId: string;
   private commandsStatistics: CommandStatistics;
 
@@ -52,7 +52,7 @@ export default class Statistics {
         }
         break;
       default:
-        logger.error(`${this.logPrefix()} Wrong message type ${messageType}`);
+        logger.error(`${this.logPrefix()} wrong message type ${messageType}`);
         break;
     }
   }
@@ -64,7 +64,7 @@ export default class Statistics {
     perfEntry.entryType = entry.entryType;
     perfEntry.startTime = entry.startTime;
     perfEntry.duration = entry.duration;
-    logger.info(`${this.logPrefix()} object ${className} method(s) performance entry: %j`, perfEntry);
+    logger.info(`${this.logPrefix()} ${className} method(s) entry: %j`, perfEntry);
   }
 
   public start(): void {
@@ -137,6 +137,6 @@ export default class Statistics {
   }
 
   private logPrefix(): string {
-    return Utils.logPrefix(` ${this.objId} Statistics:`);
+    return Utils.logPrefix(` ${this.objId} | Performance statistics`);
   }
 }

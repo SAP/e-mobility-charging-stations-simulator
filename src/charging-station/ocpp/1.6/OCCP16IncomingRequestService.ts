@@ -271,7 +271,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           logger.debug(this.chargingStation.logPrefix() + ' Transaction remotely STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
           return Constants.OCPP_RESPONSE_ACCEPTED;
         }
-        logger.error(this.chargingStation.logPrefix() + ' Remote starting transaction REJECTED on connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
+        logger.warn(this.chargingStation.logPrefix() + ' Remote starting transaction REJECTED on connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
         return Constants.OCPP_RESPONSE_REJECTED;
       }
       await this.chargingStation.ocppRequestService.sendStatusNotification(transactionConnectorID, OCPP16ChargePointStatus.PREPARING);
@@ -287,7 +287,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       logger.debug(this.chargingStation.logPrefix() + ' Transaction remotely STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorID.toString() + ' for idTag ' + commandPayload.idTag);
       return Constants.OCPP_RESPONSE_ACCEPTED;
     }
-    logger.error(this.chargingStation.logPrefix() + ' Remote starting transaction REJECTED on unavailable connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
+    logger.warn(this.chargingStation.logPrefix() + ' Remote starting transaction REJECTED on unavailable connector Id ' + transactionConnectorID.toString() + ', idTag ' + commandPayload.idTag);
     return Constants.OCPP_RESPONSE_REJECTED;
   }
 

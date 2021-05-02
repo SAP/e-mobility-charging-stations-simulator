@@ -49,7 +49,7 @@ export default abstract class OCPPRequestService {
       // Check if wsConnection opened and charging station registered
       if (this.chargingStation.isWebSocketOpen() && (this.chargingStation.isRegistered() || commandName === RequestCommand.BOOT_NOTIFICATION)) {
         if (this.chargingStation.getEnableStatistics()) {
-          this.chargingStation.statistics.addMessage(commandName, messageType);
+          this.chargingStation.performanceStatistics.addMessage(commandName, messageType);
         }
         // Yes: Send Message
         this.chargingStation.wsConnection.send(messageToSend);
@@ -76,7 +76,7 @@ export default abstract class OCPPRequestService {
        */
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
         if (self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.statistics.addMessage(commandName, MessageType.CALL_RESULT_MESSAGE);
+          self.chargingStation.performanceStatistics.addMessage(commandName, MessageType.CALL_RESULT_MESSAGE);
         }
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
@@ -90,7 +90,7 @@ export default abstract class OCPPRequestService {
        */
       function rejectCallback(error: OCPPError): void {
         if (self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.statistics.addMessage(commandName, MessageType.CALL_ERROR_MESSAGE);
+          self.chargingStation.performanceStatistics.addMessage(commandName, MessageType.CALL_ERROR_MESSAGE);
         }
         logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception

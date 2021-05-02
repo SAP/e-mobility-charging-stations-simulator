@@ -21,13 +21,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   private handleResponseBootNotification(payload: OCPP16BootNotificationResponse, requestPayload: OCPP16BootNotificationRequest): void {
     if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
-      this.chargingStation.heartbeatSetInterval ? this.chargingStation.restartHeartbeat() : this.chargingStation.startHeartbeat();
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartBeatInterval, payload.interval.toString());
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartbeatInterval, payload.interval.toString(), false, false);
+      this.chargingStation.heartbeatSetInterval ? this.chargingStation.restartHeartbeat() : this.chargingStation.startHeartbeat();
     } else if (payload.status === OCPP16RegistrationStatus.PENDING) {
       logger.info(this.chargingStation.logPrefix() + ' Charging station in pending state on the central server');
     } else {
-      logger.info(this.chargingStation.logPrefix() + ' Charging station rejected by the central server');
+      logger.warn(this.chargingStation.logPrefix() + ' Charging station rejected by the central server');
     }
   }
 
@@ -64,7 +64,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       const configuredMeterValueSampleInterval = this.chargingStation.getConfigurationKey(OCPP16StandardParametersKey.MeterValueSampleInterval);
       this.chargingStation.startMeterValues(connectorId, configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
     } else {
-      logger.error(this.chargingStation.logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload?.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
+      logger.warn(this.chargingStation.logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload?.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
       this.chargingStation.resetTransactionOnConnector(connectorId);
       await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.AVAILABLE);
       this.chargingStation.getConnector(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
@@ -97,7 +97,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       logger.info(this.chargingStation.logPrefix() + ' Transaction ' + requestPayload.transactionId.toString() + ' STOPPED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorId.toString());
       this.chargingStation.resetTransactionOnConnector(transactionConnectorId);
     } else {
-      logger.error(this.chargingStation.logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status);
+      logger.warn(this.chargingStation.logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status);
     }
   }
 

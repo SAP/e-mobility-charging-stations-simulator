@@ -17,7 +17,7 @@ export default class AutomaticTransactionGenerator {
     if (this.chargingStation.getEnableStatistics()) {
       this.performanceObserver = new PerformanceObserver((list) => {
         const entry = list.getEntries()[0];
-        this.chargingStation.statistics.logPerformance(entry, Constants.ENTITY_AUTOMATIC_TRANSACTION_GENERATOR);
+        this.chargingStation.performanceStatistics.logPerformance(entry, Constants.ENTITY_AUTOMATIC_TRANSACTION_GENERATOR);
         this.performanceObserver.disconnect();
       });
     }
@@ -96,7 +96,7 @@ export default class AutomaticTransactionGenerator {
           startResponse = await this.startTransaction(connectorId, this);
         }
         if (startResponse?.idTagInfo?.status !== AuthorizationStatus.ACCEPTED) {
-          logger.info(this.logPrefix(connectorId) + ' transaction rejected');
+          logger.warn(this.logPrefix(connectorId) + ' transaction rejected');
           await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
         } else {
           // Wait until end of transaction
@@ -154,8 +154,8 @@ export default class AutomaticTransactionGenerator {
 
   private logPrefix(connectorId: number = null): string {
     if (connectorId) {
-      return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' ATG on connector #' + connectorId.toString() + ':');
+      return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' | ATG on connector #' + connectorId.toString() + ':');
     }
-    return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' ATG:');
+    return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' | ATG:');
   }
 }

@@ -21,8 +21,8 @@ import OCPPError from './OcppError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
+import PerformanceStatistics from '../utils/PerformanceStatistics';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
-import Statistics from '../utils/Statistics';
 import { StopTransactionReason } from '../types/ocpp/Transaction';
 import Utils from '../utils/Utils';
 import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
@@ -41,7 +41,7 @@ export default class ChargingStation {
   public wsConnection: WebSocket;
   public requests: Requests;
   public messageQueue: string[];
-  public statistics: Statistics;
+  public performanceStatistics: PerformanceStatistics;
   public heartbeatSetInterval: NodeJS.Timeout;
   public ocppIncomingRequestService: OCPPIncomingRequestService;
   public ocppRequestService: OCPPRequestService;
@@ -74,7 +74,7 @@ export default class ChargingStation {
   }
 
   public logPrefix(): string {
-    return Utils.logPrefix(` ${this.stationInfo.chargingStationId}:`);
+    return Utils.logPrefix(` ${this.stationInfo.chargingStationId} |`);
   }
 
   public getRandomTagId(): string {
@@ -181,7 +181,7 @@ export default class ChargingStation {
       }, this.getHeartbeatInterval());
       logger.info(this.logPrefix() + ' Heartbeat started every ' + Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()));
     } else if (this.heartbeatSetInterval) {
-      logger.info(this.logPrefix() + ' Heartbeat every ' + Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()) + ' already started');
+      logger.info(this.logPrefix() + ' Heartbeat already started every ' + Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()));
     } else {
       logger.error(`${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval() ? Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()) : this.getHeartbeatInterval()}, not starting the heartbeat`);
     }
@@ -465,10 +465,10 @@ export default class ChargingStation {
     }
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
-      this.statistics = new Statistics(this.stationInfo.chargingStationId);
+      this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
       this.performanceObserver = new PerformanceObserver((list) => {
         const entry = list.getEntries()[0];
-        this.statistics.logPerformance(entry, Constants.ENTITY_CHARGING_STATION);
+        this.performanceStatistics.logPerformance(entry, Constants.ENTITY_CHARGING_STATION);
         this.performanceObserver.disconnect();
       });
     }
@@ -530,7 +530,7 @@ export default class ChargingStation {
         // Incoming Message
         case MessageType.CALL_MESSAGE:
           if (this.getEnableStatistics()) {
-            this.statistics.addMessage(commandName, messageType);
+            this.performanceStatistics.addMessage(commandName, messageType);
           }
           // Process the call
           await this.ocppIncomingRequestService.handleRequest(messageId, commandName, commandPayload);
@@ -733,7 +733,7 @@ export default class ChargingStation {
       }
     }
     if (this.getEnableStatistics()) {
-      this.statistics.start();
+      this.performanceStatistics.start();
     }
   }
 
