@@ -96,6 +96,20 @@ export default class Statistics {
     return (sortedDataSet[(middleIndex - 1)] + sortedDataSet[middleIndex]) / 2;
   }
 
+  private stdDeviation(dataSet: number[]): number {
+    let totalDataSet = 0;
+    for (const data of dataSet) {
+      totalDataSet += data;
+    }
+    const dataSetMean = totalDataSet / dataSet.length;
+    let totalGeometricDeviation = 0;
+    for (const data of dataSet) {
+      const deviation = data - dataSetMean;
+      totalGeometricDeviation += deviation * deviation;
+    }
+    return Math.sqrt(totalGeometricDeviation / dataSet.length);
+  }
+
   private addPerformanceTimer(command: RequestCommand | IncomingRequestCommand, duration: number): void {
     // Map to proper command name
     const MAPCOMMAND = {
@@ -119,6 +133,7 @@ export default class Statistics {
     this.commandsStatistics.commandsStatisticsData[command].avgTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement / this.commandsStatistics.commandsStatisticsData[command].countTimeMeasurement;
     Array.isArray(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries) ? this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries.push(duration) : this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries = [duration] as CircularArray<number>;
     this.commandsStatistics.commandsStatisticsData[command].medTimeMeasurement = this.median(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries);
+    this.commandsStatistics.commandsStatisticsData[command].stdDevTimeMeasurement = this.stdDeviation(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries);
   }
 
   private logPrefix(): string {

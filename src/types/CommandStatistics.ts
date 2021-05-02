@@ -20,6 +20,7 @@ export interface CommandStatisticsData {
   totalTimeMeasurement: number;
   avgTimeMeasurement: number;
   medTimeMeasurement: number;
+  stdDevTimeMeasurement: number;
 }
 
 export default interface CommandStatistics {
