@@ -21,8 +21,7 @@ export default abstract class OCPPRequestService {
     this.ocppResponseService = ocppResponseService;
   }
 
-  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType = MessageType.CALL_RESULT_MESSAGE,
-      commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
+  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -77,7 +76,7 @@ export default abstract class OCPPRequestService {
        */
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
         if (self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.statistics.addMessage(commandName, messageType);
+          self.chargingStation.statistics.addMessage(commandName, MessageType.CALL_RESULT_MESSAGE);
         }
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
@@ -91,7 +90,7 @@ export default abstract class OCPPRequestService {
        */
       function rejectCallback(error: OCPPError): void {
         if (self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.statistics.addMessage(commandName, messageType);
+          self.chargingStation.statistics.addMessage(commandName, MessageType.CALL_ERROR_MESSAGE);
         }
         logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception

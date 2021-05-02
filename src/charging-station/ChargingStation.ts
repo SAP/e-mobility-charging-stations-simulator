@@ -517,7 +517,7 @@ export default class ChargingStation {
 
   private async onMessage(messageEvent: MessageEvent): Promise<void> {
     let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, {}, {}];
-    let responseCallback: (payload?: Record<string, unknown> | string, requestPayload?: Record<string, unknown>) => void;
+    let responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void;
     let rejectCallback: (error: OCPPError) => void;
     let requestPayload: Record<string, unknown>;
     let errMsg: string;
