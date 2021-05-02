@@ -98,7 +98,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
   private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement {
     let workerSetElt: WorkerSetElement;
     this.workerSet.forEach((workerSetElement) => {
-      if (JSON.stringify(workerSetElement.worker) === JSON.stringify(worker)) {
+      if (workerSetElement.worker.threadId === worker.threadId) {
         workerSetElt = workerSetElement;
       }
     });

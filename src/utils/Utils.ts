@@ -130,7 +130,7 @@ export default class Utils {
     return JSON.parse(JSON.stringify(object)) as T;
   }
 
-  static isIterable(obj): boolean {
+  static isIterable<T>(obj: T): boolean {
     if (obj) {
       return typeof obj[Symbol.iterator] === 'function';
     }
