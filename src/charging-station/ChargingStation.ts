@@ -728,7 +728,8 @@ export default class ChargingStation {
         this.automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
       }
       if (this.automaticTransactionGeneration.timeToStop) {
-        await this.automaticTransactionGeneration.start();
+        // The ATG might sleep
+        void this.automaticTransactionGeneration.start();
       }
     }
     if (this.getEnableStatistics()) {
@@ -865,7 +866,8 @@ export default class ChargingStation {
             this.automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
           }
           if (this.automaticTransactionGeneration.timeToStop) {
-            await this.automaticTransactionGeneration.start();
+            // The ATG might sleep
+            void this.automaticTransactionGeneration.start();
           }
         }
         // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed

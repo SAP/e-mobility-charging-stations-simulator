@@ -53,7 +53,7 @@ export default class AutomaticTransactionGenerator {
     this.timeToStop = true;
   }
 
-  public async startConnector(connectorId: number): Promise<void> {
+  private async startConnector(connectorId: number): Promise<void> {
     do {
       if (this.timeToStop) {
         logger.error(this.logPrefix(connectorId) + ' Entered in transaction loop while a request to stop it was made');
