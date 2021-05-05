@@ -57,7 +57,7 @@ chargeBoxSerialNumberPrefix | | '' | string | charging stations serial number pr
 firmwareVersion | | '' | string | charging stations firmware version
 power | | | number\|number[] | charging stations maximum power value(s)
 powerSharedByConnectors | true/false | false | boolean | charging stations power shared by connectors
-powerUnits | W/kW | W | string | charging stations power units
+powerUnit | W/kW | W | string | charging stations power unit
 
 ## License
 

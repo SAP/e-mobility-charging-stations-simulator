@@ -45,7 +45,7 @@ export default interface ChargingStationTemplate {
   firmwareVersion?: string;
   power: number | number[];
   powerSharedByConnectors?: boolean;
-  powerUnits: PowerUnits;
+  powerUnit: PowerUnits;
   powerOutType?: PowerOutType;
   numberOfPhases?: number;
   numberOfConnectors?: number | number[];
