@@ -20,7 +20,7 @@ A list of RFID tags must be defined for the automatic transaction generator with
 
 ### Global configuration 
 
-_src/assets/config.json_
+**src/assets/config.json**:
 
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
