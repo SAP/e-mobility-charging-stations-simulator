@@ -113,7 +113,7 @@ export default class PerformanceStatistics {
   private addPerformanceTimer(command: RequestCommand | IncomingRequestCommand, duration: number): void {
     // Map to proper command name
     const MAPCOMMAND = {
-      sendMeterValues: RequestCommand.METERVALUES,
+      sendMeterValues: RequestCommand.METER_VALUES,
       startTransaction: RequestCommand.START_TRANSACTION,
       stopTransaction: RequestCommand.STOP_TRANSACTION,
     };

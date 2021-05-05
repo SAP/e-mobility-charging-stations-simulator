@@ -12,7 +12,7 @@ export enum OCPP16RequestCommand {
   AUTHORIZE = 'Authorize',
   START_TRANSACTION = 'StartTransaction',
   STOP_TRANSACTION = 'StopTransaction',
-  METERVALUES = 'MeterValues'
+  METER_VALUES = 'MeterValues'
 }
 
 export enum OCPP16IncomingRequestCommand {

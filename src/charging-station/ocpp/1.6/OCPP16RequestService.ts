@@ -314,9 +314,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
         transactionId,
         meterValue,
       };
-      await self.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METERVALUES);
+      await self.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
     } catch (error) {
-      self.handleRequestError(OCPP16RequestCommand.METERVALUES, error);
+      self.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
     }
   }
 
