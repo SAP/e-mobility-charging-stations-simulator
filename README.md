@@ -38,12 +38,26 @@ logMaxFiles | | 7 | integer | maximum number of files to keep
 logLevel | emerg/alert/crit/error/warning/notice/info/debug | info | string | winston logging level
 logFile | | combined.log | string | log file relative path
 logErrorFile | | error.log | string | error log file relative path 
+stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | array of charging template file URIs
  
 ### Charging station template
 
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
+supervisionURL | | '' | string | connection URI to OCPP-J server
+ocppVersion | 1.6 | 1.6 | string | OCPP version 
+ocppProtocol | json | json | string | OCPP protocol
 authorizationFile | | '' | string | RFID tags list file relative to src/assets path
+baseName | | '' | string | base name to build charging stations name
+nameSuffix | | '' | string | name suffix to build charging stations name
+fixedName | true/false | false | boolean | use the baseName as the charging stations unique name
+chargePointModel | | '' | string | charging stations model
+chargePointVendor | | '' | string | charging stations vendor
+chargeBoxSerialNumberPrefix | | '' | string | charging stations serial number prefix
+firmwareVersion | | '' | string | charging stations firmware version
+power | | | number\|number[] | charging stations maximum power value(s)
+powerSharedByConnectors | true/false | false | boolean | charging stations power shared by connectors
+powerUnits | W/kW | W | string | charging stations power units
 
 ## License
 

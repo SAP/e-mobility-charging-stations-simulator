@@ -8,7 +8,7 @@ export enum PowerOutType {
   DC = 'DC',
 }
 
-export enum PowerUnit {
+export enum PowerUnits {
   WATT = 'W',
   KILO_WATT = 'kW',
 }
@@ -38,14 +38,14 @@ export default interface ChargingStationTemplate {
   authorizationFile?: string;
   baseName: string;
   nameSuffix?: string;
-  fixedName?: string;
+  fixedName?: boolean;
   chargePointModel: string;
   chargePointVendor: string;
   chargeBoxSerialNumberPrefix?: string;
   firmwareVersion?: string;
   power: number | number[];
   powerSharedByConnectors?: boolean;
-  powerUnit: PowerUnit;
+  powerUnits: PowerUnits;
   powerOutType?: PowerOutType;
   numberOfPhases?: number;
   numberOfConnectors?: number | number[];
