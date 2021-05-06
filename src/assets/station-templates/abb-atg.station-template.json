@@ -8,7 +8,7 @@
   "power": 50000,
   "powerSharedByConnectors": true,
   "powerUnit": "W",
-  "powerOutType": "DC",
+  "currentOutType": "DC",
   "useConnectorId0": true,
   "randomConnectors": false,
   "resetTime": 60,

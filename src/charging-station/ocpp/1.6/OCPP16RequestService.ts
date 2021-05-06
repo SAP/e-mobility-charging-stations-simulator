@@ -4,6 +4,7 @@ import { MeterValue, MeterValueLocation, MeterValuePhase, MeterValueUnit, MeterV
 
 import { ACElectricUtils } from '../../../utils/ElectricUtils';
 import Constants from '../../../utils/Constants';
+import { CurrentOutType } from '../../../types/ChargingStationTemplate';
 import MeasurandValues from '../../../types/MeasurandValues';
 import { MessageType } from '../../../types/ocpp/MessageType';
 import { OCPP16BootNotificationResponse } from '../../../types/ocpp/1.6/Responses';
@@ -12,7 +13,6 @@ import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStat
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import OCPPError from '../../OcppError';
 import OCPPRequestService from '../OCPPRequestService';
-import { PowerOutType } from '../../../types/ChargingStationTemplate';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
@@ -161,12 +161,12 @@ export default class OCPP16RequestService extends OCPPRequestService {
             logger.error(errMsg);
             throw Error(errMsg);
           }
-          const errMsg = `${self.chargingStation.logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: Unknown ${self.chargingStation.getPowerOutType()} powerOutType in template file ${self.chargingStation.stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} measurand value`;
+          const errMsg = `${self.chargingStation.logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: Unknown ${self.chargingStation.getCurrentOutType()} currentOutType in template file ${self.chargingStation.stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} measurand value`;
           const powerMeasurandValues = {} as MeasurandValues;
           const maxPower = Math.round(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider);
           const maxPowerPerPhase = Math.round((self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider) / self.chargingStation.getNumberOfPhases());
-          switch (self.chargingStation.getPowerOutType()) {
-            case PowerOutType.AC:
+          switch (self.chargingStation.getCurrentOutType()) {
+            case CurrentOutType.AC:
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 powerMeasurandValues.L1 = Utils.getRandomFloatRounded(maxPowerPerPhase);
                 powerMeasurandValues.L2 = 0;
@@ -178,7 +178,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
                 powerMeasurandValues.allPhases = Utils.roundTo(powerMeasurandValues.L1 + powerMeasurandValues.L2 + powerMeasurandValues.L3, 2);
               }
               break;
-            case PowerOutType.DC:
+            case CurrentOutType.DC:
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 powerMeasurandValues.allPhases = Utils.getRandomFloatRounded(maxPower);
               }
@@ -221,11 +221,11 @@ export default class OCPP16RequestService extends OCPPRequestService {
             logger.error(errMsg);
             throw Error(errMsg);
           }
-          const errMsg = `${self.chargingStation.logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: Unknown ${self.chargingStation.getPowerOutType()} powerOutType in template file ${self.chargingStation.stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} measurand value`;
+          const errMsg = `${self.chargingStation.logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: Unknown ${self.chargingStation.getCurrentOutType()} currentOutType in template file ${self.chargingStation.stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ? meterValuesTemplate[index].measurand : OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} measurand value`;
           const currentMeasurandValues: MeasurandValues = {} as MeasurandValues;
           let maxAmperage: number;
-          switch (self.chargingStation.getPowerOutType()) {
-            case PowerOutType.AC:
+          switch (self.chargingStation.getCurrentOutType()) {
+            case CurrentOutType.AC:
               maxAmperage = ACElectricUtils.amperagePerPhaseFromPower(self.chargingStation.getNumberOfPhases(), self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 currentMeasurandValues.L1 = Utils.getRandomFloatRounded(maxAmperage);
@@ -238,7 +238,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
                 currentMeasurandValues.allPhases = Utils.roundTo((currentMeasurandValues.L1 + currentMeasurandValues.L2 + currentMeasurandValues.L3) / self.chargingStation.getNumberOfPhases(), 2);
               }
               break;
-            case PowerOutType.DC:
+            case CurrentOutType.DC:
               maxAmperage = ACElectricUtils.amperageTotalFromPower(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 currentMeasurandValues.allPhases = Utils.getRandomFloatRounded(maxAmperage);

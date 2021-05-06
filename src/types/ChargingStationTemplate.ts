@@ -3,7 +3,7 @@ import Connectors from './Connectors';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';
 
-export enum PowerOutType {
+export enum CurrentOutType {
   AC = 'AC',
   DC = 'DC',
 }
@@ -46,7 +46,7 @@ export default interface ChargingStationTemplate {
   power: number | number[];
   powerSharedByConnectors?: boolean;
   powerUnit: PowerUnits;
-  powerOutType?: PowerOutType;
+  currentOutType?: CurrentOutType;
   numberOfPhases?: number;
   numberOfConnectors?: number | number[];
   useConnectorId0?: boolean;

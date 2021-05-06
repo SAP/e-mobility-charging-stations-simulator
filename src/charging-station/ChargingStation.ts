@@ -1,6 +1,6 @@
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
-import ChargingStationTemplate, { PowerOutType, VoltageOut } from '../types/ChargingStationTemplate';
+import ChargingStationTemplate, { CurrentOutType, VoltageOut } from '../types/ChargingStationTemplate';
 import Connectors, { Connector } from '../types/Connectors';
 import { PerformanceObserver, performance } from 'perf_hooks';
 import Requests, { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand } from '../types/ocpp/Requests';
@@ -91,10 +91,10 @@ export default class ChargingStation {
   }
 
   public getNumberOfPhases(): number {
-    switch (this.getPowerOutType()) {
-      case PowerOutType.AC:
+    switch (this.getCurrentOutType()) {
+      case CurrentOutType.AC:
         return !Utils.isUndefined(this.stationInfo.numberOfPhases) ? this.stationInfo.numberOfPhases : 3;
-      case PowerOutType.DC:
+      case CurrentOutType.DC:
         return 0;
     }
   }
@@ -119,18 +119,18 @@ export default class ChargingStation {
     return this.connectors[id];
   }
 
-  public getPowerOutType(): PowerOutType {
-    return !Utils.isUndefined(this.stationInfo.powerOutType) ? this.stationInfo.powerOutType : PowerOutType.AC;
+  public getCurrentOutType(): CurrentOutType {
+    return !Utils.isUndefined(this.stationInfo.currentOutType) ? this.stationInfo.currentOutType : CurrentOutType.AC;
   }
 
   public getVoltageOut(): number {
-    const errMsg = `${this.logPrefix()} Unknown ${this.getPowerOutType()} powerOutType in template file ${this.stationTemplateFile}, cannot define default voltage out`;
+    const errMsg = `${this.logPrefix()} Unknown ${this.getCurrentOutType()} currentOutType in template file ${this.stationTemplateFile}, cannot define default voltage out`;
     let defaultVoltageOut: number;
-    switch (this.getPowerOutType()) {
-      case PowerOutType.AC:
+    switch (this.getCurrentOutType()) {
+      case CurrentOutType.AC:
         defaultVoltageOut = VoltageOut.VOLTAGE_230;
         break;
-      case PowerOutType.DC:
+      case CurrentOutType.DC:
         defaultVoltageOut = VoltageOut.VOLTAGE_400;
         break;
       default:

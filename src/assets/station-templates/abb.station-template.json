@@ -7,7 +7,7 @@
   "power": 50000,
   "powerSharedByConnectors": true,
   "powerUnit": "W",
-  "powerOutType": "DC",
+  "currentOutType": "DC",
   "numberOfConnectors": 2,
   "useConnectorId0": true,
   "randomConnectors": false,
