@@ -67,9 +67,9 @@ resetTime | | 60 | integer | seconds to wait before the charging stations come b
 connectionTimeout | | 30 | integer | connection timeout to the OCPP-J server
 autoReconnectMaxRetries | | -1 (unlimited) | integer | connection retries to the OCPP-J server
 reconnectExponentialDelay | true/false | false | boolean | connection delay retry to the OCPP-J server
-registrationMaxRetries | | -1 (unlimited) | number | charging stations boot notification retries
+registrationMaxRetries | | -1 (unlimited) | integer | charging stations boot notification retries
 enableStatistics | true/false | true | boolean | enable charging stations statistics   
-voltageOut | | AC:230/DC:400 | number | charging stations voltage out 
+voltageOut | | AC:230/DC:400 | integer | charging stations voltage out
 
 ## License
 
