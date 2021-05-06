@@ -59,7 +59,7 @@ power | | | integer\|integer[] | charging stations maximum power value(s)
 powerSharedByConnectors | true/false | false | boolean | charging stations power shared by its connectors
 powerUnit | W/kW | W | string | charging stations power unit
 currentOutType | AC/DC | AC | string | charging stations current out type
-numberOfPhases | 1/3 | AC:3/DC:0 | integer | charging stations number of phase(s) 
+numberOfPhases | 0/1/3 | AC:3/DC:0 | integer | charging stations number of phase(s) 
 numberOfConnectors | | | integer\|integer[] | charging stations number of connector(s)
 useConnectorId0 | true/false | true | boolean | use connector id 0 definition from the template
 randomConnectors | true/false | false | boolean | randomize the connector id
@@ -67,7 +67,7 @@ resetTime | | 60 | integer | seconds to wait before the charging stations come b
 connectionTimeout | | 30 | integer | connection timeout to the OCPP-J server
 autoReconnectMaxRetries | | -1 (unlimited) | integer | connection retries to the OCPP-J server
 reconnectExponentialDelay | true/false | false | boolean | connection delay retry to the OCPP-J server
-registrationMaxRetries | | -1 (unlimited) | boolean | charging stations boot notification retries
+registrationMaxRetries | | -1 (unlimited) | number | charging stations boot notification retries
 enableStatistics | true/false | true | boolean | enable charging stations statistics   
 voltageOut | | AC:230/DC:400 | number | charging stations voltage out 
 
