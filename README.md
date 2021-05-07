@@ -70,6 +70,79 @@ reconnectExponentialDelay | true/false | false | boolean | connection delay retr
 registrationMaxRetries | | -1 (unlimited) | integer | charging stations boot notification retries
 enableStatistics | true/false | true | boolean | enable charging stations statistics   
 voltageOut | | AC:230/DC:400 | integer | charging stations voltage out
+Configuration | | | ChargingStationConfiguration | charging stations OCPP configuration parameters
+AutomaticTransactionGenerator | | | AutomaticTransactionGenerator | charging stations ATG configuration
+Connectors | | | Connectors | charging stations connectors configuration
+
+#### Configuration section
+
+```json
+"Configuration": {
+    "configurationKey": [
+       ...
+       {
+        "key": "StandardKey",
+        "readonly": false,
+        "value": "StandardValue",
+        "visible": true,
+        "reboot": false
+      },
+      ...
+      {
+        "key": "VendorKey",
+        "readonly": false,
+        "value": "VendorValue",
+        "visible": false,
+        "reboot": true
+      },
+      ...
+    ]
+  }
+```
+
+#### AutomaticTransactionGenerator section
+
+```json
+ "AutomaticTransactionGenerator": {
+    "enable": false,
+    "minDuration": 60,
+    "maxDuration": 80,
+    "minDelayBetweenTwoTransactions": 15,
+    "maxDelayBetweenTwoTransactions": 30,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "stopOnConnectionFailure": true,
+    "requireAuthorize": false
+  }
+```
+#### Connectors section
+
+```json
+"Connectors": {
+    "0": {},
+    "1": {
+      "bootStatus": "Available",
+      "MeterValues": [
+        ...
+        {
+          "unit": "A",
+          "measurand": "Current.Import"
+        },
+        ...
+        {
+          "unit": "Wh"
+        },
+        ...
+      ]
+    }
+  },
+```
+
+## OCPP commands
+
+### Version 1.6
+
+TODO
 
 ## License
 
