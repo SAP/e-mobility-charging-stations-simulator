@@ -62,7 +62,7 @@ currentOutType | AC/DC | AC | string | charging stations current out type
 numberOfPhases | 0/1/3 | AC:3/DC:0 | integer | charging stations number of phase(s) 
 numberOfConnectors | | | integer\|integer[] | charging stations number of connector(s)
 useConnectorId0 | true/false | true | boolean | use connector id 0 definition from the template
-randomConnectors | true/false | false | boolean | randomize the connector id
+randomConnectors | true/false | false | boolean | randomize runtime connector id affectation from the connector id definition in template
 resetTime | | 60 | integer | seconds to wait before the charging stations come back at reset
 connectionTimeout | | 30 | integer | connection timeout to the OCPP-J server
 autoReconnectMaxRetries | | -1 (unlimited) | integer | connection retries to the OCPP-J server

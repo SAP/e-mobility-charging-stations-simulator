@@ -53,7 +53,7 @@
     "tslib": "^2.2.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
-    "winston-daily-rotate-file": "^4.5.4",
+    "winston-daily-rotate-file": "^4.5.5",
     "ws": "^7.4.5"
   },
   "optionalDependencies": {
@@ -68,7 +68,7 @@
     "@typescript-eslint/parser": "^4.22.1",
     "clinic": "^8.0.1",
     "cross-env": "^7.0.3",
-    "eslint": "^7.25.0",
+    "eslint": "^7.26.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jsdoc": "^33.1.0",
     "mbt": "^1.1.1",
