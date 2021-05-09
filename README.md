@@ -27,7 +27,8 @@ Key | Value(s) | Default Value | Value type | Description
 supervisionURLs | | [] | string[] |  array of connection URIs to OCPP-J servers
 distributeStationsToTenantsEqually | true/false | true | boolean | distribute charging stations uniformly to the OCPP-J servers
 statisticsDisplayInterval | | 60 | integer | seconds between charging stations statistics output in the logs 
-workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker threads process type           
+workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker threads process type
+workerStartDelay | | 500 | integer | milliseconds to wait at charging station worker threads startup
 workerPoolMinSize | | 4 | integer | worker threads pool minimum number of threads
 workerPoolMaxSize | | 16 | integer | worker threads pool maximum number of threads
 chargingStationsPerWorker | | 1 | integer | number of charging stations per worker threads for the `workerSet` process type
