@@ -1,6 +1,6 @@
 
 export default class CircularArray<T> extends Array<T> {
-  size: number;
+  public size: number;
   private readonly maximumCircularArraySize = 2000;
 
   constructor(size?: number) {
