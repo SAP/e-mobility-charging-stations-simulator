@@ -70,7 +70,7 @@
     "cross-env": "^7.0.3",
     "eslint": "^7.26.0",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jsdoc": "^34.0.0",
+    "eslint-plugin-jsdoc": "^34.0.2",
     "mbt": "^1.1.1",
     "npm-check": "^5.9.2",
     "rollup": "^2.47.0",
