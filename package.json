@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "mongodb": "^3.6.6",
-    "poolifier": "^2.0.1",
+    "poolifier": "^2.0.2",
     "source-map-support": "^0.5.19",
     "tslib": "^2.2.0",
     "uuid": "^8.3.2",
