@@ -1,11 +1,11 @@
+const DEFAULT_CIRCULAR_ARRAY_SIZE = 2000;
 
 export default class CircularArray<T> extends Array<T> {
   public size: number;
-  private readonly defaultCircularArraySize = 2000;
 
   constructor(size?: number) {
     super();
-    this.size = size ?? this.defaultCircularArraySize;
+    this.size = size ?? DEFAULT_CIRCULAR_ARRAY_SIZE;
   }
 
   public push(...items: T[]): number {
