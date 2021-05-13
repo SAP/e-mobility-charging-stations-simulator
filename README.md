@@ -35,7 +35,7 @@ chargingStationsPerWorker | | 1 | integer | number of charging stations per work
 logConsole | true/false | false | boolean | output logs on the console 
 logFormat | | simple | string | winston log format
 logRotate | true/false | true | boolean | enable daily log files rotation
-logMaxFiles | | 7 | integer | maximum number of files to keep
+logMaxFiles | | 7 | integer | maximum number of log files to keep
 logLevel | emerg/alert/crit/error/warning/notice/info/debug | info | string | winston logging level
 logFile | | combined.log | string | log file relative path
 logErrorFile | | error.log | string | error log file relative path 
@@ -78,7 +78,7 @@ Connectors | | | Connectors | charging stations connectors configuration
 #### Configuration section
 
 ```json
-"Configuration": {
+  "Configuration": {
     "configurationKey": [
        ...
        {
@@ -104,7 +104,7 @@ Connectors | | | Connectors | charging stations connectors configuration
 #### AutomaticTransactionGenerator section
 
 ```json
- "AutomaticTransactionGenerator": {
+  "AutomaticTransactionGenerator": {
     "enable": false,
     "minDuration": 60,
     "maxDuration": 80,
@@ -119,7 +119,7 @@ Connectors | | | Connectors | charging stations connectors configuration
 #### Connectors section
 
 ```json
-"Connectors": {
+  "Connectors": {
     "0": {},
     "1": {
       "bootStatus": "Available",
