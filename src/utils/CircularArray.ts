@@ -3,47 +3,67 @@ const DEFAULT_CIRCULAR_ARRAY_SIZE = 2000;
 export default class CircularArray<T> extends Array<T> {
   public size: number;
 
-  constructor(size?: number) {
+  constructor(size: number = DEFAULT_CIRCULAR_ARRAY_SIZE, ...items: T[]) {
     super();
-    this.size = size ?? DEFAULT_CIRCULAR_ARRAY_SIZE;
+    this.checkSize(size);
+    this.size = size;
+    if (arguments.length > 1) {
+      this.push(...items);
+    }
   }
 
   public push(...items: T[]): number {
-    if (this.length + items.length > this.size) {
-      super.splice(0, (this.length + items.length) - this.size);
+    const length = super.push(...items);
+    if (length > this.size) {
+      super.splice(0, length - this.size);
     }
-    return super.push(...items);
+    return this.length;
   }
 
   public unshift(...items: T[]): number {
-    if (this.length + items.length > this.size) {
-      super.splice(this.size - items.length, (this.length + items.length) - this.size);
+    const length = super.unshift(...items);
+    if (length > this.size) {
+      super.splice(this.size, items.length);
     }
-    return super.unshift(...items);
+    return length;
   }
 
-  public concat(...items: (T | ConcatArray<T>)[]): T[] {
-    if (this.length + items.length > this.size) {
-      super.splice(0, (this.length + items.length) - this.size);
+  public concat(...items: (T | ConcatArray<T>)[]): CircularArray<T> {
+    const concatenatedCircularArray = super.concat(
+      items as T[]
+    ) as CircularArray<T>;
+    concatenatedCircularArray.size = this.size;
+    if (concatenatedCircularArray.length > concatenatedCircularArray.size) {
+      concatenatedCircularArray.splice(
+        0,
+        concatenatedCircularArray.length - this.size
+      );
     }
-    return super.concat(items as T[]);
+    return concatenatedCircularArray;
   }
 
   public splice(start: number, deleteCount?: number, ...items: T[]): T[] {
-    this.push(...items);
-    return super.splice(start, deleteCount);
+    let itemsRemoved: T[];
+    if (arguments.length >= 3 && typeof deleteCount !== 'undefined') {
+      itemsRemoved = super.splice(start, deleteCount);
+      // FIXME: that makes the items insert not in place
+      this.push(...items);
+    } else if (arguments.length === 2) {
+      itemsRemoved = super.splice(start, deleteCount);
+    } else {
+      itemsRemoved = super.splice(start);
+    }
+    return itemsRemoved;
   }
 
   public resize(size: number): void {
-    if (size < 0) {
-      throw new RangeError(
-        'circular array size does not allow negative values.'
-      );
-    }
+    this.checkSize(size);
     if (size === 0) {
       this.length = 0;
-    } else if (size !== this.size) {
-      this.slice(-size);
+    } else if (size < this.size) {
+      for (let i = size; i < this.size; i++) {
+        super.pop();
+      }
     }
     this.size = size;
   }
@@ -54,5 +74,11 @@ export default class CircularArray<T> extends Array<T> {
 
   public full(): boolean {
     return this.length === this.size;
+  }
+
+  private checkSize(size: number) {
+    if (size < 0) {
+      throw new RangeError('Invalid circular array size');
+    }
   }
 }
