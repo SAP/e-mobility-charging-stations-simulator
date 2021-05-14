@@ -1,7 +1,7 @@
+import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from './CircularArray';
 import CommandStatistics, { CommandStatisticsData, PerfEntry } from '../types/CommandStatistics';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 
-import CircularArray from './CircularArray';
 import Configuration from './Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
 import { PerformanceEntry } from 'perf_hooks';
@@ -131,7 +131,7 @@ export default class PerformanceStatistics {
     this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement ? (this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement < duration ? duration : this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement) : duration;
     this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement ? this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement + duration : duration;
     this.commandsStatistics.commandsStatisticsData[command].avgTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement / this.commandsStatistics.commandsStatisticsData[command].countTimeMeasurement;
-    Array.isArray(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries) ? this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries.push(duration) : this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries = [duration] as CircularArray<number>;
+    Array.isArray(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries) ? this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries.push(duration) : this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, duration);
     this.commandsStatistics.commandsStatisticsData[command].medTimeMeasurement = this.median(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries);
     this.commandsStatistics.commandsStatisticsData[command].stdDevTimeMeasurement = this.stdDeviation(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries);
   }

@@ -1,4 +1,4 @@
-import CircularArray from '../utils/CircularArray';
+import { CircularArray } from '../utils/CircularArray';
 import { EntryType } from 'perf_hooks';
 
 export interface PerfEntry {

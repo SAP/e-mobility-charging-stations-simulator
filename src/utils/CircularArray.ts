@@ -1,6 +1,6 @@
-const DEFAULT_CIRCULAR_ARRAY_SIZE = 2000;
+export const DEFAULT_CIRCULAR_ARRAY_SIZE = 2000;
 
-export default class CircularArray<T> extends Array<T> {
+export class CircularArray<T> extends Array<T> {
   public size: number;
 
   constructor(size: number = DEFAULT_CIRCULAR_ARRAY_SIZE, ...items: T[]) {
