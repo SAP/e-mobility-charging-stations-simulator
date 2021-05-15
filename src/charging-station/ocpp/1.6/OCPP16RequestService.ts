@@ -62,7 +62,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
   public async sendAuthorize(idTag?: string): Promise<OCPP16AuthorizeResponse> {
     try {
       const payload: AuthorizeRequest = {
-        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_TAGID },
+        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
       };
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.AUTHORIZE) as OCPP16AuthorizeResponse;
     } catch (error) {
@@ -74,7 +74,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     try {
       const payload: StartTransactionRequest = {
         connectorId,
-        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_TAGID },
+        ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
