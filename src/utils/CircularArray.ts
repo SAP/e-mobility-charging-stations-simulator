@@ -36,7 +36,7 @@ export class CircularArray<T> extends Array<T> {
     if (concatenatedCircularArray.length > concatenatedCircularArray.size) {
       concatenatedCircularArray.splice(
         0,
-        concatenatedCircularArray.length - this.size
+        concatenatedCircularArray.length - concatenatedCircularArray.size
       );
     }
     return concatenatedCircularArray;
