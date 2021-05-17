@@ -20,11 +20,11 @@ export default class WorkerFactory {
         return new WorkerSet<T>(workerScript, options.elementsPerWorker, options.startDelay);
       case WorkerProcessType.STATIC_POOL:
         options.poolMaxSize = options.poolMaxSize ?? 16;
-        return new WorkerStaticPool<T>(workerScript, options.poolMaxSize, options.startDelay);
+        return new WorkerStaticPool<T>(workerScript, options.poolMaxSize, options.startDelay, options.poolOptions);
       case WorkerProcessType.DYNAMIC_POOL:
         options.poolMinSize = options.poolMinSize ?? 4;
         options.poolMaxSize = options.poolMaxSize ?? 16;
-        return new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize, options.startDelay);
+        return new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize, options.startDelay, options.poolOptions);
       default:
         return null;
     }

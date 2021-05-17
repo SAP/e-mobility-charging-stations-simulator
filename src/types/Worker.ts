@@ -1,3 +1,4 @@
+import { PoolOptions } from 'poolifier';
 import { Worker } from 'worker_threads';
 
 export enum WorkerProcessType {
@@ -11,6 +12,7 @@ export interface WorkerOptions {
   poolMaxSize?: number;
   poolMinSize?: number;
   elementsPerWorker?: number;
+  poolOptions?: PoolOptions<Worker>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

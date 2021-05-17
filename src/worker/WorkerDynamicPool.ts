@@ -15,10 +15,11 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
    * @param {number} min
    * @param {number} max
    * @param {number} workerStartDelay
+   * @param {PoolOptions} opts
    */
-  constructor(workerScript: string, min: number, max: number, workerStartDelay?: number) {
+  constructor(workerScript: string, min: number, max: number, workerStartDelay?: number, opts?: PoolOptions<Worker>) {
     super(workerScript, workerStartDelay);
-    this.pool = DynamicPool.getInstance(min, max, this.workerScript);
+    this.pool = DynamicPool.getInstance(min, max, this.workerScript, opts);
   }
 
   get size(): number {
@@ -67,17 +68,14 @@ class DynamicPool extends DynamicThreadPool<WorkerData> {
     super(min, max, workerScript, opts);
   }
 
-  public static getInstance(min: number, max: number, workerScript: string): DynamicPool {
+  public static getInstance(min: number, max: number, workerScript: string, opts?: PoolOptions<Worker>): DynamicPool {
     if (!DynamicPool.instance) {
-      DynamicPool.instance = new DynamicPool(min, max, workerScript,
-        {
-          exitHandler: (code) => {
-            if (code !== 0) {
-              console.error(`Worker stopped with exit code ${code}`);
-            }
-          }
+      opts.exitHandler = opts.exitHandler ?? ((code) => {
+        if (code !== 0) {
+          console.error(`Worker stopped with exit code ${code}`);
         }
-      );
+      });
+      DynamicPool.instance = new DynamicPool(min, max, workerScript, opts);
     }
     return DynamicPool.instance;
   }

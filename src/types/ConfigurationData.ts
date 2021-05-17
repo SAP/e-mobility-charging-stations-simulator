@@ -1,3 +1,4 @@
+import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
 
 export interface StationTemplateURL {
@@ -16,6 +17,7 @@ export default interface ConfigurationData {
   workerStartDelay?: number;
   workerPoolMinSize?: number;
   workerPoolMaxSize?: number;
+  workerPoolStrategy?: WorkerChoiceStrategy;
   chargingStationsPerWorker?: number;
   logFormat?: string;
   logLevel?: string;

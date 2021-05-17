@@ -14,10 +14,11 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
    * @param {string} workerScript
    * @param {number} numberOfThreads
    * @param {number} startWorkerDelay
+   * @param {PoolOptions} opts
    */
-  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number) {
+  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number, opts?: PoolOptions<Worker>) {
     super(workerScript, startWorkerDelay);
-    this.pool = StaticPool.getInstance(numberOfThreads, this.workerScript);
+    this.pool = StaticPool.getInstance(numberOfThreads, this.workerScript, opts);
   }
 
   get size(): number {
@@ -65,17 +66,14 @@ class StaticPool extends FixedThreadPool<WorkerData> {
     super(numberOfThreads, workerScript, opts);
   }
 
-  public static getInstance(numberOfThreads: number, workerScript: string): StaticPool {
+  public static getInstance(numberOfThreads: number, workerScript: string, opts?: PoolOptions<Worker>): StaticPool {
     if (!StaticPool.instance) {
-      StaticPool.instance = new StaticPool(numberOfThreads, workerScript,
-        {
-          exitHandler: (code) => {
-            if (code !== 0) {
-              console.error(`Worker stopped with exit code ${code}`);
-            }
-          }
+      opts.exitHandler = opts.exitHandler ?? ((code) => {
+        if (code !== 0) {
+          console.error(`Worker stopped with exit code ${code}`);
         }
-      );
+      });
+      StaticPool.instance = new StaticPool(numberOfThreads, workerScript, opts);
     }
     return StaticPool.instance;
   }

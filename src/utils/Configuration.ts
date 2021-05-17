@@ -1,6 +1,7 @@
 import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
 
 import Constants from './Constants';
+import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from '../types/Worker';
 import fs from 'fs';
 import path from 'path';
@@ -63,6 +64,10 @@ export default class Configuration {
   static getWorkerPoolMaxSize(): number {
     Configuration.deprecateConfigurationKey('workerPoolSize;', 'Use \'workerPoolMaxSize\' instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize') ? Configuration.getConfig().workerPoolMaxSize : 16;
+  }
+
+  static getWorkerPoolStrategy(): WorkerChoiceStrategy {
+    return Configuration.getConfig().workerPoolStrategy;
   }
 
   static getChargingStationsPerWorker(): number {

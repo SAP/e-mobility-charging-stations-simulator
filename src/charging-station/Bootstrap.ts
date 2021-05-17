@@ -83,7 +83,10 @@ export default class Bootstrap {
           startDelay: Configuration.getWorkerStartDelay(),
           poolMaxSize: Configuration.getWorkerPoolMaxSize(),
           poolMinSize: Configuration.getWorkerPoolMinSize(),
-          elementsPerWorker: Configuration.getChargingStationsPerWorker()
+          elementsPerWorker: Configuration.getChargingStationsPerWorker(),
+          poolOptions: {
+            workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
+          }
         });
     }
     return this.workerImplementationInstance;
