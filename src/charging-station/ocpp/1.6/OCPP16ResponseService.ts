@@ -50,7 +50,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
 
-    if (payload?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+    if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
       this.chargingStation.getConnector(connectorId).transactionStarted = true;
       this.chargingStation.getConnector(connectorId).transactionId = payload.transactionId;
       this.chargingStation.getConnector(connectorId).idTag = requestPayload.idTag;
