@@ -36,7 +36,7 @@ export default class Utils {
     }
   }
 
-  static convertToDate(value): Date {
+  static convertToDate(value: any): Date {
     // Check
     if (!value) {
       return value;
@@ -48,7 +48,7 @@ export default class Utils {
     return value;
   }
 
-  static convertToInt(value): number {
+  static convertToInt(value: any): number {
     let changedValue = value;
     if (!value) {
       return 0;
@@ -64,7 +64,7 @@ export default class Utils {
     return changedValue;
   }
 
-  static convertToFloat(value): number {
+  static convertToFloat(value: any): number {
     let changedValue = value;
     if (!value) {
       return 0;
@@ -77,7 +77,7 @@ export default class Utils {
     return changedValue;
   }
 
-  static convertToBoolean(value): boolean {
+  static convertToBoolean(value: any): boolean {
     let result = false;
     // Check boolean
     if (value) {
@@ -137,7 +137,7 @@ export default class Utils {
     return false;
   }
 
-  static isEmptyJSon(document): boolean {
+  static isEmptyJSon(document: any): boolean {
     // Empty?
     if (!document) {
       return true;
@@ -150,15 +150,15 @@ export default class Utils {
     return Object.keys(document).length === 0;
   }
 
-  static isString(value): boolean {
+  static isString(value: any): boolean {
     return typeof value === 'string';
   }
 
-  static isUndefined(value): boolean {
+  static isUndefined(value: any): boolean {
     return typeof value === 'undefined';
   }
 
-  static isNullOrUndefined(value): boolean {
+  static isNullOrUndefined(value: any): boolean {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (value == null) {
       return true;
@@ -166,7 +166,7 @@ export default class Utils {
     return false;
   }
 
-  static isEmptyArray(object): boolean {
+  static isEmptyArray(object: any): boolean {
     if (!object) {
       return true;
     }
@@ -176,7 +176,7 @@ export default class Utils {
     return true;
   }
 
-  static isEmptyObject(obj): boolean {
+  static isEmptyObject(obj: any): boolean {
     return !Object.keys(obj).length;
   }
 

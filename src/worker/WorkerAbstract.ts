@@ -5,7 +5,7 @@ export default abstract class WorkerAbstract {
   protected readonly workerScript: string;
   protected readonly workerStartDelay: number;
   public abstract size: number;
-  public abstract maxElementsPerWorker: number;
+  public abstract maxElementsPerWorker: number | null;
 
   /**
    * `WorkerAbstract` constructor.

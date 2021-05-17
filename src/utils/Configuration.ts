@@ -9,7 +9,7 @@ import path from 'path';
 export default class Configuration {
   private static configurationFilePath = path.join(path.resolve(__dirname, '../'), 'assets', 'config.json');
   private static configurationFileWatcher: fs.FSWatcher;
-  private static configuration: ConfigurationData;
+  private static configuration: ConfigurationData | null = null;
   private static configurationChangeCallback: () => Promise<void>;
 
   static setConfigurationChangeCallback(cb: () => Promise<void>): void {
@@ -143,7 +143,7 @@ export default class Configuration {
   }
 
   private static objectHasOwnProperty(object: any, property: string): boolean {
-    return Object.prototype.hasOwnProperty.call(object, property) as boolean;
+    return Object.prototype.hasOwnProperty.call(object, property);
   }
 
   private static isUndefined(obj: any): boolean {

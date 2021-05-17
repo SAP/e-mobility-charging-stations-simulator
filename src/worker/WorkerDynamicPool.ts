@@ -26,7 +26,7 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
     return this.pool.workers.length;
   }
 
-  get maxElementsPerWorker(): number {
+  get maxElementsPerWorker(): number | null {
     return null;
   }
 
@@ -50,7 +50,7 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @param elementData
+   * @param {T} elementData
    * @returns {Promise<void>}
    * @public
    */
@@ -70,7 +70,7 @@ class DynamicPool extends DynamicThreadPool<WorkerData> {
 
   public static getInstance(min: number, max: number, workerScript: string, opts?: PoolOptions<Worker>): DynamicPool {
     if (!DynamicPool.instance) {
-      opts.exitHandler = opts.exitHandler ?? ((code) => {
+      opts.exitHandler = opts?.exitHandler ?? ((code) => {
         if (code !== 0) {
           console.error(`Worker stopped with exit code ${code}`);
         }

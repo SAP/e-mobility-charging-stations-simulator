@@ -10,7 +10,7 @@ export default class Bootstrap {
   private static instance: Bootstrap;
   private started: boolean;
   private workerScript: string;
-  private workerImplementationInstance: WorkerAbstract;
+  private workerImplementationInstance: WorkerAbstract | null = null;
 
   private constructor() {
     this.started = false;
@@ -29,7 +29,7 @@ export default class Bootstrap {
     if (isMainThread && !this.started) {
       try {
         let numStationsTotal = 0;
-        await this.getWorkerImplementationInstance().start();
+        await this.getWorkerImplementationInstance()?.start();
         // Start ChargingStation object in worker thread
         if (Configuration.getStationTemplateURLs()) {
           for (const stationURL of Configuration.getStationTemplateURLs()) {
@@ -40,7 +40,7 @@ export default class Bootstrap {
                   index,
                   templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
-                await this.getWorkerImplementationInstance().addElement(workerData);
+                await this.getWorkerImplementationInstance()?.addElement(workerData);
                 numStationsTotal++;
               }
             } catch (error) {
@@ -64,7 +64,7 @@ export default class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
-      await this.getWorkerImplementationInstance().stop();
+      await this.getWorkerImplementationInstance()?.stop();
       // Nullify to force worker implementation instance creation
       this.workerImplementationInstance = null;
     }
@@ -76,7 +76,7 @@ export default class Bootstrap {
     await this.start();
   }
 
-  private getWorkerImplementationInstance(): WorkerAbstract {
+  private getWorkerImplementationInstance(): WorkerAbstract | null {
     if (!this.workerImplementationInstance) {
       this.workerImplementationInstance = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
         {

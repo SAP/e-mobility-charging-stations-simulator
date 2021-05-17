@@ -1,5 +1,5 @@
 import { AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../../types/ocpp/Transaction';
-import { IncomingRequestCommand, Request, RequestCommand } from '../../types/ocpp/Requests';
+import { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
 
 import { BootNotificationResponse } from '../../types/ocpp/Responses';
 import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
@@ -32,7 +32,7 @@ export default abstract class OCPPRequestService {
         // Request
         case MessageType.CALL_MESSAGE:
           // Build request
-          this.chargingStation.requests[messageId] = [responseCallback, rejectCallback, commandParams] as Request;
+          this.chargingStation.requests[messageId] = [responseCallback, rejectCallback, commandParams as Record<string, unknown>];
           messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
           break;
         // Response

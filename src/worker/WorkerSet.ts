@@ -27,7 +27,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @param elementData
+   * @param {T} elementData
    * @returns {Promise<void>}
    * @public
    */

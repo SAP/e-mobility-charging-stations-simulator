@@ -9,7 +9,7 @@ import logger from '../utils/Logger';
 export default class AutomaticTransactionGenerator {
   public timeToStop: boolean;
   private chargingStation: ChargingStation;
-  private performanceObserver: PerformanceObserver;
+  private performanceObserver!: PerformanceObserver;
 
   constructor(chargingStation: ChargingStation) {
     this.chargingStation = chargingStation;
@@ -149,10 +149,11 @@ export default class AutomaticTransactionGenerator {
   // eslint-disable-next-line consistent-this
   private async stopTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StopTransactionResponse> {
     const transactionId = self.chargingStation.getConnector(connectorId).transactionId;
-    return await self.chargingStation.ocppRequestService.sendStopTransaction(transactionId, self.chargingStation.getTransactionMeterStop(transactionId), self.chargingStation.getTransactionIdTag(transactionId));
+    return await self.chargingStation.ocppRequestService.sendStopTransaction(transactionId, self.chargingStation.getTransactionMeterStop(transactionId),
+      self.chargingStation.getTransactionIdTag(transactionId));
   }
 
-  private logPrefix(connectorId: number = null): string {
+  private logPrefix(connectorId?: number): string {
     if (connectorId) {
       return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' | ATG on connector #' + connectorId.toString() + ':');
     }

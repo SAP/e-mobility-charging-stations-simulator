@@ -190,7 +190,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       let clearedCP = false;
       for (const connector in this.chargingStation.connectors) {
         if (!Utils.isEmptyArray(this.chargingStation.getConnector(Utils.convertToInt(connector)).chargingProfiles)) {
-          this.chargingStation.getConnector(Utils.convertToInt(connector)).chargingProfiles.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
+          this.chargingStation.getConnector(Utils.convertToInt(connector)).chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
             let clearCurrentCP = false;
             if (chargingProfile.chargingProfileId === commandPayload.id) {
               clearCurrentCP = true;

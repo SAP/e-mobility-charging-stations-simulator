@@ -27,6 +27,6 @@ export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand
 };
 
-export type Request = [(payload: Record<string, unknown>, requestPayload: Record<string, unknown>) => void, (error: OCPPError) => void, Record<string, unknown>];
+export type Request = [(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void, (error: OCPPError) => void, Record<string, unknown>];
 
 export type IncomingRequest = [MessageType, string, IncomingRequestCommand, Record<string, unknown>, Record<string, unknown>];

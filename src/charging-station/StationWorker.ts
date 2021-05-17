@@ -22,7 +22,7 @@ if (Utils.workerPoolInUse()) {
  * Listen messages send by the main thread
  */
 function addMessageListener(): void {
-  parentPort.on('message', (message) => {
+  parentPort?.on('message', (message) => {
     if (message.id === WorkerEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.workerData);
     }

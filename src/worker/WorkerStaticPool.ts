@@ -25,7 +25,7 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
     return this.pool.workers.length;
   }
 
-  get maxElementsPerWorker(): number {
+  get maxElementsPerWorker(): number | null {
     return null;
   }
 
@@ -48,7 +48,7 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @param elementData
+   * @param {T} elementData
    * @returns {Promise<void>}
    * @public
    */
@@ -68,7 +68,7 @@ class StaticPool extends FixedThreadPool<WorkerData> {
 
   public static getInstance(numberOfThreads: number, workerScript: string, opts?: PoolOptions<Worker>): StaticPool {
     if (!StaticPool.instance) {
-      opts.exitHandler = opts.exitHandler ?? ((code) => {
+      opts.exitHandler = opts?.exitHandler ?? ((code) => {
         if (code !== 0) {
           console.error(`Worker stopped with exit code ${code}`);
         }

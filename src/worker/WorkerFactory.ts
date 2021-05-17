@@ -8,7 +8,7 @@ import WorkerStaticPool from './WorkerStaticPool';
 import { isMainThread } from 'worker_threads';
 
 export default class WorkerFactory {
-  public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): WorkerAbstract {
+  public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): WorkerAbstract | null {
     if (!isMainThread) {
       throw new Error('Trying to get a worker implementation outside the main thread');
     }
