@@ -5,9 +5,11 @@ import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import { isMainThread } from 'worker_threads';
 import path from 'path';
+import { version } from '../../package.json';
 
 export default class Bootstrap {
   private static instance: Bootstrap;
+  private version: string = version as string;
   private started: boolean;
   private workerScript: string;
   private workerImplementationInstance: WorkerAbstract | null = null;
@@ -53,7 +55,7 @@ export default class Bootstrap {
         if (numStationsTotal === 0) {
           console.log('No charging station template enabled in configuration, exiting');
         } else {
-          console.log(`Charging station simulator started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.getWorkerImplementationInstance().size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.getWorkerImplementationInstance().maxElementsPerWorker ? ` (${this.getWorkerImplementationInstance().maxElementsPerWorker} charging station(s) per worker)` : ''}`);
+          console.log(`Charging station simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.getWorkerImplementationInstance().size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.getWorkerImplementationInstance().maxElementsPerWorker ? ` (${this.getWorkerImplementationInstance().maxElementsPerWorker} charging station(s) per worker)` : ''}`);
         }
         this.started = true;
       } catch (error) {

@@ -44,10 +44,11 @@
     "git:sinit": "git submodule update --init --recursive --force",
     "git:sdiff": "git diff && git submodule foreach 'git diff'",
     "git:supdate": "git submodule update --remote --recursive --merge",
-    "git:spush": "git push --recurse-submodules=on-demand"
+    "git:spush": "git push --recurse-submodules=on-demand",
+    "postversion": "git push && git push upstream && git push --tags && git push upstream --tags"
   },
   "dependencies": {
-    "mongodb": "^3.6.6",
+    "mongodb": "^3.6.7",
     "poolifier": "^2.0.2",
     "source-map-support": "^0.5.19",
     "tslib": "^2.2.0",
@@ -61,7 +62,8 @@
     "utf-8-validate": "^5.0.5"
   },
   "devDependencies": {
-    "@types/node": "^14.14.45",
+    "@rollup/plugin-json": "^4.1.0",
+    "@types/node": "^14.17.0",
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.4.4",
     "@typescript-eslint/eslint-plugin": "^4.24.0",
@@ -70,7 +72,7 @@
     "cross-env": "^7.0.3",
     "eslint": "^7.26.0",
     "eslint-plugin-import": "^2.23.2",
-    "eslint-plugin-jsdoc": "^34.7.0",
+    "eslint-plugin-jsdoc": "^34.8.2",
     "mbt": "^1.1.1",
     "npm-check": "^5.9.2",
     "rollup": "^2.48.0",
