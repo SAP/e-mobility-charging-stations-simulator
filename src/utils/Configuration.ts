@@ -58,12 +58,12 @@ export default class Configuration {
   }
 
   static getWorkerPoolMinSize(): number {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMinSize') ? Configuration.getConfig().workerPoolMinSize : 4;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMinSize') ? Configuration.getConfig().workerPoolMinSize : Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
   }
 
   static getWorkerPoolMaxSize(): number {
     Configuration.deprecateConfigurationKey('workerPoolSize;', 'Use \'workerPoolMaxSize\' instead');
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize') ? Configuration.getConfig().workerPoolMaxSize : 16;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize') ? Configuration.getConfig().workerPoolMaxSize : Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
   }
 
   static getWorkerPoolStrategy(): WorkerChoiceStrategy {
@@ -71,7 +71,7 @@ export default class Configuration {
   }
 
   static getChargingStationsPerWorker(): number {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'chargingStationsPerWorker') ? Configuration.getConfig().chargingStationsPerWorker : 1;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'chargingStationsPerWorker') ? Configuration.getConfig().chargingStationsPerWorker : Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER;
   }
 
   static getLogConsole(): boolean {

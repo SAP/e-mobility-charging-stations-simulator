@@ -16,14 +16,14 @@ export default class WorkerFactory {
     options.startDelay = options.startDelay ?? Constants.WORKER_START_DELAY;
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
-        options.elementsPerWorker = options.elementsPerWorker ?? 1;
+        options.elementsPerWorker = options.elementsPerWorker ?? Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER;
         return new WorkerSet<T>(workerScript, options.elementsPerWorker, options.startDelay);
       case WorkerProcessType.STATIC_POOL:
-        options.poolMaxSize = options.poolMaxSize ?? 16;
+        options.poolMaxSize = options.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
         return new WorkerStaticPool<T>(workerScript, options.poolMaxSize, options.startDelay, options.poolOptions);
       case WorkerProcessType.DYNAMIC_POOL:
-        options.poolMinSize = options.poolMinSize ?? 4;
-        options.poolMaxSize = options.poolMaxSize ?? 16;
+        options.poolMinSize = options.poolMinSize ?? Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
+        options.poolMaxSize = options.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
         return new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize, options.startDelay, options.poolOptions);
       default:
         return null;
