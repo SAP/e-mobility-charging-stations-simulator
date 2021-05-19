@@ -9,7 +9,7 @@ import { version } from '../../package.json';
 
 export default class Bootstrap {
   private static instance: Bootstrap;
-  private version: string = version as string;
+  private version: string = version ;
   private started: boolean;
   private workerScript: string;
   private workerImplementationInstance: WorkerAbstract | null = null;
