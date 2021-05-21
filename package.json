@@ -48,7 +48,7 @@
     "postversion": "git push && git push upstream && git push --tags && git push upstream --tags"
   },
   "dependencies": {
-    "mongodb": "^3.6.7",
+    "mongodb": "^3.6.8",
     "poolifier": "^2.0.2",
     "source-map-support": "^0.5.19",
     "tslib": "^2.2.0",
