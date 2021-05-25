@@ -758,7 +758,9 @@ export default class ChargingStation {
   }
 
   private startWebSocketPing(): void {
-    const webSocketPingInterval: number = this.getConfigurationKey(StandardParametersKey.WebSocketPingInterval) ? Utils.convertToInt(this.getConfigurationKey(StandardParametersKey.WebSocketPingInterval).value) : 0;
+    const webSocketPingInterval: number = this.getConfigurationKey(StandardParametersKey.WebSocketPingInterval)
+      ? Utils.convertToInt(this.getConfigurationKey(StandardParametersKey.WebSocketPingInterval).value)
+      : 0;
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
       this.webSocketPingSetInterval = setInterval(() => {
         if (this.isWebSocketOpen()) {
