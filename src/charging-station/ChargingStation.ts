@@ -315,9 +315,7 @@ export default class ChargingStation {
 
   public resetTransactionOnConnector(connectorId: number): void {
     this.initTransactionOnConnector(connectorId);
-    if (this.getConnector(connectorId)?.transactionSetInterval) {
-      clearInterval(this.getConnector(connectorId).transactionSetInterval);
-    }
+    this.stopMeterValues(connectorId);
   }
 
   public addToMessageQueue(message: string): void {
@@ -723,6 +721,13 @@ export default class ChargingStation {
       }
     }
     // Start the ATG
+    this.startAutomaticTransactionGenerator();
+    if (this.getEnableStatistics()) {
+      this.performanceStatistics.start();
+    }
+  }
+
+  private startAutomaticTransactionGenerator() {
     if (this.stationInfo.AutomaticTransactionGenerator.enable) {
       if (!this.automaticTransactionGeneration) {
         this.automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
@@ -731,9 +736,6 @@ export default class ChargingStation {
         // The ATG might sleep
         void this.automaticTransactionGeneration.start();
       }
-    }
-    if (this.getEnableStatistics()) {
-      this.performanceStatistics.start();
     }
   }
 
@@ -836,6 +838,12 @@ export default class ChargingStation {
     logger.info(this.logPrefix() + ' Will communicate through URL ' + this.supervisionUrl);
   }
 
+  private stopMeterValues(connectorId: number) {
+    if (this.getConnector(connectorId)?.transactionSetInterval) {
+      clearInterval(this.getConnector(connectorId).transactionSetInterval);
+    }
+  }
+
   private startAuthorizationFileMonitoring(): void {
     fs.watch(this.getAuthorizationFile()).on('change', (e) => {
       try {
@@ -861,15 +869,7 @@ export default class ChargingStation {
           await this.automaticTransactionGeneration.stop();
         }
         // Start the ATG
-        if (this.stationInfo.AutomaticTransactionGenerator.enable) {
-          if (!this.automaticTransactionGeneration) {
-            this.automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
-          }
-          if (this.automaticTransactionGeneration.timeToStop) {
-            // The ATG might sleep
-            void this.automaticTransactionGeneration.start();
-          }
-        }
+        this.startAutomaticTransactionGenerator();
         // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
       } catch (error) {
         logger.error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
@@ -889,7 +889,7 @@ export default class ChargingStation {
       this.stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure &&
       this.automaticTransactionGeneration &&
       !this.automaticTransactionGeneration.timeToStop) {
-      this.automaticTransactionGeneration.stop().catch(() => { });
+      await this.automaticTransactionGeneration.stop();
     }
     if (this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() || this.getAutoReconnectMaxRetries() === -1) {
       this.autoReconnectRetryCount++;
