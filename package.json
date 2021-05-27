@@ -48,14 +48,14 @@
     "postversion": "git push && git push upstream && git push --tags && git push upstream --tags"
   },
   "dependencies": {
-    "mongodb": "^3.6.8",
+    "mongodb": "^3.6.9",
     "poolifier": "^2.0.2",
     "source-map-support": "^0.5.19",
     "tslib": "^2.2.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.5",
-    "ws": "^7.4.5"
+    "ws": "^7.4.6"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.3",
@@ -75,12 +75,12 @@
     "eslint-plugin-jsdoc": "^35.0.0",
     "mbt": "^1.2.1",
     "npm-check": "^5.9.2",
-    "rollup": "^2.49.0",
+    "rollup": "^2.50.2",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",
-    "typescript": "^4.2.4"
+    "typescript": "^4.3.2"
   }
 }
