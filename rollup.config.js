@@ -1,6 +1,7 @@
 import analyze from 'rollup-plugin-analyzer';
 import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
+import istanbul from 'rollup-plugin-istanbul';
 import json from '@rollup/plugin-json';
 import { terser } from 'rollup-plugin-terser';
 import typescript from 'rollup-plugin-typescript2';
@@ -25,6 +26,7 @@ export default {
     typescript({
       tsconfig: 'tsconfig.json'
     }),
+    isDevelopmentBuild && istanbul(),
     del({
       targets: 'dist/*'
     }),
