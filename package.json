@@ -45,7 +45,7 @@
     "git:sdiff": "git diff && git submodule foreach 'git diff'",
     "git:supdate": "git submodule update --remote --recursive --merge",
     "git:spush": "git push --recurse-submodules=on-demand",
-    "postversion": "git push && git push upstream && git push --tags && git push upstream --tags"
+    "release": "release-it"
   },
   "dependencies": {
     "mongodb": "^3.6.9",
@@ -75,6 +75,7 @@
     "eslint-plugin-jsdoc": "^35.0.0",
     "mbt": "^1.2.1",
     "npm-check": "^5.9.2",
+    "release-it": "^14.7.0",
     "rollup": "^2.50.4",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
