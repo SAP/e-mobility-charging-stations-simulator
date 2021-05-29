@@ -1,4 +1,5 @@
 {
+  "parallel": true,
   "diff": true,
   "recursive": true,
   "extension": [
@@ -13,6 +14,7 @@
   "full-trace": true,
   "exit": true,
   "require": [
-    "ts-node/register"
+    "ts-node/register",
+    "mochawesome/register"
   ]
 }
