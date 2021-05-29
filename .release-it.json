@@ -1,6 +1,6 @@
 {
   "git": {
-    "requireCleanWorkingDir": false
+    "pushRepo": "upstream"
   },
   "npm": {
     "publish": false
