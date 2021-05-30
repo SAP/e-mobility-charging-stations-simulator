@@ -4,10 +4,6 @@
 
 Simple [node.js](https://nodejs.org/) program to simulate a set of charging stations based on the OCPP-J 1.6 protocol.
 
-## Start
-
-To start the program, run: `npm start`.
-
 ## Configuration syntax
 
 All configuration files are in the JSON standard format.  
@@ -140,11 +136,73 @@ Connectors | | | Connectors | charging stations connectors configuration
   },
 ```
 
-## OCPP commands
+## Start
+
+To start the program, run: `npm start`.
+
+## Docker
+
+In the [docker](./docker) folder:
+
+```bash
+make
+```
+
+Or without the optional git submodules:
+
+```bash
+make SUBMODULES_INIT=false
+```
+
+## OCPP-J commands supported
 
 ### Version 1.6
 
-TODO
+### Core Profile
+
+- :heavy_check_mark: Authorize
+- :heavy_check_mark: BootNotification
+- :heavy_check_mark: ChangeAvailability
+- :heavy_check_mark: ChangeConfiguration
+- :heavy_check_mark: ClearCache
+- :x: DataTransfer
+- :heavy_check_mark: GetConfiguration
+- :heavy_check_mark: Heartbeat
+- :heavy_check_mark: MeterValues
+- :heavy_check_mark: RemoteStartTransaction
+- :heavy_check_mark: RemoteStopTransaction
+- :heavy_check_mark: Reset
+- :heavy_check_mark: StartTransaction
+- :heavy_check_mark: StatusNotification
+- :heavy_check_mark: StopTransaction
+- :heavy_check_mark: UnlockConnector
+
+### Firmware Management Profile
+
+- :x: GetDiagnostics
+- :x: DiagnosticsStatusNotification
+- :x: FirmwareStatusNotification
+- :x: UpdateFirmware
+
+### Local Auth List Management Profile
+
+- :x: GetLocalListVersion
+- :x: SendLocalList
+
+### Reservation Profile
+
+- :x: CancelReservation
+- :x: ReserveNow
+
+### Smart Charging Profile
+
+- :heavy_check_mark: ClearChargingProfile
+- :heavy_check_mark: GetCompositeSchedule
+- :heavy_check_mark: SetChargingProfile
+
+### Remote Trigger Profile
+
+- :x: TriggerMessage
 
 ## License
 
