@@ -816,12 +816,8 @@ export default class ChargingStation {
   }
 
   private openWSConnection(options?: WebSocket.ClientOptions, forceCloseOpened = false): void {
-    if (Utils.isUndefined(options)) {
-      options = {} as WebSocket.ClientOptions;
-    }
-    if (Utils.isUndefined(options?.handshakeTimeout)) {
-      options.handshakeTimeout = this.getConnectionTimeout() * 1000;
-    }
+    options ?? {} as WebSocket.ClientOptions;
+    options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     if (this.isWebSocketOpen() && forceCloseOpened) {
       this.wsConnection.close();
     }
