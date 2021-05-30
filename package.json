@@ -1,6 +1,6 @@
 {
   "name": "ev-simulator",
-  "version": "1.0.2-4",
+  "version": "1.0.2-5",
   "engines": {
     "node": "14.x.x",
     "npm": "6.x.x"
