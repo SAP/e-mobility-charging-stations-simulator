@@ -38,6 +38,7 @@
     "lint:fix": "cross-env TIMING=1 eslint --fix --ext .js,.ts src",
     "import-sort": "npx import-sort-cli --write 'src/**/*.ts{,x}'",
     "tsc": "tsc",
+    "pretest": "npm run build:dev",
     "test": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\"}' nyc mocha test/**/*Test.ts",
     "coverage": "nyc report --reporter=lcov",
     "coverage:html": "nyc report --reporter=html",
