@@ -10,6 +10,6 @@
     "release": true
   },
   "hooks": {
-    "after:bump": "npx auto-changelog -p"
+    "after:bump": "npx auto-changelog -p --commit-url https://github.com/sap-labs-france/ev-simulator/commit/{id}"
   }
 }
