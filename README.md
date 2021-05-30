@@ -160,49 +160,49 @@ make SUBMODULES_INIT=false
 
 ### Core Profile
 
-- :heavy_check_mark: Authorize
-- :heavy_check_mark: BootNotification
-- :heavy_check_mark: ChangeAvailability
-- :heavy_check_mark: ChangeConfiguration
-- :heavy_check_mark: ClearCache
-- :x: DataTransfer
-- :heavy_check_mark: GetConfiguration
-- :heavy_check_mark: Heartbeat
-- :heavy_check_mark: MeterValues
-- :heavy_check_mark: RemoteStartTransaction
-- :heavy_check_mark: RemoteStopTransaction
-- :heavy_check_mark: Reset
-- :heavy_check_mark: StartTransaction
-- :heavy_check_mark: StatusNotification
-- :heavy_check_mark: StopTransaction
-- :heavy_check_mark: UnlockConnector
+- :white_check_mark: Authorize
+- :white_check_mark: BootNotification
+- :white_check_mark: ChangeAvailability
+- :white_check_mark: ChangeConfiguration
+- :white_check_mark: ClearCache
+- :negative_squared_cross_mark: DataTransfer
+- :white_check_mark: GetConfiguration
+- :white_check_mark: Heartbeat
+- :white_check_mark: MeterValues
+- :white_check_mark: RemoteStartTransaction
+- :white_check_mark: RemoteStopTransaction
+- :white_check_mark: Reset
+- :white_check_mark: StartTransaction
+- :white_check_mark: StatusNotification
+- :white_check_mark: StopTransaction
+- :white_check_mark: UnlockConnector
 
 ### Firmware Management Profile
 
-- :x: GetDiagnostics
-- :x: DiagnosticsStatusNotification
-- :x: FirmwareStatusNotification
-- :x: UpdateFirmware
+- :negative_squared_cross_mark: GetDiagnostics
+- :negative_squared_cross_mark: DiagnosticsStatusNotification
+- :negative_squared_cross_mark: FirmwareStatusNotification
+- :negative_squared_cross_mark: UpdateFirmware
 
 ### Local Auth List Management Profile
 
-- :x: GetLocalListVersion
-- :x: SendLocalList
+- :negative_squared_cross_mark: GetLocalListVersion
+- :negative_squared_cross_mark: SendLocalList
 
 ### Reservation Profile
 
-- :x: CancelReservation
-- :x: ReserveNow
+- :negative_squared_cross_mark: CancelReservation
+- :negative_squared_cross_mark: ReserveNow
 
 ### Smart Charging Profile
 
-- :heavy_check_mark: ClearChargingProfile
-- :heavy_check_mark: GetCompositeSchedule
-- :heavy_check_mark: SetChargingProfile
+- :white_check_mark: ClearChargingProfile
+- :white_check_mark: GetCompositeSchedule
+- :white_check_mark: SetChargingProfile
 
 ### Remote Trigger Profile
 
-- :x: TriggerMessage
+- :negative_squared_cross_mark: TriggerMessage
 
 ## License
 
