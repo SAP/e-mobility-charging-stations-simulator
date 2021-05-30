@@ -7,7 +7,8 @@ then
   [ -z $emobility_server_type ] && { echo "emobility env server type variable not found, exiting"; exit 1; }
   [ -z $emobility_service_type ] && { echo "emobility env service type variable not found, exiting"; exit 1; }
 
-  cp $emobility_install_dir/src/assets/configs-aws/$emobility_server_type-$emobility_service_type-$emobility_landscape.json $emobility_install_dir/dist/assets/config.json
+  cp $emobility_install_dir/dist/assets/configs-aws/$emobility_server_type-$emobility_service_type-$emobility_landscape.json $emobility_install_dir/dist/assets/config.json
+  cp $emobility_install_dir/dist/assets/configs-aws/$emobility_server_type-$emobility_service_type-$emobility_landscape-tags.json $emobility_install_dir/dist/assets/authorization-tags.json
 else
   echo "no emobility env defined, start with default configuration"
 fi

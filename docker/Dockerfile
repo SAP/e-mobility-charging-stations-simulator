@@ -8,6 +8,7 @@ RUN npm set progress=false && npm config set depth 0 && npm cache clean --force
 RUN npm install
 COPY tsconfig.json rollup.config.js ./
 COPY src ./src
+COPY src/assets/authorization-tags-template.json ./src/assets/authorization-tags.json
 COPY docker/config.json ./src/assets/config.json
 RUN npm run build
 
