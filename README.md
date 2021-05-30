@@ -165,7 +165,7 @@ make SUBMODULES_INIT=false
 - :white_check_mark: ChangeAvailability
 - :white_check_mark: ChangeConfiguration
 - :white_check_mark: ClearCache
-- :negative_squared_cross_mark: DataTransfer
+- :x: DataTransfer
 - :white_check_mark: GetConfiguration
 - :white_check_mark: Heartbeat
 - :white_check_mark: MeterValues
@@ -179,20 +179,20 @@ make SUBMODULES_INIT=false
 
 ### Firmware Management Profile
 
-- :negative_squared_cross_mark: GetDiagnostics
-- :negative_squared_cross_mark: DiagnosticsStatusNotification
-- :negative_squared_cross_mark: FirmwareStatusNotification
-- :negative_squared_cross_mark: UpdateFirmware
+- :x: GetDiagnostics
+- :x: DiagnosticsStatusNotification
+- :x: FirmwareStatusNotification
+- :x: UpdateFirmware
 
 ### Local Auth List Management Profile
 
-- :negative_squared_cross_mark: GetLocalListVersion
-- :negative_squared_cross_mark: SendLocalList
+- :x: GetLocalListVersion
+- :x: SendLocalList
 
 ### Reservation Profile
 
-- :negative_squared_cross_mark: CancelReservation
-- :negative_squared_cross_mark: ReserveNow
+- :x: CancelReservation
+- :x: ReserveNow
 
 ### Smart Charging Profile
 
@@ -202,7 +202,7 @@ make SUBMODULES_INIT=false
 
 ### Remote Trigger Profile
 
-- :negative_squared_cross_mark: TriggerMessage
+- :x: TriggerMessage
 
 ## License
 
