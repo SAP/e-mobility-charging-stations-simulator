@@ -59,11 +59,12 @@ export default class PerformanceStatistics {
 
   public logPerformance(entry: PerformanceEntry, className: string): void {
     this.addPerformanceTimer(entry.name as RequestCommand | IncomingRequestCommand, entry.duration);
-    const perfEntry: PerfEntry = {} as PerfEntry;
-    perfEntry.name = entry.name;
-    perfEntry.entryType = entry.entryType;
-    perfEntry.startTime = entry.startTime;
-    perfEntry.duration = entry.duration;
+    const perfEntry: PerfEntry = {
+      name: entry.name,
+      entryType: entry.entryType,
+      startTime: entry.startTime,
+      duration: entry.duration
+    } ;
     logger.info(`${this.logPrefix()} ${className} method(s) entry: %j`, perfEntry);
   }
 

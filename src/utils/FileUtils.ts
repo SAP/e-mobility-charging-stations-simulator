@@ -5,9 +5,9 @@ export default class FileUtils {
     const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
     if (error.code === 'ENOENT') {
       if (consoleOut) {
-        console.error(prefix + fileType + ' file ' + filePath + ' not found: ', error);
+        console.warn(prefix + fileType + ' file ' + filePath + ' not found: ', error);
       } else {
-        logger.error(prefix + fileType + ' file ' + filePath + ' not found: %j', error);
+        logger.warn(prefix + fileType + ' file ' + filePath + ' not found: %j', error);
       }
     } else {
       if (consoleOut) {
