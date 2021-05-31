@@ -41,7 +41,7 @@ export default class Configuration {
   static getStationTemplateURLs(): StationTemplateURL[] {
     Configuration.getConfig().stationTemplateURLs.forEach((stationURL: StationTemplateURL) => {
       if (!Configuration.isUndefined(stationURL['numberOfStation'])) {
-        console.error(`Deprecated configuration key 'numberOfStation' usage for template file '${stationURL.file}' in 'stationTemplateURLs'. Use 'numberOfStations' instead`);
+        console.error(`${Configuration.logPrefix()} Deprecated configuration key 'numberOfStation' usage for template file '${stationURL.file}' in 'stationTemplateURLs'. Use 'numberOfStations' instead`);
       }
     });
     // Read conf
@@ -114,16 +114,24 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationsToTenantsEqually') ? Configuration.getConfig().distributeStationsToTenantsEqually : true;
   }
 
+  private static logPrefix(): string {
+    return new Date().toLocaleString() + ' Simulator configuration |';
+  }
+
   private static deprecateConfigurationKey(key: string, logMsgToAppend = '') {
     if (!Configuration.isUndefined(Configuration.getConfig()[key])) {
-      console.error(`Deprecated configuration key '${key}' usage${logMsgToAppend && '. ' + logMsgToAppend}`);
+      console.error(`${Configuration.logPrefix()} Deprecated configuration key '${key}' usage${logMsgToAppend && '. ' + logMsgToAppend}`);
     }
   }
 
   // Read the config file
   private static getConfig(): ConfigurationData {
     if (!Configuration.configuration) {
-      Configuration.configuration = JSON.parse(fs.readFileSync(Configuration.configurationFilePath, 'utf8')) as ConfigurationData;
+      try {
+        Configuration.configuration = JSON.parse(fs.readFileSync(Configuration.configurationFilePath, 'utf8')) as ConfigurationData;
+      } catch (error) {
+        Configuration.handleFileException(Configuration.logPrefix(), 'Configuration', Configuration.configurationFilePath, error);
+      }
       if (!Configuration.configurationFileWatcher) {
         Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
       }
@@ -132,21 +140,35 @@ export default class Configuration {
   }
 
   private static getConfigurationFileWatcher(): fs.FSWatcher {
+    try {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    return fs.watch(Configuration.configurationFilePath).on('change', async (e): Promise<void> => {
-      // Nullify to force configuration file reading
-      Configuration.configuration = null;
-      if (!Configuration.isUndefined(Configuration.configurationChangeCallback)) {
-        await Configuration.configurationChangeCallback();
-      }
-    });
+      return fs.watch(Configuration.configurationFilePath).on('change', async (e): Promise<void> => {
+        // Nullify to force configuration file reading
+        Configuration.configuration = null;
+        if (!Configuration.isUndefined(Configuration.configurationChangeCallback)) {
+          await Configuration.configurationChangeCallback();
+        }
+      });
+    } catch (error) {
+      Configuration.handleFileException(Configuration.logPrefix(), 'Configuration', Configuration.configurationFilePath, error);
+    }
   }
 
   private static objectHasOwnProperty(object: any, property: string): boolean {
-    return Object.prototype.hasOwnProperty.call(object, property);
+    return Object.prototype.hasOwnProperty.call(object, property) as boolean;
   }
 
   private static isUndefined(obj: any): boolean {
     return typeof obj === 'undefined';
+  }
+
+  private static handleFileException(logPrefix: string, fileType: string, filePath: string, error: NodeJS.ErrnoException): void {
+    const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
+    if (error.code === 'ENOENT') {
+      console.error(prefix + fileType + ' file ' + filePath + ' not found: ', error);
+    } else {
+      console.error(prefix + fileType + ' file ' + filePath + ' opening error: ', error);
+    }
+    throw error;
   }
 }

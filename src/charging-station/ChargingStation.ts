@@ -12,6 +12,7 @@ import { ChargingProfile } from '../types/ocpp/ChargingProfile';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
+import FileUtils from '../utils/FileUtils';
 import { MessageType } from '../types/ocpp/MessageType';
 import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCCP16IncomingRequestService';
@@ -359,8 +360,7 @@ export default class ChargingStation {
       stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8')) as ChargingStationTemplate;
       fs.closeSync(fileDescriptor);
     } catch (error) {
-      logger.error('Template file ' + this.stationTemplateFile + ' loading error: %j', error);
-      throw error;
+      FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error);
     }
     const stationInfo: ChargingStationInfo = stationTemplateFromFile || {} as ChargingStationInfo;
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
@@ -611,8 +611,7 @@ export default class ChargingStation {
         authorizedTags = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8')) as string[];
         fs.closeSync(fileDescriptor);
       } catch (error) {
-        logger.error(this.logPrefix() + ' Authorization file ' + authorizationFile + ' loading error: %j', error);
-        throw error;
+        FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error);
       }
     } else {
       logger.info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile);
@@ -841,36 +840,49 @@ export default class ChargingStation {
   }
 
   private startAuthorizationFileMonitoring(): void {
-    fs.watch(this.getAuthorizationFile()).on('change', (e) => {
+    const authorizationFile = this.getAuthorizationFile();
+    if (authorizationFile) {
       try {
-        logger.debug(this.logPrefix() + ' Authorization file ' + this.getAuthorizationFile() + ' have changed, reload');
-        // Initialize authorizedTags
-        this.authorizedTags = this.getAuthorizedTags();
+        fs.watch(authorizationFile).on('change', (e) => {
+          try {
+            logger.debug(this.logPrefix() + ' Authorization file ' + authorizationFile + ' have changed, reload');
+            // Initialize authorizedTags
+            this.authorizedTags = this.getAuthorizedTags();
+          } catch (error) {
+            logger.error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
+          }
+        });
       } catch (error) {
-        logger.error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
+        FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error);
       }
-    });
+    } else {
+      logger.info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile + '. Not monitoring changes');
+    }
   }
 
   private startStationTemplateFileMonitoring(): void {
+    try {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    fs.watch(this.stationTemplateFile).on('change', async (e): Promise<void> => {
-      try {
-        logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
-        // Initialize
-        this.initialize();
-        // Stop the ATG
-        if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
+      fs.watch(this.stationTemplateFile).on('change', async (e): Promise<void> => {
+        try {
+          logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
+          // Initialize
+          this.initialize();
+          // Stop the ATG
+          if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
           this.automaticTransactionGeneration) {
-          await this.automaticTransactionGeneration.stop();
+            await this.automaticTransactionGeneration.stop();
+          }
+          // Start the ATG
+          this.startAutomaticTransactionGenerator();
+          // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
+        } catch (error) {
+          logger.error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
         }
-        // Start the ATG
-        this.startAutomaticTransactionGenerator();
-        // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
-      } catch (error) {
-        logger.error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
-      }
-    });
+      });
+    } catch (error) {
+      FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error);
+    }
   }
 
   private getReconnectExponentialDelay(): boolean | undefined {

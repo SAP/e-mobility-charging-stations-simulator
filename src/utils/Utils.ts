@@ -122,8 +122,7 @@ export default class Utils {
   }
 
   static logPrefix(prefixString = ''): string {
-    const date = new Date();
-    return date.toLocaleString() + prefixString;
+    return new Date().toLocaleString() + prefixString;
   }
 
   static cloneObject<T>(object: T): T {
