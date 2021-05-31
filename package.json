@@ -87,7 +87,7 @@
     "npm-check": "^5.9.2",
     "nyc": "^15.1.0",
     "release-it": "^14.7.0",
-    "rollup": "^2.50.4",
+    "rollup": "^2.50.5",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
