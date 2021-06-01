@@ -586,7 +586,7 @@ export default class ChargingStation {
 
   private async onError(errorEvent: any): Promise<void> {
     logger.error(this.logPrefix() + ' Socket error: %j', errorEvent);
-    // pragma switch (errorEvent.code) {
+    // switch (errorEvent.code) {
     //   case 'ECONNREFUSED':
     //     await this._reconnect(errorEvent);
     //     break;
