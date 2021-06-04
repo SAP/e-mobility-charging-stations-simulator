@@ -128,7 +128,7 @@ export default class AutomaticTransactionGenerator {
   private async startTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StartTransactionResponse | AuthorizeResponse> {
     if (self.chargingStation.hasAuthorizedTags()) {
       const tagId = self.chargingStation.getRandomTagId();
-      if (self.chargingStation.stationInfo.AutomaticTransactionGenerator.requireAuthorize) {
+      if (self.chargingStation.getAutomaticTransactionGeneratorRequireAuthorize()) {
         // Authorize tagId
         const authorizeResponse = await self.chargingStation.ocppRequestService.sendAuthorize(tagId);
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {

@@ -174,6 +174,10 @@ export default class ChargingStation {
     this.startWebSocketPing();
   }
 
+  public getAutomaticTransactionGeneratorRequireAuthorize(): boolean {
+    return this.stationInfo.AutomaticTransactionGenerator.requireAuthorize ?? true;
+  }
+
   public startHeartbeat(): void {
     if (this.getHeartbeatInterval() && this.getHeartbeatInterval() > 0 && !this.heartbeatSetInterval) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises

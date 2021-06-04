@@ -49,7 +49,7 @@
     "probabilityOfStart": 1,
     "stopAfterHours": 0.3,
     "stopOnConnectionFailure": false,
-    "requireAuthorize": false
+    "requireAuthorize": true
   },
   "Connectors": {
     "0": {},

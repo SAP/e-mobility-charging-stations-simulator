@@ -110,7 +110,7 @@ Connectors | | | Connectors | charging stations connectors configuration
     "probabilityOfStart": 1,
     "stopAfterHours": 0.3,
     "stopOnConnectionFailure": true,
-    "requireAuthorize": false
+    "requireAuthorize": true
   }
 ```
 #### Connectors section
