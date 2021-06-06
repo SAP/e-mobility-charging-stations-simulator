@@ -28,7 +28,7 @@ export interface AutomaticTransactionGenerator {
   probabilityOfStart: number;
   stopAfterHours: number;
   stopOnConnectionFailure: boolean;
-  requireAuthorize: boolean
+  requireAuthorize?: boolean
 }
 
 export default interface ChargingStationTemplate {
