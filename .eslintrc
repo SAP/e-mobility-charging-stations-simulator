@@ -207,5 +207,17 @@
       "error",
       "single"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "*.js"
+      ],
+      "extends": "plugin:node/recommended",
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-var-requires": "off"
+      }
+    }
+  ]
 }

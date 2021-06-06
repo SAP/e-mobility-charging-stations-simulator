@@ -86,6 +86,7 @@
     "eslint": "^7.28.0",
     "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-jsdoc": "^35.1.2",
+    "eslint-plugin-node": "^11.1.0",
     "expect": "^27.0.2",
     "mbt": "^1.2.1",
     "mocha": "^8.4.0",
