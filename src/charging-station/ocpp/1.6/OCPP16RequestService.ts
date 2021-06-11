@@ -1,6 +1,6 @@
 import { AuthorizeRequest, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionReason, OCPP16StopTransactionResponse, StartTransactionRequest, StopTransactionRequest } from '../../../types/ocpp/1.6/Transaction';
 import { HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
-import { MeterValue, MeterValueLocation, MeterValuePhase, MeterValueUnit, MeterValuesRequest, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
+import { MeterValue, MeterValueContext, MeterValueLocation, MeterValuePhase, MeterValueUnit, MeterValuesRequest, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
 
 import { ACElectricUtils } from '../../../utils/ElectricUtils';
 import Constants from '../../../utils/Constants';
@@ -78,7 +78,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
         meterStart: 0,
         timestamp: new Date().toISOString(),
       };
-      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.START_TRANSACTION) as OCPP16StartTransactionResponse;
+      const response = await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.START_TRANSACTION) as OCPP16StartTransactionResponse;
+      await this.sendTransactionBeginMeterValues(connectorId, response.transactionId, 0);
+      return response;
     } catch (error) {
       this.handleRequestError(OCPP16RequestCommand.START_TRANSACTION, error);
     }
@@ -94,6 +96,13 @@ export default class OCPP16RequestService extends OCPPRequestService {
         timestamp: new Date().toISOString(),
         ...reason && { reason },
       };
+      let connectorId: number;
+      for (const connector in this.chargingStation.connectors) {
+        if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionId === transactionId) {
+          connectorId = Utils.convertToInt(connector);
+        }
+      }
+      await this.sendTransactionEndMeterValues(connectorId, transactionId, meterStop);
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.STOP_TRANSACTION) as OCPP16StartTransactionResponse;
     } catch (error) {
       this.handleRequestError(OCPP16RequestCommand.STOP_TRANSACTION, error);
@@ -323,5 +332,59 @@ export default class OCPP16RequestService extends OCPPRequestService {
   public async sendError(messageId: string, error: OCPPError, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<unknown> {
     // Send error
     return this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
+  }
+
+  private async sendTransactionBeginMeterValues(connectorId: number, transactionId: number, meterBegin: number) {
+    const meterValue: MeterValue = {
+      timestamp: new Date().toISOString(),
+      sampledValue: [],
+    };
+    const meterValuesTemplate: OCPP16SampledValue[] = this.chargingStation.getConnector(connectorId).MeterValues;
+    for (let index = 0; index < meterValuesTemplate.length; index++) {
+      // Energy.Active.Import.Register measurand (default)
+      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+        meterValue.sampledValue.push({
+          ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.WATT_HOUR },
+          context: MeterValueContext.TRANSACTION_BEGIN,
+          ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
+          ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
+          ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } :
+            { value: meterBegin.toString() },
+        });
+      }
+    }
+    const payload: MeterValuesRequest = {
+      connectorId,
+      transactionId,
+      meterValue,
+    };
+    await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
+  }
+
+  private async sendTransactionEndMeterValues(connectorId: number, transactionId: number, meterEnd: number) {
+    const meterValue: MeterValue = {
+      timestamp: new Date().toISOString(),
+      sampledValue: [],
+    };
+    const meterValuesTemplate: OCPP16SampledValue[] = this.chargingStation.getConnector(connectorId).MeterValues;
+    for (let index = 0; index < meterValuesTemplate.length; index++) {
+      // Energy.Active.Import.Register measurand (default)
+      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+        meterValue.sampledValue.push({
+          ...!Utils.isUndefined(meterValuesTemplate[index].unit) ? { unit: meterValuesTemplate[index].unit } : { unit: MeterValueUnit.WATT_HOUR },
+          context: MeterValueContext.TRANSACTION_END,
+          ...!Utils.isUndefined(meterValuesTemplate[index].measurand) && { measurand: meterValuesTemplate[index].measurand },
+          ...!Utils.isUndefined(meterValuesTemplate[index].location) && { location: meterValuesTemplate[index].location },
+          ...!Utils.isUndefined(meterValuesTemplate[index].value) ? { value: meterValuesTemplate[index].value } :
+            { value: meterEnd.toString() },
+        });
+      }
+    }
+    const payload: MeterValuesRequest = {
+      connectorId,
+      transactionId,
+      meterValue,
+    };
+    await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
   }
 }
