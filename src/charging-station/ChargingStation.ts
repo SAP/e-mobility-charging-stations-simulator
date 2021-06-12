@@ -1,6 +1,6 @@
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
-import ChargingStationTemplate, { CurrentOutType, VoltageOut } from '../types/ChargingStationTemplate';
+import ChargingStationTemplate, { CurrentOutType, PowerUnits, VoltageOut } from '../types/ChargingStationTemplate';
 import Connectors, { Connector } from '../types/Connectors';
 import { PerformanceObserver, performance } from 'perf_hooks';
 import Requests, { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand } from '../types/ocpp/Requests';
@@ -395,12 +395,18 @@ export default class ChargingStation {
     } catch (error) {
       FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error);
     }
-    const stationInfo: ChargingStationInfo = stationTemplateFromFile || {} as ChargingStationInfo;
+    const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? {} as ChargingStationInfo;
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
       stationTemplateFromFile.power = stationTemplateFromFile.power as number[];
-      stationInfo.maxPower = stationTemplateFromFile.power[Math.floor(Math.random() * stationTemplateFromFile.power.length)];
+      const powerArrayRandomIndex = Math.floor(Math.random() * stationTemplateFromFile.power.length);
+      stationInfo.maxPower = stationTemplateFromFile.powerUnit === PowerUnits.KILO_WATT
+        ? stationTemplateFromFile.power[powerArrayRandomIndex] * 1000
+        : stationTemplateFromFile.power[powerArrayRandomIndex];
     } else {
-      stationInfo.maxPower = stationTemplateFromFile.power as number;
+      stationTemplateFromFile.power = stationTemplateFromFile.power as number;
+      stationInfo.maxPower = stationTemplateFromFile.powerUnit === PowerUnits.KILO_WATT
+        ? (stationTemplateFromFile.power) * 1000
+        : stationTemplateFromFile.power;
     }
     stationInfo.chargingStationId = this.getChargingStationId(stationTemplateFromFile);
     stationInfo.resetTime = stationTemplateFromFile.resetTime ? stationTemplateFromFile.resetTime * 1000 : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;

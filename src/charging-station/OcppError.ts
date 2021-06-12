@@ -7,9 +7,9 @@ export default class OCPPError extends Error {
   constructor(code: string, message: string, details?: any) {
     super(message);
 
-    this.code = code || ErrorType.GENERIC_ERROR;
-    this.message = message || '';
-    this.details = details || {};
+    this.code = code ?? ErrorType.GENERIC_ERROR;
+    this.message = message ?? '';
+    this.details = details ?? {};
 
     Object.setPrototypeOf(this, OCPPError.prototype); // For instanceof
 
