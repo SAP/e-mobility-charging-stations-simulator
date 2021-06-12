@@ -57,6 +57,7 @@ power | | | integer\|integer[] | charging stations maximum power value(s)
 powerSharedByConnectors | true/false | false | boolean | charging stations power shared by its connectors
 powerUnit | W/kW | W | string | charging stations power unit
 currentOutType | AC/DC | AC | string | charging stations current out type
+voltageOut | | AC:230/DC:400 | integer | charging stations voltage out
 numberOfPhases | 0/1/3 | AC:3/DC:0 | integer | charging stations number of phase(s) 
 numberOfConnectors | | | integer\|integer[] | charging stations number of connector(s)
 useConnectorId0 | true/false | true | boolean | use connector id 0 definition from the template
@@ -66,8 +67,10 @@ connectionTimeout | | 30 | integer | connection timeout to the OCPP-J server
 autoReconnectMaxRetries | | -1 (unlimited) | integer | connection retries to the OCPP-J server
 reconnectExponentialDelay | true/false | false | boolean | connection delay retry to the OCPP-J server
 registrationMaxRetries | | -1 (unlimited) | integer | charging stations boot notification retries
-enableStatistics | true/false | true | boolean | enable charging stations statistics   
-voltageOut | | AC:230/DC:400 | integer | charging stations voltage out
+enableStatistics | true/false | true | boolean | enable charging stations statistics
+beginEndMeterValues | true/false | false | boolean | enable Transaction.{Begin,End} MeterValues
+outOfOrderEndMeterValues | true/false | false | boolean | send Transaction.End MeterValues out of order
+meteringPerTransaction | true/false | true | boolean | disable metering on a per transaction basis
 Configuration | | | ChargingStationConfiguration | charging stations OCPP configuration parameters
 AutomaticTransactionGenerator | | | AutomaticTransactionGenerator | charging stations ATG configuration
 Connectors | | | Connectors | charging stations connectors configuration

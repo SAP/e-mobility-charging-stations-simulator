@@ -63,8 +63,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
       const transactionId = this.chargingStation.getConnector(connectorId).transactionId;
-      const stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId),
-        this.chargingStation.getTransactionIdTag(transactionId), OCPP16StopTransactionReason.UNLOCK_COMMAND);
+      const stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId,
+        this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+        this.chargingStation.getTransactionIdTag(transactionId),
+        OCPP16StopTransactionReason.UNLOCK_COMMAND);
       if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
         return Constants.OCPP_RESPONSE_UNLOCKED;
       }
@@ -297,7 +299,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionId === transactionId) {
         await this.chargingStation.ocppRequestService.sendStatusNotification(Utils.convertToInt(connector), OCPP16ChargePointStatus.FINISHING);
         this.chargingStation.getConnector(Utils.convertToInt(connector)).status = OCPP16ChargePointStatus.FINISHING;
-        await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getTransactionMeterStop(transactionId),
+        await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId, this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
           this.chargingStation.getTransactionIdTag(transactionId));
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }

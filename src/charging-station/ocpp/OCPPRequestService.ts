@@ -114,5 +114,7 @@ export default abstract class OCPPRequestService {
   public abstract sendStartTransaction(connectorId: number, idTag?: string): Promise<StartTransactionResponse>;
   public abstract sendStopTransaction(transactionId: number, meterStop: number, idTag?: string, reason?: StopTransactionReason): Promise<StopTransactionResponse>;
   public abstract sendMeterValues(connectorId: number, transactionId: number, interval: number, self: OCPPRequestService): Promise<void>;
+  public abstract sendTransactionBeginMeterValues(connectorId: number, transactionId: number, meterBegin: number): Promise<void>;
+  public abstract sendTransactionEndMeterValues(connectorId: number, transactionId: number, meterEnd: number): Promise<void>;
   public abstract sendError(messageId: string, error: OCPPError, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown>;
 }

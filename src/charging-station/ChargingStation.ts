@@ -149,12 +149,38 @@ export default class ChargingStation {
     }
   }
 
-  public getTransactionMeterStop(transactionId: number): number | undefined {
-    for (const connector in this.connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
-        return this.getConnector(Utils.convertToInt(connector)).lastEnergyActiveImportRegisterValue;
+  public getOutOfOrderEndMeterValues(): boolean {
+    return this.stationInfo.outOfOrderEndMeterValues ?? false;
+  }
+
+  public getBeginEndMeterValues(): boolean {
+    return this.stationInfo.beginEndMeterValues ?? false;
+  }
+
+  public getMeteringPerTransaction(): boolean {
+    return this.stationInfo.meteringPerTransaction ?? true;
+  }
+
+  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
+    if (this.getMeteringPerTransaction()) {
+      for (const connector in this.connectors) {
+        if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
+          return this.getConnector(Utils.convertToInt(connector)).transactionEnergyActiveImportRegisterValue;
+        }
       }
     }
+    for (const connector in this.connectors) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
+        return this.getConnector(Utils.convertToInt(connector)).energyActiveImportRegisterValue;
+      }
+    }
+  }
+
+  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number | undefined {
+    if (this.getMeteringPerTransaction()) {
+      return this.getConnector(connectorId).transactionEnergyActiveImportRegisterValue;
+    }
+    return this.getConnector(connectorId).energyActiveImportRegisterValue;
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
@@ -319,7 +345,10 @@ export default class ChargingStation {
   }
 
   public resetTransactionOnConnector(connectorId: number): void {
-    this.initTransactionOnConnector(connectorId);
+    this.getConnector(connectorId).transactionStarted = false;
+    delete this.getConnector(connectorId).transactionId;
+    delete this.getConnector(connectorId).idTag;
+    this.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;
     this.stopMeterValues(connectorId);
   }
 
@@ -448,7 +477,7 @@ export default class ChargingStation {
     // Initialize transaction attributes on connectors
     for (const connector in this.connectors) {
       if (Utils.convertToInt(connector) > 0 && !this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
-        this.initTransactionOnConnector(Utils.convertToInt(connector));
+        this.initTransactionAttributesOnConnector(Utils.convertToInt(connector));
       }
     }
     switch (this.getOCPPVersion()) {
@@ -756,7 +785,8 @@ export default class ChargingStation {
       for (const connector in this.connectors) {
         if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
           const transactionId = this.getConnector(Utils.convertToInt(connector)).transactionId;
-          await this.ocppRequestService.sendStopTransaction(transactionId, this.getTransactionMeterStop(transactionId), this.getTransactionIdTag(transactionId), reason);
+          await this.ocppRequestService.sendStopTransaction(transactionId, this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+            this.getTransactionIdTag(transactionId), reason);
         }
       }
     }
@@ -916,11 +946,10 @@ export default class ChargingStation {
     }
   }
 
-  private initTransactionOnConnector(connectorId: number): void {
+  private initTransactionAttributesOnConnector(connectorId: number): void {
     this.getConnector(connectorId).transactionStarted = false;
-    delete this.getConnector(connectorId).transactionId;
-    delete this.getConnector(connectorId).idTag;
-    this.getConnector(connectorId).lastEnergyActiveImportRegisterValue = -1;
+    this.getConnector(connectorId).energyActiveImportRegisterValue = 0;
+    this.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;
   }
 }
 

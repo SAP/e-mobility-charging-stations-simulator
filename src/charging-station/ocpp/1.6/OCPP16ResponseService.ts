@@ -54,7 +54,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.getConnector(connectorId).transactionStarted = true;
       this.chargingStation.getConnector(connectorId).transactionId = payload.transactionId;
       this.chargingStation.getConnector(connectorId).idTag = requestPayload.idTag;
-      this.chargingStation.getConnector(connectorId).lastEnergyActiveImportRegisterValue = 0;
+      this.chargingStation.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;
+      this.chargingStation.getBeginEndMeterValues() && await this.chargingStation.ocppRequestService.sendTransactionBeginMeterValues(connectorId, payload.transactionId,
+        this.chargingStation.getEnergyActiveImportRegisterByTransactionId(payload.transactionId));
       await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.CHARGING);
       this.chargingStation.getConnector(connectorId).status = OCPP16ChargePointStatus.CHARGING;
       logger.info(this.chargingStation.logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
@@ -84,6 +86,8 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+      (this.chargingStation.getBeginEndMeterValues() && this.chargingStation.getOutOfOrderEndMeterValues())
+        && await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(transactionConnectorId, requestPayload.transactionId, requestPayload.meterStop);
       if (!this.chargingStation.isChargingStationAvailable() || !this.chargingStation.isConnectorAvailable(transactionConnectorId)) {
         await this.chargingStation.ocppRequestService.sendStatusNotification(transactionConnectorId, OCPP16ChargePointStatus.UNAVAILABLE);
         this.chargingStation.getConnector(transactionConnectorId).status = OCPP16ChargePointStatus.UNAVAILABLE;

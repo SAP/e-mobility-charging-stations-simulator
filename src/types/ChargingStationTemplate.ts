@@ -47,6 +47,7 @@ export default interface ChargingStationTemplate {
   powerSharedByConnectors?: boolean;
   powerUnit: PowerUnits;
   currentOutType?: CurrentOutType;
+  voltageOut?: number;
   numberOfPhases?: number;
   numberOfConnectors?: number | number[];
   useConnectorId0?: boolean;
@@ -57,7 +58,9 @@ export default interface ChargingStationTemplate {
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
-  voltageOut?: number;
+  beginEndMeterValues?: boolean;
+  outOfOrderEndMeterValues?: boolean;
+  meteringPerTransaction?: boolean;
   Configuration?: ChargingStationConfiguration;
   AutomaticTransactionGenerator: AutomaticTransactionGenerator;
   Connectors: Connectors;
