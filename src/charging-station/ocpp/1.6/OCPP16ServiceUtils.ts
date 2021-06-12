@@ -33,7 +33,7 @@ export class OCPP16ServiceUtils {
     };
   }
 
-  public static getMeasurandDefaultUnit(measurandType: OCPP16MeterValueMeasurand): MeterValueUnit {
+  public static getMeasurandDefaultUnit(measurandType: OCPP16MeterValueMeasurand): MeterValueUnit | undefined {
     switch (measurandType) {
       case OCPP16MeterValueMeasurand.CURRENT_EXPORT:
       case OCPP16MeterValueMeasurand.CURRENT_IMPORT:
@@ -53,7 +53,7 @@ export class OCPP16ServiceUtils {
     }
   }
 
-  public static getMeasurandDefaultLocation(measurandType: OCPP16MeterValueMeasurand): MeterValueLocation {
+  public static getMeasurandDefaultLocation(measurandType: OCPP16MeterValueMeasurand): MeterValueLocation | undefined {
     switch (measurandType) {
       case OCPP16MeterValueMeasurand.STATE_OF_CHARGE:
         return MeterValueLocation.EV;

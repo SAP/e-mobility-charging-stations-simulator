@@ -1,8 +1,8 @@
+import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import { AuthorizeRequest, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionReason, OCPP16StopTransactionResponse, StartTransactionRequest, StopTransactionRequest } from '../../../types/ocpp/1.6/Transaction';
 import { HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
-import { MeterValue, MeterValueContext, MeterValuePhase, MeterValuesRequest, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
+import { MeterValue, MeterValueContext, MeterValuePhase, MeterValueUnit, MeterValuesRequest, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
 
-import { ACElectricUtils } from '../../../utils/ElectricUtils';
 import Constants from '../../../utils/Constants';
 import { CurrentOutType } from '../../../types/ChargingStationTemplate';
 import MeasurandValues from '../../../types/MeasurandValues';
@@ -145,24 +145,25 @@ export default class OCPP16RequestService extends OCPPRequestService {
           OCPP16ServiceUtils.checkMeasurandPowerDivider(self.chargingStation, meterValuesTemplate[index].measurand);
           const errMsg = `${self.chargingStation.logPrefix()} MeterValues measurand ${meterValuesTemplate[index].measurand ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: Unknown ${self.chargingStation.getCurrentOutType()} currentOutType in template file ${self.chargingStation.stationTemplateFile}, cannot calculate ${meterValuesTemplate[index].measurand ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} measurand value`;
           const powerMeasurandValues = {} as MeasurandValues;
+          const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT ? 1000 : 1;
           const maxPower = Math.round(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider);
           const maxPowerPerPhase = Math.round((self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider) / self.chargingStation.getNumberOfPhases());
           switch (self.chargingStation.getCurrentOutType()) {
             case CurrentOutType.AC:
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
-                powerMeasurandValues.L1 = Utils.getRandomFloatRounded(maxPowerPerPhase);
+                powerMeasurandValues.L1 = Utils.getRandomFloatRounded(maxPowerPerPhase / unitDivider);
                 powerMeasurandValues.L2 = 0;
                 powerMeasurandValues.L3 = 0;
                 if (self.chargingStation.getNumberOfPhases() === 3) {
-                  powerMeasurandValues.L2 = Utils.getRandomFloatRounded(maxPowerPerPhase);
-                  powerMeasurandValues.L3 = Utils.getRandomFloatRounded(maxPowerPerPhase);
+                  powerMeasurandValues.L2 = Utils.getRandomFloatRounded(maxPowerPerPhase / unitDivider);
+                  powerMeasurandValues.L3 = Utils.getRandomFloatRounded(maxPowerPerPhase / unitDivider);
                 }
                 powerMeasurandValues.allPhases = Utils.roundTo(powerMeasurandValues.L1 + powerMeasurandValues.L2 + powerMeasurandValues.L3, 2);
               }
               break;
             case CurrentOutType.DC:
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
-                powerMeasurandValues.allPhases = Utils.getRandomFloatRounded(maxPower);
+                powerMeasurandValues.allPhases = Utils.getRandomFloatRounded(maxPower / unitDivider);
               }
               break;
             default:
@@ -171,8 +172,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
           }
           meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index], powerMeasurandValues.allPhases));
           const sampledValuesIndex = meterValue.sampledValue.length - 1;
-          if (Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxPower || debug) {
-            logger.error(`${self.chargingStation.logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/${maxPower}`);
+          const maxPowerRounded = Utils.roundTo(maxPower / unitDivider, 2);
+          if (Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxPowerRounded || debug) {
+            logger.error(`${self.chargingStation.logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/${maxPowerRounded}`);
           }
           for (let phase = 1; self.chargingStation.getNumberOfPhases() === 3 && phase <= self.chargingStation.getNumberOfPhases(); phase++) {
             const phaseValue = `L${phase}-N`;
@@ -200,7 +202,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
               }
               break;
             case CurrentOutType.DC:
-              maxAmperage = ACElectricUtils.amperageTotalFromPower(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
+              maxAmperage = DCElectricUtils.amperage(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
               if (Utils.isUndefined(meterValuesTemplate[index].value)) {
                 currentMeasurandValues.allPhases = Utils.getRandomFloatRounded(maxAmperage);
               }
@@ -222,24 +224,26 @@ export default class OCPP16RequestService extends OCPPRequestService {
         // Energy.Active.Import.Register measurand (default)
         } else if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
           OCPP16ServiceUtils.checkMeasurandPowerDivider(self.chargingStation, meterValuesTemplate[index].measurand);
+          const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
           if (Utils.isUndefined(meterValuesTemplate[index].value)) {
-            const measurandValue = Utils.getRandomInt(self.chargingStation.stationInfo.maxPower / (self.chargingStation.stationInfo.powerDivider * 3600000) * interval);
+            const energyMeasurandValue = Utils.getRandomInt(self.chargingStation.stationInfo.maxPower / (self.chargingStation.stationInfo.powerDivider * 3600000) * interval);
             // Persist previous value in connector
             if (connector && !Utils.isNullOrUndefined(connector.energyActiveImportRegisterValue) && connector.energyActiveImportRegisterValue >= 0 &&
                 !Utils.isNullOrUndefined(connector.transactionEnergyActiveImportRegisterValue) && connector.transactionEnergyActiveImportRegisterValue >= 0) {
-              connector.energyActiveImportRegisterValue += measurandValue;
-              connector.transactionEnergyActiveImportRegisterValue += measurandValue;
+              connector.energyActiveImportRegisterValue += energyMeasurandValue;
+              connector.transactionEnergyActiveImportRegisterValue += energyMeasurandValue;
             } else {
               connector.energyActiveImportRegisterValue = 0;
               connector.transactionEnergyActiveImportRegisterValue = 0;
             }
           }
           meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index],
-            self.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)));
+            Utils.roundTo(self.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) / unitDivider, 4)));
           const sampledValuesIndex = meterValue.sampledValue.length - 1;
-          const maxConsumption = Math.round(self.chargingStation.stationInfo.maxPower * 3600 / (self.chargingStation.stationInfo.powerDivider * interval));
-          if (Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxConsumption || debug) {
-            logger.error(`${self.chargingStation.logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/${maxConsumption}`);
+          const maxEnergy = Math.round(self.chargingStation.stationInfo.maxPower * 3600 / (self.chargingStation.stationInfo.powerDivider * interval));
+          const maxEnergyRounded = Utils.roundTo(maxEnergy / unitDivider, 4);
+          if (Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxEnergyRounded || debug) {
+            logger.error(`${self.chargingStation.logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/${maxEnergyRounded}`);
           }
         // Unsupported measurand
         } else {
@@ -266,7 +270,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
     for (let index = 0; index < meterValuesTemplate.length; index++) {
       // Energy.Active.Import.Register measurand (default)
       if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index], meterBegin, MeterValueContext.TRANSACTION_BEGIN));
+        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
+        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index],
+          Utils.roundTo(meterBegin / unitDivider, 4), MeterValueContext.TRANSACTION_BEGIN));
       }
     }
     const payload: MeterValuesRequest = {
@@ -286,7 +292,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
     for (let index = 0; index < meterValuesTemplate.length; index++) {
       // Energy.Active.Import.Register measurand (default)
       if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index], meterEnd, MeterValueContext.TRANSACTION_END));
+        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
+        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index], Utils.roundTo(meterEnd / unitDivider, 4), MeterValueContext.TRANSACTION_END));
       }
     }
     const payload: MeterValuesRequest = {

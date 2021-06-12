@@ -53,7 +53,7 @@ chargePointModel | | '' | string | charging stations model
 chargePointVendor | | '' | string | charging stations vendor
 chargeBoxSerialNumberPrefix | | '' | string | charging stations serial number prefix
 firmwareVersion | | '' | string | charging stations firmware version
-power | | | integer\|integer[] | charging stations maximum power value(s)
+power | | | float\|float[] | charging stations maximum power value(s)
 powerSharedByConnectors | true/false | false | boolean | charging stations power shared by its connectors
 powerUnit | W/kW | W | string | charging stations power unit
 currentOutType | AC/DC | AC | string | charging stations current out type

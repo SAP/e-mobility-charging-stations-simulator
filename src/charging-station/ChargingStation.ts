@@ -561,7 +561,6 @@ export default class ChargingStation {
     try {
       // Parse the message
       [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent.toString()) as IncomingRequest;
-
       // Check the Type of message
       switch (messageType) {
         // Incoming Message

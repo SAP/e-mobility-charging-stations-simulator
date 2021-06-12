@@ -12,8 +12,8 @@ export interface Connector {
   transactionId?: number;
   transactionSetInterval?: NodeJS.Timeout;
   idTag?: string;
-  energyActiveImportRegisterValue?: number;
-  transactionEnergyActiveImportRegisterValue?: number;
+  energyActiveImportRegisterValue?: number; // In Wh
+  transactionEnergyActiveImportRegisterValue?: number; // In Wh
   chargingProfiles?: ChargingProfile[]
 }
 
