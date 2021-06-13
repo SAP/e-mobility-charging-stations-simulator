@@ -707,13 +707,16 @@ export default class ChargingStation {
 
   // 0 for disabling
   private getConnectionTimeout(): number | undefined {
+    if (this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut)) {
+      return parseInt(this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut).value) ?? Constants.DEFAULT_CONNECTION_TIMEOUT;
+    }
     if (!Utils.isUndefined(this.stationInfo.connectionTimeout)) {
       return this.stationInfo.connectionTimeout;
     }
     if (!Utils.isUndefined(Configuration.getConnectionTimeout())) {
       return Configuration.getConnectionTimeout();
     }
-    return 30;
+    return Constants.DEFAULT_CONNECTION_TIMEOUT;
   }
 
   // -1 for unlimited, 0 for disabling

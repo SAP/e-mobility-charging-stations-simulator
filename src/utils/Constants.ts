@@ -36,4 +36,6 @@ export default class Constants {
   static readonly DEFAULT_WORKER_POOL_MIN_SIZE = 4;
   static readonly DEFAULT_WORKER_POOL_MAX_SIZE = 16;
   static readonly DEFAULT_CHARGING_STATIONS_PER_WORKER = 1;
+
+  static readonly DEFAULT_CONNECTION_TIMEOUT = 30;
 }

@@ -218,7 +218,7 @@ All kind of OCPP parameters are supported in a charging station template. The li
 
 - :white_check_mark: AuthorizeRemoteTxRequests (type: boolean) (units: -)
 - :x: ClockAlignedDataInterval (type: integer) (units: seconds)
-- :x: ConnectionTimeOut (type: integer) (units: seconds)
+- :white_check_mark: ConnectionTimeOut (type: integer) (units: seconds)
 - :x: GetConfigurationMaxKeys (type: integer) (units: -)
 - :white_check_mark: HeartbeatInterval (type: integer) (units: seconds)
 - :x: LocalAuthorizeOffline (type: boolean) (units: -)
