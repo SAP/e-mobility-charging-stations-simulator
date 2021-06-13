@@ -1,7 +1,7 @@
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import { AuthorizeRequest, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionReason, OCPP16StopTransactionResponse, StartTransactionRequest, StopTransactionRequest } from '../../../types/ocpp/1.6/Transaction';
 import { HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
-import { MeterValue, MeterValueContext, MeterValuePhase, MeterValueUnit, MeterValuesRequest, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
+import { MeterValuePhase, MeterValueUnit, MeterValuesRequest, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
 
 import Constants from '../../../utils/Constants';
 import { CurrentOutType } from '../../../types/ChargingStationTemplate';
@@ -27,7 +27,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendBootNotification(chargePointModel: string, chargePointVendor: string, chargeBoxSerialNumber?: string, firmwareVersion?: string, chargePointSerialNumber?: string, iccid?: string, imsi?: string, meterSerialNumber?: string, meterType?: string): Promise<OCPP16BootNotificationResponse> {
+  public async sendBootNotification(chargePointModel: string, chargePointVendor: string, chargeBoxSerialNumber?: string, firmwareVersion?: string,
+      chargePointSerialNumber?: string, iccid?: string, imsi?: string, meterSerialNumber?: string, meterType?: string): Promise<OCPP16BootNotificationResponse> {
     try {
       const payload: OCPP16BootNotificationRequest = {
         chargePointModel,
@@ -88,21 +89,24 @@ export default class OCPP16RequestService extends OCPPRequestService {
   public async sendStopTransaction(transactionId: number, meterStop: number, idTag?: string,
       reason: OCPP16StopTransactionReason = OCPP16StopTransactionReason.NONE): Promise<OCPP16StopTransactionResponse> {
     try {
-      const payload: StopTransactionRequest = {
-        transactionId,
-        ...!Utils.isUndefined(idTag) && { idTag },
-        meterStop: meterStop,
-        timestamp: new Date().toISOString(),
-        ...reason && { reason },
-      };
       let connectorId: number;
       for (const connector in this.chargingStation.connectors) {
         if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionId === transactionId) {
           connectorId = Utils.convertToInt(connector);
         }
       }
+      const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(this.chargingStation, connectorId, meterStop);
+      // FIXME: should be a callback, each OCPP commands implementation must do only one job
       (this.chargingStation.getBeginEndMeterValues() && !this.chargingStation.getOutOfOrderEndMeterValues())
-        && await this.sendTransactionEndMeterValues(connectorId, transactionId, meterStop);
+        && await this.sendTransactionEndMeterValues(connectorId, transactionId, transactionEndMeterValue);
+      const payload: StopTransactionRequest = {
+        transactionId,
+        ...!Utils.isUndefined(idTag) && { idTag },
+        meterStop,
+        timestamp: new Date().toISOString(),
+        ...reason && { reason },
+        ...this.chargingStation.getTransactionDataMeterValues() && { transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(this.chargingStation.getConnector(connectorId).transactionBeginMeterValue, transactionEndMeterValue) },
+      };
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.STOP_TRANSACTION) as OCPP16StartTransactionResponse;
     } catch (error) {
       this.handleRequestError(OCPP16RequestCommand.STOP_TRANSACTION, error);
@@ -112,7 +116,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
   // eslint-disable-next-line consistent-this
   public async sendMeterValues(connectorId: number, transactionId: number, interval: number, self: OCPPRequestService, debug = false): Promise<void> {
     try {
-      const meterValue: MeterValue = {
+      const meterValue: OCPP16MeterValue = {
         timestamp: new Date().toISOString(),
         sampledValue: [],
       };
@@ -261,45 +265,20 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendTransactionBeginMeterValues(connectorId: number, transactionId: number, meterBegin: number): Promise<void> {
-    const meterValue: MeterValue = {
-      timestamp: new Date().toISOString(),
-      sampledValue: [],
-    };
-    const meterValuesTemplate: OCPP16SampledValue[] = this.chargingStation.getConnector(connectorId).MeterValues;
-    for (let index = 0; index < meterValuesTemplate.length; index++) {
-      // Energy.Active.Import.Register measurand (default)
-      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
-        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index],
-          Utils.roundTo(meterBegin / unitDivider, 4), MeterValueContext.TRANSACTION_BEGIN));
-      }
-    }
+  public async sendTransactionBeginMeterValues(connectorId: number, transactionId: number, beginMeterValue: OCPP16MeterValue): Promise<void> {
     const payload: MeterValuesRequest = {
       connectorId,
       transactionId,
-      meterValue,
+      meterValue: beginMeterValue,
     };
     await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
   }
 
-  public async sendTransactionEndMeterValues(connectorId: number, transactionId: number, meterEnd: number): Promise<void> {
-    const meterValue: MeterValue = {
-      timestamp: new Date().toISOString(),
-      sampledValue: [],
-    };
-    const meterValuesTemplate: OCPP16SampledValue[] = this.chargingStation.getConnector(connectorId).MeterValues;
-    for (let index = 0; index < meterValuesTemplate.length; index++) {
-      // Energy.Active.Import.Register measurand (default)
-      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
-        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index], Utils.roundTo(meterEnd / unitDivider, 4), MeterValueContext.TRANSACTION_END));
-      }
-    }
+  public async sendTransactionEndMeterValues(connectorId: number, transactionId: number, endMeterValue: OCPP16MeterValue): Promise<void> {
     const payload: MeterValuesRequest = {
       connectorId,
       transactionId,
-      meterValue,
+      meterValue: endMeterValue,
     };
     await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
   }

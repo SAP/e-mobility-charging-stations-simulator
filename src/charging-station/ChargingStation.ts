@@ -161,6 +161,10 @@ export default class ChargingStation {
     return this.stationInfo.meteringPerTransaction ?? true;
   }
 
+  public getTransactionDataMeterValues(): boolean {
+    return this.stationInfo.transactionDataMeterValues ?? false;
+  }
+
   public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
     if (this.getMeteringPerTransaction()) {
       for (const connector in this.connectors) {
@@ -349,6 +353,7 @@ export default class ChargingStation {
     delete this.getConnector(connectorId).transactionId;
     delete this.getConnector(connectorId).idTag;
     this.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;
+    delete this.getConnector(connectorId).transactionBeginMeterValue;
     this.stopMeterValues(connectorId);
   }
 
@@ -405,9 +410,11 @@ export default class ChargingStation {
     } else {
       stationTemplateFromFile.power = stationTemplateFromFile.power as number;
       stationInfo.maxPower = stationTemplateFromFile.powerUnit === PowerUnits.KILO_WATT
-        ? (stationTemplateFromFile.power) * 1000
+        ? stationTemplateFromFile.power * 1000
         : stationTemplateFromFile.power;
     }
+    delete stationInfo.power;
+    delete stationInfo.powerUnit;
     stationInfo.chargingStationId = this.getChargingStationId(stationTemplateFromFile);
     stationInfo.resetTime = stationTemplateFromFile.resetTime ? stationTemplateFromFile.resetTime * 1000 : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     return stationInfo;
@@ -882,7 +889,7 @@ export default class ChargingStation {
     const authorizationFile = this.getAuthorizationFile();
     if (authorizationFile) {
       try {
-        fs.watch(authorizationFile).on('change', (e) => {
+        fs.watch(authorizationFile).on('change', () => {
           try {
             logger.debug(this.logPrefix() + ' Authorization file ' + authorizationFile + ' have changed, reload');
             // Initialize authorizedTags
@@ -901,8 +908,8 @@ export default class ChargingStation {
 
   private startStationTemplateFileMonitoring(): void {
     try {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      fs.watch(this.stationTemplateFile).on('change', async (e): Promise<void> => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      fs.watch(this.stationTemplateFile).on('change', async (): Promise<void> => {
         try {
           logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
           // Initialize

@@ -1,4 +1,4 @@
-import { MeterValueContext, MeterValueLocation, MeterValuePhase, MeterValueUnit, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
+import { MeterValueContext, MeterValueLocation, MeterValuePhase, MeterValueUnit, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
 
 import ChargingStation from '../../ChargingStation';
 import Utils from '../../../utils/Utils';
@@ -10,7 +10,7 @@ export class OCPP16ServiceUtils {
       const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider is undefined`;
       logger.error(errMsg);
       throw Error(errMsg);
-    } else if (chargingStation.stationInfo.powerDivider && chargingStation.stationInfo.powerDivider <= 0) {
+    } else if (chargingStation.stationInfo?.powerDivider <= 0) {
       const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider have zero or below value ${chargingStation.stationInfo.powerDivider}`;
       logger.error(errMsg);
       throw Error(errMsg);
@@ -58,5 +58,45 @@ export class OCPP16ServiceUtils {
       case OCPP16MeterValueMeasurand.STATE_OF_CHARGE:
         return MeterValueLocation.EV;
     }
+  }
+
+  public static buildTransactionBeginMeterValue(chargingStation: ChargingStation, connectorId: number, meterBegin: number): OCPP16MeterValue {
+    const meterValue: OCPP16MeterValue = {
+      timestamp: new Date().toISOString(),
+      sampledValue: [],
+    };
+    const meterValuesTemplate: OCPP16SampledValue[] = chargingStation.getConnector(connectorId).MeterValues;
+    for (let index = 0; index < meterValuesTemplate.length; index++) {
+      // Energy.Active.Import.Register measurand (default)
+      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
+        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index],
+          Utils.roundTo(meterBegin / unitDivider, 4), MeterValueContext.TRANSACTION_BEGIN));
+      }
+    }
+    return meterValue;
+  }
+
+  public static buildTransactionEndMeterValue(chargingStation: ChargingStation, connectorId: number, meterEnd: number): OCPP16MeterValue {
+    const meterValue: OCPP16MeterValue = {
+      timestamp: new Date().toISOString(),
+      sampledValue: [],
+    };
+    const meterValuesTemplate: OCPP16SampledValue[] = chargingStation.getConnector(connectorId).MeterValues;
+    for (let index = 0; index < meterValuesTemplate.length; index++) {
+      // Energy.Active.Import.Register measurand (default)
+      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
+        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index], Utils.roundTo(meterEnd / unitDivider, 4), MeterValueContext.TRANSACTION_END));
+      }
+    }
+    return meterValue;
+  }
+
+  public static buildTransactionDataMeterValues(transactionBeginMeterValue: OCPP16MeterValue, transactionEndMeterValue: OCPP16MeterValue): OCPP16MeterValue[] {
+    const meterValues: OCPP16MeterValue[] = [];
+    meterValues.push(transactionBeginMeterValue);
+    meterValues.push(transactionEndMeterValue);
+    return meterValues;
   }
 }

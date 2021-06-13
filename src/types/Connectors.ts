@@ -1,7 +1,8 @@
+import { MeterValue, SampledValue } from './ocpp/MeterValues';
+
 import { AvailabilityType } from './ocpp/Requests';
 import { ChargePointStatus } from './ocpp/ChargePointStatus';
 import { ChargingProfile } from './ocpp/ChargingProfile';
-import { SampledValue } from './ocpp/MeterValues';
 
 export interface Connector {
   availability: AvailabilityType;
@@ -14,7 +15,8 @@ export interface Connector {
   idTag?: string;
   energyActiveImportRegisterValue?: number; // In Wh
   transactionEnergyActiveImportRegisterValue?: number; // In Wh
-  chargingProfiles?: ChargingProfile[]
+  transactionBeginMeterValue?: MeterValue;
+  chargingProfiles?: ChargingProfile[];
 }
 
 export default interface Connectors {

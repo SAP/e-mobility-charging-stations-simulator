@@ -71,6 +71,7 @@ enableStatistics | true/false | true | boolean | enable charging stations statis
 beginEndMeterValues | true/false | false | boolean | enable Transaction.{Begin,End} MeterValues
 outOfOrderEndMeterValues | true/false | false | boolean | send Transaction.End MeterValues out of order
 meteringPerTransaction | true/false | true | boolean | disable metering on a per transaction basis
+transactionDataMeterValues | true/false | false | boolean | enable transaction data MeterValues at stop transaction
 Configuration | | | ChargingStationConfiguration | charging stations OCPP configuration parameters
 AutomaticTransactionGenerator | | | AutomaticTransactionGenerator | charging stations ATG configuration
 Connectors | | | Connectors | charging stations connectors configuration

@@ -1,4 +1,4 @@
-import { MeterValue } from './MeterValues';
+import { OCPP16MeterValue } from './MeterValues';
 
 export enum OCPP16StopTransactionReason {
   NONE = '',
@@ -56,7 +56,7 @@ export interface StopTransactionRequest {
   timestamp: string;
   transactionId: number;
   reason?: OCPP16StopTransactionReason;
-  transactionData?: MeterValue[];
+  transactionData?: OCPP16MeterValue[];
 }
 
 export interface OCPP16StopTransactionResponse {

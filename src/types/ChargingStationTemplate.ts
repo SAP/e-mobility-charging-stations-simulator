@@ -16,7 +16,8 @@ export enum PowerUnits {
 export enum VoltageOut {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
-  VOLTAGE_400 = 400
+  VOLTAGE_400 = 400,
+  VOLTAGE_800 = 800
 }
 
 export interface AutomaticTransactionGenerator {
@@ -61,6 +62,7 @@ export default interface ChargingStationTemplate {
   beginEndMeterValues?: boolean;
   outOfOrderEndMeterValues?: boolean;
   meteringPerTransaction?: boolean;
+  transactionDataMeterValues?: boolean;
   Configuration?: ChargingStationConfiguration;
   AutomaticTransactionGenerator: AutomaticTransactionGenerator;
   Connectors: Connectors;

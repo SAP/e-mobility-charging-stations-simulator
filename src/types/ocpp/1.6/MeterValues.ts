@@ -89,7 +89,7 @@ export interface OCPP16SampledValue {
   format?: MeterValueFormat;
 }
 
-export interface MeterValue {
+export interface OCPP16MeterValue {
   timestamp: string;
   sampledValue: OCPP16SampledValue[];
 }
@@ -97,7 +97,7 @@ export interface MeterValue {
 export interface MeterValuesRequest {
   connectorId: number;
   transactionId?: number;
-  meterValue: MeterValue | MeterValue[];
+  meterValue: OCPP16MeterValue | OCPP16MeterValue[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

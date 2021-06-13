@@ -1,4 +1,4 @@
-import { OCPP16MeterValueMeasurand, OCPP16SampledValue } from './1.6/MeterValues';
+import { OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16SampledValue } from './1.6/MeterValues';
 
 export type MeterValueMeasurand = OCPP16MeterValueMeasurand;
 
@@ -7,3 +7,5 @@ export const MeterValueMeasurand = {
 };
 
 export type SampledValue = OCPP16SampledValue;
+
+export type MeterValue = OCPP16MeterValue;
