@@ -1,6 +1,7 @@
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { CurrentOutType, PowerUnits, VoltageOut } from '../types/ChargingStationTemplate';
+import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles } from '../types/ocpp/Configuration';
 import Connectors, { Connector } from '../types/Connectors';
 import { PerformanceObserver, performance } from 'perf_hooks';
 import Requests, { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand } from '../types/ocpp/Requests';
@@ -23,7 +24,6 @@ import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import PerformanceStatistics from '../utils/PerformanceStatistics';
-import { StandardParametersKey } from '../types/ocpp/Configuration';
 import { StopTransactionReason } from '../types/ocpp/Transaction';
 import Utils from '../utils/Utils';
 import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
@@ -506,6 +506,26 @@ export default class ChargingStation {
     this.addConfigurationKey(StandardParametersKey.NumberOfConnectors, this.getNumberOfConnectors().toString(), true);
     if (!this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)) {
       this.addConfigurationKey(StandardParametersKey.MeterValuesSampledData, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER);
+    }
+    if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
+      this.addConfigurationKey(StandardParametersKey.SupportedFeatureProfiles, SupportedFeatureProfiles.Core);
+    }
+    if (!this.getConfigurationKey(StandardParametersKey.ConnectorPhaseRotation)) {
+      const connectorPhaseRotation = [];
+      for (const connector in this.connectors) {
+        // AC/DC
+        if (Utils.convertToInt(connector) === 0 && this.getNumberOfPhases() === 0) {
+          connectorPhaseRotation.push(`${connector}.${ConnectorPhaseRotation.RST}`);
+        } else if (Utils.convertToInt(connector) > 0 && this.getNumberOfPhases() === 0) {
+          connectorPhaseRotation.push(`${connector}.${ConnectorPhaseRotation.NotApplicable}`);
+        // AC
+        } else if (Utils.convertToInt(connector) > 0 && this.getNumberOfPhases() === 1) {
+          connectorPhaseRotation.push(`${connector}.${ConnectorPhaseRotation.NotApplicable}`);
+        } else if (Utils.convertToInt(connector) > 0 && this.getNumberOfPhases() === 3) {
+          connectorPhaseRotation.push(`${connector}.${ConnectorPhaseRotation.RST}`);
+        }
+      }
+      this.addConfigurationKey(StandardParametersKey.ConnectorPhaseRotation, connectorPhaseRotation.toString());
     }
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {

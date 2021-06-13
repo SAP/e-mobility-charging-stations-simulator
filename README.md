@@ -208,6 +208,61 @@ make SUBMODULES_INIT=false
 
 - :x: TriggerMessage
 
+## OCPP-J standard parameters supported
+
+All kind of OCPP parameters is supported in a charging station template. The list here mention the standard ones also handled automatically in the simulator. 
+
+### Version 1.6
+
+### Core Profile
+
+- :white_check_mark: AuthorizeRemoteTxRequests (type: boolean) (units: -)
+- :x: ClockAlignedDataInterval (type: integer) (units: seconds)
+- :x: ConnectionTimeOut (type: integer) (units: seconds)
+- :x: GetConfigurationMaxKeys (type: integer) (units: -)
+- :white_check_mark: HeartbeatInterval (type: integer) (units: seconds)
+- :x: LocalAuthorizeOffline (type: boolean) (units: -)
+- :x: LocalPreAuthorize (type: boolean) (units: -)
+- :x: MeterValuesAlignedData (type: CSL) (units: -)
+- :white_check_mark: MeterValuesSampledData (type: CSL) (units: -)
+- :white_check_mark: MeterValueSampleInterval (type: integer) (units: seconds)
+- :white_check_mark: NumberOfConnectors (type: integer) (units: -)
+- :x: ResetRetries (type: integer) (units: times)
+- :white_check_mark: ConnectorPhaseRotation (type: CSL) (units: -)
+- :x: StopTransactionOnEVSideDisconnect (type: boolean) (units: -)
+- :x: StopTransactionOnInvalidId (type: boolean) (units: -)
+- :x: StopTxnAlignedData (type: CSL) (units: -)
+- :x: StopTxnSampledData (type: CSL) (units: -)
+- :x: SupportedFeatureProfiles (type: CSL) (units: -)
+- :x: TransactionMessageAttempts (type: integer) (units: times)
+- :x: TransactionMessageRetryInterval (type: integer) (units: seconds)
+- :x: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
+
+### Firmware Management Profile
+
+- *none*
+
+### Local Auth List Management Profile
+
+- :x: LocalAuthListEnabled (type: boolean) (units: -)
+- :x: LocalAuthListMaxLength (type: integer) (units: -)
+- :x: SendLocalListMaxLength (type: integer) (units: -)
+
+### Reservation Profile
+
+- *none*
+
+### Smart Charging Profile
+
+- :x: ChargeProfileMaxStackLevel (type: integer) (units: -)
+- :x: ChargingScheduleAllowedChargingRateUnit (type: CSL) (units: -)
+- :x: ChargingScheduleMaxPeriods (type: integer) (units: -)
+- :x: MaxChargingProfilesInstalled (type: integer) (units: -)
+
+### Remote Trigger Profile
+
+- *none*
+
 ## License
 
 This file and all other files in this repository are licensed under the Apache Software License, v.2 and copyrighted under the copyright in [NOTICE](NOTICE) file, except as noted otherwise in the [LICENSE](LICENSE) file.

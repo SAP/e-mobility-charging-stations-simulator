@@ -1,3 +1,12 @@
+export enum OCPP16SupportedFeatureProfiles {
+  Core = 'Core',
+  Firmware_Management = 'FirmwareManagement',
+  Local_Auth_List_Management = 'LocalAuthListManagement',
+  Reservation = 'Reservation',
+  Smart_Charging = 'SmartCharging',
+  Remote_Trigger = 'RemoteTrigger'
+}
+
 export enum OCPP16StandardParametersKey {
   AllowOfflineTxForUnknownId = 'AllowOfflineTxForUnknownId',
   AuthorizationCacheEnabled = 'AuthorizationCacheEnabled',
