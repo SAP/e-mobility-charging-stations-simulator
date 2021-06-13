@@ -210,7 +210,7 @@ make SUBMODULES_INIT=false
 
 ## OCPP-J standard parameters supported
 
-All kind of OCPP parameters is supported in a charging station template. The list here mention the standard ones also handled automatically in the simulator. 
+All kind of OCPP parameters are supported in a charging station template. The list here mention the standard ones also handled automatically in the simulator. 
 
 ### Version 1.6
 
