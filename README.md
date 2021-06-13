@@ -162,7 +162,7 @@ make SUBMODULES_INIT=false
 
 ### Version 1.6
 
-### Core Profile
+#### Core Profile
 
 - :white_check_mark: Authorize
 - :white_check_mark: BootNotification
@@ -181,30 +181,30 @@ make SUBMODULES_INIT=false
 - :white_check_mark: StopTransaction
 - :white_check_mark: UnlockConnector
 
-### Firmware Management Profile
+#### Firmware Management Profile
 
 - :x: GetDiagnostics
 - :x: DiagnosticsStatusNotification
 - :x: FirmwareStatusNotification
 - :x: UpdateFirmware
 
-### Local Auth List Management Profile
+#### Local Auth List Management Profile
 
 - :x: GetLocalListVersion
 - :x: SendLocalList
 
-### Reservation Profile
+#### Reservation Profile
 
 - :x: CancelReservation
 - :x: ReserveNow
 
-### Smart Charging Profile
+#### Smart Charging Profile
 
 - :white_check_mark: ClearChargingProfile
 - :white_check_mark: GetCompositeSchedule
 - :white_check_mark: SetChargingProfile
 
-### Remote Trigger Profile
+#### Remote Trigger Profile
 
 - :x: TriggerMessage
 
@@ -214,7 +214,7 @@ All kind of OCPP parameters is supported in a charging station template. The lis
 
 ### Version 1.6
 
-### Core Profile
+#### Core Profile
 
 - :white_check_mark: AuthorizeRemoteTxRequests (type: boolean) (units: -)
 - :x: ClockAlignedDataInterval (type: integer) (units: seconds)
@@ -238,28 +238,28 @@ All kind of OCPP parameters is supported in a charging station template. The lis
 - :x: TransactionMessageRetryInterval (type: integer) (units: seconds)
 - :x: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
 
-### Firmware Management Profile
+#### Firmware Management Profile
 
 - *none*
 
-### Local Auth List Management Profile
+#### Local Auth List Management Profile
 
 - :x: LocalAuthListEnabled (type: boolean) (units: -)
 - :x: LocalAuthListMaxLength (type: integer) (units: -)
 - :x: SendLocalListMaxLength (type: integer) (units: -)
 
-### Reservation Profile
+#### Reservation Profile
 
 - *none*
 
-### Smart Charging Profile
+#### Smart Charging Profile
 
 - :x: ChargeProfileMaxStackLevel (type: integer) (units: -)
 - :x: ChargingScheduleAllowedChargingRateUnit (type: CSL) (units: -)
 - :x: ChargingScheduleMaxPeriods (type: integer) (units: -)
 - :x: MaxChargingProfilesInstalled (type: integer) (units: -)
 
-### Remote Trigger Profile
+#### Remote Trigger Profile
 
 - *none*
 
