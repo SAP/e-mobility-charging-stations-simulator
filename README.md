@@ -233,10 +233,11 @@ All kind of OCPP parameters are supported in a charging station template. The li
 - :x: StopTransactionOnInvalidId (type: boolean) (units: -)
 - :x: StopTxnAlignedData (type: CSL) (units: -)
 - :x: StopTxnSampledData (type: CSL) (units: -)
-- :x: SupportedFeatureProfiles (type: CSL) (units: -)
+- :white_check_mark: SupportedFeatureProfiles (type: CSL) (units: -)
 - :x: TransactionMessageAttempts (type: integer) (units: times)
 - :x: TransactionMessageRetryInterval (type: integer) (units: seconds)
 - :x: UnlockConnectorOnEVSideDisconnect (type: boolean) (units: -)
+- :white_check_mark: WebSocketPingInterval (type: integer) (units: seconds)
 
 #### Firmware Management Profile
 
@@ -244,7 +245,7 @@ All kind of OCPP parameters are supported in a charging station template. The li
 
 #### Local Auth List Management Profile
 
-- :x: LocalAuthListEnabled (type: boolean) (units: -)
+- :white_check_mark: LocalAuthListEnabled (type: boolean) (units: -)
 - :x: LocalAuthListMaxLength (type: integer) (units: -)
 - :x: SendLocalListMaxLength (type: integer) (units: -)
 

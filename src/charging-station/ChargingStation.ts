@@ -503,12 +503,12 @@ export default class ChargingStation {
         break;
     }
     // OCPP parameters
+    if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
+      this.addConfigurationKey(StandardParametersKey.SupportedFeatureProfiles, `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging}`);
+    }
     this.addConfigurationKey(StandardParametersKey.NumberOfConnectors, this.getNumberOfConnectors().toString(), true);
     if (!this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)) {
       this.addConfigurationKey(StandardParametersKey.MeterValuesSampledData, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER);
-    }
-    if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
-      this.addConfigurationKey(StandardParametersKey.SupportedFeatureProfiles, SupportedFeatureProfiles.Core);
     }
     if (!this.getConfigurationKey(StandardParametersKey.ConnectorPhaseRotation)) {
       const connectorPhaseRotation = [];
@@ -526,6 +526,13 @@ export default class ChargingStation {
         }
       }
       this.addConfigurationKey(StandardParametersKey.ConnectorPhaseRotation, connectorPhaseRotation.toString());
+    }
+    if (!this.getConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests)) {
+      this.addConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests, 'true');
+    }
+    if (!this.getConfigurationKey(StandardParametersKey.LocalAuthListEnabled)
+        && this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles).value.includes(SupportedFeatureProfiles.Local_Auth_List_Management)) {
+      this.addConfigurationKey(StandardParametersKey.LocalAuthListEnabled, 'false');
     }
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
