@@ -503,6 +503,19 @@ export default class ChargingStation {
         break;
     }
     // OCPP parameters
+    this.initOCPPParameters();
+    this.stationInfo.powerDivider = this.getPowerDivider();
+    if (this.getEnableStatistics()) {
+      this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
+      this.performanceObserver = new PerformanceObserver((list) => {
+        const entry = list.getEntries()[0];
+        this.performanceStatistics.logPerformance(entry, Constants.ENTITY_CHARGING_STATION);
+        this.performanceObserver.disconnect();
+      });
+    }
+  }
+
+  private initOCPPParameters(): void {
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(StandardParametersKey.SupportedFeatureProfiles, `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging}`);
     }
@@ -534,14 +547,8 @@ export default class ChargingStation {
         && this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles).value.includes(SupportedFeatureProfiles.Local_Auth_List_Management)) {
       this.addConfigurationKey(StandardParametersKey.LocalAuthListEnabled, 'false');
     }
-    this.stationInfo.powerDivider = this.getPowerDivider();
-    if (this.getEnableStatistics()) {
-      this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
-      this.performanceObserver = new PerformanceObserver((list) => {
-        const entry = list.getEntries()[0];
-        this.performanceStatistics.logPerformance(entry, Constants.ENTITY_CHARGING_STATION);
-        this.performanceObserver.disconnect();
-      });
+    if (!this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut)) {
+      this.addConfigurationKey(StandardParametersKey.ConnectionTimeOut, Constants.DEFAULT_CONNECTION_TIMEOUT.toString());
     }
   }
 
@@ -709,12 +716,6 @@ export default class ChargingStation {
   private getConnectionTimeout(): number | undefined {
     if (this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut)) {
       return parseInt(this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut).value) ?? Constants.DEFAULT_CONNECTION_TIMEOUT;
-    }
-    if (!Utils.isUndefined(this.stationInfo.connectionTimeout)) {
-      return this.stationInfo.connectionTimeout;
-    }
-    if (!Utils.isUndefined(Configuration.getConnectionTimeout())) {
-      return Configuration.getConnectionTimeout();
     }
     return Constants.DEFAULT_CONNECTION_TIMEOUT;
   }

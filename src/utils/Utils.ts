@@ -4,6 +4,10 @@ import { WorkerProcessType } from '../types/Worker';
 import { v4 as uuid } from 'uuid';
 
 export default class Utils {
+  static logPrefix(prefixString = ''): string {
+    return new Date().toLocaleString() + prefixString;
+  }
+
   static generateUUID(): string {
     return uuid();
   }
@@ -119,10 +123,6 @@ export default class Utils {
       return Utils.roundTo(Utils.getRandomFloat(max, min), scale);
     }
     return Utils.roundTo(Utils.getRandomFloat(max), scale);
-  }
-
-  static logPrefix(prefixString = ''): string {
-    return new Date().toLocaleString() + prefixString;
   }
 
   static cloneObject<T>(object: T): T {

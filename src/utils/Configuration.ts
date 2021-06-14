@@ -22,8 +22,8 @@ export default class Configuration {
   }
 
   static getConnectionTimeout(): number {
-    Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'connectionTimeout\' in charging station instead');
-    Configuration.deprecateConfigurationKey('connectionTimeout', 'Use it in charging station template instead');
+    Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
+    Configuration.deprecateConfigurationKey('connectionTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
     // Read conf
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'connectionTimeout')) {
       return Configuration.getConfig().connectionTimeout;

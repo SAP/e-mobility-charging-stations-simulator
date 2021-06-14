@@ -63,7 +63,6 @@ numberOfConnectors | | | integer\|integer[] | charging stations number of connec
 useConnectorId0 | true/false | true | boolean | use connector id 0 definition from the template
 randomConnectors | true/false | false | boolean | randomize runtime connector id affectation from the connector id definition in template
 resetTime | | 60 | integer | seconds to wait before the charging stations come back at reset
-connectionTimeout | | 30 | integer | connection timeout to the OCPP-J server
 autoReconnectMaxRetries | | -1 (unlimited) | integer | connection retries to the OCPP-J server
 reconnectExponentialDelay | true/false | false | boolean | connection delay retry to the OCPP-J server
 registrationMaxRetries | | -1 (unlimited) | integer | charging stations boot notification retries
