@@ -21,16 +21,9 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
   }
 
-  static getConnectionTimeout(): number {
+  static getAutoReconnectMaxRetries(): number {
     Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
     Configuration.deprecateConfigurationKey('connectionTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
-    // Read conf
-    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'connectionTimeout')) {
-      return Configuration.getConfig().connectionTimeout;
-    }
-  }
-
-  static getAutoReconnectMaxRetries(): number {
     Configuration.deprecateConfigurationKey('autoReconnectMaxRetries', 'Use it in charging station template instead');
     // Read conf
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries')) {

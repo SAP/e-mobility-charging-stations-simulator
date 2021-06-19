@@ -54,7 +54,6 @@ export default interface ChargingStationTemplate {
   useConnectorId0?: boolean;
   randomConnectors?: boolean;
   resetTime?: number;
-  connectionTimeout?: number;
   autoReconnectMaxRetries?: number;
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;
@@ -63,6 +62,7 @@ export default interface ChargingStationTemplate {
   outOfOrderEndMeterValues?: boolean;
   meteringPerTransaction?: boolean;
   transactionDataMeterValues?: boolean;
+  mainVoltageMeterValues?: boolean;
   Configuration?: ChargingStationConfiguration;
   AutomaticTransactionGenerator: AutomaticTransactionGenerator;
   Connectors: Connectors;

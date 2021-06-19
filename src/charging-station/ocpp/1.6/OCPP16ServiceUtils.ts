@@ -1,6 +1,7 @@
-import { MeterValueContext, MeterValueLocation, MeterValuePhase, MeterValueUnit, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
+import { MeterValueContext, MeterValueLocation, MeterValueUnit, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16MeterValuePhase, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
 
 import ChargingStation from '../../ChargingStation';
+import { SampledValueTemplate } from '../../../types/Connectors';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
@@ -17,7 +18,8 @@ export class OCPP16ServiceUtils {
     }
   }
 
-  public static buildSampledValue(sampledValueTemplate: OCPP16SampledValue, value: number, context?: MeterValueContext, phase?: MeterValuePhase): OCPP16SampledValue {
+  public static buildSampledValue(sampledValueTemplate: SampledValueTemplate, value: number, context?: MeterValueContext, phase?: OCPP16MeterValuePhase): OCPP16SampledValue {
+    const sampledValueValue = value ?? (sampledValueTemplate.value ?? null);
     const sampledValueContext = context ?? (sampledValueTemplate.context ?? null);
     const sampledValueLocation = sampledValueTemplate.location
       ? sampledValueTemplate.location
@@ -28,7 +30,7 @@ export class OCPP16ServiceUtils {
       ...!Utils.isNullOrUndefined(sampledValueContext) && { context: sampledValueContext },
       ...!Utils.isNullOrUndefined(sampledValueTemplate.measurand) && { measurand: sampledValueTemplate.measurand },
       ...!Utils.isNullOrUndefined(sampledValueLocation) && { location: sampledValueLocation },
-      ...!Utils.isNullOrUndefined(sampledValueTemplate.value) ? { value: sampledValueTemplate.value } : { value: value.toString() },
+      ...!Utils.isNullOrUndefined(sampledValueValue) && { value: sampledValueValue.toString() },
       ...!Utils.isNullOrUndefined(sampledValuePhase) && { phase: sampledValuePhase },
     };
   }
@@ -65,15 +67,10 @@ export class OCPP16ServiceUtils {
       timestamp: new Date().toISOString(),
       sampledValue: [],
     };
-    const meterValuesTemplate: OCPP16SampledValue[] = chargingStation.getConnector(connectorId).MeterValues;
-    for (let index = 0; index < meterValuesTemplate.length; index++) {
-      // Energy.Active.Import.Register measurand (default)
-      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
-        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index],
-          Utils.roundTo(meterBegin / unitDivider, 4), MeterValueContext.TRANSACTION_BEGIN));
-      }
-    }
+    // Energy.Active.Import.Register measurand (default)
+    const sampledValueTemplate = chargingStation.getSampledValueTemplate(connectorId);
+    const unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
+    meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(sampledValueTemplate, Utils.roundTo(meterBegin / unitDivider, 4), MeterValueContext.TRANSACTION_BEGIN));
     return meterValue;
   }
 
@@ -82,14 +79,10 @@ export class OCPP16ServiceUtils {
       timestamp: new Date().toISOString(),
       sampledValue: [],
     };
-    const meterValuesTemplate: OCPP16SampledValue[] = chargingStation.getConnector(connectorId).MeterValues;
-    for (let index = 0; index < meterValuesTemplate.length; index++) {
-      // Energy.Active.Import.Register measurand (default)
-      if (!meterValuesTemplate[index].measurand || meterValuesTemplate[index].measurand === OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-        const unitDivider = meterValuesTemplate[index]?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
-        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(meterValuesTemplate[index], Utils.roundTo(meterEnd / unitDivider, 4), MeterValueContext.TRANSACTION_END));
-      }
-    }
+    // Energy.Active.Import.Register measurand (default)
+    const sampledValueTemplate = chargingStation.getSampledValueTemplate(connectorId);
+    const unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
+    meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(sampledValueTemplate, Utils.roundTo(meterEnd / unitDivider, 4), MeterValueContext.TRANSACTION_END));
     return meterValue;
   }
 

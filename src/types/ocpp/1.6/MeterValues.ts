@@ -61,7 +61,7 @@ export enum MeterValueLocation {
   OUTLET = 'Outlet'
 }
 
-export enum MeterValuePhase {
+export enum OCPP16MeterValuePhase {
   L1 = 'L1',
   L2 = 'L2',
   L3 = 'L3',
@@ -84,7 +84,7 @@ export interface OCPP16SampledValue {
   unit?: MeterValueUnit;
   context?: MeterValueContext;
   measurand?: OCPP16MeterValueMeasurand;
-  phase?: MeterValuePhase;
+  phase?: OCPP16MeterValuePhase;
   location?: MeterValueLocation;
   format?: MeterValueFormat;
 }

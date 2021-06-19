@@ -2,7 +2,8 @@ import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Resp
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { CurrentOutType, PowerUnits, VoltageOut } from '../types/ChargingStationTemplate';
 import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles } from '../types/ocpp/Configuration';
-import Connectors, { Connector } from '../types/Connectors';
+import Connectors, { Connector, SampledValueTemplate } from '../types/Connectors';
+import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import { PerformanceObserver, performance } from 'perf_hooks';
 import Requests, { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand } from '../types/ocpp/Requests';
 import WebSocket, { MessageEvent } from 'ws';
@@ -15,7 +16,6 @@ import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import FileUtils from '../utils/FileUtils';
 import { MessageType } from '../types/ocpp/MessageType';
-import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCCP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
@@ -165,6 +165,10 @@ export default class ChargingStation {
     return this.stationInfo.transactionDataMeterValues ?? false;
   }
 
+  public getMainVoltageMeterValues(): boolean {
+    return this.stationInfo.mainVoltageMeterValues ?? true;
+  }
+
   public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
     if (this.getMeteringPerTransaction()) {
       for (const connector in this.connectors) {
@@ -202,6 +206,33 @@ export default class ChargingStation {
     this.stopWebSocketPing();
     // Start WebSocket ping
     this.startWebSocketPing();
+  }
+
+  public getSampledValueTemplate(connectorId: number, measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+      phase?: MeterValuePhase): SampledValueTemplate | undefined {
+    if (!Constants.SUPPORTED_MEASURANDS.includes(measurand)) {
+      logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand ${measurand} in template on connectorId ${connectorId}`);
+      return;
+    }
+    const sampledValueTemplates: SampledValueTemplate[] = this.getConnector(connectorId).MeterValues;
+    let defaultMeasurandFound = false;
+    for (let index = 0; !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length; index++) {
+      if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
+          && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
+        return sampledValueTemplates[index];
+      } else if (!phase && !sampledValueTemplates[index].phase && sampledValueTemplates[index]?.measurand === measurand
+                 && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
+        return sampledValueTemplates[index];
+      } else if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+                 && (!sampledValueTemplates[index].measurand || sampledValueTemplates[index].measurand === measurand)) {
+        defaultMeasurandFound = true;
+        return sampledValueTemplates[index];
+      }
+    }
+    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER && !defaultMeasurandFound) {
+      logger.error(`${this.logPrefix()} Missing MeterValues for default measurand ${MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} in template on connectorId ${connectorId}`);
+    }
+    logger.debug(`${this.logPrefix()} No MeterValues for measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
   }
 
   public getAutomaticTransactionGeneratorRequireAuthorize(): boolean {
@@ -384,9 +415,9 @@ export default class ChargingStation {
 
   private getChargingStationId(stationTemplate: ChargingStationTemplate): string {
     // In case of multiple instances: add instance index to charging station id
-    let instanceIndex = process.env.CF_INSTANCE_INDEX ? process.env.CF_INSTANCE_INDEX : 0;
+    let instanceIndex = process.env.CF_INSTANCE_INDEX ?? 0;
     instanceIndex = instanceIndex > 0 ? instanceIndex : '';
-    const idSuffix = stationTemplate.nameSuffix ? stationTemplate.nameSuffix : '';
+    const idSuffix = stationTemplate.nameSuffix ?? '';
     return stationTemplate.fixedName ? stationTemplate.baseName : stationTemplate.baseName + '-' + instanceIndex.toString() + ('000000000' + this.index.toString()).substr(('000000000' + this.index.toString()).length - 4) + idSuffix;
   }
 

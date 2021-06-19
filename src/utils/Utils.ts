@@ -125,6 +125,13 @@ export default class Utils {
     return Utils.roundTo(Utils.getRandomFloat(max), scale);
   }
 
+  static getRandomFloatFluctuatedRounded(staticValue: number, fluctuationPercent: number, scale = 2): number {
+    if (fluctuationPercent === 0) {
+      return Utils.roundTo(staticValue, scale);
+    }
+    return Utils.getRandomFloatRounded(staticValue + staticValue * (fluctuationPercent / 100), staticValue - staticValue * (fluctuationPercent / 100), scale);
+  }
+
   static cloneObject<T>(object: T): T {
     return JSON.parse(JSON.stringify(object)) as T;
   }

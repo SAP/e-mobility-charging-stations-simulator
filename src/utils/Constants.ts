@@ -1,4 +1,6 @@
-import { AvailabilityStatus, ChargingProfileStatus, ClearChargingProfileStatus, ConfigurationStatus, DefaultStatus, UnlockStatus } from '../types/ocpp/1.6/Responses';
+import { AvailabilityStatus, ChargingProfileStatus, ClearChargingProfileStatus, ConfigurationStatus, DefaultStatus, UnlockStatus } from '../types/ocpp/Responses';
+
+import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
 
 export default class Constants {
   static readonly ENTITY_CHARGING_STATION = 'ChargingStation';
@@ -38,4 +40,9 @@ export default class Constants {
   static readonly DEFAULT_CHARGING_STATIONS_PER_WORKER = 1;
 
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30;
+
+  static readonly SUPPORTED_MEASURANDS = Object.freeze([MeterValueMeasurand.STATE_OF_CHARGE, MeterValueMeasurand.VOLTAGE,
+    MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueMeasurand.CURRENT_IMPORT, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER]);
+
+  static readonly DEFAULT_FLUCTUATION_PERCENT = 5;
 }

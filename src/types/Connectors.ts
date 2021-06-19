@@ -4,11 +4,15 @@ import { AvailabilityType } from './ocpp/Requests';
 import { ChargePointStatus } from './ocpp/ChargePointStatus';
 import { ChargingProfile } from './ocpp/ChargingProfile';
 
+export interface SampledValueTemplate extends SampledValue {
+  fluctuationPercent?: number;
+}
+
 export interface Connector {
   availability: AvailabilityType;
   bootStatus?: ChargePointStatus;
   status?: ChargePointStatus;
-  MeterValues: SampledValue[];
+  MeterValues: SampledValueTemplate[];
   transactionStarted?: boolean;
   transactionId?: number;
   transactionSetInterval?: NodeJS.Timeout;

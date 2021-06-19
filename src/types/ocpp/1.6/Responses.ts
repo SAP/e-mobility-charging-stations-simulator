@@ -4,26 +4,17 @@ export interface HeartbeatResponse {
   currentTime: string;
 }
 
-export enum DefaultStatus {
-  ACCEPTED = 'Accepted',
-  REJECTED = 'Rejected'
-}
-
-export interface DefaultResponse {
-  status: DefaultStatus;
-}
-
-export enum UnlockStatus {
+export enum OCPP16UnlockStatus {
   UNLOCKED = 'Unlocked',
   UNLOCK_FAILED = 'UnlockFailed',
   NOT_SUPPORTED = 'NotSupported'
 }
 
 export interface UnlockConnectorResponse {
-  status: UnlockStatus;
+  status: OCPP16UnlockStatus;
 }
 
-export enum ConfigurationStatus {
+export enum OCPP16ConfigurationStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   REBOOT_REQUIRED = 'RebootRequired',
@@ -31,7 +22,7 @@ export enum ConfigurationStatus {
 }
 
 export interface ChangeConfigurationResponse {
-  status: ConfigurationStatus;
+  status: OCPP16ConfigurationStatus;
 }
 
 export enum OCPP16RegistrationStatus {
@@ -47,38 +38,38 @@ export interface OCPP16BootNotificationResponse {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface StatusNotificationResponse { }
+export interface StatusNotificationResponse {}
 
 export interface GetConfigurationResponse {
   configurationKey: OCPPConfigurationKey[];
   unknownKey: string[];
 }
 
-export enum ChargingProfileStatus {
+export enum OCPP16ChargingProfileStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   NOT_SUPPORTED = 'NotSupported',
 }
 
 export interface SetChargingProfileResponse {
-  status: ChargingProfileStatus;
+  status: OCPP16ChargingProfileStatus;
 }
 
-export enum AvailabilityStatus {
+export enum OCPP16AvailabilityStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   SCHEDULED = 'Scheduled'
 }
 
 export interface ChangeAvailabilityResponse {
-  status: AvailabilityStatus;
+  status: OCPP16AvailabilityStatus;
 }
 
-export enum ClearChargingProfileStatus {
+export enum OCPP16ClearChargingProfileStatus {
   ACCEPTED = 'Accepted',
   UNKNOWN = 'Unknown'
 }
 
 export interface ClearChargingProfileResponse {
-  status: ClearChargingProfileStatus;
+  status: OCPP16ClearChargingProfileStatus;
 }

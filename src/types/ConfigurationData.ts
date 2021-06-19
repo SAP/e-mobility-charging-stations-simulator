@@ -10,7 +10,6 @@ export default interface ConfigurationData {
   supervisionURLs?: string[];
   stationTemplateURLs: StationTemplateURL[];
   statisticsDisplayInterval?: number;
-  connectionTimeout?: number;
   autoReconnectMaxRetries?: number;
   distributeStationsToTenantsEqually?: boolean;
   workerProcess?: WorkerProcessType;
