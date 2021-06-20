@@ -151,7 +151,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           }
           meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
             voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue, null, phaseLineToNeutralValue as OCPP16MeterValuePhase));
-          if (self.chargingStation.getPhaseLineToLineVoltage()) {
+          if (self.chargingStation.getPhaseLineToLineVoltageMeterValues()) {
             const phaseLineToLineValue = `L${phase}-L${(phase + 1) % self.chargingStation.getNumberOfPhases() !== 0 ? (phase + 1) % self.chargingStation.getNumberOfPhases() : self.chargingStation.getNumberOfPhases()}`;
             const voltagePhaseLineToLineSampledValueTemplate = self.chargingStation.getSampledValueTemplate(connectorId, OCPP16MeterValueMeasurand.VOLTAGE, phaseLineToLineValue as OCPP16MeterValuePhase);
             let voltagePhaseLineToLineMeasurandValue: number;

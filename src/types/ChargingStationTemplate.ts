@@ -63,7 +63,7 @@ export default interface ChargingStationTemplate {
   meteringPerTransaction?: boolean;
   transactionDataMeterValues?: boolean;
   mainVoltageMeterValues?: boolean;
-  phaseLineToLineVoltage?: boolean;
+  phaseLineToLineVoltageMeterValues?: boolean;
   Configuration?: ChargingStationConfiguration;
   AutomaticTransactionGenerator: AutomaticTransactionGenerator;
   Connectors: Connectors;

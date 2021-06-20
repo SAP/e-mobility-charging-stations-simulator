@@ -169,8 +169,8 @@ export default class ChargingStation {
     return this.stationInfo.mainVoltageMeterValues ?? true;
   }
 
-  public getPhaseLineToLineVoltage(): boolean {
-    return this.stationInfo.phaseLineToLineVoltage ?? false;
+  public getPhaseLineToLineVoltageMeterValues(): boolean {
+    return this.stationInfo.phaseLineToLineVoltageMeterValues ?? false;
   }
 
   public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
