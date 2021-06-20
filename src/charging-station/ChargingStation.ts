@@ -121,7 +121,7 @@ export default class ChargingStation {
   }
 
   public getCurrentOutType(): CurrentOutType | undefined {
-    return !Utils.isUndefined(this.stationInfo.currentOutType) ? this.stationInfo.currentOutType : CurrentOutType.AC;
+    return this.stationInfo.currentOutType ?? CurrentOutType.AC;
   }
 
   public getVoltageOut(): number | undefined {
@@ -169,6 +169,10 @@ export default class ChargingStation {
     return this.stationInfo.mainVoltageMeterValues ?? true;
   }
 
+  public getPhaseLineToLineVoltage(): boolean {
+    return this.stationInfo.phaseLineToLineVoltage ?? false;
+  }
+
   public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
     if (this.getMeteringPerTransaction()) {
       for (const connector in this.connectors) {
@@ -211,11 +215,14 @@ export default class ChargingStation {
   public getSampledValueTemplate(connectorId: number, measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       phase?: MeterValuePhase): SampledValueTemplate | undefined {
     if (!Constants.SUPPORTED_MEASURANDS.includes(measurand)) {
-      logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand ${measurand} in template on connectorId ${connectorId}`);
+      logger.warn(`${this.logPrefix()} Trying to get unsupported MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+      return;
+    }
+    if (measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER && !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
+      logger.warn(`${this.logPrefix()} Trying to get MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId} not found in '${StandardParametersKey.MeterValuesSampledData}' OCPP parameter`);
       return;
     }
     const sampledValueTemplates: SampledValueTemplate[] = this.getConnector(connectorId).MeterValues;
-    let defaultMeasurandFound = false;
     for (let index = 0; !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length; index++) {
       if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
           && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
@@ -225,12 +232,11 @@ export default class ChargingStation {
         return sampledValueTemplates[index];
       } else if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
                  && (!sampledValueTemplates[index].measurand || sampledValueTemplates[index].measurand === measurand)) {
-        defaultMeasurandFound = true;
         return sampledValueTemplates[index];
       }
     }
-    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER && !defaultMeasurandFound) {
-      logger.error(`${this.logPrefix()} Missing MeterValues for default measurand ${MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER} in template on connectorId ${connectorId}`);
+    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+      logger.error(`${this.logPrefix()} Missing MeterValues for default measurand ${measurand} in template on connectorId ${connectorId}`);
     }
     logger.debug(`${this.logPrefix()} No MeterValues for measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
   }

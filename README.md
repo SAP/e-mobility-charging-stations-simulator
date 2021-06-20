@@ -72,6 +72,7 @@ outOfOrderEndMeterValues | true/false | false | boolean | send Transaction.End M
 meteringPerTransaction | true/false | true | boolean | disable metering on a per transaction basis
 transactionDataMeterValues | true/false | false | boolean | enable transaction data MeterValues at stop transaction
 mainVoltageMeterValues | true/false | true | boolean | include charging station main voltage MeterValues on three phased charging stations
+phaseLineToLineVoltage | true/false | true | boolean | include charging station line to line voltage MeterValues on three phased charging stations
 Configuration | | | ChargingStationConfiguration | charging stations OCPP configuration parameters
 AutomaticTransactionGenerator | | | AutomaticTransactionGenerator | charging stations ATG configuration
 Connectors | | | Connectors | charging stations connectors configuration
@@ -125,6 +126,14 @@ Connectors | | | Connectors | charging stations connectors configuration
     "1": {
       "bootStatus": "Available",
       "MeterValues": [
+        ...
+        {
+          "unit": "W",
+          "measurand": "Power.Active.Import",
+          "phase": "L1-N",
+          "value": "5000",
+          "fluctuationPercent": "10"
+        },
         ...
         {
           "unit": "A",

@@ -139,7 +139,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
         if (self.chargingStation.getNumberOfPhases() !== 3 || (self.chargingStation.getNumberOfPhases() === 3 && self.chargingStation.getMainVoltageMeterValues())) {
           meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(voltageSampledValueTemplate, voltageMeasurandValue));
         }
-        const defaultVoltagePhaseLineToLineMeasurandValue = Utils.getRandomFloatFluctuatedRounded(VoltageOut.VOLTAGE_400, fluctuationPercent);
         for (let phase = 1; self.chargingStation.getNumberOfPhases() === 3 && phase <= self.chargingStation.getNumberOfPhases(); phase++) {
           const phaseLineToNeutralValue = `L${phase}-N`;
           const voltagePhaseLineToNeutralSampledValueTemplate = self.chargingStation.getSampledValueTemplate(connectorId, OCPP16MeterValueMeasurand.VOLTAGE,
@@ -152,16 +151,19 @@ export default class OCPP16RequestService extends OCPPRequestService {
           }
           meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
             voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue, null, phaseLineToNeutralValue as OCPP16MeterValuePhase));
-          const phaseLineToLineValue = `L${phase}-L${(phase + 1) % self.chargingStation.getNumberOfPhases() !== 0 ? (phase + 1) % self.chargingStation.getNumberOfPhases() : self.chargingStation.getNumberOfPhases()}`;
-          const voltagePhaseLineToLineSampledValueTemplate = self.chargingStation.getSampledValueTemplate(connectorId, OCPP16MeterValueMeasurand.VOLTAGE, phaseLineToLineValue as OCPP16MeterValuePhase);
-          let voltagePhaseLineToLineMeasurandValue: number;
-          if (voltagePhaseLineToLineSampledValueTemplate) {
-            const voltagePhaseLineToLineSampledValueTemplateValue = voltagePhaseLineToLineSampledValueTemplate.value ? parseInt(voltagePhaseLineToLineSampledValueTemplate.value) : VoltageOut.VOLTAGE_400;
-            const fluctuationPhaseLineToLinePercent = voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT;
-            voltagePhaseLineToLineMeasurandValue = Utils.getRandomFloatFluctuatedRounded(voltagePhaseLineToLineSampledValueTemplateValue, fluctuationPhaseLineToLinePercent);
+          if (self.chargingStation.getPhaseLineToLineVoltage()) {
+            const phaseLineToLineValue = `L${phase}-L${(phase + 1) % self.chargingStation.getNumberOfPhases() !== 0 ? (phase + 1) % self.chargingStation.getNumberOfPhases() : self.chargingStation.getNumberOfPhases()}`;
+            const voltagePhaseLineToLineSampledValueTemplate = self.chargingStation.getSampledValueTemplate(connectorId, OCPP16MeterValueMeasurand.VOLTAGE, phaseLineToLineValue as OCPP16MeterValuePhase);
+            let voltagePhaseLineToLineMeasurandValue: number;
+            if (voltagePhaseLineToLineSampledValueTemplate) {
+              const voltagePhaseLineToLineSampledValueTemplateValue = voltagePhaseLineToLineSampledValueTemplate.value ? parseInt(voltagePhaseLineToLineSampledValueTemplate.value) : VoltageOut.VOLTAGE_400;
+              const fluctuationPhaseLineToLinePercent = voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT;
+              voltagePhaseLineToLineMeasurandValue = Utils.getRandomFloatFluctuatedRounded(voltagePhaseLineToLineSampledValueTemplateValue, fluctuationPhaseLineToLinePercent);
+            }
+            const defaultVoltagePhaseLineToLineMeasurandValue = Utils.getRandomFloatFluctuatedRounded(VoltageOut.VOLTAGE_400, fluctuationPercent);
+            meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
+              voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue, null, phaseLineToLineValue as OCPP16MeterValuePhase));
           }
-          meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
-            voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue, null, phaseLineToLineValue as OCPP16MeterValuePhase));
         }
       }
       // Power.Active.Import measurand
