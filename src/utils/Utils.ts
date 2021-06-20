@@ -129,7 +129,8 @@ export default class Utils {
     if (fluctuationPercent === 0) {
       return Utils.roundTo(staticValue, scale);
     }
-    return Utils.getRandomFloatRounded(staticValue + staticValue * (fluctuationPercent / 100), staticValue - staticValue * (fluctuationPercent / 100), scale);
+    const fluctuationRatio = fluctuationPercent / 100;
+    return Utils.getRandomFloatRounded(staticValue * (1 + fluctuationRatio), staticValue * (1 - fluctuationRatio), scale);
   }
 
   static cloneObject<T>(object: T): T {
