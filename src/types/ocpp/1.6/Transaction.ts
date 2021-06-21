@@ -31,8 +31,8 @@ export interface IdTagInfo {
 
 export interface AuthorizeRequest {
   idTag: string;
-
 }
+
 export interface OCPP16AuthorizeResponse {
   idTagInfo: IdTagInfo;
 }

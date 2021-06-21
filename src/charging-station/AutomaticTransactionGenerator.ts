@@ -130,7 +130,7 @@ export default class AutomaticTransactionGenerator {
       const tagId = self.chargingStation.getRandomTagId();
       if (self.chargingStation.getAutomaticTransactionGeneratorRequireAuthorize()) {
         // Authorize tagId
-        const authorizeResponse = await self.chargingStation.ocppRequestService.sendAuthorize(tagId);
+        const authorizeResponse = await self.chargingStation.ocppRequestService.sendAuthorize(connectorId, tagId);
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           logger.info(self.logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
           // Start transaction

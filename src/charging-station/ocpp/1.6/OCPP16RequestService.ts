@@ -61,11 +61,12 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendAuthorize(idTag?: string): Promise<OCPP16AuthorizeResponse> {
+  public async sendAuthorize(connectorId: number, idTag?: string): Promise<OCPP16AuthorizeResponse> {
     try {
       const payload: AuthorizeRequest = {
         ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
       };
+      this.chargingStation.getConnector(connectorId).authorizeIdTag = idTag;
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.AUTHORIZE) as OCPP16AuthorizeResponse;
     } catch (error) {
       this.handleRequestError(OCPP16RequestCommand.AUTHORIZE, error);
@@ -93,6 +94,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       for (const connector in this.chargingStation.connectors) {
         if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionId === transactionId) {
           connectorId = Utils.convertToInt(connector);
+          break;
         }
       }
       const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(this.chargingStation, connectorId, meterStop);

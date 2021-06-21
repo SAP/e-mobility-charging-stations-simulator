@@ -277,7 +277,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           }
         }
         if (!authorized) {
-          const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(commandPayload.idTag);
+          const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(transactionConnectorID, commandPayload.idTag);
           if (authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
             authorized = true;
           }

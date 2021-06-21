@@ -13,10 +13,12 @@ export interface Connector {
   bootStatus?: ChargePointStatus;
   status?: ChargePointStatus;
   MeterValues: SampledValueTemplate[];
+  authorizeIdTag?: string;
+  authorized?: boolean;
   transactionStarted?: boolean;
   transactionId?: number;
   transactionSetInterval?: NodeJS.Timeout;
-  idTag?: string;
+  transactionIdTag?: string;
   energyActiveImportRegisterValue?: number; // In Wh
   transactionEnergyActiveImportRegisterValue?: number; // In Wh
   transactionBeginMeterValue?: MeterValue;

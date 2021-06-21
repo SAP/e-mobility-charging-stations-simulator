@@ -144,7 +144,7 @@ export default class ChargingStation {
   public getTransactionIdTag(transactionId: number): string | undefined {
     for (const connector in this.connectors) {
       if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionId === transactionId) {
-        return this.getConnector(Utils.convertToInt(connector)).idTag;
+        return this.getConnector(Utils.convertToInt(connector)).transactionIdTag;
       }
     }
   }
@@ -219,7 +219,7 @@ export default class ChargingStation {
       return;
     }
     if (measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER && !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
-      logger.warn(`${this.logPrefix()} Trying to get MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId} not found in '${StandardParametersKey.MeterValuesSampledData}' OCPP parameter`);
+      logger.debug(`${this.logPrefix()} Trying to get MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId} not found in '${StandardParametersKey.MeterValuesSampledData}' OCPP parameter`);
       return;
     }
     const sampledValueTemplates: SampledValueTemplate[] = this.getConnector(connectorId).MeterValues;
@@ -386,9 +386,11 @@ export default class ChargingStation {
   }
 
   public resetTransactionOnConnector(connectorId: number): void {
+    this.getConnector(connectorId).authorized = false;
     this.getConnector(connectorId).transactionStarted = false;
+    delete this.getConnector(connectorId).authorizeIdTag;
     delete this.getConnector(connectorId).transactionId;
-    delete this.getConnector(connectorId).idTag;
+    delete this.getConnector(connectorId).transactionIdTag;
     this.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;
     delete this.getConnector(connectorId).transactionBeginMeterValue;
     this.stopMeterValues(connectorId);
@@ -1027,6 +1029,7 @@ export default class ChargingStation {
   }
 
   private initTransactionAttributesOnConnector(connectorId: number): void {
+    this.getConnector(connectorId).authorized = false;
     this.getConnector(connectorId).transactionStarted = false;
     this.getConnector(connectorId).energyActiveImportRegisterValue = 0;
     this.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;

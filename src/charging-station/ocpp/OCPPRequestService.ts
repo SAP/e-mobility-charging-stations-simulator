@@ -111,7 +111,7 @@ export default abstract class OCPPRequestService {
   public abstract sendHeartbeat(): Promise<void>;
   public abstract sendBootNotification(chargePointModel: string, chargePointVendor: string, chargeBoxSerialNumber?: string, firmwareVersion?: string, chargePointSerialNumber?: string, iccid?: string, imsi?: string, meterSerialNumber?: string, meterType?: string): Promise<BootNotificationResponse>;
   public abstract sendStatusNotification(connectorId: number, status: ChargePointStatus, errorCode?: ChargePointErrorCode): Promise<void>;
-  public abstract sendAuthorize(idTag?: string): Promise<AuthorizeResponse>;
+  public abstract sendAuthorize(connectorId: number, idTag?: string): Promise<AuthorizeResponse>;
   public abstract sendStartTransaction(connectorId: number, idTag?: string): Promise<StartTransactionResponse>;
   public abstract sendStopTransaction(transactionId: number, meterStop: number, idTag?: string, reason?: StopTransactionReason): Promise<StopTransactionResponse>;
   public abstract sendMeterValues(connectorId: number, transactionId: number, interval: number, self: OCPPRequestService): Promise<void>;

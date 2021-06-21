@@ -46,6 +46,10 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction on a non existing connector Id ' + connectorId.toString());
       return;
     }
+    if (this.chargingStation.getConnector(connectorId).authorized && this.chargingStation.getConnector(connectorId).authorizeIdTag !== requestPayload.idTag) {
+      logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction with an idTag ' + requestPayload.idTag + ' different from the authorize request one ' + this.chargingStation.getConnector(connectorId).authorizeIdTag + ' on connector Id ' + connectorId.toString());
+      return;
+    }
     if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
       logger.debug(this.chargingStation.logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.chargingStation.getConnector(connectorId));
       return;
@@ -54,7 +58,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
       this.chargingStation.getConnector(connectorId).transactionStarted = true;
       this.chargingStation.getConnector(connectorId).transactionId = payload.transactionId;
-      this.chargingStation.getConnector(connectorId).idTag = requestPayload.idTag;
+      this.chargingStation.getConnector(connectorId).transactionIdTag = requestPayload.idTag;
       this.chargingStation.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;
       this.chargingStation.getConnector(connectorId).transactionBeginMeterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(this.chargingStation, connectorId,
         requestPayload.meterStart);
@@ -122,6 +126,20 @@ export default class OCPP16ResponseService extends OCPPResponseService {
   }
 
   private handleResponseAuthorize(payload: OCPP16AuthorizeResponse, requestPayload: AuthorizeRequest): void {
-    logger.debug(this.chargingStation.logPrefix() + ' Authorize response received: %j to Authorize request: %j', payload, requestPayload);
+    let authorizeConnectorId: number;
+    for (const connector in this.chargingStation.connectors) {
+      if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.authorizeIdTag === requestPayload.idTag) {
+        authorizeConnectorId = Utils.convertToInt(connector);
+        break;
+      }
+    }
+    if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
+      this.chargingStation.getConnector(authorizeConnectorId).authorized = true;
+      logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} authorized on connector ${authorizeConnectorId}`);
+    } else {
+      this.chargingStation.getConnector(authorizeConnectorId).authorized = false;
+      delete this.chargingStation.getConnector(authorizeConnectorId).authorizeIdTag;
+      logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status ${payload.idTagInfo.status} on connector ${authorizeConnectorId}`);
+    }
   }
 }
