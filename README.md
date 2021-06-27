@@ -67,9 +67,10 @@ autoReconnectMaxRetries | | -1 (unlimited) | integer | connection retries to the
 reconnectExponentialDelay | true/false | false | boolean | connection delay retry to the OCPP-J server
 registrationMaxRetries | | -1 (unlimited) | integer | charging stations boot notification retries
 enableStatistics | true/false | true | boolean | enable charging stations statistics
+mayAuthorizeAtRemoteStart | true/false | true | boolean | always send authorize at remote start transaction when AuthorizeRemoteTxRequests is enabled
 beginEndMeterValues | true/false | false | boolean | enable Transaction.{Begin,End} MeterValues
 outOfOrderEndMeterValues | true/false | false | boolean | send Transaction.End MeterValues out of order
-meteringPerTransaction | true/false | true | boolean | disable metering on a per transaction basis
+meteringPerTransaction | true/false | true | boolean | enable metering history on a per transaction basis
 transactionDataMeterValues | true/false | false | boolean | enable transaction data MeterValues at stop transaction
 mainVoltageMeterValues | true/false | true | boolean | include charging station main voltage MeterValues on three phased charging stations
 phaseLineToLineVoltageMeterValues | true/false | true | boolean | include charging station line to line voltage MeterValues on three phased charging stations

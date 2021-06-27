@@ -91,6 +91,10 @@ export default class ChargingStation {
     return !Utils.isUndefined(this.stationInfo.enableStatistics) ? this.stationInfo.enableStatistics : true;
   }
 
+  public getMayAuthorizeAtRemoteStart(): boolean | undefined {
+    return this.stationInfo.mayAuthorizeAtRemoteStart ?? true;
+  }
+
   public getNumberOfPhases(): number | undefined {
     switch (this.getCurrentOutType()) {
       case CurrentType.AC:
@@ -371,18 +375,18 @@ export default class ChargingStation {
     }
   }
 
-  public setChargingProfile(connectorId: number, cp: ChargingProfile): boolean {
+  public setChargingProfile(connectorId: number, cp: ChargingProfile): void {
+    let cpReplaced = false;
     if (!Utils.isEmptyArray(this.getConnector(connectorId).chargingProfiles)) {
       this.getConnector(connectorId).chargingProfiles?.forEach((chargingProfile: ChargingProfile, index: number) => {
         if (chargingProfile.chargingProfileId === cp.chargingProfileId
             || (chargingProfile.stackLevel === cp.stackLevel && chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)) {
           this.getConnector(connectorId).chargingProfiles[index] = cp;
-          return true;
+          cpReplaced = true;
         }
       });
     }
-    this.getConnector(connectorId).chargingProfiles?.push(cp);
-    return true;
+    !cpReplaced && this.getConnector(connectorId).chargingProfiles?.push(cp);
   }
 
   public resetTransactionOnConnector(connectorId: number): void {

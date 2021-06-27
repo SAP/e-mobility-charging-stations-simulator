@@ -58,6 +58,7 @@ export default interface ChargingStationTemplate {
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
+  mayAuthorizeAtRemoteStart: boolean;
   beginEndMeterValues?: boolean;
   outOfOrderEndMeterValues?: boolean;
   meteringPerTransaction?: boolean;
