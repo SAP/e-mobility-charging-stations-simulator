@@ -1,6 +1,6 @@
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import { AuthorizeRequest, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionReason, OCPP16StopTransactionResponse, StartTransactionRequest, StopTransactionRequest } from '../../../types/ocpp/1.6/Transaction';
-import { CurrentOutType, VoltageOut } from '../../../types/ChargingStationTemplate';
+import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
 import { HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
 import { MeterValueUnit, MeterValuesRequest, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16MeterValuePhase } from '../../../types/ocpp/1.6/MeterValues';
 
@@ -158,11 +158,11 @@ export default class OCPP16RequestService extends OCPPRequestService {
             const voltagePhaseLineToLineSampledValueTemplate = self.chargingStation.getSampledValueTemplate(connectorId, OCPP16MeterValueMeasurand.VOLTAGE, phaseLineToLineValue as OCPP16MeterValuePhase);
             let voltagePhaseLineToLineMeasurandValue: number;
             if (voltagePhaseLineToLineSampledValueTemplate) {
-              const voltagePhaseLineToLineSampledValueTemplateValue = voltagePhaseLineToLineSampledValueTemplate.value ? parseInt(voltagePhaseLineToLineSampledValueTemplate.value) : VoltageOut.VOLTAGE_400;
+              const voltagePhaseLineToLineSampledValueTemplateValue = voltagePhaseLineToLineSampledValueTemplate.value ? parseInt(voltagePhaseLineToLineSampledValueTemplate.value) : Voltage.VOLTAGE_400;
               const fluctuationPhaseLineToLinePercent = voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT;
               voltagePhaseLineToLineMeasurandValue = Utils.getRandomFloatFluctuatedRounded(voltagePhaseLineToLineSampledValueTemplateValue, fluctuationPhaseLineToLinePercent);
             }
-            const defaultVoltagePhaseLineToLineMeasurandValue = Utils.getRandomFloatFluctuatedRounded(VoltageOut.VOLTAGE_400, fluctuationPercent);
+            const defaultVoltagePhaseLineToLineMeasurandValue = Utils.getRandomFloatFluctuatedRounded(Voltage.VOLTAGE_400, fluctuationPercent);
             meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
               voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue, null, phaseLineToLineValue as OCPP16MeterValuePhase));
           }
@@ -186,7 +186,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         const maxPower = Math.round(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider);
         const maxPowerPerPhase = Math.round((self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider) / self.chargingStation.getNumberOfPhases());
         switch (self.chargingStation.getCurrentOutType()) {
-          case CurrentOutType.AC:
+          case CurrentType.AC:
             if (self.chargingStation.getNumberOfPhases() === 3) {
               const defaultFluctuatedPowerPerPhase = powerSampledValueTemplate.value
                 && Utils.getRandomFloatFluctuatedRounded(parseInt(powerSampledValueTemplate.value) / self.chargingStation.getNumberOfPhases(), powerSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT);
@@ -208,7 +208,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             }
             powerMeasurandValues.allPhases = Utils.roundTo(powerMeasurandValues.L1 + powerMeasurandValues.L2 + powerMeasurandValues.L3, 2);
             break;
-          case CurrentOutType.DC:
+          case CurrentType.DC:
             powerMeasurandValues.allPhases = powerSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(parseInt(powerSampledValueTemplate.value), powerSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT)
               : Utils.getRandomFloatRounded(maxPower / unitDivider);
@@ -250,7 +250,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         const currentMeasurandValues: MeasurandValues = {} as MeasurandValues;
         let maxAmperage: number;
         switch (self.chargingStation.getCurrentOutType()) {
-          case CurrentOutType.AC:
+          case CurrentType.AC:
             maxAmperage = ACElectricUtils.amperagePerPhaseFromPower(self.chargingStation.getNumberOfPhases(), self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
             if (self.chargingStation.getNumberOfPhases() === 3) {
               const defaultFluctuatedAmperagePerPhase = currentSampledValueTemplate.value
@@ -273,7 +273,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             }
             currentMeasurandValues.allPhases = Utils.roundTo((currentMeasurandValues.L1 + currentMeasurandValues.L2 + currentMeasurandValues.L3) / self.chargingStation.getNumberOfPhases(), 2);
             break;
-          case CurrentOutType.DC:
+          case CurrentType.DC:
             maxAmperage = DCElectricUtils.amperage(self.chargingStation.stationInfo.maxPower / self.chargingStation.stationInfo.powerDivider, self.chargingStation.getVoltageOut());
             currentMeasurandValues.allPhases = currentSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(parseInt(currentSampledValueTemplate.value), currentSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT)

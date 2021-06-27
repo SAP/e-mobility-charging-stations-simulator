@@ -1,6 +1,6 @@
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
-import ChargingStationTemplate, { CurrentOutType, PowerUnits, VoltageOut } from '../types/ChargingStationTemplate';
+import ChargingStationTemplate, { CurrentType, PowerUnits, Voltage } from '../types/ChargingStationTemplate';
 import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles } from '../types/ocpp/Configuration';
 import Connectors, { Connector, SampledValueTemplate } from '../types/Connectors';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
@@ -93,9 +93,9 @@ export default class ChargingStation {
 
   public getNumberOfPhases(): number | undefined {
     switch (this.getCurrentOutType()) {
-      case CurrentOutType.AC:
+      case CurrentType.AC:
         return !Utils.isUndefined(this.stationInfo.numberOfPhases) ? this.stationInfo.numberOfPhases : 3;
-      case CurrentOutType.DC:
+      case CurrentType.DC:
         return 0;
     }
   }
@@ -120,19 +120,19 @@ export default class ChargingStation {
     return this.connectors[id];
   }
 
-  public getCurrentOutType(): CurrentOutType | undefined {
-    return this.stationInfo.currentOutType ?? CurrentOutType.AC;
+  public getCurrentOutType(): CurrentType | undefined {
+    return this.stationInfo.currentOutType ?? CurrentType.AC;
   }
 
   public getVoltageOut(): number | undefined {
     const errMsg = `${this.logPrefix()} Unknown ${this.getCurrentOutType()} currentOutType in template file ${this.stationTemplateFile}, cannot define default voltage out`;
     let defaultVoltageOut: number;
     switch (this.getCurrentOutType()) {
-      case CurrentOutType.AC:
-        defaultVoltageOut = VoltageOut.VOLTAGE_230;
+      case CurrentType.AC:
+        defaultVoltageOut = Voltage.VOLTAGE_230;
         break;
-      case CurrentOutType.DC:
-        defaultVoltageOut = VoltageOut.VOLTAGE_400;
+      case CurrentType.DC:
+        defaultVoltageOut = Voltage.VOLTAGE_400;
         break;
       default:
         logger.error(errMsg);

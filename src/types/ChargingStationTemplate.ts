@@ -3,7 +3,7 @@ import Connectors from './Connectors';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';
 
-export enum CurrentOutType {
+export enum CurrentType {
   AC = 'AC',
   DC = 'DC',
 }
@@ -13,7 +13,7 @@ export enum PowerUnits {
   KILO_WATT = 'kW',
 }
 
-export enum VoltageOut {
+export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
@@ -47,8 +47,8 @@ export default interface ChargingStationTemplate {
   power: number | number[];
   powerSharedByConnectors?: boolean;
   powerUnit: PowerUnits;
-  currentOutType?: CurrentOutType;
-  voltageOut?: number;
+  currentOutType?: CurrentType;
+  voltageOut?: Voltage;
   numberOfPhases?: number;
   numberOfConnectors?: number | number[];
   useConnectorId0?: boolean;
