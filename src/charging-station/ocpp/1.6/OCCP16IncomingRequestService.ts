@@ -301,7 +301,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private async notifyRemoteStartTransactionRejected(connectorId: number, idTag: string): Promise<DefaultResponse> {
     await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.AVAILABLE);
     this.chargingStation.getConnector(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
-    logger.warn(this.chargingStation.logPrefix() + ' Remote starting transaction REJECTED on connector Id ' + connectorId.toString() + ', availability: ' + this.chargingStation.getConnector(connectorId).availability + ', idTag ' + idTag);
+    logger.warn(this.chargingStation.logPrefix() + ' Remote starting transaction REJECTED on connector Id ' + connectorId.toString() + ', availability ' + this.chargingStation.getConnector(connectorId).availability + ', idTag ' + idTag);
     return Constants.OCPP_RESPONSE_REJECTED;
   }
 
