@@ -75,8 +75,10 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     } else {
       logger.warn(this.chargingStation.logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload?.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
       this.chargingStation.resetTransactionOnConnector(connectorId);
-      await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.AVAILABLE);
-      this.chargingStation.getConnector(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
+      if (this.chargingStation.getConnector(connectorId).status !== OCPP16ChargePointStatus.AVAILABLE) {
+        await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.AVAILABLE);
+        this.chargingStation.getConnector(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
+      }
     }
   }
 

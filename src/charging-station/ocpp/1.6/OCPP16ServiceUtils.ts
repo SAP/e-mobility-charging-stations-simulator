@@ -23,7 +23,7 @@ export class OCPP16ServiceUtils {
     const sampledValueContext = context ?? (sampledValueTemplate.context ?? null);
     const sampledValueLocation = sampledValueTemplate.location
       ? sampledValueTemplate.location
-      : (OCPP16ServiceUtils.getMeasurandDefaultLocation(sampledValueTemplate.measurand ?? null));
+      : OCPP16ServiceUtils.getMeasurandDefaultLocation(sampledValueTemplate.measurand ?? null);
     const sampledValuePhase = phase ?? (sampledValueTemplate.phase ?? null);
     return {
       ...!Utils.isNullOrUndefined(sampledValueTemplate.unit) && { unit: sampledValueTemplate.unit },
