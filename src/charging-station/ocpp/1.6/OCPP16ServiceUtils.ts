@@ -21,9 +21,7 @@ export class OCPP16ServiceUtils {
   public static buildSampledValue(sampledValueTemplate: SampledValueTemplate, value: number, context?: MeterValueContext, phase?: OCPP16MeterValuePhase): OCPP16SampledValue {
     const sampledValueValue = value ?? (sampledValueTemplate.value ?? null);
     const sampledValueContext = context ?? (sampledValueTemplate.context ?? null);
-    const sampledValueLocation = sampledValueTemplate.location
-      ? sampledValueTemplate.location
-      : OCPP16ServiceUtils.getMeasurandDefaultLocation(sampledValueTemplate.measurand ?? null);
+    const sampledValueLocation = sampledValueTemplate.location ?? OCPP16ServiceUtils.getMeasurandDefaultLocation(sampledValueTemplate.measurand ?? null);
     const sampledValuePhase = phase ?? (sampledValueTemplate.phase ?? null);
     return {
       ...!Utils.isNullOrUndefined(sampledValueTemplate.unit) && { unit: sampledValueTemplate.unit },
