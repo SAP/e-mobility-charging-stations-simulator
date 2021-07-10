@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sap-labs-france/ev-simulator.git"
+    "url": "https://github.com/jerome-benoit/ev-simulator.git"
   },
   "description": "Electric Vehicle charging stations simulator",
   "author": "SAP E-Mobility Labs France <e-mobility@sap.com>",
@@ -20,10 +20,10 @@
   ],
   "main": "dist/start.js",
   "auto-changelog": {
-    "commitUrl": "https://github.com/sap-labs-france/ev-simulator/commit/{id}",
-    "issueUrl": "https://github.com/sap-labs-france/ev-simulator/issues/{id}",
-    "mergeUrl": "https://github.com/sap-labs-france/ev-simulator/pull/{id}",
-    "compareUrl": "https://github.com/sap-labs-france/ev-simulator/compare/{from}...{to}"
+    "commitUrl": "https://github.com/jerome-benoit/ev-simulator/commit/{id}",
+    "issueUrl": "https://github.com/jerome-benoit/ev-simulator/issues/{id}",
+    "mergeUrl": "https://github.com/jerome-benoit/ev-simulator/pull/{id}",
+    "compareUrl": "https://github.com/jerome-benoit/ev-simulator/compare/{from}...{to}"
   },
   "scripts": {
     "prestart": "npm run build",

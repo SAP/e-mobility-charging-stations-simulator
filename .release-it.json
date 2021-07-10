@@ -1,7 +1,7 @@
 {
   "git": {
     "changelog": "npx auto-changelog --stdout --commit-limit false --unreleased --template https://raw.githubusercontent.com/release-it/release-it/master/templates/changelog-compact.hbs",
-    "pushRepo": "upstream"
+    "pushRepo": "origin"
   },
   "npm": {
     "publish": false
