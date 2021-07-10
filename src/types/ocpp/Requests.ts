@@ -1,6 +1,7 @@
 import { OCPP16AvailabilityType, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand } from './1.6/Requests';
 
 import { MessageType } from './MessageType';
+import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
 import OCPPError from '../../charging-station/OcppError';
 
 export default interface Requests {
@@ -25,6 +26,12 @@ export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
 
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand
+};
+
+export type DiagnosticsStatus = OCPP16DiagnosticsStatus;
+
+export const DiagnosticsStatus = {
+  ...OCPP16DiagnosticsStatus
 };
 
 export type Request = [(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void, (error: OCPPError) => void, Record<string, unknown>];

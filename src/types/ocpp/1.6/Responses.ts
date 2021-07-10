@@ -73,3 +73,10 @@ export enum OCPP16ClearChargingProfileStatus {
 export interface ClearChargingProfileResponse {
   status: OCPP16ClearChargingProfileStatus;
 }
+
+export interface GetDiagnosticsResponse {
+  fileName?: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface DiagnosticsStatusNotificationResponse {}

@@ -1,5 +1,5 @@
 import { AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../../types/ocpp/Transaction';
-import { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
+import { DiagnosticsStatus, IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
 
 import { BootNotificationResponse } from '../../types/ocpp/Responses';
 import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
@@ -104,7 +104,7 @@ export default abstract class OCPPRequestService {
   }
 
   public handleRequestError(commandName: RequestCommand, error: Error): void {
-    logger.error(this.chargingStation.logPrefix() + ' Send ' + commandName + ' error: %j', error);
+    logger.error(this.chargingStation.logPrefix() + ' Request command ' + commandName + ' error: %j', error);
     throw error;
   }
 
@@ -117,5 +117,6 @@ export default abstract class OCPPRequestService {
   public abstract sendMeterValues(connectorId: number, transactionId: number, interval: number, self: OCPPRequestService): Promise<void>;
   public abstract sendTransactionBeginMeterValues(connectorId: number, transactionId: number, beginMeterValue: MeterValue): Promise<void>;
   public abstract sendTransactionEndMeterValues(connectorId: number, transactionId: number, endMeterValue: MeterValue): Promise<void>;
+  public abstract sendDiagnosticsStatusNotification(diagnosticsStatus: DiagnosticsStatus): Promise<void>;
   public abstract sendError(messageId: string, error: OCPPError, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown>;
 }

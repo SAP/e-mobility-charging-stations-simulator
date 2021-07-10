@@ -1,19 +1,27 @@
-import { ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingProfileRequest, GetConfigurationRequest, OCPP16AvailabilityType, OCPP16IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, UnlockConnectorRequest } from '../../../types/ocpp/1.6/Requests';
-import { ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, GetConfigurationResponse, SetChargingProfileResponse, UnlockConnectorResponse } from '../../../types/ocpp/1.6/Responses';
+import * as url from 'url';
+
+import { ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingProfileRequest, GetConfigurationRequest, GetDiagnosticsRequest, OCPP16AvailabilityType, OCPP16IncomingRequestCommand, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, UnlockConnectorRequest } from '../../../types/ocpp/1.6/Requests';
+import { ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, GetConfigurationResponse, GetDiagnosticsResponse, SetChargingProfileResponse, UnlockConnectorResponse } from '../../../types/ocpp/1.6/Responses';
 import { ChargingProfilePurposeType, OCPP16ChargingProfile } from '../../../types/ocpp/1.6/ChargingProfile';
+import { Client, FTPResponse } from 'basic-ftp';
 import { OCPP16AuthorizationStatus, OCPP16StopTransactionReason } from '../../../types/ocpp/1.6/Transaction';
 
 import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { IncomingRequestCommand } from '../../../types/ocpp/Requests';
 import { MessageType } from '../../../types/ocpp/MessageType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
+import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import OCPPError from '../../OcppError';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
 import Utils from '../../../utils/Utils';
+import fs from 'fs';
 import logger from '../../../utils/Logger';
+import path from 'path';
+import tar from 'tar';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
@@ -339,5 +347,54 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     logger.info(this.chargingStation.logPrefix() + ' Trying to remote stop a non existing transaction ' + transactionId.toString());
     return Constants.OCPP_RESPONSE_REJECTED;
+  }
+
+  private async handleRequestGetDiagnostics(commandPayload: GetDiagnosticsRequest): Promise<GetDiagnosticsResponse> {
+    logger.debug(this.chargingStation.logPrefix() + ' ' + IncomingRequestCommand.GET_DIAGNOSTICS + ' request received: %j', commandPayload);
+    const uri = new url.URL(commandPayload.location);
+    if (uri.protocol.startsWith('ftp:')) {
+      let ftpClient: Client;
+      try {
+        const logFiles = fs.readdirSync(path.resolve(__dirname, '../../../../')).filter((file) => file.endsWith('.log')).map((file) => path.join('./', file));
+        const diagnosticsArchive = this.chargingStation.stationInfo.chargingStationId + '_logs.tar.gz';
+        tar.create({ gzip: true }, logFiles).pipe(fs.createWriteStream(diagnosticsArchive));
+        ftpClient = new Client();
+        const accessResponse = await ftpClient.access({
+          host: uri.host,
+          ...(uri.port !== '') && { port: Utils.convertToInt(uri.port) },
+          ...(uri.username !== '') && { user: uri.username },
+          ...(uri.password !== '') && { password: uri.password },
+        });
+        let uploadResponse: FTPResponse;
+        if (accessResponse.code === 220) {
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          ftpClient.trackProgress(async (info) => {
+            logger.info(`${this.chargingStation.logPrefix()} ${info.bytes / 1024} bytes transferred from diagnostics archive ${info.name}`);
+            await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.Uploading);
+          });
+          uploadResponse = await ftpClient.uploadFrom(path.join(path.resolve(__dirname, '../../../../'), diagnosticsArchive), uri.pathname + diagnosticsArchive);
+          if (uploadResponse.code === 226) {
+            await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.Uploaded);
+            if (ftpClient) {
+              ftpClient.close();
+            }
+            return { fileName: diagnosticsArchive };
+          }
+          throw Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+        }
+        throw Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+      } catch (error) {
+        await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.UploadFailed);
+        this.handleIncomingRequestError(IncomingRequestCommand.GET_DIAGNOSTICS, error);
+        if (ftpClient) {
+          ftpClient.close();
+        }
+        return Constants.OCPP_RESPONSE_EMPTY;
+      }
+    } else {
+      logger.error(`${this.chargingStation.logPrefix()} Unsupported protocol ${uri.protocol} to transfer the diagnostic logs archive`);
+      await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.UploadFailed);
+      return Constants.OCPP_RESPONSE_EMPTY;
+    }
   }
 }

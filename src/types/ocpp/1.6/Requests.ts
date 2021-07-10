@@ -2,6 +2,7 @@ import { ChargingProfilePurposeType, OCPP16ChargingProfile } from './ChargingPro
 
 import { OCPP16ChargePointErrorCode } from './ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from './ChargePointStatus';
+import { OCPP16DiagnosticsStatus } from './DiagnosticsStatus';
 import { OCPP16StandardParametersKey } from './Configuration';
 
 export enum OCPP16RequestCommand {
@@ -12,7 +13,8 @@ export enum OCPP16RequestCommand {
   AUTHORIZE = 'Authorize',
   START_TRANSACTION = 'StartTransaction',
   STOP_TRANSACTION = 'StopTransaction',
-  METER_VALUES = 'MeterValues'
+  METER_VALUES = 'MeterValues',
+  DIAGNOSTICS_STATUS_NOTIFICATION= 'DiagnosticsStatusNotification'
 }
 
 export enum OCPP16IncomingRequestCommand {
@@ -25,7 +27,8 @@ export enum OCPP16IncomingRequestCommand {
   SET_CHARGING_PROFILE = 'SetChargingProfile',
   CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
-  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction'
+  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
+  GET_DIAGNOSTICS = 'GetDiagnostics'
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -105,4 +108,16 @@ export interface ClearChargingProfileRequest {
   connectorId?: number;
   chargingProfilePurpose?: ChargingProfilePurposeType;
   stackLevel?: number;
+}
+
+export interface GetDiagnosticsRequest {
+  location: string;
+  retries?: number;
+  retryInterval?: number;
+  startTime?: Date;
+  stopTime?: Date;
+}
+
+export interface DiagnosticsStatusNotificationRequest {
+  status: OCPP16DiagnosticsStatus
 }

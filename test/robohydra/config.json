@@ -1,0 +1,9 @@
+{
+  "pluginLoadPaths": [
+    "test/robohydra/plugins"
+  ],
+  "plugins": [
+    "logger",
+    "wsServer"
+  ]
+}

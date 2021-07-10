@@ -1,7 +1,7 @@
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import { AuthorizeRequest, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionReason, OCPP16StopTransactionResponse, StartTransactionRequest, StopTransactionRequest } from '../../../types/ocpp/1.6/Transaction';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
-import { HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
+import { DiagnosticsStatusNotificationRequest, HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
 import { MeterValueUnit, MeterValuesRequest, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16MeterValuePhase } from '../../../types/ocpp/1.6/MeterValues';
 
 import Constants from '../../../utils/Constants';
@@ -11,6 +11,7 @@ import { MessageType } from '../../../types/ocpp/MessageType';
 import { OCPP16BootNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
+import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../OcppError';
 import OCPPRequestService from '../OCPPRequestService';
@@ -352,6 +353,13 @@ export default class OCPP16RequestService extends OCPPRequestService {
       meterValue: endMeterValue,
     };
     await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
+  }
+
+  public async sendDiagnosticsStatusNotification(diagnosticsStatus: OCPP16DiagnosticsStatus): Promise<void> {
+    const payload: DiagnosticsStatusNotificationRequest = {
+      status: diagnosticsStatus
+    };
+    await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION);
   }
 
   public async sendError(messageId: string, error: OCPPError, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<unknown> {

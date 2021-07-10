@@ -88,3 +88,5 @@ Thumbs.db
 # MTA
 *.mta
 mta_archives/
+
+*.tar.gz

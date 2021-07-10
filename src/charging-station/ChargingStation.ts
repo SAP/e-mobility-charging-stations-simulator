@@ -228,7 +228,10 @@ export default class ChargingStation {
     }
     const sampledValueTemplates: SampledValueTemplate[] = this.getConnector(connectorId).MeterValues;
     for (let index = 0; !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length; index++) {
-      if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
+      if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand)) {
+        logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+        continue;
+      } else if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
           && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
         return sampledValueTemplates[index];
       } else if (!phase && !sampledValueTemplates[index].phase && sampledValueTemplates[index]?.measurand === measurand
@@ -547,6 +550,13 @@ export default class ChargingStation {
     }
     // OCPP parameters
     this.initOCPPParameters();
+    if (this.stationInfo.autoRegister) {
+      this.bootNotificationResponse = {
+        currentTime: new Date().toISOString(),
+        interval: this.getHeartbeatInterval() / 1000,
+        status: RegistrationStatus.ACCEPTED
+      };
+    }
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
       this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
@@ -643,8 +653,13 @@ export default class ChargingStation {
     let requestPayload: Record<string, unknown>;
     let errMsg: string;
     try {
-      // Parse the message
-      [messageType, messageId, commandName, commandPayload, errorDetails] = JSON.parse(messageEvent.toString()) as IncomingRequest;
+      const request = JSON.parse(messageEvent.toString()) as IncomingRequest;
+      if (Utils.isIterable(request)) {
+        // Parse the message
+        [messageType, messageId, commandName, commandPayload, errorDetails] = request;
+      } else {
+        throw new Error('Incoming request is not iterable');
+      }
       // Check the Type of message
       switch (messageType) {
         // Incoming Message
@@ -692,7 +707,7 @@ export default class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming message %j processing error %j on request content type %j', this.logPrefix(), messageEvent, error, this.requests[messageId]);
+      logger.error('%s Incoming request message %j processing error %j on content type %j', this.logPrefix(), messageEvent, error, this.requests[messageId]);
       // Send error
       messageType !== MessageType.CALL_ERROR_MESSAGE && await this.ocppRequestService.sendError(messageId, error, commandName);
     }
@@ -926,6 +941,8 @@ export default class ChargingStation {
     if (HeartBeatInterval) {
       return Utils.convertToInt(HeartBeatInterval.value) * 1000;
     }
+    !this.stationInfo.autoRegister && logger.warn(`${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL}`);
+    return Constants.DEFAULT_HEARTBEAT_INTERVAL;
   }
 
   private stopHeartbeat(): void {

@@ -6,6 +6,7 @@ export default class Constants {
   static readonly ENTITY_CHARGING_STATION = 'ChargingStation';
   static readonly ENTITY_AUTOMATIC_TRANSACTION_GENERATOR = 'AutomaticTransactionGenerator';
 
+  static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: DefaultStatus.ACCEPTED });
   static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: DefaultStatus.REJECTED });
   static readonly OCPP_CONFIGURATION_RESPONSE_ACCEPTED = Object.freeze({ status: ConfigurationStatus.ACCEPTED });
@@ -25,7 +26,7 @@ export default class Constants {
   static readonly OCPP_AVAILABILITY_RESPONSE_SCHEDULED = Object.freeze({ status: AvailabilityStatus.SCHEDULED });
 
   static readonly OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
-  static readonly OCPP_ERROR_TIMEOUT = 60000; // 60 sec
+  static readonly OCPP_ERROR_TIMEOUT = 60000; // Ms
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms
@@ -40,6 +41,8 @@ export default class Constants {
   static readonly DEFAULT_CHARGING_STATIONS_PER_WORKER = 1;
 
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30;
+
+  static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms
 
   static readonly SUPPORTED_MEASURANDS = Object.freeze([MeterValueMeasurand.STATE_OF_CHARGE, MeterValueMeasurand.VOLTAGE,
     MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueMeasurand.CURRENT_IMPORT, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER]);

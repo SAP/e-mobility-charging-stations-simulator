@@ -1,0 +1,2 @@
+GetDiagnostics:
+  curl -d '[2,"123456789","GetDiagnostics",{"location":"ftp://localhost"}]' -H "Content-Type: application/json" -X POST http://localhost:3000/message
