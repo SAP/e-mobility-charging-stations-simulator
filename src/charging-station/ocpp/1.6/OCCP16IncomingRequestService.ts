@@ -15,7 +15,7 @@ import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStat
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
-import OCPPError from '../../OcppError';
+import OCPPError from '../../OCPPError';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
 import Utils from '../../../utils/Utils';
 import fs from 'fs';
