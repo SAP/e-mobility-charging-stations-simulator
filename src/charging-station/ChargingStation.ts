@@ -140,7 +140,7 @@ export default class ChargingStation {
         break;
       default:
         logger.error(errMsg);
-        throw Error(errMsg);
+        throw new Error(errMsg);
     }
     return !Utils.isUndefined(this.stationInfo.voltageOut) ? this.stationInfo.voltageOut : defaultVoltageOut;
   }
@@ -228,7 +228,7 @@ export default class ChargingStation {
     }
     const sampledValueTemplates: SampledValueTemplate[] = this.getConnector(connectorId).MeterValues;
     for (let index = 0; !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length; index++) {
-      if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand)) {
+      if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)) {
         logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
         continue;
       } else if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand

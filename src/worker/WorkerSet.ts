@@ -33,7 +33,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
    */
   public async addElement(elementData: T): Promise<void> {
     if (!this.workerSet) {
-      throw Error('Cannot add a WorkerSet element: workers\' set does not exist');
+      throw new Error('Cannot add a WorkerSet element: workers\' set does not exist');
     }
     if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
       this.startWorker();

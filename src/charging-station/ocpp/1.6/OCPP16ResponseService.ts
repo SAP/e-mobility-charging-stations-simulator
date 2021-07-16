@@ -54,6 +54,10 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       logger.debug(this.chargingStation.logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.chargingStation.getConnector(connectorId));
       return;
     }
+    if (this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.AVAILABLE) {
+      logger.error(`${this.chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with status ${this.chargingStation.getConnector(connectorId)?.status}`);
+      return;
+    }
 
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
       this.chargingStation.getConnector(connectorId).transactionStarted = true;

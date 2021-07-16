@@ -216,7 +216,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             break;
           default:
             logger.error(errMsg);
-            throw Error(errMsg);
+            throw new Error(errMsg);
         }
         meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(powerSampledValueTemplate, powerMeasurandValues.allPhases));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;
@@ -282,7 +282,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             break;
           default:
             logger.error(errMsg);
-            throw Error(errMsg);
+            throw new Error(errMsg);
         }
         meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(currentSampledValueTemplate, currentMeasurandValues.allPhases));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;
@@ -338,32 +338,48 @@ export default class OCPP16RequestService extends OCPPRequestService {
   }
 
   public async sendTransactionBeginMeterValues(connectorId: number, transactionId: number, beginMeterValue: OCPP16MeterValue): Promise<void> {
-    const payload: MeterValuesRequest = {
-      connectorId,
-      transactionId,
-      meterValue: beginMeterValue,
-    };
-    await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
+    try {
+      const payload: MeterValuesRequest = {
+        connectorId,
+        transactionId,
+        meterValue: beginMeterValue,
+      };
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
+    } catch (error) {
+      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
+    }
   }
 
   public async sendTransactionEndMeterValues(connectorId: number, transactionId: number, endMeterValue: OCPP16MeterValue): Promise<void> {
-    const payload: MeterValuesRequest = {
-      connectorId,
-      transactionId,
-      meterValue: endMeterValue,
-    };
-    await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
+    try {
+      const payload: MeterValuesRequest = {
+        connectorId,
+        transactionId,
+        meterValue: endMeterValue,
+      };
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
+    } catch (error) {
+      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
+    }
   }
 
   public async sendDiagnosticsStatusNotification(diagnosticsStatus: OCPP16DiagnosticsStatus): Promise<void> {
-    const payload: DiagnosticsStatusNotificationRequest = {
-      status: diagnosticsStatus
-    };
-    await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION);
+    try {
+      const payload: DiagnosticsStatusNotificationRequest = {
+        status: diagnosticsStatus
+      };
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION);
+    } catch (error) {
+      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
+    }
   }
 
   public async sendError(messageId: string, error: OCPPError, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<unknown> {
-    // Send error
-    return this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
+    try {
+      // Send error
+      return this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
+    } catch (err) {
+      this.handleRequestError(commandName as OCPP16RequestCommand, err);
+    }
   }
 }

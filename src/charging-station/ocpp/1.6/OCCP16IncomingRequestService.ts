@@ -4,12 +4,12 @@ import { ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingPro
 import { ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, GetConfigurationResponse, GetDiagnosticsResponse, SetChargingProfileResponse, UnlockConnectorResponse } from '../../../types/ocpp/1.6/Responses';
 import { ChargingProfilePurposeType, OCPP16ChargingProfile } from '../../../types/ocpp/1.6/ChargingProfile';
 import { Client, FTPResponse } from 'basic-ftp';
+import { IncomingRequestCommand, RequestCommand } from '../../../types/ocpp/Requests';
 import { OCPP16AuthorizationStatus, OCPP16StopTransactionReason } from '../../../types/ocpp/1.6/Transaction';
 
 import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { IncomingRequestCommand } from '../../../types/ocpp/Requests';
 import { MessageType } from '../../../types/ocpp/MessageType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
@@ -132,10 +132,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestChangeConfiguration(commandPayload: ChangeConfigurationRequest): ChangeConfigurationResponse {
     // JSON request fields type sanity check
     if (!Utils.isString(commandPayload.key)) {
-      logger.error(`${this.chargingStation.logPrefix()} ChangeConfiguration request key field is not a string:`, commandPayload);
+      logger.error(`${this.chargingStation.logPrefix()} ${RequestCommand.CHANGE_CONFIGURATION} request key field is not a string:`, commandPayload);
     }
     if (!Utils.isString(commandPayload.value)) {
-      logger.error(`${this.chargingStation.logPrefix()} ChangeConfiguration request value field is not a string:`, commandPayload);
+      logger.error(`${this.chargingStation.logPrefix()} ${RequestCommand.CHANGE_CONFIGURATION} request value field is not a string:`, commandPayload);
     }
     const keyToChange = this.chargingStation.getConfigurationKey(commandPayload.key, true);
     if (!keyToChange) {
@@ -380,9 +380,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             }
             return { fileName: diagnosticsArchive };
           }
-          throw Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+          throw new Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
         }
-        throw Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+        throw new Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
       } catch (error) {
         await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.UploadFailed);
         this.handleIncomingRequestError(IncomingRequestCommand.GET_DIAGNOSTICS, error);
