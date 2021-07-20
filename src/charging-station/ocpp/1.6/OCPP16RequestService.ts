@@ -127,7 +127,10 @@ export default class OCPP16RequestService extends OCPPRequestService {
       // SoC measurand
       const socSampledValueTemplate = self.chargingStation.getSampledValueTemplate(connectorId, OCPP16MeterValueMeasurand.STATE_OF_CHARGE);
       if (socSampledValueTemplate) {
-        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(socSampledValueTemplate, Utils.getRandomInt(100)));
+        const socSampledValueTemplateValue = socSampledValueTemplate.value
+          ? Utils.getRandomFloatFluctuatedRounded(parseInt(socSampledValueTemplate.value), socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT)
+          : Utils.getRandomInt(100);
+        meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;
         if (Utils.convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > 100 || debug) {
           logger.error(`${self.chargingStation.logPrefix()} MeterValues measurand ${meterValue.sampledValue[sampledValuesIndex].measurand ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${meterValue.sampledValue[sampledValuesIndex].value}/100`);
