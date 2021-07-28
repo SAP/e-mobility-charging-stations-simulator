@@ -58,6 +58,10 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       logger.error(`${this.chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with status ${this.chargingStation.getConnector(connectorId)?.status}`);
       return;
     }
+    if (!Number.isInteger(payload.transactionId)) {
+      logger.warn(`${this.chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with a non integer transaction Id ${payload.transactionId}, converting to integer`);
+      payload.transactionId = Utils.convertToInt(payload.transactionId);
+    }
 
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
       this.chargingStation.getConnector(connectorId).transactionStarted = true;
