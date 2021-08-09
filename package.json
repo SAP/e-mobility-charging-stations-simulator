@@ -87,7 +87,7 @@
     "clinic": "^9.0.0",
     "cross-env": "^7.0.3",
     "eslint": "^7.32.0",
-    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-import": "^2.24.0",
     "eslint-plugin-jsdoc": "^36.0.6",
     "eslint-plugin-node": "^11.1.0",
     "expect": "^27.0.6",
@@ -96,16 +96,16 @@
     "mochawesome": "^6.2.2",
     "npm-check": "^5.9.2",
     "nyc": "^15.1.0",
-    "release-it": "^14.10.1",
+    "release-it": "^14.11.0",
     "robohydra": "^0.6.9",
-    "rollup": "^2.56.0",
+    "rollup": "^2.56.1",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-istanbul": "^3.0.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",
-    "ts-node": "^10.1.0",
+    "ts-node": "^10.2.0",
     "typescript": "^4.3.5"
   }
 }
