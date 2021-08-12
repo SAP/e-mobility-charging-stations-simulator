@@ -1,8 +1,9 @@
 import { AuthorizationStatus, AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/ocpp/Transaction';
-import { PerformanceObserver, performance } from 'perf_hooks';
 
 import ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
+import { PerformanceObserver } from 'perf_hooks';
+import PerformanceStatistics from '../utils/PerformanceStatistics';
 import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
 
@@ -15,11 +16,8 @@ export default class AutomaticTransactionGenerator {
     this.chargingStation = chargingStation;
     this.timeToStop = true;
     if (this.chargingStation.getEnableStatistics()) {
-      this.performanceObserver = new PerformanceObserver((list) => {
-        const entry = list.getEntries()[0];
-        this.chargingStation.performanceStatistics.logPerformance(entry, Constants.ENTITY_AUTOMATIC_TRANSACTION_GENERATOR);
-        this.performanceObserver.disconnect();
-      });
+      this.performanceObserver = PerformanceStatistics.initPerformanceObserver(Constants.ENTITY_AUTOMATIC_TRANSACTION_GENERATOR, this.chargingStation.performanceStatistics,
+        this.performanceObserver);
     }
   }
 
@@ -85,16 +83,14 @@ export default class AutomaticTransactionGenerator {
       const start = Math.random();
       let skip = 0;
       if (start < this.chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
-        skip = 0;
         // Start transaction
-        let startResponse: StartTransactionResponse | AuthorizeResponse;
+        let startTransaction: (connectorId: number, self: AutomaticTransactionGenerator) => Promise<StartTransactionResponse | AuthorizeResponse>;
         if (this.chargingStation.getEnableStatistics()) {
-          const startTransaction = performance.timerify(this.startTransaction);
-          this.performanceObserver.observe({ entryTypes: ['function'] });
-          startResponse = await startTransaction(connectorId, this);
+          startTransaction = PerformanceStatistics.timedFunction(this.startTransaction.bind(this), this.performanceObserver);
         } else {
-          startResponse = await this.startTransaction(connectorId, this);
+          startTransaction = this.startTransaction.bind(this);
         }
+        const startResponse = await startTransaction(connectorId, this);
         if (startResponse?.idTagInfo?.status !== AuthorizationStatus.ACCEPTED) {
           logger.warn(this.logPrefix(connectorId) + ' transaction rejected');
           await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
@@ -107,13 +103,13 @@ export default class AutomaticTransactionGenerator {
           // Stop transaction
           if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
             logger.info(this.logPrefix(connectorId) + ' stop transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString());
+            let stopTransaction: (connectorId: number, self: AutomaticTransactionGenerator) => Promise<StopTransactionResponse>;
             if (this.chargingStation.getEnableStatistics()) {
-              const stopTransaction = performance.timerify(this.stopTransaction);
-              this.performanceObserver.observe({ entryTypes: ['function'] });
-              await stopTransaction(connectorId, this);
+              stopTransaction = PerformanceStatistics.timedFunction(this.stopTransaction.bind(this), this.performanceObserver);
             } else {
-              await this.stopTransaction(connectorId, this);
+              stopTransaction = this.stopTransaction.bind(this);
             }
+            await stopTransaction(connectorId, this);
           }
         }
       } else {
@@ -134,22 +130,22 @@ export default class AutomaticTransactionGenerator {
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           logger.info(self.logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
           // Start transaction
-          return await self.chargingStation.ocppRequestService.sendStartTransaction(connectorId, tagId);
+          return self.chargingStation.ocppRequestService.sendStartTransaction(connectorId, tagId);
         }
         return authorizeResponse;
       }
       logger.info(self.logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
       // Start transaction
-      return await self.chargingStation.ocppRequestService.sendStartTransaction(connectorId, tagId);
+      return self.chargingStation.ocppRequestService.sendStartTransaction(connectorId, tagId);
     }
     logger.info(self.logPrefix(connectorId) + ' start transaction without a tagID');
-    return await self.chargingStation.ocppRequestService.sendStartTransaction(connectorId);
+    return self.chargingStation.ocppRequestService.sendStartTransaction(connectorId);
   }
 
   // eslint-disable-next-line consistent-this
   private async stopTransaction(connectorId: number, self: AutomaticTransactionGenerator): Promise<StopTransactionResponse> {
     const transactionId = self.chargingStation.getConnector(connectorId).transactionId;
-    return await self.chargingStation.ocppRequestService.sendStopTransaction(transactionId, self.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+    return self.chargingStation.ocppRequestService.sendStopTransaction(transactionId, self.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
       self.chargingStation.getTransactionIdTag(transactionId));
   }
 

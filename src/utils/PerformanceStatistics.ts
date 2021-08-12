@@ -1,10 +1,10 @@
 import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from './CircularArray';
 import CommandStatistics, { CommandStatisticsData, PerfEntry } from '../types/CommandStatistics';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
+import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 
 import Configuration from './Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
-import { PerformanceEntry } from 'perf_hooks';
 import Utils from './Utils';
 import logger from './Logger';
 
@@ -15,6 +15,19 @@ export default class PerformanceStatistics {
   public constructor(objId: string) {
     this.objId = objId;
     this.commandsStatistics = { id: this.objId ? this.objId : 'Object id not specified', commandsStatisticsData: {} };
+  }
+
+  public static initPerformanceObserver(entity: string, performanceStatistics: PerformanceStatistics, performanceObserver: PerformanceObserver): PerformanceObserver {
+    return new PerformanceObserver((list) => {
+      const entry = list.getEntries()[0];
+      performanceStatistics.logPerformance(entry, entity);
+      performanceObserver && performanceObserver.disconnect();
+    });
+  }
+
+  public static timedFunction(method: (...optionalParams: any[]) => any, performanceObserver: PerformanceObserver): (...optionalParams: any[]) => any {
+    performanceObserver.observe({ entryTypes: ['function'] });
+    return performance.timerify(method);
   }
 
   public addMessage(command: RequestCommand | IncomingRequestCommand, messageType: MessageType): void {
@@ -64,7 +77,7 @@ export default class PerformanceStatistics {
       entryType: entry.entryType,
       startTime: entry.startTime,
       duration: entry.duration
-    } ;
+    };
     logger.info(`${this.logPrefix()} ${className} method(s) entry: %j`, perfEntry);
   }
 

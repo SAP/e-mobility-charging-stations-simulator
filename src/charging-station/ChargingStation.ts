@@ -4,7 +4,6 @@ import ChargingStationTemplate, { CurrentType, PowerUnits, Voltage } from '../ty
 import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles } from '../types/ocpp/Configuration';
 import Connectors, { Connector, SampledValueTemplate } from '../types/Connectors';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
-import { PerformanceObserver, performance } from 'perf_hooks';
 import Requests, { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand } from '../types/ocpp/Requests';
 import WebSocket, { MessageEvent } from 'ws';
 
@@ -23,8 +22,10 @@ import OCPPError from './OCPPError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
+import { PerformanceObserver } from 'perf_hooks';
 import PerformanceStatistics from '../utils/PerformanceStatistics';
 import { StopTransactionReason } from '../types/ocpp/Transaction';
+import { URL } from 'url';
 import Utils from '../utils/Utils';
 import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import crypto from 'crypto';
@@ -50,8 +51,7 @@ export default class ChargingStation {
   private bootNotificationRequest!: BootNotificationRequest;
   private bootNotificationResponse!: BootNotificationResponse | null;
   private connectorsConfigurationHash!: string;
-  private supervisionUrl!: string;
-  private wsConnectionUrl!: string;
+  private wsConnectionUrl!: URL;
   private hasSocketRestarted: boolean;
   private autoReconnectRetryCount: number;
   private automaticTransactionGeneration!: AutomaticTransactionGenerator;
@@ -292,15 +292,7 @@ export default class ChargingStation {
     if (interval > 0) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.getConnector(connectorId).transactionSetInterval = setInterval(async (): Promise<void> => {
-        if (this.getEnableStatistics()) {
-          const sendMeterValues = performance.timerify(this.ocppRequestService.sendMeterValues);
-          this.performanceObserver.observe({
-            entryTypes: ['function'],
-          });
-          await sendMeterValues(connectorId, this.getConnector(connectorId).transactionId, interval, this.ocppRequestService);
-        } else {
-          await this.ocppRequestService.sendMeterValues(connectorId, this.getConnector(connectorId).transactionId, interval, this.ocppRequestService);
-        }
+        await this.ocppRequestService.sendMeterValues(connectorId, this.getConnector(connectorId).transactionId, interval, this.ocppRequestService);
       }, interval);
     } else {
       logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.milliSecondsToHHMMSS(interval) : interval}, not sending MeterValues`);
@@ -485,8 +477,7 @@ export default class ChargingStation {
       ...!Utils.isUndefined(this.stationInfo.firmwareVersion) && { firmwareVersion: this.stationInfo.firmwareVersion },
     };
     this.configuration = this.getTemplateChargingStationConfiguration();
-    this.supervisionUrl = this.getSupervisionURL();
-    this.wsConnectionUrl = this.supervisionUrl + '/' + this.stationInfo.chargingStationId;
+    this.wsConnectionUrl = new URL(this.getSupervisionURL().href + '/' + this.stationInfo.chargingStationId);
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -560,11 +551,7 @@ export default class ChargingStation {
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
       this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
-      this.performanceObserver = new PerformanceObserver((list) => {
-        const entry = list.getEntries()[0];
-        this.performanceStatistics.logPerformance(entry, Constants.ENTITY_CHARGING_STATION);
-        this.performanceObserver.disconnect();
-      });
+      this.performanceObserver = PerformanceStatistics.initPerformanceObserver(Constants.ENTITY_CHARGING_STATION, this.performanceStatistics, this.performanceObserver);
     }
   }
 
@@ -606,7 +593,7 @@ export default class ChargingStation {
   }
 
   private async onOpen(): Promise<void> {
-    logger.info(`${this.logPrefix()} Is connected to server through ${this.wsConnectionUrl}`);
+    logger.info(`${this.logPrefix()} Connected to server through ${this.wsConnectionUrl.toString()}`);
     if (!this.isRegistered()) {
       // Send BootNotification
       let registrationRetryCount = 0;
@@ -714,11 +701,11 @@ export default class ChargingStation {
   }
 
   private onPing(): void {
-    logger.debug(this.logPrefix() + ' Has received a WS ping (rfc6455) from the server');
+    logger.debug(this.logPrefix() + ' Received a WS ping (rfc6455) from the server');
   }
 
   private onPong(): void {
-    logger.debug(this.logPrefix() + ' Has received a WS pong (rfc6455) from the server');
+    logger.debug(this.logPrefix() + ' Received a WS pong (rfc6455) from the server');
   }
 
   private async onError(errorEvent: any): Promise<void> {
@@ -917,7 +904,7 @@ export default class ChargingStation {
     }
   }
 
-  private getSupervisionURL(): string {
+  private getSupervisionURL(): URL {
     const supervisionUrls = Utils.cloneObject<string | string[]>(this.stationInfo.supervisionURL ? this.stationInfo.supervisionURL : Configuration.getSupervisionURLs());
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
@@ -927,9 +914,9 @@ export default class ChargingStation {
         // Get a random url
         indexUrl = Math.floor(Math.random() * supervisionUrls.length);
       }
-      return supervisionUrls[indexUrl];
+      return new URL(supervisionUrls[indexUrl]);
     }
-    return supervisionUrls as string;
+    return new URL(supervisionUrls as string);
   }
 
   private getHeartbeatInterval(): number | undefined {
@@ -967,7 +954,7 @@ export default class ChargingStation {
         break;
     }
     this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
-    logger.info(this.logPrefix() + ' Will communicate through URL ' + this.supervisionUrl);
+    logger.info(this.logPrefix() + ' Open connection to URL ' + this.wsConnectionUrl.toString());
   }
 
   private stopMeterValues(connectorId: number) {

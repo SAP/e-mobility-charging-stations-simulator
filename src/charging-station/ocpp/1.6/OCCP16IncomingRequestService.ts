@@ -291,11 +291,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 logger.debug(this.chargingStation.logPrefix() + ' Transaction remotely STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorId.toString() + ' for idTag ' + commandPayload.idTag);
                 return Constants.OCPP_RESPONSE_ACCEPTED;
               }
-              return await this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
+              return this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
             }
-            return await this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
+            return this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
           }
-          return await this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
+          return this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
         }
         // No authorization check required, start transaction
         if (this.setRemoteStartTransactionChargingProfile(transactionConnectorId, commandPayload.chargingProfile)) {
@@ -303,13 +303,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             logger.debug(this.chargingStation.logPrefix() + ' Transaction remotely STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorId.toString() + ' for idTag ' + commandPayload.idTag);
             return Constants.OCPP_RESPONSE_ACCEPTED;
           }
-          return await this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
+          return this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
         }
-        return await this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
+        return this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
       }
-      return await this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
+      return this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
     }
-    return await this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
+    return this.notifyRemoteStartTransactionRejected(transactionConnectorId, commandPayload.idTag);
   }
 
   private async notifyRemoteStartTransactionRejected(connectorId: number, idTag: string): Promise<DefaultResponse> {
