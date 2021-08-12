@@ -17,16 +17,16 @@ export default class PerformanceStatistics {
     this.commandsStatistics = { id: this.objId ? this.objId : 'Object id not specified', commandsStatisticsData: {} };
   }
 
-  public static initPerformanceObserver(entity: string, performanceStatistics: PerformanceStatistics, performanceObserver: PerformanceObserver): PerformanceObserver {
-    return new PerformanceObserver((list) => {
-      const entry = list.getEntries()[0];
-      performanceStatistics.logPerformance(entry, entity);
-      performanceObserver && performanceObserver.disconnect();
+  public static initFunctionPerformanceObserver(performanceStatistics: PerformanceStatistics): PerformanceObserver {
+    const performanceObserver = new PerformanceObserver((list, observer) => {
+      performanceStatistics.logPerformance(list.getEntries()[0]);
+      observer.disconnect();
     });
+    performanceObserver.observe({ entryTypes: ['function'] });
+    return performanceObserver;
   }
 
-  public static timedFunction(method: (...optionalParams: any[]) => any, performanceObserver: PerformanceObserver): (...optionalParams: any[]) => any {
-    performanceObserver.observe({ entryTypes: ['function'] });
+  public static timedFunction(method: (...optionalParams: any[]) => any): (...optionalParams: any[]) => any {
     return performance.timerify(method);
   }
 
@@ -70,15 +70,15 @@ export default class PerformanceStatistics {
     }
   }
 
-  public logPerformance(entry: PerformanceEntry, className: string): void {
-    this.addPerformanceTimer(entry.name as RequestCommand | IncomingRequestCommand, entry.duration);
+  public logPerformance(entry: PerformanceEntry): void {
+    this.addPerformanceTimer(entry.name, entry.duration);
     const perfEntry: PerfEntry = {
       name: entry.name,
       entryType: entry.entryType,
       startTime: entry.startTime,
       duration: entry.duration
     };
-    logger.info(`${this.logPrefix()} ${className} method(s) entry: %j`, perfEntry);
+    logger.debug(`${this.logPrefix()} Method or function '${entry.name}' performance entry: %j`, perfEntry);
   }
 
   public start(): void {
@@ -124,30 +124,29 @@ export default class PerformanceStatistics {
     return Math.sqrt(totalGeometricDeviation / dataSet.length);
   }
 
-  private addPerformanceTimer(command: RequestCommand | IncomingRequestCommand, duration: number): void {
-    // Map to proper command name
-    const MAP_COMMAND = {
-      sendMeterValues: RequestCommand.METER_VALUES,
-      startTransaction: RequestCommand.START_TRANSACTION,
-      stopTransaction: RequestCommand.STOP_TRANSACTION,
+  private addPerformanceTimer(name: string, duration: number): void {
+    // Rename entry name
+    const MAP_NAME = {
+      startATGTransaction: 'StartATGTransaction',
+      stopATGTransaction: 'StartATGTransaction'
     };
-    if (MAP_COMMAND[command]) {
-      command = MAP_COMMAND[command] as RequestCommand | IncomingRequestCommand;
+    if (MAP_NAME[name]) {
+      name = MAP_NAME[name] as string;
     }
     // Initialize command statistics
-    if (!this.commandsStatistics.commandsStatisticsData[command]) {
-      this.commandsStatistics.commandsStatisticsData[command] = {} as CommandStatisticsData;
+    if (!this.commandsStatistics.commandsStatisticsData[name]) {
+      this.commandsStatistics.commandsStatisticsData[name] = {} as CommandStatisticsData;
     }
     // Update current statistics timers
-    this.commandsStatistics.commandsStatisticsData[command].countTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].countTimeMeasurement ? this.commandsStatistics.commandsStatisticsData[command].countTimeMeasurement + 1 : 1;
-    this.commandsStatistics.commandsStatisticsData[command].currentTimeMeasurement = duration;
-    this.commandsStatistics.commandsStatisticsData[command].minTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].minTimeMeasurement ? (this.commandsStatistics.commandsStatisticsData[command].minTimeMeasurement > duration ? duration : this.commandsStatistics.commandsStatisticsData[command].minTimeMeasurement) : duration;
-    this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement ? (this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement < duration ? duration : this.commandsStatistics.commandsStatisticsData[command].maxTimeMeasurement) : duration;
-    this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement ? this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement + duration : duration;
-    this.commandsStatistics.commandsStatisticsData[command].avgTimeMeasurement = this.commandsStatistics.commandsStatisticsData[command].totalTimeMeasurement / this.commandsStatistics.commandsStatisticsData[command].countTimeMeasurement;
-    Array.isArray(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries) ? this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries.push(duration) : this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, duration);
-    this.commandsStatistics.commandsStatisticsData[command].medTimeMeasurement = this.median(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries);
-    this.commandsStatistics.commandsStatisticsData[command].stdDevTimeMeasurement = this.stdDeviation(this.commandsStatistics.commandsStatisticsData[command].timeMeasurementSeries);
+    this.commandsStatistics.commandsStatisticsData[name].countTimeMeasurement = this.commandsStatistics.commandsStatisticsData[name].countTimeMeasurement ? this.commandsStatistics.commandsStatisticsData[name].countTimeMeasurement + 1 : 1;
+    this.commandsStatistics.commandsStatisticsData[name].currentTimeMeasurement = duration;
+    this.commandsStatistics.commandsStatisticsData[name].minTimeMeasurement = this.commandsStatistics.commandsStatisticsData[name].minTimeMeasurement ? (this.commandsStatistics.commandsStatisticsData[name].minTimeMeasurement > duration ? duration : this.commandsStatistics.commandsStatisticsData[name].minTimeMeasurement) : duration;
+    this.commandsStatistics.commandsStatisticsData[name].maxTimeMeasurement = this.commandsStatistics.commandsStatisticsData[name].maxTimeMeasurement ? (this.commandsStatistics.commandsStatisticsData[name].maxTimeMeasurement < duration ? duration : this.commandsStatistics.commandsStatisticsData[name].maxTimeMeasurement) : duration;
+    this.commandsStatistics.commandsStatisticsData[name].totalTimeMeasurement = this.commandsStatistics.commandsStatisticsData[name].totalTimeMeasurement ? this.commandsStatistics.commandsStatisticsData[name].totalTimeMeasurement + duration : duration;
+    this.commandsStatistics.commandsStatisticsData[name].avgTimeMeasurement = this.commandsStatistics.commandsStatisticsData[name].totalTimeMeasurement / this.commandsStatistics.commandsStatisticsData[name].countTimeMeasurement;
+    Array.isArray(this.commandsStatistics.commandsStatisticsData[name].timeMeasurementSeries) ? this.commandsStatistics.commandsStatisticsData[name].timeMeasurementSeries.push(duration) : this.commandsStatistics.commandsStatisticsData[name].timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, duration);
+    this.commandsStatistics.commandsStatisticsData[name].medTimeMeasurement = this.median(this.commandsStatistics.commandsStatisticsData[name].timeMeasurementSeries);
+    this.commandsStatistics.commandsStatisticsData[name].stdDevTimeMeasurement = this.stdDeviation(this.commandsStatistics.commandsStatisticsData[name].timeMeasurementSeries);
   }
 
   private logPrefix(): string {

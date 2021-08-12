@@ -22,7 +22,6 @@ import OCPPError from './OCPPError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
-import { PerformanceObserver } from 'perf_hooks';
 import PerformanceStatistics from '../utils/PerformanceStatistics';
 import { StopTransactionReason } from '../types/ocpp/Transaction';
 import { URL } from 'url';
@@ -55,7 +54,6 @@ export default class ChargingStation {
   private hasSocketRestarted: boolean;
   private autoReconnectRetryCount: number;
   private automaticTransactionGeneration!: AutomaticTransactionGenerator;
-  private performanceObserver!: PerformanceObserver;
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
   constructor(index: number, stationTemplateFile: string) {
@@ -551,7 +549,7 @@ export default class ChargingStation {
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
       this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
-      this.performanceObserver = PerformanceStatistics.initPerformanceObserver(Constants.ENTITY_CHARGING_STATION, this.performanceStatistics, this.performanceObserver);
+      PerformanceStatistics.initFunctionPerformanceObserver(this.performanceStatistics);
     }
   }
 
@@ -593,7 +591,7 @@ export default class ChargingStation {
   }
 
   private async onOpen(): Promise<void> {
-    logger.info(`${this.logPrefix()} Connected to server through ${this.wsConnectionUrl.toString()}`);
+    logger.info(`${this.logPrefix()} Connected to OCPP server through ${this.wsConnectionUrl.toString()}`);
     if (!this.isRegistered()) {
       // Send BootNotification
       let registrationRetryCount = 0;
@@ -954,7 +952,7 @@ export default class ChargingStation {
         break;
     }
     this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
-    logger.info(this.logPrefix() + ' Open connection to URL ' + this.wsConnectionUrl.toString());
+    logger.info(this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString());
   }
 
   private stopMeterValues(connectorId: number) {
