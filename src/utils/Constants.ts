@@ -3,9 +3,6 @@ import { AvailabilityStatus, ChargingProfileStatus, ClearChargingProfileStatus, 
 import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
 
 export default class Constants {
-  static readonly ENTITY_CHARGING_STATION = 'ChargingStation';
-  static readonly ENTITY_AUTOMATIC_TRANSACTION_GENERATOR = 'AutomaticTransactionGenerator';
-
   static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: DefaultStatus.ACCEPTED });
   static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: DefaultStatus.REJECTED });
