@@ -13,17 +13,9 @@ export default class PerformanceStatistics {
   private commandsStatistics: CommandStatistics;
 
   public constructor(objId: string) {
+    this.initFunctionPerformanceObserver();
     this.objId = objId;
     this.commandsStatistics = { id: this.objId ? this.objId : 'Object id not specified', commandsStatisticsData: {} };
-  }
-
-  public static initFunctionPerformanceObserver(performanceStatistics: PerformanceStatistics): PerformanceObserver {
-    const performanceObserver = new PerformanceObserver((list, observer) => {
-      performanceStatistics.logPerformance(list.getEntries()[0]);
-      observer.disconnect();
-    });
-    performanceObserver.observe({ entryTypes: ['function'] });
-    return performanceObserver;
   }
 
   public static timedFunction(method: (...optionalParams: any[]) => any): (...optionalParams: any[]) => any {
@@ -78,11 +70,19 @@ export default class PerformanceStatistics {
       startTime: entry.startTime,
       duration: entry.duration
     };
-    logger.debug(`${this.logPrefix()} Method or function '${entry.name}' performance entry: %j`, perfEntry);
+    logger.debug(`${this.logPrefix()} method or function '${entry.name}' performance entry: %j`, perfEntry);
   }
 
   public start(): void {
     this.displayInterval();
+  }
+
+  private initFunctionPerformanceObserver(): void {
+    const performanceObserver = new PerformanceObserver((list, observer) => {
+      this.logPerformance(list.getEntries()[0]);
+      observer.disconnect();
+    });
+    performanceObserver.observe({ entryTypes: ['function'] });
   }
 
   private display(): void {

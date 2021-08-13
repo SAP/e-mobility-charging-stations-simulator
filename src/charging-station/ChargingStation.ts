@@ -549,7 +549,6 @@ export default class ChargingStation {
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
       this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
-      PerformanceStatistics.initFunctionPerformanceObserver(this.performanceStatistics);
     }
   }
 
