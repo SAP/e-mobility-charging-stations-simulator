@@ -385,11 +385,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         throw new Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
       } catch (error) {
         await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.UploadFailed);
-        this.handleIncomingRequestError(IncomingRequestCommand.GET_DIAGNOSTICS, error);
         if (ftpClient) {
           ftpClient.close();
         }
-        return Constants.OCPP_RESPONSE_EMPTY;
+        return this.handleIncomingRequestError(IncomingRequestCommand.GET_DIAGNOSTICS, error, Constants.OCPP_RESPONSE_EMPTY);
       }
     } else {
       logger.error(`${this.chargingStation.logPrefix()} Unsupported protocol ${uri.protocol} to transfer the diagnostic logs archive`);
