@@ -11,6 +11,7 @@ import { MessageType } from '../../types/ocpp/MessageType';
 import { MeterValue } from '../../types/ocpp/MeterValues';
 import OCPPError from '../OCPPError';
 import OCPPResponseService from './OCPPResponseService';
+import PerformanceStatistics from '../../utils/PerformanceStatistics';
 import logger from '../../utils/Logger';
 
 export default abstract class OCPPRequestService {
@@ -50,10 +51,12 @@ export default abstract class OCPPRequestService {
       // Check if wsConnection opened and charging station registered
       if (this.chargingStation.isWebSocketOpen() && (this.chargingStation.isRegistered() || commandName === RequestCommand.BOOT_NOTIFICATION)) {
         if (this.chargingStation.getEnableStatistics()) {
-          this.chargingStation.performanceStatistics.addMessage(commandName, messageType);
+          this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
         }
         // Yes: Send Message
+        const beginId = PerformanceStatistics.beginMeasure(commandName);
         this.chargingStation.wsConnection.send(messageToSend);
+        PerformanceStatistics.endMeasure(commandName, beginId);
       } else if (commandName !== RequestCommand.BOOT_NOTIFICATION) {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
@@ -77,7 +80,7 @@ export default abstract class OCPPRequestService {
        */
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
         if (self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.performanceStatistics.addMessage(commandName, MessageType.CALL_RESULT_MESSAGE);
+          self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE);
         }
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
@@ -91,7 +94,7 @@ export default abstract class OCPPRequestService {
        */
       function rejectCallback(error: OCPPError): void {
         if (self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.performanceStatistics.addMessage(commandName, MessageType.CALL_ERROR_MESSAGE);
+          self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
         }
         logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception
@@ -114,7 +117,7 @@ export default abstract class OCPPRequestService {
   public abstract sendAuthorize(connectorId: number, idTag?: string): Promise<AuthorizeResponse>;
   public abstract sendStartTransaction(connectorId: number, idTag?: string): Promise<StartTransactionResponse>;
   public abstract sendStopTransaction(transactionId: number, meterStop: number, idTag?: string, reason?: StopTransactionReason): Promise<StopTransactionResponse>;
-  public abstract sendMeterValues(connectorId: number, transactionId: number, interval: number, self: OCPPRequestService): Promise<void>;
+  public abstract sendMeterValues(connectorId: number, transactionId: number, interval: number): Promise<void>;
   public abstract sendTransactionBeginMeterValues(connectorId: number, transactionId: number, beginMeterValue: MeterValue): Promise<void>;
   public abstract sendTransactionEndMeterValues(connectorId: number, transactionId: number, endMeterValue: MeterValue): Promise<void>;
   public abstract sendDiagnosticsStatusNotification(diagnosticsStatus: DiagnosticsStatus): Promise<void>;

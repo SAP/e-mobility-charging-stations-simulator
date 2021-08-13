@@ -290,7 +290,7 @@ export default class ChargingStation {
     if (interval > 0) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.getConnector(connectorId).transactionSetInterval = setInterval(async (): Promise<void> => {
-        await this.ocppRequestService.sendMeterValues(connectorId, this.getConnector(connectorId).transactionId, interval, this.ocppRequestService);
+        await this.ocppRequestService.sendMeterValues(connectorId, this.getConnector(connectorId).transactionId, interval);
       }, interval);
     } else {
       logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.milliSecondsToHHMMSS(interval) : interval}, not sending MeterValues`);
@@ -413,6 +413,7 @@ export default class ChargingStation {
     if (!Utils.isEmptyArray(this.messageQueue)) {
       this.messageQueue.forEach((message, index) => {
         this.messageQueue.splice(index, 1);
+        // TODO: evaluate the need to track performance
         this.wsConnection.send(message);
       });
     }
@@ -649,7 +650,7 @@ export default class ChargingStation {
         // Incoming Message
         case MessageType.CALL_MESSAGE:
           if (this.getEnableStatistics()) {
-            this.performanceStatistics.addMessage(commandName, messageType);
+            this.performanceStatistics.addRequestStatistic(commandName, messageType);
           }
           // Process the call
           await this.ocppIncomingRequestService.handleRequest(messageId, commandName, commandPayload);
