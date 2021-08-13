@@ -75,7 +75,9 @@ export default class PerformanceStatistics {
   }
 
   public stop(): void {
-    clearInterval(this.displayInterval);
+    if (this.displayInterval) {
+      clearInterval(this.displayInterval);
+    }
     performance.clearMarks();
     this.performanceObserver.disconnect();
   }

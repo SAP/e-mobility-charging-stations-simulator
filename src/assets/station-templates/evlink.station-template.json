@@ -37,6 +37,11 @@
         "key": "AuthorizeRemoteTxRequests",
         "readonly": false,
         "value": "false"
+      },
+      {
+        "key": "WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
       }
     ]
   },

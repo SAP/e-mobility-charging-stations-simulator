@@ -4,6 +4,7 @@ import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerData } from '../types/Worker';
+import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerStaticPool<T> extends WorkerAbstract {
   private pool: StaticPool;
@@ -68,11 +69,7 @@ class StaticPool extends FixedThreadPool<WorkerData> {
 
   public static getInstance(numberOfThreads: number, workerScript: string, opts?: PoolOptions<Worker>): StaticPool {
     if (!StaticPool.instance) {
-      opts.exitHandler = opts?.exitHandler ?? ((code) => {
-        if (code !== 0) {
-          console.error(`Worker stopped with exit code ${code}`);
-        }
-      });
+      opts.exitHandler = opts?.exitHandler ?? WorkerUtils.defaultExitHandler;
       StaticPool.instance = new StaticPool(numberOfThreads, workerScript, opts);
     }
     return StaticPool.instance;

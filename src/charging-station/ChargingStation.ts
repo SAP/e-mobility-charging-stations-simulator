@@ -298,6 +298,9 @@ export default class ChargingStation {
   }
 
   public start(): void {
+    if (this.getEnableStatistics()) {
+      this.performanceStatistics.start();
+    }
     this.openWSConnection();
     // Monitor authorization file
     this.startAuthorizationFileMonitoring();
@@ -329,18 +332,20 @@ export default class ChargingStation {
     if (this.isWebSocketOpen()) {
       this.wsConnection.close();
     }
+    if (this.getEnableStatistics()) {
+      this.performanceStatistics.stop();
+    }
     this.bootNotificationResponse = null;
     this.hasStopped = true;
   }
 
   public getConfigurationKey(key: string | StandardParametersKey, caseInsensitive = false): ConfigurationKey | undefined {
-    const configurationKey: ConfigurationKey | undefined = this.configuration.configurationKey.find((configElement) => {
+    return this.configuration.configurationKey.find((configElement) => {
       if (caseInsensitive) {
         return configElement.key.toLowerCase() === key.toLowerCase();
       }
       return configElement.key === key;
     });
-    return configurationKey;
   }
 
   public addConfigurationKey(key: string | StandardParametersKey, value: string, readonly = false, visible = true, reboot = false): void {
@@ -716,7 +721,7 @@ export default class ChargingStation {
   }
 
   private getTemplateChargingStationConfiguration(): ChargingStationConfiguration {
-    return this.stationInfo.Configuration ? this.stationInfo.Configuration : {} as ChargingStationConfiguration;
+    return this.stationInfo.Configuration ?? {} as ChargingStationConfiguration;
   }
 
   private getAuthorizationFile(): string | undefined {
@@ -840,9 +845,6 @@ export default class ChargingStation {
     }
     // Start the ATG
     this.startAutomaticTransactionGenerator();
-    if (this.getEnableStatistics()) {
-      this.performanceStatistics.start();
-    }
   }
 
   private startAutomaticTransactionGenerator() {
@@ -1012,6 +1014,8 @@ export default class ChargingStation {
   }
 
   private async reconnect(error: any): Promise<void> {
+    // Stop WebSocket ping
+    this.stopWebSocketPing();
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop the ATG if needed

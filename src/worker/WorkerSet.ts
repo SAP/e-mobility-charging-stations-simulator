@@ -3,6 +3,7 @@ import { WorkerEvents, WorkerSetElement } from '../types/Worker';
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
+import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerSet<T> extends WorkerAbstract {
   public maxElementsPerWorker: number;
@@ -76,9 +77,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
     worker.on('message', () => { });
     worker.on('error', () => { });
     worker.on('exit', (code) => {
-      if (code !== 0) {
-        console.error(`Worker stopped with exit code ${code}`);
-      }
+      WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });

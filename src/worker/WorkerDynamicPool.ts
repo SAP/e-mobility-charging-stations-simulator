@@ -4,6 +4,7 @@ import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerData } from '../types/Worker';
+import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerDynamicPool<T> extends WorkerAbstract {
   private pool: DynamicPool;
@@ -70,11 +71,7 @@ class DynamicPool extends DynamicThreadPool<WorkerData> {
 
   public static getInstance(min: number, max: number, workerScript: string, opts?: PoolOptions<Worker>): DynamicPool {
     if (!DynamicPool.instance) {
-      opts.exitHandler = opts?.exitHandler ?? ((code) => {
-        if (code !== 0) {
-          console.error(`Worker stopped with exit code ${code}`);
-        }
-      });
+      opts.exitHandler = opts?.exitHandler ?? WorkerUtils.defaultExitHandler;
       DynamicPool.instance = new DynamicPool(min, max, workerScript, opts);
     }
     return DynamicPool.instance;
