@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "basic-ftp": "^4.6.6",
-    "mongodb": "^3.6.11",
+    "mongodb": "^4.1.0",
     "poolifier": "^2.0.2",
     "source-map-support": "^0.5.19",
     "tar": "^6.1.8",
@@ -96,7 +96,7 @@
     "mochawesome": "^6.2.2",
     "npm-check": "^5.9.2",
     "nyc": "^15.1.0",
-    "release-it": "^14.11.3",
+    "release-it": "^14.11.4",
     "robohydra": "^0.6.9",
     "rollup": "^2.56.2",
     "rollup-plugin-analyzer": "^4.0.0",

@@ -53,12 +53,12 @@ export default class Utils {
   }
 
   static convertToInt(value: any): number {
-    let changedValue = value;
+    let changedValue: number = value;
     if (!value) {
       return 0;
     }
     if (Number.isSafeInteger(value)) {
-      return value;
+      return changedValue;
     }
     // Check
     if (Utils.isString(value)) {
@@ -69,7 +69,7 @@ export default class Utils {
   }
 
   static convertToFloat(value: any): number {
-    let changedValue = value;
+    let changedValue: number = value;
     if (!value) {
       return 0;
     }

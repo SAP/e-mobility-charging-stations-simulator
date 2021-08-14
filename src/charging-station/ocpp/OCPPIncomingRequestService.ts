@@ -9,10 +9,10 @@ export default abstract class OCPPIncomingRequestService {
     this.chargingStation = chargingStation;
   }
 
-  protected handleIncomingRequestError(commandName: IncomingRequestCommand, error: Error, ocppResponse?): unknown {
+  protected handleIncomingRequestError(commandName: IncomingRequestCommand, error: Error, errorOcppResponse?: Record<string, unknown>): unknown {
     logger.error(this.chargingStation.logPrefix() + ' Incoming request command ' + commandName + ' error: %j', error);
-    if (ocppResponse) {
-      return ocppResponse;
+    if (errorOcppResponse) {
+      return errorOcppResponse;
     }
     throw error;
   }
