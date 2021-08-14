@@ -79,17 +79,22 @@ export default class PerformanceStatistics {
       clearInterval(this.displayInterval);
     }
     performance.clearMarks();
-    this.performanceObserver.disconnect();
+    this.performanceObserver?.disconnect();
+  }
+
+  public restart(): void {
+    this.stop();
+    this.start();
   }
 
   private initializePerformanceObserver(): void {
     this.performanceObserver = new PerformanceObserver((list) => {
-      this.logPerformanceEntry(list.getEntries()[0]);
+      this.addPerformanceEntry(list.getEntries()[0]);
     });
     this.performanceObserver.observe({ entryTypes: ['measure'] });
   }
 
-  private logPerformanceEntry(entry: PerformanceEntry): void {
+  private addPerformanceEntry(entry: PerformanceEntry): void {
     this.addPerformanceStatistic(entry.name, entry.duration);
     logger.debug(`${this.logPrefix()} '${entry.name}' performance entry: %j`, entry);
   }

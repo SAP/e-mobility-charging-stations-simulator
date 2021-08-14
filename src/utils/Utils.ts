@@ -61,7 +61,7 @@ export default class Utils {
       return value;
     }
     // Check
-    if (typeof value === 'string') {
+    if (Utils.isString(value)) {
       // Create Object
       changedValue = parseInt(value);
     }
@@ -74,7 +74,7 @@ export default class Utils {
       return 0;
     }
     // Check
-    if (typeof value === 'string') {
+    if (Utils.isString(value)) {
       // Create Object
       changedValue = parseFloat(value);
     }

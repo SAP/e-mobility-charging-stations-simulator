@@ -992,13 +992,17 @@ export default class ChargingStation {
           logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
           // Initialize
           this.initialize();
-          // Stop the ATG
+          // Restart the ATG
           if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
           this.automaticTransactionGeneration) {
             await this.automaticTransactionGeneration.stop();
           }
-          // Start the ATG
           this.startAutomaticTransactionGenerator();
+          if (this.getEnableStatistics()) {
+            this.performanceStatistics.restart();
+          } else {
+            this.performanceStatistics.stop();
+          }
           // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
         } catch (error) {
           logger.error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
