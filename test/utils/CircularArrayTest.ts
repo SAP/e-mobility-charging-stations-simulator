@@ -9,7 +9,7 @@ describe('Circular array test suite', () => {
 
   it('Verify circular array default size at instance creation', () => {
     const circularArray = new CircularArray();
-    expect(circularArray.size).toBe(2000);
+    expect(circularArray.size).toBe(Number.MAX_SAFE_INTEGER);
   });
 
   it('Verify that circular array size can be set at instance creation', () => {
