@@ -1,3 +1,5 @@
+// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+
 import { StationWorkerData, WorkerEvents } from '../types/Worker';
 import { parentPort, workerData } from 'worker_threads';
 

@@ -1,3 +1,5 @@
+// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+
 import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from './CircularArray';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';

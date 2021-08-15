@@ -1,3 +1,5 @@
+// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+
 import { WorkerEvents, WorkerSetElement } from '../types/Worker';
 
 import Utils from '../utils/Utils';
