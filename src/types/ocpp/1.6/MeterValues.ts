@@ -97,7 +97,7 @@ export interface OCPP16MeterValue {
 export interface MeterValuesRequest {
   connectorId: number;
   transactionId?: number;
-  meterValue: OCPP16MeterValue | OCPP16MeterValue[];
+  meterValue: OCPP16MeterValue[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface

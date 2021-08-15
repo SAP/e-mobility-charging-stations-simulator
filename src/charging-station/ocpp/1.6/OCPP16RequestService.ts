@@ -332,7 +332,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       const payload: MeterValuesRequest = {
         connectorId,
         transactionId,
-        meterValue,
+        meterValue: [meterValue],
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
     } catch (error) {
@@ -345,7 +345,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       const payload: MeterValuesRequest = {
         connectorId,
         transactionId,
-        meterValue: beginMeterValue,
+        meterValue: [beginMeterValue],
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
     } catch (error) {
@@ -358,7 +358,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       const payload: MeterValuesRequest = {
         connectorId,
         transactionId,
-        meterValue: endMeterValue,
+        meterValue: [endMeterValue],
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
     } catch (error) {
