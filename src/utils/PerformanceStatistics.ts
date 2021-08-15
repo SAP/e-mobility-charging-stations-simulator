@@ -28,6 +28,7 @@ export default class PerformanceStatistics {
 
   public static endMeasure(name: string, beginId: string): void {
     performance.measure(name, beginId);
+    performance.clearMarks(beginId);
   }
 
   public addRequestStatistic(command: RequestCommand | IncomingRequestCommand, messageType: MessageType): void {
