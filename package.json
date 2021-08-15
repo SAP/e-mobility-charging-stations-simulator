@@ -11,6 +11,13 @@
   },
   "description": "Electric Vehicle charging stations simulator",
   "author": "SAP E-Mobility Labs France <e-mobility@sap.com>",
+  "contributors": [
+    {
+      "name": "Jérôme Benoit",
+      "email": "jerome.benoit@piment-noir.org",
+      "url": "https://github.com/jerome-benoit"
+    }
+  ],
   "license": "Apache-2.0",
   "licenses": [
     {
