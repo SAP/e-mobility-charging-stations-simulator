@@ -12,6 +12,7 @@ export interface StatisticsData {
   totalTimeMeasurement: number;
   avgTimeMeasurement: number;
   medTimeMeasurement: number;
+  ninetyFiveThPercentileTimeMeasurement: number;
   stdDevTimeMeasurement: number;
 }
 

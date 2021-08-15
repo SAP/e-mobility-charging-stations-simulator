@@ -90,14 +90,10 @@ export default class PerformanceStatistics {
 
   private initializePerformanceObserver(): void {
     this.performanceObserver = new PerformanceObserver((list) => {
-      this.addPerformanceEntry(list.getEntries()[0]);
+      this.addPerformanceEntryToStatistics(list.getEntries()[0]);
+      logger.debug(`${this.logPrefix()} '${list.getEntries()[0].name}' performance entry: %j`, list.getEntries()[0]);
     });
     this.performanceObserver.observe({ entryTypes: ['measure'] });
-  }
-
-  private addPerformanceEntry(entry: PerformanceEntry): void {
-    this.addPerformanceStatistic(entry.name, entry.duration);
-    logger.debug(`${this.logPrefix()} '${entry.name}' performance entry: %j`, entry);
   }
 
   private logStatistics(): void {
@@ -127,6 +123,28 @@ export default class PerformanceStatistics {
     return (sortedDataSet[(middleIndex - 1)] + sortedDataSet[middleIndex]) / 2;
   }
 
+  // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
+  private percentile(dataSet: number[], percentile: number): number {
+    if (percentile < 0 && percentile > 100) {
+      throw new RangeError('Percentile is not between 0 and 100');
+    }
+    if (Utils.isEmptyArray(dataSet)) {
+      return 0;
+    }
+    const sortedDataSet = dataSet.slice().sort();
+    if (percentile === 0) {
+      return sortedDataSet[0];
+    }
+    if (percentile === 100) {
+      return sortedDataSet[sortedDataSet.length - 1];
+    }
+    const percentileIndex = ((percentile / 100) * sortedDataSet.length) - 1;
+    if (Number.isInteger(percentileIndex)) {
+      return (sortedDataSet[percentileIndex] + sortedDataSet[percentileIndex + 1]) / 2;
+    }
+    return sortedDataSet[Math.round(percentileIndex)];
+  }
+
   private stdDeviation(dataSet: number[]): number {
     let totalDataSet = 0;
     for (const data of dataSet) {
@@ -141,26 +159,28 @@ export default class PerformanceStatistics {
     return Math.sqrt(totalGeometricDeviation / dataSet.length);
   }
 
-  private addPerformanceStatistic(name: string, duration: number): void {
+  private addPerformanceEntryToStatistics(entry: PerformanceEntry): void {
+    let entryName = entry.name;
     // Rename entry name
-    const MAP_NAME = {};
-    if (MAP_NAME[name]) {
-      name = MAP_NAME[name] as string;
+    const MAP_NAME: Record<string, string> = {};
+    if (MAP_NAME[entryName]) {
+      entryName = MAP_NAME[entryName];
     }
     // Initialize command statistics
-    if (!this.statistics.statisticsData[name]) {
-      this.statistics.statisticsData[name] = {} as StatisticsData;
+    if (!this.statistics.statisticsData[entryName]) {
+      this.statistics.statisticsData[entryName] = {} as StatisticsData;
     }
-    // Update current statistics timers
-    this.statistics.statisticsData[name].countTimeMeasurement = this.statistics.statisticsData[name].countTimeMeasurement ? this.statistics.statisticsData[name].countTimeMeasurement + 1 : 1;
-    this.statistics.statisticsData[name].currentTimeMeasurement = duration;
-    this.statistics.statisticsData[name].minTimeMeasurement = this.statistics.statisticsData[name].minTimeMeasurement ? (this.statistics.statisticsData[name].minTimeMeasurement > duration ? duration : this.statistics.statisticsData[name].minTimeMeasurement) : duration;
-    this.statistics.statisticsData[name].maxTimeMeasurement = this.statistics.statisticsData[name].maxTimeMeasurement ? (this.statistics.statisticsData[name].maxTimeMeasurement < duration ? duration : this.statistics.statisticsData[name].maxTimeMeasurement) : duration;
-    this.statistics.statisticsData[name].totalTimeMeasurement = this.statistics.statisticsData[name].totalTimeMeasurement ? this.statistics.statisticsData[name].totalTimeMeasurement + duration : duration;
-    this.statistics.statisticsData[name].avgTimeMeasurement = this.statistics.statisticsData[name].totalTimeMeasurement / this.statistics.statisticsData[name].countTimeMeasurement;
-    Array.isArray(this.statistics.statisticsData[name].timeMeasurementSeries) ? this.statistics.statisticsData[name].timeMeasurementSeries.push(duration) : this.statistics.statisticsData[name].timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, duration);
-    this.statistics.statisticsData[name].medTimeMeasurement = this.median(this.statistics.statisticsData[name].timeMeasurementSeries);
-    this.statistics.statisticsData[name].stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData[name].timeMeasurementSeries);
+    // Update current statistics
+    this.statistics.statisticsData[entryName].countTimeMeasurement = this.statistics.statisticsData[entryName].countTimeMeasurement ? this.statistics.statisticsData[entryName].countTimeMeasurement + 1 : 1;
+    this.statistics.statisticsData[entryName].currentTimeMeasurement = entry.duration;
+    this.statistics.statisticsData[entryName].minTimeMeasurement = this.statistics.statisticsData[entryName].minTimeMeasurement ? (this.statistics.statisticsData[entryName].minTimeMeasurement > entry.duration ? entry.duration : this.statistics.statisticsData[entryName].minTimeMeasurement) : entry.duration;
+    this.statistics.statisticsData[entryName].maxTimeMeasurement = this.statistics.statisticsData[entryName].maxTimeMeasurement ? (this.statistics.statisticsData[entryName].maxTimeMeasurement < entry.duration ? entry.duration : this.statistics.statisticsData[entryName].maxTimeMeasurement) : entry.duration;
+    this.statistics.statisticsData[entryName].totalTimeMeasurement = this.statistics.statisticsData[entryName].totalTimeMeasurement ? this.statistics.statisticsData[entryName].totalTimeMeasurement + entry.duration : entry.duration;
+    this.statistics.statisticsData[entryName].avgTimeMeasurement = this.statistics.statisticsData[entryName].totalTimeMeasurement / this.statistics.statisticsData[entryName].countTimeMeasurement;
+    Array.isArray(this.statistics.statisticsData[entryName].timeMeasurementSeries) ? this.statistics.statisticsData[entryName].timeMeasurementSeries.push(entry.duration) : this.statistics.statisticsData[entryName].timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, entry.duration);
+    this.statistics.statisticsData[entryName].medTimeMeasurement = this.median(this.statistics.statisticsData[entryName].timeMeasurementSeries);
+    this.statistics.statisticsData[entryName].ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData[entryName].timeMeasurementSeries, 95);
+    this.statistics.statisticsData[entryName].stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData[entryName].timeMeasurementSeries);
   }
 
   private logPrefix(): string {
