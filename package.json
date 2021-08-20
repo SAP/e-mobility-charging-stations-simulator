@@ -99,7 +99,7 @@
     "eslint-plugin-node": "^11.1.0",
     "expect": "^27.0.6",
     "mbt": "^1.2.3",
-    "mocha": "^9.0.3",
+    "mocha": "^9.1.0",
     "mochawesome": "^6.2.2",
     "npm-check": "^5.9.2",
     "nyc": "^15.1.0",
