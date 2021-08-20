@@ -43,6 +43,8 @@ stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | a
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
 supervisionURL | | '' | string | connection URI to OCPP-J server
+supervisionUser | | '' | string | basic HTTP authentication user to OCPP-J server
+supervisionPassword | | '' | string | basic HTTP authentication password to OCPP-J server
 ocppVersion | 1.6 | 1.6 | string | OCPP version 
 ocppProtocol | json | json | string | OCPP protocol
 authorizationFile | | '' | string | RFID tags list file relative to src/assets path

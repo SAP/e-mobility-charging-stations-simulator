@@ -5,12 +5,13 @@ import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles
 import Connectors, { Connector, SampledValueTemplate } from '../types/Connectors';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import Requests, { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand } from '../types/ocpp/Requests';
-import WebSocket, { MessageEvent } from 'ws';
+import WebSocket, { ClientOptions, MessageEvent } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
 import { ChargingProfile } from '../types/ocpp/ChargingProfile';
 import ChargingStationInfo from '../types/ChargingStationInfo';
+import { ClientRequestArgs } from 'http';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import FileUtils from '../utils/FileUtils';
@@ -938,9 +939,12 @@ export default class ChargingStation {
     }
   }
 
-  private openWSConnection(options?: WebSocket.ClientOptions, forceCloseOpened = false): void {
-    options ?? {} as WebSocket.ClientOptions;
+  private openWSConnection(options?: ClientOptions & ClientRequestArgs, forceCloseOpened = false): void {
+    options ?? {};
     options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+    if (!Utils.isNullOrUndefined(this.stationInfo.supervisionUser) && !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)) {
+      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
+    }
     if (this.isWebSocketOpen() && forceCloseOpened) {
       this.wsConnection.close();
     }

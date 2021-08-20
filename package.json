@@ -68,7 +68,7 @@
     "mongodb": "^4.1.0",
     "poolifier": "^2.0.2",
     "source-map-support": "^0.5.19",
-    "tar": "^6.1.8",
+    "tar": "^6.1.10",
     "tslib": "^2.3.1",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
@@ -84,7 +84,7 @@
     "@rollup/plugin-json": "^4.1.0",
     "@types/mocha": "^9.0.0",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^14.17.9",
+    "@types/node": "^14.17.10",
     "@types/tar": "^4.0.5",
     "@types/uuid": "^8.3.1",
     "@types/ws": "^7.4.7",
@@ -94,7 +94,7 @@
     "clinic": "^9.0.0",
     "cross-env": "^7.0.3",
     "eslint": "^7.32.0",
-    "eslint-plugin-import": "^2.24.0",
+    "eslint-plugin-import": "^2.24.1",
     "eslint-plugin-jsdoc": "^36.0.7",
     "eslint-plugin-node": "^11.1.0",
     "expect": "^27.0.6",
@@ -112,7 +112,7 @@
     "rollup-plugin-istanbul": "^3.0.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",
-    "ts-node": "^10.2.0",
+    "ts-node": "^10.2.1",
     "typescript": "^4.3.5"
   }
 }
