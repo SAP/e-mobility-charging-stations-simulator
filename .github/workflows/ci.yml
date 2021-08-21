@@ -1,4 +1,4 @@
-name: Build CI
+name: CI
 on:
   push:
     branches:
@@ -15,6 +15,8 @@ jobs:
         node-version: [14.x]
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
       with:
@@ -23,7 +25,16 @@ jobs:
       run: npm ci
     - name: npm run build
       run: npm run build
-  docker:
+    - name: npm run lint
+      run: npm run lint
+    - name: npm test
+      run: npm test
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.USER_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  build-docker:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -34,16 +45,3 @@ jobs:
       run: |
         cd docker
         make SUBMODULES_INIT=false
-  sonarcloud:
-    name: SonarCloud
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.USER_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
