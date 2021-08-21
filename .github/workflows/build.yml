@@ -34,7 +34,7 @@ jobs:
       run: |
         cd docker
         make SUBMODULES_INIT=false
-   sonarcloud:
+  sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
     steps:
