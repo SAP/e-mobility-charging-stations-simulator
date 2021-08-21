@@ -117,7 +117,7 @@ export default class PerformanceStatistics {
     if (Array.isArray(dataSet) && dataSet.length === 1) {
       return dataSet[0];
     }
-    const sortedDataSet = dataSet.slice().sort();
+    const sortedDataSet = dataSet.slice().sort((a, b) => (a - b));
     const middleIndex = Math.floor(sortedDataSet.length / 2);
     if (sortedDataSet.length % 2) {
       return sortedDataSet[middleIndex / 2];
@@ -133,7 +133,7 @@ export default class PerformanceStatistics {
     if (Utils.isEmptyArray(dataSet)) {
       return 0;
     }
-    const sortedDataSet = dataSet.slice().sort();
+    const sortedDataSet = dataSet.slice().sort((a, b) => (a - b));
     if (percentile === 0) {
       return sortedDataSet[0];
     }

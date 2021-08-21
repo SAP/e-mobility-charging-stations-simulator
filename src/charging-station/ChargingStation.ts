@@ -940,8 +940,8 @@ export default class ChargingStation {
   }
 
   private openWSConnection(options?: ClientOptions & ClientRequestArgs, forceCloseOpened = false): void {
-    options ?? {};
-    options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+    options = options ?? {};
+    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     if (!Utils.isNullOrUndefined(this.stationInfo.supervisionUser) && !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
     }
