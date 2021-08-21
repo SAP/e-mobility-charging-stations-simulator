@@ -49,7 +49,7 @@ export default abstract class OCPPRequestService {
           break;
       }
       // Check if wsConnection opened and charging station registered
-      if (this.chargingStation.isWebSocketOpen() && (this.chargingStation.isRegistered() || commandName === RequestCommand.BOOT_NOTIFICATION)) {
+      if (this.chargingStation.isWebSocketConnectionOpened() && (this.chargingStation.isRegistered() || commandName === RequestCommand.BOOT_NOTIFICATION)) {
         if (this.chargingStation.getEnableStatistics()) {
           this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
         }

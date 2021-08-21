@@ -103,7 +103,7 @@ export default class ChargingStation {
     }
   }
 
-  public isWebSocketOpen(): boolean {
+  public isWebSocketConnectionOpened(): boolean {
     return this.wsConnection?.readyState === WebSocket.OPEN;
   }
 
@@ -330,7 +330,7 @@ export default class ChargingStation {
         this.getConnector(Utils.convertToInt(connector)).status = ChargePointStatus.UNAVAILABLE;
       }
     }
-    if (this.isWebSocketOpen()) {
+    if (this.isWebSocketConnectionOpened()) {
       this.wsConnection.close();
     }
     if (this.getEnableStatistics()) {
@@ -613,7 +613,7 @@ export default class ChargingStation {
     if (this.isRegistered()) {
       await this.startMessageSequence();
       this.hasStopped && (this.hasStopped = false);
-      if (this.hasSocketRestarted && this.isWebSocketOpen()) {
+      if (this.hasSocketRestarted && this.isWebSocketConnectionOpened()) {
         this.flushMessageQueue();
       }
     } else {
@@ -887,7 +887,7 @@ export default class ChargingStation {
       : 0;
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
       this.webSocketPingSetInterval = setInterval(() => {
-        if (this.isWebSocketOpen()) {
+        if (this.isWebSocketConnectionOpened()) {
           this.wsConnection.ping((): void => { });
         }
       }, webSocketPingInterval * 1000);
@@ -945,7 +945,7 @@ export default class ChargingStation {
     if (!Utils.isNullOrUndefined(this.stationInfo.supervisionUser) && !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
     }
-    if (this.isWebSocketOpen() && forceCloseOpened) {
+    if (this.isWebSocketConnectionOpened() && forceCloseOpened) {
       this.wsConnection.close();
     }
     let protocol;
