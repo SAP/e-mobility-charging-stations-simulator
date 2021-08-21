@@ -16,7 +16,7 @@ import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import FileUtils from '../utils/FileUtils';
 import { MessageType } from '../types/ocpp/MessageType';
-import OCPP16IncomingRequestService from './ocpp/1.6/OCCP16IncomingRequestService';
+import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
 import OCPPError from './OCPPError';
