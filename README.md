@@ -27,7 +27,7 @@ workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker t
 workerStartDelay | | 500 | integer | milliseconds to wait at charging station worker threads startup
 workerPoolMinSize | | 4 | integer | worker threads pool minimum number of threads
 workerPoolMaxSize | | 16 | integer | worker threads pool maximum number of threads
-workerPoolStrategy | ROUND_ROBIN/LESS_RECENTLY_USED/... | [poolifier](https://github.com/pioardi/poolifier) default: ROUND_ROBBIN | string | worker threads pool [poolifier](https://github.com/pioardi/poolifier) worker choice strategy
+workerPoolStrategy | ROUND_ROBIN/LESS_RECENTLY_USED/... | [poolifier](https://github.com/poolifier/poolifier) default: ROUND_ROBBIN | string | worker threads pool [poolifier](https://github.com/poolifier/poolifier) worker choice strategy
 chargingStationsPerWorker | | 1 | integer | number of charging stations per worker threads for the `workerSet` process type
 logConsole | true/false | false | boolean | output logs on the console 
 logFormat | | simple | string | winston log format
