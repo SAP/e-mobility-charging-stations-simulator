@@ -23,11 +23,11 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: npm install
       run: npm ci
-    - name: npm run build
-      run: npm run build
     - name: npm run lint
       run: npm run lint
       continue-on-error: true
+    - name: npm run build
+      run: npm run build
     - name: npm test
       run: npm test
     - name: npm run coverage
