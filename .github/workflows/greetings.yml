@@ -8,6 +8,6 @@ jobs:
     steps:
     - uses: actions/first-interaction@v1
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token: ${{ secrets.USER_TOKEN }}
         issue-message: 'Welcome to your first issue in e-Mobility software'
         pr-message: 'Welcome to your first PR in e-Mobility software'
