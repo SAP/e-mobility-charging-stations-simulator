@@ -98,11 +98,12 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement {
     let workerSetElt: WorkerSetElement;
-    this.workerSet.forEach((workerSetElement) => {
+    for (const workerSetElement of this.workerSet) {
       if (workerSetElement.worker.threadId === worker.threadId) {
         workerSetElt = workerSetElement;
+        break;
       }
-    });
+    }
     return workerSetElt;
   }
 }
