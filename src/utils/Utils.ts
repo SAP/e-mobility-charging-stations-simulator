@@ -58,7 +58,7 @@ export default class Utils {
       return 0;
     }
     if (Number.isSafeInteger(value)) {
-      return changedValue;
+      return value as number;
     }
     // Check
     if (Utils.isString(value)) {
