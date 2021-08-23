@@ -12,11 +12,12 @@ export default class Bootstrap {
   private version: string = version;
   private started: boolean;
   private workerScript: string;
-  private workerImplementationInstance: WorkerAbstract | null = null;
+  private workerImplementation: WorkerAbstract | null = null;
 
   private constructor() {
     this.started = false;
     this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'StationWorker.js');
+    this.initWorkerImplementation();
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
   }
 
@@ -31,7 +32,7 @@ export default class Bootstrap {
     if (isMainThread && !this.started) {
       try {
         let numStationsTotal = 0;
-        await this.getWorkerImplementationInstance()?.start();
+        await this.workerImplementation.start();
         // Start ChargingStation object in worker thread
         if (Configuration.getStationTemplateURLs()) {
           for (const stationURL of Configuration.getStationTemplateURLs()) {
@@ -42,7 +43,7 @@ export default class Bootstrap {
                   index,
                   templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
-                await this.getWorkerImplementationInstance()?.addElement(workerData);
+                await this.workerImplementation.addElement(workerData);
                 numStationsTotal++;
               }
             } catch (error) {
@@ -55,7 +56,7 @@ export default class Bootstrap {
         if (numStationsTotal === 0) {
           console.log('No charging station template enabled in configuration, exiting');
         } else {
-          console.log(`Charging station simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.getWorkerImplementationInstance().size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.getWorkerImplementationInstance().maxElementsPerWorker ? ` (${this.getWorkerImplementationInstance().maxElementsPerWorker} charging station(s) per worker)` : ''}`);
+          console.log(`Charging station simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.workerImplementation.maxElementsPerWorker ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`);
         }
         this.started = true;
       } catch (error) {
@@ -66,31 +67,30 @@ export default class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
-      await this.getWorkerImplementationInstance()?.stop();
-      // Nullify to force worker implementation instance creation
-      this.workerImplementationInstance = null;
+      await this.workerImplementation.stop();
     }
     this.started = false;
   }
 
   public async restart(): Promise<void> {
     await this.stop();
+    this.initWorkerImplementation(true);
     await this.start();
   }
 
-  private getWorkerImplementationInstance(): WorkerAbstract | null {
-    if (!this.workerImplementationInstance) {
-      this.workerImplementationInstance = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
-        {
-          startDelay: Configuration.getWorkerStartDelay(),
-          poolMaxSize: Configuration.getWorkerPoolMaxSize(),
-          poolMinSize: Configuration.getWorkerPoolMinSize(),
-          elementsPerWorker: Configuration.getChargingStationsPerWorker(),
-          poolOptions: {
-            workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
-          }
-        });
+  private initWorkerImplementation(forceInstantiation = false) {
+    this.workerImplementation = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
+      {
+        startDelay: Configuration.getWorkerStartDelay(),
+        poolMaxSize: Configuration.getWorkerPoolMaxSize(),
+        poolMinSize: Configuration.getWorkerPoolMinSize(),
+        elementsPerWorker: Configuration.getChargingStationsPerWorker(),
+        poolOptions: {
+          workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
+        }
+      }, forceInstantiation);
+    if (!this.workerImplementation) {
+      throw new Error('Worker implementation not found');
     }
-    return this.workerImplementationInstance;
   }
 }
