@@ -8,11 +8,11 @@ import path from 'path';
 import { version } from '../../package.json';
 
 export default class Bootstrap {
-  private static instance: Bootstrap;
+  private static instance: Bootstrap | null = null;
+  private static workerImplementation: WorkerAbstract | null = null;
   private version: string = version;
   private started: boolean;
   private workerScript: string;
-  private workerImplementation: WorkerAbstract | null = null;
 
   private constructor() {
     this.started = false;
@@ -32,7 +32,7 @@ export default class Bootstrap {
     if (isMainThread && !this.started) {
       try {
         let numStationsTotal = 0;
-        await this.workerImplementation.start();
+        await Bootstrap.workerImplementation.start();
         // Start ChargingStation object in worker thread
         if (Configuration.getStationTemplateURLs()) {
           for (const stationURL of Configuration.getStationTemplateURLs()) {
@@ -43,7 +43,7 @@ export default class Bootstrap {
                   index,
                   templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
-                await this.workerImplementation.addElement(workerData);
+                await Bootstrap.workerImplementation.addElement(workerData);
                 numStationsTotal++;
               }
             } catch (error) {
@@ -56,7 +56,7 @@ export default class Bootstrap {
         if (numStationsTotal === 0) {
           console.log('No charging station template enabled in configuration, exiting');
         } else {
-          console.log(`Charging station simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.workerImplementation.maxElementsPerWorker ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`);
+          console.log(`Charging station simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${Bootstrap.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${Bootstrap.workerImplementation.maxElementsPerWorker ? ` (${Bootstrap.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`);
         }
         this.started = true;
       } catch (error) {
@@ -67,19 +67,19 @@ export default class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
-      await this.workerImplementation.stop();
+      await Bootstrap.workerImplementation.stop();
     }
     this.started = false;
   }
 
   public async restart(): Promise<void> {
     await this.stop();
-    this.initWorkerImplementation(true);
+    this.initWorkerImplementation();
     await this.start();
   }
 
-  private initWorkerImplementation(forceInstantiation = false) {
-    this.workerImplementation = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
+  private initWorkerImplementation() {
+    Bootstrap.workerImplementation = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
       {
         startDelay: Configuration.getWorkerStartDelay(),
         poolMaxSize: Configuration.getWorkerPoolMaxSize(),
@@ -88,8 +88,8 @@ export default class Bootstrap {
         poolOptions: {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
         }
-      }, forceInstantiation);
-    if (!this.workerImplementation) {
+      });
+    if (!Bootstrap.workerImplementation) {
       throw new Error('Worker implementation not found');
     }
   }
