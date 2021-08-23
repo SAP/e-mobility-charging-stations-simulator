@@ -104,7 +104,7 @@
     "nyc": "^15.1.0",
     "release-it": "^14.11.5",
     "robohydra": "^0.6.9",
-    "rollup": "^2.56.2",
+    "rollup": "^2.56.3",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
