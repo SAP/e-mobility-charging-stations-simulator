@@ -8,6 +8,7 @@ import WorkerStaticPool from './WorkerStaticPool';
 import { isMainThread } from 'worker_threads';
 
 export default class WorkerFactory {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
   public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): WorkerAbstract | null {
