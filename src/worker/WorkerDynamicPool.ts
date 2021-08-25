@@ -38,7 +38,9 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
    * @public
    */
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  public async start(): Promise<void> {}
+  public async start(): Promise<void> {
+    // This is intentional
+  }
 
   /**
    *

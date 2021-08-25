@@ -76,8 +76,8 @@ export default class WorkerSet<T> extends WorkerAbstract {
    */
   private startWorker(): void {
     const worker = new Worker(this.workerScript);
-    worker.on('message', () => { });
-    worker.on('error', () => { });
+    worker.on('message', () => { /* This is intentional */ });
+    worker.on('error', () => { /* This is intentional */ });
     worker.on('exit', (code) => {
       WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
@@ -88,7 +88,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
   private getLastWorkerSetElement(): WorkerSetElement {
     let workerSetElement: WorkerSetElement;
     // eslint-disable-next-line no-empty
-    for (workerSetElement of this.workerSet) { }
+    for (workerSetElement of this.workerSet) { /* This is intentional */ }
     return workerSetElement;
   }
 

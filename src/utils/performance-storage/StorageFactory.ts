@@ -6,7 +6,9 @@ import logger from '../Logger';
 
 export class StorageFactory {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private constructor() {}
+  private constructor() {
+    // This is intentional
+  }
 
   public static getStorage(type: StorageType, connectionURI: string, logPrefix: string): Storage {
     let storageInstance: Storage = null;

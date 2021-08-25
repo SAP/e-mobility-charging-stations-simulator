@@ -9,7 +9,9 @@ import { isMainThread } from 'worker_threads';
 
 export default class WorkerFactory {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private constructor() {}
+  private constructor() {
+    // This is intentional
+  }
 
   public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): WorkerAbstract | null {
     if (!isMainThread) {
