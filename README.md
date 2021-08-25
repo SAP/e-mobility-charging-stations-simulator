@@ -197,7 +197,7 @@ make SUBMODULES_INIT=false
 
 #### Firmware Management Profile
 
-- :x: GetDiagnostics
+- :white_check_mark: GetDiagnostics
 - :x: DiagnosticsStatusNotification
 - :x: FirmwareStatusNotification
 - :x: UpdateFirmware
