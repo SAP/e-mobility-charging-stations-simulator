@@ -7,10 +7,13 @@ import Statistics, { StatisticsData } from '../types/Statistics';
 
 import Configuration from './Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
+import { Storage } from './performance-storage/Storage';
+import { StorageFactory } from './performance-storage/StorageFactory';
 import Utils from './Utils';
 import logger from './Logger';
 
 export default class PerformanceStatistics {
+  private static storage: Storage;
   private objId: string;
   private performanceObserver: PerformanceObserver;
   private statistics: Statistics;
@@ -19,7 +22,7 @@ export default class PerformanceStatistics {
   public constructor(objId: string) {
     this.objId = objId;
     this.initializePerformanceObserver();
-    this.statistics = { id: this.objId ?? 'Object id not specified', statisticsData: {} };
+    this.statistics = { id: this.objId ?? 'Object id not specified', createdAt: new Date(), statisticsData: {} };
   }
 
   public static beginMeasure(id: string): string {
@@ -74,7 +77,10 @@ export default class PerformanceStatistics {
   }
 
   public start(): void {
-    this.startDisplayInterval();
+    this.startLogStatisticsInterval();
+    if (Configuration.getPerformanceStorage().enabled) {
+      logger.info(`${this.logPrefix()} storage enabled: type ${Configuration.getPerformanceStorage().type}, URI: ${Configuration.getPerformanceStorage().URI}`);
+    }
   }
 
   public stop(): void {
@@ -102,14 +108,14 @@ export default class PerformanceStatistics {
     logger.info(this.logPrefix() + ' %j', this.statistics);
   }
 
-  private startDisplayInterval(): void {
-    if (Configuration.getStatisticsDisplayInterval() > 0) {
+  private startLogStatisticsInterval(): void {
+    if (Configuration.getLogStatisticsInterval() > 0) {
       this.displayInterval = setInterval(() => {
         this.logStatistics();
-      }, Configuration.getStatisticsDisplayInterval() * 1000);
-      logger.info(this.logPrefix() + ' displayed every ' + Utils.secondsToHHMMSS(Configuration.getStatisticsDisplayInterval()));
+      }, Configuration.getLogStatisticsInterval() * 1000);
+      logger.info(this.logPrefix() + ' logged every ' + Utils.secondsToHHMMSS(Configuration.getLogStatisticsInterval()));
     } else {
-      logger.info(this.logPrefix() + ' display interval is set to ' + Configuration.getStatisticsDisplayInterval().toString() + '. Not displaying statistics');
+      logger.info(this.logPrefix() + ' log interval is set to ' + Configuration.getLogStatisticsInterval().toString() + '. Not logging statistics');
     }
   }
 
@@ -173,6 +179,7 @@ export default class PerformanceStatistics {
       this.statistics.statisticsData[entryName] = {} as StatisticsData;
     }
     // Update current statistics
+    this.statistics.lastUpdatedAt = new Date();
     this.statistics.statisticsData[entryName].countTimeMeasurement = this.statistics.statisticsData[entryName].countTimeMeasurement ? this.statistics.statisticsData[entryName].countTimeMeasurement + 1 : 1;
     this.statistics.statisticsData[entryName].currentTimeMeasurement = entry.duration;
     this.statistics.statisticsData[entryName].minTimeMeasurement = this.statistics.statisticsData[entryName].minTimeMeasurement ? (this.statistics.statisticsData[entryName].minTimeMeasurement > entry.duration ? entry.duration : this.statistics.statisticsData[entryName].minTimeMeasurement) : entry.duration;
@@ -183,9 +190,19 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData[entryName].medTimeMeasurement = this.median(this.statistics.statisticsData[entryName].timeMeasurementSeries);
     this.statistics.statisticsData[entryName].ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData[entryName].timeMeasurementSeries, 95);
     this.statistics.statisticsData[entryName].stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData[entryName].timeMeasurementSeries);
+    if (Configuration.getPerformanceStorage().enabled) {
+      this.getStorage().storePerformanceStatistics(this.statistics);
+    }
   }
 
   private logPrefix(): string {
     return Utils.logPrefix(` ${this.objId} | Performance statistics`);
+  }
+
+  private getStorage(): Storage {
+    if (!PerformanceStatistics.storage) {
+      PerformanceStatistics.storage = StorageFactory.getStorage(Configuration.getPerformanceStorage().type ,Configuration.getPerformanceStorage().URI, this.logPrefix());
+    }
+    return PerformanceStatistics.storage;
   }
 }

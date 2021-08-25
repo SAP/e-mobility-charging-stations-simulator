@@ -18,5 +18,7 @@ export interface StatisticsData {
 
 export default interface Statistics {
   id: string;
+  createdAt: Date;
+  lastUpdatedAt?: Date;
   statisticsData: Record<string, StatisticsData>;
 }

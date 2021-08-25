@@ -22,13 +22,13 @@ Key | Value(s) | Default Value | Value type | Description
 --- | -------| --------------| ---------- | ------------
 supervisionURLs | | [] | string[] |  array of connection URIs to OCPP-J servers
 distributeStationsToTenantsEqually | true/false | true | boolean | distribute charging stations uniformly to the OCPP-J servers
-statisticsDisplayInterval | | 60 | integer | seconds between charging stations statistics output in the logs 
 workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker threads process type
 workerStartDelay | | 500 | integer | milliseconds to wait at charging station worker threads startup
 workerPoolMinSize | | 4 | integer | worker threads pool minimum number of threads
 workerPoolMaxSize | | 16 | integer | worker threads pool maximum number of threads
 workerPoolStrategy | ROUND_ROBIN/LESS_RECENTLY_USED/... | [poolifier](https://github.com/poolifier/poolifier) default: ROUND_ROBBIN | string | worker threads pool [poolifier](https://github.com/poolifier/poolifier) worker choice strategy
 chargingStationsPerWorker | | 1 | integer | number of charging stations per worker threads for the `workerSet` process type
+logStatisticsInterval | | 60 | integer | seconds between charging stations statistics output in the logs 
 logConsole | true/false | false | boolean | output logs on the console 
 logFormat | | simple | string | winston log format
 logRotate | true/false | true | boolean | enable daily log files rotation
@@ -36,7 +36,8 @@ logMaxFiles | | 7 | integer | maximum number of log files to keep
 logLevel | emerg/alert/crit/error/warning/notice/info/debug | info | string | winston logging level
 logFile | | combined.log | string | log file relative path
 logErrorFile | | error.log | string | error log file relative path 
-stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | array of charging template file URIs
+performanceStorage | | { "enabled": false, "type": "jsonfile", "file:///performanceMeasurements.json" } | { enabled: string; type: string; URI: string; } | performance storage configuration section
+stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | array of charging station templates URIs configuration section (template file name and number of stations)
  
 ### Charging station template
 
@@ -77,9 +78,9 @@ meteringPerTransaction | true/false | true | boolean | enable metering history o
 transactionDataMeterValues | true/false | false | boolean | enable transaction data MeterValues at stop transaction
 mainVoltageMeterValues | true/false | true | boolean | include charging station main voltage MeterValues on three phased charging stations
 phaseLineToLineVoltageMeterValues | true/false | true | boolean | include charging station line to line voltage MeterValues on three phased charging stations
-Configuration | | | ChargingStationConfiguration | charging stations OCPP configuration parameters
-AutomaticTransactionGenerator | | | AutomaticTransactionGenerator | charging stations ATG configuration
-Connectors | | | Connectors | charging stations connectors configuration
+Configuration | | | ChargingStationConfiguration | charging stations OCPP parameters configuration section
+AutomaticTransactionGenerator | | | AutomaticTransactionGenerator | charging stations ATG configuration section
+Connectors | | | Connectors | charging stations connectors configuration section
 
 #### Configuration section
 

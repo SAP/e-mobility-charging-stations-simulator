@@ -1,3 +1,4 @@
+import { StorageType } from './Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
 
@@ -6,10 +7,16 @@ export interface StationTemplateURL {
   numberOfStations: number;
 }
 
+export interface StorageConfiguration {
+  enabled?: boolean;
+  type?: StorageType;
+  URI?: string;
+}
+
 export default interface ConfigurationData {
   supervisionURLs?: string[];
   stationTemplateURLs: StationTemplateURL[];
-  statisticsDisplayInterval?: number;
+  performanceStorage?: StorageConfiguration;
   autoReconnectMaxRetries?: number;
   distributeStationsToTenantsEqually?: boolean;
   workerProcess?: WorkerProcessType;
@@ -18,6 +25,7 @@ export default interface ConfigurationData {
   workerPoolMaxSize?: number;
   workerPoolStrategy?: WorkerChoiceStrategy;
   chargingStationsPerWorker?: number;
+  logStatisticsInterval?: number;
   logFormat?: string;
   logLevel?: string;
   logRotate?: boolean;

@@ -1,6 +1,7 @@
-import ConfigurationData, { StationTemplateURL } from '../types/ConfigurationData';
+import ConfigurationData, { StationTemplateURL, StorageConfiguration } from '../types/ConfigurationData';
 
 import Constants from './Constants';
+import { StorageType } from '../types/Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from '../types/Worker';
 import fs from 'fs';
@@ -16,9 +17,30 @@ export default class Configuration {
     Configuration.configurationChangeCallback = cb;
   }
 
-  static getStatisticsDisplayInterval(): number {
+  static getLogStatisticsInterval(): number {
+    Configuration.deprecateConfigurationKey('statisticsDisplayInterval', 'Use \'logStatisticsInterval\' instead');
     // Read conf
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'statisticsDisplayInterval') ? Configuration.getConfig().statisticsDisplayInterval : 60;
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logStatisticsInterval') ? Configuration.getConfig().logStatisticsInterval : 60;
+  }
+
+  static getPerformanceStorage(): StorageConfiguration {
+    let storageConfiguration: StorageConfiguration;
+    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
+      storageConfiguration =
+      {
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled') ? { enabled: Configuration.getConfig().performanceStorage.enabled } : { enabled: false },
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') ? { type: Configuration.getConfig().performanceStorage.type } : { type: StorageType.JSON_FILE },
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'URI') ? { URI: Configuration.getConfig().performanceStorage.URI } : { URI: 'file:///performanceMeasurements.json' }
+      };
+    } else {
+      storageConfiguration =
+      {
+        enabled: false,
+        type: StorageType.JSON_FILE,
+        URI: 'file:///performanceMeasurements.json'
+      };
+    }
+    return storageConfiguration;
   }
 
   static getAutoReconnectMaxRetries(): number {
@@ -159,8 +181,12 @@ export default class Configuration {
     const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
     if (error.code === 'ENOENT') {
       console.error(prefix + fileType + ' file ' + filePath + ' not found: ', error);
+    } else if (error.code === 'EEXIST') {
+      console.error(prefix + fileType + ' file ' + filePath + ' already exists: ', error);
+    } else if (error.code === 'EACCES') {
+      console.error(prefix + fileType + ' file ' + filePath + ' access denied: ', error);
     } else {
-      console.error(prefix + fileType + ' file ' + filePath + ' opening error: ', error);
+      console.error(prefix + fileType + ' file ' + filePath + ' error: ', error);
     }
     throw error;
   }
