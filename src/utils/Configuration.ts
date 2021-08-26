@@ -133,8 +133,11 @@ export default class Configuration {
     return new Date().toLocaleString() + ' Simulator configuration |';
   }
 
-  private static warnDeprecatedConfigurationKey(key: string, logMsgToAppend = '') {
-    if (!Configuration.isUndefined(Configuration.getConfig()[key])) {
+  private static warnDeprecatedConfigurationKey(key: string, sectionName?: string, logMsgToAppend = '') {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (sectionName && !Configuration.isUndefined(Configuration.getConfig()[sectionName]) && !Configuration.isUndefined(Configuration.getConfig()[sectionName][key])) {
+      console.error(`${Configuration.logPrefix()} Deprecated configuration key '${key}' usage in section '${sectionName}'${logMsgToAppend && '. ' + logMsgToAppend}`);
+    } else if (!Configuration.isUndefined(Configuration.getConfig()[key])) {
       console.error(`${Configuration.logPrefix()} Deprecated configuration key '${key}' usage${logMsgToAppend && '. ' + logMsgToAppend}`);
     }
   }
