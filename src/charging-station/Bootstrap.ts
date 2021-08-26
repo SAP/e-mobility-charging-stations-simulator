@@ -6,6 +6,7 @@ import { StorageFactory } from '../utils/performance-storage/StorageFactory';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
+import chalk from 'chalk';
 import { isMainThread } from 'worker_threads';
 import path from 'path';
 import { version } from '../../package.json';
@@ -52,20 +53,20 @@ export default class Bootstrap {
                 numStationsTotal++;
               }
             } catch (error) {
-              console.error('Charging station start with template file ' + stationURL.file + ' error ', error);
+              console.error(chalk.red('Charging station start with template file ' + stationURL.file + ' error '), error);
             }
           }
         } else {
-          console.log('No stationTemplateURLs defined in configuration, exiting');
+          console.warn(chalk.yellow('No stationTemplateURLs defined in configuration, exiting'));
         }
         if (numStationsTotal === 0) {
-          console.log('No charging station template enabled in configuration, exiting');
+          console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'));
         } else {
-          console.log(`Charging station simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${Bootstrap.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${Bootstrap.workerImplementation.maxElementsPerWorker ? ` (${Bootstrap.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`);
+          console.log(chalk.green(`Charging station simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${Bootstrap.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${Bootstrap.workerImplementation.maxElementsPerWorker ? ` (${Bootstrap.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`));
         }
         this.started = true;
       } catch (error) {
-        console.error('Bootstrap start error ', error);
+        console.error(chalk.red('Bootstrap start error '), error);
       }
     }
   }

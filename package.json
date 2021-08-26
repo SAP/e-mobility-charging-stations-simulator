@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "basic-ftp": "^4.6.6",
+    "chalk": "^4.1.2",
     "mongodb": "^4.1.1",
     "poolifier": "^2.0.2",
     "source-map-support": "^0.5.19",
@@ -111,6 +112,6 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",
     "ts-node": "^10.2.1",
-    "typescript": "^4.3.5"
+    "typescript": "^4.4.2"
   }
 }
