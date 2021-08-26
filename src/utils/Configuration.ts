@@ -18,7 +18,7 @@ export default class Configuration {
   }
 
   static getLogStatisticsInterval(): number {
-    Configuration.deprecateConfigurationKey('statisticsDisplayInterval', 'Use \'logStatisticsInterval\' instead');
+    Configuration.warnDeprecatedConfigurationKey('statisticsDisplayInterval', 'Use \'logStatisticsInterval\' instead');
     // Read conf
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logStatisticsInterval') ? Configuration.getConfig().logStatisticsInterval : 60;
   }
@@ -44,9 +44,9 @@ export default class Configuration {
   }
 
   static getAutoReconnectMaxRetries(): number {
-    Configuration.deprecateConfigurationKey('autoReconnectTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
-    Configuration.deprecateConfigurationKey('connectionTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
-    Configuration.deprecateConfigurationKey('autoReconnectMaxRetries', 'Use it in charging station template instead');
+    Configuration.warnDeprecatedConfigurationKey('autoReconnectTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
+    Configuration.warnDeprecatedConfigurationKey('connectionTimeout', 'Use \'ConnectionTimeOut\' OCPP parameter in charging station template instead');
+    Configuration.warnDeprecatedConfigurationKey('autoReconnectMaxRetries', 'Use it in charging station template instead');
     // Read conf
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
       return Configuration.getConfig().autoReconnectMaxRetries;
@@ -64,7 +64,7 @@ export default class Configuration {
   }
 
   static getWorkerProcess(): WorkerProcessType {
-    Configuration.deprecateConfigurationKey('useWorkerPool;', 'Use \'workerProcess\' to define the type of worker process to use instead');
+    Configuration.warnDeprecatedConfigurationKey('useWorkerPool;', 'Use \'workerProcess\' to define the type of worker process to use instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess') ? Configuration.getConfig().workerProcess : WorkerProcessType.WORKER_SET;
   }
 
@@ -77,7 +77,7 @@ export default class Configuration {
   }
 
   static getWorkerPoolMaxSize(): number {
-    Configuration.deprecateConfigurationKey('workerPoolSize;', 'Use \'workerPoolMaxSize\' instead');
+    Configuration.warnDeprecatedConfigurationKey('workerPoolSize;', 'Use \'workerPoolMaxSize\' instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize') ? Configuration.getConfig().workerPoolMaxSize : Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
   }
 
@@ -90,7 +90,7 @@ export default class Configuration {
   }
 
   static getLogConsole(): boolean {
-    Configuration.deprecateConfigurationKey('consoleLog', 'Use \'logConsole\' instead');
+    Configuration.warnDeprecatedConfigurationKey('consoleLog', 'Use \'logConsole\' instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logConsole') ? Configuration.getConfig().logConsole : false;
   }
 
@@ -115,7 +115,7 @@ export default class Configuration {
   }
 
   static getLogErrorFile(): string {
-    Configuration.deprecateConfigurationKey('errorFile', 'Use \'logErrorFile\' instead');
+    Configuration.warnDeprecatedConfigurationKey('errorFile', 'Use \'logErrorFile\' instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile') ? Configuration.getConfig().logErrorFile : 'error.log';
   }
 
@@ -125,7 +125,7 @@ export default class Configuration {
   }
 
   static getDistributeStationsToTenantsEqually(): boolean {
-    Configuration.deprecateConfigurationKey('distributeStationToTenantEqually', 'Use \'distributeStationsToTenantsEqually\' instead');
+    Configuration.warnDeprecatedConfigurationKey('distributeStationToTenantEqually', 'Use \'distributeStationsToTenantsEqually\' instead');
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationsToTenantsEqually') ? Configuration.getConfig().distributeStationsToTenantsEqually : true;
   }
 
@@ -133,7 +133,7 @@ export default class Configuration {
     return new Date().toLocaleString() + ' Simulator configuration |';
   }
 
-  private static deprecateConfigurationKey(key: string, logMsgToAppend = '') {
+  private static warnDeprecatedConfigurationKey(key: string, logMsgToAppend = '') {
     if (!Configuration.isUndefined(Configuration.getConfig()[key])) {
       console.error(`${Configuration.logPrefix()} Deprecated configuration key '${key}' usage${logMsgToAppend && '. ' + logMsgToAppend}`);
     }
