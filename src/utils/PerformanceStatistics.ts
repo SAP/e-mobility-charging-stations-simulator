@@ -7,13 +7,12 @@ import Statistics, { StatisticsData } from '../types/Statistics';
 
 import Configuration from './Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
-import { Storage } from './performance-storage/Storage';
-import { StorageFactory } from './performance-storage/StorageFactory';
 import Utils from './Utils';
+import { WorkerEvents } from '../types/Worker';
 import logger from './Logger';
+import { parentPort } from 'worker_threads';
 
 export default class PerformanceStatistics {
-  private static storage: Storage;
   private objId: string;
   private performanceObserver: PerformanceObserver;
   private statistics: Statistics;
@@ -191,18 +190,11 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData[entryName].ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData[entryName].timeMeasurementSeries, 95);
     this.statistics.statisticsData[entryName].stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData[entryName].timeMeasurementSeries);
     if (Configuration.getPerformanceStorage().enabled) {
-      this.getStorage().storePerformanceStatistics(this.statistics);
+      parentPort.postMessage({ id: WorkerEvents.PERFORMANCE_STATISTICS, data: this.statistics });
     }
   }
 
   private logPrefix(): string {
     return Utils.logPrefix(` ${this.objId} | Performance statistics`);
-  }
-
-  private getStorage(): Storage {
-    if (!PerformanceStatistics.storage) {
-      PerformanceStatistics.storage = StorageFactory.getStorage(Configuration.getPerformanceStorage().type ,Configuration.getPerformanceStorage().URI, this.logPrefix());
-    }
-    return PerformanceStatistics.storage;
   }
 }

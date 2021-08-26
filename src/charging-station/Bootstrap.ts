@@ -1,5 +1,8 @@
+import { StationWorkerData, WorkerEvents, WorkerMessage } from '../types/Worker';
+
 import Configuration from '../utils/Configuration';
-import { StationWorkerData } from '../types/Worker';
+import { Storage } from '../utils/performance-storage/Storage';
+import { StorageFactory } from '../utils/performance-storage/StorageFactory';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
@@ -10,6 +13,7 @@ import { version } from '../../package.json';
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
   private static workerImplementation: WorkerAbstract | null = null;
+  private static storage: Storage;
   private version: string = version;
   private started: boolean;
   private workerScript: string;
@@ -18,6 +22,7 @@ export default class Bootstrap {
     this.started = false;
     this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'StationWorker.js');
     this.initWorkerImplementation();
+    Bootstrap.storage = StorageFactory.getStorage(Configuration.getPerformanceStorage().type, Configuration.getPerformanceStorage().URI, this.logPrefix());
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
   }
 
@@ -88,9 +93,17 @@ export default class Bootstrap {
         poolOptions: {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
         }
+      }, (msg: WorkerMessage) => {
+        if (msg.id === WorkerEvents.PERFORMANCE_STATISTICS) {
+          Bootstrap.storage.storePerformanceStatistics(msg.data);
+        }
       });
     if (!Bootstrap.workerImplementation) {
       throw new Error('Worker implementation not found');
     }
+  }
+
+  private logPrefix(): string {
+    return Utils.logPrefix(' Bootstrap');
   }
 }

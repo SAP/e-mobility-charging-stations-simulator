@@ -12,14 +12,16 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
   /**
    * Create a new `WorkerDynamicPool`.
    *
-   * @param {string} workerScript
-   * @param {number} min
-   * @param {number} max
-   * @param {number} workerStartDelay
-   * @param {PoolOptions} opts
+   * @param workerScript
+   * @param min
+   * @param max
+   * @param workerStartDelay
+   * @param opts
+   * @param messageListenerCallback
    */
-  constructor(workerScript: string, min: number, max: number, workerStartDelay?: number, opts?: PoolOptions<Worker>) {
-    super(workerScript, workerStartDelay);
+  constructor(workerScript: string, min: number, max: number, workerStartDelay?: number, opts?: PoolOptions<Worker>,
+      messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }) {
+    super(workerScript, workerStartDelay, messageListenerCallback);
     opts.exitHandler = opts?.exitHandler ?? WorkerUtils.defaultExitHandler;
     this.pool = new DynamicThreadPool<WorkerData>(min, max, this.workerScript, opts);
   }
@@ -34,7 +36,7 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @returns {Promise<void>}
+   * @returns
    * @public
    */
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -44,7 +46,7 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @returns {Promise<void>}
+   * @returns
    * @public
    */
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -54,8 +56,8 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @param {T} elementData
-   * @returns {Promise<void>}
+   * @param elementData
+   * @returns
    * @public
    */
   public async addElement(elementData: T): Promise<void> {

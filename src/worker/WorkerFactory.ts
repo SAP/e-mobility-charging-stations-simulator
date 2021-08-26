@@ -13,7 +13,8 @@ export default class WorkerFactory {
     // This is intentional
   }
 
-  public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): WorkerAbstract | null {
+  public static getWorkerImplementation<T>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions,
+      messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }): WorkerAbstract | null {
     if (!isMainThread) {
       throw new Error('Trying to get a worker implementation outside the main thread');
     }
@@ -23,16 +24,16 @@ export default class WorkerFactory {
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
         options.elementsPerWorker = options.elementsPerWorker ?? Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER;
-        workerImplementation = new WorkerSet<T>(workerScript, options.elementsPerWorker, options.startDelay);
+        workerImplementation = new WorkerSet<T>(workerScript, options.elementsPerWorker, options.startDelay, messageListenerCallback);
         break;
       case WorkerProcessType.STATIC_POOL:
         options.poolMaxSize = options.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
-        workerImplementation = new WorkerStaticPool<T>(workerScript, options.poolMaxSize, options.startDelay, options.poolOptions);
+        workerImplementation = new WorkerStaticPool<T>(workerScript, options.poolMaxSize, options.startDelay, options.poolOptions, messageListenerCallback);
         break;
       case WorkerProcessType.DYNAMIC_POOL:
         options.poolMinSize = options.poolMinSize ?? Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
         options.poolMaxSize = options.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
-        workerImplementation = new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize, options.startDelay, options.poolOptions);
+        workerImplementation = new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize, options.startDelay, options.poolOptions, messageListenerCallback);
         break;
     }
     return workerImplementation;

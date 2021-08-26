@@ -24,11 +24,18 @@ export interface StationWorkerData extends WorkerData {
 }
 
 export interface WorkerSetElement {
-  worker: Worker,
-  numberOfWorkerElements: number
+  worker: Worker;
+  numberOfWorkerElements: number;
+}
+
+export interface WorkerMessage {
+  id: WorkerEvents;
+  data: any;
 }
 
 export enum WorkerEvents {
   START_WORKER_ELEMENT = 'startWorkerElement',
+  STOP_WORKER_ELEMENT = 'stopWorkerElement',
+  PERFORMANCE_STATISTICS = 'performanceStatistics'
 }
 

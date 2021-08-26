@@ -75,8 +75,8 @@ export default abstract class OCPPRequestService {
       /**
        * Function that will receive the request's response
        *
-       * @param {Record<string, unknown> | string} payload
-       * @param {Record<string, unknown>} requestPayload
+       * @param payload
+       * @param requestPayload
        */
       async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
         if (self.chargingStation.getEnableStatistics()) {
@@ -90,7 +90,7 @@ export default abstract class OCPPRequestService {
       /**
        * Function that will receive the request's rejection
        *
-       * @param {OCPPError} error
+       * @param error
        */
       function rejectCallback(error: OCPPError): void {
         if (self.chargingStation.getEnableStatistics()) {

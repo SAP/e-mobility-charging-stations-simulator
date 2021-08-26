@@ -14,12 +14,13 @@ export default class WorkerSet<T> extends WorkerAbstract {
   /**
    * Create a new `WorkerSet`.
    *
-   * @param {string} workerScript
-   * @param {number} maxElementsPerWorker
-   * @param {number} workerStartDelay
+   * @param workerScript
+   * @param maxElementsPerWorker
+   * @param workerStartDelay
+   * @param messageListenerCallback
    */
-  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartDelay?: number) {
-    super(workerScript, workerStartDelay);
+  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartDelay?: number, messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }) {
+    super(workerScript, workerStartDelay, messageListenerCallback);
     this.workerSet = new Set<WorkerSetElement>();
     this.maxElementsPerWorker = maxElementsPerWorker;
   }
@@ -30,8 +31,8 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @param {T} elementData
-   * @returns {Promise<void>}
+   * @param elementData
+   * @returns
    * @public
    */
   public async addElement(elementData: T): Promise<void> {
@@ -43,13 +44,13 @@ export default class WorkerSet<T> extends WorkerAbstract {
       // Start worker sequentially to optimize memory at startup
       await Utils.sleep(this.workerStartDelay);
     }
-    this.getLastWorker().postMessage({ id: WorkerEvents.START_WORKER_ELEMENT, workerData: elementData });
+    this.getLastWorker().postMessage({ id: WorkerEvents.START_WORKER_ELEMENT, data: elementData });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
   }
 
   /**
    *
-   * @returns {Promise<void>}
+   * @returns
    * @public
    */
   public async start(): Promise<void> {
@@ -60,7 +61,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   /**
    *
-   * @returns {Promise<void>}
+   * @returns
    * @public
    */
   public async stop(): Promise<void> {
@@ -76,7 +77,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
    */
   private startWorker(): void {
     const worker = new Worker(this.workerScript);
-    worker.on('message', () => { /* This is intentional */ });
+    worker.on('message', this.messageListener);
     worker.on('error', () => { /* This is intentional */ });
     worker.on('exit', (code) => {
       WorkerUtils.defaultExitHandler(code);

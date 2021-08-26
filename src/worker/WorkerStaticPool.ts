@@ -12,13 +12,15 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
   /**
    * Create a new `WorkerStaticPool`.
    *
-   * @param {string} workerScript
-   * @param {number} numberOfThreads
-   * @param {number} startWorkerDelay
-   * @param {PoolOptions} opts
+   * @param workerScript
+   * @param numberOfThreads
+   * @param startWorkerDelay
+   * @param opts
+   * @param messageListenerCallback
    */
-  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number, opts?: PoolOptions<Worker>) {
-    super(workerScript, startWorkerDelay);
+  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number, opts?: PoolOptions<Worker>,
+      messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }) {
+    super(workerScript, startWorkerDelay, messageListenerCallback);
     opts.exitHandler = opts?.exitHandler ?? WorkerUtils.defaultExitHandler;
     this.pool = new FixedThreadPool(numberOfThreads, this.workerScript, opts);
   }
@@ -33,15 +35,17 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @returns {Promise<void>}
+   * @returns
    * @public
    */
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  public async start(): Promise<void> {}
+  public async start(): Promise<void> {
+    // This is intentional
+  }
 
   /**
    *
-   * @returns {Promise<void>}
+   * @returns
    * @public
    */
   public async stop(): Promise<void> {
@@ -50,8 +54,8 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
 
   /**
    *
-   * @param {T} elementData
-   * @returns {Promise<void>}
+   * @param elementData
+   * @returns
    * @public
    */
   public async addElement(elementData: T): Promise<void> {
