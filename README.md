@@ -1,4 +1,4 @@
-# ev-simulator
+# charging-stations-simulator
 
 ## Summary
 
