@@ -35,6 +35,8 @@ export default class WorkerFactory {
         options.poolMaxSize = options.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
         workerImplementation = new WorkerDynamicPool<T>(workerScript, options.poolMinSize, options.poolMaxSize, options.startDelay, options.poolOptions, messageListenerCallback);
         break;
+      default:
+        throw new Error(`Worker implementation type '${workerProcessType}' not found`);
     }
     return workerImplementation;
   }

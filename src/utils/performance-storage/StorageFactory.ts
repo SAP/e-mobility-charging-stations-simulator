@@ -2,7 +2,6 @@ import { JSONFileStorage } from './JSONFileStorage';
 import { MongoDBStorage } from './MongoDBStorage';
 import { Storage } from './Storage';
 import { StorageType } from '../../types/Storage';
-import logger from '../Logger';
 
 export class StorageFactory {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -20,7 +19,7 @@ export class StorageFactory {
         storageInstance = new MongoDBStorage(connectionURI, logPrefix);
         break;
       default:
-        logger.error(`${logPrefix} Unknown storage type: ${type}`);
+        throw new Error(`${logPrefix} Unknown storage type: ${type}`);
     }
     return storageInstance;
   }

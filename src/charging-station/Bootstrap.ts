@@ -99,9 +99,6 @@ export default class Bootstrap {
           Bootstrap.storage.storePerformanceStatistics(msg.data);
         }
       });
-    if (!Bootstrap.workerImplementation) {
-      throw new Error('Worker implementation not found');
-    }
   }
 
   private logPrefix(): string {
