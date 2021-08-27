@@ -9,7 +9,7 @@ import typescript from 'rollup-plugin-typescript2';
 const isDevelopmentBuild = process.env.BUILD === 'development';
 
 export default {
-  input: ['src/start.ts', 'src/charging-station/StationWorker.ts'],
+  input: ['src/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
   output:
   {
     dir: 'dist',

@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { StationWorkerData, WorkerEvents, WorkerMessage } from '../types/Worker';
+import { ChargingStationWorkerData, WorkerEvents, WorkerMessage } from '../types/Worker';
 import { parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
@@ -11,7 +11,7 @@ import Utils from '../utils/Utils';
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
 if (Utils.workerPoolInUse()) {
-  threadWorker = new ThreadWorker<StationWorkerData>(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
+  threadWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, { maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME, async: false });
 } else {
   // Add message listener to start charging station from main thread
   addMessageListener();
@@ -36,7 +36,7 @@ function addMessageListener(): void {
  *
  * @param data workerData
  */
-function startChargingStation(data: StationWorkerData): void {
+function startChargingStation(data: ChargingStationWorkerData): void {
   const station = new ChargingStation(data.index, data.templateFile);
   station.start();
 }

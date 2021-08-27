@@ -1,4 +1,4 @@
-import { StationWorkerData, WorkerEvents, WorkerMessage } from '../types/Worker';
+import { ChargingStationWorkerData, WorkerEvents, WorkerMessage } from '../types/Worker';
 
 import Configuration from '../utils/Configuration';
 import { Storage } from '../utils/performance-storage/Storage';
@@ -21,7 +21,7 @@ export default class Bootstrap {
 
   private constructor() {
     this.started = false;
-    this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'StationWorker.js');
+    this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'ChargingStationWorker.js');
     this.initWorkerImplementation();
     Bootstrap.storage = StorageFactory.getStorage(Configuration.getPerformanceStorage().type, Configuration.getPerformanceStorage().URI, this.logPrefix());
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
@@ -45,7 +45,7 @@ export default class Bootstrap {
             try {
               const nbStations = stationURL.numberOfStations ? stationURL.numberOfStations : 0;
               for (let index = 1; index <= nbStations; index++) {
-                const workerData: StationWorkerData = {
+                const workerData: ChargingStationWorkerData = {
                   index,
                   templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
@@ -85,7 +85,7 @@ export default class Bootstrap {
   }
 
   private initWorkerImplementation() {
-    Bootstrap.workerImplementation = WorkerFactory.getWorkerImplementation<StationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
+    Bootstrap.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
       {
         startDelay: Configuration.getWorkerStartDelay(),
         poolMaxSize: Configuration.getWorkerPoolMaxSize(),

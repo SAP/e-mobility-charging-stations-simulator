@@ -18,7 +18,7 @@ export interface WorkerOptions {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface WorkerData {}
 
-export interface StationWorkerData extends WorkerData {
+export interface ChargingStationWorkerData extends WorkerData {
   index: number;
   templateFile: string;
 }
