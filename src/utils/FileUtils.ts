@@ -24,9 +24,9 @@ export default class FileUtils {
       }
     } else {
       if (consoleOut) {
-        console.error(chalk.yellow(prefix + fileType + ' file ' + filePath + ' error: '), error);
+        console.warn(chalk.yellow(prefix + fileType + ' file ' + filePath + ' error: '), error);
       } else {
-        logger.error(prefix + fileType + ' file ' + filePath + ' error: %j', error);
+        logger.warn(prefix + fileType + ' file ' + filePath + ' error: %j', error);
       }
       throw error;
     }
