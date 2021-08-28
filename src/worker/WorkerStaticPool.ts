@@ -16,11 +16,9 @@ export default class WorkerStaticPool<T> extends WorkerAbstract {
    * @param numberOfThreads
    * @param startWorkerDelay
    * @param opts
-   * @param messageListenerCallback
    */
-  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number, opts?: PoolOptions<Worker>,
-      messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }) {
-    super(workerScript, startWorkerDelay, messageListenerCallback);
+  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number, opts?: PoolOptions<Worker>) {
+    super(workerScript, startWorkerDelay);
     opts.exitHandler = opts?.exitHandler ?? WorkerUtils.defaultExitHandler;
     this.pool = new FixedThreadPool(numberOfThreads, this.workerScript, opts);
   }

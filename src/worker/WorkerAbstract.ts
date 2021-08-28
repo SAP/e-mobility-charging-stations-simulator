@@ -4,7 +4,6 @@ import { WorkerData } from '../types/Worker';
 export default abstract class WorkerAbstract {
   protected readonly workerScript: string;
   protected readonly workerStartDelay: number;
-  protected readonly messageListener: (message: any) => void;
   public abstract size: number;
   public abstract maxElementsPerWorker: number | null;
 
@@ -13,13 +12,10 @@ export default abstract class WorkerAbstract {
    *
    * @param workerScript
    * @param workerStartDelay
-   * @param messageListenerCallback
    */
-  constructor(workerScript: string, workerStartDelay: number = Constants.WORKER_START_DELAY,
-      messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }) {
+  constructor(workerScript: string, workerStartDelay: number = Constants.WORKER_START_DELAY) {
     this.workerScript = workerScript;
     this.workerStartDelay = workerStartDelay;
-    this.messageListener = messageListenerCallback;
   }
 
   public abstract start(): Promise<void>;

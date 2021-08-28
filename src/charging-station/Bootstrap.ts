@@ -95,11 +95,11 @@ export default class Bootstrap {
         elementsPerWorker: Configuration.getChargingStationsPerWorker(),
         poolOptions: {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
-        }
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      }, async (msg: WorkerMessage) => {
-        if (msg.id === WorkerMessageEvents.PERFORMANCE_STATISTICS) {
-          await Bootstrap.storage.storePerformanceStatistics(msg.data);
+        },
+        messageHandler: async (msg: WorkerMessage) => {
+          if (msg.id === WorkerMessageEvents.PERFORMANCE_STATISTICS) {
+            await Bootstrap.storage.storePerformanceStatistics(msg.data);
+          }
         }
       });
   }

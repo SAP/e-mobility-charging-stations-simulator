@@ -17,11 +17,9 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
    * @param max
    * @param workerStartDelay
    * @param opts
-   * @param messageListenerCallback
    */
-  constructor(workerScript: string, min: number, max: number, workerStartDelay?: number, opts?: PoolOptions<Worker>,
-      messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }) {
-    super(workerScript, workerStartDelay, messageListenerCallback);
+  constructor(workerScript: string, min: number, max: number, workerStartDelay?: number, opts?: PoolOptions<Worker>) {
+    super(workerScript, workerStartDelay);
     opts.exitHandler = opts?.exitHandler ?? WorkerUtils.defaultExitHandler;
     this.pool = new DynamicThreadPool<WorkerData>(min, max, this.workerScript, opts);
   }

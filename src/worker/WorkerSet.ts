@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerMessageEvents, WorkerSetElement } from '../types/Worker';
+import { WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
@@ -8,7 +8,8 @@ import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerSet<T> extends WorkerAbstract {
-  public maxElementsPerWorker: number;
+  public readonly maxElementsPerWorker: number;
+  private readonly messageHandler: (message: any) => void | Promise<void>;
   private workerSet: Set<WorkerSetElement>;
 
   /**
@@ -17,12 +18,13 @@ export default class WorkerSet<T> extends WorkerAbstract {
    * @param workerScript
    * @param maxElementsPerWorker
    * @param workerStartDelay
-   * @param messageListenerCallback
+   * @param opts
    */
-  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartDelay?: number, messageListenerCallback: (message: any) => void = () => { /* This is intentional */ }) {
-    super(workerScript, workerStartDelay, messageListenerCallback);
-    this.workerSet = new Set<WorkerSetElement>();
+  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartDelay?: number, opts?: WorkerOptions) {
+    super(workerScript, workerStartDelay);
     this.maxElementsPerWorker = maxElementsPerWorker;
+    this.messageHandler = opts?.messageHandler ?? (() => { });
+    this.workerSet = new Set<WorkerSetElement>();
   }
 
   get size(): number {
@@ -77,7 +79,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
    */
   private startWorker(): void {
     const worker = new Worker(this.workerScript);
-    worker.on('message', this.messageListener);
+    worker.on('message', this.messageHandler);
     worker.on('error', () => { /* This is intentional */ });
     worker.on('exit', (code) => {
       WorkerUtils.defaultExitHandler(code);
