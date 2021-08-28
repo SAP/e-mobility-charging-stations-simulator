@@ -1,5 +1,4 @@
 import { CircularArray } from '../utils/CircularArray';
-import { URL } from 'url';
 
 export interface StatisticsData {
   countRequest: number;

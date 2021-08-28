@@ -91,3 +91,4 @@ mta_archives/
 
 *.tar.gz
 performanceMeasurements.json
+*.db

@@ -34,6 +34,5 @@
   ],
   "logStatisticsInterval": 0,
   "logFile": "combined.log",
-  "logErrorFile": "error.log",
-  "logConsole": false
+  "logErrorFile": "error.log"
 }

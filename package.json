@@ -66,14 +66,18 @@
     "basic-ftp": "^4.6.6",
     "chalk": "^4.1.2",
     "mongodb": "^4.1.1",
+    "mysql2": "^2.3.0",
     "poolifier": "^2.0.2",
+    "reflect-metadata": "^0.1.13",
     "source-map-support": "^0.5.19",
+    "sqlite3": "^5.0.2",
     "tar": "^6.1.11",
     "tslib": "^2.3.1",
+    "typeorm": "^0.2.37",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.5",
-    "ws": "^8.2.0"
+    "ws": "^8.2.1"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.3",

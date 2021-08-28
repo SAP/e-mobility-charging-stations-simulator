@@ -1,8 +1,10 @@
+// Copyright Jerome Benoit. 2021. All Rights Reserved.
+
 import Constants from '../Constants';
-import { DBType } from '../../types/Storage';
 import { MongoClient } from 'mongodb';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
+import { StorageType } from '../../types/Storage';
 
 export class MongoDBStorage extends Storage {
   private client: MongoClient;
@@ -20,7 +22,7 @@ export class MongoDBStorage extends Storage {
       this.checkDBConnection();
       await this.client.db(this.dbName).collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE).insertOne(performanceStatistics);
     } catch (error) {
-      this.handleDBError(DBType.MONGO_DB, error, Constants.PERFORMANCE_RECORDS_TABLE);
+      this.handleDBError(StorageType.MONGO_DB, error, Constants.PERFORMANCE_RECORDS_TABLE);
     }
   }
 
@@ -31,7 +33,7 @@ export class MongoDBStorage extends Storage {
         this.connected = true;
       }
     } catch (error) {
-      this.handleDBError(DBType.MONGO_DB, error);
+      this.handleDBError(StorageType.MONGO_DB, error);
     }
   }
 
@@ -42,13 +44,13 @@ export class MongoDBStorage extends Storage {
         this.connected = false;
       }
     } catch (error) {
-      this.handleDBError(DBType.MONGO_DB, error);
+      this.handleDBError(StorageType.MONGO_DB, error);
     }
   }
 
   private checkDBConnection() {
     if (!this.connected) {
-      throw new Error(`${this.logPrefix} ${DBType.MONGO_DB} connection not opened while trying to issue a request`);
+      throw new Error(`${this.logPrefix} ${this.getDBTypeFromStorageType(StorageType.MONGO_DB)} connection not opened while trying to issue a request`);
     }
   }
 }

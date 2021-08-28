@@ -1,6 +1,10 @@
-import { DBType } from '../../types/Storage';
+// Copyright Jerome Benoit. 2021. All Rights Reserved.
+
+import { DBType, StorageType } from '../../types/Storage';
+
 import Statistics from '../../types/Statistics';
 import { URL } from 'url';
+import Utils from '../Utils';
 import logger from '../Logger';
 
 export abstract class Storage {
@@ -13,8 +17,21 @@ export abstract class Storage {
     this.logPrefix = logPrefix;
   }
 
-  protected handleDBError(DBEngine: DBType, error: Error, table?: string): void {
-    logger.error(`${this.logPrefix} ${DBEngine} error${table && ` in table or collection ${table}`} %j`, error);
+  protected handleDBError(type: StorageType, error: Error, table?: string): void {
+    logger.error(`${this.logPrefix} ${this.getDBTypeFromStorageType(type)} error${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`} %j`, error);
+  }
+
+  protected getDBTypeFromStorageType(type: StorageType): DBType {
+    switch (type) {
+      case StorageType.MARIA_DB:
+        return DBType.MARIA_DB;
+      case StorageType.MONGO_DB:
+        return DBType.MONGO_DB;
+      case StorageType.MYSQL:
+        return DBType.MYSQL;
+      case StorageType.SQLITE:
+        return DBType.SQLITE;
+    }
   }
 
   public abstract open(): void | Promise<void>;

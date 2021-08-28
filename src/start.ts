@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import Bootstrap from './charging-station/Bootstrap';
 import chalk from 'chalk';
 

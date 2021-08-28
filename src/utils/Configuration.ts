@@ -31,7 +31,9 @@ export default class Configuration {
       {
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled') ? { enabled: Configuration.getConfig().performanceStorage.enabled } : { enabled: false },
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') ? { type: Configuration.getConfig().performanceStorage.type } : { type: StorageType.JSON_FILE },
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'URI') ? { URI: Configuration.getConfig().performanceStorage.URI } : { URI: 'file:///performanceMeasurements.json' }
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'URI')
+          ? { URI: Configuration.getConfig().performanceStorage.URI }
+          : { URI: (Configuration.getConfig().performanceStorage.type === StorageType.JSON_FILE) ? 'file:///performanceMeasurements.json' : `file:///${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db` }
       };
     } else {
       storageConfiguration =
