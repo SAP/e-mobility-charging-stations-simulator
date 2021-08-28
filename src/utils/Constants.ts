@@ -45,4 +45,8 @@ export default class Constants {
     MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueMeasurand.CURRENT_IMPORT, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER]);
 
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5;
+
+  static readonly PERFORMANCE_RECORDS_FILETYPE = 'Performance records';
+  static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'charging-stations-simulator';
+  static readonly PERFORMANCE_RECORDS_TABLE = 'performanceRecords';
 }

@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerEvents, WorkerSetElement } from '../types/Worker';
+import { WorkerMessageEvents, WorkerSetElement } from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
@@ -44,7 +44,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
       // Start worker sequentially to optimize memory at startup
       await Utils.sleep(this.workerStartDelay);
     }
-    this.getLastWorker().postMessage({ id: WorkerEvents.START_WORKER_ELEMENT, data: elementData });
+    this.getLastWorker().postMessage({ id: WorkerMessageEvents.START_WORKER_ELEMENT, data: elementData });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
   }
 

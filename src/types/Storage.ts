@@ -3,3 +3,7 @@ export enum StorageType {
   MONGO_DB = 'mongodb'
 }
 
+export enum DBType {
+  MONGO_DB = 'MongoDB'
+}
+

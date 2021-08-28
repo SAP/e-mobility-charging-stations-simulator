@@ -7,8 +7,9 @@ import Statistics, { StatisticsData } from '../types/Statistics';
 
 import Configuration from './Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
+import { URL } from 'url';
 import Utils from './Utils';
-import { WorkerEvents } from '../types/Worker';
+import { WorkerMessageEvents } from '../types/Worker';
 import logger from './Logger';
 import { parentPort } from 'worker_threads';
 
@@ -18,10 +19,10 @@ export default class PerformanceStatistics {
   private statistics: Statistics;
   private displayInterval: NodeJS.Timeout;
 
-  public constructor(objId: string) {
+  public constructor(objId: string, URI: URL) {
     this.objId = objId;
     this.initializePerformanceObserver();
-    this.statistics = { id: this.objId ?? 'Object id not specified', createdAt: new Date(), statisticsData: {} };
+    this.statistics = { id: this.objId ?? 'Object id not specified', URI: URI.toString(), createdAt: new Date(), statisticsData: {} };
   }
 
   public static beginMeasure(id: string): string {
@@ -190,7 +191,7 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData[entryName].ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData[entryName].timeMeasurementSeries, 95);
     this.statistics.statisticsData[entryName].stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData[entryName].timeMeasurementSeries);
     if (Configuration.getPerformanceStorage().enabled) {
-      parentPort.postMessage({ id: WorkerEvents.PERFORMANCE_STATISTICS, data: this.statistics });
+      parentPort.postMessage({ id: WorkerMessageEvents.PERFORMANCE_STATISTICS, data: this.statistics });
     }
   }
 

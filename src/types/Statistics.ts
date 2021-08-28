@@ -1,4 +1,5 @@
 import { CircularArray } from '../utils/CircularArray';
+import { URL } from 'url';
 
 export interface StatisticsData {
   countRequest: number;
@@ -18,6 +19,7 @@ export interface StatisticsData {
 
 export default interface Statistics {
   id: string;
+  URI: string;
   createdAt: Date;
   lastUpdatedAt?: Date;
   statisticsData: Record<string, StatisticsData>;

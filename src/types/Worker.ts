@@ -29,11 +29,11 @@ export interface WorkerSetElement {
 }
 
 export interface WorkerMessage {
-  id: WorkerEvents;
+  id: WorkerMessageEvents;
   data: any;
 }
 
-export enum WorkerEvents {
+export enum WorkerMessageEvents {
   START_WORKER_ELEMENT = 'startWorkerElement',
   STOP_WORKER_ELEMENT = 'stopWorkerElement',
   PERFORMANCE_STATISTICS = 'performanceStatistics'

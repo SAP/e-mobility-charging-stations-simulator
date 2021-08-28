@@ -1,4 +1,4 @@
-import { ChargingStationWorkerData, WorkerEvents, WorkerMessage } from '../types/Worker';
+import { ChargingStationWorkerData, WorkerMessage, WorkerMessageEvents } from '../types/Worker';
 
 import Configuration from '../utils/Configuration';
 import { Storage } from '../utils/performance-storage/Storage';
@@ -38,6 +38,7 @@ export default class Bootstrap {
     if (isMainThread && !this.started) {
       try {
         let numStationsTotal = 0;
+        await Bootstrap.storage.open();
         await Bootstrap.workerImplementation.start();
         // Start ChargingStation object in worker thread
         if (Configuration.getStationTemplateURLs()) {
@@ -74,6 +75,7 @@ export default class Bootstrap {
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
       await Bootstrap.workerImplementation.stop();
+      await Bootstrap.storage.close();
     }
     this.started = false;
   }
@@ -84,7 +86,7 @@ export default class Bootstrap {
     await this.start();
   }
 
-  private initWorkerImplementation() {
+  private initWorkerImplementation(): void {
     Bootstrap.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
       {
         startDelay: Configuration.getWorkerStartDelay(),
@@ -94,9 +96,10 @@ export default class Bootstrap {
         poolOptions: {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
         }
-      }, (msg: WorkerMessage) => {
-        if (msg.id === WorkerEvents.PERFORMANCE_STATISTICS) {
-          Bootstrap.storage.storePerformanceStatistics(msg.data);
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      }, async (msg: WorkerMessage) => {
+        if (msg.id === WorkerMessageEvents.PERFORMANCE_STATISTICS) {
+          await Bootstrap.storage.storePerformanceStatistics(msg.data);
         }
       });
   }

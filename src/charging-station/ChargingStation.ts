@@ -555,7 +555,7 @@ export default class ChargingStation {
     }
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
-      this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId);
+      this.performanceStatistics = new PerformanceStatistics(this.stationInfo.chargingStationId, this.wsConnectionUrl);
     }
   }
 
@@ -1021,7 +1021,7 @@ export default class ChargingStation {
     return !Utils.isUndefined(this.stationInfo.reconnectExponentialDelay) ? this.stationInfo.reconnectExponentialDelay : false;
   }
 
-  private async reconnect(error: any): Promise<void> {
+  private async reconnect(error: unknown): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
     // Stop heartbeat

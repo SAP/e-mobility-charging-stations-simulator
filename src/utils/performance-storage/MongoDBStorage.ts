@@ -1,16 +1,54 @@
+import Constants from '../Constants';
+import { DBType } from '../../types/Storage';
+import { MongoClient } from 'mongodb';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
 
 export class MongoDBStorage extends Storage {
+  private client: MongoClient;
+  private connected: boolean;
+
   constructor(storageURI: string, logPrefix: string) {
     super(storageURI, logPrefix);
+    this.client = new MongoClient(this.storageURI.toString());
+    this.connected = false;
+    this.dbName = this.storageURI.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
   }
 
-  public storePerformanceStatistics(performanceStatistics: Statistics): void {
-    throw new Error('Method not yet implemented');
+  public async storePerformanceStatistics(performanceStatistics: Statistics): Promise<void> {
+    try {
+      this.checkDBConnection();
+      await this.client.db(this.dbName).collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE).insertOne(performanceStatistics);
+    } catch (error) {
+      this.handleDBError(DBType.MONGO_DB, error, Constants.PERFORMANCE_RECORDS_TABLE);
+    }
   }
 
-  private open(): void {}
+  public async open(): Promise<void> {
+    try {
+      if (!this.connected) {
+        await this.client.connect();
+        this.connected = true;
+      }
+    } catch (error) {
+      this.handleDBError(DBType.MONGO_DB, error);
+    }
+  }
 
-  private close(): void {}
+  public async close(): Promise<void> {
+    try {
+      if (this.connected) {
+        await this.client.close();
+        this.connected = false;
+      }
+    } catch (error) {
+      this.handleDBError(DBType.MONGO_DB, error);
+    }
+  }
+
+  private checkDBConnection() {
+    if (!this.connected) {
+      throw new Error(`${this.logPrefix} ${DBType.MONGO_DB} connection not opened while trying to issue a request`);
+    }
+  }
 }

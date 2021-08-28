@@ -1,3 +1,4 @@
+import Constants from '../Constants';
 import FileUtils from '../FileUtils';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
@@ -5,35 +6,52 @@ import fs from 'fs';
 import path from 'path';
 
 export class JSONFileStorage extends Storage {
+  private fd: number | null = null;
+
   constructor(storageURI: string, logPrefix: string) {
     super(storageURI, logPrefix);
+    this.dbName = path.join(path.resolve(__dirname, '../../../'), this.storageURI.pathname.replace(/(?:^\/)|(?:\/$)/g, ''));
   }
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
-    const performanceJSONFilePath = path.join(path.resolve(__dirname, '../../../'), this.storageURI.pathname.replace(/(?:^\/)|(?:\/$)/g, ''));
-    if (!fs.existsSync(performanceJSONFilePath)) {
-      this.open(performanceJSONFilePath);
-    }
-    fs.readFile(performanceJSONFilePath, 'utf-8', (error, data) => {
+    this.checkPerformanceRecordsFile();
+    fs.readFile(this.dbName, 'utf-8', (error, data) => {
       if (error) {
-        FileUtils.handleFileException(this.logPrefix, 'Performance measurements', performanceJSONFilePath, error);
+        FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
       } else {
-        const performanceRecords: Statistics[] = data ? JSON.parse(data.toString()) as Statistics[] : [];
+        const performanceRecords: Statistics[] = data ? JSON.parse(data) as Statistics[] : [];
         performanceRecords.push(performanceStatistics);
-        fs.writeFile(performanceJSONFilePath, JSON.stringify(performanceRecords, null, 2), 'utf-8', (err) => {
+        fs.writeFile(this.dbName, JSON.stringify(performanceRecords, null, 2), 'utf-8', (err) => {
           if (err) {
-            FileUtils.handleFileException(this.logPrefix, 'Performance measurements', performanceJSONFilePath, err);
+            FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, err);
           }
         });
       }
     });
   }
 
-  private open(filePath: string): void {
+  public open(): void {
     try {
-      fs.openSync(filePath, 'w+');
+      this.fd = fs.openSync(this.dbName, 'a+');
     } catch (error) {
-      FileUtils.handleFileException(this.logPrefix, 'Performance measurements', filePath, error);
+      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
+    }
+  }
+
+  public close(): void {
+    try {
+      if (this.fd) {
+        fs.closeSync(this.fd);
+        this.fd = null;
+      }
+    } catch (error) {
+      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
+    }
+  }
+
+  private checkPerformanceRecordsFile(): void {
+    if (!this.fd) {
+      throw new Error(`${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`);
     }
   }
 }
