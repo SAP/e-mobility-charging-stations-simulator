@@ -21,7 +21,7 @@ export default class WorkerFactory {
     options = options ?? {} as WorkerOptions;
     options.startDelay = options.startDelay ?? Constants.WORKER_START_DELAY;
     options.poolOptions = options?.poolOptions ?? {} as PoolOptions<Worker>;
-    // options?.messageHandler && options.poolOptions.messageHandler = options.messageHandler;
+    options?.messageHandler && (options.poolOptions.messageHandler = options.messageHandler);
     let workerImplementation: WorkerAbstract = null;
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
