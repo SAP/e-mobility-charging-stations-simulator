@@ -43,9 +43,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       }
     } else {
       // Throw exception
-      const errMsg = `${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload, null, 2)}`;
-      await this.chargingStation.ocppRequestService.sendError(messageId, new OCPPError(ErrorType.NOT_IMPLEMENTED, errMsg), commandName);
-      throw new OCPPError(ErrorType.NOT_IMPLEMENTED, errMsg);
+      const error = new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload, null, 2)}`);
+      await this.chargingStation.ocppRequestService.sendError(messageId, error, commandName);
+      throw error;
     }
     // Send the built response
     await this.chargingStation.ocppRequestService.sendMessage(messageId, response, MessageType.CALL_RESULT_MESSAGE, commandName);

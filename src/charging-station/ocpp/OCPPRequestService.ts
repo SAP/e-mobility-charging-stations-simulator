@@ -23,7 +23,8 @@ export default abstract class OCPPRequestService {
     this.ocppResponseService = ocppResponseService;
   }
 
-  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand): Promise<any> {
+  public async sendMessage(messageId: string, commandParams: Record<string, unknown>, messageType: MessageType,
+      commandName: RequestCommand | IncomingRequestCommand): Promise<unknown> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -34,7 +35,7 @@ export default abstract class OCPPRequestService {
         // Request
         case MessageType.CALL_MESSAGE:
           // Build request
-          this.chargingStation.requests[messageId] = [responseCallback, rejectCallback, commandParams as Record<string, unknown>];
+          this.chargingStation.requests[messageId] = [responseCallback, rejectCallback, commandParams];
           messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
           break;
         // Response
@@ -61,7 +62,7 @@ export default abstract class OCPPRequestService {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it
-        return rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ? commandParams.details : {}));
+        return rejectCallback(new OCPPError(commandParams.code ? commandParams.code as ErrorType : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message as string : `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ? commandParams.details : {}));
       }
       // Response?
       if (messageType === MessageType.CALL_RESULT_MESSAGE) {
@@ -69,7 +70,7 @@ export default abstract class OCPPRequestService {
         resolve();
       } else if (messageType === MessageType.CALL_ERROR_MESSAGE) {
         // Send timeout
-        setTimeout(() => rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams.details ? commandParams.details : {})), Constants.OCPP_ERROR_TIMEOUT);
+        setTimeout(() => rejectCallback(new OCPPError(commandParams.code ? commandParams.code as ErrorType : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message as string : `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams.details ? commandParams.details : {})), Constants.OCPP_ERROR_TIMEOUT);
       }
 
       /**

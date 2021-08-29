@@ -13,7 +13,7 @@ export interface WorkerOptions {
   poolMinSize?: number;
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
-  messageHandler?: (message: any) => void | Promise<void>;
+  messageHandler?: (message: unknown) => void | Promise<void>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
