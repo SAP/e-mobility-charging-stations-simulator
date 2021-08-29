@@ -14,12 +14,13 @@ import ChargingStationInfo from '../types/ChargingStationInfo';
 import { ClientRequestArgs } from 'http';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
+import { ErrorType } from '../types/ocpp/ErrorType';
 import FileUtils from '../utils/FileUtils';
 import { MessageType } from '../types/ocpp/MessageType';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
-import OCPPError from './OCPPError';
+import OCPPError from './ocpp/OCPPError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
@@ -649,7 +650,7 @@ export default class ChargingStation {
         // Parse the message
         [messageType, messageId, commandName, commandPayload, errorDetails] = request;
       } else {
-        throw new Error('Incoming request is not iterable');
+        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming request is not iterable');
       }
       // Check the Type of message
       switch (messageType) {
@@ -667,11 +668,11 @@ export default class ChargingStation {
           if (Utils.isIterable(this.requests[messageId])) {
             [responseCallback, , requestPayload] = this.requests[messageId];
           } else {
-            throw new Error(`Response request for message id ${messageId} is not iterable`);
+            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Response request for message id ${messageId} is not iterable`);
           }
           if (!responseCallback) {
             // Error
-            throw new Error(`Response request for unknown message id ${messageId}`);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Response request for unknown message id ${messageId}`);
           }
           delete this.requests[messageId];
           responseCallback(commandName, requestPayload);
@@ -680,12 +681,12 @@ export default class ChargingStation {
         case MessageType.CALL_ERROR_MESSAGE:
           if (!this.requests[messageId]) {
             // Error
-            throw new Error(`Error request for unknown message id ${messageId}`);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Error request for unknown message id ${messageId}`);
           }
           if (Utils.isIterable(this.requests[messageId])) {
             [, rejectCallback] = this.requests[messageId];
           } else {
-            throw new Error(`Error request for message id ${messageId} is not iterable`);
+            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Error request for message id ${messageId} is not iterable`);
           }
           delete this.requests[messageId];
           rejectCallback(new OCPPError(commandName, commandPayload.toString(), errorDetails));
@@ -694,7 +695,7 @@ export default class ChargingStation {
         default:
           errMsg = `${this.logPrefix()} Wrong message type ${messageType}`;
           logger.error(errMsg);
-          throw new Error(errMsg);
+          throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
       }
     } catch (error) {
       // Log

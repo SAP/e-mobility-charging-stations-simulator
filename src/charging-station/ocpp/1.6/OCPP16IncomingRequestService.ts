@@ -17,7 +17,7 @@ import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStat
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
-import OCPPError from '../../OCPPError';
+import OCPPError from '../OCPPError';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
 import Utils from '../../../utils/Utils';
 import fs from 'fs';
@@ -43,8 +43,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       }
     } else {
       // Throw exception
-      await this.chargingStation.ocppRequestService.sendError(messageId, new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented`, {}), commandName);
-      throw new Error(`${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload)}`);
+      const errMsg = `${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload, null, 2)}`;
+      await this.chargingStation.ocppRequestService.sendError(messageId, new OCPPError(ErrorType.NOT_IMPLEMENTED, errMsg), commandName);
+      throw new OCPPError(ErrorType.NOT_IMPLEMENTED, errMsg);
     }
     // Send the built response
     await this.chargingStation.ocppRequestService.sendMessage(messageId, response, MessageType.CALL_RESULT_MESSAGE, commandName);
@@ -382,9 +383,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             }
             return { fileName: diagnosticsArchive };
           }
-          throw new Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+          throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
         }
-        throw new Error(`Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+        throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
       } catch (error) {
         await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.UploadFailed);
         if (ftpClient) {

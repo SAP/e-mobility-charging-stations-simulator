@@ -9,7 +9,7 @@ import Constants from '../../utils/Constants';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import { MeterValue } from '../../types/ocpp/MeterValues';
-import OCPPError from '../OCPPError';
+import OCPPError from './OCPPError';
 import OCPPResponseService from './OCPPResponseService';
 import PerformanceStatistics from '../../utils/PerformanceStatistics';
 import logger from '../../utils/Logger';

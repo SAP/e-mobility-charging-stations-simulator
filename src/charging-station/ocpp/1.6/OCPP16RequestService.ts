@@ -7,6 +7,7 @@ import { DiagnosticsStatusNotificationRequest, HeartbeatRequest, OCPP16BootNotif
 import { MeterValueUnit, MeterValuesRequest, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16MeterValuePhase } from '../../../types/ocpp/1.6/MeterValues';
 
 import Constants from '../../../utils/Constants';
+import { ErrorType } from '../../../types/ocpp/ErrorType';
 import MeasurandPerPhaseSampledValueTemplates from '../../../types/MeasurandPerPhaseSampledValueTemplates';
 import MeasurandValues from '../../../types/MeasurandValues';
 import { MessageType } from '../../../types/ocpp/MessageType';
@@ -15,7 +16,7 @@ import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointE
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
-import OCPPError from '../../OCPPError';
+import OCPPError from '../OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
@@ -221,7 +222,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             break;
           default:
             logger.error(errMsg);
-            throw new Error(errMsg);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg);
         }
         meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(powerSampledValueTemplate, powerMeasurandValues.allPhases));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;
@@ -287,7 +288,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             break;
           default:
             logger.error(errMsg);
-            throw new Error(errMsg);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg);
         }
         meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(currentSampledValueTemplate, currentMeasurandValues.allPhases));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;
