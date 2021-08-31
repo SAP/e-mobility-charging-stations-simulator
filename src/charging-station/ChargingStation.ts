@@ -243,7 +243,9 @@ export default class ChargingStation {
       }
     }
     if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-      logger.error(`${this.logPrefix()} Missing MeterValues for default measurand ${measurand} in template on connectorId ${connectorId}`);
+      const errorMsg = `${this.logPrefix()} Missing MeterValues for default measurand ${measurand} in template on connectorId ${connectorId}`;
+      logger.error(errorMsg);
+      throw new Error(errorMsg);
     }
     logger.debug(`${this.logPrefix()} No MeterValues for measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
   }
