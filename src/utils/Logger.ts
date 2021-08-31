@@ -20,7 +20,7 @@ if (Configuration.getLogRotate()) {
 }
 
 const logger: Logger = createLogger({
-  level: Configuration.getLogLevel(),
+  level: Configuration.getLogLevel().toLowerCase(),
   format: format.combine(format.splat(), format[Configuration.getLogFormat()]()),
   transports: transports,
 });

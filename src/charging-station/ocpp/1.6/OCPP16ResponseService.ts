@@ -57,7 +57,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
     if (this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.AVAILABLE
-        || this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.PREPARING) {
+        && this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.PREPARING) {
       logger.error(`${this.chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with status ${this.chargingStation.getConnector(connectorId)?.status}`);
       return;
     }
