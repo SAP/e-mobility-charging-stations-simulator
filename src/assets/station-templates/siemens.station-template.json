@@ -69,8 +69,6 @@
       "MeterValues": [
         {
           "context": "Sample.Periodic",
-          "format": "Raw",
-          "measurand": "Energey.Active.Import.Register",
           "unit": "Wh"
         }
       ]
