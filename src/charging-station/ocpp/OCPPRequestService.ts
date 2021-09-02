@@ -24,7 +24,7 @@ export default abstract class OCPPRequestService {
   }
 
   public async sendMessage(messageId: string, commandParams: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
-      skipBuffering = false): Promise<unknown> {
+      skipBufferingOnError = false): Promise<unknown> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -58,7 +58,7 @@ export default abstract class OCPPRequestService {
         const beginId = PerformanceStatistics.beginMeasure(commandName);
         this.chargingStation.wsConnection.send(messageToSend);
         PerformanceStatistics.endMeasure(commandName, beginId);
-      } else if (!skipBuffering) {
+      } else if (!skipBufferingOnError) {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it

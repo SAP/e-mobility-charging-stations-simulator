@@ -13,7 +13,7 @@ export default class OCPPError extends Error {
     this.name = new.target.name;
     this.code = code ?? ErrorType.GENERIC_ERROR;
     this.message = message ?? '';
-    this.message = command ?? '';
+    this.command = command;
     this.details = details ?? {};
 
     Object.setPrototypeOf(this, new.target.prototype);
