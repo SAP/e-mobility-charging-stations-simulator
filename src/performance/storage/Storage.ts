@@ -1,11 +1,11 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { DBType, StorageType } from '../../types/Storage';
+import { DBName, StorageType } from '../../types/Storage';
 
 import Statistics from '../../types/Statistics';
 import { URL } from 'url';
-import Utils from '../Utils';
-import logger from '../Logger';
+import Utils from '../../utils/Utils';
+import logger from '../../utils/Logger';
 
 export abstract class Storage {
   protected readonly storageURI: URL;
@@ -18,19 +18,19 @@ export abstract class Storage {
   }
 
   protected handleDBError(type: StorageType, error: Error, table?: string): void {
-    logger.error(`${this.logPrefix} ${this.getDBTypeFromStorageType(type)} error${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`} %j`, error);
+    logger.error(`${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`}: %j`, error);
   }
 
-  protected getDBTypeFromStorageType(type: StorageType): DBType {
+  protected getDBNameFromStorageType(type: StorageType): DBName {
     switch (type) {
       case StorageType.MARIA_DB:
-        return DBType.MARIA_DB;
+        return DBName.MARIA_DB;
       case StorageType.MONGO_DB:
-        return DBType.MONGO_DB;
+        return DBName.MONGO_DB;
       case StorageType.MYSQL:
-        return DBType.MYSQL;
+        return DBName.MYSQL;
       case StorageType.SQLITE:
-        return DBType.SQLITE;
+        return DBName.SQLITE;
     }
   }
 

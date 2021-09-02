@@ -1,3 +1,7 @@
+import { Configuration } from '@mikro-orm/core';
+
+export type MikroORMDBType = keyof typeof Configuration.PLATFORMS;
+
 export enum StorageType {
   JSON_FILE = 'jsonfile',
   MONGO_DB = 'mongodb',
@@ -6,7 +10,7 @@ export enum StorageType {
   SQLITE = 'sqlite'
 }
 
-export enum DBType {
+export enum DBName {
   MONGO_DB = 'MongoDB',
   MYSQL = 'MySQL',
   MARIA_DB = 'MariaDB',

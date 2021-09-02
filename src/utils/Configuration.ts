@@ -25,6 +25,9 @@ export default class Configuration {
   }
 
   static getPerformanceStorage(): StorageConfiguration {
+    const defaultJSONFilePathURI = `file://${path.join(path.resolve(__dirname, '../../'), Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME)}`;
+    const SQLiteFileName = `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
+    const defaultSQLiteFilePathURI = `file://${path.join(path.resolve(__dirname, '../../'), SQLiteFileName)}`;
     let storageConfiguration: StorageConfiguration;
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration =
@@ -33,14 +36,14 @@ export default class Configuration {
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') ? { type: Configuration.getConfig().performanceStorage.type } : { type: StorageType.JSON_FILE },
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'URI')
           ? { URI: Configuration.getConfig().performanceStorage.URI }
-          : { URI: (Configuration.getConfig().performanceStorage.type === StorageType.JSON_FILE) ? 'file:///performanceMeasurements.json' : `file:///${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db` }
+          : { URI: (Configuration.getConfig().performanceStorage.type === StorageType.JSON_FILE) ? defaultJSONFilePathURI : defaultSQLiteFilePathURI }
       };
     } else {
       storageConfiguration =
       {
         enabled: false,
         type: StorageType.JSON_FILE,
-        URI: 'file:///performanceMeasurements.json'
+        URI: defaultJSONFilePathURI
       };
     }
     return storageConfiguration;

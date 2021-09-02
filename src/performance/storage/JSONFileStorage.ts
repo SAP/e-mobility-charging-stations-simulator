@@ -1,18 +1,17 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import Constants from '../Constants';
-import FileUtils from '../FileUtils';
+import Constants from '../../utils/Constants';
+import FileUtils from '../../utils/FileUtils';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
 import fs from 'fs';
-import path from 'path';
 
 export class JSONFileStorage extends Storage {
   private fd: number | null = null;
 
   constructor(storageURI: string, logPrefix: string) {
     super(storageURI, logPrefix);
-    this.dbName = path.join(path.resolve(__dirname, '../../../'), this.storageURI.pathname.replace(/(?:^\/)|(?:\/$)/g, ''));
+    this.dbName = this.storageURI.pathname;
   }
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {

@@ -24,7 +24,7 @@ import OCPPError from './ocpp/OCPPError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
-import PerformanceStatistics from '../utils/PerformanceStatistics';
+import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { StopTransactionReason } from '../types/ocpp/Transaction';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
@@ -652,7 +652,7 @@ export default class ChargingStation {
         // Parse the message
         [messageType, messageId, commandName, commandPayload, errorDetails] = request;
       } else {
-        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming request is not iterable');
+        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming request is not iterable', commandName);
       }
       // Check the Type of message
       switch (messageType) {
@@ -670,11 +670,11 @@ export default class ChargingStation {
           if (Utils.isIterable(this.requests[messageId])) {
             [responseCallback, , requestPayload] = this.requests[messageId];
           } else {
-            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Response request for message id ${messageId} is not iterable`);
+            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Response request for message id ${messageId} is not iterable`, commandName);
           }
           if (!responseCallback) {
             // Error
-            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Response request for unknown message id ${messageId}`);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Response request for unknown message id ${messageId}`, commandName);
           }
           delete this.requests[messageId];
           responseCallback(commandName, requestPayload);
@@ -691,7 +691,7 @@ export default class ChargingStation {
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Error request for message id ${messageId} is not iterable`);
           }
           delete this.requests[messageId];
-          rejectCallback(new OCPPError(commandName, commandPayload.toString(), errorDetails));
+          rejectCallback(new OCPPError(commandName, commandPayload.toString(), null, errorDetails));
           break;
         // Error
         default:

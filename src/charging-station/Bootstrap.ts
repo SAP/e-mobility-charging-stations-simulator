@@ -1,8 +1,8 @@
 import { ChargingStationWorkerData, WorkerMessage, WorkerMessageEvents } from '../types/Worker';
 
 import Configuration from '../utils/Configuration';
-import { Storage } from '../utils/performance-storage/Storage';
-import { StorageFactory } from '../utils/performance-storage/StorageFactory';
+import { Storage } from '../performance/storage/Storage';
+import { StorageFactory } from '../performance/storage/StorageFactory';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';

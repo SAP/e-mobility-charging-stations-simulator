@@ -11,7 +11,7 @@ import { MessageType } from '../../types/ocpp/MessageType';
 import { MeterValue } from '../../types/ocpp/MeterValues';
 import OCPPError from './OCPPError';
 import OCPPResponseService from './OCPPResponseService';
-import PerformanceStatistics from '../../utils/PerformanceStatistics';
+import PerformanceStatistics from '../../performance/PerformanceStatistics';
 import logger from '../../utils/Logger';
 
 export default abstract class OCPPRequestService {
@@ -23,7 +23,8 @@ export default abstract class OCPPRequestService {
     this.ocppResponseService = ocppResponseService;
   }
 
-  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown> {
+  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
+      skipBuffering = false): Promise<unknown> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
@@ -48,16 +49,16 @@ export default abstract class OCPPRequestService {
           messageToSend = JSON.stringify([messageType, messageId, commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : '', commandParams.details ? commandParams.details : {}]);
           break;
       }
-      // Check if wsConnection opened and charging station registered
-      if (this.chargingStation.isWebSocketConnectionOpened() && (this.chargingStation.isRegistered() || commandName === RequestCommand.BOOT_NOTIFICATION)) {
-        if (this.chargingStation.getEnableStatistics()) {
-          this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
-        }
+      if (this.chargingStation.getEnableStatistics()) {
+        this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
+      }
+      // Check if wsConnection opened
+      if (this.chargingStation.isWebSocketConnectionOpened()) {
         // Yes: Send Message
         const beginId = PerformanceStatistics.beginMeasure(commandName);
         this.chargingStation.wsConnection.send(messageToSend);
         PerformanceStatistics.endMeasure(commandName, beginId);
-      } else if (commandName !== RequestCommand.BOOT_NOTIFICATION) {
+      } else if (!skipBuffering) {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it

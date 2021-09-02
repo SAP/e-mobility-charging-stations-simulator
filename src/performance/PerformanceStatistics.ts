@@ -1,16 +1,16 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from './CircularArray';
+import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import Statistics, { StatisticsData } from '../types/Statistics';
 
-import Configuration from './Configuration';
+import Configuration from '../utils/Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
 import { URL } from 'url';
-import Utils from './Utils';
+import Utils from '../utils/Utils';
 import { WorkerMessageEvents } from '../types/Worker';
-import logger from './Logger';
+import logger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 
 export default class PerformanceStatistics {
@@ -179,7 +179,7 @@ export default class PerformanceStatistics {
       this.statistics.statisticsData[entryName] = {} as StatisticsData;
     }
     // Update current statistics
-    this.statistics.lastUpdatedAt = new Date();
+    this.statistics.updatedAt = new Date();
     this.statistics.statisticsData[entryName].countTimeMeasurement = this.statistics.statisticsData[entryName].countTimeMeasurement ? this.statistics.statisticsData[entryName].countTimeMeasurement + 1 : 1;
     this.statistics.statisticsData[entryName].currentTimeMeasurement = entry.duration;
     this.statistics.statisticsData[entryName].minTimeMeasurement = this.statistics.statisticsData[entryName].minTimeMeasurement ? (this.statistics.statisticsData[entryName].minTimeMeasurement > entry.duration ? entry.duration : this.statistics.statisticsData[entryName].minTimeMeasurement) : entry.duration;

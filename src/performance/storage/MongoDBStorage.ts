@@ -1,6 +1,6 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import Constants from '../Constants';
+import Constants from '../../utils/Constants';
 import { MongoClient } from 'mongodb';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
@@ -50,7 +50,7 @@ export class MongoDBStorage extends Storage {
 
   private checkDBConnection() {
     if (!this.connected) {
-      throw new Error(`${this.logPrefix} ${this.getDBTypeFromStorageType(StorageType.MONGO_DB)} connection not opened while trying to issue a request`);
+      throw new Error(`${this.logPrefix} ${this.getDBNameFromStorageType(StorageType.MONGO_DB)} connection not opened while trying to issue a request`);
     }
   }
 }

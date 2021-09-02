@@ -20,6 +20,6 @@ export default interface Statistics {
   id: string;
   URI: string;
   createdAt: Date;
-  lastUpdatedAt?: Date;
+  updatedAt?: Date;
   statisticsData: Record<string, StatisticsData>;
 }

@@ -4,7 +4,7 @@ import { AuthorizationStatus, AuthorizeResponse, StartTransactionResponse, StopT
 
 import ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
-import PerformanceStatistics from '../utils/PerformanceStatistics';
+import PerformanceStatistics from '../performance/PerformanceStatistics';
 import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
 

@@ -38,7 +38,18 @@ logFile | | combined.log | string | log file relative path
 logErrorFile | | error.log | string | error log file relative path 
 performanceStorage | | { "enabled": false, "type": "jsonfile", "file:///performanceMeasurements.json" } | { enabled: string; type: string; URI: string; } where type can be 'jsonfile', 'mysql', 'mariadb', 'sqlite' or 'mongodb' | performance storage configuration section
 stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | array of charging station templates URIs configuration section (template file name and number of stations)
- 
+
+#### Worker process model: 
+
+- **workerSet**:
+  Worker set executing each a static number (chargingStationsPerWorker) of simulated charging stations from the total
+
+- **staticPool**:
+  Statically sized worker pool executing a static total number of simulated charging stations    
+
+- **dynamicPool**:
+  Dynamically sized worker pool executing a static total number of simulated charging stations 
+
 ### Charging station template
 
 Key | Value(s) | Default Value | Value type | Description 

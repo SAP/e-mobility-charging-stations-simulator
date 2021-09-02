@@ -1,7 +1,9 @@
 # config
-src/assets/config.json
+src/assets/config*.json
+!src/assets/config-template.json
 src/scripts/scriptConfig.json
-src/assets/authorization-tags.json
+src/assets/*tags.json
+!src/assets/authorization-tags-template.json
 manifest.yml
 
 # Logs
@@ -90,5 +92,5 @@ Thumbs.db
 mta_archives/
 
 *.tar.gz
-performanceMeasurements.json
+performanceRecords.json
 *.db

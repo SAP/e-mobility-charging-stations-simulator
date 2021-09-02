@@ -43,7 +43,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       }
     } else {
       // Throw exception
-      const error = new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload, null, 2)}`);
+      const error = new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
       await this.chargingStation.ocppRequestService.sendError(messageId, error, commandName);
       throw error;
     }
@@ -383,9 +383,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             }
             return { fileName: diagnosticsArchive };
           }
-          throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+          throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`, IncomingRequestCommand.GET_DIAGNOSTICS);
         }
-        throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`);
+        throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`, IncomingRequestCommand.GET_DIAGNOSTICS);
       } catch (error) {
         await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.UploadFailed);
         if (ftpClient) {
