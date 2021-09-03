@@ -25,9 +25,6 @@ export default class Configuration {
   }
 
   static getPerformanceStorage(): StorageConfiguration {
-    const defaultJSONFilePathURI = `file://${path.join(path.resolve(__dirname, '../../'), Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME)}`;
-    const SQLiteFileName = `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
-    const defaultSQLiteFilePathURI = `file://${path.join(path.resolve(__dirname, '../../'), SQLiteFileName)}`;
     let storageConfiguration: StorageConfiguration;
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration =
@@ -36,14 +33,14 @@ export default class Configuration {
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') ? { type: Configuration.getConfig().performanceStorage.type } : { type: StorageType.JSON_FILE },
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'URI')
           ? { URI: Configuration.getConfig().performanceStorage.URI }
-          : { URI: (Configuration.getConfig().performanceStorage.type === StorageType.JSON_FILE) ? defaultJSONFilePathURI : defaultSQLiteFilePathURI }
+          : { URI: this.getDefaultPerformanceStorageURI(Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE) }
       };
     } else {
       storageConfiguration =
       {
         enabled: false,
         type: StorageType.JSON_FILE,
-        URI: defaultJSONFilePathURI
+        URI: this.getDefaultPerformanceStorageURI(StorageType.JSON_FILE)
       };
     }
     return storageConfiguration;
@@ -175,6 +172,18 @@ export default class Configuration {
       });
     } catch (error) {
       Configuration.handleFileException(Configuration.logPrefix(), 'Configuration', Configuration.configurationFilePath, error);
+    }
+  }
+
+  private static getDefaultPerformanceStorageURI(storageType: StorageType) {
+    const SQLiteFileName = `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
+    switch (storageType) {
+      case StorageType.JSON_FILE:
+        return `file://${path.join(path.resolve(__dirname, '../../'), Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME)}`;
+      case StorageType.SQLITE:
+        return `file://${path.join(path.resolve(__dirname, '../../'), SQLiteFileName)}`;
+      default:
+        throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);
     }
   }
 
