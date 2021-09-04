@@ -1,6 +1,6 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
 
-import { CircularArray } from '../../../utils/CircularArray';
+import { PerformanceRecord } from './PerformanceRecord';
 
 @Entity()
 export class PerformanceData {
@@ -8,44 +8,47 @@ export class PerformanceData {
   // pk!: number;
 
   // @Property()
-  // commandName: string;
+  // commandName!: string;
 
   // @Property()
-  // countRequest: number;
+  // countRequest!: number;
 
   // @Property()
-  // countResponse: number;
+  // countResponse!: number;
 
   // @Property()
-  // countError: number;
+  // countError!: number;
 
   // @Property()
-  // countTimeMeasurement: number;
+  // countTimeMeasurement!: number;
 
   // @Property()
-  // timeMeasurementSeries: CircularArray<number>;
+  // timeMeasurementSeries!: number[];
 
   // @Property()
-  // currentTimeMeasurement: number;
+  // currentTimeMeasurement!: number;
 
   // @Property()
-  // minTimeMeasurement: number;
+  // minTimeMeasurement!: number;
 
   // @Property()
-  // maxTimeMeasurement: number;
+  // maxTimeMeasurement!: number;
 
   // @Property()
-  // totalTimeMeasurement: number;
+  // totalTimeMeasurement!: number;
 
   // @Property()
-  // avgTimeMeasurement: number;
+  // avgTimeMeasurement!: number;
 
   // @Property()
-  // medTimeMeasurement: number;
+  // medTimeMeasurement!: number;
 
   // @Property()
-  // ninetyFiveThPercentileTimeMeasurement: number;
+  // ninetyFiveThPercentileTimeMeasurement!: number;
 
   // @Property()
-  // stdDevTimeMeasurement: number;
+  // stdDevTimeMeasurement!: number;
+
+  // @ManyToOne('PerformanceRecord')
+  // performanceRecord!: PerformanceRecord;
 }

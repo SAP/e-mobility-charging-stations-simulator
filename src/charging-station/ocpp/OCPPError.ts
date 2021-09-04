@@ -5,9 +5,9 @@ import { ErrorType } from '../../types/ocpp/ErrorType';
 export default class OCPPError extends Error {
   code: ErrorType | IncomingRequestCommand;
   command?: RequestCommand | IncomingRequestCommand;
-  details?: unknown;
+  details?: Record<string, unknown>;
 
-  constructor(code: ErrorType | IncomingRequestCommand, message: string, command?: RequestCommand | IncomingRequestCommand, details?: unknown) {
+  constructor(code: ErrorType | IncomingRequestCommand, message: string, command?: RequestCommand | IncomingRequestCommand, details?: Record<string, unknown>) {
     super(message);
 
     this.name = new.target.name;

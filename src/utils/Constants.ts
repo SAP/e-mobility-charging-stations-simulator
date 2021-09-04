@@ -49,5 +49,5 @@ export default class Constants {
   static readonly PERFORMANCE_RECORDS_FILETYPE = 'Performance records';
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json';
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'charging-stations-simulator';
-  static readonly PERFORMANCE_RECORDS_TABLE = 'performanceRecords';
+  static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records';
 }

@@ -4,6 +4,8 @@ src/assets/config*.json
 src/scripts/scriptConfig.json
 src/assets/*tags.json
 !src/assets/authorization-tags-template.json
+mikro-orm.config*.ts
+!mikro-orm.config-template.ts
 manifest.yml
 
 # Logs
@@ -91,6 +93,7 @@ Thumbs.db
 *.mta
 mta_archives/
 
+temp/
 *.tar.gz
 performanceRecords.json
 *.db

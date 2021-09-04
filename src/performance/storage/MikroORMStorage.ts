@@ -8,6 +8,7 @@ import { PerformanceData } from '../../types/orm/entities/PerformanceData';
 import { PerformanceRecord } from '../../types/orm/entities/PerformanceRecord';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
+import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 export class MikroORMStorage extends Storage {
   private storageType: StorageType;
@@ -38,15 +39,15 @@ export class MikroORMStorage extends Storage {
 
   private getDBName(): string {
     if (this.storageType === StorageType.SQLITE) {
-      return Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
+      return `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
     }
     return this.storageURI.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
   }
 
   private getOptions(): Configuration<IDatabaseDriver<Connection>> | Options<IDatabaseDriver<Connection>> {
     return {
+      metadataProvider: TsMorphMetadataProvider,
       entities: [PerformanceRecord, PerformanceData],
-      dbName: this.dbName,
       type: this.storageType as MikroORMDBType,
       clientUrl: this.getClientUrl()
     };
@@ -55,7 +56,6 @@ export class MikroORMStorage extends Storage {
   private getClientUrl(): string {
     switch (this.storageType) {
       case StorageType.SQLITE:
-        return this.storageURI.pathname;
       case StorageType.MARIA_DB:
       case StorageType.MYSQL:
         return this.storageURI.toString();
