@@ -1,4 +1,4 @@
-import { AvailabilityStatus, ChargingProfileStatus, ClearChargingProfileStatus, ConfigurationStatus, DefaultStatus, UnlockStatus } from '../types/ocpp/Responses';
+import { AvailabilityStatus, ChargingProfileStatus, ClearChargingProfileStatus, ConfigurationStatus, DefaultStatus, TriggerMessageStatus, UnlockStatus } from '../types/ocpp/Responses';
 
 import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
 
@@ -21,9 +21,13 @@ export default class Constants {
   static readonly OCPP_AVAILABILITY_RESPONSE_ACCEPTED = Object.freeze({ status: AvailabilityStatus.ACCEPTED });
   static readonly OCPP_AVAILABILITY_RESPONSE_REJECTED = Object.freeze({ status: AvailabilityStatus.REJECTED });
   static readonly OCPP_AVAILABILITY_RESPONSE_SCHEDULED = Object.freeze({ status: AvailabilityStatus.SCHEDULED });
+  static readonly OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED = Object.freeze({ status: TriggerMessageStatus.ACCEPTED });
+  static readonly OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED = Object.freeze({ status: TriggerMessageStatus.REJECTED });
+  static readonly OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED = Object.freeze({ status: TriggerMessageStatus.NOT_IMPLEMENTED });
 
   static readonly OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
   static readonly OCPP_ERROR_TIMEOUT = 60000; // Ms
+  static readonly OCPP_TRIGGER_MESSAGE_DELAY = 2000; // Ms
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms

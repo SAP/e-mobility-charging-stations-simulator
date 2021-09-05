@@ -231,7 +231,7 @@ make SUBMODULES_INIT=false
 
 #### Remote Trigger Profile
 
-- :x: TriggerMessage
+- :white_check_mark: TriggerMessage
 
 ## OCPP-J standard parameters supported
 

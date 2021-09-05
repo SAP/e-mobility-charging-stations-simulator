@@ -78,6 +78,10 @@ export default class ChargingStation {
     return Utils.logPrefix(` ${this.stationInfo.chargingStationId} |`);
   }
 
+  public getBootNotificationRequest(): BootNotificationRequest {
+    return this.bootNotificationRequest;
+  }
+
   public getRandomTagId(): string {
     const index = Math.floor(Math.random() * this.authorizedTags.length);
     return this.authorizedTags[index];

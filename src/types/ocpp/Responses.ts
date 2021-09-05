@@ -1,4 +1,4 @@
-import { OCPP16AvailabilityStatus, OCPP16BootNotificationResponse, OCPP16ChargingProfileStatus, OCPP16ClearChargingProfileStatus, OCPP16ConfigurationStatus, OCPP16RegistrationStatus, OCPP16UnlockStatus } from './1.6/Responses';
+import { OCPP16AvailabilityStatus, OCPP16BootNotificationResponse, OCPP16ChargingProfileStatus, OCPP16ClearChargingProfileStatus, OCPP16ConfigurationStatus, OCPP16RegistrationStatus, OCPP16TriggerMessageStatus, OCPP16UnlockStatus } from './1.6/Responses';
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse;
 
@@ -45,4 +45,10 @@ export type UnlockStatus = OCPP16UnlockStatus;
 
 export const UnlockStatus = {
   ...OCPP16UnlockStatus
+};
+
+export type TriggerMessageStatus = OCPP16TriggerMessageStatus;
+
+export const TriggerMessageStatus = {
+  ...OCPP16TriggerMessageStatus
 };

@@ -80,3 +80,13 @@ export interface GetDiagnosticsResponse {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DiagnosticsStatusNotificationResponse {}
+
+export enum OCPP16TriggerMessageStatus {
+  ACCEPTED = 'Accepted',
+  REJECTED = 'Rejected',
+  NOT_IMPLEMENTED = 'NotImplemented'
+}
+
+export interface OCPP16TriggerMessageResponse {
+  status: OCPP16TriggerMessageStatus
+}

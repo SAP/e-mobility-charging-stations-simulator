@@ -14,7 +14,7 @@ export enum OCPP16RequestCommand {
   START_TRANSACTION = 'StartTransaction',
   STOP_TRANSACTION = 'StopTransaction',
   METER_VALUES = 'MeterValues',
-  DIAGNOSTICS_STATUS_NOTIFICATION= 'DiagnosticsStatusNotification'
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification'
 }
 
 export enum OCPP16IncomingRequestCommand {
@@ -28,7 +28,8 @@ export enum OCPP16IncomingRequestCommand {
   CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
   REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
-  GET_DIAGNOSTICS = 'GetDiagnostics'
+  GET_DIAGNOSTICS = 'GetDiagnostics',
+  TRIGGER_MESSAGE = 'TriggerMessage'
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -120,4 +121,18 @@ export interface GetDiagnosticsRequest {
 
 export interface DiagnosticsStatusNotificationRequest {
   status: OCPP16DiagnosticsStatus
+}
+
+export enum MessageTrigger {
+  BootNotification = 'BootNotification',
+  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
+  FirmwareStatusNotification = 'FirmwareStatusNotification',
+  Heartbeat = 'Heartbeat',
+  MeterValues = 'MeterValues',
+  StatusNotification = 'StatusNotification'
+}
+
+export interface OCPP16TriggerMessageRequest {
+  requestedMessage: MessageTrigger;
+  connectorId?: number
 }
