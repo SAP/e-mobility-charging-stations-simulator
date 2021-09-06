@@ -5,9 +5,11 @@
 .github
 .jshintrc
 .eslintrc
+.editorconfig
 .vscode
 .clinic
 .tscache
+.xmake.cfg
 # Logs
 *.log
 # Winston

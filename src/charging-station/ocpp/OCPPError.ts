@@ -1,3 +1,5 @@
+// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+
 import { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
 
 import { ErrorType } from '../../types/ocpp/ErrorType';

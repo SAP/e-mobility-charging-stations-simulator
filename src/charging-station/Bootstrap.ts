@@ -1,3 +1,5 @@
+// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+
 import { ChargingStationWorkerData, WorkerMessage, WorkerMessageEvents } from '../types/Worker';
 
 import Configuration from '../utils/Configuration';
