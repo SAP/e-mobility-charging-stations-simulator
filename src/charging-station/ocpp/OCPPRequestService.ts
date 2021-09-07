@@ -46,7 +46,7 @@ export default abstract class OCPPRequestService {
         // Error Message
         case MessageType.CALL_ERROR_MESSAGE:
           // Build Error Message
-          messageToSend = JSON.stringify([messageType, messageId, commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : '', commandParams.details ? commandParams.details : {}]);
+          messageToSend = JSON.stringify([messageType, messageId, commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? '', commandParams?.details ?? {}]);
           break;
       }
       if (this.chargingStation.getEnableStatistics()) {
@@ -62,7 +62,7 @@ export default abstract class OCPPRequestService {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it
-        return rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ? commandParams.details : {}));
+        return rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ?? {}));
       }
       // Response?
       if (messageType === MessageType.CALL_RESULT_MESSAGE) {
@@ -70,7 +70,7 @@ export default abstract class OCPPRequestService {
         resolve();
       } else if (messageType === MessageType.CALL_ERROR_MESSAGE) {
         // Send timeout
-        setTimeout(() => rejectCallback(new OCPPError(commandParams.code ? commandParams.code : ErrorType.GENERIC_ERROR, commandParams.message ? commandParams.message : `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams.details ? commandParams.details : {})), Constants.OCPP_ERROR_TIMEOUT);
+        setTimeout(() => rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {})), Constants.OCPP_ERROR_TIMEOUT);
       }
 
       /**
