@@ -2,7 +2,7 @@
 src/assets/config*.json
 !src/assets/config-template.json
 src/scripts/scriptConfig.json
-src/assets/*tags.json
+src/assets/*tags*.json
 !src/assets/authorization-tags-template.json
 mikro-orm.config*.ts
 !mikro-orm.config-template.ts
