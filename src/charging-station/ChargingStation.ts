@@ -1011,7 +1011,7 @@ export default class ChargingStation {
             this.initialize();
             // Restart the ATG
             if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
-              this.automaticTransactionGeneration) {
+                this.automaticTransactionGeneration) {
               await this.automaticTransactionGeneration.stop();
             }
             this.startAutomaticTransactionGenerator();
