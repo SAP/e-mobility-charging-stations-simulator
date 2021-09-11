@@ -237,7 +237,7 @@ export default class ChargingStation {
       if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)) {
         logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
       } else if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
-          && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
+                 && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
         return sampledValueTemplates[index];
       } else if (!phase && !sampledValueTemplates[index].phase && sampledValueTemplates[index]?.measurand === measurand
                  && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
@@ -866,7 +866,7 @@ export default class ChargingStation {
       }
       if (this.automaticTransactionGeneration.timeToStop) {
         // The ATG might sleep
-        void this.automaticTransactionGeneration.start();
+        this.automaticTransactionGeneration.start().catch(() => { });
       }
     }
   }
@@ -982,14 +982,15 @@ export default class ChargingStation {
     const authorizationFile = this.getAuthorizationFile();
     if (authorizationFile) {
       try {
-        fs.watch(authorizationFile).on('change', () => {
-          try {
-            logger.debug(this.logPrefix() + ' Authorization file ' + authorizationFile + ' have changed, reload');
-            // Initialize authorizedTags
-            this.authorizedTags = this.getAuthorizedTags();
-            console.log('here');
-          } catch (error) {
-            logger.error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
+        fs.watch(authorizationFile, (event, filename) => {
+          if (filename && event === 'change') {
+            try {
+              logger.debug(this.logPrefix() + ' Authorization file ' + authorizationFile + ' have changed, reload');
+              // Initialize authorizedTags
+              this.authorizedTags = this.getAuthorizedTags();
+            } catch (error) {
+              logger.error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
+            }
           }
         });
       } catch (error) {
@@ -1002,26 +1003,27 @@ export default class ChargingStation {
 
   private startStationTemplateFileMonitoring(): void {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      fs.watch(this.stationTemplateFile).on('change', async (): Promise<void> => {
-        try {
-          logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
-          // Initialize
-          this.initialize();
-          // Restart the ATG
-          if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
-          this.automaticTransactionGeneration) {
-            await this.automaticTransactionGeneration.stop();
+      fs.watch(this.stationTemplateFile, async (event, filename): Promise<void> => {
+        if (filename && event === 'change') {
+          try {
+            logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
+            // Initialize
+            this.initialize();
+            // Restart the ATG
+            if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
+              this.automaticTransactionGeneration) {
+              await this.automaticTransactionGeneration.stop();
+            }
+            this.startAutomaticTransactionGenerator();
+            if (this.getEnableStatistics()) {
+              this.performanceStatistics.restart();
+            } else {
+              this.performanceStatistics.stop();
+            }
+            // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
+          } catch (error) {
+            logger.error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
           }
-          this.startAutomaticTransactionGenerator();
-          if (this.getEnableStatistics()) {
-            this.performanceStatistics.restart();
-          } else {
-            this.performanceStatistics.stop();
-          }
-          // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
-        } catch (error) {
-          logger.error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
         }
       });
     } catch (error) {
