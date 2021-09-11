@@ -4,6 +4,24 @@
 
 Simple [node.js](https://nodejs.org/) program to simulate a set of charging stations based on the OCPP-J 1.6 protocol.
 
+## Prerequisites
+
+### Windows
+
+* [Chocolatey](https://chocolatey.org/):
+
+```powershell
+choco install -y nodejs-lts
+```
+
+### MacOSX
+
+* [Homebrew](https://brew.sh/):
+
+```shell
+brew install node@14
+```
+
 ## Configuration syntax
 
 All configuration files are in the JSON standard format.  
