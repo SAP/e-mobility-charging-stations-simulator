@@ -1,13 +1,14 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand, Request } from '../types/ocpp/Requests';
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { CurrentType, PowerUnits, Voltage } from '../types/ChargingStationTemplate';
 import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles } from '../types/ocpp/Configuration';
 import Connectors, { Connector, SampledValueTemplate } from '../types/Connectors';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
-import Requests, { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand } from '../types/ocpp/Requests';
-import WebSocket, { ClientOptions, MessageEvent } from 'ws';
+import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
+import WebSocket, { ClientOptions, Data } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
@@ -30,7 +31,6 @@ import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { StopTransactionReason } from '../types/ocpp/Transaction';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
-import { WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
@@ -44,7 +44,7 @@ export default class ChargingStation {
   public configuration!: ChargingStationConfiguration;
   public hasStopped: boolean;
   public wsConnection!: WebSocket;
-  public requests: Requests;
+  public requests: Map<string, Request>;
   public messageQueue: string[];
   public performanceStatistics!: PerformanceStatistics;
   public heartbeatSetInterval!: NodeJS.Timeout;
@@ -70,8 +70,8 @@ export default class ChargingStation {
     this.hasSocketRestarted = false;
     this.autoReconnectRetryCount = 0;
 
-    this.requests = {} as Requests;
-    this.messageQueue = [] as string[];
+    this.requests = new Map<string, Request>();
+    this.messageQueue = new Array<string>();
 
     this.authorizedTags = this.getAuthorizedTags();
   }
@@ -236,7 +236,6 @@ export default class ChargingStation {
     for (let index = 0; !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length; index++) {
       if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)) {
         logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand ${measurand} ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
-        continue;
       } else if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
           && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
         return sampledValueTemplates[index];
@@ -646,14 +645,15 @@ export default class ChargingStation {
     }
   }
 
-  private async onMessage(messageEvent: MessageEvent): Promise<void> {
+  private async onMessage(data: Data): Promise<void> {
     let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, {}, {}];
     let responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void;
     let rejectCallback: (error: OCPPError) => void;
     let requestPayload: Record<string, unknown>;
+    let cachedRequest: Request;
     let errMsg: string;
     try {
-      const request = JSON.parse(messageEvent.toString()) as IncomingRequest;
+      const request = JSON.parse(data.toString()) as IncomingRequest;
       if (Utils.isIterable(request)) {
         // Parse the message
         [messageType, messageId, commandName, commandPayload, errorDetails] = request;
@@ -673,8 +673,9 @@ export default class ChargingStation {
         // Outcome Message
         case MessageType.CALL_RESULT_MESSAGE:
           // Respond
-          if (Utils.isIterable(this.requests[messageId])) {
-            [responseCallback, , requestPayload] = this.requests[messageId];
+          cachedRequest = this.requests.get(messageId);
+          if (Utils.isIterable(cachedRequest)) {
+            [responseCallback, , requestPayload] = cachedRequest;
           } else {
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Response request for message id ${messageId} is not iterable`, commandName);
           }
@@ -682,21 +683,22 @@ export default class ChargingStation {
             // Error
             throw new OCPPError(ErrorType.INTERNAL_ERROR, `Response request for unknown message id ${messageId}`, commandName);
           }
-          delete this.requests[messageId];
+          this.requests.delete(messageId);
           responseCallback(commandName, requestPayload);
           break;
         // Error Message
         case MessageType.CALL_ERROR_MESSAGE:
-          if (!this.requests[messageId]) {
+          cachedRequest = this.requests.get(messageId);
+          if (!cachedRequest) {
             // Error
             throw new OCPPError(ErrorType.INTERNAL_ERROR, `Error request for unknown message id ${messageId}`);
           }
-          if (Utils.isIterable(this.requests[messageId])) {
-            [, rejectCallback] = this.requests[messageId];
+          if (Utils.isIterable(cachedRequest)) {
+            [, rejectCallback] = cachedRequest;
           } else {
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Error request for message id ${messageId} is not iterable`);
           }
-          delete this.requests[messageId];
+          this.requests.delete(messageId);
           rejectCallback(new OCPPError(commandName, commandPayload.toString(), null, errorDetails));
           break;
         // Error
@@ -707,7 +709,7 @@ export default class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming request message %j processing error %j on content type %j', this.logPrefix(), messageEvent, error, this.requests[messageId]);
+      logger.error('%s Incoming request message %j processing error %j on content type %j', this.logPrefix(), data, error, this.requests.get(messageId));
       // Send error
       messageType !== MessageType.CALL_ERROR_MESSAGE && await this.ocppRequestService.sendError(messageId, error, commandName);
     }
@@ -721,11 +723,11 @@ export default class ChargingStation {
     logger.debug(this.logPrefix() + ' Received a WS pong (rfc6455) from the server');
   }
 
-  private async onError(errorEvent: any): Promise<void> {
-    logger.error(this.logPrefix() + ' Socket error: %j', errorEvent);
-    // switch (errorEvent.code) {
+  private async onError(error: WSError): Promise<void> {
+    logger.error(this.logPrefix() + ' Socket error: %j', error);
+    // switch (error.code) {
     //   case 'ECONNREFUSED':
-    //     await this._reconnect(errorEvent);
+    //     await this.reconnect(error);
     //     break;
     // }
   }
@@ -985,6 +987,7 @@ export default class ChargingStation {
             logger.debug(this.logPrefix() + ' Authorization file ' + authorizationFile + ' have changed, reload');
             // Initialize authorizedTags
             this.authorizedTags = this.getAuthorizedTags();
+            console.log('here');
           } catch (error) {
             logger.error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
           }
@@ -1030,7 +1033,7 @@ export default class ChargingStation {
     return !Utils.isUndefined(this.stationInfo.reconnectExponentialDelay) ? this.stationInfo.reconnectExponentialDelay : false;
   }
 
-  private async reconnect(error: unknown): Promise<void> {
+  private async reconnect(error: Error): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
     // Stop heartbeat

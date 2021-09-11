@@ -35,3 +35,7 @@ export enum WebSocketCloseEventStatusCode {
   CLOSE_BAD_GATEWAY = 1014,
   CLOSE_TLS_HANDSHAKE = 1015
 }
+
+export interface WSError extends Error {
+  code?: string
+}

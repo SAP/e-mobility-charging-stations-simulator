@@ -35,7 +35,7 @@ export default abstract class OCPPRequestService {
         // Request
         case MessageType.CALL_MESSAGE:
           // Build request
-          this.chargingStation.requests[messageId] = [responseCallback, rejectCallback, commandParams as Record<string, unknown>];
+          this.chargingStation.requests.set(messageId, [responseCallback, rejectCallback, commandParams as Record<string, unknown>]);
           messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
           break;
         // Response
@@ -100,7 +100,7 @@ export default abstract class OCPPRequestService {
         logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception
         // eslint-disable-next-line no-empty-function
-        self.chargingStation.requests[messageId] = [() => { }, () => { }, {}];
+        self.chargingStation.requests.set(messageId, [() => { }, () => { }, {}]);
         // Send error
         reject(error);
       }

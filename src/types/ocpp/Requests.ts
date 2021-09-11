@@ -4,10 +4,6 @@ import { MessageType } from './MessageType';
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
 import OCPPError from '../../charging-station/ocpp/OCPPError';
 
-export default interface Requests {
-  [id: string]: Request;
-}
-
 export type BootNotificationRequest = OCPP16BootNotificationRequest;
 
 export type AvailabilityType = OCPP16AvailabilityType;
