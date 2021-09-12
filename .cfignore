@@ -9,6 +9,10 @@
 .vscode
 .clinic
 .tscache
+.nycrc.json
+.nyc_output
+.mocharc.json
+.release-it.json
 .xmake.cfg
 # Logs
 *.log
@@ -21,10 +25,21 @@
 .netrwhist
 *~
 *.orig
+*.md
+*.db
+*-template.*
+*.tar.gz
+*.mta
+mta_archives
 src
-ev-simulator-start.sh
-ev-simulator-start.bat
-README.md
+test
+temp
+outputs
+coverage
+charging-stations-simulator-start.sh
+charging-stations-simulator-start.bat
 node_modules
-manifest-cf-template.yml
+sonar-project.properties
+performanceRecords.json
+tsconfig*.json
 mta.yaml

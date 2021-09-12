@@ -4,7 +4,7 @@ networks:
       driver: bridge
 
 services:
-    simulator:
+    charging-stations-simulator:
         build:
             context: ..
             dockerfile: docker/Dockerfile

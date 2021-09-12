@@ -1,9 +1,9 @@
 PROJECT_NAME?=evse
-NAME:=simulator
+NAME:=charging-stations-simulator
 SUBMODULES_INIT?=false
 DOCKER_ECR_ACCOUNT_ID?=166296450311
 DOCKER_ECR_REGION?=eu-west-3
-DOCKER_ECR_REGISTRY_NAME?=ev_simulator
+DOCKER_ECR_REGISTRY_NAME?=charging_stations_simulator
 DOCKER_ECR_TAG?=latest
 
 .PHONY: all
