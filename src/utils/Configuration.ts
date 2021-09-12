@@ -188,11 +188,11 @@ export default class Configuration {
     }
   }
 
-  private static objectHasOwnProperty(object: any, property: string): boolean {
+  private static objectHasOwnProperty(object: unknown, property: string): boolean {
     return Object.prototype.hasOwnProperty.call(object, property) as boolean;
   }
 
-  private static isUndefined(obj: any): boolean {
+  private static isUndefined(obj: unknown): boolean {
     return typeof obj === 'undefined';
   }
 

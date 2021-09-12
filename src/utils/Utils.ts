@@ -40,20 +40,20 @@ export default class Utils {
     }
   }
 
-  static convertToDate(value: any): Date {
+  static convertToDate(value: unknown): Date {
     // Check
     if (!value) {
-      return value;
+      return value as Date;
     }
     // Check Type
     if (!(value instanceof Date)) {
-      return new Date(value);
+      return new Date(value as string);
     }
     return value;
   }
 
-  static convertToInt(value: any): number {
-    let changedValue: number = value;
+  static convertToInt(value: unknown): number {
+    let changedValue: number = value as number;
     if (!value) {
       return 0;
     }
@@ -63,25 +63,25 @@ export default class Utils {
     // Check
     if (Utils.isString(value)) {
       // Create Object
-      changedValue = parseInt(value);
+      changedValue = parseInt(value as string);
     }
     return changedValue;
   }
 
-  static convertToFloat(value: any): number {
-    let changedValue: number = value;
+  static convertToFloat(value: unknown): number {
+    let changedValue: number = value as number;
     if (!value) {
       return 0;
     }
     // Check
     if (Utils.isString(value)) {
       // Create Object
-      changedValue = parseFloat(value);
+      changedValue = parseFloat(value as string);
     }
     return changedValue;
   }
 
-  static convertToBoolean(value: any): boolean {
+  static convertToBoolean(value: unknown): boolean {
     let result = false;
     // Check boolean
     if (value) {
@@ -144,7 +144,7 @@ export default class Utils {
     return false;
   }
 
-  static isEmptyJSon(document: any): boolean {
+  static isEmptyJSon(document: unknown): boolean {
     // Empty?
     if (!document) {
       return true;
@@ -157,15 +157,15 @@ export default class Utils {
     return Object.keys(document).length === 0;
   }
 
-  static isString(value: any): boolean {
+  static isString(value: unknown): boolean {
     return typeof value === 'string';
   }
 
-  static isUndefined(value: any): boolean {
+  static isUndefined(value: unknown): boolean {
     return typeof value === 'undefined';
   }
 
-  static isNullOrUndefined(value: any): boolean {
+  static isNullOrUndefined(value: unknown): boolean {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (value == null) {
       return true;
@@ -173,7 +173,7 @@ export default class Utils {
     return false;
   }
 
-  static isEmptyArray(object: any): boolean {
+  static isEmptyArray(object: unknown): boolean {
     if (!object) {
       return true;
     }
@@ -183,7 +183,7 @@ export default class Utils {
     return true;
   }
 
-  static isEmptyObject(obj: any): boolean {
+  static isEmptyObject(obj: Record<string, unknown>): boolean {
     return !Object.keys(obj).length;
   }
 

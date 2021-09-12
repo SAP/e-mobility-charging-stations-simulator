@@ -53,7 +53,7 @@ export class JSONFileStorage extends Storage {
   }
 
   private checkPerformanceRecordsFile(): void {
-    if (!this.fd) {
+    if (!this?.fd) {
       throw new Error(`${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`);
     }
   }
