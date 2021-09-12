@@ -1,11 +1,11 @@
 name: 'Feature request'
-title: \[FEATURE\]
-description: Suggest a feature
+title: '[FEATURE] '
+description: Request a feature
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting an feature request.
+        Thank you for requesting a feature.
 
         This issue tracker is for feature requests in charging-stations-simulator.
   - type: checkboxes

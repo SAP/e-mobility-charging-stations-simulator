@@ -1,5 +1,5 @@
 name: 'Bug report'
-title: '[BUG]'
+title: '[BUG] '
 description: Create a bug report
 body:
   - type: markdown
