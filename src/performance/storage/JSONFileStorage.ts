@@ -16,13 +16,13 @@ export class JSONFileStorage extends Storage {
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.checkPerformanceRecordsFile();
-    fs.readFile(this.dbName, 'utf-8', (error, data) => {
+    fs.readFile(this.dbName, 'utf8', (error, data) => {
       if (error) {
         FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
       } else {
         const performanceRecords: Statistics[] = data ? JSON.parse(data) as Statistics[] : [];
         performanceRecords.push(performanceStatistics);
-        fs.writeFile(this.dbName, JSON.stringify(performanceRecords, null, 2), 'utf-8', (err) => {
+        fs.writeFile(this.dbName, JSON.stringify(performanceRecords, null, 2), 'utf8', (err) => {
           if (err) {
             FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, err);
           }
