@@ -33,7 +33,9 @@ export class JSONFileStorage extends Storage {
 
   public open(): void {
     try {
-      this.fd = fs.openSync(this.dbName, 'a+');
+      if (!this?.fd) {
+        this.fd = fs.openSync(this.dbName, 'a+');
+      }
     } catch (error) {
       FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
     }
@@ -41,7 +43,7 @@ export class JSONFileStorage extends Storage {
 
   public close(): void {
     try {
-      if (this.fd) {
+      if (this?.fd) {
         fs.closeSync(this.fd);
         this.fd = null;
       }

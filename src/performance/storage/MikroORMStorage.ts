@@ -12,7 +12,7 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 export class MikroORMStorage extends Storage {
   private storageType: StorageType;
-  private orm: MikroORM;
+  private orm: MikroORM | null;
 
   constructor(storageURI: string, logPrefix: string, storageType: StorageType) {
     super(storageURI, logPrefix);
@@ -30,11 +30,24 @@ export class MikroORMStorage extends Storage {
   }
 
   public async open(): Promise<void> {
-    this.orm = await MikroORM.init(this.getOptions(), true);
+    try {
+      if (!this?.orm) {
+        this.orm = await MikroORM.init(this.getOptions(), true);
+      }
+    } catch (error) {
+      this.handleDBError(this.storageType, error);
+    }
   }
 
   public async close(): Promise<void> {
-    await this.orm.close();
+    try {
+      if (this?.orm) {
+        await this.orm.close();
+        this.orm = null;
+      }
+    } catch (error) {
+      this.handleDBError(this.storageType, error);
+    }
   }
 
   private getDBName(): string {

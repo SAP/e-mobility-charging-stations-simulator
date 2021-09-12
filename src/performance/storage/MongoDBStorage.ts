@@ -7,7 +7,7 @@ import { Storage } from './Storage';
 import { StorageType } from '../../types/Storage';
 
 export class MongoDBStorage extends Storage {
-  private client: MongoClient;
+  private client: MongoClient | null;
   private connected: boolean;
 
   constructor(storageURI: string, logPrefix: string) {
@@ -28,7 +28,7 @@ export class MongoDBStorage extends Storage {
 
   public async open(): Promise<void> {
     try {
-      if (!this.connected) {
+      if (!this.connected && this?.client) {
         await this.client.connect();
         this.connected = true;
       }
@@ -39,7 +39,7 @@ export class MongoDBStorage extends Storage {
 
   public async close(): Promise<void> {
     try {
-      if (this.connected) {
+      if (this.connected && this?.client) {
         await this.client.close();
         this.connected = false;
       }
@@ -49,6 +49,9 @@ export class MongoDBStorage extends Storage {
   }
 
   private checkDBConnection() {
+    if (!this?.client) {
+      throw new Error(`${this.logPrefix} ${this.getDBNameFromStorageType(StorageType.MONGO_DB)} client initialization failed while trying to issue a request`);
+    }
     if (!this.connected) {
       throw new Error(`${this.logPrefix} ${this.getDBNameFromStorageType(StorageType.MONGO_DB)} connection not opened while trying to issue a request`);
     }
