@@ -30,11 +30,16 @@
       2,
       {
         "SwitchCase": 1,
+        "CallExpression": {
+          "arguments": 1
+        },
         "FunctionDeclaration": {
-          "parameters": 2
+          "parameters": 2,
+          "body": 1
         },
         "FunctionExpression": {
-          "parameters": 2
+          "parameters": 2,
+          "body": 1
         }
       }
     ],
@@ -215,7 +220,7 @@
       ],
       "extends": "plugin:node/recommended",
       "rules": {
-        "node/shebang" : "off",
+        "node/shebang": "off",
         "@typescript-eslint/no-unused-vars": "off",
         "@typescript-eslint/no-var-requires": "off"
       }
