@@ -62,7 +62,7 @@ export default abstract class OCPPRequestService {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it
-        return rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams.details ?? {}));
+        return rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams?.details ?? {}));
       }
       // Response?
       if (messageType === MessageType.CALL_RESULT_MESSAGE) {
