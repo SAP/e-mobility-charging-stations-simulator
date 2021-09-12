@@ -22,7 +22,7 @@ choco install -y nodejs-lts
 brew install node@14
 ```
 
-###  GNU/Linux: 
+### GNU/Linux: 
 
 * [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 14.X
 
