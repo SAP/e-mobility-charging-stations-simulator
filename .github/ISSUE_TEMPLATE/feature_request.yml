@@ -1,0 +1,26 @@
+name: 'Feature request'
+title: [FEATURE]
+description: Suggest a feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an feature request.
+
+        This issue tracker is for feature requests in charging-stations-simulator.
+  - type: checkboxes
+    attributes:
+      options:
+        - label:
+            I've searched for any related issues and avoided creating a
+            duplicate issue.
+          required: true
+  - type: textarea
+    attributes:
+      label: Description
+      description:
+        A clear and concise description of the feature.
+  - type: textarea
+    attributes:
+      label: Attachments
+      description: Logs, screenshots, screencast, etc.
