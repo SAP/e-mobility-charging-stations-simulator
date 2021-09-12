@@ -22,15 +22,26 @@ choco install -y nodejs-lts
 brew install node@14
 ```
 
+###  GNU/Linux: 
+
+* [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 14.X
+
 ## Configuration syntax
 
 All configuration files are in the JSON standard format.  
 
-The program's global configuration parameters must be within the src/assets/config.json file. A configuration template file is available at [src/assets/config-template.json](src/assets/config-template.json).
+The charging stations simulator's main configuration parameters must be within the `src/assets/config.json` file. A configuration template file is available at [src/assets/config-template.json](src/assets/config-template.json).
 
 All charging station templates are in the directory [src/assets/station-templates](src/assets/station-templates).
 
-A list of RFID tags must be defined for the automatic transaction generator with the default location and name src/assets/authorization-tags.json. A template file is available at [src/assets/authorization-tags-template.json](src/assets/authorization-tags-template.json).
+A list of RFID tags must be defined for the automatic transaction generator with the default location and name `src/assets/authorization-tags.json`. A template file is available at [src/assets/authorization-tags-template.json](src/assets/authorization-tags-template.json).
+
+The charging stations simulator have an automatic configuration files reload feature at change for: 
+* main configuration;
+* charging station templates; 
+* authorization RFID tags.
+
+But the modifications to test have to be done to the files in the build result directory [dist/assets](dist/assets). Once the modifications are finished, they have to be reported or copied to the matching files in the build source directory [src/assets](src/assets) to ensure they will be taken into account at next build. 
 
 ### Global configuration 
 
