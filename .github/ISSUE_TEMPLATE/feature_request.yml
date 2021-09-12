@@ -1,5 +1,5 @@
 name: 'Feature request'
-title: [FEATURE]
+title: \[FEATURE\]
 description: Suggest a feature
 body:
   - type: markdown
