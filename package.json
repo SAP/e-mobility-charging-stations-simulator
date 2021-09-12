@@ -1,6 +1,6 @@
 {
   "name": "charging-stations-simulator",
-  "version": "1.0.55",
+  "version": "1.0.56",
   "engines": {
     "node": "14.x.x",
     "npm": "6.x.x"
