@@ -631,16 +631,16 @@ export default class ChargingStation {
     this.hasSocketRestarted = false;
   }
 
-  private async onClose(closeEvent: any): Promise<void> {
-    switch (closeEvent) {
+  private async onClose(code: number): Promise<void> {
+    switch (code) {
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL: // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
-        logger.info(`${this.logPrefix()} Socket normally closed with status '${Utils.getWebSocketCloseEventStatusString(closeEvent)}'`);
+        logger.info(`${this.logPrefix()} Socket normally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}'`);
         this.autoReconnectRetryCount = 0;
         break;
       default: // Abnormal close
-        logger.error(`${this.logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(closeEvent)}'`);
-        await this.reconnect(closeEvent);
+        logger.error(`${this.logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}'`);
+        await this.reconnect(code);
         break;
     }
   }
@@ -1035,7 +1035,7 @@ export default class ChargingStation {
     return !Utils.isUndefined(this.stationInfo.reconnectExponentialDelay) ? this.stationInfo.reconnectExponentialDelay : false;
   }
 
-  private async reconnect(error: Error): Promise<void> {
+  private async reconnect(code: number): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
     // Stop heartbeat
