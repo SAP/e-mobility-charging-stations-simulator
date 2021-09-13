@@ -98,8 +98,9 @@ export default class PerformanceStatistics {
 
   private initializePerformanceObserver(): void {
     this.performanceObserver = new PerformanceObserver((list) => {
-      this.addPerformanceEntryToStatistics(list.getEntries()[0]);
-      logger.debug(`${this.logPrefix()} '${list.getEntries()[0].name}' performance entry: %j`, list.getEntries()[0]);
+      const lastPerformanceEntry = list.getEntries()[0];
+      this.addPerformanceEntryToStatistics(lastPerformanceEntry);
+      logger.debug(`${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`, lastPerformanceEntry);
     });
     this.performanceObserver.observe({ entryTypes: ['measure'] });
   }
