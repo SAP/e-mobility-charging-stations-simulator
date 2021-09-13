@@ -631,15 +631,17 @@ export default class ChargingStation {
     this.hasSocketRestarted = false;
   }
 
-  private async onClose(code: number): Promise<void> {
+  private async onClose(code: number, reason: string): Promise<void> {
     switch (code) {
-      case WebSocketCloseEventStatusCode.CLOSE_NORMAL: // Normal close
+      // Normal close
+      case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
-        logger.info(`${this.logPrefix()} Socket normally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}'`);
+        logger.info(`${this.logPrefix()} Socket normally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
         this.autoReconnectRetryCount = 0;
         break;
-      default: // Abnormal close
-        logger.error(`${this.logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}'`);
+      // Abnormal close
+      default:
+        logger.error(`${this.logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)} and reason '${reason}'`);
         await this.reconnect(code);
         break;
     }
