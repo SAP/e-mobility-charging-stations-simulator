@@ -26,14 +26,14 @@ export default class PerformanceStatistics {
   }
 
   public static beginMeasure(id: string): string {
-    const beginId = 'begin' + id.charAt(0).toUpperCase() + id.slice(1);
-    performance.mark(beginId);
-    return beginId;
+    const markId = `${id.charAt(0).toUpperCase() + id.slice(1)}~${Utils.generateUUID()}`;
+    performance.mark(markId);
+    return markId;
   }
 
-  public static endMeasure(name: string, beginId: string): void {
-    performance.measure(name, beginId);
-    performance.clearMarks(beginId);
+  public static endMeasure(name: string, markId: string): void {
+    performance.measure(name, markId);
+    performance.clearMarks(markId);
   }
 
   public addRequestStatistic(command: RequestCommand | IncomingRequestCommand, messageType: MessageType): void {

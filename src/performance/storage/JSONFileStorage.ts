@@ -5,6 +5,7 @@ import FileUtils from '../../utils/FileUtils';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
 import fs from 'fs';
+import lockfile from 'proper-lockfile';
 
 export class JSONFileStorage extends Storage {
   private fd: number | null = null;
@@ -16,19 +17,19 @@ export class JSONFileStorage extends Storage {
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.checkPerformanceRecordsFile();
-    fs.readFile(this.dbName, 'utf8', (error, data) => {
-      if (error) {
-        FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
-      } else {
-        const performanceRecords: Statistics[] = data ? JSON.parse(data) as Statistics[] : [];
-        performanceRecords.push(performanceStatistics);
-        fs.writeFile(this.dbName, JSON.stringify(performanceRecords, null, 2), 'utf8', (err) => {
-          if (err) {
-            FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, err);
-          }
-        });
-      }
-    });
+    lockfile.lock(this.dbName, { stale: 5000, retries: 3 })
+      .then(async (release) => {
+        try {
+          const fileData = fs.readFileSync(this.dbName, 'utf8');
+          const performanceRecords: Statistics[] = fileData ? JSON.parse(fileData) as Statistics[] : [];
+          performanceRecords.push(performanceStatistics);
+          fs.writeFileSync(this.dbName, JSON.stringify(performanceRecords, null, 2), 'utf8');
+        } catch (error) {
+          FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
+        }
+        await release();
+      })
+      .catch(() => { });
   }
 
   public open(): void {

@@ -17,6 +17,7 @@ export default class Bootstrap {
   private static instance: Bootstrap | null = null;
   private static workerImplementation: WorkerAbstract | null = null;
   private static storage: Storage;
+  private static numberOfChargingStations: number;
   private version: string = version;
   private started: boolean;
   private workerScript: string;
@@ -39,21 +40,21 @@ export default class Bootstrap {
   public async start(): Promise<void> {
     if (isMainThread && !this.started) {
       try {
-        let numStationsTotal = 0;
+        Bootstrap.numberOfChargingStations = 0;
         await Bootstrap.storage.open();
         await Bootstrap.workerImplementation.start();
         // Start ChargingStation object in worker thread
         if (Configuration.getStationTemplateURLs()) {
           for (const stationURL of Configuration.getStationTemplateURLs()) {
             try {
-              const nbStations = stationURL.numberOfStations ? stationURL.numberOfStations : 0;
+              const nbStations = stationURL.numberOfStations ?? 0;
               for (let index = 1; index <= nbStations; index++) {
                 const workerData: ChargingStationWorkerData = {
                   index,
                   templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
                 await Bootstrap.workerImplementation.addElement(workerData);
-                numStationsTotal++;
+                Bootstrap.numberOfChargingStations++;
               }
             } catch (error) {
               console.error(chalk.red('Charging station start with template file ' + stationURL.file + ' error '), error);
@@ -62,10 +63,10 @@ export default class Bootstrap {
         } else {
           console.warn(chalk.yellow('No stationTemplateURLs defined in configuration, exiting'));
         }
-        if (numStationsTotal === 0) {
+        if (Bootstrap.numberOfChargingStations === 0) {
           console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'));
         } else {
-          console.log(chalk.green(`Charging stations simulator ${this.version} started with ${numStationsTotal.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${Bootstrap.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${Bootstrap.workerImplementation.maxElementsPerWorker ? ` (${Bootstrap.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`));
+          console.log(chalk.green(`Charging stations simulator ${this.version} started with ${Bootstrap.numberOfChargingStations.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${Bootstrap.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${Bootstrap.workerImplementation.maxElementsPerWorker ? ` (${Bootstrap.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`));
         }
         this.started = true;
       } catch (error) {

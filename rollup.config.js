@@ -20,7 +20,7 @@ export default {
     preserveModulesRoot: 'src',
     ...!isDevelopmentBuild && { plugins: [terser({ numWorkers: 2 })] }
   },
-  external: ['basic-ftp', 'chalk', 'crypto', 'fs', '@mikro-orm/core', '@mikro-orm/reflection', 'mongodb', 'path', 'perf_hooks', 'poolifier', 'reflect-metadata', 'tar', 'url', 'uuid', 'ws', 'winston-daily-rotate-file', 'winston/lib/winston/transports', 'winston', 'worker_threads'],
+  external: ['basic-ftp', 'chalk', 'crypto', 'fs', '@mikro-orm/core', '@mikro-orm/reflection', 'mongodb', 'path', 'perf_hooks', 'poolifier', 'proper-lockfile', 'reflect-metadata', 'tar', 'url', 'uuid', 'ws', 'winston-daily-rotate-file', 'winston/lib/winston/transports', 'winston', 'worker_threads'],
   plugins: [
     json(),
     ts({
