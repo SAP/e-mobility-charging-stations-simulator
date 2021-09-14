@@ -22,7 +22,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseBootNotification(payload: OCPP16BootNotificationResponse, requestPayload: OCPP16BootNotificationRequest): void {
+  private handleResponseBootNotification(payload: OCPP16BootNotificationResponse): void {
     if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartBeatInterval, payload.interval.toString());
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartbeatInterval, payload.interval.toString(), false, false);

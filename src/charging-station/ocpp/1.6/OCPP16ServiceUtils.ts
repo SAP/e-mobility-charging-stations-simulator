@@ -19,7 +19,7 @@ export class OCPP16ServiceUtils {
     } else if (chargingStation.stationInfo?.powerDivider <= 0) {
       const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider have zero or below value ${chargingStation.stationInfo.powerDivider}`;
       logger.error(errMsg);
-      throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg), RequestCommand.METER_VALUES;
+      throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES);
     }
   }
 
