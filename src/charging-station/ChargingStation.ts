@@ -641,7 +641,7 @@ export default class ChargingStation {
         break;
       // Abnormal close
       default:
-        logger.error(`${this.logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)} and reason '${reason}'`);
+        logger.error(`${this.logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
         await this.reconnect(code);
         break;
     }
