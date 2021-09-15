@@ -27,10 +27,15 @@
 *.orig
 *.md
 *.db
-*-template.*
+*tags-template.*
+*config-template.*
+*cf-template.*
 *.tar.gz
 *.mta
+rollup.config.js
+mta.yaml
 mta_archives
+docker
 src
 test
 temp
@@ -42,4 +47,3 @@ node_modules
 sonar-project.properties
 performanceRecords.json
 tsconfig*.json
-mta.yaml
