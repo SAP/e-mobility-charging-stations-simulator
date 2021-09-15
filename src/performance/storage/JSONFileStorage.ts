@@ -29,7 +29,7 @@ export class JSONFileStorage extends Storage {
         }
         await release();
       })
-      .catch(() => { });
+      .catch(() => { /* This is intentional */ });
   }
 
   public open(): void {
