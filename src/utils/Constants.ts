@@ -32,6 +32,7 @@ export default class Constants {
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_WAIT_TIME = 2000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
+  static readonly CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS = 0.25; // Hours
 
   static readonly TRANSACTION_DEFAULT_IDTAG = '00000000';
 

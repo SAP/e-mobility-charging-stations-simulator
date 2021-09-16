@@ -120,7 +120,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  // eslint-disable-next-line consistent-this
   public async sendMeterValues(connectorId: number, transactionId: number, interval: number, debug = false): Promise<void> {
     try {
       const meterValue: OCPP16MeterValue = {
