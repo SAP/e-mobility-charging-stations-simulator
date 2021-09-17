@@ -235,7 +235,7 @@ export default class Utils {
   }
 
   /**
-   * Generate a cryptographically secure number in the [0, 1[ range
+   * Generate a cryptographically secure random number in the [0, 1[ range
    *
    * @returns
    */
