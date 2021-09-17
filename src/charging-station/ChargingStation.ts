@@ -899,7 +899,7 @@ export default class ChargingStation {
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
       this.webSocketPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened()) {
-          this.wsConnection.ping((): void => { });
+          this.wsConnection.ping((): void => { /* This is intentional */ });
         }
       }, webSocketPingInterval * 1000);
       logger.info(this.logPrefix() + ' WebSocket ping started every ' + Utils.secondsToHHMMSS(webSocketPingInterval));

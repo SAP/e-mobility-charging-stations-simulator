@@ -407,12 +407,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           setTimeout(() => {
             this.chargingStation.ocppRequestService.sendBootNotification(this.chargingStation.getBootNotificationRequest().chargePointModel,
               this.chargingStation.getBootNotificationRequest().chargePointVendor, this.chargingStation.getBootNotificationRequest().chargeBoxSerialNumber,
-              this.chargingStation.getBootNotificationRequest().firmwareVersion).catch(() => {});
+              this.chargingStation.getBootNotificationRequest().firmwareVersion).catch(() => { /* This is intentional */ });
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         case MessageTrigger.Heartbeat:
           setTimeout(() => {
-            this.chargingStation.ocppRequestService.sendHeartbeat().catch(() => {});
+            this.chargingStation.ocppRequestService.sendHeartbeat().catch(() => { /* This is intentional */ });
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         default:
