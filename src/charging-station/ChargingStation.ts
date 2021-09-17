@@ -85,7 +85,7 @@ export default class ChargingStation {
   }
 
   public getRandomTagId(): string {
-    const index = Math.floor(Math.random() * this.authorizedTags.length);
+    const index = Math.floor(Utils.secureRandom() * this.authorizedTags.length);
     return this.authorizedTags[index];
   }
 
@@ -453,7 +453,7 @@ export default class ChargingStation {
     const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? {} as ChargingStationInfo;
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
       stationTemplateFromFile.power = stationTemplateFromFile.power as number[];
-      const powerArrayRandomIndex = Math.floor(Math.random() * stationTemplateFromFile.power.length);
+      const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationTemplateFromFile.power.length);
       stationInfo.maxPower = stationTemplateFromFile.powerUnit === PowerUnits.KILO_WATT
         ? stationTemplateFromFile.power[powerArrayRandomIndex] * 1000
         : stationTemplateFromFile.power[powerArrayRandomIndex];
@@ -924,7 +924,7 @@ export default class ChargingStation {
         indexUrl = this.index % supervisionUrls.length;
       } else {
         // Get a random url
-        indexUrl = Math.floor(Math.random() * supervisionUrls.length);
+        indexUrl = Math.floor(Utils.secureRandom() * supervisionUrls.length);
       }
       return new URL(supervisionUrls[indexUrl]);
     }

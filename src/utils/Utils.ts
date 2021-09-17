@@ -1,6 +1,7 @@
 import Configuration from './Configuration';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
+import crypto from 'crypto';
 import { v4 as uuid } from 'uuid';
 
 export default class Utils {
@@ -98,14 +99,14 @@ export default class Utils {
   }
 
   static getRandomFloat(max: number, min = 0): number {
-    return Math.random() < 0.5 ? (1 - Math.random()) * (max - min) + min : Math.random() * (max - min) + min;
+    return (crypto.randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min;
   }
 
   static getRandomInt(max: number, min = 0): number {
     if (min) {
-      return Math.floor(Math.random() * (max - min + 1) + min);
+      return Math.floor(Utils.secureRandom() * (max - min + 1)) + min;
     }
-    return Math.floor(Math.random() * max + 1);
+    return Math.floor(Utils.secureRandom() * (max + 1));
   }
 
   static roundTo(numberValue: number, scale: number): number {
@@ -195,7 +196,7 @@ export default class Utils {
    */
   static exponentialDelay(retryNumber = 0): number {
     const delay = Math.pow(2, retryNumber) * 100;
-    const randomSum = delay * 0.2 * Math.random(); // 0-20% of the delay
+    const randomSum = delay * 0.2 * Utils.secureRandom(); // 0-20% of the delay
     return delay + randomSum;
   }
 
@@ -231,5 +232,14 @@ export default class Utils {
 
   static workerDynamicPoolInUse(): boolean {
     return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL;
+  }
+
+  /**
+   * Generate a cryptographically secure number in the [0, 1[ range
+   *
+   * @returns
+   */
+  static secureRandom(): number {
+    return crypto.randomBytes(4).readUInt32LE() / 0x100000000;
   }
 }

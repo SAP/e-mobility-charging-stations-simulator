@@ -79,7 +79,7 @@ export default class AutomaticTransactionGenerator {
         this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransactions) * 1000;
       logger.info(this.logPrefix(connectorId) + ' waiting for ' + Utils.milliSecondsToHHMMSS(wait));
       await Utils.sleep(wait);
-      const start = Math.random();
+      const start = Utils.secureRandom();
       if (start < this.chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
         transactionSkip = 0;
         // Start transaction
