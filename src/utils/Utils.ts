@@ -5,27 +5,27 @@ import crypto from 'crypto';
 import { v4 as uuid } from 'uuid';
 
 export default class Utils {
-  static logPrefix(prefixString = ''): string {
+  public static logPrefix(prefixString = ''): string {
     return new Date().toLocaleString() + prefixString;
   }
 
-  static generateUUID(): string {
+  public static generateUUID(): string {
     return uuid();
   }
 
-  static async sleep(milliSeconds: number): Promise<NodeJS.Timeout> {
+  public static async sleep(milliSeconds: number): Promise<NodeJS.Timeout> {
     return new Promise((resolve) => setTimeout(resolve, milliSeconds));
   }
 
-  static secondsToHHMMSS(seconds: number): string {
+  public static secondsToHHMMSS(seconds: number): string {
     return Utils.milliSecondsToHHMMSS(seconds * 1000);
   }
 
-  static milliSecondsToHHMMSS(milliSeconds: number): string {
+  public static milliSecondsToHHMMSS(milliSeconds: number): string {
     return new Date(milliSeconds).toISOString().substr(11, 8);
   }
 
-  static removeExtraEmptyLines(tab: string[]): void {
+  public static removeExtraEmptyLines(tab: string[]): void {
     // Start from the end
     for (let i = tab.length - 1; i > 0; i--) {
       // Two consecutive empty lines?
@@ -41,7 +41,7 @@ export default class Utils {
     }
   }
 
-  static convertToDate(value: unknown): Date {
+  public static convertToDate(value: unknown): Date {
     // Check
     if (!value) {
       return value as Date;
@@ -53,7 +53,7 @@ export default class Utils {
     return value;
   }
 
-  static convertToInt(value: unknown): number {
+  public static convertToInt(value: unknown): number {
     let changedValue: number = value as number;
     if (!value) {
       return 0;
@@ -69,7 +69,7 @@ export default class Utils {
     return changedValue;
   }
 
-  static convertToFloat(value: unknown): number {
+  public static convertToFloat(value: unknown): number {
     let changedValue: number = value as number;
     if (!value) {
       return 0;
@@ -82,7 +82,7 @@ export default class Utils {
     return changedValue;
   }
 
-  static convertToBoolean(value: unknown): boolean {
+  public static convertToBoolean(value: unknown): boolean {
     let result = false;
     // Check boolean
     if (value) {
@@ -98,35 +98,35 @@ export default class Utils {
     return result;
   }
 
-  static getRandomFloat(max: number, min = 0): number {
+  public static getRandomFloat(max: number, min = 0): number {
     return (crypto.randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min;
   }
 
-  static getRandomInt(max: number, min = 0): number {
+  public static getRandomInt(max: number, min = 0): number {
     if (min) {
       return Math.floor(Utils.secureRandom() * (max - min + 1)) + min;
     }
     return Math.floor(Utils.secureRandom() * (max + 1));
   }
 
-  static roundTo(numberValue: number, scale: number): number {
+  public static roundTo(numberValue: number, scale: number): number {
     const roundPower = Math.pow(10, scale);
     return Math.round(numberValue * roundPower) / roundPower;
   }
 
-  static truncTo(numberValue: number, scale: number): number {
+  public static truncTo(numberValue: number, scale: number): number {
     const truncPower = Math.pow(10, scale);
     return Math.trunc(numberValue * truncPower) / truncPower;
   }
 
-  static getRandomFloatRounded(max: number, min = 0, scale = 2): number {
+  public static getRandomFloatRounded(max: number, min = 0, scale = 2): number {
     if (min) {
       return Utils.roundTo(Utils.getRandomFloat(max, min), scale);
     }
     return Utils.roundTo(Utils.getRandomFloat(max), scale);
   }
 
-  static getRandomFloatFluctuatedRounded(staticValue: number, fluctuationPercent: number, scale = 2): number {
+  public static getRandomFloatFluctuatedRounded(staticValue: number, fluctuationPercent: number, scale = 2): number {
     if (fluctuationPercent === 0) {
       return Utils.roundTo(staticValue, scale);
     }
@@ -134,18 +134,18 @@ export default class Utils {
     return Utils.getRandomFloatRounded(staticValue * (1 + fluctuationRatio), staticValue * (1 - fluctuationRatio), scale);
   }
 
-  static cloneObject<T>(object: T): T {
+  public static cloneObject<T>(object: T): T {
     return JSON.parse(JSON.stringify(object)) as T;
   }
 
-  static isIterable<T>(obj: T): boolean {
+  public static isIterable<T>(obj: T): boolean {
     if (obj) {
       return typeof obj[Symbol.iterator] === 'function';
     }
     return false;
   }
 
-  static isEmptyJSon(document: unknown): boolean {
+  public static isEmptyJSon(document: unknown): boolean {
     // Empty?
     if (!document) {
       return true;
@@ -158,15 +158,15 @@ export default class Utils {
     return Object.keys(document).length === 0;
   }
 
-  static isString(value: unknown): boolean {
+  public static isString(value: unknown): boolean {
     return typeof value === 'string';
   }
 
-  static isUndefined(value: unknown): boolean {
+  public static isUndefined(value: unknown): boolean {
     return typeof value === 'undefined';
   }
 
-  static isNullOrUndefined(value: unknown): boolean {
+  public static isNullOrUndefined(value: unknown): boolean {
     // eslint-disable-next-line no-eq-null, eqeqeq
     if (value == null) {
       return true;
@@ -174,7 +174,7 @@ export default class Utils {
     return false;
   }
 
-  static isEmptyArray(object: unknown): boolean {
+  public static isEmptyArray(object: unknown): boolean {
     if (!object) {
       return true;
     }
@@ -184,17 +184,17 @@ export default class Utils {
     return true;
   }
 
-  static isEmptyObject(obj: Record<string, unknown>): boolean {
+  public static isEmptyObject(obj: Record<string, unknown>): boolean {
     return !Object.keys(obj).length;
   }
 
-  static insertAt = (str: string, subStr: string, pos: number): string => `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
+  public static insertAt = (str: string, subStr: string, pos: number): string => `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
 
   /**
    * @param [retryNumber=0]
    * @returns delay in milliseconds
    */
-  static exponentialDelay(retryNumber = 0): number {
+  public static exponentialDelay(retryNumber = 0): number {
     const delay = Math.pow(2, retryNumber) * 100;
     const randomSum = delay * 0.2 * Utils.secureRandom(); // 0-20% of the delay
     return delay + randomSum;
@@ -206,7 +206,7 @@ export default class Utils {
    * @param code websocket error code
    * @returns human readable string message
    */
-  static getWebSocketCloseEventStatusString(code: number): string {
+  public static getWebSocketCloseEventStatusString(code: number): string {
     if (code >= 0 && code <= 999) {
       return '(Unused)';
     } else if (code >= 1016) {
@@ -226,20 +226,20 @@ export default class Utils {
     return '(Unknown)';
   }
 
-  static workerPoolInUse(): boolean {
+  public static workerPoolInUse(): boolean {
     return [WorkerProcessType.DYNAMIC_POOL, WorkerProcessType.STATIC_POOL].includes(Configuration.getWorkerProcess());
   }
 
-  static workerDynamicPoolInUse(): boolean {
+  public static workerDynamicPoolInUse(): boolean {
     return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL;
   }
 
   /**
-   * Generate a cryptographically secure random number in the [0, 1[ range
+   * Generate a cryptographically secure random number in the [0,1[ range
    *
    * @returns
    */
-  static secureRandom(): number {
+  public static secureRandom(): number {
     return crypto.randomBytes(4).readUInt32LE() / 0x100000000;
   }
 }
