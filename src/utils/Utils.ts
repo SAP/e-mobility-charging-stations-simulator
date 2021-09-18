@@ -98,12 +98,16 @@ export default class Utils {
     return result;
   }
 
-  public static getRandomFloat(max: number, min = 0): number {
-    return (crypto.randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min;
+  public static getRandomFloat(max: number, min = 0, negative = false): number {
+    const randomPositiveFloat = crypto.randomBytes(4).readUInt32LE() / 0xffffffff;
+    const sign = (negative && randomPositiveFloat < 0.5) ? 1 : -1;
+    return sign * (randomPositiveFloat * (max - min) + min);
   }
 
   public static getRandomInt(max: number, min = 0): number {
+    max = Math.floor(max);
     if (min) {
+      min = Math.ceil(min);
       return Math.floor(Utils.secureRandom() * (max - min + 1)) + min;
     }
     return Math.floor(Utils.secureRandom() * (max + 1));
