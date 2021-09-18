@@ -31,7 +31,7 @@ export default class AutomaticTransactionGenerator {
         });
       }
     }
-    logger.info(this.logPrefix() + ' started and will run for ' + Utils.milliSecondsToHHMMSS(this.stopDate.getTime() - this.startDate.getTime()));
+    logger.info(this.logPrefix() + ' started and will run for ' + Utils.formatDurationMilliSeconds(this.stopDate.getTime() - this.startDate.getTime()));
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -77,7 +77,7 @@ export default class AutomaticTransactionGenerator {
       }
       const wait = Utils.getRandomInt(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
         this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransactions) * 1000;
-      logger.info(this.logPrefix(connectorId) + ' waiting for ' + Utils.milliSecondsToHHMMSS(wait));
+      logger.info(this.logPrefix(connectorId) + ' waiting for ' + Utils.formatDurationMilliSeconds(wait));
       await Utils.sleep(wait);
       const start = Utils.secureRandom();
       if (start < this.chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
@@ -91,7 +91,7 @@ export default class AutomaticTransactionGenerator {
           // Wait until end of transaction
           const waitTrxEnd = Utils.getRandomInt(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
             this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
-          logger.info(this.logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.milliSecondsToHHMMSS(waitTrxEnd));
+          logger.info(this.logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.formatDurationMilliSeconds(waitTrxEnd));
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
           if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {

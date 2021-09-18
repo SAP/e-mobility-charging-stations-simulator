@@ -59,7 +59,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       await Utils.sleep(this.chargingStation.stationInfo.resetTime);
       this.chargingStation.start();
     });
-    logger.info(`${this.chargingStation.logPrefix()} ${commandPayload.type} reset command received, simulating it. The station will be back online in ${Utils.milliSecondsToHHMMSS(this.chargingStation.stationInfo.resetTime)}`);
+    logger.info(`${this.chargingStation.logPrefix()} ${commandPayload.type} reset command received, simulating it. The station will be back online in ${Utils.formatDurationMilliSeconds(this.chargingStation.stationInfo.resetTime)}`);
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 

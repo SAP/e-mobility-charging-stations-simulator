@@ -17,12 +17,29 @@ export default class Utils {
     return new Promise((resolve) => setTimeout(resolve, milliSeconds));
   }
 
-  public static secondsToHHMMSS(seconds: number): string {
-    return Utils.milliSecondsToHHMMSS(seconds * 1000);
+  public static formatDurationMilliSeconds(duration: number): string {
+    duration = Utils.convertToInt(duration);
+    const hours = Math.floor(duration / (3600 * 1000));
+    const minutes = Math.floor((duration - (hours * (3600 * 1000))) / (60 * 1000));
+    const seconds = (duration - (hours * 3600 * 1000) - (minutes * 60 * 1000)) / 1000;
+    let hoursStr: string = hours.toString();
+    let minutesStr: string = minutes.toString();
+    let secondsStr: string = seconds.toString();
+
+    if (hours < 10) {
+      hoursStr = '0' + hours.toString();
+    }
+    if (minutes < 10) {
+      minutesStr = '0' + minutes.toString();
+    }
+    if (seconds < 10) {
+      secondsStr = '0' + seconds.toString();
+    }
+    return hoursStr + ':' + minutesStr + ':' + secondsStr;
   }
 
-  public static milliSecondsToHHMMSS(milliSeconds: number): string {
-    return new Date(milliSeconds).toISOString().substr(11, 8);
+  public static formatDurationSeconds(duration: number): string {
+    return Utils.formatDurationMilliSeconds(duration * 1000);
   }
 
   public static removeExtraEmptyLines(tab: string[]): void {

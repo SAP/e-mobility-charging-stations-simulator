@@ -265,11 +265,11 @@ export default class ChargingStation {
       this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
         await this.ocppRequestService.sendHeartbeat();
       }, this.getHeartbeatInterval());
-      logger.info(this.logPrefix() + ' Heartbeat started every ' + Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()));
+      logger.info(this.logPrefix() + ' Heartbeat started every ' + Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()));
     } else if (this.heartbeatSetInterval) {
-      logger.info(this.logPrefix() + ' Heartbeat already started every ' + Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()));
+      logger.info(this.logPrefix() + ' Heartbeat already started every ' + Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()));
     } else {
-      logger.error(`${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval() ? Utils.milliSecondsToHHMMSS(this.getHeartbeatInterval()) : this.getHeartbeatInterval()}, not starting the heartbeat`);
+      logger.error(`${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval() ? Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()) : this.getHeartbeatInterval()}, not starting the heartbeat`);
     }
   }
 
@@ -302,7 +302,7 @@ export default class ChargingStation {
         await this.ocppRequestService.sendMeterValues(connectorId, this.getConnector(connectorId).transactionId, interval);
       }, interval);
     } else {
-      logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.milliSecondsToHHMMSS(interval) : interval}, not sending MeterValues`);
+      logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.formatDurationMilliSeconds(interval) : interval}, not sending MeterValues`);
     }
   }
 
@@ -902,11 +902,11 @@ export default class ChargingStation {
           this.wsConnection.ping((): void => { /* This is intentional */ });
         }
       }, webSocketPingInterval * 1000);
-      logger.info(this.logPrefix() + ' WebSocket ping started every ' + Utils.secondsToHHMMSS(webSocketPingInterval));
+      logger.info(this.logPrefix() + ' WebSocket ping started every ' + Utils.formatDurationSeconds(webSocketPingInterval));
     } else if (this.webSocketPingSetInterval) {
-      logger.info(this.logPrefix() + ' WebSocket ping every ' + Utils.secondsToHHMMSS(webSocketPingInterval) + ' already started');
+      logger.info(this.logPrefix() + ' WebSocket ping every ' + Utils.formatDurationSeconds(webSocketPingInterval) + ' already started');
     } else {
-      logger.error(`${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval ? Utils.secondsToHHMMSS(webSocketPingInterval) : webSocketPingInterval}, not starting the WebSocket ping`);
+      logger.error(`${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval ? Utils.formatDurationSeconds(webSocketPingInterval) : webSocketPingInterval}, not starting the WebSocket ping`);
     }
   }
 
