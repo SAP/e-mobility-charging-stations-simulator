@@ -8,7 +8,7 @@ import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles
 import Connectors, { Connector, SampledValueTemplate } from '../types/Connectors';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import WebSocket, { ClientOptions, Data } from 'ws';
+import WebSocket, { ClientOptions, Data, OPEN } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
@@ -111,7 +111,7 @@ export default class ChargingStation {
   }
 
   public isWebSocketConnectionOpened(): boolean {
-    return this.wsConnection?.readyState === WebSocket.OPEN;
+    return this.wsConnection?.readyState === OPEN;
   }
 
   public isRegistered(): boolean {

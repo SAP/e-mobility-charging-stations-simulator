@@ -12,6 +12,7 @@ export default class AutomaticTransactionGenerator {
   public timeToStop: boolean;
   private startDate!: Date;
   private stopDate!: Date;
+  private runningDuration!: number;
   private chargingStation: ChargingStation;
 
   constructor(chargingStation: ChargingStation) {
@@ -21,7 +22,9 @@ export default class AutomaticTransactionGenerator {
 
   public start(): void {
     this.startDate = new Date();
-    this.stopDate = new Date(this.startDate.getTime() + (this.chargingStation.stationInfo?.AutomaticTransactionGenerator?.stopAfterHours ?? Constants.CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS) * 3600 * 1000);
+    this.stopDate = new Date(this.startDate.getTime()
+      + (this.chargingStation.stationInfo?.AutomaticTransactionGenerator?.stopAfterHours ?? Constants.CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS) * 3600 * 1000
+      - (this.runningDuration ?? 0));
     this.timeToStop = false;
     for (const connector in this.chargingStation.connectors) {
       if (Utils.convertToInt(connector) > 0) {
@@ -35,7 +38,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
-    logger.info(this.logPrefix() + ' over. Stopping all transactions');
+    logger.info(`${this.logPrefix()} over and lasted for ${Utils.formatDurationMilliSeconds(this.runningDuration ?? 0)}. Stopping all transactions`);
     for (const connector in this.chargingStation.connectors) {
       const transactionId = this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionId;
       if (this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionStarted) {
@@ -104,6 +107,7 @@ export default class AutomaticTransactionGenerator {
         totalTransactionSkip++;
         logger.info(this.logPrefix(connectorId) + ' skipped transaction ' + transactionSkip.toString() + '/' + totalTransactionSkip.toString());
       }
+      this.runningDuration = (new Date()).getTime() - this.startDate.getTime();
     }
     logger.info(this.logPrefix(connectorId) + ' stopped on connector');
   }
