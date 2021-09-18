@@ -1050,10 +1050,11 @@ export default class ChargingStation {
     if (this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() || this.getAutoReconnectMaxRetries() === -1) {
       this.autoReconnectRetryCount++;
       const reconnectDelay = (this.getReconnectExponentialDelay() ? Utils.exponentialDelay(this.autoReconnectRetryCount) : this.getConnectionTimeout() * 1000);
-      logger.error(`${this.logPrefix()} Socket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectDelay - 100}ms`);
+      const reconnectTimeout = reconnectDelay - 100;
+      logger.error(`${this.logPrefix()} Socket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectTimeout}ms`);
       await Utils.sleep(reconnectDelay);
       logger.error(this.logPrefix() + ' Socket: reconnecting try #' + this.autoReconnectRetryCount.toString());
-      this.openWSConnection({ handshakeTimeout: reconnectDelay - 100 }, true);
+      this.openWSConnection({ handshakeTimeout: reconnectTimeout }, true);
       this.hasSocketRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
       logger.error(`${this.logPrefix()} Socket reconnect failure: max retries reached (${this.autoReconnectRetryCount}) or retry disabled (${this.getAutoReconnectMaxRetries()})`);
