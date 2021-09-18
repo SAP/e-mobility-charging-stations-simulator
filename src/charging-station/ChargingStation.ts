@@ -42,7 +42,7 @@ export default class ChargingStation {
   public stationInfo!: ChargingStationInfo;
   public connectors: Connectors;
   public configuration!: ChargingStationConfiguration;
-  public hasStopped: boolean;
+  public stopped: boolean;
   public wsConnection!: WebSocket;
   public requests: Map<string, Request>;
   public messageQueue: string[];
@@ -55,9 +55,9 @@ export default class ChargingStation {
   private bootNotificationResponse!: BootNotificationResponse | null;
   private connectorsConfigurationHash!: string;
   private wsConnectionUrl!: URL;
-  private hasSocketRestarted: boolean;
+  private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
-  private automaticTransactionGeneration!: AutomaticTransactionGenerator;
+  private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
   constructor(index: number, stationTemplateFile: string) {
@@ -66,8 +66,8 @@ export default class ChargingStation {
     this.connectors = {} as Connectors;
     this.initialize();
 
-    this.hasStopped = false;
-    this.hasSocketRestarted = false;
+    this.stopped = false;
+    this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
 
     this.requests = new Map<string, Request>();
@@ -345,7 +345,7 @@ export default class ChargingStation {
       this.performanceStatistics.stop();
     }
     this.bootNotificationResponse = null;
-    this.hasStopped = true;
+    this.stopped = true;
   }
 
   public getConfigurationKey(key: string | StandardParametersKey, caseInsensitive = false): ConfigurationKey | undefined {
@@ -619,15 +619,15 @@ export default class ChargingStation {
     }
     if (this.isRegistered()) {
       await this.startMessageSequence();
-      this.hasStopped && (this.hasStopped = false);
-      if (this.hasSocketRestarted && this.isWebSocketConnectionOpened()) {
+      this.stopped && (this.stopped = false);
+      if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
         this.flushMessageQueue();
       }
     } else {
       logger.error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);
     }
     this.autoReconnectRetryCount = 0;
-    this.hasSocketRestarted = false;
+    this.wsConnectionRestarted = false;
   }
 
   private async onClose(code: number, reason: string): Promise<void> {
@@ -839,15 +839,15 @@ export default class ChargingStation {
     for (const connector in this.connectors) {
       if (Utils.convertToInt(connector) === 0) {
         continue;
-      } else if (!this.hasStopped && !this.getConnector(Utils.convertToInt(connector))?.status && this.getConnector(Utils.convertToInt(connector))?.bootStatus) {
+      } else if (!this.stopped && !this.getConnector(Utils.convertToInt(connector))?.status && this.getConnector(Utils.convertToInt(connector))?.bootStatus) {
         // Send status in template at startup
         await this.ocppRequestService.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).bootStatus);
         this.getConnector(Utils.convertToInt(connector)).status = this.getConnector(Utils.convertToInt(connector)).bootStatus;
-      } else if (this.hasStopped && this.getConnector(Utils.convertToInt(connector))?.bootStatus) {
+      } else if (this.stopped && this.getConnector(Utils.convertToInt(connector))?.bootStatus) {
         // Send status in template after reset
         await this.ocppRequestService.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).bootStatus);
         this.getConnector(Utils.convertToInt(connector)).status = this.getConnector(Utils.convertToInt(connector)).bootStatus;
-      } else if (!this.hasStopped && this.getConnector(Utils.convertToInt(connector))?.status) {
+      } else if (!this.stopped && this.getConnector(Utils.convertToInt(connector))?.status) {
         // Send previous status at template reload
         await this.ocppRequestService.sendStatusNotification(Utils.convertToInt(connector), this.getConnector(Utils.convertToInt(connector)).status);
       } else {
@@ -862,11 +862,11 @@ export default class ChargingStation {
 
   private startAutomaticTransactionGenerator() {
     if (this.stationInfo.AutomaticTransactionGenerator.enable) {
-      if (!this.automaticTransactionGeneration) {
-        this.automaticTransactionGeneration = new AutomaticTransactionGenerator(this);
+      if (!this.automaticTransactionGenerator) {
+        this.automaticTransactionGenerator = new AutomaticTransactionGenerator(this);
       }
-      if (this.automaticTransactionGeneration.timeToStop) {
-        this.automaticTransactionGeneration.start();
+      if (!this.automaticTransactionGenerator.started) {
+        this.automaticTransactionGenerator.start();
       }
     }
   }
@@ -878,9 +878,9 @@ export default class ChargingStation {
     this.stopHeartbeat();
     // Stop the ATG
     if (this.stationInfo.AutomaticTransactionGenerator.enable &&
-      this.automaticTransactionGeneration &&
-      !this.automaticTransactionGeneration.timeToStop) {
-      await this.automaticTransactionGeneration.stop(reason);
+      this.automaticTransactionGenerator &&
+      this.automaticTransactionGenerator.started) {
+      await this.automaticTransactionGenerator.stop(reason);
     } else {
       for (const connector in this.connectors) {
         if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
@@ -1011,8 +1011,8 @@ export default class ChargingStation {
             this.initialize();
             // Restart the ATG
             if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
-                this.automaticTransactionGeneration) {
-              await this.automaticTransactionGeneration.stop();
+                this.automaticTransactionGenerator) {
+              await this.automaticTransactionGenerator.stop();
             }
             this.startAutomaticTransactionGenerator();
             if (this.getEnableStatistics()) {
@@ -1043,9 +1043,9 @@ export default class ChargingStation {
     // Stop the ATG if needed
     if (this.stationInfo.AutomaticTransactionGenerator.enable &&
       this.stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure &&
-      this.automaticTransactionGeneration &&
-      !this.automaticTransactionGeneration.timeToStop) {
-      await this.automaticTransactionGeneration.stop();
+      this.automaticTransactionGenerator &&
+      this.automaticTransactionGenerator.started) {
+      await this.automaticTransactionGenerator.stop();
     }
     if (this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() || this.getAutoReconnectMaxRetries() === -1) {
       this.autoReconnectRetryCount++;
@@ -1055,7 +1055,7 @@ export default class ChargingStation {
       await Utils.sleep(reconnectDelay);
       logger.error(this.logPrefix() + ' Socket: reconnecting try #' + this.autoReconnectRetryCount.toString());
       this.openWSConnection({ handshakeTimeout: reconnectTimeout }, true);
-      this.hasSocketRestarted = true;
+      this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
       logger.error(`${this.logPrefix()} Socket reconnect failure: max retries reached (${this.autoReconnectRetryCount}) or retry disabled (${this.getAutoReconnectMaxRetries()})`);
     }

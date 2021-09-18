@@ -9,23 +9,24 @@ import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
 
 export default class AutomaticTransactionGenerator {
-  public timeToStop: boolean;
+  public started: boolean;
   private startDate!: Date;
+  private lastRunDate!: Date;
   private stopDate!: Date;
-  private runningDuration!: number;
   private chargingStation: ChargingStation;
 
   constructor(chargingStation: ChargingStation) {
     this.chargingStation = chargingStation;
-    this.timeToStop = true;
+    this.started = false;
   }
 
   public start(): void {
     this.startDate = new Date();
+    this.lastRunDate = this?.lastRunDate ?? this.startDate;
     this.stopDate = new Date(this.startDate.getTime()
       + (this.chargingStation.stationInfo?.AutomaticTransactionGenerator?.stopAfterHours ?? Constants.CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS) * 3600 * 1000
-      - (this.runningDuration ?? 0));
-    this.timeToStop = false;
+      - (this.lastRunDate.getTime() - this.startDate.getTime()));
+    this.started = true;
     for (const connector in this.chargingStation.connectors) {
       if (Utils.convertToInt(connector) > 0) {
         // Avoid hogging the event loop with a busy loop
@@ -38,7 +39,11 @@ export default class AutomaticTransactionGenerator {
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
-    logger.info(`${this.logPrefix()} over and lasted for ${Utils.formatDurationMilliSeconds(this.runningDuration ?? 0)}. Stopping all transactions`);
+    if (!this.started) {
+      logger.error(`${this.logPrefix()} trying to stop while not started`);
+      return;
+    }
+    logger.info(`${this.logPrefix()} over and lasted for ${Utils.formatDurationMilliSeconds(this.lastRunDate.getTime() - this.startDate.getTime())}. Stopping all transactions`);
     for (const connector in this.chargingStation.connectors) {
       const transactionId = this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionId;
       if (this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionStarted) {
@@ -47,14 +52,14 @@ export default class AutomaticTransactionGenerator {
           this.chargingStation.getTransactionIdTag(transactionId), reason);
       }
     }
-    this.timeToStop = true;
+    this.started = false;
   }
 
   private async startOnConnector(connectorId: number): Promise<void> {
     logger.info(this.logPrefix(connectorId) + ' started on connector');
     let transactionSkip = 0;
     let totalTransactionSkip = 0;
-    while (!this.timeToStop) {
+    while (this.started) {
       if ((new Date()) > this.stopDate) {
         await this.stop();
         break;
@@ -107,7 +112,7 @@ export default class AutomaticTransactionGenerator {
         totalTransactionSkip++;
         logger.info(this.logPrefix(connectorId) + ' skipped transaction ' + transactionSkip.toString() + '/' + totalTransactionSkip.toString());
       }
-      this.runningDuration = (new Date()).getTime() - this.startDate.getTime();
+      this.lastRunDate = new Date();
     }
     logger.info(this.logPrefix(connectorId) + ' stopped on connector');
   }
