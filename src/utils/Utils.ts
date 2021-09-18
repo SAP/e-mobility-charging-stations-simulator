@@ -33,7 +33,7 @@ export default class Utils {
       minutesStr = '0' + minutes.toString();
     }
     if (seconds < 10) {
-      secondsStr = '0' + seconds.toString();
+      secondsStr = ('0' + seconds.toString()).substring(0, 6);
     }
     return hoursStr + ':' + minutesStr + ':' + secondsStr;
   }
