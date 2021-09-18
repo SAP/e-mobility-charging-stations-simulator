@@ -1,5 +1,5 @@
 import ChargingStationConfiguration from './ChargingStationConfiguration';
-import Connectors from './Connectors';
+import { Connectors } from './Connectors';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';
 

@@ -25,6 +25,4 @@ export interface Connector {
   chargingProfiles?: ChargingProfile[];
 }
 
-export default interface Connectors {
-  [id: string]: Connector;
-}
+export type Connectors = Record<string, Connector>;

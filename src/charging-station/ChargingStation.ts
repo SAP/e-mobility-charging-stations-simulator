@@ -4,8 +4,8 @@ import { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingReq
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { CurrentType, PowerUnits, Voltage } from '../types/ChargingStationTemplate';
+import { Connector, Connectors, SampledValueTemplate } from '../types/Connectors';
 import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles } from '../types/ocpp/Configuration';
-import Connectors, { Connector, SampledValueTemplate } from '../types/Connectors';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import WebSocket, { ClientOptions, Data, OPEN } from 'ws';
