@@ -20,8 +20,8 @@ export default class Utils {
   public static formatDurationMilliSeconds(duration: number): string {
     duration = Utils.convertToInt(duration);
     const hours = Math.floor(duration / (3600 * 1000));
-    const minutes = Math.floor((duration - (hours * (3600 * 1000))) / (60 * 1000));
-    const seconds = (duration - (hours * 3600 * 1000) - (minutes * 60 * 1000)) / 1000;
+    const minutes = Math.floor((duration / 1000 - (hours * 3600)) / 60);
+    const seconds = duration / 1000 - (hours * 3600) - (minutes * 60);
     let hoursStr: string = hours.toString();
     let minutesStr: string = minutes.toString();
     let secondsStr: string = seconds.toString();
