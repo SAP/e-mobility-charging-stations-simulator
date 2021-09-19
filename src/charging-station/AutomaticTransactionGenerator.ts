@@ -57,8 +57,8 @@ export default class AutomaticTransactionGenerator {
 
   private async startOnConnector(connectorId: number): Promise<void> {
     logger.info(this.logPrefix(connectorId) + ' started on connector');
-    let transactionSkip = 0;
-    let totalTransactionSkip = 0;
+    let skippedTransactions = 0;
+    let skippedTransactionsTotal = 0;
     while (this.started) {
       if ((new Date()) > this.stopDate) {
         await this.stop();
@@ -89,7 +89,7 @@ export default class AutomaticTransactionGenerator {
       await Utils.sleep(wait);
       const start = Utils.secureRandom();
       if (start < this.chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart) {
-        transactionSkip = 0;
+        skippedTransactions = 0;
         // Start transaction
         const startResponse = await this.startTransaction(connectorId);
         if (startResponse?.idTagInfo?.status !== AuthorizationStatus.ACCEPTED) {
@@ -108,9 +108,9 @@ export default class AutomaticTransactionGenerator {
           }
         }
       } else {
-        transactionSkip++;
-        totalTransactionSkip++;
-        logger.info(this.logPrefix(connectorId) + ' skipped transaction ' + transactionSkip.toString() + '/' + totalTransactionSkip.toString());
+        skippedTransactions++;
+        skippedTransactionsTotal++;
+        logger.info(this.logPrefix(connectorId) + ' skipped transaction ' + skippedTransactions.toString() + '/' + skippedTransactionsTotal.toString());
       }
       this.lastRunDate = new Date();
     }

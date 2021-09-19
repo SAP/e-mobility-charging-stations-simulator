@@ -72,6 +72,8 @@ export default class Bootstrap {
       } catch (error) {
         console.error(chalk.red('Bootstrap start error '), error);
       }
+    } else {
+      console.error(chalk.red('Cannot start an already started charging stations simulator'));
     }
   }
 
@@ -79,6 +81,8 @@ export default class Bootstrap {
     if (isMainThread && this.started) {
       await Bootstrap.workerImplementation.stop();
       await Bootstrap.storage.close();
+    } else {
+      console.error(chalk.red('Trying to stop the charging stations simulator while not started'));
     }
     this.started = false;
   }

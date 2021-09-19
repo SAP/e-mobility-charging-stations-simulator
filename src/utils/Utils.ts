@@ -33,29 +33,13 @@ export default class Utils {
       minutesStr = '0' + minutes.toString();
     }
     if (seconds < 10) {
-      secondsStr = ('0' + seconds.toString()).substring(0, 6);
+      secondsStr = '0' + seconds.toString();
     }
-    return hoursStr + ':' + minutesStr + ':' + secondsStr;
+    return hoursStr + ':' + minutesStr + ':' + secondsStr.substring(0, 6);
   }
 
   public static formatDurationSeconds(duration: number): string {
     return Utils.formatDurationMilliSeconds(duration * 1000);
-  }
-
-  public static removeExtraEmptyLines(tab: string[]): void {
-    // Start from the end
-    for (let i = tab.length - 1; i > 0; i--) {
-      // Two consecutive empty lines?
-      if (tab[i].length === 0 && tab[i - 1].length === 0) {
-        // Remove the last one
-        tab.splice(i, 1);
-      }
-      // Check last line
-      if (i === 1 && tab[i - 1].length === 0) {
-        // Remove the first one
-        tab.splice(i - 1, 1);
-      }
-    }
   }
 
   public static convertToDate(value: unknown): Date {
@@ -116,6 +100,9 @@ export default class Utils {
   }
 
   public static getRandomFloat(max: number, min = 0, negative = false): number {
+    if (max < min || min < 0 || max < 0) {
+      throw new RangeError('Invalid interval');
+    }
     const randomPositiveFloat = crypto.randomBytes(4).readUInt32LE() / 0xffffffff;
     const sign = (negative && randomPositiveFloat < 0.5) ? 1 : -1;
     return sign * (randomPositiveFloat * (max - min) + min);
@@ -164,19 +151,6 @@ export default class Utils {
       return typeof obj[Symbol.iterator] === 'function';
     }
     return false;
-  }
-
-  public static isEmptyJSon(document: unknown): boolean {
-    // Empty?
-    if (!document) {
-      return true;
-    }
-    // Check type
-    if (typeof document !== 'object') {
-      return true;
-    }
-    // Check
-    return Object.keys(document).length === 0;
   }
 
   public static isString(value: unknown): boolean {
