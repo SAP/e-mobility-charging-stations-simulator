@@ -22,9 +22,9 @@ export default class Utils {
     const hours = Math.floor(duration / (3600 * 1000));
     const minutes = Math.floor((duration / 1000 - (hours * 3600)) / 60);
     const seconds = duration / 1000 - (hours * 3600) - (minutes * 60);
-    let hoursStr: string = hours.toString();
-    let minutesStr: string = minutes.toString();
-    let secondsStr: string = seconds.toString();
+    let hoursStr = hours.toString();
+    let minutesStr = minutes.toString();
+    let secondsStr = seconds.toString();
 
     if (hours < 10) {
       hoursStr = '0' + hours.toString();
@@ -109,8 +109,14 @@ export default class Utils {
   }
 
   public static getRandomInt(max: number, min = 0): number {
+    if (max < 0) {
+      throw new RangeError('Invalid interval');
+    }
     max = Math.floor(max);
     if (min) {
+      if (max < min || min < 0) {
+        throw new RangeError('Invalid interval');
+      }
       min = Math.ceil(min);
       return Math.floor(Utils.secureRandom() * (max - min + 1)) + min;
     }

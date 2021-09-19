@@ -1,7 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import * as url from 'url';
-
 import { ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingProfileRequest, GetConfigurationRequest, GetDiagnosticsRequest, MessageTrigger, OCPP16AvailabilityType, OCPP16IncomingRequestCommand, OCPP16TriggerMessageRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, UnlockConnectorRequest } from '../../../types/ocpp/1.6/Requests';
 import { ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, GetConfigurationResponse, GetDiagnosticsResponse, OCPP16TriggerMessageResponse, SetChargingProfileResponse, UnlockConnectorResponse } from '../../../types/ocpp/1.6/Responses';
 import { ChargingProfilePurposeType, OCPP16ChargingProfile } from '../../../types/ocpp/1.6/ChargingProfile';
@@ -19,6 +17,7 @@ import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configurati
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import OCPPError from '../OCPPError';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
+import { URL } from 'url';
 import Utils from '../../../utils/Utils';
 import fs from 'fs';
 import logger from '../../../utils/Logger';
@@ -354,7 +353,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   private async handleRequestGetDiagnostics(commandPayload: GetDiagnosticsRequest): Promise<GetDiagnosticsResponse> {
     logger.debug(this.chargingStation.logPrefix() + ' ' + IncomingRequestCommand.GET_DIAGNOSTICS + ' request received: %j', commandPayload);
-    const uri = new url.URL(commandPayload.location);
+    const uri = new URL(commandPayload.location);
     if (uri.protocol.startsWith('ftp:')) {
       let ftpClient: Client;
       try {
