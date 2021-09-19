@@ -1,3 +1,5 @@
+import { EmptyObject } from '../../EmptyObject';
+
 export enum MeterValueUnit {
   WATT_HOUR = 'Wh',
   KILO_WATT_HOUR = 'kWh',
@@ -100,6 +102,5 @@ export interface MeterValuesRequest {
   meterValue: OCPP16MeterValue[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface MeterValuesResponse {}
+export type MeterValuesResponse = EmptyObject;
 

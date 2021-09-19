@@ -1,5 +1,6 @@
 import { ChargingProfilePurposeType, OCPP16ChargingProfile } from './ChargingProfile';
 
+import { EmptyObject } from '../../EmptyObject';
 import { OCPP16ChargePointErrorCode } from './ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from './ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from './DiagnosticsStatus';
@@ -32,8 +33,7 @@ export enum OCPP16IncomingRequestCommand {
   TRIGGER_MESSAGE = 'TriggerMessage'
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface HeartbeatRequest { }
+export type HeartbeatRequest = EmptyObject;
 
 export interface OCPP16BootNotificationRequest {
   chargeBoxSerialNumber?: string;

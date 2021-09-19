@@ -1,3 +1,4 @@
+import { EmptyObject } from '../../EmptyObject';
 import { OCPPConfigurationKey } from '../Configuration';
 
 export interface HeartbeatResponse {
@@ -37,8 +38,7 @@ export interface OCPP16BootNotificationResponse {
   interval: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface StatusNotificationResponse {}
+export type StatusNotificationResponse = EmptyObject;
 
 export interface GetConfigurationResponse {
   configurationKey: OCPPConfigurationKey[];
@@ -78,8 +78,7 @@ export interface GetDiagnosticsResponse {
   fileName?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface DiagnosticsStatusNotificationResponse {}
+export type DiagnosticsStatusNotificationResponse = EmptyObject;
 
 export enum OCPP16TriggerMessageStatus {
   ACCEPTED = 'Accepted',
