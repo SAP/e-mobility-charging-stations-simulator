@@ -95,10 +95,8 @@ export default class AutomaticTransactionGenerator {
           logger.info(this.logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.formatDurationMilliSeconds(waitTrxEnd));
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
-          if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
-            logger.info(this.logPrefix(connectorId) + ' stop transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString());
-            await this.stopTransaction(connectorId);
-          }
+          logger.info(this.logPrefix(connectorId) + ' stop transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString());
+          await this.stopTransaction(connectorId);
         }
       } else {
         skippedTransactions++;

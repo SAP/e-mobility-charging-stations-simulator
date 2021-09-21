@@ -538,7 +538,7 @@ export default class ChargingStation {
     delete this.stationInfo.Connectors;
     // Initialize transaction attributes on connectors
     for (const connector in this.connectors) {
-      if (Utils.convertToInt(connector) > 0 && !this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+      if (Utils.convertToInt(connector) > 0 && !this.getConnector(Utils.convertToInt(connector))?.transactionStarted) {
         this.initTransactionAttributesOnConnector(Utils.convertToInt(connector));
       }
     }
@@ -766,7 +766,7 @@ export default class ChargingStation {
   private getNumberOfRunningTransactions(): number {
     let trxCount = 0;
     for (const connector in this.connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+      if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector))?.transactionStarted) {
         trxCount++;
       }
     }
@@ -883,7 +883,7 @@ export default class ChargingStation {
       this.automaticTransactionGenerator.stop();
     } else {
       for (const connector in this.connectors) {
-        if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+        if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector))?.transactionStarted) {
           const transactionId = this.getConnector(Utils.convertToInt(connector)).transactionId;
           await this.ocppRequestService.sendStopTransaction(transactionId, this.getEnergyActiveImportRegisterByTransactionId(transactionId),
             this.getTransactionIdTag(transactionId), reason);

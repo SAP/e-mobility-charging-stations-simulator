@@ -242,7 +242,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (connectorId === 0) {
       let response: ChangeAvailabilityResponse = Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
       for (const connector in this.chargingStation.connectors) {
-        if (this.chargingStation.getConnector(Utils.convertToInt(connector)).transactionStarted) {
+        if (this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionStarted) {
           response = Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
         }
         this.chargingStation.getConnector(Utils.convertToInt(connector)).availability = commandPayload.type;
