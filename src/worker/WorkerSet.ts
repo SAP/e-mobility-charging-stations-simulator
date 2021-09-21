@@ -94,7 +94,6 @@ export default class WorkerSet<T> extends WorkerAbstract {
 
   private getLastWorkerSetElement(): WorkerSetElement {
     let workerSetElement: WorkerSetElement;
-    // eslint-disable-next-line no-empty
     for (workerSetElement of this.workerSet) { /* This is intentional */ }
     return workerSetElement;
   }

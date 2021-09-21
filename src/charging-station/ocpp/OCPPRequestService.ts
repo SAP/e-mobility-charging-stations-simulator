@@ -80,7 +80,6 @@ export default abstract class OCPPRequestService {
         }
         logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception
-        // eslint-disable-next-line no-empty-function
         self.chargingStation.requests.set(messageId, [() => { /* This is intentiomal */ }, () => { /* This is intentiomal */ }, {}]);
         // Send error
         reject(error);

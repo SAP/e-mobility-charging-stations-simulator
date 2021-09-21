@@ -880,7 +880,7 @@ export default class ChargingStation {
     if (this.stationInfo.AutomaticTransactionGenerator.enable &&
       this.automaticTransactionGenerator &&
       this.automaticTransactionGenerator.started) {
-      await this.automaticTransactionGenerator.stop(reason);
+      this.automaticTransactionGenerator.stop();
     } else {
       for (const connector in this.connectors) {
         if (Utils.convertToInt(connector) > 0 && this.getConnector(Utils.convertToInt(connector)).transactionStarted) {
@@ -1012,7 +1012,7 @@ export default class ChargingStation {
             // Restart the ATG
             if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
                 this.automaticTransactionGenerator) {
-              await this.automaticTransactionGenerator.stop();
+              this.automaticTransactionGenerator.stop();
             }
             this.startAutomaticTransactionGenerator();
             if (this.getEnableStatistics()) {
@@ -1045,7 +1045,7 @@ export default class ChargingStation {
       this.stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure &&
       this.automaticTransactionGenerator &&
       this.automaticTransactionGenerator.started) {
-      await this.automaticTransactionGenerator.stop();
+      this.automaticTransactionGenerator.stop();
     }
     if (this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() || this.getAutoReconnectMaxRetries() === -1) {
       this.autoReconnectRetryCount++;

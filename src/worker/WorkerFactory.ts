@@ -9,7 +9,6 @@ import WorkerSet from './WorkerSet';
 import WorkerStaticPool from './WorkerStaticPool';
 
 export default class WorkerFactory {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {
     // This is intentional
   }

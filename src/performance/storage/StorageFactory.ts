@@ -7,7 +7,6 @@ import { Storage } from './Storage';
 import { StorageType } from '../../types/Storage';
 
 export class StorageFactory {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {
     // This is intentional
   }
