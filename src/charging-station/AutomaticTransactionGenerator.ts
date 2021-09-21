@@ -143,15 +143,16 @@ export default class AutomaticTransactionGenerator {
   private async stopTransaction(connectorId: number, reason: StopTransactionReason = StopTransactionReason.NONE): Promise<StopTransactionResponse> {
     const measureId = 'StopTransaction with ATG';
     const beginId = PerformanceStatistics.beginMeasure(measureId);
-    const transactionId = this.chargingStation.getConnector(connectorId).transactionId;
+    let transactionId = 0;
     let stopResponse: StopTransactionResponse;
     if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
+      transactionId = this.chargingStation.getConnector(connectorId).transactionId;
       stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId,
         this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
         this.chargingStation.getTransactionIdTag(transactionId),
         reason);
     } else {
-      logger.warn(`${this.logPrefix(connectorId)} trying to stop a not started transaction ${transactionId}`);
+      logger.warn(`${this.logPrefix(connectorId)} trying to stop a not started transaction${transactionId ? ' ' + transactionId.toString() : ''}`);
     }
     PerformanceStatistics.endMeasure(measureId, beginId);
     return stopResponse;
