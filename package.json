@@ -99,8 +99,8 @@
     "@types/tar": "^4.0.5",
     "@types/uuid": "^8.3.1",
     "@types/ws": "^7.4.7",
-    "@typescript-eslint/eslint-plugin": "^4.31.1",
-    "@typescript-eslint/parser": "^4.31.1",
+    "@typescript-eslint/eslint-plugin": "^4.31.2",
+    "@typescript-eslint/parser": "^4.31.2",
     "auto-changelog": "^2.3.0",
     "clinic": "^9.0.0",
     "cross-env": "^7.0.3",
@@ -108,7 +108,7 @@
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-jsdoc": "^36.1.0",
     "eslint-plugin-node": "^11.1.0",
-    "expect": "^27.2.0",
+    "expect": "^27.2.1",
     "mocha": "^9.1.1",
     "mochawesome": "^6.2.2",
     "npm-check": "^5.9.2",
@@ -121,7 +121,7 @@
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-istanbul": "^3.0.0",
     "rollup-plugin-terser": "^7.0.2",
-    "rollup-plugin-ts": "^1.4.2",
+    "rollup-plugin-ts": "^1.4.3",
     "ts-node": "^10.2.1",
     "typescript": "^4.4.3"
   }
