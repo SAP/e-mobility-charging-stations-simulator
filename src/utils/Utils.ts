@@ -104,7 +104,7 @@ export default class Utils {
       throw new RangeError('Invalid interval');
     }
     const randomPositiveFloat = crypto.randomBytes(4).readUInt32LE() / 0xffffffff;
-    const sign = (negative && randomPositiveFloat < 0.5) ? 1 : -1;
+    const sign = (negative && randomPositiveFloat < 0.5) ? -1 : 1;
     return sign * (randomPositiveFloat * (max - min) + min);
   }
 
