@@ -84,7 +84,7 @@ export default class ChargingStation {
     return this.bootNotificationRequest;
   }
 
-  public getRandomTagId(): string {
+  public getRandomIdTag(): string {
     const index = Math.floor(Utils.secureRandom() * this.authorizedTags.length);
     return this.authorizedTags[index];
   }

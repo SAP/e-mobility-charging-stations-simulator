@@ -114,27 +114,27 @@ export default class AutomaticTransactionGenerator {
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let startResponse: StartTransactionResponse;
     if (this.chargingStation.hasAuthorizedTags()) {
-      const tagId = this.chargingStation.getRandomTagId();
+      const idTag = this.chargingStation.getRandomIdTag();
       if (this.chargingStation.getAutomaticTransactionGeneratorRequireAuthorize()) {
-        // Authorize tagId
-        const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(connectorId, tagId);
+        // Authorize idTag
+        const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(connectorId, idTag);
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-          logger.info(this.logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
+          logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
           // Start transaction
-          startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId, tagId);
+          startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId, idTag);
           PerformanceStatistics.endMeasure(measureId, beginId);
           return startResponse;
         }
         PerformanceStatistics.endMeasure(measureId, beginId);
         return authorizeResponse;
       }
-      logger.info(this.logPrefix(connectorId) + ' start transaction for tagID ' + tagId);
+      logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
       // Start transaction
-      startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId, tagId);
+      startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId, idTag);
       PerformanceStatistics.endMeasure(measureId, beginId);
       return startResponse;
     }
-    logger.info(this.logPrefix(connectorId) + ' start transaction without a tagID');
+    logger.info(this.logPrefix(connectorId) + ' start transaction without a idTag');
     startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId);
     PerformanceStatistics.endMeasure(measureId, beginId);
     return startResponse;
