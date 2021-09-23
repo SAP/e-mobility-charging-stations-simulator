@@ -96,4 +96,5 @@ mta_archives/
 temp/
 *.tar.gz
 performanceRecords.json
+performanceRecords.json.lock
 *.db
