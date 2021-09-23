@@ -134,7 +134,7 @@ export default class AutomaticTransactionGenerator {
       PerformanceStatistics.endMeasure(measureId, beginId);
       return startResponse;
     }
-    logger.info(this.logPrefix(connectorId) + ' start transaction without a idTag');
+    logger.info(this.logPrefix(connectorId) + ' start transaction without an idTag');
     startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId);
     PerformanceStatistics.endMeasure(measureId, beginId);
     return startResponse;
