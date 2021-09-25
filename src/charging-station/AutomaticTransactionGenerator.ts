@@ -125,7 +125,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   private stopConnector(connectorId: number): void {
-    this.connectorsStatus.set(connectorId, { start: false });
+    this.connectorsStatus.set(connectorId, { ...this.connectorsStatus.get(connectorId), start: false });
   }
 
   private initStartConnectorStatus(connectorId: number): void {
