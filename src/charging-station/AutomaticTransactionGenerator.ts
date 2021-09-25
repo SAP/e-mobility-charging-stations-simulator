@@ -91,6 +91,7 @@ export default class AutomaticTransactionGenerator {
       }
       if (!this.chargingStation.isConnectorAvailable(connectorId)) {
         logger.info(`${this.logPrefix(connectorId)} Entered in transaction loop while the connector ${connectorId} is unavailable, stop it`);
+        this.stopConnector(connectorId);
         break;
       }
       if (!this.chargingStation?.ocppRequestService) {
