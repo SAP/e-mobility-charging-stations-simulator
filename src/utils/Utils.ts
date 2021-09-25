@@ -108,7 +108,7 @@ export default class Utils {
     return sign * (randomPositiveFloat * (max - min) + min);
   }
 
-  public static getRandomInt(max: number, min = 0): number {
+  public static getRandomInteger(max: number, min = 0): number {
     if (max < 0) {
       throw new RangeError('Invalid interval');
     }

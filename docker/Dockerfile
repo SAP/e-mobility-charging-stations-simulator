@@ -13,11 +13,12 @@ RUN npm run build
 
 FROM node:lts-alpine
 
+ARG STACK_TRACE_LIMIT
 ARG MAX_OLD_SPACE_SIZE
 
 WORKDIR /usr/app
 
-ENV NODE_OPTIONS=--max-old-space-size=${MAX_OLD_SPACE_SIZE}
+ENV NODE_OPTIONS="--stack-trace-limit=${STACK_TRACE_LIMIT} --max-old-space-size=${MAX_OLD_SPACE_SIZE}"
 
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist

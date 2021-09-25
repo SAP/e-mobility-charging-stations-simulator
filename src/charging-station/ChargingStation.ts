@@ -525,7 +525,7 @@ export default class ChargingStation {
       // Generate all connectors
       if ((this.stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
         for (let index = 1; index <= maxConnectors; index++) {
-          const randConnectorId = this.stationInfo.randomConnectors ? Utils.getRandomInt(Utils.convertToInt(lastConnector), 1) : index;
+          const randConnectorId = this.stationInfo.randomConnectors ? Utils.getRandomInteger(Utils.convertToInt(lastConnector), 1) : index;
           this.connectors[index] = Utils.cloneObject<Connector>(this.stationInfo.Connectors[randConnectorId]);
           this.connectors[index].availability = AvailabilityType.OPERATIVE;
           if (Utils.isUndefined(this.connectors[lastConnector]?.chargingProfiles)) {

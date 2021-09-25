@@ -10,13 +10,16 @@ import logger from '../utils/Logger';
 
 export default class AutomaticTransactionGenerator {
   public started: boolean;
+  private chargingStation: ChargingStation;
+  private connectorsStartStatus: Record<number, boolean>;
   private startDate!: Date;
   private lastRunDate!: Date;
   private stopDate!: Date;
-  private chargingStation: ChargingStation;
 
   constructor(chargingStation: ChargingStation) {
     this.chargingStation = chargingStation;
+    this.connectorsStartStatus = {} as Record<number, boolean>;
+    this.stopConnectors();
     this.started = false;
   }
 
@@ -31,15 +34,8 @@ export default class AutomaticTransactionGenerator {
     this.stopDate = new Date(this.startDate.getTime()
       + (this.chargingStation.stationInfo?.AutomaticTransactionGenerator?.stopAfterHours ?? Constants.CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS) * 3600 * 1000
       - previousRunDuration);
+    this.startConnectors();
     this.started = true;
-    for (const connector in this.chargingStation.connectors) {
-      if (Utils.convertToInt(connector) > 0) {
-        // Avoid hogging the event loop with a busy loop
-        setImmediate(() => {
-          this.startOnConnector(Utils.convertToInt(connector)).catch(() => { /* This is intentional */ });
-        });
-      }
-    }
     logger.info(this.logPrefix() + ' started and will run for ' + Utils.formatDurationMilliSeconds(this.stopDate.getTime() - this.startDate.getTime()));
   }
 
@@ -48,15 +44,38 @@ export default class AutomaticTransactionGenerator {
       logger.error(`${this.logPrefix()} trying to stop while not started`);
       return;
     }
+    this.stopConnectors();
     this.started = false;
     logger.info(`${this.logPrefix()} over and lasted for ${Utils.formatDurationMilliSeconds(this.lastRunDate.getTime() - this.startDate.getTime())}. Stopping all transactions`);
   }
 
-  private async startOnConnector(connectorId: number): Promise<void> {
+  private startConnectors(): void {
+    for (const connector in this.chargingStation.connectors) {
+      const connectorId = Utils.convertToInt(connector);
+      if (connectorId > 0) {
+        // Avoid hogging the event loop with a busy loop
+        setImmediate(() => {
+          this.startConnector(connectorId).catch(() => { /* This is intentional */ });
+        });
+      }
+    }
+  }
+
+  private stopConnectors(): void {
+    for (const connector in this.chargingStation.connectors) {
+      const connectorId = Utils.convertToInt(connector);
+      if (connectorId > 0) {
+        this.stopConnector(connectorId);
+      }
+    }
+  }
+
+  private async startConnector(connectorId: number): Promise<void> {
     logger.info(this.logPrefix(connectorId) + ' started on connector');
     let skippedTransactions = 0;
     let skippedTransactionsTotal = 0;
-    while (this.started) {
+    this.connectorsStartStatus[connectorId] = true;
+    while (this.connectorsStartStatus[connectorId]) {
       if ((new Date()) > this.stopDate) {
         this.stop();
         break;
@@ -80,7 +99,7 @@ export default class AutomaticTransactionGenerator {
           await Utils.sleep(Constants.CHARGING_STATION_ATG_INITIALIZATION_TIME);
         } while (!this.chargingStation?.ocppRequestService);
       }
-      const wait = Utils.getRandomInt(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
+      const wait = Utils.getRandomInteger(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDelayBetweenTwoTransactions,
         this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDelayBetweenTwoTransactions) * 1000;
       logger.info(this.logPrefix(connectorId) + ' waiting for ' + Utils.formatDurationMilliSeconds(wait));
       await Utils.sleep(wait);
@@ -94,7 +113,7 @@ export default class AutomaticTransactionGenerator {
           await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
         } else {
           // Wait until end of transaction
-          const waitTrxEnd = Utils.getRandomInt(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
+          const waitTrxEnd = Utils.getRandomInteger(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
             this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
           logger.info(this.logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString() + ' will stop in ' + Utils.formatDurationMilliSeconds(waitTrxEnd));
           await Utils.sleep(waitTrxEnd);
@@ -111,6 +130,10 @@ export default class AutomaticTransactionGenerator {
     }
     await this.stopTransaction(connectorId);
     logger.info(this.logPrefix(connectorId) + ' stopped on connector');
+  }
+
+  private stopConnector(connectorId: number): void {
+    this.connectorsStartStatus[connectorId] = false;
   }
 
   private async startTransaction(connectorId: number): Promise<StartTransactionResponse | AuthorizeResponse> {

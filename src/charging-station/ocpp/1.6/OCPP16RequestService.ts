@@ -132,7 +132,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       if (socSampledValueTemplate) {
         const socSampledValueTemplateValue = socSampledValueTemplate.value
           ? Utils.getRandomFloatFluctuatedRounded(parseInt(socSampledValueTemplate.value), socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT)
-          : Utils.getRandomInt(100);
+          : Utils.getRandomInteger(100);
         meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;
         if (Utils.convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > 100 || debug) {
@@ -313,7 +313,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         const energyMeasurandValue = energySampledValueTemplate.value
           // Cumulate the fluctuated value around the static one
           ? Utils.getRandomFloatFluctuatedRounded(parseInt(energySampledValueTemplate.value), energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT)
-          : Utils.getRandomInt(this.chargingStation.stationInfo.maxPower / (this.chargingStation.stationInfo.powerDivider * 3600000) * interval);
+          : Utils.getRandomInteger(this.chargingStation.stationInfo.maxPower / (this.chargingStation.stationInfo.powerDivider * 3600000) * interval);
         // Persist previous value on connector
         if (connector && !Utils.isNullOrUndefined(connector.energyActiveImportRegisterValue) && connector.energyActiveImportRegisterValue >= 0 &&
             !Utils.isNullOrUndefined(connector.transactionEnergyActiveImportRegisterValue) && connector.transactionEnergyActiveImportRegisterValue >= 0) {
