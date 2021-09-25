@@ -1,12 +1,13 @@
 version: '3.7'
 networks:
-    ev_network:
-      driver: bridge
-
+  ev_network:
+    driver: bridge
 services:
-    charging-stations-simulator:
-        build:
-            context: ..
-            dockerfile: docker/Dockerfile
-        networks:
-            - ev_network
+  charging-stations-simulator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        MAX_OLD_SPACE_SIZE: 1024
+    networks:
+      - ev_network

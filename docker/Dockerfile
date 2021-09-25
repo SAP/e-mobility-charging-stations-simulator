@@ -13,7 +13,11 @@ RUN npm run build
 
 FROM node:lts-alpine
 
+ARG MAX_OLD_SPACE_SIZE
+
 WORKDIR /usr/app
+
+ENV NODE_OPTIONS=--max-old-space-size=${MAX_OLD_SPACE_SIZE}
 
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist

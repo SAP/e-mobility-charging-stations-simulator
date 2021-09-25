@@ -3,7 +3,6 @@
     "ws://server:8010/OCPP16/5c866e81a2d9593de43efdb4"
   ],
   "distributeStationsToTenantsEqually": true,
-  "statisticsDisplayInterval": 60,
   "workerProcess": "workerSet",
   "workerPoolMinSize": 4,
   "workerPoolMaxSize": 16,
@@ -37,5 +36,6 @@
   "logRotate": false,
   "logConsole": false,
   "logFile": "/dev/stdout",
-  "logErrorFile": "/dev/stderr"
+  "logErrorFile": "/dev/stderr",
+  "logStatisticsInterval": 60
 }
