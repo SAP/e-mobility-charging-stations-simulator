@@ -21,6 +21,10 @@ export default class AutomaticTransactionGenerator {
   }
 
   public start(): void {
+    if (this.started) {
+      logger.error(`${this.logPrefix()} trying to start while already started`);
+      return;
+    }
     const previousRunDuration = (this?.startDate && this?.lastRunDate) ? (this.lastRunDate.getTime() - this.startDate.getTime()) : 0;
     this.startDate = new Date();
     this.lastRunDate = this.startDate;

@@ -1003,7 +1003,7 @@ export default class ChargingStation {
 
   private startStationTemplateFileMonitoring(): void {
     try {
-      fs.watch(this.stationTemplateFile, async (event, filename): Promise<void> => {
+      fs.watch(this.stationTemplateFile, (event, filename): void => {
         if (filename && event === 'change') {
           try {
             logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
