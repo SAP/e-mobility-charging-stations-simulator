@@ -4,6 +4,13 @@ export interface Status {
   lastRunDate?: Date;
   stopDate?: Date;
   stoppedDate?: Date;
+  authorizeRequests?: number;
+  acceptedAuthorizeRequests?: number;
+  rejectedAuthorizeRequests?: number;
+  startTransactionRequests?: number;
+  acceptedStartTransactionRequests?: number;
+  rejectedStartTransactionRequests?: number;
+  stopTransactionRequests?: number;
   skippedConsecutiveTransactions?: number;
   skippedTransactions?: number;
 }

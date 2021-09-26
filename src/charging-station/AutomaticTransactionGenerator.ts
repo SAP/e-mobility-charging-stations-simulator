@@ -95,14 +95,16 @@ export default class AutomaticTransactionGenerator {
         this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
         // Start transaction
         const startResponse = await this.startTransaction(connectorId);
+        this.connectorsStatus.get(connectorId).startTransactionRequests++;
         if (startResponse?.idTagInfo?.status !== AuthorizationStatus.ACCEPTED) {
           logger.warn(this.logPrefix(connectorId) + ' start transaction rejected');
-          await Utils.sleep(Constants.CHARGING_STATION_ATG_WAIT_TIME);
+          this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
         } else {
           // Wait until end of transaction
           const waitTrxEnd = Utils.getRandomInteger(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
             this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
           logger.info(this.logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString() + ' started and will stop in ' + Utils.formatDurationMilliSeconds(waitTrxEnd));
+          this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
           logger.info(this.logPrefix(connectorId) + ' stop transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString());
@@ -133,8 +135,15 @@ export default class AutomaticTransactionGenerator {
   }
 
   private initStartConnectorStatus(connectorId: number): void {
+    this.connectorsStatus.get(connectorId).authorizeRequests = this?.connectorsStatus.get(connectorId)?.authorizeRequests ?? 0;
+    this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests = this?.connectorsStatus.get(connectorId)?.acceptedAuthorizeRequests ?? 0;
+    this.connectorsStatus.get(connectorId).rejectedAuthorizeRequests = this?.connectorsStatus.get(connectorId)?.rejectedAuthorizeRequests ?? 0;
+    this.connectorsStatus.get(connectorId).startTransactionRequests = this?.connectorsStatus.get(connectorId)?.startTransactionRequests ?? 0;
+    this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests = this?.connectorsStatus.get(connectorId)?.acceptedStartTransactionRequests ?? 0;
+    this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests = this?.connectorsStatus.get(connectorId)?.rejectedStartTransactionRequests ?? 0;
+    this.connectorsStatus.get(connectorId).stopTransactionRequests = this?.connectorsStatus.get(connectorId)?.stopTransactionRequests ?? 0;
     this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
-    this.connectorsStatus.get(connectorId).skippedTransactions = 0;
+    this.connectorsStatus.get(connectorId).skippedTransactions = this?.connectorsStatus.get(connectorId)?.skippedTransactions ?? 0;
     const previousRunDuration = (this?.connectorsStatus.get(connectorId)?.startDate && this?.connectorsStatus.get(connectorId)?.lastRunDate)
       ? (this.connectorsStatus.get(connectorId).lastRunDate.getTime() - this.connectorsStatus.get(connectorId).startDate.getTime())
       : 0;
@@ -154,13 +163,16 @@ export default class AutomaticTransactionGenerator {
       if (this.chargingStation.getAutomaticTransactionGeneratorRequireAuthorize()) {
         // Authorize idTag
         const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(connectorId, idTag);
+        this.connectorsStatus.get(connectorId).authorizeRequests++;
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+          this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests++;
           logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
           // Start transaction
           startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId, idTag);
           PerformanceStatistics.endMeasure(measureId, beginId);
           return startResponse;
         }
+        this.connectorsStatus.get(connectorId).rejectedAuthorizeRequests++;
         PerformanceStatistics.endMeasure(measureId, beginId);
         return authorizeResponse;
       }
@@ -187,6 +199,7 @@ export default class AutomaticTransactionGenerator {
         this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
         this.chargingStation.getTransactionIdTag(transactionId),
         reason);
+      this.connectorsStatus.get(connectorId).stopTransactionRequests++;
     } else {
       logger.warn(`${this.logPrefix(connectorId)} trying to stop a not started transaction${transactionId ? ' ' + transactionId.toString() : ''}`);
     }
