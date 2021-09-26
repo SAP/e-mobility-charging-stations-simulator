@@ -33,7 +33,7 @@
     "compareUrl": "https://github.com/jerome-benoit/charging-stations-simulator/compare/{from}...{to}"
   },
   "mikro-orm": {
-    "tsConfigPath": "./tsconfig.orm.json",
+    "tsConfigPath": "./tsconfig-orm.json",
     "useTsNode": true
   },
   "scripts": {
