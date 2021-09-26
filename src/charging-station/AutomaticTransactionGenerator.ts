@@ -43,10 +43,7 @@ export default class AutomaticTransactionGenerator {
     for (const connector in this.chargingStation.connectors) {
       const connectorId = Utils.convertToInt(connector);
       if (connectorId > 0) {
-        // Avoid hogging the event loop with a busy loop
-        setImmediate(() => {
-          this.startConnector(connectorId).catch(() => { /* This is intentional */ });
-        });
+        this.startConnector(connectorId);
       }
     }
   }
@@ -60,7 +57,7 @@ export default class AutomaticTransactionGenerator {
     }
   }
 
-  private async startConnector(connectorId: number): Promise<void> {
+  private async internalStartConnector(connectorId: number): Promise<void> {
     this.initStartConnectorStatus(connectorId);
     logger.info(this.logPrefix(connectorId) + ' started on connector and will run for ' + Utils.formatDurationMilliSeconds(this.connectorsStatus.get(connectorId).stopDate.getTime() - this.connectorsStatus.get(connectorId).startDate.getTime()));
     while (this.connectorsStatus.get(connectorId).start) {
@@ -122,6 +119,13 @@ export default class AutomaticTransactionGenerator {
     this.connectorsStatus.get(connectorId).stoppedDate = new Date();
     logger.info(this.logPrefix(connectorId) + ' stopped on connector and lasted for ' + Utils.formatDurationMilliSeconds(this.connectorsStatus.get(connectorId).stoppedDate.getTime() - this.connectorsStatus.get(connectorId).startDate.getTime()));
     logger.debug(`${this.logPrefix(connectorId)} connector status %j`, this.connectorsStatus.get(connectorId));
+  }
+
+  private startConnector(connectorId: number): void {
+    // Avoid hogging the event loop with a busy loop
+    setImmediate(() => {
+      this.internalStartConnector(connectorId).catch(() => { /* This is intentional */ });
+    });
   }
 
   private stopConnector(connectorId: number): void {
