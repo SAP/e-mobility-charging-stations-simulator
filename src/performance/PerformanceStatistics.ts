@@ -5,11 +5,11 @@ import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import Statistics, { StatisticsData } from '../types/Statistics';
 
+import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import Configuration from '../utils/Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
-import { WorkerMessageEvents } from '../types/Worker';
 import logger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 
@@ -192,7 +192,7 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData[entryName].ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData[entryName].timeMeasurementSeries, 95);
     this.statistics.statisticsData[entryName].stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData[entryName].timeMeasurementSeries);
     if (Configuration.getPerformanceStorage().enabled) {
-      parentPort.postMessage({ id: WorkerMessageEvents.PERFORMANCE_STATISTICS, data: this.statistics });
+      parentPort.postMessage({ id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS, data: this.statistics });
     }
   }
 

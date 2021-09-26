@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { ChargingStationWorkerData, WorkerMessage, WorkerMessageEvents } from '../types/Worker';
+import { ChargingStationWorkerData, ChargingStationWorkerMessage, ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 
 import Configuration from '../utils/Configuration';
 import { Storage } from '../performance/storage/Storage';
@@ -103,8 +103,8 @@ export default class Bootstrap {
         poolOptions: {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
         },
-        messageHandler: async (msg: WorkerMessage) => {
-          if (msg.id === WorkerMessageEvents.PERFORMANCE_STATISTICS) {
+        messageHandler: async (msg: ChargingStationWorkerMessage) => {
+          if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
             await Bootstrap.storage.storePerformanceStatistics(msg.data);
           }
         }

@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { ChargingStationWorkerData, WorkerMessage, WorkerMessageEvents } from '../types/Worker';
+import { ChargingStationWorkerData, ChargingStationWorkerMessage, ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import { parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
@@ -24,8 +24,8 @@ if (Utils.workerPoolInUse()) {
  * Listen messages send by the main thread
  */
 function addMessageListener(): void {
-  parentPort?.on('message', (message: WorkerMessage) => {
-    if (message.id === WorkerMessageEvents.START_WORKER_ELEMENT) {
+  parentPort?.on('message', (message: ChargingStationWorkerMessage) => {
+    if (message.id === ChargingStationWorkerMessageEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.data);
     }
   });

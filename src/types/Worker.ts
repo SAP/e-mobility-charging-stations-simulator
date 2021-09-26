@@ -19,11 +19,6 @@ export interface WorkerOptions {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface WorkerData {}
 
-export interface ChargingStationWorkerData extends WorkerData {
-  index: number;
-  templateFile: string;
-}
-
 export interface WorkerSetElement {
   worker: Worker;
   numberOfWorkerElements: number;
@@ -36,7 +31,6 @@ export interface WorkerMessage {
 
 export enum WorkerMessageEvents {
   START_WORKER_ELEMENT = 'startWorkerElement',
-  STOP_WORKER_ELEMENT = 'stopWorkerElement',
-  PERFORMANCE_STATISTICS = 'performanceStatistics'
+  STOP_WORKER_ELEMENT = 'stopWorkerElement'
 }
 
