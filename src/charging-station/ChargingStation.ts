@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { AvailabilityType, BootNotificationRequest, IncomingRequest, IncomingRequestCommand, Request } from '../types/ocpp/Requests';
+import { AvailabilityType, BootNotificationRequest, CachedRequest, IncomingRequest, IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { CurrentType, PowerUnits, Voltage } from '../types/ChargingStationTemplate';
@@ -43,7 +43,7 @@ export default class ChargingStation {
   public connectors: Connectors;
   public configuration!: ChargingStationConfiguration;
   public wsConnection!: WebSocket;
-  public requests: Map<string, Request>;
+  public requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics;
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
@@ -70,7 +70,7 @@ export default class ChargingStation {
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
 
-    this.requests = new Map<string, Request>();
+    this.requests = new Map<string, CachedRequest>();
     this.messageQueue = new Array<string>();
 
     this.authorizedTags = this.getAuthorizedTags();
@@ -237,13 +237,13 @@ export default class ChargingStation {
       if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)) {
         logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
       } else if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
-                 && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
+        && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
         return sampledValueTemplates[index];
       } else if (!phase && !sampledValueTemplates[index].phase && sampledValueTemplates[index]?.measurand === measurand
-                 && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
+        && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
         return sampledValueTemplates[index];
       } else if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-                 && (!sampledValueTemplates[index].measurand || sampledValueTemplates[index].measurand === measurand)) {
+        && (!sampledValueTemplates[index].measurand || sampledValueTemplates[index].measurand === measurand)) {
         return sampledValueTemplates[index];
       }
     }
@@ -387,7 +387,7 @@ export default class ChargingStation {
     if (!Utils.isEmptyArray(this.getConnector(connectorId).chargingProfiles)) {
       this.getConnector(connectorId).chargingProfiles?.forEach((chargingProfile: ChargingProfile, index: number) => {
         if (chargingProfile.chargingProfileId === cp.chargingProfileId
-            || (chargingProfile.stackLevel === cp.stackLevel && chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)) {
+          || (chargingProfile.stackLevel === cp.stackLevel && chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)) {
           this.getConnector(connectorId).chargingProfiles[index] = cp;
           cpReplaced = true;
         }
@@ -595,7 +595,7 @@ export default class ChargingStation {
       this.addConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests, 'true');
     }
     if (!this.getConfigurationKey(StandardParametersKey.LocalAuthListEnabled)
-        && this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles).value.includes(SupportedFeatureProfiles.Local_Auth_List_Management)) {
+      && this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles).value.includes(SupportedFeatureProfiles.Local_Auth_List_Management)) {
       this.addConfigurationKey(StandardParametersKey.LocalAuthListEnabled, 'false');
     }
     if (!this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut)) {
@@ -650,8 +650,9 @@ export default class ChargingStation {
     let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, {}, {}];
     let responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void;
     let rejectCallback: (error: OCPPError) => void;
+    let requestCommandName: RequestCommand | IncomingRequestCommand;
     let requestPayload: Record<string, unknown>;
-    let cachedRequest: Request;
+    let cachedRequest: CachedRequest;
     let errMsg: string;
     try {
       const request = JSON.parse(data.toString()) as IncomingRequest;
@@ -676,7 +677,7 @@ export default class ChargingStation {
           // Respond
           cachedRequest = this.requests.get(messageId);
           if (Utils.isIterable(cachedRequest)) {
-            [responseCallback, , requestPayload] = cachedRequest;
+            [responseCallback, , , requestPayload] = cachedRequest;
           } else {
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Response request for message id ${messageId} is not iterable`, commandName);
           }
@@ -684,23 +685,21 @@ export default class ChargingStation {
             // Error
             throw new OCPPError(ErrorType.INTERNAL_ERROR, `Response request for unknown message id ${messageId}`, commandName);
           }
-          this.requests.delete(messageId);
           responseCallback(commandName, requestPayload);
           break;
         // Error Message
         case MessageType.CALL_ERROR_MESSAGE:
           cachedRequest = this.requests.get(messageId);
-          if (!cachedRequest) {
-            // Error
-            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Error request for unknown message id ${messageId}`);
-          }
           if (Utils.isIterable(cachedRequest)) {
-            [, rejectCallback] = cachedRequest;
+            [, rejectCallback, requestCommandName] = cachedRequest;
           } else {
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Error request for message id ${messageId} is not iterable`);
           }
-          this.requests.delete(messageId);
-          rejectCallback(new OCPPError(commandName, commandPayload.toString(), null, errorDetails));
+          if (!rejectCallback) {
+            // Error
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Error request for unknown message id ${messageId}`, requestCommandName);
+          }
+          rejectCallback(new OCPPError(commandName, commandPayload.toString(), requestCommandName, errorDetails));
           break;
         // Error
         default:
@@ -710,9 +709,9 @@ export default class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming request message %j processing error %j on content type %j', this.logPrefix(), data, error, this.requests.get(messageId));
+      logger.error('%s Incoming request message %j matching cached request %j processing error %j ', this.logPrefix(), data, this.requests.get(messageId), error);
       // Send error
-      messageType !== MessageType.CALL_ERROR_MESSAGE && await this.ocppRequestService.sendError(messageId, error, commandName);
+      messageType === MessageType.CALL_MESSAGE && await this.ocppRequestService.sendError(messageId, error, commandName);
     }
   }
 
@@ -1011,7 +1010,7 @@ export default class ChargingStation {
             this.initialize();
             // Restart the ATG
             if (!this.stationInfo.AutomaticTransactionGenerator.enable &&
-                this.automaticTransactionGenerator) {
+              this.automaticTransactionGenerator) {
               this.automaticTransactionGenerator.stop();
             }
             this.startAutomaticTransactionGenerator();

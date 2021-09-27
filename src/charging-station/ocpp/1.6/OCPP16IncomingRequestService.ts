@@ -36,15 +36,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       } catch (error) {
         // Log
         logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);
-        // Send back an error response to inform backend
-        await this.chargingStation.ocppRequestService.sendError(messageId, error, commandName);
         throw error;
       }
     } else {
       // Throw exception
-      const error = new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
-      await this.chargingStation.ocppRequestService.sendError(messageId, error, commandName);
-      throw error;
+      throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
     }
     // Send the built response
     await this.chargingStation.ocppRequestService.sendMessage(messageId, response, MessageType.CALL_RESULT_MESSAGE, commandName);

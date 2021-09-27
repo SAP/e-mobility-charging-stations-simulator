@@ -30,6 +30,8 @@ export const DiagnosticsStatus = {
   ...OCPP16DiagnosticsStatus
 };
 
-export type Request = [(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void, (error: OCPPError) => void, Record<string, unknown>];
+export type Request = [MessageType, string, RequestCommand, Record<string, unknown>, Record<string, unknown>];
 
 export type IncomingRequest = [MessageType, string, IncomingRequestCommand, Record<string, unknown>, Record<string, unknown>];
+
+export type CachedRequest = [(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void, (error: OCPPError) => void, RequestCommand | IncomingRequestCommand, Record<string, unknown>];

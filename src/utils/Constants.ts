@@ -26,7 +26,7 @@ export default class Constants {
   static readonly OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED = Object.freeze({ status: TriggerMessageStatus.NOT_IMPLEMENTED });
 
   static readonly OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
-  static readonly OCPP_ERROR_TIMEOUT = 60000; // Ms
+  static readonly OCPP_SOCKET_TIMEOUT = 60000; // Ms
   static readonly OCPP_TRIGGER_MESSAGE_DELAY = 2000; // Ms
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms

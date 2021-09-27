@@ -42,16 +42,16 @@ export default abstract class OCPPRequestService {
       } else if (!skipBufferingOnError) {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
-        // Reject it
-        return rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams?.details ?? {}));
+        // Reject it but keep the request in the cache
+        reject(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams?.details ?? {}));
       }
       // Response?
       if (messageType === MessageType.CALL_RESULT_MESSAGE) {
         // Yes: send Ok
         resolve(commandName);
-      } else if (messageType === MessageType.CALL_ERROR_MESSAGE) {
+      } else {
         // Send timeout
-        setTimeout(() => rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {})), Constants.OCPP_ERROR_TIMEOUT);
+        setTimeout(() => rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {})), Constants.OCPP_SOCKET_TIMEOUT);
       }
 
       /**
@@ -66,11 +66,12 @@ export default abstract class OCPPRequestService {
         }
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
+        self.chargingStation.requests.delete(messageId);
         resolve(payload);
       }
 
       /**
-       * Function that will receive the request's rejection
+       * Function that will receive the request's error response
        *
        * @param error
        */
@@ -78,10 +79,8 @@ export default abstract class OCPPRequestService {
         if (self.chargingStation.getEnableStatistics()) {
           self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
         }
-        logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
-        // Build Exception
-        self.chargingStation.requests.set(messageId, [() => { /* This is intentional */ }, () => { /* This is intentional */ }, {}]);
-        // Send error
+        logger.debug(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with parameters %j`, error, commandName, commandParams);
+        self.chargingStation.requests.delete(messageId);
         reject(error);
       }
     });
@@ -100,7 +99,7 @@ export default abstract class OCPPRequestService {
       // Request
       case MessageType.CALL_MESSAGE:
         // Build request
-        this.chargingStation.requests.set(messageId, [responseCallback, rejectCallback, commandParams as Record<string, unknown>]);
+        this.chargingStation.requests.set(messageId, [responseCallback, rejectCallback, commandName, commandParams as Record<string, unknown>]);
         messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
         break;
       // Response
