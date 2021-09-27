@@ -80,7 +80,7 @@ export default abstract class OCPPRequestService {
         }
         logger.debug(`${self.chargingStation.logPrefix()} Error: %j occurred when calling command %s with parameters: %j`, error, commandName, commandParams);
         // Build Exception
-        self.chargingStation.requests.set(messageId, [() => { /* This is intentiomal */ }, () => { /* This is intentiomal */ }, {}]);
+        self.chargingStation.requests.set(messageId, [() => { /* This is intentional */ }, () => { /* This is intentional */ }, {}]);
         // Send error
         reject(error);
       }
