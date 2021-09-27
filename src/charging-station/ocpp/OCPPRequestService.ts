@@ -46,7 +46,7 @@ export default abstract class OCPPRequestService {
         reject(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams?.details ?? {}));
       }
       // Response?
-      if (messageType === MessageType.CALL_RESULT_MESSAGE) {
+      if (messageType !== MessageType.CALL_MESSAGE) {
         // Yes: send Ok
         resolve(commandName);
       } else {
