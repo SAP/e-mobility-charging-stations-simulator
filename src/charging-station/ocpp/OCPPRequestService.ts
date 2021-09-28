@@ -43,7 +43,7 @@ export default abstract class OCPPRequestService {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
         // Reject it but keep the request in the cache
-        reject(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams?.details ?? {}));
+        return reject(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams?.details ?? {}));
       }
       // Response?
       if (messageType !== MessageType.CALL_MESSAGE) {
