@@ -26,7 +26,7 @@ import tar from 'tar';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
-    let response;
+    let response: Record<string, unknown>;
     const methodName = `handleRequest${commandName}`;
     // Call
     if (typeof this[methodName] === 'function') {

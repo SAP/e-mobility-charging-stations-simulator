@@ -37,21 +37,29 @@ export default abstract class OCPPRequestService {
       if (this.chargingStation.isWebSocketConnectionOpened()) {
         // Yes: Send Message
         const beginId = PerformanceStatistics.beginMeasure(commandName);
+        // FIXME: Handle sending error
         this.chargingStation.wsConnection.send(messageToSend);
         PerformanceStatistics.endMeasure(commandName, beginId);
       } else if (!skipBufferingOnError) {
         // Buffer it
         this.chargingStation.addToMessageQueue(messageToSend);
-        // Reject it but keep the request in the cache
-        return reject(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `WebSocket closed for message id '${messageId}' with content '${messageToSend}', message buffered`, commandParams?.details ?? {}));
+        const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {});
+        if (messageType === MessageType.CALL_MESSAGE) {
+          // Reject it but keep the request in the cache
+          return reject(ocppError);
+        }
+        return rejectCallback(ocppError);
+      } else {
+        // Reject it
+        return rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}));
       }
       // Response?
       if (messageType !== MessageType.CALL_MESSAGE) {
         // Yes: send Ok
-        resolve(commandName);
+        resolve({ commandName, commandParams });
       } else {
         // Send timeout
-        setTimeout(() => rejectCallback(new OCPPError(commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {})), Constants.OCPP_SOCKET_TIMEOUT);
+        setTimeout(() => rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {})), Constants.OCPP_SOCKET_TIMEOUT);
       }
 
       /**
@@ -67,7 +75,7 @@ export default abstract class OCPPRequestService {
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
         self.chargingStation.requests.delete(messageId);
-        resolve(payload);
+        resolve({ commandName, payload, requestPayload });
       }
 
       /**
@@ -91,7 +99,7 @@ export default abstract class OCPPRequestService {
     throw error;
   }
 
-  private buildMessageToSend(messageId: string, commandParams: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
+  private buildMessageToSend(messageId: string, commandParams: Record<string, unknown>, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
       responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => Promise<void>, rejectCallback: (error: OCPPError) => void): string {
     let messageToSend: string;
     // Type of message
@@ -99,7 +107,7 @@ export default abstract class OCPPRequestService {
       // Request
       case MessageType.CALL_MESSAGE:
         // Build request
-        this.chargingStation.requests.set(messageId, [responseCallback, rejectCallback, commandName, commandParams as Record<string, unknown>]);
+        this.chargingStation.requests.set(messageId, [responseCallback, rejectCallback, commandName, commandParams]);
         messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
         break;
       // Response
