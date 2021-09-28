@@ -79,7 +79,7 @@ export default abstract class OCPPRequestService {
         if (self.chargingStation.getEnableStatistics()) {
           self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
         }
-        logger.debug(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with parameters %j`, error, commandName, commandParams);
+        logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with parameters %j`, error, commandName, commandParams);
         self.chargingStation.requests.delete(messageId);
         reject(error);
       }

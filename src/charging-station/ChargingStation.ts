@@ -679,11 +679,11 @@ export default class ChargingStation {
           if (Utils.isIterable(cachedRequest)) {
             [responseCallback, , , requestPayload] = cachedRequest;
           } else {
-            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Response request for message id ${messageId} is not iterable`, commandName);
+            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Cached request for message id ${messageId} response is not iterable`, commandName);
           }
           if (!responseCallback) {
             // Error
-            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Response request for unknown message id ${messageId}`, commandName);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Response for unknown message id ${messageId}`, commandName);
           }
           responseCallback(commandName, requestPayload);
           break;
@@ -693,11 +693,11 @@ export default class ChargingStation {
           if (Utils.isIterable(cachedRequest)) {
             [, rejectCallback, requestCommandName] = cachedRequest;
           } else {
-            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Error request for message id ${messageId} is not iterable`);
+            throw new OCPPError(ErrorType.PROTOCOL_ERROR, `Cached request for message id ${messageId} error response is not iterable`);
           }
           if (!rejectCallback) {
             // Error
-            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Error request for unknown message id ${messageId}`, requestCommandName);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, `Error response for unknown message id ${messageId}`, requestCommandName);
           }
           rejectCallback(new OCPPError(commandName, commandPayload.toString(), requestCommandName, errorDetails));
           break;
@@ -709,7 +709,7 @@ export default class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming request message %j matching cached request %j processing error %j ', this.logPrefix(), data, this.requests.get(messageId), error);
+      logger.error('%s Incoming OCPP message %j matching cached request %j processing error %j', this.logPrefix(), data, this.requests.get(messageId), error);
       // Send error
       messageType === MessageType.CALL_MESSAGE && await this.ocppRequestService.sendError(messageId, error, commandName);
     }
