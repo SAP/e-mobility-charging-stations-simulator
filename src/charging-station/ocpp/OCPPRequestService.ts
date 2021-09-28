@@ -56,7 +56,7 @@ export default abstract class OCPPRequestService {
       // Response?
       if (messageType !== MessageType.CALL_MESSAGE) {
         // Yes: send Ok
-        resolve({ commandName, commandParams });
+        resolve(commandParams);
       } else {
         // Send timeout
         setTimeout(() => rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {})), Constants.OCPP_SOCKET_TIMEOUT);
@@ -75,7 +75,7 @@ export default abstract class OCPPRequestService {
         // Send the response
         await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
         self.chargingStation.requests.delete(messageId);
-        resolve({ commandName, payload, requestPayload });
+        resolve(payload);
       }
 
       /**
