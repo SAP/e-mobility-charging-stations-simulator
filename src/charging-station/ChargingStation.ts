@@ -508,8 +508,9 @@ export default class ChargingStation {
       this.stationInfo.randomConnectors = true;
     }
     const connectorsConfigHash = crypto.createHash('sha256').update(JSON.stringify(this.stationInfo.Connectors) + maxConnectors.toString()).digest('hex');
-    // FIXME: Handle shrinking the number of connectors
-    if (!this.connectors || (this.connectors && this.connectorsConfigurationHash !== connectorsConfigHash)) {
+    const connectorsConfigChanged = !Utils.isEmptyObject(this.connectors) && this.connectorsConfigurationHash !== connectorsConfigHash;
+    if (Utils.isEmptyObject(this.connectors) || connectorsConfigChanged) {
+      connectorsConfigChanged && (this.connectors = {} as Connectors);
       this.connectorsConfigurationHash = connectorsConfigHash;
       // Add connector Id 0
       let lastConnector = '0';
