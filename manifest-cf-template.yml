@@ -11,4 +11,4 @@ applications:
   command: node -r source-map-support/register dist/start.js
   env:
     # OPTIMIZE_MEMORY: true
-    NODE_OPTIONS: --stack-trace-limit=1024 --max-old-space-size=512
+    NODE_OPTIONS: --stack-trace-limit=1024 --max-old-space-size=768
