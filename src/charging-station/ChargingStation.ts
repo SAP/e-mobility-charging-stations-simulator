@@ -315,17 +315,17 @@ export default class ChargingStation {
     this.startAuthorizationFileMonitoring();
     // Monitor station template file
     this.startStationTemplateFileMonitoring();
-    // Handle Socket incoming messages
+    // Handle WebSocket incoming messages
     this.wsConnection.on('message', this.onMessage.bind(this));
-    // Handle Socket error
+    // Handle WebSocket error
     this.wsConnection.on('error', this.onError.bind(this));
-    // Handle Socket close
+    // Handle WebSocket close
     this.wsConnection.on('close', this.onClose.bind(this));
-    // Handle Socket opening connection
+    // Handle WebSocket opening connection
     this.wsConnection.on('open', this.onOpen.bind(this));
-    // Handle Socket ping
+    // Handle WebSocket ping
     this.wsConnection.on('ping', this.onPing.bind(this));
-    // Handle Socket pong
+    // Handle WebSocket pong
     this.wsConnection.on('pong', this.onPong.bind(this));
   }
 
@@ -636,12 +636,12 @@ export default class ChargingStation {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
-        logger.info(`${this.logPrefix()} Socket normally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
+        logger.info(`${this.logPrefix()} WebSocket normally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
         this.autoReconnectRetryCount = 0;
         break;
       // Abnormal close
       default:
-        logger.error(`${this.logPrefix()} Socket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
+        logger.error(`${this.logPrefix()} WebSocket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
         await this.reconnect(code);
         break;
     }
@@ -725,7 +725,7 @@ export default class ChargingStation {
   }
 
   private async onError(error: WSError): Promise<void> {
-    logger.error(this.logPrefix() + ' Socket error: %j', error);
+    logger.error(this.logPrefix() + ' WebSocket error: %j', error);
     // switch (error.code) {
     //   case 'ECONNREFUSED':
     //     await this.reconnect(error);
@@ -1051,13 +1051,13 @@ export default class ChargingStation {
       this.autoReconnectRetryCount++;
       const reconnectDelay = (this.getReconnectExponentialDelay() ? Utils.exponentialDelay(this.autoReconnectRetryCount) : this.getConnectionTimeout() * 1000);
       const reconnectTimeout = reconnectDelay - 100;
-      logger.error(`${this.logPrefix()} Socket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectTimeout}ms`);
+      logger.error(`${this.logPrefix()} WebSocket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectTimeout}ms`);
       await Utils.sleep(reconnectDelay);
-      logger.error(this.logPrefix() + ' Socket: reconnecting try #' + this.autoReconnectRetryCount.toString());
+      logger.error(this.logPrefix() + ' WebSocket: reconnecting try #' + this.autoReconnectRetryCount.toString());
       this.openWSConnection({ handshakeTimeout: reconnectTimeout }, true);
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
-      logger.error(`${this.logPrefix()} Socket reconnect failure: max retries reached (${this.autoReconnectRetryCount}) or retry disabled (${this.getAutoReconnectMaxRetries()})`);
+      logger.error(`${this.logPrefix()} WebSocket reconnect failure: max retries reached (${this.autoReconnectRetryCount}) or retry disabled (${this.getAutoReconnectMaxRetries()})`);
     }
   }
 
