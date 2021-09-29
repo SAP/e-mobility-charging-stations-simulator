@@ -4,6 +4,8 @@ import { MessageType } from './MessageType';
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
 import OCPPError from '../../charging-station/ocpp/OCPPError';
 
+export type IncomingRequestHandler = (commandPayload: Record<string, unknown>) => Record<string, unknown> | Promise<Record<string, unknown>>;
+
 export type BootNotificationRequest = OCPP16BootNotificationRequest;
 
 export type AvailabilityType = OCPP16AvailabilityType;

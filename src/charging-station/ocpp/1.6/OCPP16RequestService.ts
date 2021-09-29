@@ -18,7 +18,6 @@ import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStat
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
-import { RequestCommand } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
@@ -222,7 +221,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             break;
           default:
             logger.error(errMsg);
-            throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
         }
         meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(powerSampledValueTemplate, powerMeasurandValues.allPhases));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;
@@ -288,7 +287,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             break;
           default:
             logger.error(errMsg);
-            throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES);
+            throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
         }
         meterValue.sampledValue.push(OCPP16ServiceUtils.buildSampledValue(currentSampledValueTemplate, currentMeasurandValues.allPhases));
         const sampledValuesIndex = meterValue.sampledValue.length - 1;

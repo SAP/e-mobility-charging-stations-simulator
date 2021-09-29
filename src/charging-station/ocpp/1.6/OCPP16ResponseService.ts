@@ -5,20 +5,36 @@ import { HeartbeatRequest, OCPP16RequestCommand, StatusNotificationRequest } fro
 import { HeartbeatResponse, OCPP16BootNotificationResponse, OCPP16RegistrationStatus, StatusNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
 
+import ChargingStation from '../../ChargingStation';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import OCPPResponseService from '../OCPPResponseService';
+import { ResponseHandler } from '../../../types/ocpp/Responses';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
 export default class OCPP16ResponseService extends OCPPResponseService {
+  private responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>;
+
+  constructor(chargingStation: ChargingStation) {
+    super(chargingStation);
+    this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
+      [OCPP16RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],
+      [OCPP16RequestCommand.HEARTBEAT, this.handleResponseHeartbeat.bind(this)],
+      [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this)],
+      [OCPP16RequestCommand.START_TRANSACTION, this.handleResponseStartTransaction.bind(this)],
+      [OCPP16RequestCommand.STOP_TRANSACTION, this.handleResponseStopTransaction.bind(this)],
+      [OCPP16RequestCommand.STATUS_NOTIFICATION, this.handleResponseStatusNotification.bind(this)],
+      [OCPP16RequestCommand.METER_VALUES, this.handleResponseMeterValues.bind(this)],
+    ]);
+  }
+
   public async handleResponse(commandName: OCPP16RequestCommand, payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
-    const responseCallbackMethodName = `handleResponse${commandName}`;
-    if (typeof this[responseCallbackMethodName] === 'function') {
-      await this[responseCallbackMethodName](payload, requestPayload);
+    if (this.responseHandlers.has(commandName)) {
+      await this.responseHandlers.get(commandName)(payload, requestPayload);
     } else {
-      logger.error(this.chargingStation.logPrefix() + ' Trying to call an undefined response callback method: ' + responseCallbackMethodName);
+      logger.error(this.chargingStation.logPrefix() + ' Trying to call an undefined method for command ' + commandName + ' response');
     }
   }
 
@@ -31,6 +47,28 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       logger.info(this.chargingStation.logPrefix() + ' Charging station in pending state on the central server');
     } else {
       logger.warn(this.chargingStation.logPrefix() + ' Charging station rejected by the central server');
+    }
+  }
+
+  private handleResponseHeartbeat(payload: HeartbeatResponse, requestPayload: HeartbeatRequest): void {
+    logger.debug(this.chargingStation.logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
+  }
+
+  private handleResponseAuthorize(payload: OCPP16AuthorizeResponse, requestPayload: AuthorizeRequest): void {
+    let authorizeConnectorId: number;
+    for (const connector in this.chargingStation.connectors) {
+      if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.authorizeIdTag === requestPayload.idTag) {
+        authorizeConnectorId = Utils.convertToInt(connector);
+        break;
+      }
+    }
+    if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
+      this.chargingStation.getConnector(authorizeConnectorId).authorized = true;
+      logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} authorized on connector ${authorizeConnectorId}`);
+    } else {
+      this.chargingStation.getConnector(authorizeConnectorId).authorized = false;
+      delete this.chargingStation.getConnector(authorizeConnectorId).authorizeIdTag;
+      logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status ${payload.idTagInfo.status} on connector ${authorizeConnectorId}`);
     }
   }
 
@@ -57,7 +95,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
     if (this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.AVAILABLE
-        && this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.PREPARING) {
+      && this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.PREPARING) {
       logger.error(`${this.chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with status ${this.chargingStation.getConnector(connectorId)?.status}`);
       return;
     }
@@ -132,27 +170,5 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   private handleResponseMeterValues(payload: MeterValuesRequest, requestPayload: MeterValuesResponse): void {
     logger.debug(this.chargingStation.logPrefix() + ' MeterValues response received: %j to MeterValues request: %j', payload, requestPayload);
-  }
-
-  private handleResponseHeartbeat(payload: HeartbeatResponse, requestPayload: HeartbeatRequest): void {
-    logger.debug(this.chargingStation.logPrefix() + ' Heartbeat response received: %j to Heartbeat request: %j', payload, requestPayload);
-  }
-
-  private handleResponseAuthorize(payload: OCPP16AuthorizeResponse, requestPayload: AuthorizeRequest): void {
-    let authorizeConnectorId: number;
-    for (const connector in this.chargingStation.connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.authorizeIdTag === requestPayload.idTag) {
-        authorizeConnectorId = Utils.convertToInt(connector);
-        break;
-      }
-    }
-    if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      this.chargingStation.getConnector(authorizeConnectorId).authorized = true;
-      logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} authorized on connector ${authorizeConnectorId}`);
-    } else {
-      this.chargingStation.getConnector(authorizeConnectorId).authorized = false;
-      delete this.chargingStation.getConnector(authorizeConnectorId).authorizeIdTag;
-      logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status ${payload.idTagInfo.status} on connector ${authorizeConnectorId}`);
-    }
   }
 }

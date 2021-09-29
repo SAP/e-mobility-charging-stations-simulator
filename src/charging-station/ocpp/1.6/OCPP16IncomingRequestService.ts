@@ -1,15 +1,16 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingProfileRequest, GetConfigurationRequest, GetDiagnosticsRequest, MessageTrigger, OCPP16AvailabilityType, OCPP16IncomingRequestCommand, OCPP16TriggerMessageRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, UnlockConnectorRequest } from '../../../types/ocpp/1.6/Requests';
+import { ChangeAvailabilityRequest, ChangeConfigurationRequest, ClearChargingProfileRequest, GetConfigurationRequest, GetDiagnosticsRequest, MessageTrigger, OCPP16AvailabilityType, OCPP16IncomingRequestCommand, OCPP16RequestCommand, OCPP16TriggerMessageRequest, RemoteStartTransactionRequest, RemoteStopTransactionRequest, ResetRequest, SetChargingProfileRequest, UnlockConnectorRequest } from '../../../types/ocpp/1.6/Requests';
 import { ChangeAvailabilityResponse, ChangeConfigurationResponse, ClearChargingProfileResponse, GetConfigurationResponse, GetDiagnosticsResponse, OCPP16TriggerMessageResponse, SetChargingProfileResponse, UnlockConnectorResponse } from '../../../types/ocpp/1.6/Responses';
 import { ChargingProfilePurposeType, OCPP16ChargingProfile } from '../../../types/ocpp/1.6/ChargingProfile';
 import { Client, FTPResponse } from 'basic-ftp';
-import { IncomingRequestCommand, RequestCommand } from '../../../types/ocpp/Requests';
 import { OCPP16AuthorizationStatus, OCPP16StopTransactionReason } from '../../../types/ocpp/1.6/Transaction';
 
+import ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { IncomingRequestHandler } from '../../../types/ocpp/Requests';
 import { MessageType } from '../../../types/ocpp/MessageType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
@@ -25,14 +26,31 @@ import path from 'path';
 import tar from 'tar';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
+  private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
+
+  constructor(chargingStation: ChargingStation) {
+    super(chargingStation);
+    this.incomingRequestHandlers = new Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>([
+      [OCPP16IncomingRequestCommand.RESET, this.handleRequestReset.bind(this)],
+      [OCPP16IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],
+      [OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR, this.handleRequestUnlockConnector.bind(this)],
+      [OCPP16IncomingRequestCommand.GET_CONFIGURATION, this.handleRequestGetConfiguration.bind(this)],
+      [OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION, this.handleRequestChangeConfiguration.bind(this)],
+      [OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE, this.handleRequestSetChargingProfile.bind(this)],
+      [OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE, this.handleRequestClearChargingProfile.bind(this)],
+      [OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY, this.handleRequestChangeAvailability.bind(this)],
+      [OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION, this.handleRequestRemoteStartTransaction.bind(this)],
+      [OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION, this.handleRequestRemoteStopTransaction.bind(this)],
+      [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)]
+    ]);
+  }
+
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
     let response: Record<string, unknown>;
-    const methodName = `handleRequest${commandName}`;
-    // Call
-    if (typeof this[methodName] === 'function') {
+    if (this.incomingRequestHandlers.has(commandName)) {
       try {
         // Call the method to build the response
-        response = await this[methodName](commandPayload);
+        response = await this.incomingRequestHandlers.get(commandName)(commandPayload);
       } catch (error) {
         // Log
         logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);
@@ -130,10 +148,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestChangeConfiguration(commandPayload: ChangeConfigurationRequest): ChangeConfigurationResponse {
     // JSON request fields type sanity check
     if (!Utils.isString(commandPayload.key)) {
-      logger.error(`${this.chargingStation.logPrefix()} ${RequestCommand.CHANGE_CONFIGURATION} request key field is not a string:`, commandPayload);
+      logger.error(`${this.chargingStation.logPrefix()} ${OCPP16RequestCommand.CHANGE_CONFIGURATION} request key field is not a string:`, commandPayload);
     }
     if (!Utils.isString(commandPayload.value)) {
-      logger.error(`${this.chargingStation.logPrefix()} ${RequestCommand.CHANGE_CONFIGURATION} request value field is not a string:`, commandPayload);
+      logger.error(`${this.chargingStation.logPrefix()} ${OCPP16RequestCommand.CHANGE_CONFIGURATION} request value field is not a string:`, commandPayload);
     }
     const keyToChange = this.chargingStation.getConfigurationKey(commandPayload.key, true);
     if (!keyToChange) {
@@ -348,7 +366,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   }
 
   private async handleRequestGetDiagnostics(commandPayload: GetDiagnosticsRequest): Promise<GetDiagnosticsResponse> {
-    logger.debug(this.chargingStation.logPrefix() + ' ' + IncomingRequestCommand.GET_DIAGNOSTICS + ' request received: %j', commandPayload);
+    logger.debug(this.chargingStation.logPrefix() + ' ' + OCPP16IncomingRequestCommand.GET_DIAGNOSTICS + ' request received: %j', commandPayload);
     const uri = new URL(commandPayload.location);
     if (uri.protocol.startsWith('ftp:')) {
       let ftpClient: Client;
@@ -378,15 +396,15 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             }
             return { fileName: diagnosticsArchive };
           }
-          throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`, IncomingRequestCommand.GET_DIAGNOSTICS);
+          throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`, OCPP16IncomingRequestCommand.GET_DIAGNOSTICS);
         }
-        throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`, IncomingRequestCommand.GET_DIAGNOSTICS);
+        throw new OCPPError(ErrorType.GENERIC_ERROR, `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${uploadResponse?.code && '|' + uploadResponse?.code.toString()}`, OCPP16IncomingRequestCommand.GET_DIAGNOSTICS);
       } catch (error) {
         await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(OCPP16DiagnosticsStatus.UploadFailed);
         if (ftpClient) {
           ftpClient.close();
         }
-        return this.handleIncomingRequestError(IncomingRequestCommand.GET_DIAGNOSTICS, error, Constants.OCPP_RESPONSE_EMPTY);
+        return this.handleIncomingRequestError(OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, error, Constants.OCPP_RESPONSE_EMPTY);
       }
     } else {
       logger.error(`${this.chargingStation.logPrefix()} Unsupported protocol ${uri.protocol} to transfer the diagnostic logs archive`);
@@ -414,7 +432,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED;
       }
     } catch (error) {
-      return this.handleIncomingRequestError(IncomingRequestCommand.TRIGGER_MESSAGE, error, Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED);
+      return this.handleIncomingRequestError(OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, error, Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED);
     }
   }
 }
