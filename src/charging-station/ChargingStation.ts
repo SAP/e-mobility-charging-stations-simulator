@@ -315,13 +315,13 @@ export default class ChargingStation {
     this.startAuthorizationFileMonitoring();
     // Monitor station template file
     this.startStationTemplateFileMonitoring();
-    // Handle WebSocket incoming messages
+    // Handle WebSocket message
     this.wsConnection.on('message', this.onMessage.bind(this));
     // Handle WebSocket error
     this.wsConnection.on('error', this.onError.bind(this));
     // Handle WebSocket close
     this.wsConnection.on('close', this.onClose.bind(this));
-    // Handle WebSocket opening connection
+    // Handle WebSocket open
     this.wsConnection.on('open', this.onOpen.bind(this));
     // Handle WebSocket ping
     this.wsConnection.on('ping', this.onPing.bind(this));
@@ -509,7 +509,7 @@ export default class ChargingStation {
     }
     const connectorsConfigHash = crypto.createHash('sha256').update(JSON.stringify(this.stationInfo.Connectors) + maxConnectors.toString()).digest('hex');
     const connectorsConfigChanged = !Utils.isEmptyObject(this.connectors) && this.connectorsConfigurationHash !== connectorsConfigHash;
-    if (Utils.isEmptyObject(this.connectors) || connectorsConfigChanged) {
+    if (!this.connectors || Utils.isEmptyObject(this.connectors) || connectorsConfigChanged) {
       connectorsConfigChanged && (this.connectors = {} as Connectors);
       this.connectorsConfigurationHash = connectorsConfigHash;
       // Add connector Id 0
