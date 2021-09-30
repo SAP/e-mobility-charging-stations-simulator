@@ -26,7 +26,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       [OCPP16RequestCommand.START_TRANSACTION, this.handleResponseStartTransaction.bind(this)],
       [OCPP16RequestCommand.STOP_TRANSACTION, this.handleResponseStopTransaction.bind(this)],
       [OCPP16RequestCommand.STATUS_NOTIFICATION, this.handleResponseStatusNotification.bind(this)],
-      [OCPP16RequestCommand.METER_VALUES, this.handleResponseMeterValues.bind(this)],
+      [OCPP16RequestCommand.METER_VALUES, this.handleResponseMeterValues.bind(this)]
     ]);
   }
 
