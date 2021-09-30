@@ -8,7 +8,7 @@ export interface SampledValueTemplate extends SampledValue {
   fluctuationPercent?: number;
 }
 
-export interface Connector {
+export interface ConnectorStatus {
   availability: AvailabilityType;
   bootStatus?: ChargePointStatus;
   status?: ChargePointStatus;
@@ -24,5 +24,3 @@ export interface Connector {
   transactionBeginMeterValue?: MeterValue;
   chargingProfiles?: ChargingProfile[];
 }
-
-export type Connectors = Record<string, Connector>;

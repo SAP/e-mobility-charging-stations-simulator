@@ -1,5 +1,5 @@
 import ChargingStationConfiguration from './ChargingStationConfiguration';
-import { Connectors } from './Connectors';
+import { ConnectorStatus } from './Connectors';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';
 
@@ -70,5 +70,5 @@ export default interface ChargingStationTemplate {
   phaseLineToLineVoltageMeterValues?: boolean;
   Configuration?: ChargingStationConfiguration;
   AutomaticTransactionGenerator: AutomaticTransactionGenerator;
-  Connectors: Connectors;
+  Connectors: Record<string, ConnectorStatus>;
 }

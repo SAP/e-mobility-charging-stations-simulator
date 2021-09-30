@@ -40,8 +40,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   private startConnectors(): void {
-    for (const connector in this.chargingStation.connectors) {
-      const connectorId = Utils.convertToInt(connector);
+    for (const connectorId of this.chargingStation.connectors.keys()) {
       if (connectorId > 0) {
         this.startConnector(connectorId);
       }
@@ -49,8 +48,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   private stopConnectors(): void {
-    for (const connector in this.chargingStation.connectors) {
-      const connectorId = Utils.convertToInt(connector);
+    for (const connectorId of this.chargingStation.connectors.keys()) {
       if (connectorId > 0) {
         this.stopConnector(connectorId);
       }
@@ -103,11 +101,11 @@ export default class AutomaticTransactionGenerator {
           // Wait until end of transaction
           const waitTrxEnd = Utils.getRandomInteger(this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
             this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration) * 1000;
-          logger.info(this.logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString() + ' started and will stop in ' + Utils.formatDurationMilliSeconds(waitTrxEnd));
+          logger.info(this.logPrefix(connectorId) + ' transaction ' + this.chargingStation.getConnectorStatus(connectorId).transactionId.toString() + ' started and will stop in ' + Utils.formatDurationMilliSeconds(waitTrxEnd));
           this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
-          logger.info(this.logPrefix(connectorId) + ' stop transaction ' + this.chargingStation.getConnector(connectorId).transactionId.toString());
+          logger.info(this.logPrefix(connectorId) + ' stop transaction ' + this.chargingStation.getConnectorStatus(connectorId).transactionId.toString());
           await this.stopTransaction(connectorId);
         }
       } else {
@@ -193,8 +191,8 @@ export default class AutomaticTransactionGenerator {
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let transactionId = 0;
     let stopResponse: StopTransactionResponse;
-    if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
-      transactionId = this.chargingStation.getConnector(connectorId).transactionId;
+    if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
+      transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
       stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(transactionId,
         this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
         this.chargingStation.getTransactionIdTag(transactionId),

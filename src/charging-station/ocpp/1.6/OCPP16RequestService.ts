@@ -70,7 +70,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       const payload: AuthorizeRequest = {
         ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
       };
-      this.chargingStation.getConnector(connectorId).authorizeIdTag = idTag;
+      this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.AUTHORIZE) as OCPP16AuthorizeResponse;
     } catch (error) {
       this.handleRequestError(OCPP16RequestCommand.AUTHORIZE, error);
@@ -95,9 +95,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
       reason: OCPP16StopTransactionReason = OCPP16StopTransactionReason.NONE): Promise<OCPP16StopTransactionResponse> {
     try {
       let connectorId: number;
-      for (const connector in this.chargingStation.connectors) {
-        if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionId === transactionId) {
-          connectorId = Utils.convertToInt(connector);
+      for (const id of this.chargingStation.connectors.keys()) {
+        if (id > 0 && this.chargingStation.getConnectorStatus(id)?.transactionId === transactionId) {
+          connectorId = id;
           break;
         }
       }
@@ -111,7 +111,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         meterStop,
         timestamp: new Date().toISOString(),
         ...reason && { reason },
-        ...this.chargingStation.getTransactionDataMeterValues() && { transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(this.chargingStation.getConnector(connectorId).transactionBeginMeterValue, transactionEndMeterValue) },
+        ...this.chargingStation.getTransactionDataMeterValues() && { transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue, transactionEndMeterValue) },
       };
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.STOP_TRANSACTION) as OCPP16StartTransactionResponse;
     } catch (error) {
@@ -125,7 +125,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         timestamp: new Date().toISOString(),
         sampledValue: [],
       };
-      const connector = this.chargingStation.getConnector(connectorId);
+      const connector = this.chargingStation.getConnectorStatus(connectorId);
       // SoC measurand
       const socSampledValueTemplate = this.chargingStation.getSampledValueTemplate(connectorId, OCPP16MeterValueMeasurand.STATE_OF_CHARGE);
       if (socSampledValueTemplate) {

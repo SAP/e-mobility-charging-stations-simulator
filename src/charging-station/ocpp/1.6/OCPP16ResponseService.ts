@@ -56,18 +56,18 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   private handleResponseAuthorize(payload: OCPP16AuthorizeResponse, requestPayload: AuthorizeRequest): void {
     let authorizeConnectorId: number;
-    for (const connector in this.chargingStation.connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.authorizeIdTag === requestPayload.idTag) {
-        authorizeConnectorId = Utils.convertToInt(connector);
+    for (const connectorId of this.chargingStation.connectors.keys()) {
+      if (connectorId > 0 && this.chargingStation.getConnectorStatus(connectorId)?.authorizeIdTag === requestPayload.idTag) {
+        authorizeConnectorId = connectorId;
         break;
       }
     }
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      this.chargingStation.getConnector(authorizeConnectorId).authorized = true;
+      this.chargingStation.getConnectorStatus(authorizeConnectorId).authorized = true;
       logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} authorized on connector ${authorizeConnectorId}`);
     } else {
-      this.chargingStation.getConnector(authorizeConnectorId).authorized = false;
-      delete this.chargingStation.getConnector(authorizeConnectorId).authorizeIdTag;
+      this.chargingStation.getConnectorStatus(authorizeConnectorId).authorized = false;
+      delete this.chargingStation.getConnectorStatus(authorizeConnectorId).authorizeIdTag;
       logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status ${payload.idTagInfo.status} on connector ${authorizeConnectorId}`);
     }
   }
@@ -76,9 +76,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     const connectorId = requestPayload.connectorId;
 
     let transactionConnectorId: number;
-    for (const connector in this.chargingStation.connectors) {
-      if (Utils.convertToInt(connector) > 0 && Utils.convertToInt(connector) === connectorId) {
-        transactionConnectorId = Utils.convertToInt(connector);
+    for (const id of this.chargingStation.connectors.keys()) {
+      if (id > 0 && id === connectorId) {
+        transactionConnectorId = id;
         break;
       }
     }
@@ -86,17 +86,17 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction on a non existing connector Id ' + connectorId.toString());
       return;
     }
-    if (this.chargingStation.getConnector(connectorId).authorized && this.chargingStation.getConnector(connectorId).authorizeIdTag !== requestPayload.idTag) {
-      logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction with an idTag ' + requestPayload.idTag + ' different from the authorize request one ' + this.chargingStation.getConnector(connectorId).authorizeIdTag + ' on connector Id ' + connectorId.toString());
+    if (this.chargingStation.getConnectorStatus(connectorId).authorized && this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag !== requestPayload.idTag) {
+      logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction with an idTag ' + requestPayload.idTag + ' different from the authorize request one ' + this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag + ' on connector Id ' + connectorId.toString());
       return;
     }
-    if (this.chargingStation.getConnector(connectorId)?.transactionStarted) {
-      logger.debug(this.chargingStation.logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.chargingStation.getConnector(connectorId));
+    if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
+      logger.debug(this.chargingStation.logPrefix() + ' Trying to start a transaction on an already used connector ' + connectorId.toString() + ': %j', this.chargingStation.getConnectorStatus(connectorId));
       return;
     }
-    if (this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.AVAILABLE
-      && this.chargingStation.getConnector(connectorId)?.status !== OCPP16ChargePointStatus.PREPARING) {
-      logger.error(`${this.chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with status ${this.chargingStation.getConnector(connectorId)?.status}`);
+    if (this.chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.AVAILABLE
+      && this.chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.PREPARING) {
+      logger.error(`${this.chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with status ${this.chargingStation.getConnectorStatus(connectorId)?.status}`);
       return;
     }
     if (!Number.isInteger(payload.transactionId)) {
@@ -105,16 +105,16 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
 
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      this.chargingStation.getConnector(connectorId).transactionStarted = true;
-      this.chargingStation.getConnector(connectorId).transactionId = payload.transactionId;
-      this.chargingStation.getConnector(connectorId).transactionIdTag = requestPayload.idTag;
-      this.chargingStation.getConnector(connectorId).transactionEnergyActiveImportRegisterValue = 0;
-      this.chargingStation.getConnector(connectorId).transactionBeginMeterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(this.chargingStation, connectorId,
+      this.chargingStation.getConnectorStatus(connectorId).transactionStarted = true;
+      this.chargingStation.getConnectorStatus(connectorId).transactionId = payload.transactionId;
+      this.chargingStation.getConnectorStatus(connectorId).transactionIdTag = requestPayload.idTag;
+      this.chargingStation.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
+      this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(this.chargingStation, connectorId,
         requestPayload.meterStart);
       this.chargingStation.getBeginEndMeterValues() && await this.chargingStation.ocppRequestService.sendTransactionBeginMeterValues(connectorId, payload.transactionId,
-        this.chargingStation.getConnector(connectorId).transactionBeginMeterValue);
+        this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue);
       await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.CHARGING);
-      this.chargingStation.getConnector(connectorId).status = OCPP16ChargePointStatus.CHARGING;
+      this.chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.CHARGING;
       logger.info(this.chargingStation.logPrefix() + ' Transaction ' + payload.transactionId.toString() + ' STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + connectorId.toString() + ' for idTag ' + requestPayload.idTag);
       if (this.chargingStation.stationInfo.powerSharedByConnectors) {
         this.chargingStation.stationInfo.powerDivider++;
@@ -124,18 +124,18 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     } else {
       logger.warn(this.chargingStation.logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload?.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
       this.chargingStation.resetTransactionOnConnector(connectorId);
-      if (this.chargingStation.getConnector(connectorId).status !== OCPP16ChargePointStatus.AVAILABLE) {
+      if (this.chargingStation.getConnectorStatus(connectorId).status !== OCPP16ChargePointStatus.AVAILABLE) {
         await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.AVAILABLE);
-        this.chargingStation.getConnector(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
+        this.chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
       }
     }
   }
 
   private async handleResponseStopTransaction(payload: OCPP16StopTransactionResponse, requestPayload: StopTransactionRequest): Promise<void> {
     let transactionConnectorId: number;
-    for (const connector in this.chargingStation.connectors) {
-      if (Utils.convertToInt(connector) > 0 && this.chargingStation.getConnector(Utils.convertToInt(connector))?.transactionId === requestPayload.transactionId) {
-        transactionConnectorId = Utils.convertToInt(connector);
+    for (const connectorId of this.chargingStation.connectors.keys()) {
+      if (connectorId > 0 && this.chargingStation.getConnectorStatus(connectorId)?.transactionId === requestPayload.transactionId) {
+        transactionConnectorId = connectorId;
         break;
       }
     }
@@ -149,10 +149,10 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           OCPP16ServiceUtils.buildTransactionEndMeterValue(this.chargingStation, transactionConnectorId, requestPayload.meterStop));
       if (!this.chargingStation.isChargingStationAvailable() || !this.chargingStation.isConnectorAvailable(transactionConnectorId)) {
         await this.chargingStation.ocppRequestService.sendStatusNotification(transactionConnectorId, OCPP16ChargePointStatus.UNAVAILABLE);
-        this.chargingStation.getConnector(transactionConnectorId).status = OCPP16ChargePointStatus.UNAVAILABLE;
+        this.chargingStation.getConnectorStatus(transactionConnectorId).status = OCPP16ChargePointStatus.UNAVAILABLE;
       } else {
         await this.chargingStation.ocppRequestService.sendStatusNotification(transactionConnectorId, OCPP16ChargePointStatus.AVAILABLE);
-        this.chargingStation.getConnector(transactionConnectorId).status = OCPP16ChargePointStatus.AVAILABLE;
+        this.chargingStation.getConnectorStatus(transactionConnectorId).status = OCPP16ChargePointStatus.AVAILABLE;
       }
       if (this.chargingStation.stationInfo.powerSharedByConnectors) {
         this.chargingStation.stationInfo.powerDivider--;
