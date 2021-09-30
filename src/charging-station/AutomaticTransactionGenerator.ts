@@ -40,6 +40,9 @@ export default class AutomaticTransactionGenerator {
   }
 
   private startConnectors(): void {
+    if (this.connectorsStatus?.size !== 0 && this.connectorsStatus.size !== this.chargingStation.getNumberOfConnectors()) {
+      this.connectorsStatus.clear();
+    }
     for (const connectorId of this.chargingStation.connectors.keys()) {
       if (connectorId > 0) {
         this.startConnector(connectorId);

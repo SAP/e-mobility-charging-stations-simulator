@@ -126,6 +126,10 @@ export default class ChargingStation {
     return this.getConnectorStatus(id).availability === AvailabilityType.OPERATIVE;
   }
 
+  public getNumberOfConnectors(): number {
+    return this.connectors.get(0) ? this.connectors.size - 1 : this.connectors.size;
+  }
+
   public getConnectorStatus(id: number): ConnectorStatus {
     return this.connectors.get(id);
   }
@@ -508,8 +512,8 @@ export default class ChargingStation {
       this.stationInfo.randomConnectors = true;
     }
     const connectorsConfigHash = crypto.createHash('sha256').update(JSON.stringify(this.stationInfo.Connectors) + maxConnectors.toString()).digest('hex');
-    const connectorsConfigChanged = this.connectors.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;
-    if (!this.connectors || this.connectors.size === 0 || connectorsConfigChanged) {
+    const connectorsConfigChanged = this.connectors?.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;
+    if (this.connectors?.size === 0 || connectorsConfigChanged) {
       connectorsConfigChanged && (this.connectors.clear());
       this.connectorsConfigurationHash = connectorsConfigHash;
       // Add connector Id 0
@@ -825,10 +829,6 @@ export default class ChargingStation {
       maxConnectors = this.stationInfo.Connectors[0] ? this.getTemplateMaxNumberOfConnectors() - 1 : this.getTemplateMaxNumberOfConnectors();
     }
     return maxConnectors;
-  }
-
-  private getNumberOfConnectors(): number {
-    return this.connectors.get(0) ? this.connectors.size - 1 : this.connectors.size;
   }
 
   private async startMessageSequence(): Promise<void> {
