@@ -48,10 +48,10 @@ export default abstract class OCPPRequestService {
           // Reject it but keep the request in the cache
           return reject(ocppError);
         }
-        return rejectCallback(ocppError);
+        return rejectCallback(ocppError, false);
       } else {
         // Reject it
-        return rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}));
+        return rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}), false);
       }
       // Response?
       if (messageType !== MessageType.CALL_MESSAGE) {
@@ -59,7 +59,7 @@ export default abstract class OCPPRequestService {
         resolve(commandParams);
       } else {
         // Send timeout
-        setTimeout(() => rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {})), Constants.OCPP_SOCKET_TIMEOUT);
+        setTimeout(() => rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}), false), Constants.OCPP_SOCKET_TIMEOUT);
       }
 
       /**
@@ -82,9 +82,10 @@ export default abstract class OCPPRequestService {
        * Function that will receive the request's error response
        *
        * @param error
+       * @param requestStatistic
        */
-      function rejectCallback(error: OCPPError): void {
-        if (self.chargingStation.getEnableStatistics()) {
+      function rejectCallback(error: OCPPError, requestStatistic = true): void {
+        if (requestStatistic && self.chargingStation.getEnableStatistics()) {
           self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
         }
         logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with parameters %j`, error, commandName, commandParams);
