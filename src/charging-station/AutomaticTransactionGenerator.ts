@@ -11,8 +11,8 @@ import logger from '../utils/Logger';
 
 export default class AutomaticTransactionGenerator {
   public started: boolean;
-  private chargingStation: ChargingStation;
-  private connectorsStatus: Map<number, Status>;
+  private readonly chargingStation: ChargingStation;
+  private readonly connectorsStatus: Map<number, Status>;
 
   constructor(chargingStation: ChargingStation) {
     this.chargingStation = chargingStation;

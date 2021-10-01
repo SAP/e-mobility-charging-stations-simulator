@@ -7,7 +7,7 @@ import { Storage } from './Storage';
 import { StorageType } from '../../types/Storage';
 
 export class MongoDBStorage extends Storage {
-  private client: MongoClient | null;
+  private readonly client: MongoClient | null;
   private connected: boolean;
 
   constructor(storageURI: string, logPrefix: string) {

@@ -14,9 +14,9 @@ import logger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 
 export default class PerformanceStatistics {
-  private objId: string;
+  private readonly objId: string;
   private performanceObserver: PerformanceObserver;
-  private statistics: Statistics;
+  private readonly statistics: Statistics;
   private displayInterval: NodeJS.Timeout;
 
   public constructor(objId: string, URI: URL) {

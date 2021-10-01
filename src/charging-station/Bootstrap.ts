@@ -18,9 +18,9 @@ export default class Bootstrap {
   private static workerImplementation: WorkerAbstract | null = null;
   private static storage: Storage;
   private static numberOfChargingStations: number;
-  private version: string = version;
+  private readonly version: string = version;
   private started: boolean;
-  private workerScript: string;
+  private readonly workerScript: string;
 
   private constructor() {
     this.started = false;

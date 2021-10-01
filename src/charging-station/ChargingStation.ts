@@ -37,22 +37,22 @@ import logger from '../utils/Logger';
 import path from 'path';
 
 export default class ChargingStation {
-  public stationTemplateFile: string;
+  public readonly stationTemplateFile: string;
   public authorizedTags: string[];
   public stationInfo!: ChargingStationInfo;
-  public connectors: Map<number, ConnectorStatus>;
+  public readonly connectors: Map<number, ConnectorStatus>;
   public configuration!: ChargingStationConfiguration;
   public wsConnection!: WebSocket;
-  public requests: Map<string, CachedRequest>;
+  public readonly requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics;
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
-  private index: number;
+  private readonly index: number;
   private bootNotificationRequest!: BootNotificationRequest;
   private bootNotificationResponse!: BootNotificationResponse | null;
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
-  private messageQueue: string[];
+  private readonly messageQueue: string[];
   private wsConnectionUrl!: URL;
   private wsConnectionRestarted: boolean;
   private stopped: boolean;
