@@ -36,4 +36,4 @@ export type Request = [MessageType, string, RequestCommand, Record<string, unkno
 
 export type IncomingRequest = [MessageType, string, IncomingRequestCommand, Record<string, unknown>, Record<string, unknown>];
 
-export type CachedRequest = [(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void, (error: OCPPError) => void, RequestCommand | IncomingRequestCommand, Record<string, unknown>];
+export type CachedRequest = [(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void, (error: OCPPError, requestStatistic?: boolean) => void, RequestCommand | IncomingRequestCommand, Record<string, unknown>];

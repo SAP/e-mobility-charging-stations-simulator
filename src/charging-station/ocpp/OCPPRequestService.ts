@@ -101,7 +101,8 @@ export default abstract class OCPPRequestService {
   }
 
   private buildMessageToSend(messageId: string, commandParams: Record<string, unknown>, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
-      responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => Promise<void>, rejectCallback: (error: OCPPError) => void): string {
+      responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => Promise<void>,
+      rejectCallback: (error: OCPPError, requestStatistic?: boolean) => void): string {
     let messageToSend: string;
     // Type of message
     switch (messageType) {
