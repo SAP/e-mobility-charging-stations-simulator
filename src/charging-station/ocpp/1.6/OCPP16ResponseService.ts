@@ -32,9 +32,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   public async handleResponse(commandName: OCPP16RequestCommand, payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
     if (this.responseHandlers.has(commandName)) {
-      await this.responseHandlers.get(commandName)(payload, requestPayload);
+      try {
+        await this.responseHandlers.get(commandName)(payload, requestPayload);
+      } catch (error) {
+        logger.error(this.chargingStation.logPrefix() + ' Handle request response error: %j', error);
+      }
     } else {
-      logger.error(this.chargingStation.logPrefix() + ' Trying to call an undefined method for command ' + commandName + ' response');
+      logger.error(`${this.chargingStation.logPrefix()} %s is not implemented to handle request response payload %j`, commandName, payload);
     }
   }
 
