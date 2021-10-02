@@ -21,5 +21,5 @@ export default interface Statistics {
   URI: string;
   createdAt: Date;
   updatedAt?: Date;
-  statisticsData: Record<string, StatisticsData>;
+  statisticsData: Map<string, Partial<StatisticsData>>;
 }

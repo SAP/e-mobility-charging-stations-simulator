@@ -22,7 +22,7 @@ export default class PerformanceStatistics {
   public constructor(objId: string, URI: URL) {
     this.objId = objId;
     this.initializePerformanceObserver();
-    this.statistics = { id: this.objId ?? 'Object id not specified', URI: URI.toString(), createdAt: new Date(), statisticsData: {} };
+    this.statistics = { id: this.objId ?? 'Object id not specified', URI: URI.toString(), createdAt: new Date(), statisticsData: new Map<string, Partial<StatisticsData>>() };
   }
 
   public static beginMeasure(id: string): string {
@@ -39,35 +39,24 @@ export default class PerformanceStatistics {
   public addRequestStatistic(command: RequestCommand | IncomingRequestCommand, messageType: MessageType): void {
     switch (messageType) {
       case MessageType.CALL_MESSAGE:
-        if (this.statistics.statisticsData[command] && this.statistics.statisticsData[command].countRequest) {
-          this.statistics.statisticsData[command].countRequest++;
+        if (this.statistics.statisticsData.has(command) && this.statistics.statisticsData.get(command)?.countRequest) {
+          this.statistics.statisticsData.get(command).countRequest++;
         } else {
-          this.statistics.statisticsData[command] = {} as StatisticsData;
-          this.statistics.statisticsData[command].countRequest = 1;
+          this.statistics.statisticsData.set(command, Object.assign({ countRequest: 1 }, this.statistics.statisticsData.get(command)));
         }
         break;
       case MessageType.CALL_RESULT_MESSAGE:
-        if (this.statistics.statisticsData[command]) {
-          if (this.statistics.statisticsData[command].countResponse) {
-            this.statistics.statisticsData[command].countResponse++;
-          } else {
-            this.statistics.statisticsData[command].countResponse = 1;
-          }
+        if (this.statistics.statisticsData.has(command) && this.statistics.statisticsData.get(command)?.countResponse) {
+          this.statistics.statisticsData.get(command).countResponse++;
         } else {
-          this.statistics.statisticsData[command] = {} as StatisticsData;
-          this.statistics.statisticsData[command].countResponse = 1;
+          this.statistics.statisticsData.set(command, Object.assign({ countResponse: 1 }, this.statistics.statisticsData.get(command)));
         }
         break;
       case MessageType.CALL_ERROR_MESSAGE:
-        if (this.statistics.statisticsData[command]) {
-          if (this.statistics.statisticsData[command].countError) {
-            this.statistics.statisticsData[command].countError++;
-          } else {
-            this.statistics.statisticsData[command].countError = 1;
-          }
+        if (this.statistics.statisticsData.has(command) && this.statistics.statisticsData.get(command)?.countError) {
+          this.statistics.statisticsData.get(command).countError++;
         } else {
-          this.statistics.statisticsData[command] = {} as StatisticsData;
-          this.statistics.statisticsData[command].countError = 1;
+          this.statistics.statisticsData.set(command, Object.assign({ countError: 1 }, this.statistics.statisticsData.get(command)));
         }
         break;
       default:
@@ -176,21 +165,21 @@ export default class PerformanceStatistics {
       entryName = MAP_NAME[entryName];
     }
     // Initialize command statistics
-    if (!this.statistics.statisticsData[entryName]) {
-      this.statistics.statisticsData[entryName] = {} as StatisticsData;
+    if (!this.statistics.statisticsData.has(entryName)) {
+      this.statistics.statisticsData.set(entryName, {});
     }
     // Update current statistics
     this.statistics.updatedAt = new Date();
-    this.statistics.statisticsData[entryName].countTimeMeasurement = this.statistics.statisticsData[entryName].countTimeMeasurement ? this.statistics.statisticsData[entryName].countTimeMeasurement + 1 : 1;
-    this.statistics.statisticsData[entryName].currentTimeMeasurement = entry.duration;
-    this.statistics.statisticsData[entryName].minTimeMeasurement = this.statistics.statisticsData[entryName].minTimeMeasurement ? (this.statistics.statisticsData[entryName].minTimeMeasurement > entry.duration ? entry.duration : this.statistics.statisticsData[entryName].minTimeMeasurement) : entry.duration;
-    this.statistics.statisticsData[entryName].maxTimeMeasurement = this.statistics.statisticsData[entryName].maxTimeMeasurement ? (this.statistics.statisticsData[entryName].maxTimeMeasurement < entry.duration ? entry.duration : this.statistics.statisticsData[entryName].maxTimeMeasurement) : entry.duration;
-    this.statistics.statisticsData[entryName].totalTimeMeasurement = this.statistics.statisticsData[entryName].totalTimeMeasurement ? this.statistics.statisticsData[entryName].totalTimeMeasurement + entry.duration : entry.duration;
-    this.statistics.statisticsData[entryName].avgTimeMeasurement = this.statistics.statisticsData[entryName].totalTimeMeasurement / this.statistics.statisticsData[entryName].countTimeMeasurement;
-    Array.isArray(this.statistics.statisticsData[entryName].timeMeasurementSeries) ? this.statistics.statisticsData[entryName].timeMeasurementSeries.push(entry.duration) : this.statistics.statisticsData[entryName].timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, entry.duration);
-    this.statistics.statisticsData[entryName].medTimeMeasurement = this.median(this.statistics.statisticsData[entryName].timeMeasurementSeries);
-    this.statistics.statisticsData[entryName].ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData[entryName].timeMeasurementSeries, 95);
-    this.statistics.statisticsData[entryName].stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData[entryName].timeMeasurementSeries);
+    this.statistics.statisticsData.get(entryName).countTimeMeasurement = this.statistics.statisticsData.get(entryName)?.countTimeMeasurement ? this.statistics.statisticsData.get(entryName).countTimeMeasurement + 1 : 1;
+    this.statistics.statisticsData.get(entryName).currentTimeMeasurement = entry.duration;
+    this.statistics.statisticsData.get(entryName).minTimeMeasurement = this.statistics.statisticsData.get(entryName)?.minTimeMeasurement ? (this.statistics.statisticsData.get(entryName).minTimeMeasurement > entry.duration ? entry.duration : this.statistics.statisticsData.get(entryName).minTimeMeasurement) : entry.duration;
+    this.statistics.statisticsData.get(entryName).maxTimeMeasurement = this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ? (this.statistics.statisticsData.get(entryName).maxTimeMeasurement < entry.duration ? entry.duration : this.statistics.statisticsData.get(entryName).maxTimeMeasurement) : entry.duration;
+    this.statistics.statisticsData.get(entryName).totalTimeMeasurement = this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ? this.statistics.statisticsData.get(entryName).totalTimeMeasurement + entry.duration : entry.duration;
+    this.statistics.statisticsData.get(entryName).avgTimeMeasurement = this.statistics.statisticsData.get(entryName).totalTimeMeasurement / this.statistics.statisticsData.get(entryName).countTimeMeasurement;
+    Array.isArray(this.statistics.statisticsData.get(entryName).timeMeasurementSeries) ? this.statistics.statisticsData.get(entryName).timeMeasurementSeries.push(entry.duration) : this.statistics.statisticsData.get(entryName).timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, entry.duration);
+    this.statistics.statisticsData.get(entryName).medTimeMeasurement = this.median(this.statistics.statisticsData.get(entryName).timeMeasurementSeries);
+    this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData.get(entryName).timeMeasurementSeries, 95);
+    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData.get(entryName).timeMeasurementSeries);
     if (Configuration.getPerformanceStorage().enabled) {
       parentPort.postMessage({ id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS, data: this.statistics });
     }

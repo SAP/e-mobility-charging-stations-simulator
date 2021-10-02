@@ -23,7 +23,19 @@ export class JSONFileStorage extends Storage {
           const fileData = fs.readFileSync(this.dbName, 'utf8');
           const performanceRecords: Statistics[] = fileData ? JSON.parse(fileData) as Statistics[] : [];
           performanceRecords.push(performanceStatistics);
-          fs.writeFileSync(this.dbName, JSON.stringify(performanceRecords, null, 2), 'utf8');
+          fs.writeFileSync(this.dbName,
+            JSON.stringify(performanceRecords,
+              (key, value) => {
+                if (value instanceof Map) {
+                  return {
+                    dataType: 'Map',
+                    value: [...value]
+                  };
+                }
+                return value as Statistics;
+              },
+              2),
+            'utf8');
         } catch (error) {
           FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
         }
