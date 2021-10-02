@@ -56,11 +56,10 @@ export default abstract class OCPPRequestService {
       // Response?
       if (messageType !== MessageType.CALL_MESSAGE) {
         // Yes: send Ok
-        resolve(commandParams);
-      } else {
-        // Send timeout
-        setTimeout(() => rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}), false), Constants.OCPP_SOCKET_TIMEOUT);
+        return resolve(commandParams);
       }
+      // Send timeout
+      setTimeout(() => rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}), false), Constants.OCPP_SOCKET_TIMEOUT);
 
       /**
        * Function that will receive the request's response
