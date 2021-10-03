@@ -7,7 +7,7 @@ import { WorkerData } from '../types/Worker';
 import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerStaticPool<T> extends WorkerAbstract {
-  private pool: FixedThreadPool<WorkerData>;
+  private readonly pool: FixedThreadPool<WorkerData>;
 
   /**
    * Create a new `WorkerStaticPool`.

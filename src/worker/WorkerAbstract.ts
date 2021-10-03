@@ -4,8 +4,8 @@ import { WorkerData } from '../types/Worker';
 export default abstract class WorkerAbstract {
   protected readonly workerScript: string;
   protected readonly workerStartDelay: number;
-  public abstract size: number;
-  public abstract maxElementsPerWorker: number | null;
+  public abstract readonly size: number;
+  public abstract readonly maxElementsPerWorker: number | null;
 
   /**
    * `WorkerAbstract` constructor.

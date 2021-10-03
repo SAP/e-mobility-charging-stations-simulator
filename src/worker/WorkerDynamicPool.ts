@@ -7,7 +7,7 @@ import { WorkerData } from '../types/Worker';
 import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerDynamicPool<T> extends WorkerAbstract {
-  private pool: DynamicThreadPool<WorkerData>;
+  private readonly pool: DynamicThreadPool<WorkerData>;
 
   /**
    * Create a new `WorkerDynamicPool`.
