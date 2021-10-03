@@ -42,7 +42,7 @@ export default abstract class OCPPRequestService {
         PerformanceStatistics.endMeasure(commandName, beginId);
       } else if (!skipBufferingOnError) {
         // Buffer it
-        this.chargingStation.addToMessageQueue(messageToSend);
+        this.chargingStation.bufferMessage(messageToSend);
         const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {});
         if (messageType === MessageType.CALL_MESSAGE) {
           // Reject it but keep the request in the cache

@@ -52,7 +52,7 @@ export default class ChargingStation {
   private bootNotificationResponse!: BootNotificationResponse | null;
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
-  private readonly messageQueue: string[];
+  private readonly messageBuffer: Set<string>;
   private wsConnectionUrl!: URL;
   private wsConnectionRestarted: boolean;
   private stopped: boolean;
@@ -71,7 +71,7 @@ export default class ChargingStation {
     this.autoReconnectRetryCount = 0;
 
     this.requests = new Map<string, CachedRequest>();
-    this.messageQueue = new Array<string>();
+    this.messageBuffer = new Set<string>();
 
     this.authorizedTags = this.getAuthorizedTags();
   }
@@ -411,28 +411,16 @@ export default class ChargingStation {
     this.stopMeterValues(connectorId);
   }
 
-  public addToMessageQueue(message: string): void {
-    let dups = false;
-    // Handle dups in message queue
-    for (const bufferedMessage of this.messageQueue) {
-      // Message already in the queue
-      if (message === bufferedMessage) {
-        dups = true;
-        break;
-      }
-    }
-    if (!dups) {
-      // Queue message
-      this.messageQueue.push(message);
-    }
+  public bufferMessage(message: string): void {
+    this.messageBuffer.add(message);
   }
 
-  private flushMessageQueue() {
-    if (!Utils.isEmptyArray(this.messageQueue)) {
-      this.messageQueue.forEach((message, index) => {
-        this.messageQueue.splice(index, 1);
+  private flushMessageBuffer() {
+    if (this.messageBuffer.size > 0) {
+      this.messageBuffer.forEach((message) => {
         // TODO: evaluate the need to track performance
         this.wsConnection.send(message);
+        this.messageBuffer.delete(message);
       });
     }
   }
@@ -627,7 +615,7 @@ export default class ChargingStation {
       await this.startMessageSequence();
       this.stopped && (this.stopped = false);
       if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
-        this.flushMessageQueue();
+        this.flushMessageBuffer();
       }
     } else {
       logger.error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);
