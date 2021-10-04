@@ -235,6 +235,24 @@ export default class Utils {
     return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL;
   }
 
+  public static async promiseWithTimeout<T>(
+      promise: Promise<T>,
+      timeoutMs: number,
+      timeoutError: Error,
+      timeoutCallback: () => void = () => { /* This is intentional */ }
+  ): Promise<T> {
+    // Create a timeout promise that rejects in timeout milliseconds
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        timeoutCallback;
+        reject(timeoutError);
+      }, timeoutMs);
+    });
+
+    // Returns a race between timeout promise and the passed promise
+    return Promise.race<T>([promise, timeoutPromise]);
+  }
+
   /**
    * Generate a cryptographically secure random number in the [0,1[ range
    *

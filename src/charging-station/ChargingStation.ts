@@ -703,7 +703,7 @@ export default class ChargingStation {
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming OCPP message %j matching cached request %j processing error %j', this.logPrefix(), data, this.requests.get(messageId), error);
+      logger.error('%s Incoming OCPP message %j matching cached request %j processing error %j', this.logPrefix(), data.toString(), this.requests.get(messageId), error);
       // Send error
       messageType === MessageType.CALL_MESSAGE && await this.ocppRequestService.sendError(messageId, error, commandName);
     }

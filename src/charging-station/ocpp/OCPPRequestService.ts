@@ -12,6 +12,7 @@ import { MeterValue } from '../../types/ocpp/MeterValues';
 import OCPPError from './OCPPError';
 import OCPPResponseService from './OCPPResponseService';
 import PerformanceStatistics from '../../performance/PerformanceStatistics';
+import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
 
 export default abstract class OCPPRequestService {
@@ -28,7 +29,7 @@ export default abstract class OCPPRequestService {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
-    return new Promise((resolve, reject) => {
+    return Utils.promiseWithTimeout(new Promise((resolve, reject) => {
       const messageToSend = this.buildMessageToSend(messageId, commandParams, messageType, commandName, responseCallback, rejectCallback);
       if (this.chargingStation.getEnableStatistics()) {
         this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
@@ -58,8 +59,6 @@ export default abstract class OCPPRequestService {
         // Yes: send Ok
         return resolve(commandParams);
       }
-      // Send timeout
-      setTimeout(() => rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}), false), Constants.OCPP_SOCKET_TIMEOUT);
 
       /**
        * Function that will receive the request's response
@@ -91,6 +90,8 @@ export default abstract class OCPPRequestService {
         self.chargingStation.requests.delete(messageId);
         reject(error);
       }
+    }), Constants.OCPP_WEBSOCKET_TIMEOUT, new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}'`, commandParams?.details ?? {}), () => {
+      messageType === MessageType.CALL_MESSAGE && this.chargingStation.requests.delete(messageId);
     });
   }
 
