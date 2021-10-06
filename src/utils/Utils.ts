@@ -244,7 +244,7 @@ export default class Utils {
     // Create a timeout promise that rejects in timeout milliseconds
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        timeoutCallback;
+        timeoutCallback();
         reject(timeoutError);
       }, timeoutMs);
     });
