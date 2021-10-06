@@ -67,10 +67,10 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       }
     }
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      this.chargingStation.getConnectorStatus(authorizeConnectorId).authorized = true;
+      this.chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = true;
       logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} authorized on connector ${authorizeConnectorId}`);
     } else {
-      this.chargingStation.getConnectorStatus(authorizeConnectorId).authorized = false;
+      this.chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = false;
       delete this.chargingStation.getConnectorStatus(authorizeConnectorId).authorizeIdTag;
       logger.debug(`${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status ${payload.idTagInfo.status} on connector ${authorizeConnectorId}`);
     }
@@ -90,8 +90,28 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction on a non existing connector Id ' + connectorId.toString());
       return;
     }
-    if (this.chargingStation.getConnectorStatus(connectorId).authorized && this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag !== requestPayload.idTag) {
+    if (this.chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted && this.chargingStation.getAuthorizeRemoteTxRequests()
+      && this.chargingStation.getLocalAuthListEnabled() && this.chargingStation.hasAuthorizedTags() && !this.chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized) {
+      logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction with a not local authorized idTag ' + this.chargingStation.getConnectorStatus(connectorId).localAuthorizeIdTag + ' on connector Id ' + connectorId.toString());
+      await this.resetConnectorOnStartTransactionError(connectorId);
+      return;
+    }
+    if (this.chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted && this.chargingStation.getAuthorizeRemoteTxRequests()
+      && this.chargingStation.getMayAuthorizeAtRemoteStart() && !this.chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized
+      && !this.chargingStation.getConnectorStatus(connectorId).idTagAuthorized) {
+      logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction with a not authorized idTag ' + this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag + ' on connector Id ' + connectorId.toString());
+      await this.resetConnectorOnStartTransactionError(connectorId);
+      return;
+    }
+    if (this.chargingStation.getConnectorStatus(connectorId).idTagAuthorized && this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag !== requestPayload.idTag) {
       logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction with an idTag ' + requestPayload.idTag + ' different from the authorize request one ' + this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag + ' on connector Id ' + connectorId.toString());
+      await this.resetConnectorOnStartTransactionError(connectorId);
+      return;
+    }
+    if (this.chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized
+      && this.chargingStation.getConnectorStatus(connectorId).localAuthorizeIdTag !== requestPayload.idTag) {
+      logger.error(this.chargingStation.logPrefix() + ' Trying to start a transaction with an idTag ' + requestPayload.idTag + ' different from the local authorized one ' + this.chargingStation.getConnectorStatus(connectorId).localAuthorizeIdTag + ' on connector Id ' + connectorId.toString());
+      await this.resetConnectorOnStartTransactionError(connectorId);
       return;
     }
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
@@ -127,11 +147,15 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.startMeterValues(connectorId, configuredMeterValueSampleInterval ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000 : 60000);
     } else {
       logger.warn(this.chargingStation.logPrefix() + ' Starting transaction id ' + payload.transactionId.toString() + ' REJECTED with status ' + payload?.idTagInfo?.status + ', idTag ' + requestPayload.idTag);
-      this.chargingStation.resetTransactionOnConnector(connectorId);
-      if (this.chargingStation.getConnectorStatus(connectorId).status !== OCPP16ChargePointStatus.AVAILABLE) {
-        await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.AVAILABLE);
-        this.chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
-      }
+      await this.resetConnectorOnStartTransactionError(connectorId);
+    }
+  }
+
+  private async resetConnectorOnStartTransactionError(connectorId: number): Promise<void> {
+    this.chargingStation.resetConnectorStatus(connectorId);
+    if (this.chargingStation.getConnectorStatus(connectorId).status !== OCPP16ChargePointStatus.AVAILABLE) {
+      await this.chargingStation.ocppRequestService.sendStatusNotification(connectorId, OCPP16ChargePointStatus.AVAILABLE);
+      this.chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
     }
   }
 
@@ -162,7 +186,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         this.chargingStation.stationInfo.powerDivider--;
       }
       logger.info(this.chargingStation.logPrefix() + ' Transaction ' + requestPayload.transactionId.toString() + ' STOPPED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorId.toString());
-      this.chargingStation.resetTransactionOnConnector(transactionConnectorId);
+      this.chargingStation.resetConnectorStatus(transactionConnectorId);
     } else {
       logger.warn(this.chargingStation.logPrefix() + ' Stopping transaction id ' + requestPayload.transactionId.toString() + ' REJECTED with status ' + payload.idTagInfo?.status);
     }

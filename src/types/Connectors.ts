@@ -14,7 +14,10 @@ export interface ConnectorStatus {
   status?: ChargePointStatus;
   MeterValues: SampledValueTemplate[];
   authorizeIdTag?: string;
-  authorized?: boolean;
+  idTagAuthorized?: boolean;
+  localAuthorizeIdTag?: string;
+  idTagLocalAuthorized?: boolean;
+  transactionRemoteStarted?: boolean;
   transactionStarted?: boolean;
   transactionId?: number;
   transactionSetInterval?: NodeJS.Timeout;

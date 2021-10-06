@@ -400,9 +400,12 @@ export default class ChargingStation {
     !cpReplaced && this.getConnectorStatus(connectorId).chargingProfiles?.push(cp);
   }
 
-  public resetTransactionOnConnector(connectorId: number): void {
-    this.getConnectorStatus(connectorId).authorized = false;
+  public resetConnectorStatus(connectorId: number): void {
+    this.getConnectorStatus(connectorId).idTagLocalAuthorized = false;
+    this.getConnectorStatus(connectorId).idTagAuthorized = false;
+    this.getConnectorStatus(connectorId).transactionRemoteStarted = false;
     this.getConnectorStatus(connectorId).transactionStarted = false;
+    delete this.getConnectorStatus(connectorId).localAuthorizeIdTag;
     delete this.getConnectorStatus(connectorId).authorizeIdTag;
     delete this.getConnectorStatus(connectorId).transactionId;
     delete this.getConnectorStatus(connectorId).transactionIdTag;
@@ -533,7 +536,7 @@ export default class ChargingStation {
     // Initialize transaction attributes on connectors
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0 && !this.getConnectorStatus(connectorId)?.transactionStarted) {
-        this.initTransactionAttributesOnConnector(connectorId);
+        this.initializeConnectorStatus(connectorId);
       }
     }
     switch (this.getOCPPVersion()) {
@@ -1050,8 +1053,10 @@ export default class ChargingStation {
     }
   }
 
-  private initTransactionAttributesOnConnector(connectorId: number): void {
-    this.getConnectorStatus(connectorId).authorized = false;
+  private initializeConnectorStatus(connectorId: number): void {
+    this.getConnectorStatus(connectorId).idTagLocalAuthorized = false;
+    this.getConnectorStatus(connectorId).idTagAuthorized = false;
+    this.getConnectorStatus(connectorId).transactionRemoteStarted = false;
     this.getConnectorStatus(connectorId).transactionStarted = false;
     this.getConnectorStatus(connectorId).energyActiveImportRegisterValue = 0;
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;

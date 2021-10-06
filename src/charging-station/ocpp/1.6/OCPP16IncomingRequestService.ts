@@ -293,19 +293,20 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           let authorized = false;
           if (this.chargingStation.getLocalAuthListEnabled() && this.chargingStation.hasAuthorizedTags()
               && this.chargingStation.authorizedTags.find((value) => value === commandPayload.idTag)) {
+            this.chargingStation.getConnectorStatus(transactionConnectorId).localAuthorizeIdTag = commandPayload.idTag;
+            this.chargingStation.getConnectorStatus(transactionConnectorId).idTagLocalAuthorized = true;
             authorized = true;
           }
-          if (!authorized || (authorized && this.chargingStation.getMayAuthorizeAtRemoteStart())) {
+          if (!authorized && this.chargingStation.getMayAuthorizeAtRemoteStart()) {
             const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(transactionConnectorId, commandPayload.idTag);
             if (authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
               authorized = true;
-            } else {
-              authorized = false;
             }
           }
           if (authorized) {
             // Authorization successful, start transaction
             if (this.setRemoteStartTransactionChargingProfile(transactionConnectorId, commandPayload.chargingProfile)) {
+              this.chargingStation.getConnectorStatus(transactionConnectorId).transactionRemoteStarted = true;
               if ((await this.chargingStation.ocppRequestService.sendStartTransaction(transactionConnectorId, commandPayload.idTag)).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
                 logger.debug(this.chargingStation.logPrefix() + ' Transaction remotely STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorId.toString() + ' for idTag ' + commandPayload.idTag);
                 return Constants.OCPP_RESPONSE_ACCEPTED;
@@ -318,6 +319,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         }
         // No authorization check required, start transaction
         if (this.setRemoteStartTransactionChargingProfile(transactionConnectorId, commandPayload.chargingProfile)) {
+          this.chargingStation.getConnectorStatus(transactionConnectorId).transactionRemoteStarted = true;
           if ((await this.chargingStation.ocppRequestService.sendStartTransaction(transactionConnectorId, commandPayload.idTag)).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
             logger.debug(this.chargingStation.logPrefix() + ' Transaction remotely STARTED on ' + this.chargingStation.stationInfo.chargingStationId + '#' + transactionConnectorId.toString() + ' for idTag ' + commandPayload.idTag);
             return Constants.OCPP_RESPONSE_ACCEPTED;
