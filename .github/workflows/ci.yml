@@ -3,10 +3,8 @@ on:
   push:
     branches:
       - master
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
-    # branches:
-    #   - master
 jobs:
   build:
     runs-on: ubuntu-latest
