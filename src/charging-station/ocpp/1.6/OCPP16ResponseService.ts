@@ -6,9 +6,11 @@ import { HeartbeatResponse, OCPP16BootNotificationResponse, OCPP16RegistrationSt
 import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
 
 import ChargingStation from '../../ChargingStation';
+import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
+import OCPPError from '../OCPPError';
 import OCPPResponseService from '../OCPPResponseService';
 import { ResponseHandler } from '../../../types/ocpp/Responses';
 import Utils from '../../../utils/Utils';
@@ -36,9 +38,11 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         await this.responseHandlers.get(commandName)(payload, requestPayload);
       } catch (error) {
         logger.error(this.chargingStation.logPrefix() + ' Handle request response error: %j', error);
+        throw error;
       }
     } else {
-      logger.error(`${this.chargingStation.logPrefix()} %s is not implemented to handle request response payload %j`, commandName, payload);
+      // Throw exception
+      throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request response payload ${JSON.stringify(payload, null, 2)}`, commandName);
     }
   }
 

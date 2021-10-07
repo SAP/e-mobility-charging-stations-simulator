@@ -70,10 +70,16 @@ export default abstract class OCPPRequestService {
         if (self.chargingStation.getEnableStatistics()) {
           self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE);
         }
-        // Send the response
-        await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
-        self.chargingStation.requests.delete(messageId);
-        resolve(payload);
+        // Handle the request's response
+        try {
+          await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
+          resolve(payload);
+        } catch (error) {
+          reject(error);
+          throw error;
+        } finally {
+          self.chargingStation.requests.delete(messageId);
+        }
       }
 
       /**

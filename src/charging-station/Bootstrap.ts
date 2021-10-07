@@ -15,9 +15,9 @@ import { version } from '../../package.json';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
-  private static workerImplementation: WorkerAbstract | null = null;
-  private static storage: Storage;
-  private static numberOfChargingStations: number;
+  private workerImplementation: WorkerAbstract | null = null;
+  private readonly storage: Storage;
+  private numberOfChargingStations: number;
   private readonly version: string = version;
   private started: boolean;
   private readonly workerScript: string;
@@ -26,7 +26,7 @@ export default class Bootstrap {
     this.started = false;
     this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'ChargingStationWorker.js');
     this.initWorkerImplementation();
-    Bootstrap.storage = StorageFactory.getStorage(Configuration.getPerformanceStorage().type, Configuration.getPerformanceStorage().URI, this.logPrefix());
+    this.storage = StorageFactory.getStorage(Configuration.getPerformanceStorage().type, Configuration.getPerformanceStorage().URI, this.logPrefix());
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
   }
 
@@ -40,9 +40,9 @@ export default class Bootstrap {
   public async start(): Promise<void> {
     if (isMainThread && !this.started) {
       try {
-        Bootstrap.numberOfChargingStations = 0;
-        await Bootstrap.storage.open();
-        await Bootstrap.workerImplementation.start();
+        this.numberOfChargingStations = 0;
+        await this.storage.open();
+        await this.workerImplementation.start();
         // Start ChargingStation object in worker thread
         if (Configuration.getStationTemplateURLs()) {
           for (const stationURL of Configuration.getStationTemplateURLs()) {
@@ -53,8 +53,8 @@ export default class Bootstrap {
                   index,
                   templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
                 };
-                await Bootstrap.workerImplementation.addElement(workerData);
-                Bootstrap.numberOfChargingStations++;
+                await this.workerImplementation.addElement(workerData);
+                this.numberOfChargingStations++;
               }
             } catch (error) {
               console.error(chalk.red('Charging station start with template file ' + stationURL.file + ' error '), error);
@@ -63,10 +63,10 @@ export default class Bootstrap {
         } else {
           console.warn(chalk.yellow('No stationTemplateURLs defined in configuration, exiting'));
         }
-        if (Bootstrap.numberOfChargingStations === 0) {
+        if (this.numberOfChargingStations === 0) {
           console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'));
         } else {
-          console.log(chalk.green(`Charging stations simulator ${this.version} started with ${Bootstrap.numberOfChargingStations.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${Bootstrap.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${Bootstrap.workerImplementation.maxElementsPerWorker ? ` (${Bootstrap.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`));
+          console.log(chalk.green(`Charging stations simulator ${this.version} started with ${this.numberOfChargingStations.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.workerImplementation.maxElementsPerWorker ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`));
         }
         this.started = true;
       } catch (error) {
@@ -79,8 +79,8 @@ export default class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
-      await Bootstrap.workerImplementation.stop();
-      await Bootstrap.storage.close();
+      await this.workerImplementation.stop();
+      await this.storage.close();
     } else {
       console.error(chalk.red('Trying to stop the charging stations simulator while not started'));
     }
@@ -94,7 +94,7 @@ export default class Bootstrap {
   }
 
   private initWorkerImplementation(): void {
-    Bootstrap.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
+    this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
       {
         startDelay: Configuration.getWorkerStartDelay(),
         poolMaxSize: Configuration.getWorkerPoolMaxSize(),
@@ -105,7 +105,7 @@ export default class Bootstrap {
         },
         messageHandler: async (msg: ChargingStationWorkerMessage) => {
           if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
-            await Bootstrap.storage.storePerformanceStatistics(msg.data);
+            await this.storage.storePerformanceStatistics(msg.data);
           }
         }
       });
