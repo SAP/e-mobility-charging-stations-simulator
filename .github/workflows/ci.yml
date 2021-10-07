@@ -26,6 +26,7 @@ jobs:
       continue-on-error: true
     - name: npm run build
       run: npm run build
+      continue-on-error: true
     - name: npm test
       run: npm test
     - name: npm run coverage
