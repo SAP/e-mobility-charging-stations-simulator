@@ -88,6 +88,7 @@ supervisionUser | | '' | string | basic HTTP authentication user to OCPP-J serve
 supervisionPassword | | '' | string | basic HTTP authentication password to OCPP-J server
 ocppVersion | 1.6 | 1.6 | string | OCPP version 
 ocppProtocol | json | json | string | OCPP protocol
+wsOptions | | {} | ClientOptions & ClientRequestArgs | [ws](https://github.com/websockets/ws) and node.js [http](https://nodejs.org/api/http.html) clients options intersection
 authorizationFile | | '' | string | RFID tags list file relative to src/assets path
 baseName | | '' | string | base name to build charging stations name
 nameSuffix | | '' | string | name suffix to build charging stations name

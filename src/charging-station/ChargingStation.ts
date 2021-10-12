@@ -446,6 +446,9 @@ export default class ChargingStation {
       FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error);
     }
     const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? {} as ChargingStationInfo;
+    stationInfo.wsOptions = stationTemplateFromFile?.wsOptions ?? {};
+    stationInfo.wsOptions.origin = stationTemplateFromFile?.wsOptions?.origin ?? 'http://localhost';
+    stationInfo.wsOptions.handshakeTimeout = stationTemplateFromFile?.wsOptions?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
       stationTemplateFromFile.power = stationTemplateFromFile.power as number[];
       const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationTemplateFromFile.power.length);
@@ -942,9 +945,7 @@ export default class ChargingStation {
     }
   }
 
-  private openWSConnection(options?: ClientOptions & ClientRequestArgs, forceCloseOpened = false): void {
-    options = options ?? {};
-    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+  private openWSConnection(options: ClientOptions & ClientRequestArgs = this.stationInfo.wsOptions, forceCloseOpened = false): void {
     if (!Utils.isNullOrUndefined(this.stationInfo.supervisionUser) && !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
     }
@@ -1042,11 +1043,11 @@ export default class ChargingStation {
     if (this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() || this.getAutoReconnectMaxRetries() === -1) {
       this.autoReconnectRetryCount++;
       const reconnectDelay = (this.getReconnectExponentialDelay() ? Utils.exponentialDelay(this.autoReconnectRetryCount) : this.getConnectionTimeout() * 1000);
-      const reconnectTimeout = reconnectDelay - 100;
+      const reconnectTimeout = (reconnectDelay - 100) > 0 ? reconnectDelay : 0;
       logger.error(`${this.logPrefix()} WebSocket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectTimeout}ms`);
       await Utils.sleep(reconnectDelay);
       logger.error(this.logPrefix() + ' WebSocket: reconnecting try #' + this.autoReconnectRetryCount.toString());
-      this.openWSConnection({ handshakeTimeout: reconnectTimeout }, true);
+      this.openWSConnection({ ...this.stationInfo.wsOptions, handshakeTimeout: reconnectTimeout }, true);
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
       logger.error(`${this.logPrefix()} WebSocket reconnect failure: max retries reached (${this.autoReconnectRetryCount}) or retry disabled (${this.getAutoReconnectMaxRetries()})`);

@@ -1,4 +1,6 @@
 import ChargingStationConfiguration from './ChargingStationConfiguration';
+import { ClientOptions } from 'ws';
+import { ClientRequestArgs } from 'http';
 import { ConnectorStatus } from './Connectors';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';
@@ -38,6 +40,7 @@ export default interface ChargingStationTemplate {
   supervisionPassword?: string;
   ocppVersion?: OCPPVersion;
   ocppProtocol?: OCPPProtocol;
+  wsOptions?: ClientOptions & ClientRequestArgs;
   authorizationFile?: string;
   baseName: string;
   nameSuffix?: string;
