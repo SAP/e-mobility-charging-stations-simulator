@@ -479,6 +479,7 @@ export default class ChargingStation {
   private initialize(): void {
     this.stationInfo = this.buildStationInfo();
     this.configuration = this.getTemplateChargingStationConfiguration();
+    delete this.stationInfo.Configuration;
     this.bootNotificationRequest = {
       chargePointModel: this.stationInfo.chargePointModel,
       chargePointVendor: this.stationInfo.chargePointVendor,
