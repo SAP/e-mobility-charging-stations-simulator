@@ -447,8 +447,6 @@ export default class ChargingStation {
     }
     const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? {} as ChargingStationInfo;
     stationInfo.wsOptions = stationTemplateFromFile?.wsOptions ?? {};
-    stationInfo.wsOptions.origin = stationTemplateFromFile?.wsOptions?.origin ?? 'http://localhost';
-    stationInfo.wsOptions.handshakeTimeout = stationTemplateFromFile?.wsOptions?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
       stationTemplateFromFile.power = stationTemplateFromFile.power as number[];
       const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationTemplateFromFile.power.length);
@@ -480,13 +478,13 @@ export default class ChargingStation {
 
   private initialize(): void {
     this.stationInfo = this.buildStationInfo();
+    this.configuration = this.getTemplateChargingStationConfiguration();
     this.bootNotificationRequest = {
       chargePointModel: this.stationInfo.chargePointModel,
       chargePointVendor: this.stationInfo.chargePointVendor,
       ...!Utils.isUndefined(this.stationInfo.chargeBoxSerialNumberPrefix) && { chargeBoxSerialNumber: this.stationInfo.chargeBoxSerialNumberPrefix },
       ...!Utils.isUndefined(this.stationInfo.firmwareVersion) && { firmwareVersion: this.stationInfo.firmwareVersion },
     };
-    this.configuration = this.getTemplateChargingStationConfiguration();
     this.wsConnectionUrl = new URL(this.getSupervisionURL().href + '/' + this.stationInfo.chargingStationId);
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
@@ -946,6 +944,7 @@ export default class ChargingStation {
   }
 
   private openWSConnection(options: ClientOptions & ClientRequestArgs = this.stationInfo.wsOptions, forceCloseOpened = false): void {
+    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     if (!Utils.isNullOrUndefined(this.stationInfo.supervisionUser) && !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
     }
@@ -1043,7 +1042,7 @@ export default class ChargingStation {
     if (this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() || this.getAutoReconnectMaxRetries() === -1) {
       this.autoReconnectRetryCount++;
       const reconnectDelay = (this.getReconnectExponentialDelay() ? Utils.exponentialDelay(this.autoReconnectRetryCount) : this.getConnectionTimeout() * 1000);
-      const reconnectTimeout = (reconnectDelay - 100) > 0 ? reconnectDelay : 0;
+      const reconnectTimeout = (reconnectDelay - 100) > 0 && reconnectDelay;
       logger.error(`${this.logPrefix()} WebSocket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectTimeout}ms`);
       await Utils.sleep(reconnectDelay);
       logger.error(this.logPrefix() + ' WebSocket: reconnecting try #' + this.autoReconnectRetryCount.toString());
