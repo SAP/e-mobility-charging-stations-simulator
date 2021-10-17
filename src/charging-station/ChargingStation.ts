@@ -443,7 +443,7 @@ export default class ChargingStation {
       stationTemplateFromFile = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8')) as ChargingStationTemplate;
       fs.closeSync(fileDescriptor);
     } catch (error) {
-      FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error);
+      FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error as NodeJS.ErrnoException);
     }
     const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? {} as ChargingStationInfo;
     stationInfo.wsOptions = stationTemplateFromFile?.wsOptions ?? {};
@@ -710,7 +710,7 @@ export default class ChargingStation {
       // Log
       logger.error('%s Incoming OCPP message %j matching cached request %j processing error %j', this.logPrefix(), data.toString(), this.requests.get(messageId), error);
       // Send error
-      messageType === MessageType.CALL_MESSAGE && await this.ocppRequestService.sendError(messageId, error, commandName);
+      messageType === MessageType.CALL_MESSAGE && await this.ocppRequestService.sendError(messageId, error as OCPPError, commandName);
     }
   }
 
@@ -749,7 +749,7 @@ export default class ChargingStation {
         authorizedTags = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8')) as string[];
         fs.closeSync(fileDescriptor);
       } catch (error) {
-        FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error);
+        FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error as NodeJS.ErrnoException);
       }
     } else {
       logger.info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile);
@@ -952,7 +952,7 @@ export default class ChargingStation {
     if (this.isWebSocketConnectionOpened() && forceCloseOpened) {
       this.wsConnection.close();
     }
-    let protocol;
+    let protocol: string;
     switch (this.getOCPPVersion()) {
       case OCPPVersion.VERSION_16:
         protocol = 'ocpp' + OCPPVersion.VERSION_16;
@@ -987,7 +987,7 @@ export default class ChargingStation {
           }
         });
       } catch (error) {
-        FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error);
+        FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error as NodeJS.ErrnoException);
       }
     } else {
       logger.info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile + '. Not monitoring changes');
@@ -1020,7 +1020,7 @@ export default class ChargingStation {
         }
       });
     } catch (error) {
-      FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error);
+      FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error as NodeJS.ErrnoException);
     }
   }
 

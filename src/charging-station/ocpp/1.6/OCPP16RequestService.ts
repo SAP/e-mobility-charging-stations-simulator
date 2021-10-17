@@ -27,7 +27,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       const payload: HeartbeatRequest = {};
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.HEARTBEAT);
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.HEARTBEAT, error);
+      this.handleRequestError(OCPP16RequestCommand.HEARTBEAT, error as Error);
     }
   }
 
@@ -47,7 +47,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.BOOT_NOTIFICATION, true) as OCPP16BootNotificationResponse;
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.BOOT_NOTIFICATION, error);
+      this.handleRequestError(OCPP16RequestCommand.BOOT_NOTIFICATION, error as Error);
     }
   }
 
@@ -61,7 +61,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.STATUS_NOTIFICATION);
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.STATUS_NOTIFICATION, error);
+      this.handleRequestError(OCPP16RequestCommand.STATUS_NOTIFICATION, error as Error);
     }
   }
 
@@ -73,7 +73,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.AUTHORIZE) as OCPP16AuthorizeResponse;
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.AUTHORIZE, error);
+      this.handleRequestError(OCPP16RequestCommand.AUTHORIZE, error as Error);
     }
   }
 
@@ -87,7 +87,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.START_TRANSACTION) as OCPP16StartTransactionResponse;
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.START_TRANSACTION, error);
+      this.handleRequestError(OCPP16RequestCommand.START_TRANSACTION, error as Error);
     }
   }
 
@@ -115,7 +115,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.STOP_TRANSACTION) as OCPP16StartTransactionResponse;
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.STOP_TRANSACTION, error);
+      this.handleRequestError(OCPP16RequestCommand.STOP_TRANSACTION, error as Error);
     }
   }
 
@@ -337,7 +337,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
+      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error as Error);
     }
   }
 
@@ -350,7 +350,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
+      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error as Error);
     }
   }
 
@@ -363,7 +363,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.METER_VALUES);
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
+      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error as Error);
     }
   }
 
@@ -374,7 +374,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       };
       await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION);
     } catch (error) {
-      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error);
+      this.handleRequestError(OCPP16RequestCommand.METER_VALUES, error as Error);
     }
   }
 
@@ -383,7 +383,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       // Send error
       return await this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
     } catch (err) {
-      this.handleRequestError(commandName as OCPP16RequestCommand, err);
+      this.handleRequestError(commandName as OCPP16RequestCommand, err as Error);
     }
   }
 }
