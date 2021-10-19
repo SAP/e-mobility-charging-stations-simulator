@@ -39,7 +39,7 @@ export class JSONFileStorage extends Storage {
             'utf8'
           );
         } catch (error) {
-          FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
+          FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error as NodeJS.ErrnoException);
         }
         await release();
       })
@@ -52,7 +52,7 @@ export class JSONFileStorage extends Storage {
         this.fd = fs.openSync(this.dbName, 'a+');
       }
     } catch (error) {
-      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
+      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error as NodeJS.ErrnoException);
     }
   }
 
@@ -63,7 +63,7 @@ export class JSONFileStorage extends Storage {
         this.fd = null;
       }
     } catch (error) {
-      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error);
+      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error as NodeJS.ErrnoException);
     }
   }
 

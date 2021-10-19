@@ -22,7 +22,7 @@ export class MongoDBStorage extends Storage {
       this.checkDBConnection();
       await this.client.db(this.dbName).collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE).insertOne(performanceStatistics);
     } catch (error) {
-      this.handleDBError(StorageType.MONGO_DB, error, Constants.PERFORMANCE_RECORDS_TABLE);
+      this.handleDBError(StorageType.MONGO_DB, error as Error, Constants.PERFORMANCE_RECORDS_TABLE);
     }
   }
 
@@ -33,7 +33,7 @@ export class MongoDBStorage extends Storage {
         this.connected = true;
       }
     } catch (error) {
-      this.handleDBError(StorageType.MONGO_DB, error);
+      this.handleDBError(StorageType.MONGO_DB, error as Error);
     }
   }
 
@@ -44,7 +44,7 @@ export class MongoDBStorage extends Storage {
         this.connected = false;
       }
     } catch (error) {
-      this.handleDBError(StorageType.MONGO_DB, error);
+      this.handleDBError(StorageType.MONGO_DB, error as Error);
     }
   }
 

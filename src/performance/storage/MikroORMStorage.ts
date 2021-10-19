@@ -25,7 +25,7 @@ export class MikroORMStorage extends Storage {
       const performanceRecord = new PerformanceRecord();
       await this.orm.em.persistAndFlush(performanceRecord);
     } catch (error) {
-      this.handleDBError(this.storageType, error, Constants.PERFORMANCE_RECORDS_TABLE);
+      this.handleDBError(this.storageType, error as Error, Constants.PERFORMANCE_RECORDS_TABLE);
     }
   }
 
@@ -35,7 +35,7 @@ export class MikroORMStorage extends Storage {
         this.orm = await MikroORM.init(this.getOptions(), true);
       }
     } catch (error) {
-      this.handleDBError(this.storageType, error);
+      this.handleDBError(this.storageType, error as Error);
     }
   }
 
@@ -46,7 +46,7 @@ export class MikroORMStorage extends Storage {
         this.orm = null;
       }
     } catch (error) {
-      this.handleDBError(this.storageType, error);
+      this.handleDBError(this.storageType, error as Error);
     }
   }
 
