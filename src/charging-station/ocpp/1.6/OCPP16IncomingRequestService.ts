@@ -296,12 +296,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             this.chargingStation.getConnectorStatus(transactionConnectorId).localAuthorizeIdTag = commandPayload.idTag;
             this.chargingStation.getConnectorStatus(transactionConnectorId).idTagLocalAuthorized = true;
             authorized = true;
-          }
-          if (!authorized && this.chargingStation.getMayAuthorizeAtRemoteStart()) {
+          } else if (this.chargingStation.getMayAuthorizeAtRemoteStart()) {
             const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(transactionConnectorId, commandPayload.idTag);
             if (authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
               authorized = true;
             }
+          } else {
+            logger.warn(`${this.chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction but local authorization or authorize is enabled`);
           }
           if (authorized) {
             // Authorization successful, start transaction
