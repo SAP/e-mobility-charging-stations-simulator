@@ -73,7 +73,7 @@
     "@mikro-orm/sqlite": "^4.5.9",
     "basic-ftp": "^4.6.6",
     "chalk": "^4.1.2",
-    "mongodb": "^4.1.4",
+    "mongodb": "^4.2.0",
     "poolifier": "^2.1.0",
     "proper-lockfile": "^4.1.2",
     "source-map-support": "^0.5.20",
@@ -97,7 +97,7 @@
     "@types/node": "^14.17.33",
     "@types/proper-lockfile": "^4.1.2",
     "@types/tar": "^6.1.0",
-    "@types/uuid": "^8.3.1",
+    "@types/uuid": "^8.3.3",
     "@types/ws": "^8.2.0",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
@@ -121,8 +121,8 @@
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-istanbul": "^3.0.0",
     "rollup-plugin-terser": "^7.0.2",
-    "rollup-plugin-ts": "^2.0.1",
+    "rollup-plugin-ts": "^2.0.2",
     "ts-node": "^10.4.0",
-    "typescript": "^4.4.4"
+    "typescript": "^4.5.2"
   }
 }
