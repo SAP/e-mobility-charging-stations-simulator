@@ -302,7 +302,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               authorized = true;
             }
           } else {
-            logger.warn(`${this.chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction but local authorization or authorize is enabled`);
+            logger.warn(`${this.chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction but local authorization or authorize isn't enabled`);
           }
           if (authorized) {
             // Authorization successful, start transaction
