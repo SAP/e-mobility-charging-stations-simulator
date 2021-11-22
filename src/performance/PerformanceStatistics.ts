@@ -3,7 +3,7 @@
 import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
-import Statistics, { StatisticsData } from '../types/Statistics';
+import Statistics, { StatisticsData, TimeSeries } from '../types/Statistics';
 
 import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import Configuration from '../utils/Configuration';
@@ -176,13 +176,19 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData.get(entryName).maxTimeMeasurement = this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ? (this.statistics.statisticsData.get(entryName).maxTimeMeasurement < entry.duration ? entry.duration : this.statistics.statisticsData.get(entryName).maxTimeMeasurement) : entry.duration;
     this.statistics.statisticsData.get(entryName).totalTimeMeasurement = this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ? this.statistics.statisticsData.get(entryName).totalTimeMeasurement + entry.duration : entry.duration;
     this.statistics.statisticsData.get(entryName).avgTimeMeasurement = this.statistics.statisticsData.get(entryName).totalTimeMeasurement / this.statistics.statisticsData.get(entryName).countTimeMeasurement;
-    Array.isArray(this.statistics.statisticsData.get(entryName).timeMeasurementSeries) ? this.statistics.statisticsData.get(entryName).timeMeasurementSeries.push(entry.duration) : this.statistics.statisticsData.get(entryName).timeMeasurementSeries = new CircularArray<number>(DEFAULT_CIRCULAR_ARRAY_SIZE, entry.duration);
-    this.statistics.statisticsData.get(entryName).medTimeMeasurement = this.median(this.statistics.statisticsData.get(entryName).timeMeasurementSeries);
-    this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement = this.percentile(this.statistics.statisticsData.get(entryName).timeMeasurementSeries, 95);
-    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = this.stdDeviation(this.statistics.statisticsData.get(entryName).timeMeasurementSeries);
+    Array.isArray(this.statistics.statisticsData.get(entryName).timeMeasurementSeries)
+      ? this.statistics.statisticsData.get(entryName).timeMeasurementSeries.push({ timestamp: entry.startTime, value: entry.duration })
+      : this.statistics.statisticsData.get(entryName).timeMeasurementSeries = new CircularArray<TimeSeries>(DEFAULT_CIRCULAR_ARRAY_SIZE, { timestamp: entry.startTime, value: entry.duration });
+    this.statistics.statisticsData.get(entryName).medTimeMeasurement = this.median(this.extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).timeMeasurementSeries));
+    this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement = this.percentile(this.extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).timeMeasurementSeries), 95);
+    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = this.stdDeviation(this.extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).timeMeasurementSeries));
     if (Configuration.getPerformanceStorage().enabled) {
       parentPort.postMessage({ id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS, data: this.statistics });
     }
+  }
+
+  private extractTimeSeriesValues(timeSeries: CircularArray<TimeSeries>): number[] {
+    return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
   }
 
   private logPrefix(): string {

@@ -1,11 +1,16 @@
 import { CircularArray } from '../utils/CircularArray';
 
+export interface TimeSeries {
+  timestamp: number;
+  value: number;
+}
+
 export interface StatisticsData {
   countRequest: number;
   countResponse: number;
   countError: number;
   countTimeMeasurement: number;
-  timeMeasurementSeries: CircularArray<number>;
+  timeMeasurementSeries: CircularArray<TimeSeries>;
   currentTimeMeasurement: number;
   minTimeMeasurement: number;
   maxTimeMeasurement: number;
