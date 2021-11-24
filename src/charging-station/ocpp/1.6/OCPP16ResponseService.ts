@@ -49,7 +49,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
   private handleResponseBootNotification(payload: OCPP16BootNotificationResponse): void {
     if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartBeatInterval, payload.interval.toString());
-      this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartbeatInterval, payload.interval.toString(), false, false);
+      this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartbeatInterval, payload.interval.toString(), { visible: false });
       this.chargingStation.heartbeatSetInterval ? this.chargingStation.restartHeartbeat() : this.chargingStation.startHeartbeat();
     } else if (payload.status === OCPP16RegistrationStatus.PENDING) {
       logger.info(this.chargingStation.logPrefix() + ' Charging station in pending state on the central server');

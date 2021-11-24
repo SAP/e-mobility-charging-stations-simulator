@@ -53,3 +53,7 @@ export enum OCPP16StandardParametersKey {
   ConnectorSwitch3to1PhaseSupported = 'ConnectorSwitch3to1PhaseSupported',
   MaxChargingProfilesInstalled = 'MaxChargingProfilesInstalled'
 }
+
+export enum OCPP16VendorDefaultParametersKey {
+  ConnectionUrl = 'ConnectionUrl'
+}

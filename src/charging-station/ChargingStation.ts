@@ -4,7 +4,7 @@ import { AvailabilityType, BootNotificationRequest, CachedRequest, IncomingReque
 import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
 import ChargingStationConfiguration, { ConfigurationKey } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, { CurrentType, PowerUnits, Voltage } from '../types/ChargingStationTemplate';
-import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles } from '../types/ocpp/Configuration';
+import { ConnectorPhaseRotation, StandardParametersKey, SupportedFeatureProfiles, VendorDefaultParametersKey } from '../types/ocpp/Configuration';
 import { ConnectorStatus, SampledValueTemplate } from '../types/Connectors';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
@@ -53,7 +53,7 @@ export default class ChargingStation {
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
-  private wsConnectionUrl!: URL;
+  private wsConfiguredConnectionUrl!: URL;
   private wsConnectionRestarted: boolean;
   private stopped: boolean;
   private autoReconnectRetryCount: number;
@@ -74,6 +74,10 @@ export default class ChargingStation {
     this.messageBuffer = new Set<string>();
 
     this.authorizedTags = this.getAuthorizedTags();
+  }
+
+  get wsConnectionUrl(): URL {
+    return this.getSupervisionURLOCPPConfiguration() ? new URL(this.getConfigurationKey(this.stationInfo.supervisionURLOCPPKey ?? VendorDefaultParametersKey.ConnectionUrl).value + '/' + this.stationInfo.chargingStationId) : this.wsConfiguredConnectionUrl;
   }
 
   public logPrefix(): string {
@@ -361,8 +365,11 @@ export default class ChargingStation {
     });
   }
 
-  public addConfigurationKey(key: string | StandardParametersKey, value: string, readonly = false, visible = true, reboot = false): void {
+  public addConfigurationKey(key: string | StandardParametersKey, value: string, options: { readonly?: boolean, visible?: boolean, reboot?: boolean } = { readonly: false, visible: true, reboot: false }): void {
     const keyFound = this.getConfigurationKey(key);
+    const readonly = options.readonly;
+    const visible = options.visible;
+    const reboot = options.reboot;
     if (!keyFound) {
       this.configuration.configurationKey.push({
         key,
@@ -428,6 +435,10 @@ export default class ChargingStation {
     }
   }
 
+  private getSupervisionURLOCPPConfiguration(): boolean {
+    return this.stationInfo.supervisionURLOCPPConfiguration ?? false;
+  }
+
   private getChargingStationId(stationTemplate: ChargingStationTemplate): string {
     // In case of multiple instances: add instance index to charging station id
     const instanceIndex = process.env.CF_INSTANCE_INDEX ?? 0;
@@ -486,7 +497,6 @@ export default class ChargingStation {
       ...!Utils.isUndefined(this.stationInfo.chargeBoxSerialNumberPrefix) && { chargeBoxSerialNumber: this.stationInfo.chargeBoxSerialNumberPrefix },
       ...!Utils.isUndefined(this.stationInfo.firmwareVersion) && { firmwareVersion: this.stationInfo.firmwareVersion },
     };
-    this.wsConnectionUrl = new URL(this.getSupervisionURL().href + '/' + this.stationInfo.chargingStationId);
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -541,6 +551,7 @@ export default class ChargingStation {
         this.initializeConnectorStatus(connectorId);
       }
     }
+    this.wsConfiguredConnectionUrl = new URL(this.getConfiguredSupervisionURL().href + '/' + this.stationInfo.chargingStationId);
     switch (this.getOCPPVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService = new OCPP16IncomingRequestService(this);
@@ -566,10 +577,13 @@ export default class ChargingStation {
   }
 
   private initOCPPParameters(): void {
+    if (this.getSupervisionURLOCPPConfiguration() && !this.getConfigurationKey(this.stationInfo.supervisionURLOCPPKey ?? VendorDefaultParametersKey.ConnectionUrl)) {
+      this.addConfigurationKey(VendorDefaultParametersKey.ConnectionUrl, this.getConfiguredSupervisionURL().href, { reboot: true });
+    }
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(StandardParametersKey.SupportedFeatureProfiles, `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging}`);
     }
-    this.addConfigurationKey(StandardParametersKey.NumberOfConnectors, this.getNumberOfConnectors().toString(), true);
+    this.addConfigurationKey(StandardParametersKey.NumberOfConnectors, this.getNumberOfConnectors().toString(), { readonly: true });
     if (!this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)) {
       this.addConfigurationKey(StandardParametersKey.MeterValuesSampledData, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER);
     }
@@ -910,8 +924,8 @@ export default class ChargingStation {
     }
   }
 
-  private getSupervisionURL(): URL {
-    const supervisionUrls = Utils.cloneObject<string | string[]>(this.stationInfo.supervisionURL ? this.stationInfo.supervisionURL : Configuration.getSupervisionURLs());
+  private getConfiguredSupervisionURL(): URL {
+    const supervisionUrls = Utils.cloneObject<string | string[]>(this.stationInfo.supervisionURL ?? Configuration.getSupervisionURLs());
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
       if (Configuration.getDistributeStationsToTenantsEqually()) {
