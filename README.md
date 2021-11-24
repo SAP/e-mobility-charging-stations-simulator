@@ -86,7 +86,7 @@ Key | Value(s) | Default Value | Value type | Description
 supervisionURL | | '' | string | connection URI to OCPP-J server
 supervisionUser | | '' | string | basic HTTP authentication user to OCPP-J server
 supervisionPassword | | '' | string | basic HTTP authentication password to OCPP-J server
-supervisionURLOCPPConfiguration | | '' | boolean | Allow supervision URL configuration via a vendor OCPP parameter key
+supervisionURLOCPPConfiguration | | false | boolean | Allow supervision URL configuration via a vendor OCPP parameter key
 supervisionURLOCPPKey | | '' | string | The vendor string that will be used as a vendor OCPP parameter key to set the supervision URL
 ocppVersion | 1.6 | 1.6 | string | OCPP version 
 ocppProtocol | json | json | string | OCPP protocol
