@@ -378,6 +378,15 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
+  public async sendResult(messageId: string, resultMessageData: Record<string, unknown>, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<unknown> {
+    try {
+      // Send error
+      return await this.sendMessage(messageId, resultMessageData, MessageType.CALL_RESULT_MESSAGE, commandName);
+    } catch (err) {
+      this.handleRequestError(commandName as OCPP16RequestCommand, err as Error);
+    }
+  }
+
   public async sendError(messageId: string, error: OCPPError, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<unknown> {
     try {
       // Send error

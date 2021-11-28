@@ -24,13 +24,13 @@ export default abstract class OCPPRequestService {
     this.ocppResponseService = ocppResponseService;
   }
 
-  public async sendMessage(messageId: string, commandParams: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
+  public async sendMessage(messageId: string, messageData: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
       skipBufferingOnError = false): Promise<unknown> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Send a message through wsConnection
     return Utils.promiseWithTimeout(new Promise((resolve, reject) => {
-      const messageToSend = this.buildMessageToSend(messageId, commandParams, messageType, commandName, responseCallback, rejectCallback);
+      const messageToSend = this.buildMessageToSend(messageId, messageData, messageType, commandName, responseCallback, rejectCallback);
       if (this.chargingStation.getEnableStatistics()) {
         this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
       }
@@ -44,7 +44,7 @@ export default abstract class OCPPRequestService {
       } else if (!skipBufferingOnError) {
         // Buffer it
         this.chargingStation.bufferMessage(messageToSend);
-        const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {});
+        const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`, messageData?.details ?? {});
         if (messageType === MessageType.CALL_MESSAGE) {
           // Reject it but keep the request in the cache
           return reject(ocppError);
@@ -52,12 +52,12 @@ export default abstract class OCPPRequestService {
         return rejectCallback(ocppError, false);
       } else {
         // Reject it
-        return rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`, commandParams?.details ?? {}), false);
+        return rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`, messageData?.details ?? {}), false);
       }
       // Response?
       if (messageType !== MessageType.CALL_MESSAGE) {
         // Yes: send Ok
-        return resolve(commandParams);
+        return resolve(messageData);
       }
 
       /**
@@ -92,11 +92,11 @@ export default abstract class OCPPRequestService {
         if (requestStatistic && self.chargingStation.getEnableStatistics()) {
           self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
         }
-        logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with parameters %j`, error, commandName, commandParams);
+        logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`, error, commandName, messageData);
         self.chargingStation.requests.delete(messageId);
         reject(error);
       }
-    }), Constants.OCPP_WEBSOCKET_TIMEOUT, new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}'`, commandParams?.details ?? {}), () => {
+    }), Constants.OCPP_WEBSOCKET_TIMEOUT, new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}'`, messageData?.details ?? {}), () => {
       messageType === MessageType.CALL_MESSAGE && this.chargingStation.requests.delete(messageId);
     });
   }
@@ -106,7 +106,7 @@ export default abstract class OCPPRequestService {
     throw error;
   }
 
-  private buildMessageToSend(messageId: string, commandParams: Record<string, unknown>, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
+  private buildMessageToSend(messageId: string, messageData: Record<string, unknown>, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
       responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => Promise<void>,
       rejectCallback: (error: OCPPError, requestStatistic?: boolean) => void): string {
     let messageToSend: string;
@@ -115,18 +115,18 @@ export default abstract class OCPPRequestService {
       // Request
       case MessageType.CALL_MESSAGE:
         // Build request
-        this.chargingStation.requests.set(messageId, [responseCallback, rejectCallback, commandName, commandParams]);
-        messageToSend = JSON.stringify([messageType, messageId, commandName, commandParams]);
+        this.chargingStation.requests.set(messageId, [responseCallback, rejectCallback, commandName, messageData]);
+        messageToSend = JSON.stringify([messageType, messageId, commandName, messageData]);
         break;
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
         // Build response
-        messageToSend = JSON.stringify([messageType, messageId, commandParams]);
+        messageToSend = JSON.stringify([messageType, messageId, messageData]);
         break;
       // Error Message
       case MessageType.CALL_ERROR_MESSAGE:
         // Build Error Message
-        messageToSend = JSON.stringify([messageType, messageId, commandParams?.code ?? ErrorType.GENERIC_ERROR, commandParams?.message ?? '', commandParams?.details ?? {}]);
+        messageToSend = JSON.stringify([messageType, messageId, messageData?.code ?? ErrorType.GENERIC_ERROR, messageData?.message ?? '', messageData?.details ?? {}]);
         break;
     }
     return messageToSend;
@@ -142,5 +142,6 @@ export default abstract class OCPPRequestService {
   public abstract sendTransactionBeginMeterValues(connectorId: number, transactionId: number, beginMeterValue: MeterValue): Promise<void>;
   public abstract sendTransactionEndMeterValues(connectorId: number, transactionId: number, endMeterValue: MeterValue): Promise<void>;
   public abstract sendDiagnosticsStatusNotification(diagnosticsStatus: DiagnosticsStatus): Promise<void>;
+  public abstract sendResult(messageId: string, resultMessageData: Record<string, unknown>, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown>;
   public abstract sendError(messageId: string, error: OCPPError, commandName: RequestCommand | IncomingRequestCommand): Promise<unknown>;
 }
