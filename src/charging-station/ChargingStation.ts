@@ -14,6 +14,7 @@ import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
 import { ChargingProfile } from '../types/ocpp/ChargingProfile';
 import ChargingStationInfo from '../types/ChargingStationInfo';
+import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import { ClientRequestArgs } from 'http';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
@@ -34,6 +35,7 @@ import Utils from '../utils/Utils';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
+import { parentPort } from 'worker_threads';
 import path from 'path';
 
 export default class ChargingStation {
@@ -335,6 +337,7 @@ export default class ChargingStation {
     this.wsConnection.on('ping', this.onPing.bind(this));
     // Handle WebSocket pong
     this.wsConnection.on('pong', this.onPong.bind(this));
+    parentPort.postMessage({ id: ChargingStationWorkerMessageEvents.STARTED, data: { id: this.stationInfo.chargingStationId } });
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -353,6 +356,7 @@ export default class ChargingStation {
       this.performanceStatistics.stop();
     }
     this.bootNotificationResponse = null;
+    parentPort.postMessage({ id: ChargingStationWorkerMessageEvents.STOPPED, data: { id: this.stationInfo.chargingStationId } });
     this.stopped = true;
   }
 

@@ -109,7 +109,11 @@ export default class Bootstrap {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
         },
         messageHandler: async (msg: ChargingStationWorkerMessage) => {
-          if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
+          if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
+            this.webSocketServer.webSocketServerService.chargingStations.add(msg.data.id);
+          } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
+            this.webSocketServer.webSocketServerService.chargingStations.delete(msg.data.id);
+          } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
             await this.storage.storePerformanceStatistics(msg.data);
           }
         }

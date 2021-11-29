@@ -8,16 +8,16 @@ import WebSocket from 'ws';
 import logger from '../utils/Logger';
 
 export default class WebSocketServer extends WebSocket.Server {
-  private webSocketServerService: AbstractUIService;
+  public webSocketServerService: AbstractUIService;
 
   public constructor(options?: WebSocket.ServerOptions, callback?: () => void) {
     // Create the WebSocket Server
-    super(options, callback);
+    super({ ...options, port: 80 }, callback);
     // FIXME: version the instantiation
     this.webSocketServerService = new UIService(this);
   }
 
-  public broadcastToClients(message: Record<string, unknown>): void {
+  public broadcastToClients(message: string | Record<string, unknown>): void {
     for (const client of this.clients) {
       if (client?.readyState === WebSocket.OPEN) {
         client.send(message);
@@ -34,7 +34,7 @@ export default class WebSocketServer extends WebSocket.Server {
         [version, command, payload] = JSON.parse(messageData.toString()) as ProtocolRequest;
         switch (version) {
           case ProtocolVersion['0.0.1']:
-            this.webSocketServerService.handleMessage(command, payload).catch(() => {
+            this.webSocketServerService.handleMessage(version, command, payload).catch(() => {
               logger.error(`${this.logPrefix()} Error while handling command %s message: %j`, command, payload);
             });
             break;

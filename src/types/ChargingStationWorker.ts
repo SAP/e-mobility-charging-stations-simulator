@@ -6,6 +6,8 @@ export interface ChargingStationWorkerData extends WorkerData {
 }
 
 enum InternalChargingStationWorkerMessageEvents {
+  STARTED = 'started',
+  STOPPED = 'stopped',
   PERFORMANCE_STATISTICS = 'performanceStatistics'
 }
 
