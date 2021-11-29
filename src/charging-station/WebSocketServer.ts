@@ -26,22 +26,25 @@ export default class WebSocketServer extends WebSocket.Server {
   }
 
   public start(): void {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
     this.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
-      // Check connection validity
-    });
-    this.on('message', (messageData) => {
-      let [version, command, payload]: ProtocolRequest = [ProtocolVersion['0.0.1'], ProtocolCommand.UNKNOWN, {}];
-      // FIXME: check for iterable object
-      [version, command, payload] = JSON.parse(messageData.toString()) as ProtocolRequest;
-      switch (version) {
-        case ProtocolVersion['0.0.1']:
-          self.webSocketServerService.handleMessage(command, payload).catch(() => { });
-          break;
-        default:
-          logger.error(`${this.logPrefix()} Unknown protocol version: ${version}`);
-      }
+      // FIXME: Check connection validity
+      socket.on('message', (messageData) => {
+        let [version, command, payload]: ProtocolRequest = [ProtocolVersion['0.0.1'], ProtocolCommand.UNKNOWN, {}];
+        // FIXME: check for iterable object
+        [version, command, payload] = JSON.parse(messageData.toString()) as ProtocolRequest;
+        switch (version) {
+          case ProtocolVersion['0.0.1']:
+            this.webSocketServerService.handleMessage(command, payload).catch(() => {
+              logger.error(`${this.logPrefix()} Error while handling command %s message: %j`, command, payload);
+            });
+            break;
+          default:
+            logger.error(`${this.logPrefix()} Unknown protocol version: ${version}`);
+        }
+      });
+      socket.on('error', (error) => {
+        logger.error(`${this.logPrefix()} Error on WebSocket: %j`, error);
+      });
     });
   }
 
