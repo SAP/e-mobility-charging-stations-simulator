@@ -24,7 +24,7 @@ export default class UIService extends AbstractUIService {
         messageResponse = await this.messageHandlers.get(command)(payload);
       } catch (error) {
         // Log
-        logger.error(this.webSocketServer.logPrefix() + ' Handle request error: %j', error);
+        logger.error(this.webSocketServer.logPrefix() + ' Handle message error: %j', error);
         throw error;
       }
     } else {
