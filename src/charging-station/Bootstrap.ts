@@ -6,6 +6,7 @@ import Configuration from '../utils/Configuration';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import Utils from '../utils/Utils';
+import WebSocketServer from './WebSocketServer';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import chalk from 'chalk';
@@ -16,6 +17,7 @@ import { version } from '../../package.json';
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
   private workerImplementation: WorkerAbstract | null = null;
+  private readonly webSocketServer: WebSocketServer;
   private readonly storage: Storage;
   private numberOfChargingStations: number;
   private readonly version: string = version;
@@ -26,6 +28,7 @@ export default class Bootstrap {
     this.started = false;
     this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'ChargingStationWorker.js');
     this.initWorkerImplementation();
+    this.webSocketServer = new WebSocketServer();
     this.storage = StorageFactory.getStorage(Configuration.getPerformanceStorage().type, Configuration.getPerformanceStorage().URI, this.logPrefix());
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
   }
@@ -43,6 +46,7 @@ export default class Bootstrap {
         this.numberOfChargingStations = 0;
         await this.storage.open();
         await this.workerImplementation.start();
+        this.webSocketServer.start();
         // Start ChargingStation object in worker thread
         if (Configuration.getStationTemplateURLs()) {
           for (const stationURL of Configuration.getStationTemplateURLs()) {
@@ -80,6 +84,7 @@ export default class Bootstrap {
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
       await this.workerImplementation.stop();
+      this.webSocketServer.stop();
       await this.storage.close();
     } else {
       console.error(chalk.red('Trying to stop the charging stations simulator while not started'));

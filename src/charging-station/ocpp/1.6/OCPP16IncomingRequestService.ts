@@ -11,7 +11,6 @@ import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { IncomingRequestHandler } from '../../../types/ocpp/Requests';
-import { MessageType } from '../../../types/ocpp/MessageType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
