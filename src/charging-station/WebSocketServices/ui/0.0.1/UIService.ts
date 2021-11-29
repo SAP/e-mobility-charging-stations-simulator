@@ -19,7 +19,7 @@ export default class UIService extends AbstractUIService {
 
   async handleMessage(version: ProtocolVersion, command: ProtocolCommand, payload: Record<string, unknown>): Promise<void> {
     let messageResponse: Record<string, unknown>;
-    if (this.messageHandlers.has(command) && command !== ProtocolCommand.UNKNOWN) {
+    if (this.messageHandlers.has(command)) {
       try {
         // Call the method to build the response
         messageResponse = await this.messageHandlers.get(command)(payload);
