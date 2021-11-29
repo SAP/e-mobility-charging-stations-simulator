@@ -27,7 +27,7 @@ export default class WebSocketServer extends WebSocket.Server {
 
   public start(): void {
     this.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
-      // FIXME: Check connection validity
+      // FIXME: check connection validity
       socket.on('message', (messageData) => {
         let [version, command, payload]: ProtocolRequest = [ProtocolVersion['0.0.1'], ProtocolCommand.UNKNOWN, {}];
         // FIXME: check for iterable object
