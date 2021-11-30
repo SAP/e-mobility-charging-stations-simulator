@@ -12,7 +12,6 @@ export default abstract class AbstractUIService {
   constructor(uiWebSocketServer: UIWebSocketServer) {
     this.chargingStations = new Set<string>();
     this.uiWebSocketServer = uiWebSocketServer;
-    // TODO: Move the shared service code to AbstractUIService
     this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
       [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
     ]);

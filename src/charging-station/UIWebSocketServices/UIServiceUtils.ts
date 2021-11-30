@@ -17,7 +17,7 @@ export class UIServiceUtils {
         return fullProtocol;
       }
     }
-    logger.error(`${Utils.logPrefix('WebSocket Server:')} Unsupported protocol: ${protocol} or protocol version: ${version}`);
+    logger.error(`${Utils.logPrefix(' UI WebSocket Server:')} Unsupported protocol: ${protocol} or protocol version: ${version}`);
     return false;
   };
 }
