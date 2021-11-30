@@ -12,7 +12,7 @@ export default class WebSocketServer extends WebSocket.Server {
 
   public constructor(options?: WebSocket.ServerOptions, callback?: () => void) {
     // Create the WebSocket Server
-    super({ ...options, port: 80 }, callback);
+    super(options ?? { port: 80 }, callback);
     // FIXME: version the instantiation
     this.webSocketServerService = new UIService(this);
   }
