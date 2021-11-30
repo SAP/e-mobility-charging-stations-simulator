@@ -43,7 +43,7 @@ export default abstract class AbstractUIService {
     return JSON.stringify([command, payload]);
   }
 
-  protected handleListChargingStations(): Set<string> {
+  private handleListChargingStations(): Set<string> {
     return this.chargingStations;
   }
 }
