@@ -61,5 +61,5 @@ export default class Constants {
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records';
 
   static readonly DEFAULT_UI_WEBSOCKET_SERVER_HOST = 'localhost';
-  static readonly DEFAULT_UI_WEBSOCKET_SERVER_PORT = 80;
+  static readonly DEFAULT_UI_WEBSOCKET_SERVER_PORT = 8080;
 }

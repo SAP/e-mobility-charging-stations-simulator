@@ -65,7 +65,7 @@ logMaxFiles | | 7 | integer | maximum number of log files to keep
 logLevel | emerg/alert/crit/error/warning/notice/info/debug | info | string | winston logging level
 logFile | | combined.log | string | log file relative path
 logErrorFile | | error.log | string | error log file relative path
-uiWebSocketServer | | { "enabled": true, "options": { "host: "localhost", "port": 80 } } | { enabled: boolean; options: ServerOptions; } | UI WebSocket server configuration section 
+uiWebSocketServer | | { "enabled": true, "options": { "host: "localhost", "port": 8080 } } | { enabled: boolean; options: ServerOptions; } | UI WebSocket server configuration section 
 performanceStorage | | { "enabled": false, "type": "jsonfile", "file:///performanceRecords.json" } | { enabled: boolean; type: string; URI: string; } where type can be 'jsonfile' or 'mongodb' | performance storage configuration section
 stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | array of charging station templates URIs configuration section (template file name and number of stations)
 

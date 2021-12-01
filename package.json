@@ -2,8 +2,8 @@
   "name": "charging-stations-simulator",
   "version": "1.1.35",
   "engines": {
-    "node": "14.x.x",
-    "npm": "6.x.x"
+    "node": "16.x.x",
+    "npm": "8.x.x"
   },
   "repository": {
     "type": "git",
@@ -94,7 +94,7 @@
     "@rollup/plugin-json": "^4.1.0",
     "@types/mocha": "^9.0.0",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^14.17.34",
+    "@types/node": "^16.11.11",
     "@types/proper-lockfile": "^4.1.2",
     "@types/tar": "^6.1.1",
     "@types/uuid": "^8.3.3",
