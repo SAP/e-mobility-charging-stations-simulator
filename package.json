@@ -25,7 +25,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "main": "dist/start.js",
+  "main": "./dist/start.js",
   "auto-changelog": {
     "commitUrl": "https://github.com/jerome-benoit/charging-stations-simulator/commit/{id}",
     "issueUrl": "https://github.com/jerome-benoit/charging-stations-simulator/issues/{id}",
