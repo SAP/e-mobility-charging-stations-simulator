@@ -31,7 +31,7 @@ jobs:
     - name: npm run coverage
       run: npm run coverage
     - name: SonarCloud Scan
-      if: "github.repository == 'jerome-benoit/charging-stations-simulator' && matrix.node-version == '14.x'"
+      if: "github.repository == 'jerome-benoit/charging-stations-simulator' && matrix.node-version == '16.x'"
       uses: sonarsource/sonarcloud-github-action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
