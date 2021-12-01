@@ -1,3 +1,4 @@
+import { ServerOptions } from 'ws';
 import { StorageType } from './Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
@@ -5,6 +6,11 @@ import { WorkerProcessType } from './Worker';
 export interface StationTemplateURL {
   file: string;
   numberOfStations: number;
+}
+
+export interface UIWebSocketServerConfiguration {
+  enabled?: boolean;
+  options?: ServerOptions;
 }
 
 export interface StorageConfiguration {
@@ -16,6 +22,7 @@ export interface StorageConfiguration {
 export default interface ConfigurationData {
   supervisionURLs?: string[];
   stationTemplateURLs: StationTemplateURL[];
+  uiWebSocketServer?: UIWebSocketServerConfiguration;
   performanceStorage?: StorageConfiguration;
   autoReconnectMaxRetries?: number;
   distributeStationsToTenantsEqually?: boolean;

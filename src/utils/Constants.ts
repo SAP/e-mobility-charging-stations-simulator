@@ -45,8 +45,13 @@ export default class Constants {
 
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms
 
-  static readonly SUPPORTED_MEASURANDS = Object.freeze([MeterValueMeasurand.STATE_OF_CHARGE, MeterValueMeasurand.VOLTAGE,
-    MeterValueMeasurand.POWER_ACTIVE_IMPORT, MeterValueMeasurand.CURRENT_IMPORT, MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER]);
+  static readonly SUPPORTED_MEASURANDS = Object.freeze([
+    MeterValueMeasurand.STATE_OF_CHARGE,
+    MeterValueMeasurand.VOLTAGE,
+    MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+    MeterValueMeasurand.CURRENT_IMPORT,
+    MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+  ]);
 
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5;
 
@@ -54,4 +59,7 @@ export default class Constants {
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json';
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'charging-stations-simulator';
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records';
+
+  static readonly DEFAULT_UI_WEBSOCKET_SERVER_HOST = 'localhost';
+  static readonly DEFAULT_UI_WEBSOCKET_SERVER_PORT = 80;
 }

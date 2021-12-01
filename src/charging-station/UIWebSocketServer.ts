@@ -1,24 +1,25 @@
 import { Protocol, ProtocolCommand, ProtocolRequest, ProtocolVersion } from '../types/UIProtocol';
+import WebSocket, { OPEN, Server, ServerOptions } from 'ws';
 
 import AbstractUIService from './UIWebSocketServices/AbstractUIService';
 import BaseError from '../exception/BaseError';
+import Configuration from '../utils/Configuration';
 import { IncomingMessage } from 'http';
 import UIServiceFactory from './UIWebSocketServices/UIServiceFactory';
 import Utils from '../utils/Utils';
-import WebSocket from 'ws';
 import logger from '../utils/Logger';
 
-export default class UIWebSocketServer extends WebSocket.Server {
+export default class UIWebSocketServer extends Server {
   public uiService: AbstractUIService;
 
-  public constructor(options?: WebSocket.ServerOptions, callback?: () => void) {
+  public constructor(options?: ServerOptions, callback?: () => void) {
     // Create the WebSocket Server
-    super(options ?? { port: 80 }, callback);
+    super(options ?? Configuration.getUIWebSocketServer().options, callback);
   }
 
   public broadcastToClients(message: string | Record<string, unknown>): void {
     for (const client of this.clients) {
-      if (client?.readyState === WebSocket.OPEN) {
+      if (client?.readyState === OPEN) {
         client.send(message);
       }
     }

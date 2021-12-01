@@ -1,6 +1,7 @@
-import ConfigurationData, { StationTemplateURL, StorageConfiguration } from '../types/ConfigurationData';
+import ConfigurationData, { StationTemplateURL, StorageConfiguration, UIWebSocketServerConfiguration } from '../types/ConfigurationData';
 
 import Constants from './Constants';
+import { ServerOptions } from 'ws';
 import { StorageType } from '../types/Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from '../types/Worker';
@@ -24,23 +25,45 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logStatisticsInterval') ? Configuration.getConfig().logStatisticsInterval : 60;
   }
 
+  static getUIWebSocketServer(): UIWebSocketServerConfiguration {
+    let options: ServerOptions = {
+      host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
+      port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT
+    };
+    let uiWebSocketServerConfiguration: UIWebSocketServerConfiguration = {
+      enabled: true,
+      options
+    };
+    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiWebSocketServer')) {
+      if (Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer, 'options')) {
+        options = {
+          ...Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer.options, 'host') && { host: Configuration.getConfig().uiWebSocketServer.options.host },
+          ...Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer.options, 'port') && { port: Configuration.getConfig().uiWebSocketServer.options.port }
+        };
+      }
+      uiWebSocketServerConfiguration =
+      {
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer, 'enabled') && { enabled: Configuration.getConfig().uiWebSocketServer.enabled },
+        options
+      };
+    }
+    return uiWebSocketServerConfiguration;
+  }
+
   static getPerformanceStorage(): StorageConfiguration {
-    let storageConfiguration: StorageConfiguration;
+    let storageConfiguration: StorageConfiguration = {
+      enabled: false,
+      type: StorageType.JSON_FILE,
+      URI: this.getDefaultPerformanceStorageURI(StorageType.JSON_FILE)
+    };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration =
       {
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled') ? { enabled: Configuration.getConfig().performanceStorage.enabled } : { enabled: false },
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') ? { type: Configuration.getConfig().performanceStorage.type } : { type: StorageType.JSON_FILE },
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled') && { enabled: Configuration.getConfig().performanceStorage.enabled },
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') && { type: Configuration.getConfig().performanceStorage.type },
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'URI')
           ? { URI: Configuration.getConfig().performanceStorage.URI }
           : { URI: this.getDefaultPerformanceStorageURI(Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE) }
-      };
-    } else {
-      storageConfiguration =
-      {
-        enabled: false,
-        type: StorageType.JSON_FILE,
-        URI: this.getDefaultPerformanceStorageURI(StorageType.JSON_FILE)
       };
     }
     return storageConfiguration;
