@@ -117,9 +117,9 @@ export default class Bootstrap {
         },
         messageHandler: async (msg: ChargingStationWorkerMessage) => {
           if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
-            this.uiWebSocketServer.uiService.chargingStations.add(msg.data.id);
+            this.uiWebSocketServer.chargingStations.add(msg.data.id);
           } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
-            this.uiWebSocketServer.uiService.chargingStations.delete(msg.data.id);
+            this.uiWebSocketServer.chargingStations.delete(msg.data.id);
           } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
             await this.storage.storePerformanceStatistics(msg.data);
           }

@@ -4,7 +4,6 @@ export enum Protocol {
 
 export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
-  '0.0.2' = '0.0.2',
 }
 
 export enum ProtocolCommand {

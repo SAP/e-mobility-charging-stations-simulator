@@ -5,12 +5,10 @@ import UIWebSocketServer from '../UIWebSocketServer';
 import logger from '../../utils/Logger';
 
 export default abstract class AbstractUIService {
-  public readonly chargingStations: Set<string>;
   protected readonly uiWebSocketServer: UIWebSocketServer;
   protected readonly messageHandlers: Map<ProtocolCommand, ProtocolRequestHandler>;
 
   constructor(uiWebSocketServer: UIWebSocketServer) {
-    this.chargingStations = new Set<string>();
     this.uiWebSocketServer = uiWebSocketServer;
     this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
       [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
@@ -44,6 +42,6 @@ export default abstract class AbstractUIService {
   }
 
   private handleListChargingStations(): Set<string> {
-    return this.chargingStations;
+    return this.uiWebSocketServer.chargingStations;
   }
 }
