@@ -5,7 +5,7 @@ import { ChargingStationWorkerData, ChargingStationWorkerMessage, ChargingStatio
 import Configuration from '../utils/Configuration';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
-import { UIServiceUtils } from './UIWebSocketServices/UIServiceUtils';
+import { UIServiceUtils } from './ui-websocket-services/UIServiceUtils';
 import UIWebSocketServer from './UIWebSocketServer';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';

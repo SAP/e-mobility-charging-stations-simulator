@@ -1,11 +1,11 @@
 import { Protocol, ProtocolCommand, ProtocolRequest, ProtocolVersion } from '../types/UIProtocol';
 import WebSocket, { OPEN, Server, ServerOptions } from 'ws';
 
-import AbstractUIService from './UIWebSocketServices/AbstractUIService';
+import AbstractUIService from './ui-websocket-services/AbstractUIService';
 import BaseError from '../exception/BaseError';
 import Configuration from '../utils/Configuration';
 import { IncomingMessage } from 'http';
-import UIServiceFactory from './UIWebSocketServices/UIServiceFactory';
+import UIServiceFactory from './ui-websocket-services/UIServiceFactory';
 import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
 
