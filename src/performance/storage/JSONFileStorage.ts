@@ -10,9 +10,9 @@ import lockfile from 'proper-lockfile';
 export class JSONFileStorage extends Storage {
   private fd: number | null = null;
 
-  constructor(storageURI: string, logPrefix: string) {
-    super(storageURI, logPrefix);
-    this.dbName = this.storageURI.pathname;
+  constructor(storageUri: string, logPrefix: string) {
+    super(storageUri, logPrefix);
+    this.dbName = this.storageUri.pathname;
   }
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {

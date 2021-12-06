@@ -79,7 +79,7 @@ export default class ChargingStation {
   }
 
   get wsConnectionUrl(): URL {
-    return this.getSupervisionURLOCPPConfiguration() ? new URL(this.getConfigurationKey(this.stationInfo.supervisionURLOCPPKey ?? VendorDefaultParametersKey.ConnectionUrl).value + '/' + this.stationInfo.chargingStationId) : this.wsConfiguredConnectionUrl;
+    return this.getSupervisionUrlOcppConfiguration() ? new URL(this.getConfigurationKey(this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl).value + '/' + this.stationInfo.chargingStationId) : this.wsConfiguredConnectionUrl;
   }
 
   public logPrefix(): string {
@@ -439,8 +439,8 @@ export default class ChargingStation {
     }
   }
 
-  private getSupervisionURLOCPPConfiguration(): boolean {
-    return this.stationInfo.supervisionURLOCPPConfiguration ?? false;
+  private getSupervisionUrlOcppConfiguration(): boolean {
+    return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
   }
 
   private getChargingStationId(stationTemplate: ChargingStationTemplate): string {
@@ -481,7 +481,7 @@ export default class ChargingStation {
     return stationInfo;
   }
 
-  private getOCPPVersion(): OCPPVersion {
+  private getOcppVersion(): OCPPVersion {
     return this.stationInfo.ocppVersion ? this.stationInfo.ocppVersion : OCPPVersion.VERSION_16;
   }
 
@@ -555,18 +555,18 @@ export default class ChargingStation {
         this.initializeConnectorStatus(connectorId);
       }
     }
-    this.wsConfiguredConnectionUrl = new URL(this.getConfiguredSupervisionURL().href + '/' + this.stationInfo.chargingStationId);
-    switch (this.getOCPPVersion()) {
+    this.wsConfiguredConnectionUrl = new URL(this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId);
+    switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService = new OCPP16IncomingRequestService(this);
         this.ocppRequestService = new OCPP16RequestService(this, new OCPP16ResponseService(this));
         break;
       default:
-        this.handleUnsupportedVersion(this.getOCPPVersion());
+        this.handleUnsupportedVersion(this.getOcppVersion());
         break;
     }
     // OCPP parameters
-    this.initOCPPParameters();
+    this.initOcppParameters();
     if (this.stationInfo.autoRegister) {
       this.bootNotificationResponse = {
         currentTime: new Date().toISOString(),
@@ -580,9 +580,9 @@ export default class ChargingStation {
     }
   }
 
-  private initOCPPParameters(): void {
-    if (this.getSupervisionURLOCPPConfiguration() && !this.getConfigurationKey(this.stationInfo.supervisionURLOCPPKey ?? VendorDefaultParametersKey.ConnectionUrl)) {
-      this.addConfigurationKey(VendorDefaultParametersKey.ConnectionUrl, this.getConfiguredSupervisionURL().href, { reboot: true });
+  private initOcppParameters(): void {
+    if (this.getSupervisionUrlOcppConfiguration() && !this.getConfigurationKey(this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl)) {
+      this.addConfigurationKey(VendorDefaultParametersKey.ConnectionUrl, this.getConfiguredSupervisionUrl().href, { reboot: true });
     }
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(StandardParametersKey.SupportedFeatureProfiles, `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging}`);
@@ -928,8 +928,8 @@ export default class ChargingStation {
     }
   }
 
-  private getConfiguredSupervisionURL(): URL {
-    const supervisionUrls = Utils.cloneObject<string | string[]>(this.stationInfo.supervisionURL ?? Configuration.getSupervisionURLs());
+  private getConfiguredSupervisionUrl(): URL {
+    const supervisionUrls = Utils.cloneObject<string | string[]>(this.stationInfo.supervisionUrl ?? Configuration.getSupervisionUrls());
     let indexUrl = 0;
     if (!Utils.isEmptyArray(supervisionUrls)) {
       if (Configuration.getDistributeStationsToTenantsEqually()) {
@@ -971,12 +971,12 @@ export default class ChargingStation {
       this.wsConnection.close();
     }
     let protocol: string;
-    switch (this.getOCPPVersion()) {
+    switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         protocol = 'ocpp' + OCPPVersion.VERSION_16;
         break;
       default:
-        this.handleUnsupportedVersion(this.getOCPPVersion());
+        this.handleUnsupportedVersion(this.getOcppVersion());
         break;
     }
     this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);

@@ -8,12 +8,12 @@ import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
 
 export abstract class Storage {
-  protected readonly storageURI: URL;
+  protected readonly storageUri: URL;
   protected readonly logPrefix: string;
   protected dbName: string;
 
-  constructor(storageURI: string, logPrefix: string) {
-    this.storageURI = new URL(storageURI);
+  constructor(storageUri: string, logPrefix: string) {
+    this.storageUri = new URL(storageUri);
     this.logPrefix = logPrefix;
   }
 

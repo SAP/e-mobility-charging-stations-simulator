@@ -1,4 +1,4 @@
-import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol';
+import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UiProtocol';
 
 import BaseError from '../../exception/BaseError';
 import UIWebSocketServer from '../UIWebSocketServer';

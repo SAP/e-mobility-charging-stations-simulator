@@ -49,7 +49,7 @@ But the modifications to test have to be done to the files in the build result d
 
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
-supervisionURLs | | [] | string[] |  array of connection URIs to OCPP-J servers
+supervisionUrls | | [] | string[] |  array of connection URIs to OCPP-J servers
 distributeStationsToTenantsEqually | true/false | true | boolean | distribute charging stations uniformly to the OCPP-J servers
 workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker threads process type
 workerStartDelay | | 500 | integer | milliseconds to wait at charging station worker threads startup
@@ -67,7 +67,7 @@ logFile | | combined.log | string | log file relative path
 logErrorFile | | error.log | string | error log file relative path
 uiWebSocketServer | | { "enabled": true, "options": { "host: "localhost", "port": 8080 } } | { enabled: boolean; options: ServerOptions; } | UI WebSocket server configuration section 
 performanceStorage | | { "enabled": false, "type": "jsonfile", "file:///performanceRecords.json" } | { enabled: boolean; type: string; URI: string; } where type can be 'jsonfile' or 'mongodb' | performance storage configuration section
-stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | array of charging station templates URIs configuration section (template file name and number of stations)
+stationTemplateUrls | | {}[] | { file: string; numberOfStations: number; }[] | array of charging station templates URIs configuration section (template file name and number of stations)
 
 #### Worker process model: 
 
@@ -84,11 +84,11 @@ stationTemplateURLs | | {}[] | { file: string; numberOfStations: number; }[] | a
 
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
-supervisionURL | | '' | string | connection URI to OCPP-J server
+supervisionUrl | | '' | string | connection URI to OCPP-J server
 supervisionUser | | '' | string | basic HTTP authentication user to OCPP-J server
 supervisionPassword | | '' | string | basic HTTP authentication password to OCPP-J server
-supervisionURLOCPPConfiguration | true/false | false | boolean | Allow supervision URL configuration via a vendor OCPP parameter key
-supervisionURLOCPPKey | | 'ConnectionUrl' | string | The vendor string that will be used as a vendor OCPP parameter key to set the supervision URL
+supervisionUrlOcppConfiguration | true/false | false | boolean | Allow supervision URL configuration via a vendor OCPP parameter key
+supervisionUrlOcppKey | | 'ConnectionUrl' | string | The vendor string that will be used as a vendor OCPP parameter key to set the supervision URL
 ocppVersion | 1.6 | 1.6 | string | OCPP version 
 ocppProtocol | json | json | string | OCPP protocol
 wsOptions | | {} | ClientOptions & ClientRequestArgs | [ws](https://github.com/websockets/ws) and node.js [http](https://nodejs.org/api/http.html) clients options intersection

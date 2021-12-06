@@ -1,5 +1,5 @@
 import AbstractUIService from './AbstractUIService';
-import { ProtocolVersion } from '../../types/UIProtocol';
+import { ProtocolVersion } from '../../types/UiProtocol';
 import UIService001 from './UIService001';
 import UIWebSocketServer from '../UIWebSocketServer';
 

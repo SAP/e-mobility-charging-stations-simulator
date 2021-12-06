@@ -23,7 +23,7 @@ export interface StatisticsData {
 
 export default interface Statistics {
   id: string;
-  URI: string;
+  uri: string;
   createdAt: Date;
   updatedAt?: Date;
   statisticsData: Map<string, Partial<StatisticsData>>;

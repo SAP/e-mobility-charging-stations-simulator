@@ -1,4 +1,4 @@
-import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol';
+import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UiProtocol';
 
 import AbstractUIService from './AbstractUIService';
 import UIWebSocketServer from '../UIWebSocketServer';

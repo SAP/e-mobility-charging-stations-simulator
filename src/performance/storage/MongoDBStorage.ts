@@ -10,11 +10,11 @@ export class MongoDBStorage extends Storage {
   private readonly client: MongoClient | null;
   private connected: boolean;
 
-  constructor(storageURI: string, logPrefix: string) {
-    super(storageURI, logPrefix);
-    this.client = new MongoClient(this.storageURI.toString());
+  constructor(storageUri: string, logPrefix: string) {
+    super(storageUri, logPrefix);
+    this.client = new MongoClient(this.storageUri.toString());
     this.connected = false;
-    this.dbName = this.storageURI.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
+    this.dbName = this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
   }
 
   public async storePerformanceStatistics(performanceStatistics: Statistics): Promise<void> {

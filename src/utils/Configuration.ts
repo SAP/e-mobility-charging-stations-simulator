@@ -1,4 +1,4 @@
-import ConfigurationData, { StationTemplateURL, StorageConfiguration, UIWebSocketServerConfiguration } from '../types/ConfigurationData';
+import ConfigurationData, { StationTemplateUrl, StorageConfiguration, UIWebSocketServerConfiguration } from '../types/ConfigurationData';
 
 import Constants from './Constants';
 import { ServerOptions } from 'ws';
@@ -51,19 +51,20 @@ export default class Configuration {
   }
 
   static getPerformanceStorage(): StorageConfiguration {
+    Configuration.warnDeprecatedConfigurationKey('URI', 'performanceStorage', 'Use \'uri\' instead');
     let storageConfiguration: StorageConfiguration = {
       enabled: false,
       type: StorageType.JSON_FILE,
-      URI: this.getDefaultPerformanceStorageURI(StorageType.JSON_FILE)
+      uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration =
       {
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled') && { enabled: Configuration.getConfig().performanceStorage.enabled },
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') && { type: Configuration.getConfig().performanceStorage.type },
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'URI')
-          ? { URI: Configuration.getConfig().performanceStorage.URI }
-          : { URI: this.getDefaultPerformanceStorageURI(Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE) }
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'uri')
+          ? { uri: Configuration.getConfig().performanceStorage.uri }
+          : { uri: this.getDefaultPerformanceStorageUri(Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE) }
       };
     }
     return storageConfiguration;
@@ -79,14 +80,16 @@ export default class Configuration {
     }
   }
 
-  static getStationTemplateURLs(): StationTemplateURL[] {
-    Configuration.getConfig().stationTemplateURLs.forEach((stationURL: StationTemplateURL) => {
-      if (!Configuration.isUndefined(stationURL['numberOfStation'])) {
-        console.error(chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key 'numberOfStation' usage for template file '${stationURL.file}' in 'stationTemplateURLs'. Use 'numberOfStations' instead}`);
+  static getStationTemplateUrls(): StationTemplateUrl[] {
+    Configuration.warnDeprecatedConfigurationKey('stationTemplateURLs', null, 'Use \'stationTemplateUrls\' instead');
+    !Configuration.isUndefined(Configuration.getConfig()['stationTemplateURLs']) && (Configuration.getConfig().stationTemplateUrls = Configuration.getConfig()['stationTemplateURLs'] as StationTemplateUrl[]);
+    Configuration.getConfig().stationTemplateUrls.forEach((stationUrl: StationTemplateUrl) => {
+      if (!Configuration.isUndefined(stationUrl['numberOfStation'])) {
+        console.error(chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key 'numberOfStation' usage for template file '${stationUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead}`);
       }
     });
     // Read conf
-    return Configuration.getConfig().stationTemplateURLs;
+    return Configuration.getConfig().stationTemplateUrls;
   }
 
   static getWorkerProcess(): WorkerProcessType {
@@ -145,9 +148,11 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile') ? Configuration.getConfig().logErrorFile : 'error.log';
   }
 
-  static getSupervisionURLs(): string[] {
+  static getSupervisionUrls(): string[] {
+    Configuration.warnDeprecatedConfigurationKey('supervisionURLs', null, 'Use \'supervisionUrls\' instead');
+    !Configuration.isUndefined(Configuration.getConfig()['supervisionURLs']) && (Configuration.getConfig().supervisionUrls = Configuration.getConfig()['supervisionURLs'] as string[]);
     // Read conf
-    return Configuration.getConfig().supervisionURLs;
+    return Configuration.getConfig().supervisionUrls;
   }
 
   static getDistributeStationsToTenantsEqually(): boolean {
@@ -199,7 +204,7 @@ export default class Configuration {
     }
   }
 
-  private static getDefaultPerformanceStorageURI(storageType: StorageType) {
+  private static getDefaultPerformanceStorageUri(storageType: StorageType) {
     const SQLiteFileName = `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
     switch (storageType) {
       case StorageType.JSON_FILE:

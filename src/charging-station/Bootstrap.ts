@@ -34,7 +34,7 @@ export default class Bootstrap {
     }));
     Configuration.getPerformanceStorage().enabled && (this.storage = StorageFactory.getStorage(
       Configuration.getPerformanceStorage().type,
-      Configuration.getPerformanceStorage().URI,
+      Configuration.getPerformanceStorage().uri,
       this.logPrefix()
     ));
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
@@ -54,25 +54,26 @@ export default class Bootstrap {
         await this.storage?.open();
         await this.workerImplementation.start();
         this.uiWebSocketServer?.start();
+        const stationTemplateUrls = Configuration.getStationTemplateUrls();
         // Start ChargingStation object in worker thread
-        if (Configuration.getStationTemplateURLs()) {
-          for (const stationURL of Configuration.getStationTemplateURLs()) {
+        if (stationTemplateUrls) {
+          for (const stationTemplateUrl of stationTemplateUrls) {
             try {
-              const nbStations = stationURL.numberOfStations ?? 0;
+              const nbStations = stationTemplateUrl.numberOfStations ?? 0;
               for (let index = 1; index <= nbStations; index++) {
                 const workerData: ChargingStationWorkerData = {
                   index,
-                  templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationURL.file))
+                  templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationTemplateUrl.file))
                 };
                 await this.workerImplementation.addElement(workerData);
                 this.numberOfChargingStations++;
               }
             } catch (error) {
-              console.error(chalk.red('Charging station start with template file ' + stationURL.file + ' error '), error);
+              console.error(chalk.red('Charging station start with template file ' + stationTemplateUrl.file + ' error '), error);
             }
           }
         } else {
-          console.warn(chalk.yellow('No stationTemplateURLs defined in configuration, exiting'));
+          console.warn(chalk.yellow('No stationTemplateUrls defined in configuration, exiting'));
         }
         if (this.numberOfChargingStations === 0) {
           console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'));

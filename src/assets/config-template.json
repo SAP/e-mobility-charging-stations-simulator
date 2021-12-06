@@ -1,5 +1,5 @@
 {
-  "supervisionURLs": [
+  "supervisionUrls": [
     "ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"
   ],
   "distributeStationsToTenantsEqually": true,
@@ -10,7 +10,7 @@
   "workerProcess": "workerSet",
   "workerPoolMinSize": 4,
   "workerPoolMaxSize": 16,
-  "stationTemplateURLs": [
+  "stationTemplateUrls": [
     {
       "file": "siemens.station-template.json",
       "numberOfStations": 1

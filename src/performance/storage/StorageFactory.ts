@@ -11,14 +11,14 @@ export class StorageFactory {
     // This is intentional
   }
 
-  public static getStorage(type: StorageType, connectionURI: string, logPrefix: string): Storage {
+  public static getStorage(type: StorageType, connectionUri: string, logPrefix: string): Storage {
     let storageInstance: Storage = null;
     switch (type) {
       case StorageType.JSON_FILE:
-        storageInstance = new JSONFileStorage(connectionURI, logPrefix);
+        storageInstance = new JSONFileStorage(connectionUri, logPrefix);
         break;
       case StorageType.MONGO_DB:
-        storageInstance = new MongoDBStorage(connectionURI, logPrefix);
+        storageInstance = new MongoDBStorage(connectionUri, logPrefix);
         break;
       // case StorageType.MYSQL:
       // case StorageType.MARIA_DB:

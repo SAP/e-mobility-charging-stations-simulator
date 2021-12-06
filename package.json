@@ -104,7 +104,7 @@
     "auto-changelog": "^2.3.0",
     "clinic": "^10.0.0",
     "cross-env": "^7.0.3",
-    "eslint": "^8.3.0",
+    "eslint": "^8.4.0",
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-jsdoc": "^37.1.0",
     "eslint-plugin-node": "^11.1.0",

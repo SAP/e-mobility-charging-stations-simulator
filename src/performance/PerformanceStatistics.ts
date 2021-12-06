@@ -19,10 +19,10 @@ export default class PerformanceStatistics {
   private readonly statistics: Statistics;
   private displayInterval: NodeJS.Timeout;
 
-  public constructor(objId: string, URI: URL) {
+  public constructor(objId: string, uri: URL) {
     this.objId = objId;
     this.initializePerformanceObserver();
-    this.statistics = { id: this.objId ?? 'Object id not specified', URI: URI.toString(), createdAt: new Date(), statisticsData: new Map<string, Partial<StatisticsData>>() };
+    this.statistics = { id: this.objId ?? 'Object id not specified', uri: uri.toString(), createdAt: new Date(), statisticsData: new Map<string, Partial<StatisticsData>>() };
   }
 
   public static beginMeasure(id: string): string {
@@ -68,7 +68,7 @@ export default class PerformanceStatistics {
   public start(): void {
     this.startLogStatisticsInterval();
     if (Configuration.getPerformanceStorage().enabled) {
-      logger.info(`${this.logPrefix()} storage enabled: type ${Configuration.getPerformanceStorage().type}, URI: ${Configuration.getPerformanceStorage().URI}`);
+      logger.info(`${this.logPrefix()} storage enabled: type ${Configuration.getPerformanceStorage().type}, uri: ${Configuration.getPerformanceStorage().uri}`);
     }
   }
 

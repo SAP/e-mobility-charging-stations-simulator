@@ -14,8 +14,8 @@ export class MikroORMStorage extends Storage {
   private storageType: StorageType;
   private orm: MikroORM | null;
 
-  constructor(storageURI: string, logPrefix: string, storageType: StorageType) {
-    super(storageURI, logPrefix);
+  constructor(storageUri: string, logPrefix: string, storageType: StorageType) {
+    super(storageUri, logPrefix);
     this.storageType = storageType;
     this.dbName = this.getDBName();
   }
@@ -54,7 +54,7 @@ export class MikroORMStorage extends Storage {
     if (this.storageType === StorageType.SQLITE) {
       return `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
     }
-    return this.storageURI.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
+    return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
   }
 
   private getOptions(): Configuration<IDatabaseDriver<Connection>> | Options<IDatabaseDriver<Connection>> {
@@ -71,7 +71,7 @@ export class MikroORMStorage extends Storage {
       case StorageType.SQLITE:
       case StorageType.MARIA_DB:
       case StorageType.MYSQL:
-        return this.storageURI.toString();
+        return this.storageUri.toString();
     }
   }
 }
