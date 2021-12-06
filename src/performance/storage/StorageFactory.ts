@@ -1,7 +1,7 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { JSONFileStorage } from './JSONFileStorage';
-import { MikroORMStorage } from './MikroORMStorage';
+import { JsonFileStorage } from './JsonFileStorage';
+import { MikroOrmStorage } from './MikroOrmStorage';
 import { MongoDBStorage } from './MongoDBStorage';
 import { Storage } from './Storage';
 import { StorageType } from '../../types/Storage';
@@ -15,7 +15,7 @@ export class StorageFactory {
     let storageInstance: Storage = null;
     switch (type) {
       case StorageType.JSON_FILE:
-        storageInstance = new JSONFileStorage(connectionUri, logPrefix);
+        storageInstance = new JsonFileStorage(connectionUri, logPrefix);
         break;
       case StorageType.MONGO_DB:
         storageInstance = new MongoDBStorage(connectionUri, logPrefix);
@@ -23,7 +23,7 @@ export class StorageFactory {
       // case StorageType.MYSQL:
       // case StorageType.MARIA_DB:
       // case StorageType.SQLITE:
-      //   storageInstance = new MikroORMStorage(connectionURI, logPrefix, type);
+      //   storageInstance = new MikroOrmStorage(connectionURI, logPrefix, type);
       //   break;
       default:
         throw new Error(`${logPrefix} Unknown storage type: ${type}`);

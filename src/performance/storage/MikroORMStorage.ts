@@ -10,7 +10,7 @@ import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
-export class MikroORMStorage extends Storage {
+export class MikroOrmStorage extends Storage {
   private storageType: StorageType;
   private orm: MikroORM | null;
 

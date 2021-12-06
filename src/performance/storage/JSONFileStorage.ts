@@ -7,7 +7,7 @@ import { Storage } from './Storage';
 import fs from 'fs';
 import lockfile from 'proper-lockfile';
 
-export class JSONFileStorage extends Storage {
+export class JsonFileStorage extends Storage {
   private fd: number | null = null;
 
   constructor(storageUri: string, logPrefix: string) {
