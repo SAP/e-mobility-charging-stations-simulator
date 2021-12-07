@@ -61,7 +61,9 @@ export default class Configuration {
       storageConfiguration =
       {
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled') && { enabled: Configuration.getConfig().performanceStorage.enabled },
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') && { type: Configuration.getConfig().performanceStorage.type },
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type')
+          ? { type: Configuration.getConfig().performanceStorage.type }
+          : { type: StorageType.JSON_FILE },
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'uri')
           ? { uri: Configuration.getConfig().performanceStorage.uri }
           : { uri: this.getDefaultPerformanceStorageUri(Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE) }

@@ -4,7 +4,8 @@
   ],
   "distributeStationsToTenantsEqually": true,
   "performanceStorage": {
-    "enabled": true
+    "enabled": true,
+    "type": "jsonfile"
   },
   "chargingStationsPerWorker": 1,
   "workerProcess": "workerSet",
