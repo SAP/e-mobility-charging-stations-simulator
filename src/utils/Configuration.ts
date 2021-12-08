@@ -192,17 +192,17 @@ export default class Configuration {
 
   private static getConfigurationFileWatcher(): fs.FSWatcher {
     try {
-      return fs.watch(Configuration.configurationFilePath, async (event, filename): Promise<void> => {
+      return fs.watch(Configuration.configurationFilePath, (event, filename): void => {
         if (filename && event === 'change') {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
           if (!Configuration.isUndefined(Configuration.configurationChangeCallback)) {
-            await Configuration.configurationChangeCallback();
+            Configuration.configurationChangeCallback().catch(() => { /* This is intentional */ });
           }
         }
       });
     } catch (error) {
-      Configuration.handleFileException(Configuration.logPrefix(), 'Configuration', Configuration.configurationFilePath, error);
+      Configuration.handleFileException(Configuration.logPrefix(), 'Configuration', Configuration.configurationFilePath, error as Error);
     }
   }
 
