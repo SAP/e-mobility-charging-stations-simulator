@@ -37,12 +37,14 @@ export default class Configuration {
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiWebSocketServer')) {
       if (Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer, 'options')) {
         options = {
+          ...options,
           ...Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer.options, 'host') && { host: Configuration.getConfig().uiWebSocketServer.options.host },
           ...Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer.options, 'port') && { port: Configuration.getConfig().uiWebSocketServer.options.port }
         };
       }
       uiWebSocketServerConfiguration =
       {
+        ...uiWebSocketServerConfiguration,
         ...Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer, 'enabled') && { enabled: Configuration.getConfig().uiWebSocketServer.enabled },
         options
       };
@@ -60,15 +62,10 @@ export default class Configuration {
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration =
       {
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled')
-          ? { enabled: Configuration.getConfig().performanceStorage.enabled }
-          : { enabled: false },
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type')
-          ? { type: Configuration.getConfig().performanceStorage.type }
-          : { type: StorageType.JSON_FILE },
-        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'uri')
-          ? { uri: Configuration.getConfig().performanceStorage.uri }
-          : { uri: this.getDefaultPerformanceStorageUri(Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE) }
+        ...storageConfiguration,
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'enabled') && { enabled: Configuration.getConfig().performanceStorage.enabled },
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'type') && { type: Configuration.getConfig().performanceStorage.type },
+        ...Configuration.objectHasOwnProperty(Configuration.getConfig().performanceStorage, 'uri') && { uri: this.getDefaultPerformanceStorageUri(Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE) }
       };
     }
     return storageConfiguration;
