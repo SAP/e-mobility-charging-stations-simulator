@@ -33,16 +33,20 @@ export default class OCPP16ResponseService extends OCPPResponseService {
   }
 
   public async handleResponse(commandName: OCPP16RequestCommand, payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
-    if (this.responseHandlers.has(commandName)) {
-      try {
-        await this.responseHandlers.get(commandName)(payload, requestPayload);
-      } catch (error) {
-        logger.error(this.chargingStation.logPrefix() + ' Handle request response error: %j', error);
-        throw error;
+    if (this.chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
+      if (this.responseHandlers.has(commandName)) {
+        try {
+          await this.responseHandlers.get(commandName)(payload, requestPayload);
+        } catch (error) {
+          logger.error(this.chargingStation.logPrefix() + ' Handle request response error: %j', error);
+          throw error;
+        }
+      } else {
+        // Throw exception
+        throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request response payload ${JSON.stringify(payload, null, 2)}`, commandName);
       }
     } else {
-      // Throw exception
-      throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request response payload ${JSON.stringify(payload, null, 2)}`, commandName);
+      throw new OCPPError(ErrorType.SECURITY_ERROR, `The charging station is not registered on the central server. ${commandName} cannot be not issued to handle request response payload ${JSON.stringify(payload, null, 2)}`, commandName);
     }
   }
 

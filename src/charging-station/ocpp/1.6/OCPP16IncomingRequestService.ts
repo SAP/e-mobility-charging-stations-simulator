@@ -47,18 +47,22 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
     let result: Record<string, unknown>;
-    if (this.incomingRequestHandlers.has(commandName)) {
-      try {
-        // Call the method to build the result
-        result = await this.incomingRequestHandlers.get(commandName)(commandPayload);
-      } catch (error) {
-        // Log
-        logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);
-        throw error;
+    if (this.chargingStation.isRegistered()) {
+      if (this.incomingRequestHandlers.has(commandName)) {
+        try {
+          // Call the method to build the result
+          result = await this.incomingRequestHandlers.get(commandName)(commandPayload);
+        } catch (error) {
+          // Log
+          logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);
+          throw error;
+        }
+      } else {
+        // Throw exception
+        throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
       }
     } else {
-      // Throw exception
-      throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
+      throw new OCPPError(ErrorType.SECURITY_ERROR, `The charging station is not registered on the central server. ${commandName} cannot be not issued to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
     }
     // Send the built result
     await this.chargingStation.ocppRequestService.sendResult(messageId, result, commandName);
