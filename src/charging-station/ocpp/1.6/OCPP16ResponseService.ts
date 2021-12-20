@@ -10,7 +10,7 @@ import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
-import OCPPError from '../OCPPError';
+import OCPPError from '../../../exception/OCPPError';
 import OCPPResponseService from '../OCPPResponseService';
 import { ResponseHandler } from '../../../types/ocpp/Responses';
 import Utils from '../../../utils/Utils';

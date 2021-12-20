@@ -1,9 +1,9 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
+import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 
-import BaseError from '../../exception/BaseError';
-import { ErrorType } from '../../types/ocpp/ErrorType';
+import BaseError from './BaseError';
+import { ErrorType } from '../types/ocpp/ErrorType';
 
 export default class OCPPError extends BaseError {
   code: ErrorType | IncomingRequestCommand;

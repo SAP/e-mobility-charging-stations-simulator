@@ -16,7 +16,7 @@ import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointE
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
-import OCPPError from '../OCPPError';
+import OCPPError from '../../../exception/OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';

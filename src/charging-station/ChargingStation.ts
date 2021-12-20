@@ -24,7 +24,7 @@ import { MessageType } from '../types/ocpp/MessageType';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
-import OCPPError from './ocpp/OCPPError';
+import OCPPError from '../exception/OCPPError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
@@ -117,11 +117,11 @@ export default class ChargingStation {
   }
 
   public isWebSocketConnectionOpened(): boolean {
-    return this.wsConnection?.readyState === OPEN;
+    return this?.wsConnection?.readyState === OPEN;
   }
 
   public isRegistered(): boolean {
-    return this.bootNotificationResponse?.status === RegistrationStatus.ACCEPTED;
+    return this?.bootNotificationResponse?.status === RegistrationStatus.ACCEPTED;
   }
 
   public isChargingStationAvailable(): boolean {
@@ -634,6 +634,10 @@ export default class ChargingStation {
         }
       } while (!this.isRegistered() && (registrationRetryCount <= this.getRegistrationMaxRetries() || this.getRegistrationMaxRetries() === -1));
     }
+    if (this.isRegistered() && this.stationInfo.autoRegister) {
+      await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel,
+        this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
+    }
     if (this.isRegistered()) {
       await this.startMessageSequence();
       this.stopped && (this.stopped = false);
@@ -829,7 +833,7 @@ export default class ChargingStation {
   }
 
   private getMaxNumberOfConnectors(): number {
-    let maxConnectors = 0;
+    let maxConnectors: number;
     if (!Utils.isEmptyArray(this.stationInfo.numberOfConnectors)) {
       const numberOfConnectors = this.stationInfo.numberOfConnectors as number[];
       // Distribute evenly the number of connectors

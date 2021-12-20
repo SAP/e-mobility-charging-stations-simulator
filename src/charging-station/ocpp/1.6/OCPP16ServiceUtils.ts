@@ -4,7 +4,7 @@ import { MeterValueContext, MeterValueLocation, MeterValueUnit, OCPP16MeterValue
 
 import ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import OCPPError from '../OCPPError';
+import OCPPError from '../../../exception/OCPPError';
 import { RequestCommand } from '../../../types/ocpp/Requests';
 import { SampledValueTemplate } from '../../../types/Connectors';
 import Utils from '../../../utils/Utils';
