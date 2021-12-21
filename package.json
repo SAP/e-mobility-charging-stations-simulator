@@ -82,7 +82,7 @@
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.5",
-    "ws": "^8.3.0"
+    "ws": "^8.4.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.5",
@@ -94,13 +94,13 @@
     "@rollup/plugin-json": "^4.1.0",
     "@types/mocha": "^9.0.0",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^16.11.14",
+    "@types/node": "^16.11.15",
     "@types/proper-lockfile": "^4.1.2",
     "@types/tar": "^6.1.1",
     "@types/uuid": "^8.3.3",
     "@types/ws": "^8.2.2",
-    "@typescript-eslint/eslint-plugin": "^5.7.0",
-    "@typescript-eslint/parser": "^5.7.0",
+    "@typescript-eslint/eslint-plugin": "^5.8.0",
+    "@typescript-eslint/parser": "^5.8.0",
     "auto-changelog": "^2.3.0",
     "clinic": "^10.0.0",
     "cross-env": "^7.0.3",
