@@ -1,4 +1,4 @@
-import { Protocol, ProtocolCommand, ProtocolRequest, ProtocolVersion } from '../types/UiProtocol';
+import { Protocol, ProtocolCommand, ProtocolRequest, ProtocolVersion } from '../types/UIProtocol';
 import WebSocket, { OPEN, Server, ServerOptions } from 'ws';
 
 import AbstractUIService from './ui-websocket-services/AbstractUIService';

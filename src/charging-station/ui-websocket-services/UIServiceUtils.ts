@@ -1,4 +1,4 @@
-import { Protocol, ProtocolVersion } from '../../types/UiProtocol';
+import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
 
 import { IncomingMessage } from 'http';
 import Utils from '../../utils/Utils';
