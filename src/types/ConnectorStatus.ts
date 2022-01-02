@@ -1,12 +1,8 @@
-import { MeterValue, SampledValue } from './ocpp/MeterValues';
-
 import { AvailabilityType } from './ocpp/Requests';
 import { ChargePointStatus } from './ocpp/ChargePointStatus';
 import { ChargingProfile } from './ocpp/ChargingProfile';
-
-export interface SampledValueTemplate extends SampledValue {
-  fluctuationPercent?: number;
-}
+import { MeterValue } from './ocpp/MeterValues';
+import { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates';
 
 export interface ConnectorStatus {
   availability: AvailabilityType;

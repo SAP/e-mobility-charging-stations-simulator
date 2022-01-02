@@ -1,7 +1,7 @@
 import ChargingStationConfiguration from './ChargingStationConfiguration';
 import { ClientOptions } from 'ws';
 import { ClientRequestArgs } from 'http';
-import { ConnectorStatus } from './Connectors';
+import { ConnectorStatus } from './ConnectorStatus';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';
 

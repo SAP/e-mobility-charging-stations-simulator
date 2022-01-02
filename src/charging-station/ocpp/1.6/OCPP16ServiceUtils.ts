@@ -6,7 +6,7 @@ import ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import OCPPError from '../../../exception/OCPPError';
 import { RequestCommand } from '../../../types/ocpp/Requests';
-import { SampledValueTemplate } from '../../../types/Connectors';
+import { SampledValueTemplate } from '../../../types/MeasurandPerPhaseSampledValueTemplates';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
