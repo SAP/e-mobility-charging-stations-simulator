@@ -85,8 +85,8 @@
     "ws": "^8.4.0"
   },
   "optionalDependencies": {
-    "bufferutil": "^4.0.5",
-    "utf-8-validate": "^5.0.7"
+    "bufferutil": "^4.0.6",
+    "utf-8-validate": "^5.0.8"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
@@ -102,11 +102,11 @@
     "@typescript-eslint/eslint-plugin": "^5.8.1",
     "@typescript-eslint/parser": "^5.8.1",
     "auto-changelog": "^2.3.0",
-    "clinic": "^10.0.0",
+    "clinic": "^11.0.0",
     "cross-env": "^7.0.3",
-    "eslint": "^8.5.0",
+    "eslint": "^8.6.0",
     "eslint-plugin-import": "^2.25.3",
-    "eslint-plugin-jsdoc": "^37.4.2",
+    "eslint-plugin-jsdoc": "^37.5.0",
     "eslint-plugin-node": "^11.1.0",
     "expect": "^27.4.2",
     "mocha": "^9.1.3",
