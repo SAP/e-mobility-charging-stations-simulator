@@ -2,6 +2,7 @@ import { ServerOptions } from 'ws';
 import { StorageType } from './Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
+import { level } from 'winston';
 
 export interface StationTemplateUrl {
   file: string;
@@ -34,7 +35,7 @@ export default interface ConfigurationData {
   chargingStationsPerWorker?: number;
   logStatisticsInterval?: number;
   logFormat?: string;
-  logLevel?: string;
+  logLevel?: level;
   logRotate?: boolean;
   logMaxFiles?: number;
   logFile?: string;

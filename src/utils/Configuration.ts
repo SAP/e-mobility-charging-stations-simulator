@@ -7,6 +7,7 @@ import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from '../types/Worker';
 import chalk from 'chalk';
 import fs from 'fs';
+import { level } from 'winston';
 import path from 'path';
 
 export default class Configuration {
@@ -136,8 +137,8 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') ? Configuration.getConfig().logMaxFiles : 7;
   }
 
-  static getLogLevel(): string {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel : 'info';
+  static getLogLevel(): level {
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel.toLowerCase() as level : 'info';
   }
 
   static getLogFile(): string {
