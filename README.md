@@ -49,8 +49,8 @@ But the modifications to test have to be done to the files in the build result d
 
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
-supervisionUrls | | [] | string[] |  array of connection URIs to OCPP-J servers
-distributeStationsToTenantsEqually | true/false | true | boolean | distribute charging stations uniformly to the OCPP-J servers
+supervisionUrls | | [] | string \| string[] | string or array of global connection URIs to OCPP-J servers
+supervisionUrlDistribution | round-robin/random/sequential | round-robin | boolean | supervision urls distribution policy to simulated charging stations
 workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker threads process type
 workerStartDelay | | 500 | integer | milliseconds to wait at charging station worker threads startup
 workerPoolMinSize | | 4 | integer | worker threads pool minimum number of threads
@@ -84,7 +84,7 @@ stationTemplateUrls | | {}[] | { file: string; numberOfStations: number; }[] | a
 
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
-supervisionUrl | | '' | string | connection URI to OCPP-J server
+supervisionUrls | | '' | string \| string[] | string or array of connection URIs to OCPP-J servers. It has priority over the global configuration parameter
 supervisionUser | | '' | string | basic HTTP authentication user to OCPP-J server
 supervisionPassword | | '' | string | basic HTTP authentication password to OCPP-J server
 supervisionUrlOcppConfiguration | true/false | false | boolean | Allow supervision URL configuration via a vendor OCPP parameter key

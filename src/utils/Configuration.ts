@@ -1,4 +1,4 @@
-import ConfigurationData, { StationTemplateUrl, StorageConfiguration, UIWebSocketServerConfiguration } from '../types/ConfigurationData';
+import ConfigurationData, { StationTemplateUrl, StorageConfiguration, SupervisionUrlDistribution, UIWebSocketServerConfiguration } from '../types/ConfigurationData';
 
 import Constants from './Constants';
 import { ServerOptions } from 'ws';
@@ -150,16 +150,17 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile') ? Configuration.getConfig().logErrorFile : 'error.log';
   }
 
-  static getSupervisionUrls(): string[] {
+  static getSupervisionUrls(): string | string[] {
     Configuration.warnDeprecatedConfigurationKey('supervisionURLs', null, 'Use \'supervisionUrls\' instead');
     !Configuration.isUndefined(Configuration.getConfig()['supervisionURLs']) && (Configuration.getConfig().supervisionUrls = Configuration.getConfig()['supervisionURLs'] as string[]);
     // Read conf
     return Configuration.getConfig().supervisionUrls;
   }
 
-  static getDistributeStationsToTenantsEqually(): boolean {
-    Configuration.warnDeprecatedConfigurationKey('distributeStationToTenantEqually', null, 'Use \'distributeStationsToTenantsEqually\' instead');
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'distributeStationsToTenantsEqually') ? Configuration.getConfig().distributeStationsToTenantsEqually : true;
+  static getSupervisionUrlDistribution(): SupervisionUrlDistribution {
+    Configuration.warnDeprecatedConfigurationKey('distributeStationToTenantEqually', null, 'Use \'supervisionUrlDistribution\' instead');
+    Configuration.warnDeprecatedConfigurationKey('distributeStationsToTenantsEqually', null, 'Use \'supervisionUrlDistribution\' instead');
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'supervisionUrlDistribution') ? Configuration.getConfig().supervisionUrlDistribution : SupervisionUrlDistribution.ROUND_ROBIN;
   }
 
   private static logPrefix(): string {

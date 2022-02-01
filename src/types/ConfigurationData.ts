@@ -4,6 +4,12 @@ import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
 import { level } from 'winston';
 
+export enum SupervisionUrlDistribution {
+  ROUND_ROBIN = 'round-robin',
+  RANDOM = 'random',
+  SEQUENTIAL = 'sequential',
+}
+
 export interface StationTemplateUrl {
   file: string;
   numberOfStations: number;
@@ -21,12 +27,12 @@ export interface StorageConfiguration {
 }
 
 export default interface ConfigurationData {
-  supervisionUrls?: string[];
+  supervisionUrls?: string | string[];
+  supervisionUrlDistribution?: SupervisionUrlDistribution;
   stationTemplateUrls: StationTemplateUrl[];
   uiWebSocketServer?: UIWebSocketServerConfiguration;
   performanceStorage?: StorageConfiguration;
   autoReconnectMaxRetries?: number;
-  distributeStationsToTenantsEqually?: boolean;
   workerProcess?: WorkerProcessType;
   workerStartDelay?: number;
   workerPoolMinSize?: number;

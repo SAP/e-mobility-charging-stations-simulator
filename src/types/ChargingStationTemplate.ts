@@ -35,7 +35,7 @@ export interface AutomaticTransactionGenerator {
 }
 
 export default interface ChargingStationTemplate {
-  supervisionUrl?: string;
+  supervisionUrls?: string | string[];
   supervisionUrlOcppConfiguration?: boolean;
   supervisionUrlOcppKey?: string;
   supervisionUser?: string;

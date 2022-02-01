@@ -31,6 +31,7 @@ import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
 import { StopTransactionReason } from '../types/ocpp/Transaction';
+import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
 import crypto from 'crypto';
@@ -461,6 +462,10 @@ export default class ChargingStation {
     } catch (error) {
       FileUtils.handleFileException(this.logPrefix(), 'Template', this.stationTemplateFile, error as NodeJS.ErrnoException);
     }
+    const chargingStationId = this.getChargingStationId(stationTemplateFromFile);
+    // Deprecation template keys section
+    this.warnDeprecatedTemplateKey(stationTemplateFromFile, 'supervisionUrl', chargingStationId, 'Use \'supervisionUrls\' instead');
+    this.convertDeprecatedTemplateKey(stationTemplateFromFile, 'supervisionUrl', 'supervisionUrls');
     const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? {} as ChargingStationInfo;
     stationInfo.wsOptions = stationTemplateFromFile?.wsOptions ?? {};
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
@@ -477,7 +482,7 @@ export default class ChargingStation {
     }
     delete stationInfo.power;
     delete stationInfo.powerUnit;
-    stationInfo.chargingStationId = this.getChargingStationId(stationTemplateFromFile);
+    stationInfo.chargingStationId = chargingStationId;
     stationInfo.resetTime = stationTemplateFromFile.resetTime ? stationTemplateFromFile.resetTime * 1000 : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     return stationInfo;
   }
@@ -933,17 +938,45 @@ export default class ChargingStation {
     }
   }
 
+  private warnDeprecatedTemplateKey(template: ChargingStationTemplate, key: string, chargingStationId: string, logMsgToAppend = ''): void {
+    if (!Utils.isUndefined(template[key])) {
+      logger.warn(`${Utils.logPrefix(` ${chargingStationId} |`)} Deprecated template key '${key}' usage in file '${this.stationTemplateFile}'${logMsgToAppend && '. ' + logMsgToAppend}`);
+    }
+  }
+
+  private convertDeprecatedTemplateKey(template: ChargingStationTemplate, deprecatedKey: string, key: string): void {
+    if (!Utils.isUndefined(template[deprecatedKey])) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      template[key] = template[deprecatedKey];
+      delete template[deprecatedKey];
+    }
+  }
+
   private getConfiguredSupervisionUrl(): URL {
-    const supervisionUrls = Utils.cloneObject<string | string[]>(this.stationInfo.supervisionUrl ?? Configuration.getSupervisionUrls());
-    let indexUrl = 0;
+    const supervisionUrls = Utils.cloneObject<string | string[]>(this.stationInfo.supervisionUrls ?? Configuration.getSupervisionUrls());
     if (!Utils.isEmptyArray(supervisionUrls)) {
-      if (Configuration.getDistributeStationsToTenantsEqually()) {
-        indexUrl = this.index % supervisionUrls.length;
-      } else {
-        // Get a random url
-        indexUrl = Math.floor(Utils.secureRandom() * supervisionUrls.length);
+      let urlIndex = 0;
+      switch (Configuration.getSupervisionUrlDistribution()) {
+        case SupervisionUrlDistribution.ROUND_ROBIN:
+          urlIndex = (this.index - 1) % supervisionUrls.length;
+          break;
+        case SupervisionUrlDistribution.RANDOM:
+          // Get a random url
+          urlIndex = Math.floor(Utils.secureRandom() * supervisionUrls.length);
+          break;
+        case SupervisionUrlDistribution.SEQUENTIAL:
+          if (this.index <= supervisionUrls.length) {
+            urlIndex = this.index - 1;
+          } else {
+            logger.warn(`${this.logPrefix()} No more configured supervision urls available, using the first one`);
+          }
+          break;
+        default:
+          logger.error(`${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}', defaulting to ${SupervisionUrlDistribution.ROUND_ROBIN}`);
+          urlIndex = (this.index - 1) % supervisionUrls.length;
+          break;
       }
-      return new URL(supervisionUrls[indexUrl]);
+      return new URL(supervisionUrls[urlIndex]);
     }
     return new URL(supervisionUrls as string);
   }
