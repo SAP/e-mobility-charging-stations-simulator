@@ -107,7 +107,7 @@ export default abstract class OCPPRequestService {
         messageType === MessageType.CALL_MESSAGE && this.chargingStation.requests.delete(messageId);
       });
     } else {
-      throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is in unknown state', commandName, { status: this.chargingStation?.bootNotificationResponse?.status });
+      throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is in unknown state', commandName);
     }
   }
 
