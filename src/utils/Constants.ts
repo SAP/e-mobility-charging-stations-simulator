@@ -29,6 +29,7 @@ export default class Constants {
   static readonly OCPP_WEBSOCKET_TIMEOUT = 60000; // Ms
   static readonly OCPP_TRIGGER_MESSAGE_DELAY = 2000; // Ms
 
+  static readonly CHARGING_STATION_DEFAULT_START_SEQUENCE_DELAY = 60000; // Ms
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
   static readonly CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS = 0.25; // Hours

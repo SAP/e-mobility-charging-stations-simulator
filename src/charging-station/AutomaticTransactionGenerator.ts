@@ -66,8 +66,8 @@ export default class AutomaticTransactionGenerator {
         this.stopConnector(connectorId);
         break;
       }
-      if (!this.chargingStation.isRegistered()) {
-        logger.error(this.logPrefix(connectorId) + ' entered in transaction loop while the charging station is not registered');
+      if (!this.chargingStation.isInAcceptedState()) {
+        logger.error(this.logPrefix(connectorId) + ' entered in transaction loop while the charging station is in accepted state');
         this.stopConnector(connectorId);
         break;
       }

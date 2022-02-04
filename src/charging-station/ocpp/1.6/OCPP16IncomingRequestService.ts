@@ -47,7 +47,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
     let result: Record<string, unknown>;
-    if (this.chargingStation.isRegistered()) {
+    if (this.chargingStation.isRegistered() &&
+      !(this.chargingStation.isInPendingState
+        && (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION || commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION))) {
       if (this.incomingRequestHandlers.has(commandName)) {
         try {
           // Call the method to build the result
@@ -295,7 +297,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         if (this.chargingStation.getAuthorizeRemoteTxRequests()) {
           let authorized = false;
           if (this.chargingStation.getLocalAuthListEnabled() && this.chargingStation.hasAuthorizedTags()
-              && this.chargingStation.authorizedTags.find((value) => value === commandPayload.idTag)) {
+            && this.chargingStation.authorizedTags.find((value) => value === commandPayload.idTag)) {
             this.chargingStation.getConnectorStatus(transactionConnectorId).localAuthorizeIdTag = commandPayload.idTag;
             this.chargingStation.getConnectorStatus(transactionConnectorId).idTagLocalAuthorized = true;
             authorized = true;

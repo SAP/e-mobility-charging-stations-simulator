@@ -122,8 +122,20 @@ export default class ChargingStation {
     return this?.wsConnection?.readyState === OPEN;
   }
 
-  public isRegistered(): boolean {
+  public isInPendingState(): boolean {
+    return this?.bootNotificationResponse?.status === RegistrationStatus.PENDING;
+  }
+
+  public isInAcceptedState(): boolean {
     return this?.bootNotificationResponse?.status === RegistrationStatus.ACCEPTED;
+  }
+
+  public isInRejectedState(): boolean {
+    return this?.bootNotificationResponse?.status === RegistrationStatus.REJECTED;
+  }
+
+  public isRegistered(): boolean {
+    return this.isInAcceptedState() || this.isInPendingState();
   }
 
   public isChargingStationAvailable(): boolean {
@@ -644,11 +656,21 @@ export default class ChargingStation {
       await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel,
         this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
     }
-    if (this.isRegistered()) {
+    if (this.isInAcceptedState()) {
       await this.startMessageSequence();
       this.stopped && (this.stopped = false);
       if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
         this.flushMessageBuffer();
+      }
+    } else if (this.isInPendingState()) {
+      // The central server shall issue a triggerMessage to the charging station for the boot notification at the end of its configuration process
+      while (!this.isInAcceptedState()) {
+        await this.startMessageSequence();
+        this.stopped && (this.stopped = false);
+        if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
+          this.flushMessageBuffer();
+        }
+        await Utils.sleep(Constants.CHARGING_STATION_DEFAULT_START_SEQUENCE_DELAY);
       }
     } else {
       logger.error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);
