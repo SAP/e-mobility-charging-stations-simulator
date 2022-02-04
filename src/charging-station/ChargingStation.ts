@@ -972,7 +972,7 @@ export default class ChargingStation {
           }
           break;
         default:
-          logger.error(`${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}', defaulting to ${SupervisionUrlDistribution.ROUND_ROBIN}`);
+          logger.error(`${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${SupervisionUrlDistribution.ROUND_ROBIN}`);
           urlIndex = (this.index - 1) % supervisionUrls.length;
           break;
       }
