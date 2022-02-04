@@ -66,7 +66,6 @@ export default abstract class OCPPRequestService {
           return resolve(messageData);
         }
 
-
         /**
          * Function that will receive the request's response
          *
