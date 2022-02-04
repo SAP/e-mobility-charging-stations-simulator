@@ -47,9 +47,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
     let result: Record<string, unknown>;
-    if (this.chargingStation.isRegistered() &&
-      !(this.chargingStation.isInPendingState
-        && (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION || commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION))) {
+    if (this.chargingStation.isInPendingState()
+      && (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION || commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)) {
+      throw new OCPPError(ErrorType.SECURITY_ERROR, `${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)} while charging station is in pending state`, commandName);
+    }
+    if (this.chargingStation.isRegistered()) {
       if (this.incomingRequestHandlers.has(commandName)) {
         try {
           // Call the method to build the result
@@ -64,7 +66,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
       }
     } else {
-      throw new OCPPError(ErrorType.SECURITY_ERROR, `The charging station is not registered on the central server. ${commandName} cannot be not issued to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
+      throw new OCPPError(ErrorType.SECURITY_ERROR, `The charging station is not registered on the central server. ${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
     }
     // Send the built result
     await this.chargingStation.ocppRequestService.sendResult(messageId, result, commandName);
@@ -431,12 +433,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           setTimeout(() => {
             this.chargingStation.ocppRequestService.sendBootNotification(this.chargingStation.getBootNotificationRequest().chargePointModel,
               this.chargingStation.getBootNotificationRequest().chargePointVendor, this.chargingStation.getBootNotificationRequest().chargeBoxSerialNumber,
-              this.chargingStation.getBootNotificationRequest().firmwareVersion).catch(() => { /* This is intentional */ });
+              this.chargingStation.getBootNotificationRequest().firmwareVersion, null, null, null, null, null, { triggerMessage: true }).catch(() => { /* This is intentional */ });
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         case MessageTrigger.Heartbeat:
           setTimeout(() => {
-            this.chargingStation.ocppRequestService.sendHeartbeat().catch(() => { /* This is intentional */ });
+            this.chargingStation.ocppRequestService.sendHeartbeat({ triggerMessage: true }).catch(() => { /* This is intentional */ });
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         default:

@@ -663,14 +663,14 @@ export default class ChargingStation {
         this.flushMessageBuffer();
       }
     } else if (this.isInPendingState()) {
-      // The central server shall issue a triggerMessage to the charging station for the boot notification at the end of its configuration process
+      // The central server shall issue a TriggerMessage to the charging station for the boot notification at the end of its configuration process
       while (!this.isInAcceptedState()) {
-        await this.startMessageSequence();
-        this.stopped && (this.stopped = false);
-        if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
-          this.flushMessageBuffer();
-        }
         await Utils.sleep(Constants.CHARGING_STATION_DEFAULT_START_SEQUENCE_DELAY);
+      }
+      await this.startMessageSequence();
+      this.stopped && (this.stopped = false);
+      if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
+        this.flushMessageBuffer();
       }
     } else {
       logger.error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);

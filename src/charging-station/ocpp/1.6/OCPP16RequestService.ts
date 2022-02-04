@@ -18,21 +18,23 @@ import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStat
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
+import { SendParams } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
 export default class OCPP16RequestService extends OCPPRequestService {
-  public async sendHeartbeat(): Promise<void> {
+  public async sendHeartbeat(params?: SendParams): Promise<void> {
     try {
       const payload: HeartbeatRequest = {};
-      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.HEARTBEAT);
+      await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.HEARTBEAT, params);
     } catch (error) {
       this.handleRequestError(OCPP16RequestCommand.HEARTBEAT, error as Error);
     }
   }
 
   public async sendBootNotification(chargePointModel: string, chargePointVendor: string, chargeBoxSerialNumber?: string, firmwareVersion?: string,
-      chargePointSerialNumber?: string, iccid?: string, imsi?: string, meterSerialNumber?: string, meterType?: string): Promise<OCPP16BootNotificationResponse> {
+      chargePointSerialNumber?: string, iccid?: string, imsi?: string, meterSerialNumber?: string, meterType?: string,
+      params?: SendParams): Promise<OCPP16BootNotificationResponse> {
     try {
       const payload: OCPP16BootNotificationRequest = {
         chargePointModel,
@@ -45,7 +47,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
         ...!Utils.isUndefined(meterSerialNumber) && { meterSerialNumber },
         ...!Utils.isUndefined(meterType) && { meterType }
       };
-      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE, OCPP16RequestCommand.BOOT_NOTIFICATION, true) as OCPP16BootNotificationResponse;
+      return await this.sendMessage(Utils.generateUUID(), payload, MessageType.CALL_MESSAGE,
+        OCPP16RequestCommand.BOOT_NOTIFICATION, { ...params, skipBufferingOnError: true }) as OCPP16BootNotificationResponse;
     } catch (error) {
       this.handleRequestError(OCPP16RequestCommand.BOOT_NOTIFICATION, error as Error);
     }
@@ -316,7 +319,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           : Utils.getRandomFloatRounded(maxEnergyRounded);
         // Persist previous value on connector
         if (connector && !Utils.isNullOrUndefined(connector.energyActiveImportRegisterValue) && connector.energyActiveImportRegisterValue >= 0 &&
-            !Utils.isNullOrUndefined(connector.transactionEnergyActiveImportRegisterValue) && connector.transactionEnergyActiveImportRegisterValue >= 0) {
+          !Utils.isNullOrUndefined(connector.transactionEnergyActiveImportRegisterValue) && connector.transactionEnergyActiveImportRegisterValue >= 0) {
           connector.energyActiveImportRegisterValue += energyValueRounded;
           connector.transactionEnergyActiveImportRegisterValue += energyValueRounded;
         } else {

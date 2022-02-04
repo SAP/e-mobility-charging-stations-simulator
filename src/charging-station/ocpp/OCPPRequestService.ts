@@ -1,5 +1,5 @@
 import { AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../../types/ocpp/Transaction';
-import { DiagnosticsStatus, IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
+import { DiagnosticsStatus, IncomingRequestCommand, RequestCommand, SendParams } from '../../types/ocpp/Requests';
 
 import { BootNotificationResponse } from '../../types/ocpp/Responses';
 import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
@@ -25,80 +25,90 @@ export default abstract class OCPPRequestService {
   }
 
   public async sendMessage(messageId: string, messageData: any, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
-      skipBufferingOnError = false): Promise<unknown> {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const self = this;
-    // Send a message through wsConnection
-    return Utils.promiseWithTimeout(new Promise((resolve, reject) => {
-      const messageToSend = this.buildMessageToSend(messageId, messageData, messageType, commandName, responseCallback, rejectCallback);
-      if (this.chargingStation.getEnableStatistics()) {
-        this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
-      }
-      // Check if wsConnection opened
-      if (this.chargingStation.isWebSocketConnectionOpened()) {
-        // Yes: Send Message
-        const beginId = PerformanceStatistics.beginMeasure(commandName);
-        // FIXME: Handle sending error
-        this.chargingStation.wsConnection.send(messageToSend);
-        PerformanceStatistics.endMeasure(commandName, beginId);
-      } else if (!skipBufferingOnError) {
-        // Buffer it
-        this.chargingStation.bufferMessage(messageToSend);
-        const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`, messageData?.details ?? {});
-        if (messageType === MessageType.CALL_MESSAGE) {
-          // Reject it but keep the request in the cache
-          return reject(ocppError);
+      params: SendParams = {
+        skipBufferingOnError: false,
+        triggerMessage: false
+      }): Promise<unknown> {
+    if ((this.chargingStation.isInPendingState() && !params.triggerMessage) || this.chargingStation.isInRejectedState()) {
+      throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is not in accepted state', commandName);
+    } else if (this.chargingStation.isInAcceptedState() || (this.chargingStation.isInPendingState() && params.triggerMessage)) {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const self = this;
+      // Send a message through wsConnection
+      return Utils.promiseWithTimeout(new Promise((resolve, reject) => {
+        const messageToSend = this.buildMessageToSend(messageId, messageData, messageType, commandName, responseCallback, rejectCallback);
+        if (this.chargingStation.getEnableStatistics()) {
+          this.chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
         }
-        return rejectCallback(ocppError, false);
-      } else {
-        // Reject it
-        return rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`, messageData?.details ?? {}), false);
-      }
-      // Response?
-      if (messageType !== MessageType.CALL_MESSAGE) {
-        // Yes: send Ok
-        return resolve(messageData);
-      }
+        // Check if wsConnection opened
+        if (this.chargingStation.isWebSocketConnectionOpened()) {
+          // Yes: Send Message
+          const beginId = PerformanceStatistics.beginMeasure(commandName);
+          // FIXME: Handle sending error
+          this.chargingStation.wsConnection.send(messageToSend);
+          PerformanceStatistics.endMeasure(commandName, beginId);
+        } else if (!params.skipBufferingOnError) {
+          // Buffer it
+          this.chargingStation.bufferMessage(messageToSend);
+          const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`, messageData?.details ?? {});
+          if (messageType === MessageType.CALL_MESSAGE) {
+            // Reject it but keep the request in the cache
+            return reject(ocppError);
+          }
+          return rejectCallback(ocppError, false);
+        } else {
+          // Reject it
+          return rejectCallback(new OCPPError(ErrorType.GENERIC_ERROR, `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`, messageData?.details ?? {}), false);
+        }
+        // Response?
+        if (messageType !== MessageType.CALL_MESSAGE) {
+          // Yes: send Ok
+          return resolve(messageData);
+        }
 
-      /**
-       * Function that will receive the request's response
-       *
-       * @param payload
-       * @param requestPayload
-       */
-      async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
-        if (self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE);
+
+        /**
+         * Function that will receive the request's response
+         *
+         * @param payload
+         * @param requestPayload
+         */
+        async function responseCallback(payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
+          if (self.chargingStation.getEnableStatistics()) {
+            self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_RESULT_MESSAGE);
+          }
+          // Handle the request's response
+          try {
+            await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
+            resolve(payload);
+          } catch (error) {
+            reject(error);
+            throw error;
+          } finally {
+            self.chargingStation.requests.delete(messageId);
+          }
         }
-        // Handle the request's response
-        try {
-          await self.ocppResponseService.handleResponse(commandName as RequestCommand, payload, requestPayload);
-          resolve(payload);
-        } catch (error) {
-          reject(error);
-          throw error;
-        } finally {
+
+        /**
+         * Function that will receive the request's error response
+         *
+         * @param error
+         * @param requestStatistic
+         */
+        function rejectCallback(error: OCPPError, requestStatistic = true): void {
+          if (requestStatistic && self.chargingStation.getEnableStatistics()) {
+            self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
+          }
+          logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`, error, commandName, messageData);
           self.chargingStation.requests.delete(messageId);
+          reject(error);
         }
-      }
-
-      /**
-       * Function that will receive the request's error response
-       *
-       * @param error
-       * @param requestStatistic
-       */
-      function rejectCallback(error: OCPPError, requestStatistic = true): void {
-        if (requestStatistic && self.chargingStation.getEnableStatistics()) {
-          self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
-        }
-        logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`, error, commandName, messageData);
-        self.chargingStation.requests.delete(messageId);
-        reject(error);
-      }
-    }), Constants.OCPP_WEBSOCKET_TIMEOUT, new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}'`, messageData?.details ?? {}), () => {
-      messageType === MessageType.CALL_MESSAGE && this.chargingStation.requests.delete(messageId);
-    });
+      }), Constants.OCPP_WEBSOCKET_TIMEOUT, new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}'`, messageData?.details ?? {}), () => {
+        messageType === MessageType.CALL_MESSAGE && this.chargingStation.requests.delete(messageId);
+      });
+    } else {
+      throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is in unknown state', commandName, { status: this.chargingStation?.bootNotificationResponse?.status });
+    }
   }
 
   protected handleRequestError(commandName: RequestCommand, error: Error): void {
@@ -132,8 +142,8 @@ export default abstract class OCPPRequestService {
     return messageToSend;
   }
 
-  public abstract sendHeartbeat(): Promise<void>;
-  public abstract sendBootNotification(chargePointModel: string, chargePointVendor: string, chargeBoxSerialNumber?: string, firmwareVersion?: string, chargePointSerialNumber?: string, iccid?: string, imsi?: string, meterSerialNumber?: string, meterType?: string): Promise<BootNotificationResponse>;
+  public abstract sendHeartbeat(params?: SendParams): Promise<void>;
+  public abstract sendBootNotification(chargePointModel: string, chargePointVendor: string, chargeBoxSerialNumber?: string, firmwareVersion?: string, chargePointSerialNumber?: string, iccid?: string, imsi?: string, meterSerialNumber?: string, meterType?: string, params?: SendParams): Promise<BootNotificationResponse>;
   public abstract sendStatusNotification(connectorId: number, status: ChargePointStatus, errorCode?: ChargePointErrorCode): Promise<void>;
   public abstract sendAuthorize(connectorId: number, idTag?: string): Promise<AuthorizeResponse>;
   public abstract sendStartTransaction(connectorId: number, idTag?: string): Promise<StartTransactionResponse>;
