@@ -1,3 +1,4 @@
+import { JsonType } from './JsonType';
 import { PoolOptions } from 'poolifier';
 import { Worker } from 'worker_threads';
 
@@ -16,17 +17,16 @@ export interface WorkerOptions {
   messageHandler?: (message: unknown) => void | Promise<void>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface WorkerData {}
+export type WorkerData = JsonType;
 
 export interface WorkerSetElement {
   worker: Worker;
   numberOfWorkerElements: number;
 }
 
-export interface WorkerMessage {
+export interface WorkerMessage<T extends WorkerData> {
   id: WorkerMessageEvents;
-  data: any;
+  data: T;
 }
 
 export enum WorkerMessageEvents {

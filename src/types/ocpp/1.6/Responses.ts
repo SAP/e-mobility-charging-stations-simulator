@@ -1,7 +1,8 @@
 import { EmptyObject } from '../../EmptyObject';
+import { JsonType } from '../../JsonType';
 import { OCPPConfigurationKey } from '../Configuration';
 
-export interface HeartbeatResponse {
+export interface HeartbeatResponse extends JsonType {
   currentTime: string;
 }
 
@@ -11,7 +12,7 @@ export enum OCPP16UnlockStatus {
   NOT_SUPPORTED = 'NotSupported'
 }
 
-export interface UnlockConnectorResponse {
+export interface UnlockConnectorResponse extends JsonType {
   status: OCPP16UnlockStatus;
 }
 
@@ -22,7 +23,7 @@ export enum OCPP16ConfigurationStatus {
   NOT_SUPPORTED = 'NotSupported'
 }
 
-export interface ChangeConfigurationResponse {
+export interface ChangeConfigurationResponse extends JsonType {
   status: OCPP16ConfigurationStatus;
 }
 
@@ -32,7 +33,7 @@ export enum OCPP16RegistrationStatus {
   REJECTED = 'Rejected'
 }
 
-export interface OCPP16BootNotificationResponse {
+export interface OCPP16BootNotificationResponse extends JsonType {
   status: OCPP16RegistrationStatus;
   currentTime: string;
   interval: number;
@@ -40,7 +41,7 @@ export interface OCPP16BootNotificationResponse {
 
 export type StatusNotificationResponse = EmptyObject;
 
-export interface GetConfigurationResponse {
+export interface GetConfigurationResponse extends JsonType {
   configurationKey: OCPPConfigurationKey[];
   unknownKey: string[];
 }
@@ -51,7 +52,7 @@ export enum OCPP16ChargingProfileStatus {
   NOT_SUPPORTED = 'NotSupported',
 }
 
-export interface SetChargingProfileResponse {
+export interface SetChargingProfileResponse extends JsonType {
   status: OCPP16ChargingProfileStatus;
 }
 
@@ -61,7 +62,7 @@ export enum OCPP16AvailabilityStatus {
   SCHEDULED = 'Scheduled'
 }
 
-export interface ChangeAvailabilityResponse {
+export interface ChangeAvailabilityResponse extends JsonType {
   status: OCPP16AvailabilityStatus;
 }
 
@@ -70,11 +71,11 @@ export enum OCPP16ClearChargingProfileStatus {
   UNKNOWN = 'Unknown'
 }
 
-export interface ClearChargingProfileResponse {
+export interface ClearChargingProfileResponse extends JsonType {
   status: OCPP16ClearChargingProfileStatus;
 }
 
-export interface GetDiagnosticsResponse {
+export interface GetDiagnosticsResponse extends JsonType {
   fileName?: string;
 }
 
@@ -86,6 +87,6 @@ export enum OCPP16TriggerMessageStatus {
   NOT_IMPLEMENTED = 'NotImplemented'
 }
 
-export interface OCPP16TriggerMessageResponse {
+export interface OCPP16TriggerMessageResponse extends JsonType {
   status: OCPP16TriggerMessageStatus
 }

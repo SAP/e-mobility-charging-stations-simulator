@@ -6,7 +6,7 @@ import WorkerAbstract from './WorkerAbstract';
 import { WorkerData } from '../types/Worker';
 import { WorkerUtils } from './WorkerUtils';
 
-export default class WorkerDynamicPool<T> extends WorkerAbstract {
+export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   private readonly pool: DynamicThreadPool<WorkerData>;
 
   /**
@@ -56,7 +56,7 @@ export default class WorkerDynamicPool<T> extends WorkerAbstract {
    * @returns
    * @public
    */
-  public async addElement(elementData: T): Promise<void> {
+  public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
     // Start worker sequentially to optimize memory at startup
     await Utils.sleep(this.workerStartDelay);

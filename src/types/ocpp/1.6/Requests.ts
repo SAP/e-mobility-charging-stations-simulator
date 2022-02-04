@@ -1,6 +1,7 @@
 import { ChargingProfilePurposeType, OCPP16ChargingProfile } from './ChargingProfile';
 
 import { EmptyObject } from '../../EmptyObject';
+import { JsonType } from '../../JsonType';
 import { OCPP16ChargePointErrorCode } from './ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from './ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from './DiagnosticsStatus';
@@ -35,7 +36,7 @@ export enum OCPP16IncomingRequestCommand {
 
 export type HeartbeatRequest = EmptyObject;
 
-export interface OCPP16BootNotificationRequest {
+export interface OCPP16BootNotificationRequest extends JsonType {
   chargeBoxSerialNumber?: string;
   chargePointModel: string;
   chargePointSerialNumber?: string;
@@ -47,7 +48,7 @@ export interface OCPP16BootNotificationRequest {
   meterType?: string;
 }
 
-export interface StatusNotificationRequest {
+export interface StatusNotificationRequest extends JsonType {
   connectorId: number;
   errorCode: OCPP16ChargePointErrorCode;
   info?: string;
@@ -57,26 +58,26 @@ export interface StatusNotificationRequest {
   vendorErrorCode?: string;
 }
 
-export interface ChangeConfigurationRequest {
+export interface ChangeConfigurationRequest extends JsonType {
   key: string | OCPP16StandardParametersKey;
   value: string;
 }
 
-export interface RemoteStartTransactionRequest {
+export interface RemoteStartTransactionRequest extends JsonType {
   connectorId: number;
   idTag: string;
   chargingProfile?: OCPP16ChargingProfile;
 }
 
-export interface RemoteStopTransactionRequest {
+export interface RemoteStopTransactionRequest extends JsonType {
   transactionId: number;
 }
 
-export interface UnlockConnectorRequest {
+export interface UnlockConnectorRequest extends JsonType {
   connectorId: number;
 }
 
-export interface GetConfigurationRequest {
+export interface GetConfigurationRequest extends JsonType {
   key?: string | OCPP16StandardParametersKey[];
 }
 
@@ -85,11 +86,11 @@ export enum ResetType {
   SOFT = 'Soft'
 }
 
-export interface ResetRequest {
+export interface ResetRequest extends JsonType {
   type: ResetType;
 }
 
-export interface SetChargingProfileRequest {
+export interface SetChargingProfileRequest extends JsonType {
   connectorId: number;
   csChargingProfiles: OCPP16ChargingProfile;
 }
@@ -99,19 +100,19 @@ export enum OCPP16AvailabilityType {
   OPERATIVE = 'Operative'
 }
 
-export interface ChangeAvailabilityRequest {
+export interface ChangeAvailabilityRequest extends JsonType {
   connectorId: number;
   type: OCPP16AvailabilityType;
 }
 
-export interface ClearChargingProfileRequest {
+export interface ClearChargingProfileRequest extends JsonType {
   id?: number;
   connectorId?: number;
   chargingProfilePurpose?: ChargingProfilePurposeType;
   stackLevel?: number;
 }
 
-export interface GetDiagnosticsRequest {
+export interface GetDiagnosticsRequest extends JsonType {
   location: string;
   retries?: number;
   retryInterval?: number;
@@ -119,7 +120,7 @@ export interface GetDiagnosticsRequest {
   stopTime?: Date;
 }
 
-export interface DiagnosticsStatusNotificationRequest {
+export interface DiagnosticsStatusNotificationRequest extends JsonType {
   status: OCPP16DiagnosticsStatus
 }
 
@@ -132,7 +133,7 @@ export enum MessageTrigger {
   StatusNotification = 'StatusNotification'
 }
 
-export interface OCPP16TriggerMessageRequest {
+export interface OCPP16TriggerMessageRequest extends JsonType {
   requestedMessage: MessageTrigger;
   connectorId?: number
 }

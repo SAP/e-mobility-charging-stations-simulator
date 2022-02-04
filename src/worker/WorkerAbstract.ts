@@ -1,7 +1,7 @@
 import Constants from '../utils/Constants';
 import { WorkerData } from '../types/Worker';
 
-export default abstract class WorkerAbstract {
+export default abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;
   protected readonly workerStartDelay: number;
   public abstract readonly size: number;
@@ -20,5 +20,5 @@ export default abstract class WorkerAbstract {
 
   public abstract start(): Promise<void>;
   public abstract stop(): Promise<void>;
-  public abstract addElement(elementData: WorkerData): Promise<void>;
+  public abstract addElement(elementData: T): Promise<void>;
 }

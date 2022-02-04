@@ -19,6 +19,6 @@ export const ChargingStationWorkerMessageEvents = {
 };
 
 
-export interface ChargingStationWorkerMessage extends Omit<WorkerMessage, 'id'> {
+export interface ChargingStationWorkerMessage extends Omit<WorkerMessage<ChargingStationWorkerData>, 'id'> {
   id: ChargingStationWorkerMessageEvents;
 }

@@ -3,6 +3,7 @@
 import { ChargingStationWorkerData, ChargingStationWorkerMessage, ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 
 import Configuration from '../utils/Configuration';
+import Statistics from '../types/Statistics';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import { UIServiceUtils } from './ui-websocket-services/UIServiceUtils';
@@ -17,7 +18,7 @@ import { version } from '../../package.json';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
-  private workerImplementation: WorkerAbstract | null = null;
+  private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
   private readonly uiWebSocketServer!: UIWebSocketServer;
   private readonly storage!: Storage;
   private numberOfChargingStations: number;
@@ -118,11 +119,11 @@ export default class Bootstrap {
         },
         messageHandler: async (msg: ChargingStationWorkerMessage) => {
           if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
-            this.uiWebSocketServer.chargingStations.add(msg.data.id);
+            this.uiWebSocketServer.chargingStations.add(msg.data.id as string);
           } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
-            this.uiWebSocketServer.chargingStations.delete(msg.data.id);
+            this.uiWebSocketServer.chargingStations.delete(msg.data.id as string);
           } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
-            await this.storage.storePerformanceStatistics(msg.data);
+            await this.storage.storePerformanceStatistics(msg.data as unknown as Statistics);
           }
         }
       });

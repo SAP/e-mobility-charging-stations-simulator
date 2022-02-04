@@ -1,13 +1,13 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
+import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
 
-export default class WorkerSet<T> extends WorkerAbstract {
+export default class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly maxElementsPerWorker: number;
   private readonly messageHandler: (message: unknown) => void | Promise<void>;
   private readonly workerSet: Set<WorkerSetElement>;
@@ -37,7 +37,7 @@ export default class WorkerSet<T> extends WorkerAbstract {
    * @returns
    * @public
    */
-  public async addElement(elementData: T): Promise<void> {
+  public async addElement(elementData: WorkerData): Promise<void> {
     if (!this.workerSet) {
       throw new Error('Cannot add a WorkerSet element: workers\' set does not exist');
     }

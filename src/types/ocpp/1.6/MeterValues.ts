@@ -1,4 +1,5 @@
 import { EmptyObject } from '../../EmptyObject';
+import { JsonType } from '../../JsonType';
 
 export enum MeterValueUnit {
   WATT_HOUR = 'Wh',
@@ -81,7 +82,7 @@ export enum MeterValueFormat {
   SIGNED_DATA = 'SignedData',
 }
 
-export interface OCPP16SampledValue {
+export interface OCPP16SampledValue extends JsonType {
   value?: string;
   unit?: MeterValueUnit;
   context?: MeterValueContext;
@@ -91,12 +92,12 @@ export interface OCPP16SampledValue {
   format?: MeterValueFormat;
 }
 
-export interface OCPP16MeterValue {
+export interface OCPP16MeterValue extends JsonType {
   timestamp: string;
   sampledValue: OCPP16SampledValue[];
 }
 
-export interface MeterValuesRequest {
+export interface MeterValuesRequest extends JsonType {
   connectorId: number;
   transactionId?: number;
   meterValue: OCPP16MeterValue[];

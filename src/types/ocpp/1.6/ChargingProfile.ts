@@ -1,4 +1,6 @@
-export interface OCPP16ChargingProfile {
+import { JsonType } from '../../JsonType';
+
+export interface OCPP16ChargingProfile extends JsonType {
   chargingProfileId: number;
   transactionId?: number;
   stackLevel: number;
@@ -10,7 +12,7 @@ export interface OCPP16ChargingProfile {
   chargingSchedule: ChargingSchedule;
 }
 
-export interface ChargingSchedule {
+export interface ChargingSchedule extends JsonType {
   duration?: number;
   startSchedule?: Date;
   chargingRateUnit: ChargingRateUnitType;
@@ -18,7 +20,7 @@ export interface ChargingSchedule {
   minChargeRate?: number;
 }
 
-export interface ChargingSchedulePeriod {
+export interface ChargingSchedulePeriod extends JsonType {
   startPeriod: number;
   limit: number;
   numberPhases?: number;
