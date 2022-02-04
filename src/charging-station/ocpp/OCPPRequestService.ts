@@ -29,7 +29,7 @@ export default abstract class OCPPRequestService {
         skipBufferingOnError: false,
         triggerMessage: false
       }): Promise<unknown> {
-    if ((this.chargingStation.isInPendingState() && !params.triggerMessage) || this.chargingStation.isInRejectedState()) {
+    if (this.chargingStation.isInRejectedState() || (this.chargingStation.isInPendingState() && !params.triggerMessage)) {
       throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is not in accepted state', commandName);
     } else if (this.chargingStation.isInAcceptedState() || (this.chargingStation.isInPendingState() && params.triggerMessage)) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
