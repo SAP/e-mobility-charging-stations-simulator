@@ -5,6 +5,7 @@ import AbstractUIService from './ui-websocket-services/AbstractUIService';
 import BaseError from '../exception/BaseError';
 import Configuration from '../utils/Configuration';
 import { IncomingMessage } from 'http';
+import { JsonType } from '../types/JsonType';
 import UIServiceFactory from './ui-websocket-services/UIServiceFactory';
 import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
@@ -23,7 +24,7 @@ export default class UIWebSocketServer extends Server {
     }
   }
 
-  public broadcastToClients(message: string | Record<string, unknown>): void {
+  public broadcastToClients(message: string): void {
     for (const client of this.clients) {
       if (client?.readyState === OPEN) {
         client.send(message);

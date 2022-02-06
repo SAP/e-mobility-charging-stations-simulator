@@ -8,6 +8,7 @@ import { MeterValueUnit, MeterValuesRequest, OCPP16MeterValue, OCPP16MeterValueM
 
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { JsonType } from '../../../types/JsonType';
 import MeasurandPerPhaseSampledValueTemplates from '../../../types/MeasurandPerPhaseSampledValueTemplates';
 import MeasurandValues from '../../../types/MeasurandValues';
 import { MessageType } from '../../../types/ocpp/MessageType';
@@ -381,21 +382,21 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
   }
 
-  public async sendResult(messageId: string, resultMessageData: Record<string, unknown>, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<unknown> {
+  public async sendResult(messageId: string, resultMessageData: JsonType, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<JsonType> {
     try {
       // Send error
-      return await this.sendMessage(messageId, resultMessageData, MessageType.CALL_RESULT_MESSAGE, commandName);
-    } catch (err) {
-      this.handleRequestError(commandName as OCPP16RequestCommand, err as Error);
+      return await this.sendMessage(messageId, resultMessageData, MessageType.CALL_RESULT_MESSAGE, commandName) as JsonType;
+    } catch (error) {
+      this.handleRequestError(commandName as OCPP16RequestCommand, error as Error);
     }
   }
 
-  public async sendError(messageId: string, error: OCPPError, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<unknown> {
+  public async sendError(messageId: string, ocppError: OCPPError, commandName: OCPP16RequestCommand | OCPP16IncomingRequestCommand): Promise<JsonType> {
     try {
       // Send error
-      return await this.sendMessage(messageId, error, MessageType.CALL_ERROR_MESSAGE, commandName);
-    } catch (err) {
-      this.handleRequestError(commandName as OCPP16RequestCommand, err as Error);
+      return await this.sendMessage(messageId, ocppError, MessageType.CALL_ERROR_MESSAGE, commandName) as JsonType;
+    } catch (error) {
+      this.handleRequestError(commandName as OCPP16RequestCommand, error as Error);
     }
   }
 }

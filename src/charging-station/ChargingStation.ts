@@ -20,6 +20,7 @@ import { ConnectorStatus } from '../types/ConnectorStatus';
 import Constants from '../utils/Constants';
 import { ErrorType } from '../types/ocpp/ErrorType';
 import FileUtils from '../utils/FileUtils';
+import { JsonType } from '../types/JsonType';
 import { MessageType } from '../types/ocpp/MessageType';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
@@ -697,10 +698,10 @@ export default class ChargingStation {
 
   private async onMessage(data: Data): Promise<void> {
     let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [0, '', '' as IncomingRequestCommand, {}, {}];
-    let responseCallback: (payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>) => void;
+    let responseCallback: (payload: JsonType | string, requestPayload: JsonType | OCPPError) => void;
     let rejectCallback: (error: OCPPError, requestStatistic?: boolean) => void;
     let requestCommandName: RequestCommand | IncomingRequestCommand;
-    let requestPayload: Record<string, unknown>;
+    let requestPayload: JsonType | OCPPError;
     let cachedRequest: CachedRequest;
     let errMsg: string;
     try {

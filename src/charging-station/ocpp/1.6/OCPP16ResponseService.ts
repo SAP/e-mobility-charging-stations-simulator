@@ -7,6 +7,7 @@ import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6
 
 import ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
@@ -32,7 +33,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     ]);
   }
 
-  public async handleResponse(commandName: OCPP16RequestCommand, payload: Record<string, unknown> | string, requestPayload: Record<string, unknown>): Promise<void> {
+  public async handleResponse(commandName: OCPP16RequestCommand, payload: JsonType | string, requestPayload: JsonType): Promise<void> {
     if (this.chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
       if (this.responseHandlers.has(commandName)) {
         try {

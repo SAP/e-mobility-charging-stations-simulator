@@ -11,6 +11,7 @@ import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { IncomingRequestHandler } from '../../../types/ocpp/Requests';
+import { JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
@@ -45,8 +46,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ]);
   }
 
-  public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: Record<string, unknown>): Promise<void> {
-    let result: Record<string, unknown>;
+  public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: JsonType): Promise<void> {
+    let result: JsonType;
     if (this.chargingStation.isInPendingState()
       && (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION || commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)) {
       throw new OCPPError(ErrorType.SECURITY_ERROR, `${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)} while charging station is in pending state`, commandName);
@@ -433,7 +434,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           setTimeout(() => {
             this.chargingStation.ocppRequestService.sendBootNotification(this.chargingStation.getBootNotificationRequest().chargePointModel,
               this.chargingStation.getBootNotificationRequest().chargePointVendor, this.chargingStation.getBootNotificationRequest().chargeBoxSerialNumber,
-              this.chargingStation.getBootNotificationRequest().firmwareVersion, null, null, null, null, null, { triggerMessage: true }).catch(() => { /* This is intentional */ });
+              this.chargingStation.getBootNotificationRequest().firmwareVersion, this.chargingStation.getBootNotificationRequest().chargePointSerialNumber,
+              this.chargingStation.getBootNotificationRequest().iccid, this.chargingStation.getBootNotificationRequest().imsi,
+              this.chargingStation.getBootNotificationRequest().meterSerialNumber, this.chargingStation.getBootNotificationRequest().meterType,
+              { triggerMessage: true }).catch(() => { /* This is intentional */ });
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         case MessageTrigger.Heartbeat:

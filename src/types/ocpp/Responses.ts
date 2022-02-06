@@ -1,6 +1,8 @@
 import { OCPP16AvailabilityStatus, OCPP16BootNotificationResponse, OCPP16ChargingProfileStatus, OCPP16ClearChargingProfileStatus, OCPP16ConfigurationStatus, OCPP16RegistrationStatus, OCPP16TriggerMessageStatus, OCPP16UnlockStatus } from './1.6/Responses';
 
-export type ResponseHandler = (payload: Record<string, unknown> | string, requestPayload?: Record<string, unknown>) => void | Promise<void>;
+import { JsonType } from '../JsonType';
+
+export type ResponseHandler = (payload: JsonType | string, requestPayload?: JsonType) => void | Promise<void>;
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse;
 
