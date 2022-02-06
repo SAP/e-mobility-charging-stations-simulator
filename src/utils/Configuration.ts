@@ -137,8 +137,8 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') ? Configuration.getConfig().logMaxFiles : 7;
   }
 
-  static getLogLevel(): level {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel.toLowerCase() as level : 'info';
+  static getLogLevel(): string {
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logLevel') ? Configuration.getConfig().logLevel.toLowerCase() : 'info';
   }
 
   static getLogFile(): string {

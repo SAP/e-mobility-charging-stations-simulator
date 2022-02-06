@@ -41,7 +41,7 @@ export default interface ConfigurationData {
   chargingStationsPerWorker?: number;
   logStatisticsInterval?: number;
   logFormat?: string;
-  logLevel?: level;
+  logLevel?: string;
   logRotate?: boolean;
   logMaxFiles?: number;
   logFile?: string;
