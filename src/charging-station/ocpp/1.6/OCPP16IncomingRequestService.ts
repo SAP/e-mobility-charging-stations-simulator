@@ -52,8 +52,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       && (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION || commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)) {
       throw new OCPPError(ErrorType.SECURITY_ERROR, `${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)} while charging station is in pending state`, commandName);
     }
-    // FIXME: Add template tunable for accepting incoming ChangeConfiguration request while in unknown state
-    if (this.chargingStation.isRegistered() || (this.chargingStation.isInUnknownState() && commandName === OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION)) {
+    // FIXME: Add template tunable for accepting incoming configuration requests while in unknown state
+    if (this.chargingStation.isRegistered() || (this.chargingStation.isInUnknownState() && (commandName === OCPP16IncomingRequestCommand.GET_CONFIGURATION || commandName === OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION || commandName === OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY || commandName === OCPP16IncomingRequestCommand.TRIGGER_MESSAGE))) {
       if (this.incomingRequestHandlers.has(commandName)) {
         try {
           // Call the method to build the result

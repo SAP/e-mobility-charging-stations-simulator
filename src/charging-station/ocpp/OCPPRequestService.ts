@@ -32,8 +32,8 @@ export default abstract class OCPPRequestService {
       }): Promise<JsonType | OCPPError | string> {
     if (this.chargingStation.isInRejectedState() || (this.chargingStation.isInPendingState() && !params.triggerMessage)) {
       throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is not in accepted state', commandName);
-    // FIXME: Add template tunable for accepting incoming ChangeConfiguration request while in unknown state
-    } else if ((this.chargingStation.isInUnknownState() && (commandName === RequestCommand.BOOT_NOTIFICATION || commandName === IncomingRequestCommand.CHANGE_CONFIGURATION))
+    // FIXME: Add template tunable for accepting incoming configuration requests while in unknown state
+    } else if ((this.chargingStation.isInUnknownState() && (commandName === RequestCommand.BOOT_NOTIFICATION || commandName === IncomingRequestCommand.GET_CONFIGURATION || commandName === IncomingRequestCommand.CHANGE_CONFIGURATION || commandName === IncomingRequestCommand.CHANGE_AVAILABILITY || commandName === IncomingRequestCommand.TRIGGER_MESSAGE))
       || this.chargingStation.isInAcceptedState() || (this.chargingStation.isInPendingState() && params.triggerMessage)) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
