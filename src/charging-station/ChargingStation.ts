@@ -123,6 +123,10 @@ export default class ChargingStation {
     return this?.wsConnection?.readyState === OPEN;
   }
 
+  public isInUnknownState(): boolean {
+    return Utils.isNullOrUndefined(this?.bootNotificationResponse?.status);
+  }
+
   public isInPendingState(): boolean {
     return this?.bootNotificationResponse?.status === RegistrationStatus.PENDING;
   }
@@ -136,7 +140,7 @@ export default class ChargingStation {
   }
 
   public isRegistered(): boolean {
-    return this.isInAcceptedState() || this.isInPendingState();
+    return !this.isInUnknownState() && (this.isInAcceptedState() || this.isInPendingState());
   }
 
   public isChargingStationAvailable(): boolean {
