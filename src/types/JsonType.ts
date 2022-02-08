@@ -1,5 +1,7 @@
 export interface JsonType {
-  [x: string]: string | number | boolean | Date | JsonType | JsonArray;
+  [key: string]: JsonValue;
 }
 
-type JsonArray = Array<string | number | boolean | Date | JsonType | JsonArray>;
+type JsonArray = Array<JsonValue>;
+
+type JsonValue = string | number | boolean | Date | JsonType | JsonArray;
