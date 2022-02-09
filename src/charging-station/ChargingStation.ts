@@ -123,6 +123,10 @@ export default class ChargingStation {
     return this?.wsConnection?.readyState === OPEN;
   }
 
+  public getRegistrationStatus(): RegistrationStatus {
+    return this?.bootNotificationResponse?.status;
+  }
+
   public isInUnknownState(): boolean {
     return Utils.isNullOrUndefined(this?.bootNotificationResponse?.status);
   }
@@ -161,6 +165,10 @@ export default class ChargingStation {
 
   public getCurrentOutType(): CurrentType | undefined {
     return this.stationInfo.currentOutType ?? CurrentType.AC;
+  }
+
+  public getOcppStrictCompliance(): boolean {
+    return this.stationInfo.ocppStrictCompliance ?? false;
   }
 
   public getVoltageOut(): number | undefined {
@@ -645,33 +653,23 @@ export default class ChargingStation {
 
   private async onOpen(): Promise<void> {
     logger.info(`${this.logPrefix()} Connected to OCPP server through ${this.wsConnectionUrl.toString()}`);
-    if (!this.isRegistered()) {
+    if (!this.isInAcceptedState()) {
       // Send BootNotification
       let registrationRetryCount = 0;
       do {
         this.bootNotificationResponse = await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel,
           this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
-        if (!this.isRegistered()) {
-          registrationRetryCount++;
+        if (!this.isInAcceptedState()) {
+          this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
           await Utils.sleep(this.bootNotificationResponse?.interval ? this.bootNotificationResponse.interval * 1000 : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL);
         }
-      } while (!this.isRegistered() && (registrationRetryCount <= this.getRegistrationMaxRetries() || this.getRegistrationMaxRetries() === -1));
+      } while (!this.isInAcceptedState() && (registrationRetryCount <= this.getRegistrationMaxRetries() || this.getRegistrationMaxRetries() === -1));
     }
-    if (this.isRegistered() && this.stationInfo.autoRegister) {
+    if (this.isInAcceptedState() && this.stationInfo.autoRegister) {
       await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel,
         this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
     }
     if (this.isInAcceptedState()) {
-      await this.startMessageSequence();
-      this.stopped && (this.stopped = false);
-      if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
-        this.flushMessageBuffer();
-      }
-    } else if (this.isInPendingState()) {
-      // The central server shall issue a TriggerMessage to the charging station for the boot notification at the end of its configuration process
-      while (!this.isInAcceptedState()) {
-        await Utils.sleep(Constants.CHARGING_STATION_DEFAULT_START_SEQUENCE_DELAY);
-      }
       await this.startMessageSequence();
       this.stopped && (this.stopped = false);
       if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {

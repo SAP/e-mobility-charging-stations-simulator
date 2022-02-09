@@ -107,7 +107,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       }
       const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(this.chargingStation, connectorId, meterStop);
       // FIXME: should be a callback, each OCPP commands implementation must do only one job
-      (this.chargingStation.getBeginEndMeterValues() && !this.chargingStation.getOutOfOrderEndMeterValues())
+      (this.chargingStation.getBeginEndMeterValues() && this.chargingStation.getOcppStrictCompliance() && !this.chargingStation.getOutOfOrderEndMeterValues())
         && await this.sendTransactionEndMeterValues(connectorId, transactionId, transactionEndMeterValue);
       const payload: StopTransactionRequest = {
         transactionId,

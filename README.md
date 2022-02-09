@@ -84,13 +84,14 @@ stationTemplateUrls | | {}[] | { file: string; numberOfStations: number; }[] | a
 
 Key | Value(s) | Default Value | Value type | Description 
 --- | -------| --------------| ---------- | ------------
-supervisionUrls | | '' | string \| string[] | string or array of connection URIs to OCPP-J servers. It has priority over the global configuration parameter
+supervisionUrls | | '' | string\|string[] | string or array of connection URIs to OCPP-J servers. It has priority over the global configuration parameter
 supervisionUser | | '' | string | basic HTTP authentication user to OCPP-J server
 supervisionPassword | | '' | string | basic HTTP authentication password to OCPP-J server
 supervisionUrlOcppConfiguration | true/false | false | boolean | Allow supervision URL configuration via a vendor OCPP parameter key
 supervisionUrlOcppKey | | 'ConnectionUrl' | string | The vendor string that will be used as a vendor OCPP parameter key to set the supervision URL
 ocppVersion | 1.6 | 1.6 | string | OCPP version 
 ocppProtocol | json | json | string | OCPP protocol
+ocppStrictCompliance | true/false | true | boolean | Strict adherence to the OCPP version and protocol specifications
 wsOptions | | {} | ClientOptions & ClientRequestArgs | [ws](https://github.com/websockets/ws) and node.js [http](https://nodejs.org/api/http.html) clients options intersection
 authorizationFile | | '' | string | RFID tags list file relative to src/assets path
 baseName | | '' | string | base name to build charging stations name
@@ -117,7 +118,7 @@ registrationMaxRetries | | -1 (unlimited) | integer | charging stations boot not
 enableStatistics | true/false | true | boolean | enable charging stations statistics
 mayAuthorizeAtRemoteStart | true/false | true | boolean | always send authorize at remote start transaction when AuthorizeRemoteTxRequests is enabled
 beginEndMeterValues | true/false | false | boolean | enable Transaction.{Begin,End} MeterValues
-outOfOrderEndMeterValues | true/false | false | boolean | send Transaction.End MeterValues out of order
+outOfOrderEndMeterValues | true/false | false | boolean | send Transaction.End MeterValues out of order. Need to relax OCPP specifications strict compliance ('ocppStrictCompliance' parameter)
 meteringPerTransaction | true/false | true | boolean | enable metering history on a per transaction basis
 transactionDataMeterValues | true/false | false | boolean | enable transaction data MeterValues at stop transaction
 mainVoltageMeterValues | true/false | true | boolean | include charging station main voltage MeterValues on three phased charging stations

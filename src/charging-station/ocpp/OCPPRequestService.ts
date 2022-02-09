@@ -30,10 +30,8 @@ export default abstract class OCPPRequestService {
         skipBufferingOnError: false,
         triggerMessage: false
       }): Promise<JsonType | OCPPError | string> {
-    if (this.chargingStation.isInRejectedState() || (this.chargingStation.isInPendingState() && !params.triggerMessage)) {
-      throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is not in accepted state', commandName);
-    // FIXME: Add template tunable for accepting incoming configuration requests while in unknown state
-    } else if ((this.chargingStation.isInUnknownState() && (commandName === RequestCommand.BOOT_NOTIFICATION || commandName === IncomingRequestCommand.GET_CONFIGURATION || commandName === IncomingRequestCommand.CHANGE_CONFIGURATION || commandName === IncomingRequestCommand.CHANGE_AVAILABILITY || commandName === IncomingRequestCommand.TRIGGER_MESSAGE))
+    if ((this.chargingStation.isInUnknownState() && commandName === RequestCommand.BOOT_NOTIFICATION)
+      || (!this.chargingStation.getOcppStrictCompliance() && this.chargingStation.isInUnknownState())
       || this.chargingStation.isInAcceptedState() || (this.chargingStation.isInPendingState() && params.triggerMessage)) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
@@ -108,9 +106,8 @@ export default abstract class OCPPRequestService {
       }), Constants.OCPP_WEBSOCKET_TIMEOUT, new OCPPError(ErrorType.GENERIC_ERROR, `Timeout for message id '${messageId}'`, commandName, messageData?.details as JsonType ?? {}), () => {
         messageType === MessageType.CALL_MESSAGE && this.chargingStation.requests.delete(messageId);
       });
-    } else {
-      throw new OCPPError(ErrorType.SECURITY_ERROR, 'Cannot send command payload if the charging station is in unknown state', commandName);
     }
+    throw new OCPPError(ErrorType.SECURITY_ERROR, `Cannot send command ${commandName} payload when the charging station is in ${this.chargingStation.getRegistrationStatus()} state on the central server`, commandName);
   }
 
   protected handleRequestError(commandName: RequestCommand, error: Error): void {

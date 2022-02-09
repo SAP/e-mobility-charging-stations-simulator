@@ -48,12 +48,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   public async handleRequest(messageId: string, commandName: OCPP16IncomingRequestCommand, commandPayload: JsonType): Promise<void> {
     let result: JsonType;
-    if (this.chargingStation.isInPendingState()
-      && (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION || commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)) {
-      throw new OCPPError(ErrorType.SECURITY_ERROR, `${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)} while charging station is in pending state`, commandName);
+    if (this.chargingStation.getOcppStrictCompliance() && (this.chargingStation.isInPendingState()
+      && (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION || commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION))) {
+      throw new OCPPError(ErrorType.SECURITY_ERROR, `${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)} while the charging station is in pending state on the central server`, commandName);
     }
-    // FIXME: Add template tunable for accepting incoming configuration requests while in unknown state
-    if (this.chargingStation.isRegistered() || (this.chargingStation.isInUnknownState() && (commandName === OCPP16IncomingRequestCommand.GET_CONFIGURATION || commandName === OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION || commandName === OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY || commandName === OCPP16IncomingRequestCommand.TRIGGER_MESSAGE))) {
+    if (this.chargingStation.isRegistered() || (!this.chargingStation.getOcppStrictCompliance() && this.chargingStation.isInUnknownState())) {
       if (this.incomingRequestHandlers.has(commandName)) {
         try {
           // Call the method to build the result
@@ -68,7 +67,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
       }
     } else {
-      throw new OCPPError(ErrorType.SECURITY_ERROR, `The charging station is not registered on the central server. ${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)}`, commandName);
+      throw new OCPPError(ErrorType.SECURITY_ERROR, `${commandName} cannot be issued to handle request payload ${JSON.stringify(commandPayload, null, 2)} while the charging station is not registered on the central server.`, commandName);
     }
     // Send the built result
     await this.chargingStation.ocppRequestService.sendResult(messageId, result, commandName);

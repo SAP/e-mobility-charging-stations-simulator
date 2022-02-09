@@ -4,6 +4,7 @@ import { AuthorizeRequest, OCPP16AuthorizationStatus, OCPP16AuthorizeResponse, O
 import { HeartbeatRequest, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
 import { HeartbeatResponse, OCPP16BootNotificationResponse, OCPP16RegistrationStatus, StatusNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
+import { RegistrationStatus, ResponseHandler } from '../../../types/ocpp/Responses';
 
 import ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
@@ -13,7 +14,6 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPResponseService from '../OCPPResponseService';
-import { ResponseHandler } from '../../../types/ocpp/Responses';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
@@ -47,7 +47,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         throw new OCPPError(ErrorType.NOT_IMPLEMENTED, `${commandName} is not implemented to handle request response payload ${JSON.stringify(payload, null, 2)}`, commandName);
       }
     } else {
-      throw new OCPPError(ErrorType.SECURITY_ERROR, `The charging station is not registered on the central server. ${commandName} cannot be not issued to handle request response payload ${JSON.stringify(payload, null, 2)}`, commandName);
+      throw new OCPPError(ErrorType.SECURITY_ERROR, `${commandName} cannot be issued to handle request response payload ${JSON.stringify(payload, null, 2)} while the charging station is not registered on the central server. `, commandName);
     }
   }
 
@@ -56,10 +56,12 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartBeatInterval, payload.interval.toString());
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartbeatInterval, payload.interval.toString(), { visible: false });
       this.chargingStation.heartbeatSetInterval ? this.chargingStation.restartHeartbeat() : this.chargingStation.startHeartbeat();
-    } else if (payload.status === OCPP16RegistrationStatus.PENDING) {
-      logger.info(this.chargingStation.logPrefix() + ' Charging station in pending state on the central server');
+    }
+    if (Object.values(RegistrationStatus).includes(payload.status)) {
+      const logMsg = `${this.chargingStation.logPrefix()} Charging station in '${payload.status}' state on the central server`;
+      payload.status === OCPP16RegistrationStatus.REJECTED ? logger.warn(logMsg) : logger.info(logMsg);
     } else {
-      logger.warn(this.chargingStation.logPrefix() + ' Charging station rejected by the central server');
+      logger.error(this.chargingStation.logPrefix() + ' Charging station boot notification response received: %j with undefined registration status', payload);
     }
   }
 
@@ -181,7 +183,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      (this.chargingStation.getBeginEndMeterValues() && this.chargingStation.getOutOfOrderEndMeterValues())
+      (this.chargingStation.getBeginEndMeterValues() && !this.chargingStation.getOcppStrictCompliance() && this.chargingStation.getOutOfOrderEndMeterValues())
         && await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(transactionConnectorId, requestPayload.transactionId,
           OCPP16ServiceUtils.buildTransactionEndMeterValue(this.chargingStation, transactionConnectorId, requestPayload.meterStop));
       if (!this.chargingStation.isChargingStationAvailable() || !this.chargingStation.isConnectorAvailable(transactionConnectorId)) {
