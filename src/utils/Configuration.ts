@@ -7,7 +7,6 @@ import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from '../types/Worker';
 import chalk from 'chalk';
 import fs from 'fs';
-import { level } from 'winston';
 import path from 'path';
 
 export default class Configuration {

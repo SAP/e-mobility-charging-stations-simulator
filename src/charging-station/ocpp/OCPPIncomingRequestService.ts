@@ -11,7 +11,7 @@ export default abstract class OCPPIncomingRequestService {
   }
 
   protected handleIncomingRequestError<T>(commandName: IncomingRequestCommand, error: Error, errorOcppResponse?: T): T {
-    logger.error(this.chargingStation.logPrefix() + ' Incoming request command ' + commandName + ' error: %j', error);
+    logger.error(this.chargingStation.logPrefix() + ' Incoming request command %s error: %j', commandName, error);
     if (errorOcppResponse) {
       return errorOcppResponse;
     }

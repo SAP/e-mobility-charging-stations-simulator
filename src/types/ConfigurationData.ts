@@ -2,7 +2,6 @@ import { ServerOptions } from 'ws';
 import { StorageType } from './Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
-import { level } from 'winston';
 
 export enum SupervisionUrlDistribution {
   ROUND_ROBIN = 'round-robin',

@@ -665,10 +665,6 @@ export default class ChargingStation {
         }
       } while (!this.isInAcceptedState() && (registrationRetryCount <= this.getRegistrationMaxRetries() || this.getRegistrationMaxRetries() === -1));
     }
-    if (this.isInAcceptedState() && this.stationInfo.autoRegister) {
-      await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel,
-        this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
-    }
     if (this.isInAcceptedState()) {
       await this.startMessageSequence();
       this.stopped && (this.stopped = false);
@@ -878,6 +874,10 @@ export default class ChargingStation {
   }
 
   private async startMessageSequence(): Promise<void> {
+    if (this.stationInfo.autoRegister) {
+      await this.ocppRequestService.sendBootNotification(this.bootNotificationRequest.chargePointModel,
+        this.bootNotificationRequest.chargePointVendor, this.bootNotificationRequest.chargeBoxSerialNumber, this.bootNotificationRequest.firmwareVersion);
+    }
     // Start WebSocket ping
     this.startWebSocketPing();
     // Start heartbeat

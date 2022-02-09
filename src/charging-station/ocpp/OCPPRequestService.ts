@@ -111,7 +111,7 @@ export default abstract class OCPPRequestService {
   }
 
   protected handleRequestError(commandName: RequestCommand, error: Error): void {
-    logger.error(this.chargingStation.logPrefix() + ' Request command ' + commandName + ' error: %j', error);
+    logger.error(this.chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
     throw error;
   }
 
