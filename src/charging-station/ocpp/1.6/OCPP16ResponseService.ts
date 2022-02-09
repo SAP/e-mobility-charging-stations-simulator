@@ -4,7 +4,6 @@ import { AuthorizeRequest, OCPP16AuthorizationStatus, OCPP16AuthorizeResponse, O
 import { HeartbeatRequest, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
 import { HeartbeatResponse, OCPP16BootNotificationResponse, OCPP16RegistrationStatus, StatusNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
-import { RegistrationStatus, ResponseHandler } from '../../../types/ocpp/Responses';
 
 import ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
@@ -14,6 +13,7 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPResponseService from '../OCPPResponseService';
+import { ResponseHandler } from '../../../types/ocpp/Responses';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
@@ -57,7 +57,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.addConfigurationKey(OCPP16StandardParametersKey.HeartbeatInterval, payload.interval.toString(), { visible: false });
       this.chargingStation.heartbeatSetInterval ? this.chargingStation.restartHeartbeat() : this.chargingStation.startHeartbeat();
     }
-    if (Object.values(RegistrationStatus).includes(payload.status)) {
+    if (Object.values(OCPP16RegistrationStatus).includes(payload.status)) {
       const logMsg = `${this.chargingStation.logPrefix()} Charging station in '${payload.status}' state on the central server`;
       payload.status === OCPP16RegistrationStatus.REJECTED ? logger.warn(logMsg) : logger.info(logMsg);
     } else {
