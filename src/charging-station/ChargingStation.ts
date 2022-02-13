@@ -52,6 +52,7 @@ export default class ChargingStation {
   public performanceStatistics!: PerformanceStatistics;
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
+  private readonly id: string;
   private readonly index: number;
   private bootNotificationRequest!: BootNotificationRequest;
   private bootNotificationResponse!: BootNotificationResponse | null;
@@ -66,6 +67,7 @@ export default class ChargingStation {
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
   constructor(index: number, stationTemplateFile: string) {
+    this.id = Utils.generateUUID();
     this.index = index;
     this.stationTemplateFile = stationTemplateFile;
     this.connectors = new Map<number, ConnectorStatus>();
