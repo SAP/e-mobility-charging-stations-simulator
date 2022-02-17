@@ -10,7 +10,7 @@ import Configuration from '../utils/Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
-import logger from '../utils/Logger';
+import getLogger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 
 export default class PerformanceStatistics {
@@ -60,7 +60,7 @@ export default class PerformanceStatistics {
         }
         break;
       default:
-        logger.error(`${this.logPrefix()} wrong message type ${messageType}`);
+        getLogger().error(`${this.logPrefix()} wrong message type ${messageType}`);
         break;
     }
   }
@@ -68,7 +68,7 @@ export default class PerformanceStatistics {
   public start(): void {
     this.startLogStatisticsInterval();
     if (Configuration.getPerformanceStorage().enabled) {
-      logger.info(`${this.logPrefix()} storage enabled: type ${Configuration.getPerformanceStorage().type}, uri: ${Configuration.getPerformanceStorage().uri}`);
+      getLogger().info(`${this.logPrefix()} storage enabled: type ${Configuration.getPerformanceStorage().type}, uri: ${Configuration.getPerformanceStorage().uri}`);
     }
   }
 
@@ -89,13 +89,13 @@ export default class PerformanceStatistics {
     this.performanceObserver = new PerformanceObserver((list) => {
       const lastPerformanceEntry = list.getEntries()[0];
       this.addPerformanceEntryToStatistics(lastPerformanceEntry);
-      logger.debug(`${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`, lastPerformanceEntry);
+      getLogger().debug(`${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`, lastPerformanceEntry);
     });
     this.performanceObserver.observe({ entryTypes: ['measure'] });
   }
 
   private logStatistics(): void {
-    logger.info(this.logPrefix() + ' %j', this.statistics);
+    getLogger().info(this.logPrefix() + ' %j', this.statistics);
   }
 
   private startLogStatisticsInterval(): void {
@@ -103,9 +103,9 @@ export default class PerformanceStatistics {
       this.displayInterval = setInterval(() => {
         this.logStatistics();
       }, Configuration.getLogStatisticsInterval() * 1000);
-      logger.info(this.logPrefix() + ' logged every ' + Utils.formatDurationSeconds(Configuration.getLogStatisticsInterval()));
+      getLogger().info(this.logPrefix() + ' logged every ' + Utils.formatDurationSeconds(Configuration.getLogStatisticsInterval()));
     } else {
-      logger.info(this.logPrefix() + ' log interval is set to ' + Configuration.getLogStatisticsInterval().toString() + '. Not logging statistics');
+      getLogger().info(this.logPrefix() + ' log interval is set to ' + Configuration.getLogStatisticsInterval().toString() + '. Not logging statistics');
     }
   }
 

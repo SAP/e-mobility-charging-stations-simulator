@@ -37,7 +37,7 @@ import { URL } from 'url';
 import Utils from '../utils/Utils';
 import crypto from 'crypto';
 import fs from 'fs';
-import logger from '../utils/Logger';
+import getLogger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 import path from 'path';
 
@@ -184,7 +184,7 @@ export default class ChargingStation {
         defaultVoltageOut = Voltage.VOLTAGE_400;
         break;
       default:
-        logger.error(errMsg);
+        getLogger().error(errMsg);
         throw new Error(errMsg);
     }
     return !Utils.isUndefined(this.stationInfo.voltageOut) ? this.stationInfo.voltageOut : defaultVoltageOut;
@@ -264,17 +264,17 @@ export default class ChargingStation {
   public getSampledValueTemplate(connectorId: number, measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       phase?: MeterValuePhase): SampledValueTemplate | undefined {
     if (!Constants.SUPPORTED_MEASURANDS.includes(measurand)) {
-      logger.warn(`${this.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+      getLogger().warn(`${this.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
       return;
     }
     if (measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER && !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
-      logger.debug(`${this.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId} not found in '${StandardParametersKey.MeterValuesSampledData}' OCPP parameter`);
+      getLogger().debug(`${this.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId} not found in '${StandardParametersKey.MeterValuesSampledData}' OCPP parameter`);
       return;
     }
     const sampledValueTemplates: SampledValueTemplate[] = this.getConnectorStatus(connectorId).MeterValues;
     for (let index = 0; !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length; index++) {
       if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)) {
-        logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+        getLogger().warn(`${this.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
       } else if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
         && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
         return sampledValueTemplates[index];
@@ -288,10 +288,10 @@ export default class ChargingStation {
     }
     if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
       const errorMsg = `${this.logPrefix()} Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
-      logger.error(errorMsg);
+      getLogger().error(errorMsg);
       throw new Error(errorMsg);
     }
-    logger.debug(`${this.logPrefix()} No MeterValues for measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+    getLogger().debug(`${this.logPrefix()} No MeterValues for measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
   }
 
   public getAutomaticTransactionGeneratorRequireAuthorize(): boolean {
@@ -304,11 +304,11 @@ export default class ChargingStation {
       this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
         await this.ocppRequestService.sendHeartbeat();
       }, this.getHeartbeatInterval());
-      logger.info(this.logPrefix() + ' Heartbeat started every ' + Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()));
+      getLogger().info(this.logPrefix() + ' Heartbeat started every ' + Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()));
     } else if (this.heartbeatSetInterval) {
-      logger.info(this.logPrefix() + ' Heartbeat already started every ' + Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()));
+      getLogger().info(this.logPrefix() + ' Heartbeat already started every ' + Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()));
     } else {
-      logger.error(`${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval() ? Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()) : this.getHeartbeatInterval()}, not starting the heartbeat`);
+      getLogger().error(`${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval() ? Utils.formatDurationMilliSeconds(this.getHeartbeatInterval()) : this.getHeartbeatInterval()}, not starting the heartbeat`);
     }
   }
 
@@ -321,18 +321,18 @@ export default class ChargingStation {
 
   public startMeterValues(connectorId: number, interval: number): void {
     if (connectorId === 0) {
-      logger.error(`${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId.toString()}`);
+      getLogger().error(`${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId.toString()}`);
       return;
     }
     if (!this.getConnectorStatus(connectorId)) {
-      logger.error(`${this.logPrefix()} Trying to start MeterValues on non existing connector Id ${connectorId.toString()}`);
+      getLogger().error(`${this.logPrefix()} Trying to start MeterValues on non existing connector Id ${connectorId.toString()}`);
       return;
     }
     if (!this.getConnectorStatus(connectorId)?.transactionStarted) {
-      logger.error(`${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction started`);
+      getLogger().error(`${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction started`);
       return;
     } else if (this.getConnectorStatus(connectorId)?.transactionStarted && !this.getConnectorStatus(connectorId)?.transactionId) {
-      logger.error(`${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction id`);
+      getLogger().error(`${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction id`);
       return;
     }
     if (interval > 0) {
@@ -341,7 +341,7 @@ export default class ChargingStation {
         await this.ocppRequestService.sendMeterValues(connectorId, this.getConnectorStatus(connectorId).transactionId, interval);
       }, interval);
     } else {
-      logger.error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.formatDurationMilliSeconds(interval) : interval}, not sending MeterValues`);
+      getLogger().error(`${this.logPrefix()} Charging station ${StandardParametersKey.MeterValueSampleInterval} configuration set to ${interval ? Utils.formatDurationMilliSeconds(interval) : interval}, not sending MeterValues`);
     }
   }
 
@@ -412,7 +412,7 @@ export default class ChargingStation {
         reboot,
       });
     } else {
-      logger.error(`${this.logPrefix()} Trying to add an already existing configuration key: %j`, keyFound);
+      getLogger().error(`${this.logPrefix()} Trying to add an already existing configuration key: %j`, keyFound);
     }
   }
 
@@ -422,7 +422,7 @@ export default class ChargingStation {
       const keyIndex = this.configuration.configurationKey.indexOf(keyFound);
       this.configuration.configurationKey[keyIndex].value = value;
     } else {
-      logger.error(`${this.logPrefix()} Trying to set a value on a non existing configuration key: %j`, { key, value });
+      getLogger().error(`${this.logPrefix()} Trying to set a value on a non existing configuration key: %j`, { key, value });
     }
   }
 
@@ -520,7 +520,7 @@ export default class ChargingStation {
 
   private handleUnsupportedVersion(version: OCPPVersion) {
     const errMsg = `${this.logPrefix()} Unsupported protocol version '${version}' configured in template file ${this.stationTemplateFile}`;
-    logger.error(errMsg);
+    getLogger().error(errMsg);
     throw new Error(errMsg);
   }
 
@@ -537,18 +537,18 @@ export default class ChargingStation {
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
-      logger.warn(`${this.logPrefix()} Charging station template ${this.stationTemplateFile} with ${maxConnectors} connectors`);
+      getLogger().warn(`${this.logPrefix()} Charging station template ${this.stationTemplateFile} with ${maxConnectors} connectors`);
     }
     const templateMaxConnectors = this.getTemplateMaxNumberOfConnectors();
     if (templateMaxConnectors <= 0) {
-      logger.warn(`${this.logPrefix()} Charging station template ${this.stationTemplateFile} with no connector configuration`);
+      getLogger().warn(`${this.logPrefix()} Charging station template ${this.stationTemplateFile} with no connector configuration`);
     }
     if (!this.stationInfo.Connectors[0]) {
-      logger.warn(`${this.logPrefix()} Charging station template ${this.stationTemplateFile} with no connector Id 0 configuration`);
+      getLogger().warn(`${this.logPrefix()} Charging station template ${this.stationTemplateFile} with no connector Id 0 configuration`);
     }
     // Sanity check
     if (maxConnectors > (this.stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) && !this.stationInfo.randomConnectors) {
-      logger.warn(`${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${this.stationTemplateFile}, forcing random connector configurations affectation`);
+      getLogger().warn(`${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${this.stationTemplateFile}, forcing random connector configurations affectation`);
       this.stationInfo.randomConnectors = true;
     }
     const connectorsConfigHash = crypto.createHash('sha256').update(JSON.stringify(this.stationInfo.Connectors) + maxConnectors.toString()).digest('hex');
@@ -654,7 +654,7 @@ export default class ChargingStation {
   }
 
   private async onOpen(): Promise<void> {
-    logger.info(`${this.logPrefix()} Connected to OCPP server through ${this.wsConnectionUrl.toString()}`);
+    getLogger().info(`${this.logPrefix()} Connected to OCPP server through ${this.wsConnectionUrl.toString()}`);
     if (!this.isInAcceptedState()) {
       // Send BootNotification
       let registrationRetryCount = 0;
@@ -674,7 +674,7 @@ export default class ChargingStation {
         this.flushMessageBuffer();
       }
     } else {
-      logger.error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);
+      getLogger().error(`${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`);
     }
     this.autoReconnectRetryCount = 0;
     this.wsConnectionRestarted = false;
@@ -685,12 +685,12 @@ export default class ChargingStation {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
-        logger.info(`${this.logPrefix()} WebSocket normally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
+        getLogger().info(`${this.logPrefix()} WebSocket normally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
         this.autoReconnectRetryCount = 0;
         break;
       // Abnormal close
       default:
-        logger.error(`${this.logPrefix()} WebSocket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
+        getLogger().error(`${this.logPrefix()} WebSocket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(code)}' and reason '${reason}'`);
         await this.reconnect(code);
         break;
     }
@@ -754,27 +754,27 @@ export default class ChargingStation {
         // Error
         default:
           errMsg = `${this.logPrefix()} Wrong message type ${messageType}`;
-          logger.error(errMsg);
+          getLogger().error(errMsg);
           throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
       }
     } catch (error) {
       // Log
-      logger.error('%s Incoming OCPP message %j matching cached request %j processing error %j', this.logPrefix(), data.toString(), this.requests.get(messageId), error);
+      getLogger().error('%s Incoming OCPP message %j matching cached request %j processing error %j', this.logPrefix(), data.toString(), this.requests.get(messageId), error);
       // Send error
       messageType === MessageType.CALL_MESSAGE && await this.ocppRequestService.sendError(messageId, error as OCPPError, commandName);
     }
   }
 
   private onPing(): void {
-    logger.debug(this.logPrefix() + ' Received a WS ping (rfc6455) from the server');
+    getLogger().debug(this.logPrefix() + ' Received a WS ping (rfc6455) from the server');
   }
 
   private onPong(): void {
-    logger.debug(this.logPrefix() + ' Received a WS pong (rfc6455) from the server');
+    getLogger().debug(this.logPrefix() + ' Received a WS pong (rfc6455) from the server');
   }
 
   private async onError(error: WSError): Promise<void> {
-    logger.error(this.logPrefix() + ' WebSocket error: %j', error);
+    getLogger().error(this.logPrefix() + ' WebSocket error: %j', error);
     // switch (error.code) {
     //   case 'ECONNREFUSED':
     //     await this.reconnect(error);
@@ -803,7 +803,7 @@ export default class ChargingStation {
         FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error as NodeJS.ErrnoException);
       }
     } else {
-      logger.info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile);
+      getLogger().info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile);
     }
     return authorizedTags;
   }
@@ -951,11 +951,11 @@ export default class ChargingStation {
           this.wsConnection.ping((): void => { /* This is intentional */ });
         }
       }, webSocketPingInterval * 1000);
-      logger.info(this.logPrefix() + ' WebSocket ping started every ' + Utils.formatDurationSeconds(webSocketPingInterval));
+      getLogger().info(this.logPrefix() + ' WebSocket ping started every ' + Utils.formatDurationSeconds(webSocketPingInterval));
     } else if (this.webSocketPingSetInterval) {
-      logger.info(this.logPrefix() + ' WebSocket ping every ' + Utils.formatDurationSeconds(webSocketPingInterval) + ' already started');
+      getLogger().info(this.logPrefix() + ' WebSocket ping every ' + Utils.formatDurationSeconds(webSocketPingInterval) + ' already started');
     } else {
-      logger.error(`${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval ? Utils.formatDurationSeconds(webSocketPingInterval) : webSocketPingInterval}, not starting the WebSocket ping`);
+      getLogger().error(`${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval ? Utils.formatDurationSeconds(webSocketPingInterval) : webSocketPingInterval}, not starting the WebSocket ping`);
     }
   }
 
@@ -967,7 +967,7 @@ export default class ChargingStation {
 
   private warnDeprecatedTemplateKey(template: ChargingStationTemplate, key: string, chargingStationId: string, logMsgToAppend = ''): void {
     if (!Utils.isUndefined(template[key])) {
-      logger.warn(`${Utils.logPrefix(` ${chargingStationId} |`)} Deprecated template key '${key}' usage in file '${this.stationTemplateFile}'${logMsgToAppend && '. ' + logMsgToAppend}`);
+      getLogger().warn(`${Utils.logPrefix(` ${chargingStationId} |`)} Deprecated template key '${key}' usage in file '${this.stationTemplateFile}'${logMsgToAppend && '. ' + logMsgToAppend}`);
     }
   }
 
@@ -995,11 +995,11 @@ export default class ChargingStation {
           if (this.index <= supervisionUrls.length) {
             urlIndex = this.index - 1;
           } else {
-            logger.warn(`${this.logPrefix()} No more configured supervision urls available, using the first one`);
+            getLogger().warn(`${this.logPrefix()} No more configured supervision urls available, using the first one`);
           }
           break;
         default:
-          logger.error(`${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${SupervisionUrlDistribution.ROUND_ROBIN}`);
+          getLogger().error(`${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${SupervisionUrlDistribution.ROUND_ROBIN}`);
           urlIndex = (this.index - 1) % supervisionUrls.length;
           break;
       }
@@ -1017,7 +1017,7 @@ export default class ChargingStation {
     if (HeartBeatInterval) {
       return Utils.convertToInt(HeartBeatInterval.value) * 1000;
     }
-    !this.stationInfo.autoRegister && logger.warn(`${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL}`);
+    !this.stationInfo.autoRegister && getLogger().warn(`${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL}`);
     return Constants.DEFAULT_HEARTBEAT_INTERVAL;
   }
 
@@ -1045,7 +1045,7 @@ export default class ChargingStation {
         break;
     }
     this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
-    logger.info(this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString());
+    getLogger().info(this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString());
   }
 
   private stopMeterValues(connectorId: number) {
@@ -1061,11 +1061,11 @@ export default class ChargingStation {
         fs.watch(authorizationFile, (event, filename) => {
           if (filename && event === 'change') {
             try {
-              logger.debug(this.logPrefix() + ' Authorization file ' + authorizationFile + ' have changed, reload');
+              getLogger().debug(this.logPrefix() + ' Authorization file ' + authorizationFile + ' have changed, reload');
               // Initialize authorizedTags
               this.authorizedTags = this.getAuthorizedTags();
             } catch (error) {
-              logger.error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
+              getLogger().error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
             }
           }
         });
@@ -1073,7 +1073,7 @@ export default class ChargingStation {
         FileUtils.handleFileException(this.logPrefix(), 'Authorization', authorizationFile, error as NodeJS.ErrnoException);
       }
     } else {
-      logger.info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile + '. Not monitoring changes');
+      getLogger().info(this.logPrefix() + ' No authorization file given in template file ' + this.stationTemplateFile + '. Not monitoring changes');
     }
   }
 
@@ -1082,7 +1082,7 @@ export default class ChargingStation {
       fs.watch(this.stationTemplateFile, (event, filename): void => {
         if (filename && event === 'change') {
           try {
-            logger.debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
+            getLogger().debug(this.logPrefix() + ' Template file ' + this.stationTemplateFile + ' have changed, reload');
             // Initialize
             this.initialize();
             // Restart the ATG
@@ -1098,7 +1098,7 @@ export default class ChargingStation {
             }
             // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
           } catch (error) {
-            logger.error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
+            getLogger().error(this.logPrefix() + ' Charging station template file monitoring error: %j', error);
           }
         }
       });
@@ -1127,13 +1127,13 @@ export default class ChargingStation {
       this.autoReconnectRetryCount++;
       const reconnectDelay = (this.getReconnectExponentialDelay() ? Utils.exponentialDelay(this.autoReconnectRetryCount) : this.getConnectionTimeout() * 1000);
       const reconnectTimeout = (reconnectDelay - 100) > 0 && reconnectDelay;
-      logger.error(`${this.logPrefix()} WebSocket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectTimeout}ms`);
+      getLogger().error(`${this.logPrefix()} WebSocket: connection retry in ${Utils.roundTo(reconnectDelay, 2)}ms, timeout ${reconnectTimeout}ms`);
       await Utils.sleep(reconnectDelay);
-      logger.error(this.logPrefix() + ' WebSocket: reconnecting try #' + this.autoReconnectRetryCount.toString());
+      getLogger().error(this.logPrefix() + ' WebSocket: reconnecting try #' + this.autoReconnectRetryCount.toString());
       this.openWSConnection({ ...this.stationInfo.wsOptions, handshakeTimeout: reconnectTimeout }, true);
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
-      logger.error(`${this.logPrefix()} WebSocket reconnect failure: max retries reached (${this.autoReconnectRetryCount}) or retry disabled (${this.getAutoReconnectMaxRetries()})`);
+      getLogger().error(`${this.logPrefix()} WebSocket reconnect failure: max retries reached (${this.autoReconnectRetryCount}) or retry disabled (${this.getAutoReconnectMaxRetries()})`);
     }
   }
 

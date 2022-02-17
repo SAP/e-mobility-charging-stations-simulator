@@ -14,7 +14,7 @@ import OCPPError from '../../exception/OCPPError';
 import OCPPResponseService from './OCPPResponseService';
 import PerformanceStatistics from '../../performance/PerformanceStatistics';
 import Utils from '../../utils/Utils';
-import logger from '../../utils/Logger';
+import getLogger from '../../utils/Logger';
 
 export default abstract class OCPPRequestService {
   public chargingStation: ChargingStation;
@@ -99,7 +99,7 @@ export default abstract class OCPPRequestService {
           if (requestStatistic && self.chargingStation.getEnableStatistics()) {
             self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
           }
-          logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`, error, commandName, messageData);
+          getLogger().error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`, error, commandName, messageData);
           self.chargingStation.requests.delete(messageId);
           reject(error);
         }
@@ -111,7 +111,7 @@ export default abstract class OCPPRequestService {
   }
 
   protected handleRequestError(commandName: RequestCommand, error: Error): void {
-    logger.error(this.chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
+    getLogger().error(this.chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
     throw error;
   }
 

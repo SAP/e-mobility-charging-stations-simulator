@@ -8,17 +8,17 @@ import OCPPError from '../../../exception/OCPPError';
 import { RequestCommand } from '../../../types/ocpp/Requests';
 import { SampledValueTemplate } from '../../../types/MeasurandPerPhaseSampledValueTemplates';
 import Utils from '../../../utils/Utils';
-import logger from '../../../utils/Logger';
+import getLogger from '../../../utils/Logger';
 
 export class OCPP16ServiceUtils {
   public static checkMeasurandPowerDivider(chargingStation: ChargingStation, measurandType: OCPP16MeterValueMeasurand): void {
     if (Utils.isUndefined(chargingStation.stationInfo.powerDivider)) {
       const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider is undefined`;
-      logger.error(errMsg);
+      getLogger().error(errMsg);
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES);
     } else if (chargingStation.stationInfo?.powerDivider <= 0) {
       const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER}: powerDivider have zero or below value ${chargingStation.stationInfo.powerDivider}`;
-      logger.error(errMsg);
+      getLogger().error(errMsg);
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES);
     }
   }

@@ -3,7 +3,7 @@ import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol'
 import BaseError from '../../exception/BaseError';
 import { JsonType } from '../../types/JsonType';
 import UIWebSocketServer from '../UIWebSocketServer';
-import logger from '../../utils/Logger';
+import getLogger from '../../utils/Logger';
 
 export default abstract class AbstractUIService {
   protected readonly uiWebSocketServer: UIWebSocketServer;
@@ -24,7 +24,7 @@ export default abstract class AbstractUIService {
         messageResponse = await this.messageHandlers.get(command)(payload) as JsonType;
       } catch (error) {
         // Log
-        logger.error(this.uiWebSocketServer.logPrefix() + ' Handle message error: %j', error);
+        getLogger().error(this.uiWebSocketServer.logPrefix() + ' Handle message error: %j', error);
         throw error;
       }
     } else {

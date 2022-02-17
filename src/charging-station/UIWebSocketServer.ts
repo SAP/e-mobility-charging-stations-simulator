@@ -7,7 +7,7 @@ import Configuration from '../utils/Configuration';
 import { IncomingMessage } from 'http';
 import UIServiceFactory from './ui-websocket-services/UIServiceFactory';
 import Utils from '../utils/Utils';
-import logger from '../utils/Logger';
+import getLogger from '../utils/Logger';
 
 export default class UIWebSocketServer extends Server {
   public readonly chargingStations: Set<string>;
@@ -48,11 +48,11 @@ export default class UIWebSocketServer extends Server {
           throw new BaseError('UI protocol request is not iterable');
         }
         this.uiServices.get(version).handleMessage(command, payload).catch(() => {
-          logger.error(`${this.logPrefix()} Error while handling command %s message: %j`, command, payload);
+          getLogger().error(`${this.logPrefix()} Error while handling command %s message: %j`, command, payload);
         });
       });
       socket.on('error', (error) => {
-        logger.error(`${this.logPrefix()} Error on WebSocket: %j`, error);
+        getLogger().error(`${this.logPrefix()} Error on WebSocket: %j`, error);
       });
     });
   }

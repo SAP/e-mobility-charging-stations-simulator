@@ -19,20 +19,26 @@ if (Configuration.getLogRotate()) {
   ];
 }
 
-const logger: Logger = createLogger({
-  level: Configuration.getLogLevel(),
-  format: format.combine(format.splat(), format[Configuration.getLogFormat()]()),
-  transports: transports,
-});
+let loggerInstance: Logger | null = null;
+const getLogger = () => {
+  if (!loggerInstance) {
+    loggerInstance = createLogger({
+      level: Configuration.getLogLevel(),
+      format: format.combine(format.splat(), format[Configuration.getLogFormat()]()),
+      transports: transports,
+    });
+    return loggerInstance;
+  }
+};
 
 //
 // If enabled, log to the `console` with the format:
 // `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
 //
 if (Configuration.getLogConsole()) {
-  logger.add(new Console({
+  getLogger().add(new Console({
     format: format.combine(format.splat(), format[Configuration.getLogFormat()]()),
   }));
 }
 
-export default logger;
+export default getLogger;
