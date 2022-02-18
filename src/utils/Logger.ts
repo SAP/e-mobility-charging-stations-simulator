@@ -20,7 +20,7 @@ if (Configuration.getLogRotate()) {
 }
 
 let loggerInstance: Logger | null = null;
-const getLogger = () => {
+const getLogger = (): Logger => {
   if (!loggerInstance) {
     loggerInstance = createLogger({
       level: Configuration.getLogLevel(),
