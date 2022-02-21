@@ -22,7 +22,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   public constructor(chargingStation: ChargingStation) {
     if (new.target?.name === 'OCPP16ResponseService') {
-      throw new TypeError('Cannot construct OCPP16ResponseService instances directly');
+      throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
     super(chargingStation);
     this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([

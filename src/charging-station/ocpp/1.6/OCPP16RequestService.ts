@@ -28,7 +28,7 @@ import logger from '../../../utils/Logger';
 export default class OCPP16RequestService extends OCPPRequestService {
   public constructor(chargingStation: ChargingStation, ocppResponseService: OCPPResponseService) {
     if (new.target?.name === 'OCPP16RequestService') {
-      throw new TypeError('Cannot construct OCPP16RequestService instances directly');
+      throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
     super(chargingStation, ocppResponseService);
   }

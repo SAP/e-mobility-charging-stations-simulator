@@ -30,7 +30,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   public constructor(chargingStation: ChargingStation) {
     if (new.target?.name === 'OCPP16IncomingRequestService') {
-      throw new TypeError('Cannot construct OCPP16IncomingRequestService instances directly');
+      throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
     super(chargingStation);
     this.incomingRequestHandlers = new Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>([
