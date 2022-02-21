@@ -5,7 +5,7 @@ import { DBName, StorageType } from '../../types/Storage';
 import Statistics from '../../types/Statistics';
 import { URL } from 'url';
 import Utils from '../../utils/Utils';
-import getLogger from '../../utils/Logger';
+import logger from '../../utils/Logger';
 
 export abstract class Storage {
   protected readonly storageUri: URL;
@@ -18,7 +18,7 @@ export abstract class Storage {
   }
 
   protected handleDBError(type: StorageType, error: Error, table?: string): void {
-    getLogger().error(`${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`}: %j`, error);
+    logger.error(`${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`}: %j`, error);
   }
 
   protected getDBNameFromStorageType(type: StorageType): DBName {

@@ -4,28 +4,36 @@ import { DiagnosticsStatus, IncomingRequestCommand, RequestCommand, SendParams }
 import { BootNotificationResponse } from '../../types/ocpp/Responses';
 import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../../types/ocpp/ChargePointStatus';
-import ChargingStation from '../ChargingStation';
+import type ChargingStation from '../ChargingStation';
 import Constants from '../../utils/Constants';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { JsonType } from '../../types/JsonType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import { MeterValue } from '../../types/ocpp/MeterValues';
 import OCPPError from '../../exception/OCPPError';
-import OCPPResponseService from './OCPPResponseService';
+import type OCPPResponseService from './OCPPResponseService';
 import PerformanceStatistics from '../../performance/PerformanceStatistics';
 import Utils from '../../utils/Utils';
-import getLogger from '../../utils/Logger';
+import logger from '../../utils/Logger';
 
 export default abstract class OCPPRequestService {
-  public chargingStation: ChargingStation;
-  protected ocppResponseService: OCPPResponseService;
+  private static readonly instances: Map<string, OCPPRequestService> = new Map<string, OCPPRequestService>();
+  protected readonly chargingStation: ChargingStation;
+  private readonly ocppResponseService: OCPPResponseService;
 
-  constructor(chargingStation: ChargingStation, ocppResponseService: OCPPResponseService) {
+  protected constructor(chargingStation: ChargingStation, ocppResponseService: OCPPResponseService) {
     this.chargingStation = chargingStation;
     this.ocppResponseService = ocppResponseService;
   }
 
-  public async sendMessage(messageId: string, messageData: JsonType | OCPPError, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
+  public static getInstance<T extends OCPPRequestService>(this: new (chargingStation: ChargingStation, ocppResponseService: OCPPResponseService) => T, chargingStation: ChargingStation, ocppResponseService: OCPPResponseService): T {
+    if (!OCPPRequestService.instances.has(chargingStation.id)) {
+      OCPPRequestService.instances.set(chargingStation.id, new this(chargingStation, ocppResponseService));
+    }
+    return OCPPRequestService.instances.get(chargingStation.id) as T;
+  }
+
+  protected async sendMessage(messageId: string, messageData: JsonType | OCPPError, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
       params: SendParams = {
         skipBufferingOnError: false,
         triggerMessage: false
@@ -99,7 +107,7 @@ export default abstract class OCPPRequestService {
           if (requestStatistic && self.chargingStation.getEnableStatistics()) {
             self.chargingStation.performanceStatistics.addRequestStatistic(commandName, MessageType.CALL_ERROR_MESSAGE);
           }
-          getLogger().error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`, error, commandName, messageData);
+          logger.error(`${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`, error, commandName, messageData);
           self.chargingStation.requests.delete(messageId);
           reject(error);
         }
@@ -111,7 +119,7 @@ export default abstract class OCPPRequestService {
   }
 
   protected handleRequestError(commandName: RequestCommand, error: Error): void {
-    getLogger().error(this.chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
+    logger.error(this.chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
     throw error;
   }
 

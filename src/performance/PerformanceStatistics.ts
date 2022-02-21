@@ -10,19 +10,29 @@ import Configuration from '../utils/Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
-import getLogger from '../utils/Logger';
+import logger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 
 export default class PerformanceStatistics {
+  private static readonly instances: Map<string, PerformanceStatistics> = new Map<string, PerformanceStatistics>();
   private readonly objId: string;
+  private readonly objName: string;
   private performanceObserver: PerformanceObserver;
   private readonly statistics: Statistics;
   private displayInterval: NodeJS.Timeout;
 
-  public constructor(objId: string, uri: URL) {
+  private constructor(objId: string, objName: string, uri: URL) {
     this.objId = objId;
+    this.objName = objName;
     this.initializePerformanceObserver();
-    this.statistics = { id: this.objId ?? 'Object id not specified', uri: uri.toString(), createdAt: new Date(), statisticsData: new Map<string, Partial<StatisticsData>>() };
+    this.statistics = { id: this.objId ?? 'Object id not specified', name: this.objName ?? 'Object name not specified', uri: uri.toString(), createdAt: new Date(), statisticsData: new Map<string, Partial<StatisticsData>>() };
+  }
+
+  public static getInstance(objId: string, objName: string, uri: URL): PerformanceStatistics {
+    if (!PerformanceStatistics.instances.has(objId)) {
+      PerformanceStatistics.instances.set(objId, new PerformanceStatistics(objId, objName, uri));
+    }
+    return PerformanceStatistics.instances.get(objId);
   }
 
   public static beginMeasure(id: string): string {
@@ -60,7 +70,7 @@ export default class PerformanceStatistics {
         }
         break;
       default:
-        getLogger().error(`${this.logPrefix()} wrong message type ${messageType}`);
+        logger.error(`${this.logPrefix()} wrong message type ${messageType}`);
         break;
     }
   }
@@ -68,7 +78,7 @@ export default class PerformanceStatistics {
   public start(): void {
     this.startLogStatisticsInterval();
     if (Configuration.getPerformanceStorage().enabled) {
-      getLogger().info(`${this.logPrefix()} storage enabled: type ${Configuration.getPerformanceStorage().type}, uri: ${Configuration.getPerformanceStorage().uri}`);
+      logger.info(`${this.logPrefix()} storage enabled: type ${Configuration.getPerformanceStorage().type}, uri: ${Configuration.getPerformanceStorage().uri}`);
     }
   }
 
@@ -89,13 +99,13 @@ export default class PerformanceStatistics {
     this.performanceObserver = new PerformanceObserver((list) => {
       const lastPerformanceEntry = list.getEntries()[0];
       this.addPerformanceEntryToStatistics(lastPerformanceEntry);
-      getLogger().debug(`${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`, lastPerformanceEntry);
+      logger.debug(`${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`, lastPerformanceEntry);
     });
     this.performanceObserver.observe({ entryTypes: ['measure'] });
   }
 
   private logStatistics(): void {
-    getLogger().info(this.logPrefix() + ' %j', this.statistics);
+    logger.info(this.logPrefix() + ' %j', this.statistics);
   }
 
   private startLogStatisticsInterval(): void {
@@ -103,9 +113,9 @@ export default class PerformanceStatistics {
       this.displayInterval = setInterval(() => {
         this.logStatistics();
       }, Configuration.getLogStatisticsInterval() * 1000);
-      getLogger().info(this.logPrefix() + ' logged every ' + Utils.formatDurationSeconds(Configuration.getLogStatisticsInterval()));
+      logger.info(this.logPrefix() + ' logged every ' + Utils.formatDurationSeconds(Configuration.getLogStatisticsInterval()));
     } else {
-      getLogger().info(this.logPrefix() + ' log interval is set to ' + Configuration.getLogStatisticsInterval().toString() + '. Not logging statistics');
+      logger.info(this.logPrefix() + ' log interval is set to ' + Configuration.getLogStatisticsInterval().toString() + '. Not logging statistics');
     }
   }
 
@@ -200,6 +210,6 @@ export default class PerformanceStatistics {
   }
 
   private logPrefix(): string {
-    return Utils.logPrefix(` ${this.objId} | Performance statistics`);
+    return Utils.logPrefix(` ${this.objName} | Performance statistics`);
   }
 }

@@ -23,6 +23,7 @@ export interface StatisticsData {
 
 export default interface Statistics {
   id: string;
+  name: string;
   uri: string;
   createdAt: Date;
   updatedAt?: Date;

@@ -2,7 +2,7 @@ import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
 
 import { IncomingMessage } from 'http';
 import Utils from '../../utils/Utils';
-import getLogger from '../../utils/Logger';
+import logger from '../../utils/Logger';
 
 export class UIServiceUtils {
   public static handleProtocols = (protocols: Set<string>, request: IncomingMessage): string | false => {
@@ -17,7 +17,7 @@ export class UIServiceUtils {
         return fullProtocol;
       }
     }
-    getLogger().error(`${Utils.logPrefix(' UI WebSocket Server:')} Unsupported protocol: ${protocol} or protocol version: ${version}`);
+    logger.error(`${Utils.logPrefix(' UI WebSocket Server:')} Unsupported protocol: ${protocol} or protocol version: ${version}`);
     return false;
   };
 }
