@@ -3,10 +3,10 @@
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import { AuthorizeRequest, OCPP16AuthorizeResponse, OCPP16StartTransactionResponse, OCPP16StopTransactionReason, OCPP16StopTransactionResponse, StartTransactionRequest, StopTransactionRequest } from '../../../types/ocpp/1.6/Transaction';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
-import { DiagnosticsStatusNotificationRequest, HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16IncomingRequestCommand, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
+import { DiagnosticsStatusNotificationRequest, HeartbeatRequest, OCPP16BootNotificationRequest, OCPP16RequestCommand, StatusNotificationRequest } from '../../../types/ocpp/1.6/Requests';
 import { MeterValueUnit, MeterValuesRequest, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16MeterValuePhase } from '../../../types/ocpp/1.6/MeterValues';
 
-import ChargingStation from '../../ChargingStation';
+import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import MeasurandPerPhaseSampledValueTemplates from '../../../types/MeasurandPerPhaseSampledValueTemplates';
@@ -18,7 +18,7 @@ import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStat
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
-import OCPPResponseService from '../OCPPResponseService';
+import type OCPPResponseService from '../OCPPResponseService';
 import { SendParams } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';

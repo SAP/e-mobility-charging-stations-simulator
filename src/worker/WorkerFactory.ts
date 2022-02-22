@@ -3,7 +3,7 @@ import { WorkerData, WorkerOptions, WorkerProcessType } from '../types/Worker';
 
 import Constants from '../utils/Constants';
 import { PoolOptions } from 'poolifier';
-import WorkerAbstract from './WorkerAbstract';
+import type WorkerAbstract from './WorkerAbstract';
 import WorkerDynamicPool from './WorkerDynamicPool';
 import WorkerSet from './WorkerSet';
 import WorkerStaticPool from './WorkerStaticPool';

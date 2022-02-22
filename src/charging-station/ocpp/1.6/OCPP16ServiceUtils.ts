@@ -2,7 +2,7 @@
 
 import { MeterValueContext, MeterValueLocation, MeterValueUnit, OCPP16MeterValue, OCPP16MeterValueMeasurand, OCPP16MeterValuePhase, OCPP16SampledValue } from '../../../types/ocpp/1.6/MeterValues';
 
-import ChargingStation from '../../ChargingStation';
+import type ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import OCPPError from '../../../exception/OCPPError';
 import { RequestCommand } from '../../../types/ocpp/Requests';

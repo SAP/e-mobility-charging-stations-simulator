@@ -909,7 +909,7 @@ export default class ChargingStation {
   private startAutomaticTransactionGenerator() {
     if (this.stationInfo.AutomaticTransactionGenerator.enable) {
       if (!this.automaticTransactionGenerator) {
-        this.automaticTransactionGenerator = new AutomaticTransactionGenerator(this);
+        this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this);
       }
       if (!this.automaticTransactionGenerator.started) {
         this.automaticTransactionGenerator.start();

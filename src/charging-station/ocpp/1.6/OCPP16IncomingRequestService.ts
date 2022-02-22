@@ -6,7 +6,7 @@ import { ChargingProfilePurposeType, OCPP16ChargingProfile } from '../../../type
 import { Client, FTPResponse } from 'basic-ftp';
 import { OCPP16AuthorizationStatus, OCPP16StopTransactionReason } from '../../../types/ocpp/1.6/Transaction';
 
-import ChargingStation from '../../ChargingStation';
+import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';

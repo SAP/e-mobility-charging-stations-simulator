@@ -2,7 +2,7 @@
 
 import { AuthorizationStatus, AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../types/ocpp/Transaction';
 
-import ChargingStation from './ChargingStation';
+import type ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { Status } from '../types/AutomaticTransactionGenerator';
@@ -10,15 +10,23 @@ import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
 
 export default class AutomaticTransactionGenerator {
+  private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<string, AutomaticTransactionGenerator>();
   public started: boolean;
   private readonly chargingStation: ChargingStation;
   private readonly connectorsStatus: Map<number, Status>;
 
-  constructor(chargingStation: ChargingStation) {
+  private constructor(chargingStation: ChargingStation) {
     this.chargingStation = chargingStation;
     this.connectorsStatus = new Map<number, Status>();
     this.stopConnectors();
     this.started = false;
+  }
+
+  public static getInstance(chargingStation: ChargingStation): AutomaticTransactionGenerator {
+    if (!AutomaticTransactionGenerator.instances.has(chargingStation.id)) {
+      AutomaticTransactionGenerator.instances.set(chargingStation.id, new AutomaticTransactionGenerator(chargingStation));
+    }
+    return AutomaticTransactionGenerator.instances.get(chargingStation.id);
   }
 
   public start(): void {
