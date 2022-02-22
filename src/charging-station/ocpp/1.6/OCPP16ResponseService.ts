@@ -17,11 +17,13 @@ import { ResponseHandler } from '../../../types/ocpp/Responses';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
+const moduleName = 'OCPP16ResponseService';
+
 export default class OCPP16ResponseService extends OCPPResponseService {
   private responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>;
 
   public constructor(chargingStation: ChargingStation) {
-    if (new.target?.name === 'OCPP16ResponseService') {
+    if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
     super(chargingStation);

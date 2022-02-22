@@ -23,9 +23,11 @@ import { SendParams } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
+const moduleName = 'OCPP16RequestService';
+
 export default class OCPP16RequestService extends OCPPRequestService {
   public constructor(chargingStation: ChargingStation, ocppResponseService: OCPPResponseService) {
-    if (new.target?.name === 'OCPP16RequestService') {
+    if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
     super(chargingStation, ocppResponseService);

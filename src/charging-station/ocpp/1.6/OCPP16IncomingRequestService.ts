@@ -25,11 +25,13 @@ import logger from '../../../utils/Logger';
 import path from 'path';
 import tar from 'tar';
 
+const moduleName = 'OCPPIncomingRequestService';
+
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
 
   public constructor(chargingStation: ChargingStation) {
-    if (new.target?.name === 'OCPP16IncomingRequestService') {
+    if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
     super(chargingStation);
