@@ -25,7 +25,7 @@ import logger from '../../../utils/Logger';
 import path from 'path';
 import tar from 'tar';
 
-const moduleName = 'OCPPIncomingRequestService';
+const moduleName = 'OCPP16IncomingRequestService';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
