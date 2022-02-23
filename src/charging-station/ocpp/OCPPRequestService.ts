@@ -62,7 +62,7 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  private async internalSendMessage(messageId: string, messagePayload: JsonType | OCPPError, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
+  private async internalSendMessage(messageId: string, messagePayload: JsonType | OCPPError, messageType: MessageType, commandName?: RequestCommand | IncomingRequestCommand,
       params: SendParams = {
         skipBufferingOnError: false,
         triggerMessage: false
@@ -147,9 +147,9 @@ export default abstract class OCPPRequestService {
     throw new OCPPError(ErrorType.SECURITY_ERROR, `Cannot send command ${commandName} payload when the charging station is in ${this.chargingStation.getRegistrationStatus()} state on the central server`, commandName);
   }
 
-  private buildMessageToSend(messageId: string, messagePayload: JsonType | OCPPError, messageType: MessageType, commandName: RequestCommand | IncomingRequestCommand,
-      responseCallback: (payload: JsonType | string, requestPayload: JsonType) => Promise<void>,
-      rejectCallback: (error: OCPPError, requestStatistic?: boolean) => void): string {
+  private buildMessageToSend(messageId: string, messagePayload: JsonType | OCPPError, messageType: MessageType, commandName?: RequestCommand | IncomingRequestCommand,
+      responseCallback?: (payload: JsonType | string, requestPayload: JsonType) => Promise<void>,
+      rejectCallback?: (error: OCPPError, requestStatistic?: boolean) => void): string {
     let messageToSend: string;
     // Type of message
     switch (messageType) {
@@ -167,7 +167,7 @@ export default abstract class OCPPRequestService {
       // Error Message
       case MessageType.CALL_ERROR_MESSAGE:
         // Build Error Message
-        messageToSend = JSON.stringify([messageType, messageId, messagePayload?.code ?? ErrorType.GENERIC_ERROR, messagePayload?.message ?? '', messagePayload?.details ?? {}]);
+        messageToSend = JSON.stringify([messageType, messageId, messagePayload?.code ?? ErrorType.GENERIC_ERROR, messagePayload?.message ?? '', messagePayload?.details ?? { commandName }]);
         break;
     }
     return messageToSend;
