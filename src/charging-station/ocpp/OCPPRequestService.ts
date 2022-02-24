@@ -1,5 +1,5 @@
 import { AuthorizeResponse, StartTransactionResponse, StopTransactionReason, StopTransactionResponse } from '../../types/ocpp/Transaction';
-import { DiagnosticsStatus, IncomingRequestCommand, RequestCommand, SendParams } from '../../types/ocpp/Requests';
+import { DiagnosticsStatus, IncomingRequestCommand, RequestCommand, ResponseType, SendParams } from '../../types/ocpp/Requests';
 
 import { BootNotificationResponse } from '../../types/ocpp/Responses';
 import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
@@ -33,7 +33,7 @@ export default abstract class OCPPRequestService {
     return OCPPRequestService.instances.get(chargingStation.id) as T;
   }
 
-  public async sendResult(messageId: string, messagePayload: JsonType, commandName: IncomingRequestCommand): Promise<JsonType | OCPPError | string> {
+  public async sendResult(messageId: string, messagePayload: JsonType, commandName: IncomingRequestCommand): Promise<ResponseType> {
     try {
       // Send result message
       return await this.internalSendMessage(messageId, messagePayload, MessageType.CALL_RESULT_MESSAGE, commandName);
@@ -42,7 +42,7 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  public async sendError(messageId: string, ocppError: OCPPError, commandName: IncomingRequestCommand): Promise<JsonType | OCPPError | string> {
+  public async sendError(messageId: string, ocppError: OCPPError, commandName: IncomingRequestCommand): Promise<ResponseType> {
     try {
       // Send error message
       return await this.internalSendMessage(messageId, ocppError, MessageType.CALL_ERROR_MESSAGE, commandName);
@@ -54,7 +54,7 @@ export default abstract class OCPPRequestService {
   protected async sendMessage(messageId: string, messagePayload: JsonType, commandName: RequestCommand, params: SendParams = {
     skipBufferingOnError: false,
     triggerMessage: false
-  }): Promise<JsonType | OCPPError | string> {
+  }): Promise<ResponseType> {
     try {
       return await this.internalSendMessage(messageId, messagePayload, MessageType.CALL_MESSAGE, commandName, params);
     } catch (error) {
@@ -66,7 +66,7 @@ export default abstract class OCPPRequestService {
       params: SendParams = {
         skipBufferingOnError: false,
         triggerMessage: false
-      }): Promise<JsonType | OCPPError | string> {
+      }): Promise<ResponseType> {
     if ((this.chargingStation.isInUnknownState() && commandName === RequestCommand.BOOT_NOTIFICATION)
       || (!this.chargingStation.getOcppStrictCompliance() && this.chargingStation.isInUnknownState())
       || this.chargingStation.isInAcceptedState() || (this.chargingStation.isInPendingState() && params.triggerMessage)) {

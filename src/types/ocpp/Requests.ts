@@ -12,6 +12,8 @@ export interface SendParams {
 
 export type IncomingRequestHandler = (commandPayload: JsonType) => JsonType | Promise<JsonType>;
 
+export type ResponseType = JsonType | OCPPError | string;
+
 export type BootNotificationRequest = OCPP16BootNotificationRequest;
 
 export type AvailabilityType = OCPP16AvailabilityType;
