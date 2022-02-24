@@ -2,6 +2,7 @@
 
 import { DBName, StorageType } from '../../types/Storage';
 
+import { HandleErrorParams } from '../../types/Error';
 import Statistics from '../../types/Statistics';
 import { URL } from 'url';
 import Utils from '../../utils/Utils';
@@ -17,8 +18,11 @@ export abstract class Storage {
     this.logPrefix = logPrefix;
   }
 
-  protected handleDBError(type: StorageType, error: Error, table?: string): void {
+  protected handleDBError(type: StorageType, error: Error, table?: string, params: HandleErrorParams = { throwError: false }): void {
     logger.error(`${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`}: %j`, error);
+    if (params?.throwError) {
+      throw error;
+    }
   }
 
   protected getDBNameFromStorageType(type: StorageType): DBName {

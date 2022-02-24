@@ -1,6 +1,7 @@
 import ConfigurationData, { StationTemplateUrl, StorageConfiguration, SupervisionUrlDistribution, UIWebSocketServerConfiguration } from '../types/ConfigurationData';
 
 import Constants from './Constants';
+import { HandleErrorParams } from '../types/Error';
 import { ServerOptions } from 'ws';
 import { StorageType } from '../types/Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
@@ -228,7 +229,7 @@ export default class Configuration {
     return typeof obj === 'undefined';
   }
 
-  private static handleFileException(logPrefix: string, fileType: string, filePath: string, error: NodeJS.ErrnoException): void {
+  private static handleFileException(logPrefix: string, fileType: string, filePath: string, error: NodeJS.ErrnoException, params: HandleErrorParams = { throwError: true }): void {
     const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
     if (error.code === 'ENOENT') {
       console.error(chalk.green(prefix) + chalk.red(fileType + ' file ' + filePath + ' not found: '), error);
@@ -239,6 +240,8 @@ export default class Configuration {
     } else {
       console.error(chalk.green(prefix) + chalk.red(fileType + ' file ' + filePath + ' error: '), error);
     }
-    throw error;
+    if (params?.throwError) {
+      throw error;
+    }
   }
 }

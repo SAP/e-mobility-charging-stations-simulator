@@ -7,6 +7,7 @@ import { ChargePointStatus } from '../../types/ocpp/ChargePointStatus';
 import type ChargingStation from '../ChargingStation';
 import Constants from '../../utils/Constants';
 import { ErrorType } from '../../types/ocpp/ErrorType';
+import { HandleErrorParams } from '../../types/Error';
 import { JsonType } from '../../types/JsonType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import { MeterValue } from '../../types/ocpp/MeterValues';
@@ -58,7 +59,7 @@ export default abstract class OCPPRequestService {
     try {
       return await this.internalSendMessage(messageId, messagePayload, MessageType.CALL_MESSAGE, commandName, params);
     } catch (error) {
-      this.handleRequestError(commandName, error as Error);
+      this.handleRequestError(commandName, error as Error, { throwError: false });
     }
   }
 
@@ -173,9 +174,11 @@ export default abstract class OCPPRequestService {
     return messageToSend;
   }
 
-  private handleRequestError(commandName: RequestCommand | IncomingRequestCommand, error: Error): void {
+  private handleRequestError(commandName: RequestCommand | IncomingRequestCommand, error: Error, params: HandleErrorParams = { throwError: true }): void {
     logger.error(this.chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
-    throw error;
+    if (params?.throwError) {
+      throw error;
+    }
   }
 
   public abstract sendHeartbeat(params?: SendParams): Promise<void>;

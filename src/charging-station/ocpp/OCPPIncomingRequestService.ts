@@ -1,4 +1,5 @@
 import type ChargingStation from '../ChargingStation';
+import { HandleErrorParams } from '../../types/Error';
 import { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import { JsonType } from '../../types/JsonType';
 import logger from '../../utils/Logger';
@@ -18,12 +19,14 @@ export default abstract class OCPPIncomingRequestService {
     return OCPPIncomingRequestService.instances.get(chargingStation.id) as T;
   }
 
-  protected handleIncomingRequestError<T>(commandName: IncomingRequestCommand, error: Error, errorOcppResponse?: T): T {
+  protected handleIncomingRequestError<T>(commandName: IncomingRequestCommand, error: Error, errorOcppResponse?: T, params: HandleErrorParams = { throwError: true }): T {
     logger.error(this.chargingStation.logPrefix() + ' Incoming request command %s error: %j', commandName, error);
     if (errorOcppResponse) {
       return errorOcppResponse;
     }
-    throw error;
+    if (params?.throwError) {
+      throw error;
+    }
   }
 
   public abstract handleRequest(messageId: string, commandName: IncomingRequestCommand, commandPayload: JsonType): Promise<void>;
