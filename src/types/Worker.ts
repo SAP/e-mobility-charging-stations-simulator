@@ -19,8 +19,8 @@ export interface WorkerOptions {
 }
 
 export interface WorkerStartOptions {
-  workerStartDelay: number;
-  elementStartDelay: number;
+  workerStartDelay?: number;
+  elementStartDelay?: number;
 }
 
 export type WorkerData = JsonType;
