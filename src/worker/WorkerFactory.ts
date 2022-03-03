@@ -26,16 +26,31 @@ export default class WorkerFactory {
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
         options.elementsPerWorker = options.elementsPerWorker ?? Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER;
-        workerImplementation = new WorkerSet(workerScript, options.elementsPerWorker, { workerStartDelay: options.workerStartDelay, elementStartDelay: options.elementStartDelay }, options);
+        workerImplementation = new WorkerSet(workerScript, options.elementsPerWorker,
+          {
+            workerStartDelay: options.workerStartDelay,
+            elementStartDelay: options.elementStartDelay
+          },
+          options);
         break;
       case WorkerProcessType.STATIC_POOL:
         options.poolMaxSize = options.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
-        workerImplementation = new WorkerStaticPool(workerScript, options.poolMaxSize, { workerStartDelay: options.workerStartDelay, elementStartDelay: options.elementStartDelay }, options.poolOptions);
+        workerImplementation = new WorkerStaticPool(workerScript, options.poolMaxSize,
+          {
+            workerStartDelay: options.workerStartDelay,
+            elementStartDelay: options.elementStartDelay
+          },
+          options.poolOptions);
         break;
       case WorkerProcessType.DYNAMIC_POOL:
         options.poolMinSize = options.poolMinSize ?? Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
         options.poolMaxSize = options.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
-        workerImplementation = new WorkerDynamicPool(workerScript, options.poolMinSize, options.poolMaxSize, { workerStartDelay: options.workerStartDelay, elementStartDelay: options.elementStartDelay }, options.poolOptions);
+        workerImplementation = new WorkerDynamicPool(workerScript, options.poolMinSize, options.poolMaxSize,
+          {
+            workerStartDelay: options.workerStartDelay,
+            elementStartDelay: options.elementStartDelay
+          },
+          options.poolOptions);
         break;
       default:
         throw new Error(`Worker implementation type '${workerProcessType}' not found`);

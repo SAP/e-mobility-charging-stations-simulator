@@ -42,9 +42,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       throw new Error('Cannot add a WorkerSet element: workers\' set does not exist');
     }
     if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
-      this.startWorker();
-      // Start worker sequentially to optimize memory at startup
-      this.workerStartDelay > 0 && await Utils.sleep(this.workerStartDelay);
+      await this.startWorker();
     }
     this.getLastWorker().postMessage({ id: WorkerMessageEvents.START_WORKER_ELEMENT, data: elementData });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
@@ -57,9 +55,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    * @public
    */
   public async start(): Promise<void> {
-    this.startWorker();
-    // Start worker sequentially to optimize memory at startup
-    this.workerStartDelay > 0 && await Utils.sleep(this.workerStartDelay);
+    await this.startWorker();
   }
 
   /**
@@ -78,7 +74,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    *
    * @private
    */
-  private startWorker(): void {
+  private async startWorker(): Promise<void> {
     const worker = new Worker(this.workerScript);
     worker.on('message', (msg) => {
       (async () => {
@@ -91,6 +87,8 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });
+    // Start worker sequentially to optimize memory at startup
+    this.workerStartDelay > 0 && await Utils.sleep(this.workerStartDelay);
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {
