@@ -9,12 +9,18 @@ export enum WorkerProcessType {
 }
 
 export interface WorkerOptions {
-  startDelay?: number;
+  workerStartDelay?: number;
+  elementStartDelay?: number;
   poolMaxSize?: number;
   poolMinSize?: number;
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
   messageHandler?: (message: unknown) => void | Promise<void>;
+}
+
+export interface WorkerStartOptions {
+  workerStartDelay: number;
+  elementStartDelay: number;
 }
 
 export type WorkerData = JsonType;

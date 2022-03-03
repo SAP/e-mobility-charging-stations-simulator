@@ -1,9 +1,9 @@
 import { FixedThreadPool, PoolOptions } from 'poolifier';
+import { WorkerData, WorkerStartOptions } from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
-import { WorkerData } from '../types/Worker';
 import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerStaticPool extends WorkerAbstract<WorkerData> {
@@ -14,11 +14,11 @@ export default class WorkerStaticPool extends WorkerAbstract<WorkerData> {
    *
    * @param workerScript
    * @param numberOfThreads
-   * @param startWorkerDelay
+   * @param workerStartOptions
    * @param opts
    */
-  constructor(workerScript: string, numberOfThreads: number, startWorkerDelay?: number, opts?: PoolOptions<Worker>) {
-    super(workerScript, startWorkerDelay);
+  constructor(workerScript: string, numberOfThreads: number, workerStartOptions?: WorkerStartOptions, opts?: PoolOptions<Worker>) {
+    super(workerScript, workerStartOptions);
     opts.exitHandler = opts?.exitHandler ?? WorkerUtils.defaultExitHandler;
     this.pool = new FixedThreadPool(numberOfThreads, this.workerScript, opts);
   }
@@ -57,7 +57,7 @@ export default class WorkerStaticPool extends WorkerAbstract<WorkerData> {
    */
   public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
-    // Start worker sequentially to optimize memory at startup
-    await Utils.sleep(this.workerStartDelay);
+    // Start element sequentially to optimize memory at startup
+    this.elementStartDelay > 0 && await Utils.sleep(this.elementStartDelay);
   }
 }

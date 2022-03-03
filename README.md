@@ -52,7 +52,8 @@ Key | Value(s) | Default Value | Value type | Description
 supervisionUrls | | [] | string \| string[] | string or array of global connection URIs to OCPP-J servers
 supervisionUrlDistribution | round-robin/random/sequential | round-robin | boolean | supervision urls distribution policy to simulated charging stations
 workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker threads process type
-workerStartDelay | | 500 | integer | milliseconds to wait at charging station worker threads startup
+workerStartDelay | | 500 | integer | milliseconds to wait at worker threads startup (only for workerSet threads process type)
+elementStartDelay | | 0 | integer | milliseconds to wait at charging station startup
 workerPoolMinSize | | 4 | integer | worker threads pool minimum number of threads
 workerPoolMaxSize | | 16 | integer | worker threads pool maximum number of threads
 workerPoolStrategy | ROUND_ROBIN/LESS_RECENTLY_USED/... | [poolifier](https://github.com/poolifier/poolifier) default: ROUND_ROBBIN | string | worker threads pool [poolifier](https://github.com/poolifier/poolifier) worker choice strategy

@@ -34,6 +34,7 @@ export default interface ConfigurationData {
   autoReconnectMaxRetries?: number;
   workerProcess?: WorkerProcessType;
   workerStartDelay?: number;
+  elementStartDelay?: number;
   workerPoolMinSize?: number;
   workerPoolMaxSize?: number;
   workerPoolStrategy?: WorkerChoiceStrategy;

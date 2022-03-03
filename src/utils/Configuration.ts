@@ -103,6 +103,10 @@ export default class Configuration {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerStartDelay') ? Configuration.getConfig().workerStartDelay : Constants.WORKER_START_DELAY;
   }
 
+  static getElementStartDelay(): number {
+    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'elementStartDelay') ? Configuration.getConfig().elementStartDelay : Constants.ELEMENT_START_DELAY;
+  }
+
   static getWorkerPoolMinSize(): number {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMinSize') ? Configuration.getConfig().workerPoolMinSize : Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
   }

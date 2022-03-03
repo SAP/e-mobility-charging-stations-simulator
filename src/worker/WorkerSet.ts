@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
+import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement, WorkerStartOptions } from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
@@ -17,11 +17,11 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    *
    * @param workerScript
    * @param maxElementsPerWorker
-   * @param workerStartDelay
+   * @param workerStartOptions
    * @param opts
    */
-  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartDelay?: number, opts?: WorkerOptions) {
-    super(workerScript, workerStartDelay);
+  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartOptions?: WorkerStartOptions, opts?: WorkerOptions) {
+    super(workerScript, workerStartOptions);
     this.maxElementsPerWorker = maxElementsPerWorker;
     this.messageHandler = opts?.messageHandler ?? (() => { /* This is intentional */ });
     this.workerSet = new Set<WorkerSetElement>();
@@ -44,10 +44,11 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
       this.startWorker();
       // Start worker sequentially to optimize memory at startup
-      await Utils.sleep(this.workerStartDelay);
+      this.workerStartDelay > 0 && await Utils.sleep(this.workerStartDelay);
     }
     this.getLastWorker().postMessage({ id: WorkerMessageEvents.START_WORKER_ELEMENT, data: elementData });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
+    this.elementStartDelay > 0 && await Utils.sleep(this.elementStartDelay);
   }
 
   /**
@@ -58,7 +59,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
   public async start(): Promise<void> {
     this.startWorker();
     // Start worker sequentially to optimize memory at startup
-    await Utils.sleep(this.workerStartDelay);
+    this.workerStartDelay > 0 && await Utils.sleep(this.workerStartDelay);
   }
 
   /**

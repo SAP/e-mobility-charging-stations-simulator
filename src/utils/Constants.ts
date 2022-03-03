@@ -35,6 +35,7 @@ export default class Constants {
 
   static readonly TRANSACTION_DEFAULT_IDTAG = '00000000';
 
+  static readonly ELEMENT_START_DELAY = 0;
   static readonly WORKER_START_DELAY = 500;
   static readonly WORKER_POOL_MAX_INACTIVE_TIME = 60000;
   static readonly DEFAULT_WORKER_POOL_MIN_SIZE = 4;

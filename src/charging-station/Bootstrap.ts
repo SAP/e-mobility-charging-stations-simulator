@@ -110,7 +110,8 @@ export default class Bootstrap {
   private initWorkerImplementation(): void {
     this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
       {
-        startDelay: Configuration.getWorkerStartDelay(),
+        workerStartDelay: Configuration.getWorkerStartDelay(),
+        elementStartDelay: Configuration.getElementStartDelay(),
         poolMaxSize: Configuration.getWorkerPoolMaxSize(),
         poolMinSize: Configuration.getWorkerPoolMinSize(),
         elementsPerWorker: Configuration.getChargingStationsPerWorker(),
