@@ -260,18 +260,19 @@ export default class ChargingStation {
 
   public getSampledValueTemplate(connectorId: number, measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       phase?: MeterValuePhase): SampledValueTemplate | undefined {
+    const onPhaseStr = phase ? `on phase ${phase} ` : '';
     if (!Constants.SUPPORTED_MEASURANDS.includes(measurand)) {
-      logger.warn(`${this.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+      logger.warn(`${this.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`);
       return;
     }
     if (measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER && !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
-      logger.debug(`${this.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId} not found in '${StandardParametersKey.MeterValuesSampledData}' OCPP parameter`);
+      logger.debug(`${this.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${StandardParametersKey.MeterValuesSampledData}' OCPP parameter`);
       return;
     }
     const sampledValueTemplates: SampledValueTemplate[] = this.getConnectorStatus(connectorId).MeterValues;
     for (let index = 0; !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length; index++) {
       if (!Constants.SUPPORTED_MEASURANDS.includes(sampledValueTemplates[index]?.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER)) {
-        logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+        logger.warn(`${this.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`);
       } else if (phase && sampledValueTemplates[index]?.phase === phase && sampledValueTemplates[index]?.measurand === measurand
         && this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(measurand)) {
         return sampledValueTemplates[index];
@@ -288,7 +289,7 @@ export default class ChargingStation {
       logger.error(errorMsg);
       throw new Error(errorMsg);
     }
-    logger.debug(`${this.logPrefix()} No MeterValues for measurand '${measurand}' ${phase ? `on phase ${phase} ` : ''}in template on connectorId ${connectorId}`);
+    logger.debug(`${this.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`);
   }
 
   public getAutomaticTransactionGeneratorRequireAuthorize(): boolean {
