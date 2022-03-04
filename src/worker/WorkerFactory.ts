@@ -13,29 +13,29 @@ export default class WorkerFactory {
     // This is intentional
   }
 
-  public static getWorkerImplementation<T extends WorkerData>(workerScript: string, workerProcessType: WorkerProcessType, options?: WorkerOptions): WorkerAbstract<T> | null {
+  public static getWorkerImplementation<T extends WorkerData>(workerScript: string, workerProcessType: WorkerProcessType, workerOptions?: WorkerOptions): WorkerAbstract<T> | null {
     if (!isMainThread) {
       throw new Error('Trying to get a worker implementation outside the main thread');
     }
-    options = options ?? {} as WorkerOptions;
-    options.workerStartDelay = options?.workerStartDelay ?? Constants.WORKER_START_DELAY;
-    options.elementStartDelay = options?.elementStartDelay ?? Constants.ELEMENT_START_DELAY;
-    options.poolOptions = options?.poolOptions ?? {} as PoolOptions<Worker>;
-    options?.messageHandler && (options.poolOptions.messageHandler = options.messageHandler);
+    workerOptions = workerOptions ?? {} as WorkerOptions;
+    workerOptions.workerStartDelay = workerOptions?.workerStartDelay ?? Constants.WORKER_START_DELAY;
+    workerOptions.elementStartDelay = workerOptions?.elementStartDelay ?? Constants.ELEMENT_START_DELAY;
+    workerOptions.poolOptions = workerOptions?.poolOptions ?? {} as PoolOptions<Worker>;
+    workerOptions?.messageHandler && (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
     let workerImplementation: WorkerAbstract<T> = null;
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
-        options.elementsPerWorker = options?.elementsPerWorker ?? Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER;
-        workerImplementation = new WorkerSet(workerScript, options);
+        workerOptions.elementsPerWorker = workerOptions?.elementsPerWorker ?? Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER;
+        workerImplementation = new WorkerSet(workerScript, workerOptions);
         break;
       case WorkerProcessType.STATIC_POOL:
-        options.poolMaxSize = options?.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
-        workerImplementation = new WorkerStaticPool(workerScript, options);
+        workerOptions.poolMaxSize = workerOptions?.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
+        workerImplementation = new WorkerStaticPool(workerScript, workerOptions);
         break;
       case WorkerProcessType.DYNAMIC_POOL:
-        options.poolMinSize = options?.poolMinSize ?? Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
-        options.poolMaxSize = options?.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
-        workerImplementation = new WorkerDynamicPool(workerScript, options);
+        workerOptions.poolMinSize = workerOptions?.poolMinSize ?? Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
+        workerOptions.poolMaxSize = workerOptions?.poolMaxSize ?? Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
+        workerImplementation = new WorkerDynamicPool(workerScript, workerOptions);
         break;
       default:
         throw new Error(`Worker implementation type '${workerProcessType}' not found`);

@@ -44,8 +44,15 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker) {
       await this.startWorker();
     }
-    this.getLastWorker().postMessage({ id: WorkerMessageEvents.START_WORKER_ELEMENT, workerOptions: this.workerOptions, data: elementData });
+    this.getLastWorker().postMessage({
+      id: WorkerMessageEvents.START_WORKER_ELEMENT,
+      data: elementData
+    });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
+    // Start element sequentially to optimize memory at startup
+    if (this.workerOptions.elementStartDelay > 0) {
+      await Utils.sleep(this.workerOptions.elementStartDelay);
+    }
   }
 
   /**

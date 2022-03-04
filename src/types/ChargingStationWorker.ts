@@ -1,8 +1,15 @@
 import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
+import { JsonType } from './JsonType';
+
+export interface ChargingStationWorkerOptions extends JsonType {
+  elementStartDelay?: number;
+}
+
 export interface ChargingStationWorkerData extends WorkerData {
   index: number;
   templateFile: string;
+  chargingStationWorkerOptions?: ChargingStationWorkerOptions;
 }
 
 enum InternalChargingStationWorkerMessageEvents {
