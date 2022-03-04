@@ -2,6 +2,7 @@
 
 import { DBName, StorageType } from '../../types/Storage';
 
+import { EmptyObject } from '../../types/EmptyObject';
 import { HandleErrorParams } from '../../types/Error';
 import Statistics from '../../types/Statistics';
 import { URL } from 'url';
@@ -18,7 +19,7 @@ export abstract class Storage {
     this.logPrefix = logPrefix;
   }
 
-  protected handleDBError(type: StorageType, error: Error, table?: string, params: HandleErrorParams = { throwError: false }): void {
+  protected handleDBError(type: StorageType, error: Error, table?: string, params: HandleErrorParams<EmptyObject> = { throwError: false }): void {
     logger.error(`${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`}: %j`, error);
     if (params?.throwError) {
       throw error;

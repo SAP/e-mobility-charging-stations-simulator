@@ -423,7 +423,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         if (ftpClient) {
           ftpClient.close();
         }
-        return this.handleIncomingRequestError(OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, error as Error, Constants.OCPP_RESPONSE_EMPTY);
+        return this.handleIncomingRequestError(OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, error as Error, { errorResponse: Constants.OCPP_RESPONSE_EMPTY });
       }
     } else {
       logger.error(`${this.chargingStation.logPrefix()} Unsupported protocol ${uri.protocol} to transfer the diagnostic logs archive`);
@@ -454,7 +454,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED;
       }
     } catch (error) {
-      return this.handleIncomingRequestError(OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, error as Error, Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED);
+      return this.handleIncomingRequestError(OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, error as Error, { errorResponse: Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED });
     }
   }
 }

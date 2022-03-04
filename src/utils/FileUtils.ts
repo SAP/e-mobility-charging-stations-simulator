@@ -1,10 +1,11 @@
+import { EmptyObject } from '../types/EmptyObject';
 import { HandleErrorParams } from '../types/Error';
 import chalk from 'chalk';
 import logger from './Logger';
 
 export default class FileUtils {
   static handleFileException(logPrefix: string, fileType: string, filePath: string, error: NodeJS.ErrnoException,
-      params: HandleErrorParams = { throwError: true, consoleOut: false }): void {
+      params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }): void {
     const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
     if (error.code === 'ENOENT') {
       if (params?.consoleOut) {

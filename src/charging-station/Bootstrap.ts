@@ -3,6 +3,7 @@
 import { ChargingStationWorkerData, ChargingStationWorkerMessage, ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 
 import Configuration from '../utils/Configuration';
+import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
@@ -62,12 +63,7 @@ export default class Bootstrap {
             try {
               const nbStations = stationTemplateUrl.numberOfStations ?? 0;
               for (let index = 1; index <= nbStations; index++) {
-                const workerData: ChargingStationWorkerData = {
-                  index,
-                  templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationTemplateUrl.file))
-                };
-                await this.workerImplementation.addElement(workerData);
-                this.numberOfChargingStations++;
+                await this.startChargingStation(index, stationTemplateUrl);
               }
             } catch (error) {
               console.error(chalk.red('Charging station start with template file ' + stationTemplateUrl.file + ' error '), error);
@@ -128,6 +124,15 @@ export default class Bootstrap {
           }
         }
       });
+  }
+
+  private async startChargingStation(index: number, stationTemplateUrl: StationTemplateUrl): Promise<void> {
+    const workerData: ChargingStationWorkerData = {
+      index,
+      templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationTemplateUrl.file))
+    };
+    await this.workerImplementation.addElement(workerData);
+    this.numberOfChargingStations++;
   }
 
   private logPrefix(): string {

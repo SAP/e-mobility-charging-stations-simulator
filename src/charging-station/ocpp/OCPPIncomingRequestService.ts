@@ -19,13 +19,16 @@ export default abstract class OCPPIncomingRequestService {
     return OCPPIncomingRequestService.instances.get(chargingStation.id) as T;
   }
 
-  protected handleIncomingRequestError<T>(commandName: IncomingRequestCommand, error: Error, errorOcppResponse?: T, params: HandleErrorParams = { throwError: true }): T {
+  protected handleIncomingRequestError<T>(commandName: IncomingRequestCommand, error: Error, params: HandleErrorParams<T> = { throwError: true }): T {
     logger.error(this.chargingStation.logPrefix() + ' Incoming request command %s error: %j', commandName, error);
-    if (errorOcppResponse) {
-      return errorOcppResponse;
+    if (!params?.throwError && params?.errorResponse) {
+      return params?.errorResponse;
     }
-    if (params?.throwError) {
+    if (params?.throwError && !params?.errorResponse) {
       throw error;
+    }
+    if (params?.throwError && params?.errorResponse) {
+      return params?.errorResponse;
     }
   }
 
