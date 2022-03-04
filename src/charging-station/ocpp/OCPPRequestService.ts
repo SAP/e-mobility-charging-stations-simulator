@@ -6,6 +6,7 @@ import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../../types/ocpp/ChargePointStatus';
 import type ChargingStation from '../ChargingStation';
 import Constants from '../../utils/Constants';
+import { EmptyObject } from '../../types/EmptyObject';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { HandleErrorParams } from '../../types/Error';
 import { JsonType } from '../../types/JsonType';
@@ -174,7 +175,7 @@ export default abstract class OCPPRequestService {
     return messageToSend;
   }
 
-  private handleRequestError(commandName: RequestCommand | IncomingRequestCommand, error: Error, params: HandleErrorParams = { throwError: true }): void {
+  private handleRequestError(commandName: RequestCommand | IncomingRequestCommand, error: Error, params: HandleErrorParams<EmptyObject> = { throwError: true }): void {
     logger.error(this.chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
     if (params?.throwError) {
       throw error;
