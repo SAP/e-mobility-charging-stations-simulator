@@ -68,7 +68,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
 
   public async sendAuthorize(connectorId: number, idTag?: string): Promise<OCPP16AuthorizeResponse> {
     const payload: AuthorizeRequest = {
-      ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
+      ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.DEFAULT_IDTAG },
     };
     this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
     return await this.sendMessage(Utils.generateUUID(), payload, OCPP16RequestCommand.AUTHORIZE) as OCPP16AuthorizeResponse;
@@ -77,7 +77,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
   public async sendStartTransaction(connectorId: number, idTag?: string): Promise<OCPP16StartTransactionResponse> {
     const payload: StartTransactionRequest = {
       connectorId,
-      ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.TRANSACTION_DEFAULT_IDTAG },
+      ...!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.DEFAULT_IDTAG },
       meterStart: this.chargingStation.getEnergyActiveImportRegisterByConnectorId(connectorId),
       timestamp: new Date().toISOString(),
     };
