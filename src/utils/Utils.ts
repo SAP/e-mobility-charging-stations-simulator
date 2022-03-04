@@ -20,8 +20,8 @@ export default class Utils {
   public static formatDurationMilliSeconds(duration: number): string {
     duration = Utils.convertToInt(duration);
     const hours = Math.floor(duration / (3600 * 1000));
-    const minutes = Math.floor((duration / 1000 - (hours * 3600)) / 60);
-    const seconds = duration / 1000 - (hours * 3600) - (minutes * 60);
+    const minutes = Math.floor((duration / 1000 - hours * 3600) / 60);
+    const seconds = duration / 1000 - hours * 3600 - minutes * 60;
     let hoursStr = hours.toString();
     let minutesStr = minutes.toString();
     let secondsStr = seconds.toString();
@@ -93,7 +93,7 @@ export default class Utils {
         result = value;
       } else {
         // Convert
-        result = (value === 'true');
+        result = value === 'true';
       }
     }
     return result;
@@ -104,7 +104,7 @@ export default class Utils {
       throw new RangeError('Invalid interval');
     }
     const randomPositiveFloat = crypto.randomBytes(4).readUInt32LE() / 0xffffffff;
-    const sign = (negative && randomPositiveFloat < 0.5) ? -1 : 1;
+    const sign = negative && randomPositiveFloat < 0.5 ? -1 : 1;
     return sign * (randomPositiveFloat * (max - min) + min);
   }
 
@@ -140,12 +140,20 @@ export default class Utils {
     return Utils.roundTo(Utils.getRandomFloat(max), scale);
   }
 
-  public static getRandomFloatFluctuatedRounded(staticValue: number, fluctuationPercent: number, scale = 2): number {
+  public static getRandomFloatFluctuatedRounded(
+    staticValue: number,
+    fluctuationPercent: number,
+    scale = 2
+  ): number {
     if (fluctuationPercent === 0) {
       return Utils.roundTo(staticValue, scale);
     }
     const fluctuationRatio = fluctuationPercent / 100;
-    return Utils.getRandomFloatRounded(staticValue * (1 + fluctuationRatio), staticValue * (1 - fluctuationRatio), scale);
+    return Utils.getRandomFloatRounded(
+      staticValue * (1 + fluctuationRatio),
+      staticValue * (1 - fluctuationRatio),
+      scale
+    );
   }
 
   public static cloneObject<T>(object: T): T {
@@ -189,7 +197,8 @@ export default class Utils {
     return !Object.keys(obj).length;
   }
 
-  public static insertAt = (str: string, subStr: string, pos: number): string => `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
+  public static insertAt = (str: string, subStr: string, pos: number): string =>
+    `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
 
   /**
    * @param [retryNumber=0]
@@ -228,7 +237,9 @@ export default class Utils {
   }
 
   public static workerPoolInUse(): boolean {
-    return [WorkerProcessType.DYNAMIC_POOL, WorkerProcessType.STATIC_POOL].includes(Configuration.getWorkerProcess());
+    return [WorkerProcessType.DYNAMIC_POOL, WorkerProcessType.STATIC_POOL].includes(
+      Configuration.getWorkerProcess()
+    );
   }
 
   public static workerDynamicPoolInUse(): boolean {
@@ -236,10 +247,12 @@ export default class Utils {
   }
 
   public static async promiseWithTimeout<T>(
-      promise: Promise<T>,
-      timeoutMs: number,
-      timeoutError: Error,
-      timeoutCallback: () => void = () => { /* This is intentional */ }
+    promise: Promise<T>,
+    timeoutMs: number,
+    timeoutError: Error,
+    timeoutCallback: () => void = () => {
+      /* This is intentional */
+    }
   ): Promise<T> {
     // Create a timeout promise that rejects in timeout milliseconds
     const timeoutPromise = new Promise<never>((_, reject) => {

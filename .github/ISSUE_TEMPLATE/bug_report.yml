@@ -13,15 +13,13 @@ body:
   - type: checkboxes
     attributes:
       options:
-        - label:
-            I've searched for any related issues and avoided creating a
+        - label: I've searched for any related issues and avoided creating a
             duplicate issue.
           required: true
   - type: textarea
     attributes:
       label: Description
-      description:
-        Description of the bug.
+      description: Description of the bug.
   - type: input
     attributes:
       label: charging-stations-simulator version

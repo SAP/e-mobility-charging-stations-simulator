@@ -8,7 +8,7 @@ Simple [node.js](https://nodejs.org/) program to simulate a set of charging stat
 
 ### Windows
 
-* [Chocolatey](https://chocolatey.org/):
+- [Chocolatey](https://chocolatey.org/):
 
 ```powershell
 choco install -y nodejs-lts
@@ -16,19 +16,19 @@ choco install -y nodejs-lts
 
 ### MacOSX
 
-* [Homebrew](https://brew.sh/):
+- [Homebrew](https://brew.sh/):
 
 ```shell
 brew install node@14
 ```
 
-### GNU/Linux: 
+### GNU/Linux:
 
-* [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 14.X
+- [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 14.X
 
 ## Configuration syntax
 
-All configuration files are in the JSON standard format.  
+All configuration files are in the JSON standard format.
 
 The charging stations simulator's main configuration parameters must be within the `src/assets/config.json` file. A configuration template file is available at [src/assets/config-template.json](src/assets/config-template.json).
 
@@ -36,97 +36,98 @@ All charging station templates are in the directory [src/assets/station-template
 
 A list of RFID tags must be defined for the automatic transaction generator with the default location and name `src/assets/authorization-tags.json`. A template file is available at [src/assets/authorization-tags-template.json](src/assets/authorization-tags-template.json).
 
-The charging stations simulator have an automatic configuration files reload feature at change for: 
-* main configuration;
-* charging station templates; 
-* authorization RFID tags.
+The charging stations simulator have an automatic configuration files reload feature at change for:
 
-But the modifications to test have to be done to the files in the build result directory [dist/assets](dist/assets). Once the modifications are finished, they have to be reported or copied to the matching files in the build source directory [src/assets](src/assets) to ensure they will be taken into account at next build. 
+- main configuration;
+- charging station templates;
+- authorization RFID tags.
 
-### Main configuration 
+But the modifications to test have to be done to the files in the build result directory [dist/assets](dist/assets). Once the modifications are finished, they have to be reported or copied to the matching files in the build source directory [src/assets](src/assets) to ensure they will be taken into account at next build.
+
+### Main configuration
 
 **src/assets/config.json**:
 
-Key | Value(s) | Default Value | Value type | Description 
---- | -------| --------------| ---------- | ------------
-supervisionUrls | | [] | string \| string[] | string or array of global connection URIs to OCPP-J servers
-supervisionUrlDistribution | round-robin/random/sequential | round-robin | boolean | supervision urls distribution policy to simulated charging stations
-workerProcess | workerSet/staticPool/dynamicPool | workerSet | string | worker threads process type
-workerStartDelay | | 500 | integer | milliseconds to wait at worker threads startup (only for workerSet threads process type)
-elementStartDelay | | 0 | integer | milliseconds to wait at charging station startup
-workerPoolMinSize | | 4 | integer | worker threads pool minimum number of threads
-workerPoolMaxSize | | 16 | integer | worker threads pool maximum number of threads
-workerPoolStrategy | ROUND_ROBIN/LESS_RECENTLY_USED/... | [poolifier](https://github.com/poolifier/poolifier) default: ROUND_ROBBIN | string | worker threads pool [poolifier](https://github.com/poolifier/poolifier) worker choice strategy
-chargingStationsPerWorker | | 1 | integer | number of charging stations per worker threads for the `workerSet` process type
-logStatisticsInterval | | 60 | integer | seconds between charging stations statistics output in the logs 
-logConsole | true/false | false | boolean | output logs on the console 
-logFormat | | simple | string | winston log format
-logRotate | true/false | true | boolean | enable daily log files rotation
-logMaxFiles | | 7 | integer | maximum number of log files to keep
-logLevel | emerg/alert/crit/error/warning/notice/info/debug | info | string | winston logging level
-logFile | | combined.log | string | log file relative path
-logErrorFile | | error.log | string | error log file relative path
-uiWebSocketServer | | { "enabled": true, "options": { "host: "localhost", "port": 8080 } } | { enabled: boolean; options: ServerOptions; } | UI WebSocket server configuration section 
-performanceStorage | | { "enabled": false, "type": "jsonfile", "file:///performanceRecords.json" } | { enabled: boolean; type: string; URI: string; } where type can be 'jsonfile' or 'mongodb' | performance storage configuration section
-stationTemplateUrls | | {}[] | { file: string; numberOfStations: number; }[] | array of charging station templates URIs configuration section (template file name and number of stations)
+| Key                        | Value(s)                                         | Default Value                                                               | Value type                                                                                 | Description                                                                                                |
+| -------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| supervisionUrls            |                                                  | []                                                                          | string \| string[]                                                                         | string or array of global connection URIs to OCPP-J servers                                                |
+| supervisionUrlDistribution | round-robin/random/sequential                    | round-robin                                                                 | boolean                                                                                    | supervision urls distribution policy to simulated charging stations                                        |
+| workerProcess              | workerSet/staticPool/dynamicPool                 | workerSet                                                                   | string                                                                                     | worker threads process type                                                                                |
+| workerStartDelay           |                                                  | 500                                                                         | integer                                                                                    | milliseconds to wait at worker threads startup (only for workerSet threads process type)                   |
+| elementStartDelay          |                                                  | 0                                                                           | integer                                                                                    | milliseconds to wait at charging station startup                                                           |
+| workerPoolMinSize          |                                                  | 4                                                                           | integer                                                                                    | worker threads pool minimum number of threads                                                              |
+| workerPoolMaxSize          |                                                  | 16                                                                          | integer                                                                                    | worker threads pool maximum number of threads                                                              |
+| workerPoolStrategy         | ROUND_ROBIN/LESS_RECENTLY_USED/...               | [poolifier](https://github.com/poolifier/poolifier) default: ROUND_ROBBIN   | string                                                                                     | worker threads pool [poolifier](https://github.com/poolifier/poolifier) worker choice strategy             |
+| chargingStationsPerWorker  |                                                  | 1                                                                           | integer                                                                                    | number of charging stations per worker threads for the `workerSet` process type                            |
+| logStatisticsInterval      |                                                  | 60                                                                          | integer                                                                                    | seconds between charging stations statistics output in the logs                                            |
+| logConsole                 | true/false                                       | false                                                                       | boolean                                                                                    | output logs on the console                                                                                 |
+| logFormat                  |                                                  | simple                                                                      | string                                                                                     | winston log format                                                                                         |
+| logRotate                  | true/false                                       | true                                                                        | boolean                                                                                    | enable daily log files rotation                                                                            |
+| logMaxFiles                |                                                  | 7                                                                           | integer                                                                                    | maximum number of log files to keep                                                                        |
+| logLevel                   | emerg/alert/crit/error/warning/notice/info/debug | info                                                                        | string                                                                                     | winston logging level                                                                                      |
+| logFile                    |                                                  | combined.log                                                                | string                                                                                     | log file relative path                                                                                     |
+| logErrorFile               |                                                  | error.log                                                                   | string                                                                                     | error log file relative path                                                                               |
+| uiWebSocketServer          |                                                  | { "enabled": true, "options": { "host: "localhost", "port": 8080 } }        | { enabled: boolean; options: ServerOptions; }                                              | UI WebSocket server configuration section                                                                  |
+| performanceStorage         |                                                  | { "enabled": false, "type": "jsonfile", "file:///performanceRecords.json" } | { enabled: boolean; type: string; URI: string; } where type can be 'jsonfile' or 'mongodb' | performance storage configuration section                                                                  |
+| stationTemplateUrls        |                                                  | {}[]                                                                        | { file: string; numberOfStations: number; }[]                                              | array of charging station templates URIs configuration section (template file name and number of stations) |
 
-#### Worker process model: 
+#### Worker process model:
 
 - **workerSet**:
   Worker set executing each a static number (chargingStationsPerWorker) of simulated charging stations from the total
 
 - **staticPool**:
-  Statically sized worker pool executing a static total number of simulated charging stations    
+  Statically sized worker pool executing a static total number of simulated charging stations
 
 - **dynamicPool**:
-  Dynamically sized worker pool executing a static total number of simulated charging stations 
+  Dynamically sized worker pool executing a static total number of simulated charging stations
 
 ### Charging station template
 
-Key | Value(s) | Default Value | Value type | Description 
---- | -------| --------------| ---------- | ------------
-supervisionUrls | | '' | string\|string[] | string or array of connection URIs to OCPP-J servers. It has priority over the global configuration parameter
-supervisionUser | | '' | string | basic HTTP authentication user to OCPP-J server
-supervisionPassword | | '' | string | basic HTTP authentication password to OCPP-J server
-supervisionUrlOcppConfiguration | true/false | false | boolean | Allow supervision URL configuration via a vendor OCPP parameter key
-supervisionUrlOcppKey | | 'ConnectionUrl' | string | The vendor string that will be used as a vendor OCPP parameter key to set the supervision URL
-ocppVersion | 1.6 | 1.6 | string | OCPP version 
-ocppProtocol | json | json | string | OCPP protocol
-ocppStrictCompliance | true/false | true | boolean | Strict adherence to the OCPP version and protocol specifications
-wsOptions | | {} | ClientOptions & ClientRequestArgs | [ws](https://github.com/websockets/ws) and node.js [http](https://nodejs.org/api/http.html) clients options intersection
-authorizationFile | | '' | string | RFID tags list file relative to src/assets path
-baseName | | '' | string | base name to build charging stations name
-nameSuffix | | '' | string | name suffix to build charging stations name
-fixedName | true/false | false | boolean | use the baseName as the charging stations unique name
-chargePointModel | | '' | string | charging stations model
-chargePointVendor | | '' | string | charging stations vendor
-chargeBoxSerialNumberPrefix | | '' | string | charging stations serial number prefix
-firmwareVersion | | '' | string | charging stations firmware version
-power | | | float\|float[] | charging stations maximum power value(s)
-powerSharedByConnectors | true/false | false | boolean | charging stations power shared by its connectors
-powerUnit | W/kW | W | string | charging stations power unit
-currentOutType | AC/DC | AC | string | charging stations current out type
-voltageOut | | AC:230/DC:400 | integer | charging stations voltage out
-numberOfPhases | 0/1/3 | AC:3/DC:0 | integer | charging stations number of phase(s) 
-numberOfConnectors | | | integer\|integer[] | charging stations number of connector(s)
-useConnectorId0 | true/false | true | boolean | use connector id 0 definition from the template
-randomConnectors | true/false | false | boolean | randomize runtime connector id affectation from the connector id definition in template
-resetTime | | 60 | integer | seconds to wait before the charging stations come back at reset
-autoRegister | true/false | false | boolean | set the charging station as registered at boot notification for testing purpose
-autoReconnectMaxRetries | | -1 (unlimited) | integer | connection retries to the OCPP-J server
-reconnectExponentialDelay | true/false | false | boolean | connection delay retry to the OCPP-J server
-registrationMaxRetries | | -1 (unlimited) | integer | charging stations boot notification retries
-enableStatistics | true/false | true | boolean | enable charging stations statistics
-mayAuthorizeAtRemoteStart | true/false | true | boolean | always send authorize at remote start transaction when AuthorizeRemoteTxRequests is enabled
-beginEndMeterValues | true/false | false | boolean | enable Transaction.{Begin,End} MeterValues
-outOfOrderEndMeterValues | true/false | false | boolean | send Transaction.End MeterValues out of order. Need to relax OCPP specifications strict compliance ('ocppStrictCompliance' parameter)
-meteringPerTransaction | true/false | true | boolean | enable metering history on a per transaction basis
-transactionDataMeterValues | true/false | false | boolean | enable transaction data MeterValues at stop transaction
-mainVoltageMeterValues | true/false | true | boolean | include charging station main voltage MeterValues on three phased charging stations
-phaseLineToLineVoltageMeterValues | true/false | true | boolean | include charging station line to line voltage MeterValues on three phased charging stations
-Configuration | | | ChargingStationConfiguration | charging stations OCPP parameters configuration section
-AutomaticTransactionGenerator | | | AutomaticTransactionGenerator | charging stations ATG configuration section
-Connectors | | | Connectors | charging stations connectors configuration section
+| Key                               | Value(s)   | Default Value   | Value type                        | Description                                                                                                                           |
+| --------------------------------- | ---------- | --------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| supervisionUrls                   |            | ''              | string\|string[]                  | string or array of connection URIs to OCPP-J servers. It has priority over the global configuration parameter                         |
+| supervisionUser                   |            | ''              | string                            | basic HTTP authentication user to OCPP-J server                                                                                       |
+| supervisionPassword               |            | ''              | string                            | basic HTTP authentication password to OCPP-J server                                                                                   |
+| supervisionUrlOcppConfiguration   | true/false | false           | boolean                           | Allow supervision URL configuration via a vendor OCPP parameter key                                                                   |
+| supervisionUrlOcppKey             |            | 'ConnectionUrl' | string                            | The vendor string that will be used as a vendor OCPP parameter key to set the supervision URL                                         |
+| ocppVersion                       | 1.6        | 1.6             | string                            | OCPP version                                                                                                                          |
+| ocppProtocol                      | json       | json            | string                            | OCPP protocol                                                                                                                         |
+| ocppStrictCompliance              | true/false | true            | boolean                           | Strict adherence to the OCPP version and protocol specifications                                                                      |
+| wsOptions                         |            | {}              | ClientOptions & ClientRequestArgs | [ws](https://github.com/websockets/ws) and node.js [http](https://nodejs.org/api/http.html) clients options intersection              |
+| authorizationFile                 |            | ''              | string                            | RFID tags list file relative to src/assets path                                                                                       |
+| baseName                          |            | ''              | string                            | base name to build charging stations name                                                                                             |
+| nameSuffix                        |            | ''              | string                            | name suffix to build charging stations name                                                                                           |
+| fixedName                         | true/false | false           | boolean                           | use the baseName as the charging stations unique name                                                                                 |
+| chargePointModel                  |            | ''              | string                            | charging stations model                                                                                                               |
+| chargePointVendor                 |            | ''              | string                            | charging stations vendor                                                                                                              |
+| chargeBoxSerialNumberPrefix       |            | ''              | string                            | charging stations serial number prefix                                                                                                |
+| firmwareVersion                   |            | ''              | string                            | charging stations firmware version                                                                                                    |
+| power                             |            |                 | float\|float[]                    | charging stations maximum power value(s)                                                                                              |
+| powerSharedByConnectors           | true/false | false           | boolean                           | charging stations power shared by its connectors                                                                                      |
+| powerUnit                         | W/kW       | W               | string                            | charging stations power unit                                                                                                          |
+| currentOutType                    | AC/DC      | AC              | string                            | charging stations current out type                                                                                                    |
+| voltageOut                        |            | AC:230/DC:400   | integer                           | charging stations voltage out                                                                                                         |
+| numberOfPhases                    | 0/1/3      | AC:3/DC:0       | integer                           | charging stations number of phase(s)                                                                                                  |
+| numberOfConnectors                |            |                 | integer\|integer[]                | charging stations number of connector(s)                                                                                              |
+| useConnectorId0                   | true/false | true            | boolean                           | use connector id 0 definition from the template                                                                                       |
+| randomConnectors                  | true/false | false           | boolean                           | randomize runtime connector id affectation from the connector id definition in template                                               |
+| resetTime                         |            | 60              | integer                           | seconds to wait before the charging stations come back at reset                                                                       |
+| autoRegister                      | true/false | false           | boolean                           | set the charging station as registered at boot notification for testing purpose                                                       |
+| autoReconnectMaxRetries           |            | -1 (unlimited)  | integer                           | connection retries to the OCPP-J server                                                                                               |
+| reconnectExponentialDelay         | true/false | false           | boolean                           | connection delay retry to the OCPP-J server                                                                                           |
+| registrationMaxRetries            |            | -1 (unlimited)  | integer                           | charging stations boot notification retries                                                                                           |
+| enableStatistics                  | true/false | true            | boolean                           | enable charging stations statistics                                                                                                   |
+| mayAuthorizeAtRemoteStart         | true/false | true            | boolean                           | always send authorize at remote start transaction when AuthorizeRemoteTxRequests is enabled                                           |
+| beginEndMeterValues               | true/false | false           | boolean                           | enable Transaction.{Begin,End} MeterValues                                                                                            |
+| outOfOrderEndMeterValues          | true/false | false           | boolean                           | send Transaction.End MeterValues out of order. Need to relax OCPP specifications strict compliance ('ocppStrictCompliance' parameter) |
+| meteringPerTransaction            | true/false | true            | boolean                           | enable metering history on a per transaction basis                                                                                    |
+| transactionDataMeterValues        | true/false | false           | boolean                           | enable transaction data MeterValues at stop transaction                                                                               |
+| mainVoltageMeterValues            | true/false | true            | boolean                           | include charging station main voltage MeterValues on three phased charging stations                                                   |
+| phaseLineToLineVoltageMeterValues | true/false | true            | boolean                           | include charging station line to line voltage MeterValues on three phased charging stations                                           |
+| Configuration                     |            |                 | ChargingStationConfiguration      | charging stations OCPP parameters configuration section                                                                               |
+| AutomaticTransactionGenerator     |            |                 | AutomaticTransactionGenerator     | charging stations ATG configuration section                                                                                           |
+| Connectors                        |            |                 | Connectors                        | charging stations connectors configuration section                                                                                    |
 
 #### Configuration section
 
@@ -169,6 +170,7 @@ Connectors | | | Connectors | charging stations connectors configuration section
     "requireAuthorize": true
   }
 ```
+
 #### Connectors section
 
 ```json
@@ -270,7 +272,7 @@ make SUBMODULES_INIT=true
 
 ## OCPP-J standard parameters supported
 
-All kind of OCPP parameters are supported in a charging station template. The list here mention the standard ones also handled automatically in the simulator. 
+All kind of OCPP parameters are supported in a charging station template. The list here mention the standard ones also handled automatically in the simulator.
 
 ### Version 1.6
 
@@ -301,7 +303,7 @@ All kind of OCPP parameters are supported in a charging station template. The li
 
 #### Firmware Management Profile
 
-- *none*
+- _none_
 
 #### Local Auth List Management Profile
 
@@ -311,7 +313,7 @@ All kind of OCPP parameters are supported in a charging station template. The li
 
 #### Reservation Profile
 
-- *none*
+- _none_
 
 #### Smart Charging Profile
 
@@ -322,7 +324,7 @@ All kind of OCPP parameters are supported in a charging station template. The li
 
 #### Remote Trigger Profile
 
-- *none*
+- _none_
 
 ## License
 

@@ -15,15 +15,18 @@ const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
 
 // Mongo Connection and Query
 if (config && config.mongoConnectionString) {
-  MongoClient.connect(config.mongoConnectionString, async function(err, client) {
+  MongoClient.connect(config.mongoConnectionString, async function (err, client) {
     const db = client.db();
 
     for await (const tenantID of config.tenantIDs) {
-      const response = await db.collection(tenantID + '.chargingstations').updateMany(
-        { _id: { '$regex': config.idPattern } },
-        { $set: { public: config.publicFlag } }
+      const response = await db
+        .collection(tenantID + '.chargingstations')
+        .updateMany({ _id: { $regex: config.idPattern } }, { $set: { public: config.publicFlag } });
+      console.log(
+        response.modifiedCount,
+        `Charging Stations with id = %${config.idPattern}% updated. TenantID =`,
+        tenantID
       );
-      console.log(response.modifiedCount, `Charging Stations with id = %${config.idPattern}% updated. TenantID =`, tenantID);
     }
     client.close();
   });

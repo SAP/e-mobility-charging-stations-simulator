@@ -5,7 +5,7 @@ import { Worker } from 'worker_threads';
 export enum WorkerProcessType {
   WORKER_SET = 'workerSet',
   DYNAMIC_POOL = 'dynamicPool',
-  STATIC_POOL = 'staticPool'
+  STATIC_POOL = 'staticPool',
 }
 
 export interface WorkerOptions {
@@ -32,6 +32,5 @@ export interface WorkerMessage<T extends WorkerData> {
 
 export enum WorkerMessageEvents {
   START_WORKER_ELEMENT = 'startWorkerElement',
-  STOP_WORKER_ELEMENT = 'stopWorkerElement'
+  STOP_WORKER_ELEMENT = 'stopWorkerElement',
 }
-

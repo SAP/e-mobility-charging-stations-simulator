@@ -3,7 +3,7 @@ export default class BaseError extends Error {
     super(message);
     this.name = new.target.name;
     Object.setPrototypeOf(this, new.target.prototype);
-    Error.captureStackTrace ? (Error.captureStackTrace(this, this.constructor)) : (this.createStack());
+    Error.captureStackTrace ? Error.captureStackTrace(this, this.constructor) : this.createStack();
   }
 
   private createStack(): void {

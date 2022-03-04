@@ -17,7 +17,7 @@ export enum MeterValueUnit {
   TEMP_CELSIUS = 'Celsius',
   TEMP_FAHRENHEIT = 'Fahrenheit',
   TEMP_KELVIN = 'K',
-  PERCENT = 'Percent'
+  PERCENT = 'Percent',
 }
 
 export enum MeterValueContext {
@@ -28,7 +28,7 @@ export enum MeterValueContext {
   SAMPLE_PERIODIC = 'Sample.Periodic',
   TRANSACTION_BEGIN = 'Transaction.Begin',
   TRANSACTION_END = 'Transaction.End',
-  TRIGGER = 'Trigger'
+  TRIGGER = 'Trigger',
 }
 
 export enum OCPP16MeterValueMeasurand {
@@ -53,7 +53,7 @@ export enum OCPP16MeterValueMeasurand {
   FAN_RPM = 'RPM',
   STATE_OF_CHARGE = 'SoC',
   TEMPERATURE = 'Temperature',
-  VOLTAGE = 'Voltage'
+  VOLTAGE = 'Voltage',
 }
 
 export enum MeterValueLocation {
@@ -61,7 +61,7 @@ export enum MeterValueLocation {
   CABLE = 'Cable',
   EV = 'EV',
   INLET = 'Inlet',
-  OUTLET = 'Outlet'
+  OUTLET = 'Outlet',
 }
 
 export enum OCPP16MeterValuePhase {
@@ -74,7 +74,7 @@ export enum OCPP16MeterValuePhase {
   L3_N = 'L3-N',
   L1_L2 = 'L1-L2',
   L2_L3 = 'L2-L3',
-  L3_L1 = 'L3-L1'
+  L3_L1 = 'L3-L1',
 }
 
 export enum MeterValueFormat {
@@ -104,4 +104,3 @@ export interface MeterValuesRequest extends JsonType {
 }
 
 export type MeterValuesResponse = EmptyObject;
-

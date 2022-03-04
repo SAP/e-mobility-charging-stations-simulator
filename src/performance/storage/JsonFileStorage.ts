@@ -17,33 +17,45 @@ export class JsonFileStorage extends Storage {
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.checkPerformanceRecordsFile();
-    lockfile.lock(this.dbName, { stale: 5000, retries: 3 })
+    lockfile
+      .lock(this.dbName, { stale: 5000, retries: 3 })
       .then(async (release) => {
         try {
           const fileData = fs.readFileSync(this.dbName, 'utf8');
-          const performanceRecords: Statistics[] = fileData ? JSON.parse(fileData) as Statistics[] : [];
+          const performanceRecords: Statistics[] = fileData
+            ? (JSON.parse(fileData) as Statistics[])
+            : [];
           performanceRecords.push(performanceStatistics);
           fs.writeFileSync(
             this.dbName,
-            JSON.stringify(performanceRecords,
+            JSON.stringify(
+              performanceRecords,
               (key, value) => {
                 if (value instanceof Map) {
                   return {
                     dataType: 'Map',
-                    value: [...value]
+                    value: [...value],
                   };
                 }
                 return value as Statistics;
               },
-              2),
+              2
+            ),
             'utf8'
           );
         } catch (error) {
-          FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error as NodeJS.ErrnoException);
+          FileUtils.handleFileException(
+            this.logPrefix,
+            Constants.PERFORMANCE_RECORDS_FILETYPE,
+            this.dbName,
+            error as NodeJS.ErrnoException
+          );
         }
         await release();
       })
-      .catch(() => { /* This is intentional */ });
+      .catch(() => {
+        /* This is intentional */
+      });
   }
 
   public open(): void {
@@ -52,7 +64,12 @@ export class JsonFileStorage extends Storage {
         this.fd = fs.openSync(this.dbName, 'a+');
       }
     } catch (error) {
-      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error as NodeJS.ErrnoException);
+      FileUtils.handleFileException(
+        this.logPrefix,
+        Constants.PERFORMANCE_RECORDS_FILETYPE,
+        this.dbName,
+        error as NodeJS.ErrnoException
+      );
     }
   }
 
@@ -63,13 +80,20 @@ export class JsonFileStorage extends Storage {
         this.fd = null;
       }
     } catch (error) {
-      FileUtils.handleFileException(this.logPrefix, Constants.PERFORMANCE_RECORDS_FILETYPE, this.dbName, error as NodeJS.ErrnoException);
+      FileUtils.handleFileException(
+        this.logPrefix,
+        Constants.PERFORMANCE_RECORDS_FILETYPE,
+        this.dbName,
+        error as NodeJS.ErrnoException
+      );
     }
   }
 
   private checkPerformanceRecordsFile(): void {
     if (!this?.fd) {
-      throw new Error(`${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`);
+      throw new Error(
+        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
+      );
     }
   }
 }

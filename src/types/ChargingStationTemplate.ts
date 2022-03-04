@@ -19,7 +19,7 @@ export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
-  VOLTAGE_800 = 800
+  VOLTAGE_800 = 800,
 }
 
 export interface AutomaticTransactionGenerator {
@@ -31,7 +31,7 @@ export interface AutomaticTransactionGenerator {
   probabilityOfStart: number;
   stopAfterHours: number;
   stopOnConnectionFailure: boolean;
-  requireAuthorize?: boolean
+  requireAuthorize?: boolean;
 }
 
 export default interface ChargingStationTemplate {

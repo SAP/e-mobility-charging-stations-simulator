@@ -16,8 +16,14 @@ export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
-    this.workerOptions.poolOptions.exitHandler = this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler;
-    this.pool = new DynamicThreadPool<WorkerData>(this.workerOptions.poolMinSize, this.workerOptions.poolMaxSize, this.workerScript, this.workerOptions.poolOptions);
+    this.workerOptions.poolOptions.exitHandler =
+      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler;
+    this.pool = new DynamicThreadPool<WorkerData>(
+      this.workerOptions.poolMinSize,
+      this.workerOptions.poolMaxSize,
+      this.workerScript,
+      this.workerOptions.poolOptions
+    );
   }
 
   get size(): number {
@@ -55,6 +61,7 @@ export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup
-    this.workerOptions.elementStartDelay > 0 && await Utils.sleep(this.workerOptions.elementStartDelay);
+    this.workerOptions.elementStartDelay > 0 &&
+      (await Utils.sleep(this.workerOptions.elementStartDelay));
   }
 }

@@ -32,9 +32,7 @@ export class CircularArray<T> extends Array<T> {
   }
 
   public concat(...items: (T | ConcatArray<T>)[]): CircularArray<T> {
-    const concatenatedCircularArray = super.concat(
-      items as T[]
-    ) as CircularArray<T>;
+    const concatenatedCircularArray = super.concat(items as T[]) as CircularArray<T>;
     concatenatedCircularArray.size = this.size;
     if (concatenatedCircularArray.length > concatenatedCircularArray.size) {
       concatenatedCircularArray.splice(

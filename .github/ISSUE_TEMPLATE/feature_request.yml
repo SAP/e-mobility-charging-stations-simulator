@@ -11,15 +11,13 @@ body:
   - type: checkboxes
     attributes:
       options:
-        - label:
-            I've searched for any related issues and avoided creating a
+        - label: I've searched for any related issues and avoided creating a
             duplicate issue.
           required: true
   - type: textarea
     attributes:
       label: Description
-      description:
-        A clear and concise description of the feature.
+      description: A clear and concise description of the feature.
   - type: textarea
     attributes:
       label: Attachments

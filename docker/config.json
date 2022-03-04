@@ -1,7 +1,5 @@
 {
-  "supervisionUrls": [
-    "ws://server:8010/OCPP16/5c866e81a2d9593de43efdb4"
-  ],
+  "supervisionUrls": ["ws://server:8010/OCPP16/5c866e81a2d9593de43efdb4"],
   "distributeStationsToTenantsEqually": true,
   "workerProcess": "workerSet",
   "workerPoolMinSize": 4,

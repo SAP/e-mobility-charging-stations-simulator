@@ -21,7 +21,7 @@ export default abstract class AbstractUIService {
     if (this.messageHandlers.has(command)) {
       try {
         // Call the method to build the message response
-        messageResponse = await this.messageHandlers.get(command)(payload) as JsonType;
+        messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
       } catch (error) {
         // Log
         logger.error(this.uiWebSocketServer.logPrefix() + ' Handle message error: %j', error);
@@ -29,16 +29,19 @@ export default abstract class AbstractUIService {
       }
     } else {
       // Throw exception
-      throw new BaseError(`${command} is not implemented to handle message payload ${JSON.stringify(payload, null, 2)}`);
+      throw new BaseError(
+        `${command} is not implemented to handle message payload ${JSON.stringify(
+          payload,
+          null,
+          2
+        )}`
+      );
     }
     // Send the built message response
     this.uiWebSocketServer.broadcastToClients(this.buildProtocolMessage(command, messageResponse));
   }
 
-  protected buildProtocolMessage(
-      command: ProtocolCommand,
-      payload: JsonType,
-  ): string {
+  protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
     return JSON.stringify([command, payload]);
   }
 

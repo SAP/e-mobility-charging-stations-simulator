@@ -16,7 +16,7 @@ export enum OCPP16RequestCommand {
   START_TRANSACTION = 'StartTransaction',
   STOP_TRANSACTION = 'StopTransaction',
   METER_VALUES = 'MeterValues',
-  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification'
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
 }
 
 export enum OCPP16IncomingRequestCommand {
@@ -31,7 +31,7 @@ export enum OCPP16IncomingRequestCommand {
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
   REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
   GET_DIAGNOSTICS = 'GetDiagnostics',
-  TRIGGER_MESSAGE = 'TriggerMessage'
+  TRIGGER_MESSAGE = 'TriggerMessage',
 }
 
 export type HeartbeatRequest = EmptyObject;
@@ -83,7 +83,7 @@ export interface GetConfigurationRequest extends JsonType {
 
 export enum ResetType {
   HARD = 'Hard',
-  SOFT = 'Soft'
+  SOFT = 'Soft',
 }
 
 export interface ResetRequest extends JsonType {
@@ -97,7 +97,7 @@ export interface SetChargingProfileRequest extends JsonType {
 
 export enum OCPP16AvailabilityType {
   INOPERATIVE = 'Inoperative',
-  OPERATIVE = 'Operative'
+  OPERATIVE = 'Operative',
 }
 
 export interface ChangeAvailabilityRequest extends JsonType {
@@ -121,7 +121,7 @@ export interface GetDiagnosticsRequest extends JsonType {
 }
 
 export interface DiagnosticsStatusNotificationRequest extends JsonType {
-  status: OCPP16DiagnosticsStatus
+  status: OCPP16DiagnosticsStatus;
 }
 
 export enum MessageTrigger {
@@ -130,10 +130,10 @@ export enum MessageTrigger {
   FirmwareStatusNotification = 'FirmwareStatusNotification',
   Heartbeat = 'Heartbeat',
   MeterValues = 'MeterValues',
-  StatusNotification = 'StatusNotification'
+  StatusNotification = 'StatusNotification',
 }
 
 export interface OCPP16TriggerMessageRequest extends JsonType {
   requestedMessage: MessageTrigger;
-  connectorId?: number
+  connectorId?: number;
 }

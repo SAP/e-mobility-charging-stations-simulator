@@ -19,8 +19,18 @@ export abstract class Storage {
     this.logPrefix = logPrefix;
   }
 
-  protected handleDBError(type: StorageType, error: Error, table?: string, params: HandleErrorParams<EmptyObject> = { throwError: false }): void {
-    logger.error(`${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${(!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`}: %j`, error);
+  protected handleDBError(
+    type: StorageType,
+    error: Error,
+    table?: string,
+    params: HandleErrorParams<EmptyObject> = { throwError: false }
+  ): void {
+    logger.error(
+      `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${
+        (!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`
+      }: %j`,
+      error
+    );
     if (params?.throwError) {
       throw error;
     }
@@ -41,5 +51,7 @@ export abstract class Storage {
 
   public abstract open(): void | Promise<void>;
   public abstract close(): void | Promise<void>;
-  public abstract storePerformanceStatistics(performanceStatistics: Statistics): void | Promise<void>;
+  public abstract storePerformanceStatistics(
+    performanceStatistics: Statistics
+  ): void | Promise<void>;
 }

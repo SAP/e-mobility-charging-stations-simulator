@@ -17,4 +17,6 @@ export enum ProtocolCommand {
 
 export type ProtocolRequest = [ProtocolCommand, JsonType];
 
-export type ProtocolRequestHandler = (payload: JsonType) => void | Promise<void> | JsonType | Promise<JsonType>;
+export type ProtocolRequestHandler = (
+  payload: JsonType
+) => void | Promise<void> | JsonType | Promise<JsonType>;

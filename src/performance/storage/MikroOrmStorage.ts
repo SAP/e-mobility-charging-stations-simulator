@@ -54,15 +54,20 @@ export class MikroOrmStorage extends Storage {
     if (this.storageType === StorageType.SQLITE) {
       return `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
     }
-    return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
+    return (
+      this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ??
+      Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME
+    );
   }
 
-  private getOptions(): Configuration<IDatabaseDriver<Connection>> | Options<IDatabaseDriver<Connection>> {
+  private getOptions():
+    | Configuration<IDatabaseDriver<Connection>>
+    | Options<IDatabaseDriver<Connection>> {
     return {
       metadataProvider: TsMorphMetadataProvider,
       entities: [PerformanceRecord, PerformanceData],
       type: this.storageType as MikroORMDBType,
-      clientUrl: this.getClientUrl()
+      clientUrl: this.getClientUrl(),
     };
   }
 
@@ -75,4 +80,3 @@ export class MikroOrmStorage extends Storage {
     }
   }
 }
-

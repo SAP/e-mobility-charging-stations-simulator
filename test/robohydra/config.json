@@ -1,9 +1,4 @@
 {
-  "pluginLoadPaths": [
-    "test/robohydra/plugins"
-  ],
-  "plugins": [
-    "logger",
-    "wsServer"
-  ]
+  "pluginLoadPaths": ["test/robohydra/plugins"],
+  "plugins": ["logger", "wsServer"]
 }

@@ -15,17 +15,19 @@ export interface ChargingStationWorkerData extends WorkerData {
 enum InternalChargingStationWorkerMessageEvents {
   STARTED = 'started',
   STOPPED = 'stopped',
-  PERFORMANCE_STATISTICS = 'performanceStatistics'
+  PERFORMANCE_STATISTICS = 'performanceStatistics',
 }
 
-export type ChargingStationWorkerMessageEvents = WorkerMessageEvents | InternalChargingStationWorkerMessageEvents;
+export type ChargingStationWorkerMessageEvents =
+  | WorkerMessageEvents
+  | InternalChargingStationWorkerMessageEvents;
 
 export const ChargingStationWorkerMessageEvents = {
   ...WorkerMessageEvents,
-  ...InternalChargingStationWorkerMessageEvents
+  ...InternalChargingStationWorkerMessageEvents,
 };
 
-
-export interface ChargingStationWorkerMessage extends Omit<WorkerMessage<ChargingStationWorkerData>, 'id'> {
+export interface ChargingStationWorkerMessage
+  extends Omit<WorkerMessage<ChargingStationWorkerData>, 'id'> {
   id: ChargingStationWorkerMessageEvents;
 }

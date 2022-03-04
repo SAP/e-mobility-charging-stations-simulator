@@ -1,6 +1,10 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { ChargingStationWorkerData, ChargingStationWorkerMessage, ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
+import {
+  ChargingStationWorkerData,
+  ChargingStationWorkerMessage,
+  ChargingStationWorkerMessageEvents,
+} from '../types/ChargingStationWorker';
 
 import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
@@ -29,16 +33,23 @@ export default class Bootstrap {
 
   private constructor() {
     this.started = false;
-    this.workerScript = path.join(path.resolve(__dirname, '../'), 'charging-station', 'ChargingStationWorker.js');
+    this.workerScript = path.join(
+      path.resolve(__dirname, '../'),
+      'charging-station',
+      'ChargingStationWorker.js'
+    );
     this.initWorkerImplementation();
-    Configuration.getUIWebSocketServer().enabled && (this.uiWebSocketServer = new UIWebSocketServer({
-      ...Configuration.getUIWebSocketServer().options, handleProtocols: UIServiceUtils.handleProtocols
-    }));
-    Configuration.getPerformanceStorage().enabled && (this.storage = StorageFactory.getStorage(
-      Configuration.getPerformanceStorage().type,
-      Configuration.getPerformanceStorage().uri,
-      this.logPrefix()
-    ));
+    Configuration.getUIWebSocketServer().enabled &&
+      (this.uiWebSocketServer = new UIWebSocketServer({
+        ...Configuration.getUIWebSocketServer().options,
+        handleProtocols: UIServiceUtils.handleProtocols,
+      }));
+    Configuration.getPerformanceStorage().enabled &&
+      (this.storage = StorageFactory.getStorage(
+        Configuration.getPerformanceStorage().type,
+        Configuration.getPerformanceStorage().uri,
+        this.logPrefix()
+      ));
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
   }
 
@@ -66,16 +77,39 @@ export default class Bootstrap {
                 await this.startChargingStation(index, stationTemplateUrl);
               }
             } catch (error) {
-              console.error(chalk.red('Charging station start with template file ' + stationTemplateUrl.file + ' error '), error);
+              console.error(
+                chalk.red(
+                  'Charging station start with template file ' + stationTemplateUrl.file + ' error '
+                ),
+                error
+              );
             }
           }
         } else {
           console.warn(chalk.yellow('No stationTemplateUrls defined in configuration, exiting'));
         }
         if (this.numberOfChargingStations === 0) {
-          console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'));
+          console.warn(
+            chalk.yellow('No charging station template enabled in configuration, exiting')
+          );
         } else {
-          console.log(chalk.green(`Charging stations simulator ${this.version} started with ${this.numberOfChargingStations.toString()} charging station(s) and ${Utils.workerDynamicPoolInUse() ? `${Configuration.getWorkerPoolMinSize().toString()}/` : ''}${this.workerImplementation.size}${Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''} worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${this.workerImplementation.maxElementsPerWorker ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)` : ''}`));
+          console.log(
+            chalk.green(
+              `Charging stations simulator ${
+                this.version
+              } started with ${this.numberOfChargingStations.toString()} charging station(s) and ${
+                Utils.workerDynamicPoolInUse()
+                  ? `${Configuration.getWorkerPoolMinSize().toString()}/`
+                  : ''
+              }${this.workerImplementation.size}${
+                Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''
+              } worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${
+                this.workerImplementation.maxElementsPerWorker
+                  ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
+                  : ''
+              }`
+            )
+          );
         }
         this.started = true;
       } catch (error) {
@@ -104,7 +138,9 @@ export default class Bootstrap {
   }
 
   private initWorkerImplementation(): void {
-    this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(this.workerScript, Configuration.getWorkerProcess(),
+    this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
+      this.workerScript,
+      Configuration.getWorkerProcess(),
       {
         workerStartDelay: Configuration.getWorkerStartDelay(),
         elementStartDelay: Configuration.getElementStartDelay(),
@@ -112,7 +148,7 @@ export default class Bootstrap {
         poolMinSize: Configuration.getWorkerPoolMinSize(),
         elementsPerWorker: Configuration.getChargingStationsPerWorker(),
         poolOptions: {
-          workerChoiceStrategy: Configuration.getWorkerPoolStrategy()
+          workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
         },
         messageHandler: async (msg: ChargingStationWorkerMessage) => {
           if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
@@ -122,14 +158,23 @@ export default class Bootstrap {
           } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
             await this.storage.storePerformanceStatistics(msg.data as unknown as Statistics);
           }
-        }
-      });
+        },
+      }
+    );
   }
 
-  private async startChargingStation(index: number, stationTemplateUrl: StationTemplateUrl): Promise<void> {
+  private async startChargingStation(
+    index: number,
+    stationTemplateUrl: StationTemplateUrl
+  ): Promise<void> {
     const workerData: ChargingStationWorkerData = {
       index,
-      templateFile: path.join(path.resolve(__dirname, '../'), 'assets', 'station-templates', path.basename(stationTemplateUrl.file))
+      templateFile: path.join(
+        path.resolve(__dirname, '../'),
+        'assets',
+        'station-templates',
+        path.basename(stationTemplateUrl.file)
+      ),
     };
     await this.workerImplementation.addElement(workerData);
     this.numberOfChargingStations++;

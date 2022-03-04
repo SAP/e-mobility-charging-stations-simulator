@@ -11,13 +11,8 @@
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "Build",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run-script",
-        "start:debug"
-      ],
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "runtimeArgs": ["run-script", "start:debug"],
+      "skipFiles": ["<node_internals>/**"],
       "stopOnEntry": true
     },
     {
@@ -26,13 +21,8 @@
       "name": "Debug Simulator Development Build via npm",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run-script",
-        "start:dev:debug"
-      ],
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "runtimeArgs": ["run-script", "start:dev:debug"],
+      "skipFiles": ["<node_internals>/**"],
       "stopOnEntry": true
     }
   ]

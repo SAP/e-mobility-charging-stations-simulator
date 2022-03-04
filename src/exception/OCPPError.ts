@@ -11,7 +11,12 @@ export default class OCPPError extends BaseError {
   command?: RequestCommand | IncomingRequestCommand;
   details?: JsonType;
 
-  constructor(code: ErrorType | IncomingRequestCommand, message: string, command?: RequestCommand | IncomingRequestCommand, details?: JsonType) {
+  constructor(
+    code: ErrorType | IncomingRequestCommand,
+    message: string,
+    command?: RequestCommand | IncomingRequestCommand,
+    details?: JsonType
+  ) {
     super(message);
 
     this.code = code ?? ErrorType.GENERIC_ERROR;

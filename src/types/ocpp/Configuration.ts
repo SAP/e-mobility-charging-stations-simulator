@@ -1,23 +1,27 @@
-import { OCPP16StandardParametersKey, OCPP16SupportedFeatureProfiles, OCPP16VendorDefaultParametersKey } from './1.6/Configuration';
+import {
+  OCPP16StandardParametersKey,
+  OCPP16SupportedFeatureProfiles,
+  OCPP16VendorDefaultParametersKey,
+} from './1.6/Configuration';
 
 import { JsonType } from '../JsonType';
 
 export type StandardParametersKey = OCPP16StandardParametersKey;
 
 export const StandardParametersKey = {
-  ...OCPP16StandardParametersKey
+  ...OCPP16StandardParametersKey,
 };
 
 export type VendorDefaultParametersKey = OCPP16VendorDefaultParametersKey;
 
 export const VendorDefaultParametersKey = {
-  ...OCPP16VendorDefaultParametersKey
+  ...OCPP16VendorDefaultParametersKey,
 };
 
 export type SupportedFeatureProfiles = OCPP16SupportedFeatureProfiles;
 
 export const SupportedFeatureProfiles = {
-  ...OCPP16SupportedFeatureProfiles
+  ...OCPP16SupportedFeatureProfiles,
 };
 
 export enum ConnectorPhaseRotation {
@@ -28,7 +32,7 @@ export enum ConnectorPhaseRotation {
   SRT = 'SRT',
   STR = 'STR',
   TRS = 'TRS',
-  TSR = 'TSR'
+  TSR = 'TSR',
 }
 
 export interface OCPPConfigurationKey extends JsonType {

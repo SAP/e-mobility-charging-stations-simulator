@@ -14,14 +14,18 @@ const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
 
 // Mongo Connection and Query
 if (config && config.mongoConnectionString) {
-  MongoClient.connect(config.mongoConnectionString, async function(err, client) {
+  MongoClient.connect(config.mongoConnectionString, async function (err, client) {
     const db = client.db();
 
     for await (const tenantID of config.tenantIDs) {
-      const response = await db.collection(tenantID + '.chargingstations').deleteMany(
-        { _id: { '$regex': config.idPattern } }
+      const response = await db
+        .collection(tenantID + '.chargingstations')
+        .deleteMany({ _id: { $regex: config.idPattern } });
+      console.log(
+        response.deletedCount,
+        `Charging Stations with id = %${config.idPattern}% deleted. TenantID =`,
+        tenantID
       );
-      console.log(response.deletedCount, `Charging Stations with id = %${config.idPattern}% deleted. TenantID =`, tenantID);
     }
     client.close();
   });

@@ -1,7 +1,5 @@
 {
-  "supervisionUrls": [
-    "ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"
-  ],
+  "supervisionUrls": ["ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"],
   "supervisionUrlDistribution": "sequential",
   "performanceStorage": {
     "enabled": true,

@@ -8,7 +8,10 @@ export default class UIServiceFactory {
     // This is intentional
   }
 
-  public static getUIServiceImplementation(version: ProtocolVersion, uiWebSocketServer: UIWebSocketServer): AbstractUIService | null {
+  public static getUIServiceImplementation(
+    version: ProtocolVersion,
+    uiWebSocketServer: UIWebSocketServer
+  ): AbstractUIService | null {
     switch (version) {
       case ProtocolVersion['0.0.1']:
         return new UIService001(uiWebSocketServer);

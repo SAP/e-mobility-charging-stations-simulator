@@ -2,9 +2,7 @@
   "parallel": true,
   "diff": true,
   "recursive": true,
-  "extension": [
-    "ts"
-  ],
+  "extension": ["ts"],
   "package": "./package.json",
   "reporter": "mochawesome",
   "reporter-options": "reportDir=outputs/mochawesome-report,json=false",
@@ -13,8 +11,5 @@
   "ui": "bdd",
   "full-trace": true,
   "exit": true,
-  "require": [
-    "ts-node/register",
-    "mochawesome/register"
-  ]
+  "require": ["ts-node/register", "mochawesome/register"]
 }

@@ -20,7 +20,11 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
     this.workerSet = new Set<WorkerSetElement>();
-    this.messageHandler = workerOptions?.messageHandler ?? (() => { /* This is intentional */ });
+    this.messageHandler =
+      workerOptions?.messageHandler ??
+      (() => {
+        /* This is intentional */
+      });
   }
 
   get size(): number {
@@ -39,14 +43,16 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   public async addElement(elementData: WorkerData): Promise<void> {
     if (!this.workerSet) {
-      throw new Error('Cannot add a WorkerSet element: workers\' set does not exist');
+      throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
     }
-    if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker) {
+    if (
+      this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker
+    ) {
       await this.startWorker();
     }
     this.getLastWorker().postMessage({
       id: WorkerMessageEvents.START_WORKER_ELEMENT,
-      data: elementData
+      data: elementData,
     });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
     // Start element sequentially to optimize memory at startup
@@ -85,21 +91,28 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     worker.on('message', (msg) => {
       (async () => {
         await this.messageHandler(msg);
-      })().catch(() => { /* This is intentional */ });
+      })().catch(() => {
+        /* This is intentional */
+      });
     });
-    worker.on('error', () => { /* This is intentional */ });
+    worker.on('error', () => {
+      /* This is intentional */
+    });
     worker.on('exit', (code) => {
       WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });
     // Start worker sequentially to optimize memory at startup
-    this.workerOptions.workerStartDelay > 0 && await Utils.sleep(this.workerOptions.workerStartDelay);
+    this.workerOptions.workerStartDelay > 0 &&
+      (await Utils.sleep(this.workerOptions.workerStartDelay));
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {
     let workerSetElement: WorkerSetElement;
-    for (workerSetElement of this.workerSet) { /* This is intentional */ }
+    for (workerSetElement of this.workerSet) {
+      /* This is intentional */
+    }
     return workerSetElement;
   }
 

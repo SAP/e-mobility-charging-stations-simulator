@@ -14,13 +14,18 @@ export class MongoDBStorage extends Storage {
     super(storageUri, logPrefix);
     this.client = new MongoClient(this.storageUri.toString());
     this.connected = false;
-    this.dbName = this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ?? Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
+    this.dbName =
+      this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ??
+      Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME;
   }
 
   public async storePerformanceStatistics(performanceStatistics: Statistics): Promise<void> {
     try {
       this.checkDBConnection();
-      await this.client.db(this.dbName).collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE).insertOne(performanceStatistics);
+      await this.client
+        .db(this.dbName)
+        .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
+        .insertOne(performanceStatistics);
     } catch (error) {
       this.handleDBError(StorageType.MONGO_DB, error as Error, Constants.PERFORMANCE_RECORDS_TABLE);
     }
@@ -50,10 +55,18 @@ export class MongoDBStorage extends Storage {
 
   private checkDBConnection() {
     if (!this?.client) {
-      throw new Error(`${this.logPrefix} ${this.getDBNameFromStorageType(StorageType.MONGO_DB)} client initialization failed while trying to issue a request`);
+      throw new Error(
+        `${this.logPrefix} ${this.getDBNameFromStorageType(
+          StorageType.MONGO_DB
+        )} client initialization failed while trying to issue a request`
+      );
     }
     if (!this.connected) {
-      throw new Error(`${this.logPrefix} ${this.getDBNameFromStorageType(StorageType.MONGO_DB)} connection not opened while trying to issue a request`);
+      throw new Error(
+        `${this.logPrefix} ${this.getDBNameFromStorageType(
+          StorageType.MONGO_DB
+        )} connection not opened while trying to issue a request`
+      );
     }
   }
 }

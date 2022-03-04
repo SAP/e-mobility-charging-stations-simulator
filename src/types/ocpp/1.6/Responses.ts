@@ -9,7 +9,7 @@ export interface HeartbeatResponse extends JsonType {
 export enum OCPP16UnlockStatus {
   UNLOCKED = 'Unlocked',
   UNLOCK_FAILED = 'UnlockFailed',
-  NOT_SUPPORTED = 'NotSupported'
+  NOT_SUPPORTED = 'NotSupported',
 }
 
 export interface UnlockConnectorResponse extends JsonType {
@@ -20,7 +20,7 @@ export enum OCPP16ConfigurationStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   REBOOT_REQUIRED = 'RebootRequired',
-  NOT_SUPPORTED = 'NotSupported'
+  NOT_SUPPORTED = 'NotSupported',
 }
 
 export interface ChangeConfigurationResponse extends JsonType {
@@ -30,7 +30,7 @@ export interface ChangeConfigurationResponse extends JsonType {
 export enum OCPP16RegistrationStatus {
   ACCEPTED = 'Accepted',
   PENDING = 'Pending',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }
 
 export interface OCPP16BootNotificationResponse extends JsonType {
@@ -59,7 +59,7 @@ export interface SetChargingProfileResponse extends JsonType {
 export enum OCPP16AvailabilityStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
-  SCHEDULED = 'Scheduled'
+  SCHEDULED = 'Scheduled',
 }
 
 export interface ChangeAvailabilityResponse extends JsonType {
@@ -68,7 +68,7 @@ export interface ChangeAvailabilityResponse extends JsonType {
 
 export enum OCPP16ClearChargingProfileStatus {
   ACCEPTED = 'Accepted',
-  UNKNOWN = 'Unknown'
+  UNKNOWN = 'Unknown',
 }
 
 export interface ClearChargingProfileResponse extends JsonType {
@@ -84,9 +84,9 @@ export type DiagnosticsStatusNotificationResponse = EmptyObject;
 export enum OCPP16TriggerMessageStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
-  NOT_IMPLEMENTED = 'NotImplemented'
+  NOT_IMPLEMENTED = 'NotImplemented',
 }
 
 export interface OCPP16TriggerMessageResponse extends JsonType {
-  status: OCPP16TriggerMessageStatus
+  status: OCPP16TriggerMessageStatus;
 }

@@ -26,10 +26,8 @@ describe('Circular array test suite', () => {
     expect(circularArray.length).toBe(4);
   });
 
-  it('Verify that circular array size can\'t be negative at instance creation', () => {
-    expect(() => new CircularArray(-1)).toThrowError(
-      new RangeError('Invalid circular array size')
-    );
+  it("Verify that circular array size can't be negative at instance creation", () => {
+    expect(() => new CircularArray(-1)).toThrowError(new RangeError('Invalid circular array size'));
   });
 
   it('Verify that circular array empty works as intended', () => {

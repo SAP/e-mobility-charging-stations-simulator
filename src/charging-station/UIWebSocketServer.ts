@@ -34,9 +34,13 @@ export default class UIWebSocketServer extends Server {
   public start(): void {
     this.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
       const protocolIndex = socket.protocol.indexOf(Protocol.UI);
-      const version = socket.protocol.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion;
+      const version = socket.protocol.substring(
+        protocolIndex + Protocol.UI.length
+      ) as ProtocolVersion;
       if (!this.uiServices.has(version)) {
-        throw new BaseError(`Could not find a UI service implementation for UI protocol version ${version}`);
+        throw new BaseError(
+          `Could not find a UI service implementation for UI protocol version ${version}`
+        );
       }
       // FIXME: check connection validity
       socket.on('message', (messageData) => {
@@ -47,9 +51,16 @@ export default class UIWebSocketServer extends Server {
         } else {
           throw new BaseError('UI protocol request is not iterable');
         }
-        this.uiServices.get(version).handleMessage(command, payload).catch(() => {
-          logger.error(`${this.logPrefix()} Error while handling command %s message: %j`, command, payload);
-        });
+        this.uiServices
+          .get(version)
+          .handleMessage(command, payload)
+          .catch(() => {
+            logger.error(
+              `${this.logPrefix()} Error while handling command %s message: %j`,
+              command,
+              payload
+            );
+          });
       });
       socket.on('error', (error) => {
         logger.error(`${this.logPrefix()} Error on WebSocket: %j`, error);
