@@ -9,6 +9,7 @@ export default abstract class OCPPIncomingRequestService {
     string,
     OCPPIncomingRequestService
   >();
+
   protected chargingStation: ChargingStation;
 
   protected constructor(chargingStation: ChargingStation) {

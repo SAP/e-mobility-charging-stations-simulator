@@ -18,6 +18,7 @@ export default class PerformanceStatistics {
     string,
     PerformanceStatistics
   >();
+
   private readonly objId: string;
   private readonly objName: string;
   private performanceObserver: PerformanceObserver;

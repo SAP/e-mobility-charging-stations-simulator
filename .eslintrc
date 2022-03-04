@@ -12,7 +12,7 @@
     "plugin:import/warnings",
     "plugin:import/typescript",
     "plugin:jsdoc/recommended",
-    "prettier"
+    "plugin:prettier/recommended"
   ],
   "plugins": ["import", "jsdoc", "@typescript-eslint"],
   "settings": {
@@ -21,25 +21,6 @@
     }
   },
   "rules": {
-    "indent": "off",
-    "@typescript-eslint/indent": [
-      "error",
-      2,
-      {
-        "SwitchCase": 1,
-        "CallExpression": {
-          "arguments": 1
-        },
-        "FunctionDeclaration": {
-          "parameters": 2,
-          "body": 1
-        },
-        "FunctionExpression": {
-          "parameters": 2,
-          "body": 1
-        }
-      }
-    ],
     "@typescript-eslint/array-type": "off",
     "semi": "off",
     "@typescript-eslint/semi": ["error", "always"],
@@ -55,7 +36,7 @@
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/promise-function-async": "error",
     "@typescript-eslint/no-misused-promises": "error",
-    "curly": "error",
+    "curly": ["error", "all"],
     "brace-style": "error",
     "eqeqeq": ["error", "always"],
     "no-else-return": "error",
@@ -108,13 +89,8 @@
     "max-len": [
       "warn",
       {
-        "code": 180,
-        "ignoreComments": true,
-        "ignoreUrls": true,
-        "ignoreStrings": true,
-        "ignoreTemplateLiterals": true,
-        "ignoreRegExpLiterals": true,
-        "ignorePattern": "(^(import|export)|(public|private))\\s.+;"
+        "code": 80,
+        "ignoreUrls": true
       }
     ],
     "no-lonely-if": "error",
@@ -156,7 +132,14 @@
         "exceptAfterSingleLine": true
       }
     ],
-    "quotes": ["error", "single"]
+    "quotes": [
+      "error",
+      "single",
+      {
+        "avoidEscape": true,
+        "allowTemplateLiterals": false
+      }
+    ]
   },
   "overrides": [
     {

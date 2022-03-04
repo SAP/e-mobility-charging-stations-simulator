@@ -34,6 +34,7 @@ export default abstract class OCPPRequestService {
     string,
     OCPPRequestService
   >();
+
   protected readonly chargingStation: ChargingStation;
   private readonly ocppResponseService: OCPPResponseService;
 
@@ -338,37 +339,44 @@ export default abstract class OCPPRequestService {
     meterType?: string,
     params?: SendParams
   ): Promise<BootNotificationResponse>;
+
   public abstract sendStatusNotification(
     connectorId: number,
     status: ChargePointStatus,
     errorCode?: ChargePointErrorCode
   ): Promise<void>;
+
   public abstract sendAuthorize(connectorId: number, idTag?: string): Promise<AuthorizeResponse>;
   public abstract sendStartTransaction(
     connectorId: number,
     idTag?: string
   ): Promise<StartTransactionResponse>;
+
   public abstract sendStopTransaction(
     transactionId: number,
     meterStop: number,
     idTag?: string,
     reason?: StopTransactionReason
   ): Promise<StopTransactionResponse>;
+
   public abstract sendMeterValues(
     connectorId: number,
     transactionId: number,
     interval: number
   ): Promise<void>;
+
   public abstract sendTransactionBeginMeterValues(
     connectorId: number,
     transactionId: number,
     beginMeterValue: MeterValue
   ): Promise<void>;
+
   public abstract sendTransactionEndMeterValues(
     connectorId: number,
     transactionId: number,
     endMeterValue: MeterValue
   ): Promise<void>;
+
   public abstract sendDiagnosticsStatusNotification(
     diagnosticsStatus: DiagnosticsStatus
   ): Promise<void>;

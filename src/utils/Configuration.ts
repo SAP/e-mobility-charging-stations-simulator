@@ -22,6 +22,7 @@ export default class Configuration {
     'assets',
     'config.json'
   );
+
   private static configurationFileWatcher: fs.FSWatcher;
   private static configuration: ConfigurationData | null = null;
   private static configurationChangeCallback: () => Promise<void>;

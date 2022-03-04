@@ -20,6 +20,7 @@ export default class AutomaticTransactionGenerator {
     string,
     AutomaticTransactionGenerator
   >();
+
   public started: boolean;
   private readonly chargingStation: ChargingStation;
   private readonly connectorsStatus: Map<number, Status>;

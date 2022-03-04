@@ -7,6 +7,7 @@ export default abstract class OCPPResponseService {
     string,
     OCPPResponseService
   >();
+
   protected readonly chargingStation: ChargingStation;
 
   protected constructor(chargingStation: ChargingStation) {
