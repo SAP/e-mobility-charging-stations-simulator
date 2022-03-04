@@ -24,9 +24,10 @@ if (Utils.workerPoolInUse()) {
  * Listen messages send by the main thread
  */
 function addMessageListener(): void {
-  parentPort?.on('message', (message: ChargingStationWorkerMessage) => {
+  parentPort?.on('message', async (message: ChargingStationWorkerMessage) => {
     if (message.id === ChargingStationWorkerMessageEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.data);
+      message.workerOptions?.elementStartDelay > 0 && await Utils.sleep(this.workerOptions.elementStartDelay);
     }
   });
 }
