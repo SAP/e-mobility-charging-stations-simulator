@@ -19,8 +19,8 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
-    this.messageHandler = workerOptions?.messageHandler ?? (() => { /* This is intentional */ });
     this.workerSet = new Set<WorkerSetElement>();
+    this.messageHandler = workerOptions?.messageHandler ?? (() => { /* This is intentional */ });
   }
 
   get size(): number {
