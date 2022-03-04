@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement, WorkerStartOptions } from '../types/Worker';
+import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
@@ -8,27 +8,27 @@ import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerSet extends WorkerAbstract<WorkerData> {
-  public readonly maxElementsPerWorker: number;
-  private readonly messageHandler: (message: unknown) => void | Promise<void>;
   private readonly workerSet: Set<WorkerSetElement>;
+  private readonly messageHandler: (message: unknown) => void | Promise<void>;
 
   /**
    * Create a new `WorkerSet`.
    *
    * @param workerScript
-   * @param maxElementsPerWorker
-   * @param workerStartOptions
-   * @param opts
+   * @param workerOptions
    */
-  constructor(workerScript: string, maxElementsPerWorker = 1, workerStartOptions?: WorkerStartOptions, opts?: WorkerOptions) {
-    super(workerScript, workerStartOptions);
-    this.maxElementsPerWorker = maxElementsPerWorker;
-    this.messageHandler = opts?.messageHandler ?? (() => { /* This is intentional */ });
+  constructor(workerScript: string, workerOptions?: WorkerOptions) {
+    super(workerScript, workerOptions);
+    this.messageHandler = workerOptions?.messageHandler ?? (() => { /* This is intentional */ });
     this.workerSet = new Set<WorkerSetElement>();
   }
 
   get size(): number {
     return this.workerSet.size;
+  }
+
+  get maxElementsPerWorker(): number | null {
+    return this.workerOptions.elementsPerWorker;
   }
 
   /**
@@ -41,12 +41,12 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     if (!this.workerSet) {
       throw new Error('Cannot add a WorkerSet element: workers\' set does not exist');
     }
-    if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.maxElementsPerWorker) {
+    if (this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker) {
       await this.startWorker();
     }
     this.getLastWorker().postMessage({ id: WorkerMessageEvents.START_WORKER_ELEMENT, data: elementData });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
-    this.elementStartDelay > 0 && await Utils.sleep(this.elementStartDelay);
+    this.workerOptions.elementStartDelay > 0 && await Utils.sleep(this.workerOptions.elementStartDelay);
   }
 
   /**
@@ -88,7 +88,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     });
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });
     // Start worker sequentially to optimize memory at startup
-    this.workerStartDelay > 0 && await Utils.sleep(this.workerStartDelay);
+    this.workerOptions.workerStartDelay > 0 && await Utils.sleep(this.workerOptions.workerStartDelay);
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {

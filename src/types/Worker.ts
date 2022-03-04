@@ -18,11 +18,6 @@ export interface WorkerOptions {
   messageHandler?: (message: unknown) => void | Promise<void>;
 }
 
-export interface WorkerStartOptions {
-  workerStartDelay?: number;
-  elementStartDelay?: number;
-}
-
 export type WorkerData = JsonType;
 
 export interface WorkerSetElement {

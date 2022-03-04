@@ -1,11 +1,10 @@
-import { WorkerData, WorkerStartOptions } from '../types/Worker';
+import { WorkerData, WorkerOptions } from '../types/Worker';
 
 import Constants from '../utils/Constants';
 
 export default abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;
-  protected readonly workerStartDelay: number;
-  protected readonly elementStartDelay: number;
+  protected readonly workerOptions: WorkerOptions;
   public abstract readonly size: number;
   public abstract readonly maxElementsPerWorker: number | null;
 
@@ -13,15 +12,19 @@ export default abstract class WorkerAbstract<T extends WorkerData> {
    * `WorkerAbstract` constructor.
    *
    * @param workerScript
-   * @param workerStartOptions
+   * @param workerOptions
    */
-  constructor(workerScript: string, workerStartOptions: WorkerStartOptions = {
+  constructor(workerScript: string, workerOptions: WorkerOptions = {
     workerStartDelay: Constants.WORKER_START_DELAY,
-    elementStartDelay: Constants.ELEMENT_START_DELAY
+    elementStartDelay: Constants.ELEMENT_START_DELAY,
+    poolMinSize: Constants.DEFAULT_WORKER_POOL_MIN_SIZE,
+    poolMaxSize: Constants.DEFAULT_WORKER_POOL_MAX_SIZE,
+    elementsPerWorker: Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER,
+    poolOptions: {},
+    messageHandler: () => { /* This is intentional */ }
   }) {
     this.workerScript = workerScript;
-    this.workerStartDelay = workerStartOptions.workerStartDelay;
-    this.elementStartDelay = workerStartOptions.elementStartDelay;
+    this.workerOptions = workerOptions;
   }
 
   public abstract start(): Promise<void>;
