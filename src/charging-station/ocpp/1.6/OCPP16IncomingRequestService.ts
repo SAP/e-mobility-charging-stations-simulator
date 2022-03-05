@@ -732,9 +732,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         ftpClient = new Client();
         const accessResponse = await ftpClient.access({
           host: uri.host,
-          ...(uri.port !== '' && { port: Utils.convertToInt(uri.port) }),
-          ...(uri.username !== '' && { user: uri.username }),
-          ...(uri.password !== '' && { password: uri.password }),
+          ...(!Utils.isEmptyString(uri.port) && { port: Utils.convertToInt(uri.port) }),
+          ...(!Utils.isEmptyString(uri.username) && { user: uri.username }),
+          ...(!Utils.isEmptyString(uri.password) && { password: uri.password }),
         });
         let uploadResponse: FTPResponse;
         if (accessResponse.code === 220) {

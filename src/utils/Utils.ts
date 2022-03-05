@@ -171,6 +171,10 @@ export default class Utils {
     return typeof value === 'string';
   }
 
+  public static isEmptyString(value: unknown): boolean {
+    return Utils.isString(value) && (value as string).length === 0;
+  }
+
   public static isUndefined(value: unknown): boolean {
     return typeof value === 'undefined';
   }

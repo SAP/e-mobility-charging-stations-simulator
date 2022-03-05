@@ -1,5 +1,6 @@
 import { EmptyObject } from '../types/EmptyObject';
 import { HandleErrorParams } from '../types/Error';
+import Utils from './Utils';
 import chalk from 'chalk';
 import logger from './Logger';
 
@@ -11,7 +12,7 @@ export default class FileUtils {
     error: NodeJS.ErrnoException,
     params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }
   ): void {
-    const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
+    const prefix = !Utils.isEmptyString(logPrefix) ? logPrefix + ' ' : '';
     if (error.code === 'ENOENT') {
       if (params?.consoleOut) {
         console.warn(
