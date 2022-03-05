@@ -3,6 +3,7 @@ import { Logger, createLogger, format, transport } from 'winston';
 
 import Configuration from './Configuration';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import { Format } from 'logform';
 import Utils from './Utils';
 
 let transports: transport[];
@@ -36,7 +37,7 @@ if (Configuration.getLogRotate()) {
 
 const logger: Logger = createLogger({
   level: Configuration.getLogLevel(),
-  format: format.combine(format.splat(), format[Configuration.getLogFormat()]()),
+  format: format.combine(format.splat(), (format[Configuration.getLogFormat()] as () => Format)()),
   transports: transports,
 });
 
@@ -47,7 +48,10 @@ const logger: Logger = createLogger({
 if (Configuration.getLogConsole()) {
   logger.add(
     new Console({
-      format: format.combine(format.splat(), format[Configuration.getLogFormat()]()),
+      format: format.combine(
+        format.splat(),
+        (format[Configuration.getLogFormat()] as () => Format)()
+      ),
     })
   );
 }

@@ -24,10 +24,8 @@ if (Utils.workerPoolInUse()) {
   addMessageListener();
   if (!Utils.isUndefined(workerData)) {
     startChargingStation({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      index: workerData.index as number,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      templateFile: workerData.templateFile as string,
+      index: (workerData as Record<string, unknown>).index as number,
+      templateFile: (workerData as Record<string, unknown>).templateFile as string,
     });
   }
 }

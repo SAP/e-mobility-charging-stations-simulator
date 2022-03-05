@@ -18,6 +18,9 @@ import {
   OCPP16RequestCommand,
   StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
+import MeasurandPerPhaseSampledValueTemplates, {
+  SampledValueTemplate,
+} from '../../../types/MeasurandPerPhaseSampledValueTemplates';
 import {
   MeterValueUnit,
   MeterValuesRequest,
@@ -29,7 +32,6 @@ import {
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import MeasurandPerPhaseSampledValueTemplates from '../../../types/MeasurandPerPhaseSampledValueTemplates';
 import MeasurandValues from '../../../types/MeasurandValues';
 import { OCPP16BootNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
@@ -471,8 +473,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
         const phaseValue = `L${phase}-N`;
         meterValue.sampledValue.push(
           OCPP16ServiceUtils.buildSampledValue(
-            powerPerPhaseSampledValueTemplates[`L${phase}`] ?? powerSampledValueTemplate,
-            powerMeasurandValues[`L${phase}`],
+            (powerPerPhaseSampledValueTemplates[`L${phase}`] as SampledValueTemplate) ??
+              powerSampledValueTemplate,
+            powerMeasurandValues[`L${phase}`] as number,
             null,
             phaseValue as OCPP16MeterValuePhase
           )
@@ -651,8 +654,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
         const phaseValue = `L${phase}`;
         meterValue.sampledValue.push(
           OCPP16ServiceUtils.buildSampledValue(
-            currentPerPhaseSampledValueTemplates[phaseValue] ?? currentSampledValueTemplate,
-            currentMeasurandValues[phaseValue],
+            (currentPerPhaseSampledValueTemplates[phaseValue] as SampledValueTemplate) ??
+              currentSampledValueTemplate,
+            currentMeasurandValues[phaseValue] as number,
             null,
             phaseValue as OCPP16MeterValuePhase
           )

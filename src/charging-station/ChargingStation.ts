@@ -1401,8 +1401,7 @@ export default class ChargingStation {
     key: string
   ): void {
     if (!Utils.isUndefined(template[deprecatedKey])) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      template[key] = template[deprecatedKey];
+      template[key] = template[deprecatedKey] as unknown;
       delete template[deprecatedKey];
     }
   }
