@@ -93,6 +93,7 @@ Thumbs.db
 *.mta
 mta_archives/
 
+.eslintcache
 temp/
 *.tar.gz
 performanceRecords.json

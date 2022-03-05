@@ -3,11 +3,16 @@
 .gitattributes
 .gitmodules
 .github
+.prettierrc.json
+.prettierignore
 .jshintrc
 .eslintrc
+.eslintcache
+.husky
 .editorconfig
 .vscode
 .clinic
+*.clinic-*
 .tscache
 .nycrc.json
 .nyc_output
