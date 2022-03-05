@@ -93,13 +93,6 @@ export default class Constants {
 
   static readonly DEFAULT_IDTAG = '00000000';
 
-  static readonly ELEMENT_START_DELAY = 0;
-  static readonly WORKER_START_DELAY = 500;
-  static readonly WORKER_POOL_MAX_INACTIVE_TIME = 60000;
-  static readonly DEFAULT_WORKER_POOL_MIN_SIZE = 4;
-  static readonly DEFAULT_WORKER_POOL_MAX_SIZE = 16;
-  static readonly DEFAULT_CHARGING_STATIONS_PER_WORKER = 1;
-
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30;
 
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms

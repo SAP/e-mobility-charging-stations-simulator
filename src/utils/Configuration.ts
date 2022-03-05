@@ -11,6 +11,7 @@ import { HandleErrorParams } from '../types/Error';
 import { ServerOptions } from 'ws';
 import { StorageType } from '../types/Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
+import WorkerConstants from '../worker/WorkerConstants';
 import { WorkerProcessType } from '../types/Worker';
 import chalk from 'chalk';
 import fs from 'fs';
@@ -170,19 +171,19 @@ export default class Configuration {
   static getWorkerStartDelay(): number {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerStartDelay')
       ? Configuration.getConfig().workerStartDelay
-      : Constants.WORKER_START_DELAY;
+      : WorkerConstants.DEFAULT_WORKER_START_DELAY;
   }
 
   static getElementStartDelay(): number {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'elementStartDelay')
       ? Configuration.getConfig().elementStartDelay
-      : Constants.ELEMENT_START_DELAY;
+      : WorkerConstants.DEFAULT_ELEMENT_START_DELAY;
   }
 
   static getWorkerPoolMinSize(): number {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMinSize')
       ? Configuration.getConfig().workerPoolMinSize
-      : Constants.DEFAULT_WORKER_POOL_MIN_SIZE;
+      : WorkerConstants.DEFAULT_POOL_MIN_SIZE;
   }
 
   static getWorkerPoolMaxSize(): number {
@@ -193,7 +194,7 @@ export default class Configuration {
     );
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize')
       ? Configuration.getConfig().workerPoolMaxSize
-      : Constants.DEFAULT_WORKER_POOL_MAX_SIZE;
+      : WorkerConstants.DEFAULT_POOL_MAX_SIZE;
   }
 
   static getWorkerPoolStrategy(): WorkerChoiceStrategy {
@@ -206,7 +207,7 @@ export default class Configuration {
       'chargingStationsPerWorker'
     )
       ? Configuration.getConfig().chargingStationsPerWorker
-      : Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER;
+      : WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER;
   }
 
   static getLogConsole(): boolean {
@@ -299,6 +300,7 @@ export default class Configuration {
     if (
       sectionName &&
       !Configuration.isUndefined(Configuration.getConfig()[sectionName]) &&
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       !Configuration.isUndefined(Configuration.getConfig()[sectionName][key])
     ) {
       console.error(
@@ -327,7 +329,7 @@ export default class Configuration {
           Configuration.logPrefix(),
           'Configuration',
           Configuration.configurationFilePath,
-          error
+          error as NodeJS.ErrnoException
         );
       }
       if (!Configuration.configurationFileWatcher) {

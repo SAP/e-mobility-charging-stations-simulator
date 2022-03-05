@@ -8,15 +8,15 @@ import {
 import { parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
-import Constants from '../utils/Constants';
 import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
+import WorkerConstants from '../worker/WorkerConstants';
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
 if (Utils.workerPoolInUse()) {
   threadWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
-    maxInactiveTime: Constants.WORKER_POOL_MAX_INACTIVE_TIME,
+    maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
     async: false,
   });
 } else {
@@ -24,7 +24,9 @@ if (Utils.workerPoolInUse()) {
   addMessageListener();
   if (!Utils.isUndefined(workerData)) {
     startChargingStation({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       index: workerData.index as number,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       templateFile: workerData.templateFile as string,
     });
   }

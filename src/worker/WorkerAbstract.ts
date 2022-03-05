@@ -1,6 +1,6 @@
 import { WorkerData, WorkerOptions } from '../types/Worker';
 
-import Constants from '../utils/Constants';
+import WorkerConstants from './WorkerConstants';
 
 export default abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;
@@ -17,11 +17,11 @@ export default abstract class WorkerAbstract<T extends WorkerData> {
   constructor(
     workerScript: string,
     workerOptions: WorkerOptions = {
-      workerStartDelay: Constants.WORKER_START_DELAY,
-      elementStartDelay: Constants.ELEMENT_START_DELAY,
-      poolMinSize: Constants.DEFAULT_WORKER_POOL_MIN_SIZE,
-      poolMaxSize: Constants.DEFAULT_WORKER_POOL_MAX_SIZE,
-      elementsPerWorker: Constants.DEFAULT_CHARGING_STATIONS_PER_WORKER,
+      workerStartDelay: WorkerConstants.DEFAULT_WORKER_START_DELAY,
+      elementStartDelay: WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
+      poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
+      poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
+      elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
       poolOptions: {},
       messageHandler: () => {
         /* This is intentional */
