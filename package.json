@@ -26,6 +26,12 @@
     }
   ],
   "main": "./dist/start.js",
+  "lint-staged": {
+    "*.{js,ts}": [
+      "prettier --write",
+      "eslint --cache --fix"
+    ]
+  },
   "auto-changelog": {
     "commitUrl": "https://github.com/jerome-benoit/charging-stations-simulator/commit/{id}",
     "issueUrl": "https://github.com/jerome-benoit/charging-stations-simulator/issues/{id}",
@@ -37,6 +43,7 @@
     "useTsNode": true
   },
   "scripts": {
+    "prepare": "husky install",
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.js",
     "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.js",
@@ -112,6 +119,8 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.0.0",
     "expect": "^27.5.1",
+    "husky": "^7.0.4",
+    "lint-staged": "^12.3.5",
     "mocha": "^9.2.1",
     "mochawesome": "^7.1.1",
     "npm-check": "^5.9.2",
