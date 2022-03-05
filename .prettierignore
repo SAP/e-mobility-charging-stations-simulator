@@ -5,4 +5,5 @@ outputs
 tsconfig.json
 package-lock.json
 performanceRecords.json
+*.clinic-*
 *-audit.json

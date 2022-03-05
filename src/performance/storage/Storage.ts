@@ -25,10 +25,12 @@ export abstract class Storage {
     table?: string,
     params: HandleErrorParams<EmptyObject> = { throwError: false }
   ): void {
+    const inTableOrCollectionStr =
+      (!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`;
     logger.error(
-      `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${error.message}'${
-        (!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`
-      }: %j`,
+      `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
+        error.message
+      }'${inTableOrCollectionStr}: %j`,
       error
     );
     if (params?.throwError) {

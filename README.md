@@ -19,7 +19,7 @@ choco install -y nodejs-lts
 - [Homebrew](https://brew.sh/):
 
 ```shell
-brew install node@14
+brew install node@16
 ```
 
 ### GNU/Linux:
