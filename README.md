@@ -24,7 +24,7 @@ brew install node@16
 
 ### GNU/Linux:
 
-- [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 14.X
+- [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 16.X
 
 ## Configuration syntax
 
