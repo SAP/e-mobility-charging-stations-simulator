@@ -51,4 +51,5 @@ charging-stations-simulator-start.bat
 node_modules
 sonar-project.properties
 performanceRecords.json
+performanceRecords.json.lock
 tsconfig*.json
