@@ -25,7 +25,7 @@ import {
 } from '../types/ocpp/Configuration';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import WebSocket, { ClientOptions, Data, OPEN } from 'ws';
+import WebSocket, { ClientOptions, Data, OPEN, RawData } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
@@ -451,6 +451,7 @@ export default class ChargingStation {
     if (interval > 0) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.getConnectorStatus(connectorId).transactionSetInterval = setInterval(
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         async (): Promise<void> => {
           await this.ocppRequestService.sendMeterValues(
             connectorId,
@@ -481,17 +482,26 @@ export default class ChargingStation {
     // Monitor station template file
     this.startStationTemplateFileMonitoring();
     // Handle WebSocket message
-    this.wsConnection.on('message', this.onMessage.bind(this));
+    this.wsConnection.on(
+      'message',
+      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
+    );
     // Handle WebSocket error
-    this.wsConnection.on('error', this.onError.bind(this));
+    this.wsConnection.on(
+      'error',
+      this.onError.bind(this) as (this: WebSocket, error: Error) => void
+    );
     // Handle WebSocket close
-    this.wsConnection.on('close', this.onClose.bind(this));
+    this.wsConnection.on(
+      'close',
+      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
+    );
     // Handle WebSocket open
-    this.wsConnection.on('open', this.onOpen.bind(this));
+    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
     // Handle WebSocket ping
-    this.wsConnection.on('ping', this.onPing.bind(this));
+    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
     // Handle WebSocket pong
-    this.wsConnection.on('pong', this.onPong.bind(this));
+    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
     parentPort.postMessage({
       id: ChargingStationWorkerMessageEvents.STARTED,
       data: { id: this.stationInfo.chargingStationId },
@@ -1077,6 +1087,7 @@ export default class ChargingStation {
           break;
         // Error
         default:
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           errMsg = `${this.logPrefix()} Wrong message type ${messageType}`;
           logger.error(errMsg);
           throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
@@ -1104,13 +1115,8 @@ export default class ChargingStation {
     logger.debug(this.logPrefix() + ' Received a WS pong (rfc6455) from the server');
   }
 
-  private async onError(error: WSError): Promise<void> {
+  private onError(error: WSError): void {
     logger.error(this.logPrefix() + ' WebSocket error: %j', error);
-    // switch (error.code) {
-    //   case 'ECONNREFUSED':
-    //     await this.reconnect(error);
-    //     break;
-    // }
   }
 
   private getTemplateChargingStationConfiguration(): ChargingStationConfiguration {

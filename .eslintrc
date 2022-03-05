@@ -1,41 +1,20 @@
 {
   "root": true,
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "project": "./tsconfig.json"
-  },
   "extends": [
     "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:import/errors",
     "plugin:import/warnings",
-    "plugin:import/typescript",
     "plugin:jsdoc/recommended",
     "plugin:prettier/recommended"
   ],
-  "plugins": ["import", "jsdoc", "@typescript-eslint"],
+  "plugins": ["import", "jsdoc"],
   "settings": {
     "jsdoc": {
       "mode": "typescript"
     }
   },
   "rules": {
-    "@typescript-eslint/array-type": "off",
-    "semi": "off",
-    "@typescript-eslint/semi": ["error", "always"],
     "space-before-blocks": ["error", "always"],
-    "@typescript-eslint/no-empty-function": [
-      "warn",
-      {
-        "allow": ["arrowFunctions", "methods"]
-      }
-    ],
-    "@typescript-eslint/member-ordering": "error",
-    "@typescript-eslint/await-thenable": "error",
-    "@typescript-eslint/no-floating-promises": "error",
-    "@typescript-eslint/promise-function-async": "error",
-    "@typescript-eslint/no-misused-promises": "error",
     "curly": ["error", "all"],
     "brace-style": "error",
     "eqeqeq": ["error", "always"],
@@ -49,8 +28,6 @@
     "no-return-assign": ["error", "always"],
     "no-useless-catch": "error",
     "no-useless-return": "error",
-    "no-shadow": "off", // This one is generating false positive no-shadow errors on exported/const enums
-    "@typescript-eslint/no-shadow": "error",
     "no-multiple-empty-lines": [
       "error",
       {
@@ -96,14 +73,6 @@
     "no-lonely-if": "error",
     "no-trailing-spaces": "error",
     "no-whitespace-before-property": "error",
-    "space-before-function-paren": [
-      "error",
-      {
-        "anonymous": "never",
-        "named": "never",
-        "asyncArrow": "always"
-      }
-    ],
     "space-in-parens": ["error", "never"],
     "space-infix-ops": "error",
     "space-unary-ops": "error",
@@ -143,12 +112,36 @@
   },
   "overrides": [
     {
-      "files": ["*.js"],
+      "files": ["**/*.ts"],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "project": "./tsconfig.json"
+      },
+      "extends": [
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking",
+        "plugin:import/typescript"
+      ],
+      "plugins": ["@typescript-eslint"],
+      "rules": {
+        "@typescript-eslint/array-type": "off",
+        "semi": "off",
+        "@typescript-eslint/semi": ["error", "always"],
+        "@typescript-eslint/no-empty-function": "warn",
+        "@typescript-eslint/member-ordering": "error",
+        "@typescript-eslint/await-thenable": "error",
+        "@typescript-eslint/no-floating-promises": "error",
+        "@typescript-eslint/promise-function-async": "error",
+        "@typescript-eslint/no-misused-promises": "error",
+        "no-shadow": "off", // This one is generating false positive no-shadow errors on exported/const enums
+        "@typescript-eslint/no-shadow": "error"
+      }
+    },
+    {
+      "files": ["**/*.js"],
       "extends": "plugin:node/recommended",
       "rules": {
-        "node/shebang": "off",
-        "@typescript-eslint/no-unused-vars": "off",
-        "@typescript-eslint/no-var-requires": "off"
+        "node/shebang": "off"
       }
     }
   ]

@@ -101,6 +101,7 @@ export default class PerformanceStatistics {
         }
         break;
       default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.error(`${this.logPrefix()} wrong message type ${messageType}`);
         break;
     }
