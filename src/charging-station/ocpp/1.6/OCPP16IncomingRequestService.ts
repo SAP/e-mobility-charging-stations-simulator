@@ -9,7 +9,6 @@ import {
   MessageTrigger,
   OCPP16AvailabilityType,
   OCPP16IncomingRequestCommand,
-  OCPP16RequestCommand,
   OCPP16TriggerMessageRequest,
   RemoteStartTransactionRequest,
   RemoteStopTransactionRequest,
@@ -272,7 +271,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (!Utils.isString(commandPayload.key)) {
       logger.error(
         `${this.chargingStation.logPrefix()} ${
-          OCPP16RequestCommand.CHANGE_CONFIGURATION
+          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
         } request key field is not a string:`,
         commandPayload
       );
@@ -280,7 +279,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (!Utils.isString(commandPayload.value)) {
       logger.error(
         `${this.chargingStation.logPrefix()} ${
-          OCPP16RequestCommand.CHANGE_CONFIGURATION
+          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
         } request value field is not a string:`,
         commandPayload
       );

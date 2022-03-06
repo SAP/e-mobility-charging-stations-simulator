@@ -11,7 +11,6 @@ export enum OCPP16RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
   STATUS_NOTIFICATION = 'StatusNotification',
-  CHANGE_CONFIGURATION = 'ChangeConfiguration',
   AUTHORIZE = 'Authorize',
   START_TRANSACTION = 'StartTransaction',
   STOP_TRANSACTION = 'StopTransaction',
