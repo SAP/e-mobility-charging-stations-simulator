@@ -296,7 +296,6 @@ export default class Configuration {
     sectionName?: string,
     logMsgToAppend = ''
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (
       sectionName &&
       !Configuration.isUndefined(Configuration.getConfig()[sectionName]) &&
