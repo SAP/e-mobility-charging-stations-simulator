@@ -1,20 +1,16 @@
 import {
-  AuthorizeResponse,
-  StartTransactionResponse,
-  StopTransactionReason,
-  StopTransactionResponse,
-} from '../../types/ocpp/Transaction';
-import {
   DiagnosticsStatus,
   IncomingRequestCommand,
   RequestCommand,
   ResponseType,
   SendParams,
 } from '../../types/ocpp/Requests';
+import {
+  StartTransactionResponse,
+  StopTransactionReason,
+  StopTransactionResponse,
+} from '../../types/ocpp/Transaction';
 
-import { BootNotificationResponse } from '../../types/ocpp/Responses';
-import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
-import { ChargePointStatus } from '../../types/ocpp/ChargePointStatus';
 import type ChargingStation from '../ChargingStation';
 import Constants from '../../utils/Constants';
 import { EmptyObject } from '../../types/EmptyObject';
@@ -333,7 +329,6 @@ export default abstract class OCPPRequestService {
     params?: SendParams
   ): Promise<ResponseType>;
 
-  public abstract sendAuthorize(connectorId: number, idTag?: string): Promise<AuthorizeResponse>;
   public abstract sendStartTransaction(
     connectorId: number,
     idTag?: string

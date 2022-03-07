@@ -2,7 +2,6 @@
 
 import {
   AuthorizeRequest,
-  OCPP16AuthorizeResponse,
   OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,
   OCPP16StopTransactionResponse,
@@ -23,8 +22,6 @@ import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { JsonType } from '../../../types/JsonType';
-import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
-import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
@@ -61,21 +58,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
       commandName,
       { commandName }
     );
-  }
-
-  public async sendAuthorize(
-    connectorId: number,
-    idTag?: string
-  ): Promise<OCPP16AuthorizeResponse> {
-    const payload: AuthorizeRequest = {
-      ...(!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.DEFAULT_IDTAG }),
-    };
-    this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
-    return (await this.sendMessage(
-      Utils.generateUUID(),
-      payload,
-      OCPP16RequestCommand.AUTHORIZE
-    )) as OCPP16AuthorizeResponse;
   }
 
   public async sendStartTransaction(

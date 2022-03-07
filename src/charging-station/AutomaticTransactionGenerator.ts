@@ -11,6 +11,7 @@ import {
 import type ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
+import { RequestCommand } from '../types/ocpp/Requests';
 import { Status } from '../types/AutomaticTransactionGenerator';
 import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
@@ -269,11 +270,15 @@ export default class AutomaticTransactionGenerator {
     if (this.chargingStation.hasAuthorizedTags()) {
       const idTag = this.chargingStation.getRandomIdTag();
       if (this.chargingStation.getAutomaticTransactionGeneratorRequireAuthorize()) {
+        this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
         // Authorize idTag
-        const authorizeResponse = await this.chargingStation.ocppRequestService.sendAuthorize(
-          connectorId,
-          idTag
-        );
+        const authorizeResponse: AuthorizeResponse =
+          (await this.chargingStation.ocppRequestService.sendMessageHandler(
+            RequestCommand.AUTHORIZE,
+            {
+              idTag,
+            }
+          )) as AuthorizeResponse;
         this.connectorsStatus.get(connectorId).authorizeRequests++;
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests++;
