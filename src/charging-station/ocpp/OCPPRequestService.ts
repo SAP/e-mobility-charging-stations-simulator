@@ -333,12 +333,6 @@ export default abstract class OCPPRequestService {
     params?: SendParams
   ): Promise<ResponseType>;
 
-  public abstract sendStatusNotification(
-    connectorId: number,
-    status: ChargePointStatus,
-    errorCode?: ChargePointErrorCode
-  ): Promise<void>;
-
   public abstract sendAuthorize(connectorId: number, idTag?: string): Promise<AuthorizeResponse>;
   public abstract sendStartTransaction(
     connectorId: number,

@@ -63,19 +63,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
     );
   }
 
-  public async sendStatusNotification(
-    connectorId: number,
-    status: OCPP16ChargePointStatus,
-    errorCode: OCPP16ChargePointErrorCode = OCPP16ChargePointErrorCode.NO_ERROR
-  ): Promise<void> {
-    const payload: StatusNotificationRequest = {
-      connectorId,
-      errorCode,
-      status,
-    };
-    await this.sendMessage(Utils.generateUUID(), payload, OCPP16RequestCommand.STATUS_NOTIFICATION);
-  }
-
   public async sendAuthorize(
     connectorId: number,
     idTag?: string
@@ -263,8 +250,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return {
           connectorId: commandParams?.connectorId,
-          errorCode: commandParams?.errorCode,
           status: commandParams?.status,
+          errorCode: commandParams?.errorCode,
         } as StatusNotificationRequest;
       case OCPP16RequestCommand.START_TRANSACTION:
         return {

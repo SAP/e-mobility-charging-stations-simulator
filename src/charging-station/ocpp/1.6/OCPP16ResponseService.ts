@@ -25,6 +25,7 @@ import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6
 import type ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { JsonType } from '../../../types/JsonType';
+import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
@@ -314,9 +315,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           payload.transactionId,
           this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue
         ));
-      await this.chargingStation.ocppRequestService.sendStatusNotification(
-        connectorId,
-        OCPP16ChargePointStatus.CHARGING
+      await this.chargingStation.ocppRequestService.sendMessageHandler(
+        OCPP16RequestCommand.STATUS_NOTIFICATION,
+        {
+          connectorId,
+          status: OCPP16ChargePointStatus.CHARGING,
+          errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+        }
       );
       this.chargingStation.getConnectorStatus(connectorId).status =
         OCPP16ChargePointStatus.CHARGING;
@@ -363,9 +368,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.getConnectorStatus(connectorId).status !==
       OCPP16ChargePointStatus.AVAILABLE
     ) {
-      await this.chargingStation.ocppRequestService.sendStatusNotification(
-        connectorId,
-        OCPP16ChargePointStatus.AVAILABLE
+      await this.chargingStation.ocppRequestService.sendMessageHandler(
+        OCPP16RequestCommand.STATUS_NOTIFICATION,
+        {
+          connectorId,
+          status: OCPP16ChargePointStatus.AVAILABLE,
+          errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+        }
       );
       this.chargingStation.getConnectorStatus(connectorId).status =
         OCPP16ChargePointStatus.AVAILABLE;
@@ -412,16 +421,24 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         !this.chargingStation.isChargingStationAvailable() ||
         !this.chargingStation.isConnectorAvailable(transactionConnectorId)
       ) {
-        await this.chargingStation.ocppRequestService.sendStatusNotification(
-          transactionConnectorId,
-          OCPP16ChargePointStatus.UNAVAILABLE
+        await this.chargingStation.ocppRequestService.sendMessageHandler(
+          OCPP16RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId: transactionConnectorId,
+            status: OCPP16ChargePointStatus.UNAVAILABLE,
+            errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+          }
         );
         this.chargingStation.getConnectorStatus(transactionConnectorId).status =
           OCPP16ChargePointStatus.UNAVAILABLE;
       } else {
-        await this.chargingStation.ocppRequestService.sendStatusNotification(
-          transactionConnectorId,
-          OCPP16ChargePointStatus.AVAILABLE
+        await this.chargingStation.ocppRequestService.sendMessageHandler(
+          OCPP16RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId: transactionConnectorId,
+            status: OCPP16ChargePointStatus.AVAILABLE,
+            errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+          }
         );
         this.chargingStation.getConnectorStatus(transactionConnectorId).status =
           OCPP16ChargePointStatus.AVAILABLE;
