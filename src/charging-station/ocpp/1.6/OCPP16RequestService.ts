@@ -17,6 +17,7 @@ import {
   StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
 import { MeterValuesRequest, OCPP16MeterValue } from '../../../types/ocpp/1.6/MeterValues';
+import { ResponseType, SendParams } from '../../../types/ocpp/Requests';
 
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
@@ -30,7 +31,6 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
-import { SendParams } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 
 const moduleName = 'OCPP16RequestService';
@@ -43,9 +43,25 @@ export default class OCPP16RequestService extends OCPPRequestService {
     super(chargingStation, ocppResponseService);
   }
 
-  public async sendHeartbeat(params?: SendParams): Promise<void> {
-    const payload: HeartbeatRequest = {};
-    await this.sendMessage(Utils.generateUUID(), payload, OCPP16RequestCommand.HEARTBEAT, params);
+  public async sendMessageHandler(
+    commandName: OCPP16RequestCommand,
+    commandParams?: JsonType,
+    params?: SendParams
+  ): Promise<ResponseType> {
+    if (Object.values(OCPP16RequestCommand).includes(commandName)) {
+      return this.sendMessage(
+        Utils.generateUUID(),
+        this.buildCommandPayload(commandName, commandParams),
+        commandName,
+        params
+      );
+    }
+    throw new OCPPError(
+      ErrorType.NOT_SUPPORTED,
+      `${moduleName}.sendMessageHandler: Unsupported OCPP command ${commandName}`,
+      commandName,
+      { commandName }
+    );
   }
 
   public async sendBootNotification(
@@ -176,7 +192,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     transactionId: number,
     interval: number
   ): Promise<void> {
-    const meterValue = OCPP16ServiceUtils.buildMeterValue(
+    const meterValue: OCPP16MeterValue = OCPP16ServiceUtils.buildMeterValue(
       this.chargingStation,
       connectorId,
       transactionId,
@@ -231,7 +247,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
 
   private buildCommandPayload(
     commandName: OCPP16RequestCommand,
-    commandParams: JsonType
+    commandParams?: JsonType
   ): JsonType {
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
@@ -316,7 +332,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         throw new OCPPError(
           ErrorType.NOT_SUPPORTED,
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Unsupported OCPP command: ${commandName}`,
+          `${moduleName}.buildCommandPayload: Unsupported OCPP command: ${commandName}`,
           commandName,
           { commandName }
         );

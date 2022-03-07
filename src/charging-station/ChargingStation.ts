@@ -390,7 +390,7 @@ export default class ChargingStation {
     ) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
-        await this.ocppRequestService.sendHeartbeat();
+        await this.ocppRequestService.sendMessageHandler(RequestCommand.HEARTBEAT);
       }, this.getHeartbeatInterval());
       logger.info(
         this.logPrefix() +

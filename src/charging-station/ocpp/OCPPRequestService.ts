@@ -44,6 +44,7 @@ export default abstract class OCPPRequestService {
   ) {
     this.chargingStation = chargingStation;
     this.ocppResponseService = ocppResponseService;
+    this.sendMessageHandler.bind(this);
   }
 
   public static getInstance<T extends OCPPRequestService>(
@@ -326,7 +327,12 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  public abstract sendHeartbeat(params?: SendParams): Promise<void>;
+  public abstract sendMessageHandler(
+    commandName: RequestCommand,
+    commandParams?: JsonType,
+    params?: SendParams
+  ): Promise<ResponseType>;
+
   public abstract sendBootNotification(
     chargePointModel: string,
     chargePointVendor: string,

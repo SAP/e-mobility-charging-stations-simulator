@@ -9,6 +9,7 @@ import {
   MessageTrigger,
   OCPP16AvailabilityType,
   OCPP16IncomingRequestCommand,
+  OCPP16RequestCommand,
   OCPP16TriggerMessageRequest,
   RemoteStartTransactionRequest,
   RemoteStopTransactionRequest,
@@ -830,7 +831,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         case MessageTrigger.Heartbeat:
           setTimeout(() => {
             this.chargingStation.ocppRequestService
-              .sendHeartbeat({ triggerMessage: true })
+              .sendMessageHandler(OCPP16RequestCommand.HEARTBEAT, null, { triggerMessage: true })
               .catch(() => {
                 /* This is intentional */
               });
