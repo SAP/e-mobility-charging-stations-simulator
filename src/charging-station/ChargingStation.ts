@@ -937,12 +937,16 @@ export default class ChargingStation {
       // Send BootNotification
       let registrationRetryCount = 0;
       do {
-        this.bootNotificationResponse = await this.ocppRequestService.sendBootNotification(
-          this.bootNotificationRequest.chargePointModel,
-          this.bootNotificationRequest.chargePointVendor,
-          this.bootNotificationRequest.chargeBoxSerialNumber,
-          this.bootNotificationRequest.firmwareVersion
-        );
+        this.bootNotificationResponse = (await this.ocppRequestService.sendMessageHandler(
+          RequestCommand.BOOT_NOTIFICATION,
+          {
+            chargePointModel: this.bootNotificationRequest.chargePointModel,
+            chargePointVendor: this.bootNotificationRequest.chargePointVendor,
+            chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
+            firmwareVersion: this.bootNotificationRequest.firmwareVersion,
+          },
+          { skipBufferingOnError: true }
+        )) as BootNotificationResponse;
         if (!this.isInAcceptedState()) {
           this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
           await Utils.sleep(
@@ -1237,11 +1241,15 @@ export default class ChargingStation {
 
   private async startMessageSequence(): Promise<void> {
     if (this.stationInfo.autoRegister) {
-      await this.ocppRequestService.sendBootNotification(
-        this.bootNotificationRequest.chargePointModel,
-        this.bootNotificationRequest.chargePointVendor,
-        this.bootNotificationRequest.chargeBoxSerialNumber,
-        this.bootNotificationRequest.firmwareVersion
+      await this.ocppRequestService.sendMessageHandler(
+        RequestCommand.BOOT_NOTIFICATION,
+        {
+          chargePointModel: this.bootNotificationRequest.chargePointModel,
+          chargePointVendor: this.bootNotificationRequest.chargePointVendor,
+          chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
+          firmwareVersion: this.bootNotificationRequest.firmwareVersion,
+        },
+        { skipBufferingOnError: true }
       );
     }
     // Start WebSocket ping

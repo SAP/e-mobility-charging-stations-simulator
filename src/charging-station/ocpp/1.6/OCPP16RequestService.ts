@@ -23,7 +23,6 @@ import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { JsonType } from '../../../types/JsonType';
-import { OCPP16BootNotificationResponse } from '../../../types/ocpp/1.6/Responses';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
@@ -62,37 +61,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
       commandName,
       { commandName }
     );
-  }
-
-  public async sendBootNotification(
-    chargePointModel: string,
-    chargePointVendor: string,
-    chargeBoxSerialNumber?: string,
-    firmwareVersion?: string,
-    chargePointSerialNumber?: string,
-    iccid?: string,
-    imsi?: string,
-    meterSerialNumber?: string,
-    meterType?: string,
-    params?: SendParams
-  ): Promise<OCPP16BootNotificationResponse> {
-    const payload: OCPP16BootNotificationRequest = {
-      chargePointModel,
-      chargePointVendor,
-      ...(!Utils.isUndefined(chargeBoxSerialNumber) && { chargeBoxSerialNumber }),
-      ...(!Utils.isUndefined(chargePointSerialNumber) && { chargePointSerialNumber }),
-      ...(!Utils.isUndefined(firmwareVersion) && { firmwareVersion }),
-      ...(!Utils.isUndefined(iccid) && { iccid }),
-      ...(!Utils.isUndefined(imsi) && { imsi }),
-      ...(!Utils.isUndefined(meterSerialNumber) && { meterSerialNumber }),
-      ...(!Utils.isUndefined(meterType) && { meterType }),
-    };
-    return (await this.sendMessage(
-      Utils.generateUUID(),
-      payload,
-      OCPP16RequestCommand.BOOT_NOTIFICATION,
-      { ...params, skipBufferingOnError: true }
-    )) as OCPP16BootNotificationResponse;
   }
 
   public async sendStatusNotification(

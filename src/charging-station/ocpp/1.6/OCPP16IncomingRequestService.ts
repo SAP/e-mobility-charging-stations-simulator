@@ -811,17 +811,26 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         case MessageTrigger.BootNotification:
           setTimeout(() => {
             this.chargingStation.ocppRequestService
-              .sendBootNotification(
-                this.chargingStation.getBootNotificationRequest().chargePointModel,
-                this.chargingStation.getBootNotificationRequest().chargePointVendor,
-                this.chargingStation.getBootNotificationRequest().chargeBoxSerialNumber,
-                this.chargingStation.getBootNotificationRequest().firmwareVersion,
-                this.chargingStation.getBootNotificationRequest().chargePointSerialNumber,
-                this.chargingStation.getBootNotificationRequest().iccid,
-                this.chargingStation.getBootNotificationRequest().imsi,
-                this.chargingStation.getBootNotificationRequest().meterSerialNumber,
-                this.chargingStation.getBootNotificationRequest().meterType,
-                { triggerMessage: true }
+              .sendMessageHandler(
+                OCPP16RequestCommand.BOOT_NOTIFICATION,
+                {
+                  chargePointModel:
+                    this.chargingStation.getBootNotificationRequest().chargePointModel,
+                  chargePointVendor:
+                    this.chargingStation.getBootNotificationRequest().chargePointVendor,
+                  chargeBoxSerialNumber:
+                    this.chargingStation.getBootNotificationRequest().chargeBoxSerialNumber,
+                  firmwareVersion:
+                    this.chargingStation.getBootNotificationRequest().firmwareVersion,
+                  chargePointSerialNumber:
+                    this.chargingStation.getBootNotificationRequest().chargePointSerialNumber,
+                  iccid: this.chargingStation.getBootNotificationRequest().iccid,
+                  imsi: this.chargingStation.getBootNotificationRequest().imsi,
+                  meterSerialNumber:
+                    this.chargingStation.getBootNotificationRequest().meterSerialNumber,
+                  meterType: this.chargingStation.getBootNotificationRequest().meterType,
+                },
+                { skipBufferingOnError: true, triggerMessage: true }
               )
               .catch(() => {
                 /* This is intentional */

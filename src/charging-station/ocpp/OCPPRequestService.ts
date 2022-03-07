@@ -333,19 +333,6 @@ export default abstract class OCPPRequestService {
     params?: SendParams
   ): Promise<ResponseType>;
 
-  public abstract sendBootNotification(
-    chargePointModel: string,
-    chargePointVendor: string,
-    chargeBoxSerialNumber?: string,
-    firmwareVersion?: string,
-    chargePointSerialNumber?: string,
-    iccid?: string,
-    imsi?: string,
-    meterSerialNumber?: string,
-    meterType?: string,
-    params?: SendParams
-  ): Promise<BootNotificationResponse>;
-
   public abstract sendStatusNotification(
     connectorId: number,
     status: ChargePointStatus,
