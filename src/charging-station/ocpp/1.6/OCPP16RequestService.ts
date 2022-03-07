@@ -60,23 +60,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
     );
   }
 
-  public async sendStartTransaction(
-    connectorId: number,
-    idTag?: string
-  ): Promise<OCPP16StartTransactionResponse> {
-    const payload: StartTransactionRequest = {
-      connectorId,
-      ...(!Utils.isUndefined(idTag) ? { idTag } : { idTag: Constants.DEFAULT_IDTAG }),
-      meterStart: this.chargingStation.getEnergyActiveImportRegisterByConnectorId(connectorId),
-      timestamp: new Date().toISOString(),
-    };
-    return (await this.sendMessage(
-      Utils.generateUUID(),
-      payload,
-      OCPP16RequestCommand.START_TRANSACTION
-    )) as OCPP16StartTransactionResponse;
-  }
-
   public async sendStopTransaction(
     transactionId: number,
     meterStop: number,

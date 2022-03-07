@@ -284,10 +284,13 @@ export default class AutomaticTransactionGenerator {
           this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests++;
           logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
           // Start transaction
-          startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(
-            connectorId,
-            idTag
-          );
+          startResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
+            RequestCommand.START_TRANSACTION,
+            {
+              connectorId,
+              idTag,
+            }
+          )) as StartTransactionResponse;
           PerformanceStatistics.endMeasure(measureId, beginId);
           return startResponse;
         }
@@ -297,15 +300,21 @@ export default class AutomaticTransactionGenerator {
       }
       logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
       // Start transaction
-      startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(
-        connectorId,
-        idTag
-      );
+      startResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
+        RequestCommand.START_TRANSACTION,
+        {
+          connectorId,
+          idTag,
+        }
+      )) as StartTransactionResponse;
       PerformanceStatistics.endMeasure(measureId, beginId);
       return startResponse;
     }
     logger.info(this.logPrefix(connectorId) + ' start transaction without an idTag');
-    startResponse = await this.chargingStation.ocppRequestService.sendStartTransaction(connectorId);
+    startResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
+      RequestCommand.START_TRANSACTION,
+      { connectorId }
+    )) as StartTransactionResponse;
     PerformanceStatistics.endMeasure(measureId, beginId);
     return startResponse;
   }

@@ -35,6 +35,7 @@ import { Client, FTPResponse } from 'basic-ftp';
 import {
   OCPP16AuthorizationStatus,
   OCPP16AuthorizeResponse,
+  OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,
 } from '../../../types/ocpp/1.6/Transaction';
 
@@ -566,10 +567,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               ).transactionRemoteStarted = true;
               if (
                 (
-                  await this.chargingStation.ocppRequestService.sendStartTransaction(
-                    transactionConnectorId,
-                    commandPayload.idTag
-                  )
+                  (await this.chargingStation.ocppRequestService.sendMessageHandler(
+                    OCPP16RequestCommand.START_TRANSACTION,
+                    {
+                      connectorId: transactionConnectorId,
+                      idTag: commandPayload.idTag,
+                    }
+                  )) as OCPP16StartTransactionResponse
                 ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
               ) {
                 logger.debug(
@@ -609,10 +613,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             true;
           if (
             (
-              await this.chargingStation.ocppRequestService.sendStartTransaction(
-                transactionConnectorId,
-                commandPayload.idTag
-              )
+              (await this.chargingStation.ocppRequestService.sendMessageHandler(
+                OCPP16RequestCommand.START_TRANSACTION,
+                {
+                  connectorId: transactionConnectorId,
+                  idTag: commandPayload.idTag,
+                }
+              )) as OCPP16StartTransactionResponse
             ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
           ) {
             logger.debug(
