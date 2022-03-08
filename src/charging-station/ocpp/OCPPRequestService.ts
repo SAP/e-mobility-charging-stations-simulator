@@ -324,12 +324,6 @@ export default abstract class OCPPRequestService {
     params?: SendParams
   ): Promise<ResponseType>;
 
-  public abstract sendTransactionEndMeterValues(
-    connectorId: number,
-    transactionId: number,
-    endMeterValue: MeterValue
-  ): Promise<void>;
-
   public abstract sendDiagnosticsStatusNotification(
     diagnosticsStatus: DiagnosticsStatus
   ): Promise<void>;

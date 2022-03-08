@@ -341,10 +341,13 @@ export default class AutomaticTransactionGenerator {
           connectorId,
           this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
         );
-        await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(
-          connectorId,
-          transactionId,
-          transactionEndMeterValue
+        await this.chargingStation.ocppRequestService.sendMessageHandler(
+          RequestCommand.METER_VALUES,
+          {
+            connectorId,
+            transactionId,
+            meterValue: transactionEndMeterValue,
+          }
         );
       }
       stopResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(

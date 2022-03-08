@@ -412,14 +412,17 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.getBeginEndMeterValues() &&
         !this.chargingStation.getOcppStrictCompliance() &&
         this.chargingStation.getOutOfOrderEndMeterValues() &&
-        (await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(
-          transactionConnectorId,
-          requestPayload.transactionId,
-          OCPP16ServiceUtils.buildTransactionEndMeterValue(
-            this.chargingStation,
-            transactionConnectorId,
-            requestPayload.meterStop
-          )
+        (await this.chargingStation.ocppRequestService.sendMessageHandler(
+          OCPP16RequestCommand.METER_VALUES,
+          {
+            connectorId: transactionConnectorId,
+            transactionId: requestPayload.transactionId,
+            meterValue: OCPP16ServiceUtils.buildTransactionEndMeterValue(
+              this.chargingStation,
+              transactionConnectorId,
+              requestPayload.meterStop
+            ),
+          }
         ));
       if (
         !this.chargingStation.isChargingStationAvailable() ||

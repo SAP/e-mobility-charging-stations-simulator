@@ -217,10 +217,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           connectorId,
           this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
         );
-        await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(
-          connectorId,
-          transactionId,
-          transactionEndMeterValue
+        await this.chargingStation.ocppRequestService.sendMessageHandler(
+          OCPP16RequestCommand.METER_VALUES,
+          {
+            connectorId,
+            transactionId,
+            meterValue: transactionEndMeterValue,
+          }
         );
       }
       const stopResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
@@ -760,10 +763,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             connectorId,
             this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
           );
-          await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(
-            connectorId,
-            transactionId,
-            transactionEndMeterValue
+          await this.chargingStation.ocppRequestService.sendMessageHandler(
+            OCPP16RequestCommand.METER_VALUES,
+            {
+              connectorId,
+              transactionId,
+              meterValue: transactionEndMeterValue,
+            }
           );
         }
         await this.chargingStation.ocppRequestService.sendMessageHandler(

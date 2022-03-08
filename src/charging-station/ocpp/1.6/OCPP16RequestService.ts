@@ -57,19 +57,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
     );
   }
 
-  public async sendTransactionEndMeterValues(
-    connectorId: number,
-    transactionId: number,
-    endMeterValue: OCPP16MeterValue
-  ): Promise<void> {
-    const payload: MeterValuesRequest = {
-      connectorId,
-      transactionId,
-      meterValue: [endMeterValue],
-    };
-    await this.sendMessage(Utils.generateUUID(), payload, OCPP16RequestCommand.METER_VALUES);
-  }
-
   public async sendDiagnosticsStatusNotification(
     diagnosticsStatus: OCPP16DiagnosticsStatus
   ): Promise<void> {

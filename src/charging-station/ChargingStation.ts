@@ -1356,11 +1356,11 @@ export default class ChargingStation {
               connectorId,
               this.getEnergyActiveImportRegisterByTransactionId(transactionId)
             );
-            await this.ocppRequestService.sendTransactionEndMeterValues(
+            await this.ocppRequestService.sendMessageHandler(RequestCommand.METER_VALUES, {
               connectorId,
               transactionId,
-              transactionEndMeterValue
-            );
+              meterValue: transactionEndMeterValue,
+            });
           }
           await this.ocppRequestService.sendMessageHandler(RequestCommand.STOP_TRANSACTION, {
             transactionId,
