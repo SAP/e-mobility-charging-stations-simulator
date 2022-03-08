@@ -1,5 +1,4 @@
 import {
-  DiagnosticsStatus,
   IncomingRequestCommand,
   RequestCommand,
   ResponseType,

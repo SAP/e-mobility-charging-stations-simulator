@@ -19,7 +19,6 @@ import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { JsonType } from '../../../types/JsonType';
 import { MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
-import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
