@@ -653,14 +653,13 @@ export default class ChargingStation {
     // In case of multiple instances: add instance index to charging station id
     const instanceIndex = process.env.CF_INSTANCE_INDEX ?? 0;
     const idSuffix = stationTemplate.nameSuffix ?? '';
+    const idStr = '000000000' + this.index.toString();
     return stationTemplate.fixedName
       ? stationTemplate.baseName
       : stationTemplate.baseName +
           '-' +
           instanceIndex.toString() +
-          ('000000000' + this.index.toString()).substr(
-            ('000000000' + this.index.toString()).length - 4
-          ) +
+          idStr.substring(idStr.length - 4) +
           idSuffix;
   }
 
