@@ -953,6 +953,11 @@ export default class ChargingStation {
             chargePointVendor: this.bootNotificationRequest.chargePointVendor,
             chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
             firmwareVersion: this.bootNotificationRequest.firmwareVersion,
+            chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
+            iccid: this.bootNotificationRequest.iccid,
+            imsi: this.bootNotificationRequest.imsi,
+            meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
+            meterType: this.bootNotificationRequest.meterType,
           },
           { skipBufferingOnError: true }
         )) as BootNotificationResponse;
@@ -1257,6 +1262,11 @@ export default class ChargingStation {
           chargePointVendor: this.bootNotificationRequest.chargePointVendor,
           chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
           firmwareVersion: this.bootNotificationRequest.firmwareVersion,
+          chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
+          iccid: this.bootNotificationRequest.iccid,
+          imsi: this.bootNotificationRequest.imsi,
+          meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
+          meterType: this.bootNotificationRequest.meterType,
         },
         { skipBufferingOnError: true }
       );
