@@ -37,6 +37,7 @@ import {
   OCPP16AuthorizeResponse,
   OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,
+  OCPP16StopTransactionResponse,
 } from '../../../types/ocpp/1.6/Transaction';
 
 import type ChargingStation from '../../ChargingStation';
@@ -48,6 +49,7 @@ import { JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import OCPPError from '../../../exception/OCPPError';
@@ -204,12 +206,33 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
-      const stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(
-        transactionId,
-        this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
-        this.chargingStation.getTransactionIdTag(transactionId),
-        OCPP16StopTransactionReason.UNLOCK_COMMAND
-      );
+      if (
+        this.chargingStation.getBeginEndMeterValues() &&
+        this.chargingStation.getOcppStrictCompliance() &&
+        !this.chargingStation.getOutOfOrderEndMeterValues()
+      ) {
+        // FIXME: Implement OCPP version agnostic helpers
+        const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+          this.chargingStation,
+          connectorId,
+          this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
+        );
+        await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(
+          connectorId,
+          transactionId,
+          transactionEndMeterValue
+        );
+      }
+      const stopResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
+        OCPP16RequestCommand.STOP_TRANSACTION,
+        {
+          transactionId,
+          meterStop:
+            this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+          idTag: this.chargingStation.getTransactionIdTag(transactionId),
+          reason: OCPP16StopTransactionReason.UNLOCK_COMMAND,
+        }
+      )) as OCPP16StopTransactionResponse;
       if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
         return Constants.OCPP_RESPONSE_UNLOCKED;
       }
@@ -726,10 +749,31 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         );
         this.chargingStation.getConnectorStatus(connectorId).status =
           OCPP16ChargePointStatus.FINISHING;
-        await this.chargingStation.ocppRequestService.sendStopTransaction(
-          transactionId,
-          this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
-          this.chargingStation.getTransactionIdTag(transactionId)
+        if (
+          this.chargingStation.getBeginEndMeterValues() &&
+          this.chargingStation.getOcppStrictCompliance() &&
+          !this.chargingStation.getOutOfOrderEndMeterValues()
+        ) {
+          // FIXME: Implement OCPP version agnostic helpers
+          const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+            this.chargingStation,
+            connectorId,
+            this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
+          );
+          await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(
+            connectorId,
+            transactionId,
+            transactionEndMeterValue
+          );
+        }
+        await this.chargingStation.ocppRequestService.sendMessageHandler(
+          OCPP16RequestCommand.STOP_TRANSACTION,
+          {
+            transactionId,
+            meterStop:
+              this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+            idTag: this.chargingStation.getTransactionIdTag(transactionId),
+          }
         );
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }

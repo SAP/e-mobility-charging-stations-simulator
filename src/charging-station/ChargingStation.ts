@@ -44,6 +44,7 @@ import { MessageType } from '../types/ocpp/MessageType';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
+import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import OCPPError from '../exception/OCPPError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
@@ -1337,12 +1338,29 @@ export default class ChargingStation {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted) {
           const transactionId = this.getConnectorStatus(connectorId).transactionId;
-          await this.ocppRequestService.sendStopTransaction(
+          if (
+            this.getBeginEndMeterValues() &&
+            this.getOcppStrictCompliance() &&
+            !this.getOutOfOrderEndMeterValues()
+          ) {
+            // FIXME: Implement OCPP version agnostic helpers
+            const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+              this,
+              connectorId,
+              this.getEnergyActiveImportRegisterByTransactionId(transactionId)
+            );
+            await this.ocppRequestService.sendTransactionEndMeterValues(
+              connectorId,
+              transactionId,
+              transactionEndMeterValue
+            );
+          }
+          await this.ocppRequestService.sendMessageHandler(RequestCommand.STOP_TRANSACTION, {
             transactionId,
-            this.getEnergyActiveImportRegisterByTransactionId(transactionId),
-            this.getTransactionIdTag(transactionId),
-            reason
-          );
+            meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+            idTag: this.getTransactionIdTag(transactionId),
+            reason,
+          });
         }
       }
     }

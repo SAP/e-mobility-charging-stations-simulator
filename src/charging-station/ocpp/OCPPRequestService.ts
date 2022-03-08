@@ -325,13 +325,6 @@ export default abstract class OCPPRequestService {
     params?: SendParams
   ): Promise<ResponseType>;
 
-  public abstract sendStopTransaction(
-    transactionId: number,
-    meterStop: number,
-    idTag?: string,
-    reason?: StopTransactionReason
-  ): Promise<StopTransactionResponse>;
-
   public abstract sendMeterValues(
     connectorId: number,
     transactionId: number,

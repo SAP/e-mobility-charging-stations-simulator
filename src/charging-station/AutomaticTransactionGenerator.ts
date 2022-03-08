@@ -10,6 +10,7 @@ import {
 
 import type ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
+import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { RequestCommand } from '../types/ocpp/Requests';
 import { Status } from '../types/AutomaticTransactionGenerator';
@@ -329,12 +330,33 @@ export default class AutomaticTransactionGenerator {
     let stopResponse: StopTransactionResponse;
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
       transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
-      stopResponse = await this.chargingStation.ocppRequestService.sendStopTransaction(
-        transactionId,
-        this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
-        this.chargingStation.getTransactionIdTag(transactionId),
-        reason
-      );
+      if (
+        this.chargingStation.getBeginEndMeterValues() &&
+        this.chargingStation.getOcppStrictCompliance() &&
+        !this.chargingStation.getOutOfOrderEndMeterValues()
+      ) {
+        // FIXME: Implement OCPP version agnostic helpers
+        const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+          this.chargingStation,
+          connectorId,
+          this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
+        );
+        await this.chargingStation.ocppRequestService.sendTransactionEndMeterValues(
+          connectorId,
+          transactionId,
+          transactionEndMeterValue
+        );
+      }
+      stopResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
+        RequestCommand.STOP_TRANSACTION,
+        {
+          transactionId,
+          meterStop:
+            this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+          idTag: this.chargingStation.getTransactionIdTag(transactionId),
+          reason,
+        }
+      )) as StopTransactionResponse;
       this.connectorsStatus.get(connectorId).stopTransactionRequests++;
     } else {
       logger.warn(

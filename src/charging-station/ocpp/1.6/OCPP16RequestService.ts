@@ -2,9 +2,6 @@
 
 import {
   AuthorizeRequest,
-  OCPP16StartTransactionResponse,
-  OCPP16StopTransactionReason,
-  OCPP16StopTransactionResponse,
   StartTransactionRequest,
   StopTransactionRequest,
 } from '../../../types/ocpp/1.6/Transaction';
@@ -58,53 +55,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
       commandName,
       { commandName }
     );
-  }
-
-  public async sendStopTransaction(
-    transactionId: number,
-    meterStop: number,
-    idTag?: string,
-    reason: OCPP16StopTransactionReason = OCPP16StopTransactionReason.NONE
-  ): Promise<OCPP16StopTransactionResponse> {
-    let connectorId: number;
-    for (const id of this.chargingStation.connectors.keys()) {
-      if (id > 0 && this.chargingStation.getConnectorStatus(id)?.transactionId === transactionId) {
-        connectorId = id;
-        break;
-      }
-    }
-    const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
-      this.chargingStation,
-      connectorId,
-      meterStop
-    );
-    // FIXME: should be a callback, each OCPP commands implementation must do only one job
-    this.chargingStation.getBeginEndMeterValues() &&
-      this.chargingStation.getOcppStrictCompliance() &&
-      !this.chargingStation.getOutOfOrderEndMeterValues() &&
-      (await this.sendTransactionEndMeterValues(
-        connectorId,
-        transactionId,
-        transactionEndMeterValue
-      ));
-    const payload: StopTransactionRequest = {
-      transactionId,
-      ...(!Utils.isUndefined(idTag) && { idTag }),
-      meterStop,
-      timestamp: new Date().toISOString(),
-      ...(reason && { reason }),
-      ...(this.chargingStation.getTransactionDataMeterValues() && {
-        transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-          this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
-          transactionEndMeterValue
-        ),
-      }),
-    };
-    return (await this.sendMessage(
-      Utils.generateUUID(),
-      payload,
-      OCPP16RequestCommand.STOP_TRANSACTION
-    )) as OCPP16StartTransactionResponse;
   }
 
   public async sendMeterValues(
@@ -169,6 +119,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType
   ): JsonType {
+    let connectorId: number;
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
         return {
@@ -230,6 +181,16 @@ export default class OCPP16RequestService extends OCPPRequestService {
           timestamp: new Date().toISOString(),
         } as StartTransactionRequest;
       case OCPP16RequestCommand.STOP_TRANSACTION:
+        for (const id of this.chargingStation.connectors.keys()) {
+          if (
+            id > 0 &&
+            this.chargingStation.getConnectorStatus(id)?.transactionId ===
+              commandParams?.transactionId
+          ) {
+            connectorId = id;
+            break;
+          }
+        }
         return {
           transactionId: commandParams?.transactionId,
           ...(!Utils.isUndefined(commandParams?.idTag) && { idTag: commandParams.idTag }),
@@ -238,11 +199,10 @@ export default class OCPP16RequestService extends OCPPRequestService {
           ...(commandParams?.reason && { reason: commandParams.reason }),
           ...(this.chargingStation.getTransactionDataMeterValues() && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-              this.chargingStation.getConnectorStatus(commandParams?.connectorId as number)
-                .transactionBeginMeterValue,
+              this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 this.chargingStation,
-                commandParams?.connectorId as number,
+                connectorId,
                 commandParams?.meterStop as number
               )
             ),
