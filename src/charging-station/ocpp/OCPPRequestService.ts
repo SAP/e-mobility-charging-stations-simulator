@@ -210,7 +210,6 @@ export default abstract class OCPPRequestService {
               resolve(payload);
             } catch (error) {
               reject(error);
-              throw error;
             } finally {
               self.chargingStation.requests.delete(messageId);
             }
