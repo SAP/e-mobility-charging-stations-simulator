@@ -310,10 +310,14 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           requestPayload.meterStart
         );
       this.chargingStation.getBeginEndMeterValues() &&
-        (await this.chargingStation.ocppRequestService.sendTransactionBeginMeterValues(
-          connectorId,
-          payload.transactionId,
-          this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue
+        (await this.chargingStation.ocppRequestService.sendMessageHandler(
+          OCPP16RequestCommand.METER_VALUES,
+          {
+            connectorId,
+            transactionId: payload.transactionId,
+            meterValue:
+              this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
+          }
         ));
       await this.chargingStation.ocppRequestService.sendMessageHandler(
         OCPP16RequestCommand.STATUS_NOTIFICATION,
