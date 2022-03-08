@@ -299,9 +299,9 @@ export default class Configuration {
     if (
       sectionName &&
       !Configuration.isUndefined(Configuration.getConfig()[sectionName]) &&
-      !Configuration.isUndefined(Configuration.getConfig()[sectionName] as Record<string, unknown>)[
-        key
-      ]
+      !Configuration.isUndefined(
+        (Configuration.getConfig()[sectionName] as Record<string, unknown>)[key]
+      )
     ) {
       console.error(
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key '${key}' usage in section '${sectionName}'${
