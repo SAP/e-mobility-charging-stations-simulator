@@ -829,8 +829,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 info.bytes / 1024
               } bytes transferred from diagnostics archive ${info.name}`
             );
-            await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(
-              OCPP16DiagnosticsStatus.Uploading
+            await this.chargingStation.ocppRequestService.sendMessageHandler(
+              OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+              {
+                status: OCPP16DiagnosticsStatus.Uploading,
+              }
             );
           });
           uploadResponse = await ftpClient.uploadFrom(
@@ -838,8 +841,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             uri.pathname + diagnosticsArchive
           );
           if (uploadResponse.code === 226) {
-            await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(
-              OCPP16DiagnosticsStatus.Uploaded
+            await this.chargingStation.ocppRequestService.sendMessageHandler(
+              OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+              {
+                status: OCPP16DiagnosticsStatus.Uploaded,
+              }
             );
             if (ftpClient) {
               ftpClient.close();
@@ -862,8 +868,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
         );
       } catch (error) {
-        await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(
-          OCPP16DiagnosticsStatus.UploadFailed
+        await this.chargingStation.ocppRequestService.sendMessageHandler(
+          OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+          {
+            status: OCPP16DiagnosticsStatus.UploadFailed,
+          }
         );
         if (ftpClient) {
           ftpClient.close();
@@ -880,8 +889,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           uri.protocol
         } to transfer the diagnostic logs archive`
       );
-      await this.chargingStation.ocppRequestService.sendDiagnosticsStatusNotification(
-        OCPP16DiagnosticsStatus.UploadFailed
+      await this.chargingStation.ocppRequestService.sendMessageHandler(
+        OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+        {
+          status: OCPP16DiagnosticsStatus.UploadFailed,
+        }
       );
       return Constants.OCPP_RESPONSE_EMPTY;
     }

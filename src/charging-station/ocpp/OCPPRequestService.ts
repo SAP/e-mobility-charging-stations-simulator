@@ -13,7 +13,6 @@ import { ErrorType } from '../../types/ocpp/ErrorType';
 import { HandleErrorParams } from '../../types/Error';
 import { JsonType } from '../../types/JsonType';
 import { MessageType } from '../../types/ocpp/MessageType';
-import { MeterValue } from '../../types/ocpp/MeterValues';
 import OCPPError from '../../exception/OCPPError';
 import type OCPPResponseService from './OCPPResponseService';
 import PerformanceStatistics from '../../performance/PerformanceStatistics';
@@ -323,8 +322,4 @@ export default abstract class OCPPRequestService {
     commandParams?: JsonType,
     params?: SendParams
   ): Promise<ResponseType>;
-
-  public abstract sendDiagnosticsStatusNotification(
-    diagnosticsStatus: DiagnosticsStatus
-  ): Promise<void>;
 }

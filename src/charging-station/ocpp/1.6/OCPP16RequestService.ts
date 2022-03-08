@@ -12,13 +12,13 @@ import {
   OCPP16RequestCommand,
   StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
-import { MeterValuesRequest, OCPP16MeterValue } from '../../../types/ocpp/1.6/MeterValues';
 import { ResponseType, SendParams } from '../../../types/ocpp/Requests';
 
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { JsonType } from '../../../types/JsonType';
+import { MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
@@ -54,19 +54,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
       `${moduleName}.sendMessageHandler: Unsupported OCPP command ${commandName}`,
       commandName,
       { commandName }
-    );
-  }
-
-  public async sendDiagnosticsStatusNotification(
-    diagnosticsStatus: OCPP16DiagnosticsStatus
-  ): Promise<void> {
-    const payload: DiagnosticsStatusNotificationRequest = {
-      status: diagnosticsStatus,
-    };
-    await this.sendMessage(
-      Utils.generateUUID(),
-      payload,
-      OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION
     );
   }
 
