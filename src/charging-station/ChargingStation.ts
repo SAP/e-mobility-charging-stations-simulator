@@ -23,7 +23,7 @@ import {
   SupportedFeatureProfiles,
   VendorDefaultParametersKey,
 } from '../types/ocpp/Configuration';
-import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
+import { MeterValue, MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import WebSocket, { ClientOptions, Data, OPEN, RawData } from 'ws';
 
@@ -455,11 +455,18 @@ export default class ChargingStation {
       this.getConnectorStatus(connectorId).transactionSetInterval = setInterval(
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         async (): Promise<void> => {
-          await this.ocppRequestService.sendMeterValues(
+          // FIXME: Implement OCPP version agnostic helpers
+          const meterValue: MeterValue = OCPP16ServiceUtils.buildMeterValue(
+            this,
             connectorId,
             this.getConnectorStatus(connectorId).transactionId,
             interval
           );
+          await this.ocppRequestService.sendMessageHandler(RequestCommand.METER_VALUES, {
+            connectorId,
+            transactionId: this.getConnectorStatus(connectorId).transactionId,
+            meterValue: [meterValue],
+          });
         },
         interval
       );

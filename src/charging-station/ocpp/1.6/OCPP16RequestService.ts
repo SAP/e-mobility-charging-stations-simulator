@@ -57,25 +57,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
     );
   }
 
-  public async sendMeterValues(
-    connectorId: number,
-    transactionId: number,
-    interval: number
-  ): Promise<void> {
-    const meterValue: OCPP16MeterValue = OCPP16ServiceUtils.buildMeterValue(
-      this.chargingStation,
-      connectorId,
-      transactionId,
-      interval
-    );
-    const payload: MeterValuesRequest = {
-      connectorId,
-      transactionId,
-      meterValue: [meterValue],
-    };
-    await this.sendMessage(Utils.generateUUID(), payload, OCPP16RequestCommand.METER_VALUES);
-  }
-
   public async sendTransactionBeginMeterValues(
     connectorId: number,
     transactionId: number,

@@ -5,7 +5,6 @@ import {
   ResponseType,
   SendParams,
 } from '../../types/ocpp/Requests';
-import { StopTransactionReason, StopTransactionResponse } from '../../types/ocpp/Transaction';
 
 import type ChargingStation from '../ChargingStation';
 import Constants from '../../utils/Constants';
@@ -324,12 +323,6 @@ export default abstract class OCPPRequestService {
     commandParams?: JsonType,
     params?: SendParams
   ): Promise<ResponseType>;
-
-  public abstract sendMeterValues(
-    connectorId: number,
-    transactionId: number,
-    interval: number
-  ): Promise<void>;
 
   public abstract sendTransactionBeginMeterValues(
     connectorId: number,
