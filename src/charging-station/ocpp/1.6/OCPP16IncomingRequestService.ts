@@ -400,7 +400,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestClearChargingProfile(
     commandPayload: ClearChargingProfileRequest
   ): ClearChargingProfileResponse {
-    if (!this.chargingStation.getConnectorStatus(commandPayload.connectorId)) {
+    const connectorStatus = this.chargingStation.getConnectorStatus(commandPayload.connectorId);
+    if (!connectorStatus) {
       logger.error(
         `${this.chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector Id ${
           commandPayload.connectorId
@@ -408,16 +409,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       );
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
-    if (
-      commandPayload.connectorId &&
-      !Utils.isEmptyArray(
-        this.chargingStation.getConnectorStatus(commandPayload.connectorId).chargingProfiles
-      )
-    ) {
-      this.chargingStation.getConnectorStatus(commandPayload.connectorId).chargingProfiles = [];
+    if (commandPayload.connectorId && !Utils.isEmptyArray(connectorStatus.chargingProfiles)) {
+      connectorStatus.chargingProfiles = [];
       logger.debug(
         `${this.chargingStation.logPrefix()} Charging profile(s) cleared, dump their stack: %j`,
-        this.chargingStation.getConnectorStatus(commandPayload.connectorId).chargingProfiles
+        connectorStatus.chargingProfiles
       );
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED;
     }
@@ -453,13 +449,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 clearCurrentCP = true;
               }
               if (clearCurrentCP) {
-                this.chargingStation.getConnectorStatus(
-                  commandPayload.connectorId
-                ).chargingProfiles[index] = {} as OCPP16ChargingProfile;
+                connectorStatus.chargingProfiles[index] = {} as OCPP16ChargingProfile;
                 logger.debug(
                   `${this.chargingStation.logPrefix()} Charging profile(s) cleared, dump their stack: %j`,
-                  this.chargingStation.getConnectorStatus(commandPayload.connectorId)
-                    .chargingProfiles
+                  connectorStatus.chargingProfiles
                 );
                 clearedCP = true;
               }
@@ -533,7 +526,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private async handleRequestRemoteStartTransaction(
     commandPayload: RemoteStartTransactionRequest
   ): Promise<DefaultResponse> {
-    const transactionConnectorId: number = commandPayload.connectorId;
+    const transactionConnectorId = commandPayload.connectorId;
+    const connectorStatus = this.chargingStation.getConnectorStatus(transactionConnectorId);
     if (transactionConnectorId) {
       await this.chargingStation.ocppRequestService.sendMessageHandler(
         OCPP16RequestCommand.STATUS_NOTIFICATION,
@@ -543,12 +537,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
         }
       );
-      this.chargingStation.getConnectorStatus(transactionConnectorId).status =
-        OCPP16ChargePointStatus.PREPARING;
-      if (
-        this.chargingStation.isChargingStationAvailable() &&
-        this.chargingStation.isConnectorAvailable(transactionConnectorId)
-      ) {
+      connectorStatus.status = OCPP16ChargePointStatus.PREPARING;
+      if (this.chargingStation.isChargingStationAvailable() && connectorStatus) {
         // Check if authorized
         if (this.chargingStation.getAuthorizeRemoteTxRequests()) {
           let authorized = false;
@@ -557,14 +547,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             this.chargingStation.hasAuthorizedTags() &&
             this.chargingStation.authorizedTags.find((value) => value === commandPayload.idTag)
           ) {
-            this.chargingStation.getConnectorStatus(transactionConnectorId).localAuthorizeIdTag =
-              commandPayload.idTag;
-            this.chargingStation.getConnectorStatus(transactionConnectorId).idTagLocalAuthorized =
-              true;
+            connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
+            connectorStatus.idTagLocalAuthorized = true;
             authorized = true;
           } else if (this.chargingStation.getMayAuthorizeAtRemoteStart()) {
-            this.chargingStation.getConnectorStatus(transactionConnectorId).authorizeIdTag =
-              commandPayload.idTag;
+            connectorStatus.authorizeIdTag = commandPayload.idTag;
             const authorizeResponse: OCPP16AuthorizeResponse =
               (await this.chargingStation.ocppRequestService.sendMessageHandler(
                 OCPP16RequestCommand.AUTHORIZE,
@@ -588,9 +575,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 commandPayload.chargingProfile
               )
             ) {
-              this.chargingStation.getConnectorStatus(
-                transactionConnectorId
-              ).transactionRemoteStarted = true;
+              connectorStatus.transactionRemoteStarted = true;
               if (
                 (
                   (await this.chargingStation.ocppRequestService.sendMessageHandler(
@@ -635,8 +620,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             commandPayload.chargingProfile
           )
         ) {
-          this.chargingStation.getConnectorStatus(transactionConnectorId).transactionRemoteStarted =
-            true;
+          connectorStatus.transactionRemoteStarted = true;
           if (
             (
               (await this.chargingStation.ocppRequestService.sendMessageHandler(
