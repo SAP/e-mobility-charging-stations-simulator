@@ -12,7 +12,7 @@ body:
         Please fill in as much of the template below as you're able.
   - type: checkboxes
     attributes:
-      label: ''
+      label: Duplicate issue
       options:
         - label: I've searched for any related issues and avoided creating a duplicate issue.
           required: true
