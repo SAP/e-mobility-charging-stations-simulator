@@ -100,8 +100,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
         return {
           connectorId: commandParams?.connectorId,
           transactionId: commandParams?.transactionId,
-          meterValue: Array.isArray(commandParams?.meterValues)
-            ? commandParams?.meterValues
+          meterValue: Array.isArray(commandParams?.meterValue)
+            ? commandParams?.meterValue
             : [commandParams?.meterValue],
         } as MeterValuesRequest;
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
