@@ -2,11 +2,11 @@ FROM node:lts-alpine as builder
 
 WORKDIR /usr/builder
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json prepare.js ./
 
 RUN npm set progress=false && npm config set depth 0 && npm cache clean --force
 RUN npm install
-COPY tsconfig.json rollup.config.js prepare.js ./
+COPY tsconfig.json rollup.config.js ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 RUN npm run build
