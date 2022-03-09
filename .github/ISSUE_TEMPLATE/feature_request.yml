@@ -4,9 +4,12 @@ description: Request a feature
 body:
   - type: markdown
     attributes:
+      label: Description
       value: |
         Thank you for requesting a feature.
+
         This issue tracker is for feature requests in charging-stations-simulator.
+
   - type: checkboxes
     attributes:
       options:

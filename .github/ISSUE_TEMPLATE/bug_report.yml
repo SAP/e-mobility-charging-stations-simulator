@@ -4,9 +4,12 @@ description: Create a bug report
 body:
   - type: markdown
     attributes:
+      label: Description
       value: |
         Thank you for reporting an issue.
+
         This issue tracker is for bugs and issues found in charging-stations-simulator.
+
         Please fill in as much of the template below as you're able.
   - type: checkboxes
     attributes:
