@@ -255,16 +255,6 @@ export default class ChargingStation {
     return this.stationInfo.phaseLineToLineVoltageMeterValues ?? false;
   }
 
-  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
-    const transactionConnectorStatus = this.getConnectorStatus(
-      this.getConnectorIdByTransactionId(transactionId)
-    );
-    if (this.getMeteringPerTransaction()) {
-      return transactionConnectorStatus.transactionEnergyActiveImportRegisterValue;
-    }
-    return transactionConnectorStatus.energyActiveImportRegisterValue;
-  }
-
   public getConnectorIdByTransactionId(transactionId: number): number | undefined {
     for (const connectorId of this.connectors.keys()) {
       if (
@@ -276,11 +266,22 @@ export default class ChargingStation {
     }
   }
 
-  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number | undefined {
+  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
+    const transactionConnectorStatus = this.getConnectorStatus(
+      this.getConnectorIdByTransactionId(transactionId)
+    );
     if (this.getMeteringPerTransaction()) {
-      return this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue;
+      return transactionConnectorStatus?.transactionEnergyActiveImportRegisterValue;
     }
-    return this.getConnectorStatus(connectorId).energyActiveImportRegisterValue;
+    return transactionConnectorStatus?.energyActiveImportRegisterValue;
+  }
+
+  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number | undefined {
+    const connectorStatus = this.getConnectorStatus(connectorId);
+    if (this.getMeteringPerTransaction()) {
+      return connectorStatus?.transactionEnergyActiveImportRegisterValue;
+    }
+    return connectorStatus?.energyActiveImportRegisterValue;
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
