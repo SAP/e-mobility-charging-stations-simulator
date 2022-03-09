@@ -389,17 +389,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16StopTransactionResponse,
     requestPayload: StopTransactionRequest
   ): Promise<void> {
-    let transactionConnectorId: number;
-    for (const connectorId of this.chargingStation.connectors.keys()) {
-      if (
-        connectorId > 0 &&
-        this.chargingStation.getConnectorStatus(connectorId)?.transactionId ===
-          requestPayload.transactionId
-      ) {
-        transactionConnectorId = connectorId;
-        break;
-      }
-    }
+    const transactionConnectorId = this.chargingStation.getConnectorIdByTransactionId(
+      requestPayload.transactionId
+    );
     if (!transactionConnectorId) {
       logger.error(
         this.chargingStation.logPrefix() +

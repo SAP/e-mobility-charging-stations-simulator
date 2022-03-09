@@ -122,16 +122,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
           timestamp: new Date().toISOString(),
         } as StartTransactionRequest;
       case OCPP16RequestCommand.STOP_TRANSACTION:
-        for (const id of this.chargingStation.connectors.keys()) {
-          if (
-            id > 0 &&
-            this.chargingStation.getConnectorStatus(id)?.transactionId ===
-              commandParams?.transactionId
-          ) {
-            connectorId = id;
-            break;
-          }
-        }
+        connectorId = this.chargingStation.getConnectorIdByTransactionId(
+          commandParams?.transactionId as number
+        );
         return {
           transactionId: commandParams?.transactionId,
           ...(!Utils.isUndefined(commandParams?.idTag) && { idTag: commandParams.idTag }),

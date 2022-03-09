@@ -256,19 +256,22 @@ export default class ChargingStation {
   }
 
   public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
+    const transactionConnectorStatus = this.getConnectorStatus(
+      this.getConnectorIdByTransactionId(transactionId)
+    );
     if (this.getMeteringPerTransaction()) {
-      for (const connectorId of this.connectors.keys()) {
-        if (
-          connectorId > 0 &&
-          this.getConnectorStatus(connectorId).transactionId === transactionId
-        ) {
-          return this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue;
-        }
-      }
+      return transactionConnectorStatus.transactionEnergyActiveImportRegisterValue;
     }
+    return transactionConnectorStatus.energyActiveImportRegisterValue;
+  }
+
+  public getConnectorIdByTransactionId(transactionId: number): number | undefined {
     for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId).transactionId === transactionId) {
-        return this.getConnectorStatus(connectorId).energyActiveImportRegisterValue;
+      if (
+        connectorId > 0 &&
+        this.getConnectorStatus(connectorId)?.transactionId === transactionId
+      ) {
+        return connectorId;
       }
     }
   }
