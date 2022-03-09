@@ -6,7 +6,6 @@ body:
     attributes:
       value: |
         Thank you for requesting a feature.
-
         This issue tracker is for feature requests in charging-stations-simulator.
   - type: checkboxes
     attributes:
