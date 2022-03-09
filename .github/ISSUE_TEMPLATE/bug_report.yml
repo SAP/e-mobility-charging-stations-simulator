@@ -4,7 +4,6 @@ description: Create a bug report
 body:
   - type: markdown
     attributes:
-      label: Description
       value: |
         Thank you for reporting an issue.
 
@@ -13,9 +12,9 @@ body:
         Please fill in as much of the template below as you're able.
   - type: checkboxes
     attributes:
+      label: Duplicate issue
       options:
-        - label: I've searched for any related issues and avoided creating a
-            duplicate issue.
+        - label: I've searched for any related issues and avoided creating a duplicate issue.
           required: true
   - type: textarea
     attributes:

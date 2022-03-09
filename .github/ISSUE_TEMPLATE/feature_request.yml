@@ -4,7 +4,6 @@ description: Request a feature
 body:
   - type: markdown
     attributes:
-      label: Description
       value: |
         Thank you for requesting a feature.
 
@@ -12,9 +11,9 @@ body:
 
   - type: checkboxes
     attributes:
+      label: Duplicate issue
       options:
-        - label: I've searched for any related issues and avoided creating a
-            duplicate issue.
+        - label: I've searched for any related issues and avoided creating a duplicate issue.
           required: true
   - type: textarea
     attributes:
