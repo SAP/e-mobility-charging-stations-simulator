@@ -74,6 +74,7 @@ export default class ChargingStation {
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
   private readonly index: number;
+  private configurationFile!: string;
   private bootNotificationRequest!: BootNotificationRequest;
   private bootNotificationResponse!: BootNotificationResponse | null;
   private connectorsConfigurationHash!: string;
@@ -594,6 +595,7 @@ export default class ChargingStation {
     if (keyFound) {
       const keyIndex = this.configuration.configurationKey.indexOf(keyFound);
       this.configuration.configurationKey[keyIndex].value = value;
+      this.saveConfiguration();
     } else {
       logger.error(
         `${this.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
@@ -734,7 +736,13 @@ export default class ChargingStation {
 
   private initialize(): void {
     this.stationInfo = this.buildStationInfo();
-    this.configuration = this.getTemplateChargingStationConfiguration();
+    this.configurationFile = path.join(
+      path.resolve(__dirname, '../'),
+      'assets',
+      'configurations',
+      this.stationInfo.chargingStationId + '.json'
+    );
+    this.configuration = this.getConfiguration();
     delete this.stationInfo.Configuration;
     this.bootNotificationRequest = {
       chargePointModel: this.stationInfo.chargePointModel,
@@ -940,6 +948,64 @@ export default class ChargingStation {
         Constants.DEFAULT_CONNECTION_TIMEOUT.toString()
       );
     }
+    this.saveConfiguration();
+  }
+
+  private getConfigurationFromTemplate(): ChargingStationConfiguration {
+    return this.stationInfo.Configuration ?? ({} as ChargingStationConfiguration);
+  }
+
+  private getConfigurationFromFile(): ChargingStationConfiguration | null {
+    let configuration: ChargingStationConfiguration = null;
+    if (this.configurationFile && fs.existsSync(this.configurationFile)) {
+      try {
+        const fileDescriptor = fs.openSync(this.configurationFile, 'r');
+        configuration = JSON.parse(
+          fs.readFileSync(fileDescriptor, 'utf8')
+        ) as ChargingStationConfiguration;
+        fs.closeSync(fileDescriptor);
+      } catch (error) {
+        FileUtils.handleFileException(
+          this.logPrefix(),
+          'Configuration',
+          this.configurationFile,
+          error as NodeJS.ErrnoException
+        );
+      }
+    }
+    return configuration;
+  }
+
+  private saveConfiguration(): void {
+    if (this.configurationFile) {
+      try {
+        if (!fs.existsSync(path.dirname(this.configurationFile))) {
+          fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
+        }
+        const fileDescriptor = fs.openSync(this.configurationFile, 'w');
+        fs.writeFileSync(fileDescriptor, JSON.stringify(this.configuration, null, 2));
+        fs.closeSync(fileDescriptor);
+      } catch (error) {
+        FileUtils.handleFileException(
+          this.logPrefix(),
+          'Configuration',
+          this.configurationFile,
+          error as NodeJS.ErrnoException
+        );
+      }
+    } else {
+      logger.error(
+        `${this.logPrefix()} Trying to save charging station configuration to undefined file`
+      );
+    }
+  }
+
+  private getConfiguration(): ChargingStationConfiguration {
+    let configuration: ChargingStationConfiguration = this.getConfigurationFromFile();
+    if (!configuration) {
+      configuration = this.getConfigurationFromTemplate();
+    }
+    return configuration;
   }
 
   private async onOpen(): Promise<void> {
@@ -1139,10 +1205,6 @@ export default class ChargingStation {
 
   private onError(error: WSError): void {
     logger.error(this.logPrefix() + ' WebSocket error: %j', error);
-  }
-
-  private getTemplateChargingStationConfiguration(): ChargingStationConfiguration {
-    return this.stationInfo.Configuration ?? ({} as ChargingStationConfiguration);
   }
 
   private getAuthorizationFile(): string | undefined {

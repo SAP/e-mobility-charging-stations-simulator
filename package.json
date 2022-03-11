@@ -27,7 +27,7 @@
   ],
   "main": "./dist/start.js",
   "lint-staged": {
-    "*.{js,ts}": [
+    "src/**/*.{js,ts}": [
       "prettier --write",
       "eslint --cache --fix"
     ]

@@ -1,5 +1,14 @@
 {
   "root": true,
+  "env": {
+    "es2020": true,
+    "node": true,
+    "mocha": true
+},
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
   "extends": [
     "eslint:recommended",
     "plugin:import/errors",
@@ -114,6 +123,8 @@
       "files": ["**/*.ts"],
       "parser": "@typescript-eslint/parser",
       "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "module",
         "project": "./tsconfig.json"
       },
       "extends": [

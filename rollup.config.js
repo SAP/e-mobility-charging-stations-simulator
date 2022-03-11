@@ -49,7 +49,7 @@ export default {
     }),
     isDevelopmentBuild && istanbul(),
     del({
-      targets: 'dist/*',
+      targets: ['dist/*', '!dist/assets', 'dist/assets/*.json', 'dist/assets/station-templates'],
     }),
     copy({
       targets: [{ src: 'src/assets', dest: 'dist/' }],

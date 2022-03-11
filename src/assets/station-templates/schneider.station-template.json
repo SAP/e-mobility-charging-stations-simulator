@@ -1,4 +1,6 @@
 {
+  "supervisionUrlOcppConfiguration": true,
+  "supervisionUrlOcppKey": "ocppcentraladdress",
   "authorizationFile": "authorization-tags.json",
   "baseName": "CS-SCHNEIDER",
   "chargePointModel": "MONOBLOCK",
