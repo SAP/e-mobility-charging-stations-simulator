@@ -633,10 +633,7 @@ export default class ChargingStation {
     const reboot = options.reboot;
     let keyFound = this.getConfigurationKey(key);
     if (keyFound && params?.overwrite) {
-      this.configuration.configurationKey.splice(
-        this.configuration.configurationKey.indexOf(keyFound),
-        1
-      );
+      this.deleteConfigurationKey(keyFound.key, { save: false });
       keyFound = undefined;
     }
     if (!keyFound) {
@@ -671,6 +668,21 @@ export default class ChargingStation {
         `${this.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
         { key, value }
       );
+    }
+  }
+
+  public deleteConfigurationKey(
+    key: string | StandardParametersKey,
+    params: { save?: boolean; caseInsensitive?: boolean } = { save: true, caseInsensitive: false }
+  ): ConfigurationKey[] {
+    const keyFound = this.getConfigurationKey(key, params?.caseInsensitive);
+    if (keyFound) {
+      const deletedConfigurationKey = this.configuration.configurationKey.splice(
+        this.configuration.configurationKey.indexOf(keyFound),
+        1
+      );
+      params?.save && this.saveConfiguration();
+      return deletedConfigurationKey;
     }
   }
 
@@ -966,6 +978,11 @@ export default class ChargingStation {
         this.getConfiguredSupervisionUrl().href,
         { reboot: true }
       );
+    } else if (
+      !this.getSupervisionUrlOcppConfiguration() &&
+      this.getConfigurationKey(this.getSupervisionUrlOcppKey())
+    ) {
+      this.deleteConfigurationKey(this.getSupervisionUrlOcppKey(), { save: false });
     }
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(
