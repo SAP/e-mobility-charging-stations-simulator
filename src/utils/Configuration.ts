@@ -7,6 +7,7 @@ import ConfigurationData, {
 
 import Constants from './Constants';
 import { EmptyObject } from '../types/EmptyObject';
+import { FileType } from '../types/FileType';
 import { HandleErrorParams } from '../types/Error';
 import { ServerOptions } from 'ws';
 import { StorageType } from '../types/Storage';
@@ -18,7 +19,7 @@ import fs from 'fs';
 import path from 'path';
 
 export default class Configuration {
-  private static configurationFilePath = path.join(
+  private static configurationFile = path.join(
     path.resolve(__dirname, '../'),
     'assets',
     'config.json'
@@ -322,13 +323,13 @@ export default class Configuration {
     if (!Configuration.configuration) {
       try {
         Configuration.configuration = JSON.parse(
-          fs.readFileSync(Configuration.configurationFilePath, 'utf8')
+          fs.readFileSync(Configuration.configurationFile, 'utf8')
         ) as ConfigurationData;
       } catch (error) {
         Configuration.handleFileException(
           Configuration.logPrefix(),
-          'Configuration',
-          Configuration.configurationFilePath,
+          FileType.Configuration,
+          Configuration.configurationFile,
           error as NodeJS.ErrnoException
         );
       }
@@ -341,7 +342,7 @@ export default class Configuration {
 
   private static getConfigurationFileWatcher(): fs.FSWatcher {
     try {
-      return fs.watch(Configuration.configurationFilePath, (event, filename): void => {
+      return fs.watch(Configuration.configurationFile, (event, filename): void => {
         if (filename && event === 'change') {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
@@ -355,9 +356,9 @@ export default class Configuration {
     } catch (error) {
       Configuration.handleFileException(
         Configuration.logPrefix(),
-        'Configuration',
-        Configuration.configurationFilePath,
-        error as Error
+        FileType.Configuration,
+        Configuration.configurationFile,
+        error as NodeJS.ErrnoException
       );
     }
   }
@@ -387,7 +388,7 @@ export default class Configuration {
 
   private static handleFileException(
     logPrefix: string,
-    fileType: string,
+    fileType: FileType,
     filePath: string,
     error: NodeJS.ErrnoException,
     params: HandleErrorParams<EmptyObject> = { throwError: true }

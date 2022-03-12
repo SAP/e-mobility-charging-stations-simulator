@@ -38,6 +38,7 @@ import Configuration from '../utils/Configuration';
 import { ConnectorStatus } from '../types/ConnectorStatus';
 import Constants from '../utils/Constants';
 import { ErrorType } from '../types/ocpp/ErrorType';
+import { FileType } from '../types/FileType';
 import FileUtils from '../utils/FileUtils';
 import { JsonType } from '../types/JsonType';
 import { MessageType } from '../types/ocpp/MessageType';
@@ -492,9 +493,57 @@ export default class ChargingStation {
     }
     this.openWSConnection();
     // Monitor authorization file
-    this.startAuthorizationFileMonitoring();
-    // Monitor station template file
-    this.startStationTemplateFileMonitoring();
+    FileUtils.watchJsonFile<string[]>(
+      this.logPrefix(),
+      FileType.Authorization,
+      this.getAuthorizationFile(),
+      this.authorizedTags
+    );
+    // Monitor charging station template file
+    FileUtils.watchJsonFile(
+      this.logPrefix(),
+      FileType.ChargingStationTemplate,
+      this.stationTemplateFile,
+      null,
+      (event, filename): void => {
+        if (filename && event === 'change') {
+          try {
+            logger.debug(
+              `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
+                this.stationTemplateFile
+              } file have changed, reload`
+            );
+            // Initialize
+            this.initialize();
+            // Restart the ATG
+            if (
+              !this.stationInfo.AutomaticTransactionGenerator.enable &&
+              this.automaticTransactionGenerator
+            ) {
+              this.automaticTransactionGenerator.stop();
+            }
+            this.startAutomaticTransactionGenerator();
+            if (this.getEnableStatistics()) {
+              this.performanceStatistics.restart();
+            } else {
+              this.performanceStatistics.stop();
+            }
+            // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
+          } catch (error) {
+            logger.error(
+              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error: %j`,
+              error
+            );
+          }
+        }
+      }
+    );
+    FileUtils.watchJsonFile<ChargingStationConfiguration>(
+      this.logPrefix(),
+      FileType.ChargingStationConfiguration,
+      this.configurationFile,
+      this.configuration
+    );
     // Handle WebSocket message
     this.wsConnection.on(
       'message',
@@ -568,12 +617,27 @@ export default class ChargingStation {
       readonly: false,
       visible: true,
       reboot: false,
-    }
+    },
+    params: { overwrite?: boolean; save?: boolean } = { overwrite: false, save: false }
   ): void {
-    const keyFound = this.getConfigurationKey(key);
+    if (!options || Utils.isEmptyObject(options)) {
+      options = {
+        readonly: false,
+        visible: true,
+        reboot: false,
+      };
+    }
     const readonly = options.readonly;
     const visible = options.visible;
     const reboot = options.reboot;
+    let keyFound = this.getConfigurationKey(key);
+    if (keyFound && params?.overwrite) {
+      this.configuration.configurationKey.splice(
+        this.configuration.configurationKey.indexOf(keyFound),
+        1
+      );
+      keyFound = undefined;
+    }
     if (!keyFound) {
       this.configuration.configurationKey.push({
         key,
@@ -582,6 +646,7 @@ export default class ChargingStation {
         visible,
         reboot,
       });
+      params?.save && this.saveConfiguration();
     } else {
       logger.error(
         `${this.logPrefix()} Trying to add an already existing configuration key: %j`,
@@ -590,8 +655,12 @@ export default class ChargingStation {
     }
   }
 
-  public setConfigurationKeyValue(key: string | StandardParametersKey, value: string): void {
-    const keyFound = this.getConfigurationKey(key);
+  public setConfigurationKeyValue(
+    key: string | StandardParametersKey,
+    value: string,
+    caseInsensitive = false
+  ): void {
+    const keyFound = this.getConfigurationKey(key, caseInsensitive);
     if (keyFound) {
       const keyIndex = this.configuration.configurationKey.indexOf(keyFound);
       this.configuration.configurationKey[keyIndex].value = value;
@@ -673,15 +742,13 @@ export default class ChargingStation {
     let stationTemplateFromFile: ChargingStationTemplate;
     try {
       // Load template file
-      const fileDescriptor = fs.openSync(this.stationTemplateFile, 'r');
       stationTemplateFromFile = JSON.parse(
-        fs.readFileSync(fileDescriptor, 'utf8')
+        fs.readFileSync(this.stationTemplateFile, 'utf8')
       ) as ChargingStationTemplate;
-      fs.closeSync(fileDescriptor);
     } catch (error) {
       FileUtils.handleFileException(
         this.logPrefix(),
-        'Template',
+        FileType.ChargingStationTemplate,
         this.stationTemplateFile,
         error as NodeJS.ErrnoException
       );
@@ -889,7 +956,7 @@ export default class ChargingStation {
       )
     ) {
       this.addConfigurationKey(
-        VendorDefaultParametersKey.ConnectionUrl,
+        this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl,
         this.getConfiguredSupervisionUrl().href,
         { reboot: true }
       );
@@ -903,7 +970,8 @@ export default class ChargingStation {
     this.addConfigurationKey(
       StandardParametersKey.NumberOfConnectors,
       this.getNumberOfConnectors().toString(),
-      { readonly: true }
+      { readonly: true },
+      { overwrite: true }
     );
     if (!this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)) {
       this.addConfigurationKey(
@@ -959,15 +1027,13 @@ export default class ChargingStation {
     let configuration: ChargingStationConfiguration = null;
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
-        const fileDescriptor = fs.openSync(this.configurationFile, 'r');
         configuration = JSON.parse(
-          fs.readFileSync(fileDescriptor, 'utf8')
+          fs.readFileSync(this.configurationFile, 'utf8')
         ) as ChargingStationConfiguration;
-        fs.closeSync(fileDescriptor);
       } catch (error) {
         FileUtils.handleFileException(
           this.logPrefix(),
-          'Configuration',
+          FileType.ChargingStationConfiguration,
           this.configurationFile,
           error as NodeJS.ErrnoException
         );
@@ -988,7 +1054,7 @@ export default class ChargingStation {
       } catch (error) {
         FileUtils.handleFileException(
           this.logPrefix(),
-          'Configuration',
+          FileType.ChargingStationConfiguration,
           this.configurationFile,
           error as NodeJS.ErrnoException
         );
@@ -1224,13 +1290,11 @@ export default class ChargingStation {
     if (authorizationFile) {
       try {
         // Load authorization file
-        const fileDescriptor = fs.openSync(authorizationFile, 'r');
-        authorizedTags = JSON.parse(fs.readFileSync(fileDescriptor, 'utf8')) as string[];
-        fs.closeSync(fileDescriptor);
+        authorizedTags = JSON.parse(fs.readFileSync(authorizationFile, 'utf8')) as string[];
       } catch (error) {
         FileUtils.handleFileException(
           this.logPrefix(),
-          'Authorization',
+          FileType.Authorization,
           authorizationFile,
           error as NodeJS.ErrnoException
         );
@@ -1613,89 +1677,6 @@ export default class ChargingStation {
   private stopMeterValues(connectorId: number) {
     if (this.getConnectorStatus(connectorId)?.transactionSetInterval) {
       clearInterval(this.getConnectorStatus(connectorId).transactionSetInterval);
-    }
-  }
-
-  private startAuthorizationFileMonitoring(): void {
-    const authorizationFile = this.getAuthorizationFile();
-    if (authorizationFile) {
-      try {
-        fs.watch(authorizationFile, (event, filename) => {
-          if (filename && event === 'change') {
-            try {
-              logger.debug(
-                this.logPrefix() +
-                  ' Authorization file ' +
-                  authorizationFile +
-                  ' have changed, reload'
-              );
-              // Initialize authorizedTags
-              this.authorizedTags = this.getAuthorizedTags();
-            } catch (error) {
-              logger.error(this.logPrefix() + ' Authorization file monitoring error: %j', error);
-            }
-          }
-        });
-      } catch (error) {
-        FileUtils.handleFileException(
-          this.logPrefix(),
-          'Authorization',
-          authorizationFile,
-          error as NodeJS.ErrnoException
-        );
-      }
-    } else {
-      logger.info(
-        this.logPrefix() +
-          ' No authorization file given in template file ' +
-          this.stationTemplateFile +
-          '. Not monitoring changes'
-      );
-    }
-  }
-
-  private startStationTemplateFileMonitoring(): void {
-    try {
-      fs.watch(this.stationTemplateFile, (event, filename): void => {
-        if (filename && event === 'change') {
-          try {
-            logger.debug(
-              this.logPrefix() +
-                ' Template file ' +
-                this.stationTemplateFile +
-                ' have changed, reload'
-            );
-            // Initialize
-            this.initialize();
-            // Restart the ATG
-            if (
-              !this.stationInfo.AutomaticTransactionGenerator.enable &&
-              this.automaticTransactionGenerator
-            ) {
-              this.automaticTransactionGenerator.stop();
-            }
-            this.startAutomaticTransactionGenerator();
-            if (this.getEnableStatistics()) {
-              this.performanceStatistics.restart();
-            } else {
-              this.performanceStatistics.stop();
-            }
-            // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
-          } catch (error) {
-            logger.error(
-              this.logPrefix() + ' Charging station template file monitoring error: %j',
-              error
-            );
-          }
-        }
-      });
-    } catch (error) {
-      FileUtils.handleFileException(
-        this.logPrefix(),
-        'Template',
-        this.stationTemplateFile,
-        error as NodeJS.ErrnoException
-      );
     }
   }
 

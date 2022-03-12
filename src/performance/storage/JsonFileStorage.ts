@@ -1,6 +1,6 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import Constants from '../../utils/Constants';
+import { FileType } from '../../types/FileType';
 import FileUtils from '../../utils/FileUtils';
 import Statistics from '../../types/Statistics';
 import { Storage } from './Storage';
@@ -46,7 +46,7 @@ export class JsonFileStorage extends Storage {
         } catch (error) {
           FileUtils.handleFileException(
             this.logPrefix,
-            Constants.PERFORMANCE_RECORDS_FILETYPE,
+            FileType.PerformanceRecords,
             this.dbName,
             error as NodeJS.ErrnoException
           );
@@ -66,7 +66,7 @@ export class JsonFileStorage extends Storage {
     } catch (error) {
       FileUtils.handleFileException(
         this.logPrefix,
-        Constants.PERFORMANCE_RECORDS_FILETYPE,
+        FileType.PerformanceRecords,
         this.dbName,
         error as NodeJS.ErrnoException
       );
@@ -82,7 +82,7 @@ export class JsonFileStorage extends Storage {
     } catch (error) {
       FileUtils.handleFileException(
         this.logPrefix,
-        Constants.PERFORMANCE_RECORDS_FILETYPE,
+        FileType.PerformanceRecords,
         this.dbName,
         error as NodeJS.ErrnoException
       );

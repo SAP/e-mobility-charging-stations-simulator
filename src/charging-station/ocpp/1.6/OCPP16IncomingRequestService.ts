@@ -324,12 +324,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     } else if (keyToChange && keyToChange.readonly) {
       return Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED;
     } else if (keyToChange && !keyToChange.readonly) {
-      const keyIndex = this.chargingStation.configuration.configurationKey.indexOf(keyToChange);
       let valueChanged = false;
-      if (
-        this.chargingStation.configuration.configurationKey[keyIndex].value !== commandPayload.value
-      ) {
-        this.chargingStation.configuration.configurationKey[keyIndex].value = commandPayload.value;
+      if (keyToChange.value !== commandPayload.value) {
+        this.chargingStation.setConfigurationKeyValue(
+          commandPayload.key,
+          commandPayload.value,
+          true
+        );
         valueChanged = true;
       }
       let triggerHeartbeatRestart = false;
