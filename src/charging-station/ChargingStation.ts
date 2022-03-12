@@ -105,9 +105,7 @@ export default class ChargingStation {
   get wsConnectionUrl(): URL {
     return this.getSupervisionUrlOcppConfiguration()
       ? new URL(
-          this.getConfigurationKey(
-            this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl
-          ).value +
+          this.getConfigurationKey(this.getSupervisionUrlOcppKey()).value +
             '/' +
             this.stationInfo.chargingStationId
         )
@@ -720,6 +718,10 @@ export default class ChargingStation {
     }
   }
 
+  private getSupervisionUrlOcppKey(): string {
+    return this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl;
+  }
+
   private getSupervisionUrlOcppConfiguration(): boolean {
     return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
   }
@@ -951,12 +953,10 @@ export default class ChargingStation {
   private initOcppParameters(): void {
     if (
       this.getSupervisionUrlOcppConfiguration() &&
-      !this.getConfigurationKey(
-        this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl
-      )
+      !this.getConfigurationKey(this.getSupervisionUrlOcppKey())
     ) {
       this.addConfigurationKey(
-        this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl,
+        this.getSupervisionUrlOcppKey(),
         this.getConfiguredSupervisionUrl().href,
         { reboot: true }
       );
