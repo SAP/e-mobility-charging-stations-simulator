@@ -172,9 +172,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = false;
       delete this.chargingStation.getConnectorStatus(authorizeConnectorId).authorizeIdTag;
       logger.debug(
-        `${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status ${
+        `${this.chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status '${
           payload.idTagInfo.status
-        } on connector ${authorizeConnectorId}`
+        }' on connector ${authorizeConnectorId}`
       );
     }
   }
@@ -360,9 +360,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         this.chargingStation.logPrefix() +
           ' Starting transaction id ' +
           payload.transactionId.toString() +
-          ' REJECTED with status ' +
+          " REJECTED with status '" +
           payload?.idTagInfo?.status +
-          ', idTag ' +
+          "', idTag " +
           requestPayload.idTag
       );
       await this.resetConnectorOnStartTransactionError(connectorId);
@@ -463,8 +463,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         this.chargingStation.logPrefix() +
           ' Stopping transaction id ' +
           requestPayload.transactionId.toString() +
-          ' REJECTED with status ' +
-          payload.idTagInfo?.status
+          " REJECTED with status '" +
+          payload.idTagInfo?.status +
+          "'"
       );
     }
   }

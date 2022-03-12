@@ -536,12 +536,15 @@ export default class ChargingStation {
         }
       }
     );
-    FileUtils.watchJsonFile<ChargingStationConfiguration>(
-      this.logPrefix(),
-      FileType.ChargingStationConfiguration,
-      this.configurationFile,
-      this.configuration
-    );
+    // FIXME: triggered by saveConfiguration()
+    // if (this.getOcppPersistentConfiguration()) {
+    //   FileUtils.watchJsonFile<ChargingStationConfiguration>(
+    //     this.logPrefix(),
+    //     FileType.ChargingStationConfiguration,
+    //     this.configurationFile,
+    //     this.configuration
+    //   );
+    // }
     // Handle WebSocket message
     this.wsConnection.on(
       'message',
@@ -718,12 +721,12 @@ export default class ChargingStation {
     }
   }
 
-  private getSupervisionUrlOcppKey(): string {
-    return this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl;
-  }
-
   private getSupervisionUrlOcppConfiguration(): boolean {
     return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
+  }
+
+  private getSupervisionUrlOcppKey(): string {
+    return this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl;
   }
 
   private getChargingStationId(stationTemplate: ChargingStationTemplate): string {
@@ -795,6 +798,10 @@ export default class ChargingStation {
     return this.stationInfo.ocppVersion ? this.stationInfo.ocppVersion : OCPPVersion.VERSION_16;
   }
 
+  private getOcppPersistentConfiguration(): boolean {
+    return this.stationInfo.ocppPersistentConfiguration ?? true;
+  }
+
   private handleUnsupportedVersion(version: OCPPVersion) {
     const errMsg = `${this.logPrefix()} Unsupported protocol version '${version}' configured in template file ${
       this.stationTemplateFile
@@ -807,8 +814,7 @@ export default class ChargingStation {
     this.stationInfo = this.buildStationInfo();
     this.configurationFile = path.join(
       path.resolve(__dirname, '../'),
-      'assets',
-      'configurations',
+      'assets/configurations',
       this.stationInfo.chargingStationId + '.json'
     );
     this.configuration = this.getConfiguration();
@@ -1025,7 +1031,11 @@ export default class ChargingStation {
 
   private getConfigurationFromFile(): ChargingStationConfiguration | null {
     let configuration: ChargingStationConfiguration = null;
-    if (this.configurationFile && fs.existsSync(this.configurationFile)) {
+    if (
+      this.getOcppPersistentConfiguration() &&
+      this.configurationFile &&
+      fs.existsSync(this.configurationFile)
+    ) {
       try {
         configuration = JSON.parse(
           fs.readFileSync(this.configurationFile, 'utf8')
@@ -1043,26 +1053,28 @@ export default class ChargingStation {
   }
 
   private saveConfiguration(): void {
-    if (this.configurationFile) {
-      try {
-        if (!fs.existsSync(path.dirname(this.configurationFile))) {
-          fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
+    if (this.getOcppPersistentConfiguration()) {
+      if (this.configurationFile) {
+        try {
+          if (!fs.existsSync(path.dirname(this.configurationFile))) {
+            fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
+          }
+          const fileDescriptor = fs.openSync(this.configurationFile, 'w');
+          fs.writeFileSync(fileDescriptor, JSON.stringify(this.configuration, null, 2));
+          fs.closeSync(fileDescriptor);
+        } catch (error) {
+          FileUtils.handleFileException(
+            this.logPrefix(),
+            FileType.ChargingStationConfiguration,
+            this.configurationFile,
+            error as NodeJS.ErrnoException
+          );
         }
-        const fileDescriptor = fs.openSync(this.configurationFile, 'w');
-        fs.writeFileSync(fileDescriptor, JSON.stringify(this.configuration, null, 2));
-        fs.closeSync(fileDescriptor);
-      } catch (error) {
-        FileUtils.handleFileException(
-          this.logPrefix(),
-          FileType.ChargingStationConfiguration,
-          this.configurationFile,
-          error as NodeJS.ErrnoException
+      } else {
+        logger.error(
+          `${this.logPrefix()} Trying to save charging station configuration to undefined file`
         );
       }
-    } else {
-      logger.error(
-        `${this.logPrefix()} Trying to save charging station configuration to undefined file`
-      );
     }
   }
 

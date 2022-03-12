@@ -43,6 +43,7 @@ export default interface ChargingStationTemplate {
   ocppVersion?: OCPPVersion;
   ocppProtocol?: OCPPProtocol;
   ocppStrictCompliance?: boolean;
+  ocppPersistentConfiguration?: boolean;
   wsOptions?: ClientOptions & ClientRequestArgs;
   authorizationFile?: string;
   baseName: string;
