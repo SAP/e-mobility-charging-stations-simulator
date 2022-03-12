@@ -95,6 +95,8 @@ export default class Constants {
 
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30;
 
+  static readonly DEFAULT_LOG_STATISTICS_INTERVAL = 60; // Seconds
+
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms
 
   static readonly SUPPORTED_MEASURANDS = Object.freeze([

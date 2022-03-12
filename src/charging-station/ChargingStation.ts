@@ -102,7 +102,7 @@ export default class ChargingStation {
     this.authorizedTags = this.getAuthorizedTags();
   }
 
-  get wsConnectionUrl(): URL {
+  private get wsConnectionUrl(): URL {
     return this.getSupervisionUrlOcppConfiguration()
       ? new URL(
           this.getConfigurationKey(this.getSupervisionUrlOcppKey()).value +
@@ -536,15 +536,6 @@ export default class ChargingStation {
         }
       }
     );
-    // FIXME: triggered by saveConfiguration()
-    // if (this.getOcppPersistentConfiguration()) {
-    //   FileUtils.watchJsonFile<ChargingStationConfiguration>(
-    //     this.logPrefix(),
-    //     FileType.ChargingStationConfiguration,
-    //     this.configurationFile,
-    //     this.configuration
-    //   );
-    // }
     // Handle WebSocket message
     this.wsConnection.on(
       'message',

@@ -42,7 +42,7 @@ export default class Configuration {
     // Read conf
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logStatisticsInterval')
       ? Configuration.getConfig().logStatisticsInterval
-      : 60;
+      : Constants.DEFAULT_LOG_STATISTICS_INTERVAL;
   }
 
   static getUIWebSocketServer(): UIWebSocketServerConfiguration {
