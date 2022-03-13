@@ -632,9 +632,9 @@ export default class ChargingStation {
         reboot: false,
       };
     }
-    const readonly = options.readonly;
-    const visible = options.visible;
-    const reboot = options.reboot;
+    const readonly = options.readonly ?? false;
+    const visible = options.visible ?? true;
+    const reboot = options.reboot ?? false;
     let keyFound = this.getConfigurationKey(key);
     if (keyFound && params?.overwrite) {
       this.deleteConfigurationKey(keyFound.key, { save: false });
