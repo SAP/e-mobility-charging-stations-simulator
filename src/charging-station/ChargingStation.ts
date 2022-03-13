@@ -759,6 +759,19 @@ export default class ChargingStation {
           idSuffix;
   }
 
+  private getRandomSerialNumberSuffix(params?: {
+    randomBytesLength?: number;
+    upperCase?: boolean;
+  }): string {
+    const randomSerialNumberSuffix = crypto
+      .randomBytes(params?.randomBytesLength ?? 16)
+      .toString('hex');
+    if (params?.upperCase) {
+      return randomSerialNumberSuffix.toUpperCase();
+    }
+    return randomSerialNumberSuffix;
+  }
+
   private buildStationInfo(): ChargingStationInfo {
     let stationTemplateFromFile: ChargingStationTemplate;
     try {
@@ -784,6 +797,10 @@ export default class ChargingStation {
     );
     this.convertDeprecatedTemplateKey(stationTemplateFromFile, 'supervisionUrl', 'supervisionUrls');
     const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? ({} as ChargingStationInfo);
+    stationInfo.chargePointSerialNumber = stationTemplateFromFile?.chargePointSerialNumberPrefix;
+    delete stationInfo.chargePointSerialNumberPrefix;
+    stationInfo.chargeBoxSerialNumber = stationTemplateFromFile?.chargeBoxSerialNumberPrefix;
+    delete stationInfo.chargeBoxSerialNumberPrefix;
     stationInfo.wsOptions = stationTemplateFromFile?.wsOptions ?? {};
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
       stationTemplateFromFile.power = stationTemplateFromFile.power as number[];
@@ -831,11 +848,11 @@ export default class ChargingStation {
     this.bootNotificationRequest = {
       chargePointModel: this.stationInfo.chargePointModel,
       chargePointVendor: this.stationInfo.chargePointVendor,
-      ...(!Utils.isUndefined(this.stationInfo.chargeBoxSerialNumberPrefix) && {
-        chargeBoxSerialNumber: this.stationInfo.chargeBoxSerialNumberPrefix,
+      ...(!Utils.isUndefined(this.stationInfo.chargeBoxSerialNumber) && {
+        chargeBoxSerialNumber: this.stationInfo.chargeBoxSerialNumber,
       }),
-      ...(!Utils.isUndefined(this.stationInfo.chargePointSerialNumberPrefix) && {
-        chargePointSerialNumber: this.stationInfo.chargePointSerialNumberPrefix,
+      ...(!Utils.isUndefined(this.stationInfo.chargePointSerialNumber) && {
+        chargePointSerialNumber: this.stationInfo.chargePointSerialNumber,
       }),
       ...(!Utils.isUndefined(this.stationInfo.firmwareVersion) && {
         firmwareVersion: this.stationInfo.firmwareVersion,
