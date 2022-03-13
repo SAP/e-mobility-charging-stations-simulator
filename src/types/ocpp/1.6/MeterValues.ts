@@ -103,4 +103,4 @@ export interface MeterValuesRequest extends JsonType {
   meterValue: OCPP16MeterValue[];
 }
 
-export type MeterValuesResponse = EmptyObject;
+export type OCPP16MeterValuesResponse = EmptyObject;

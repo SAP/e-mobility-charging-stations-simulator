@@ -4,12 +4,15 @@ import {
   OCPP16ChargingProfileStatus,
   OCPP16ClearChargingProfileStatus,
   OCPP16ConfigurationStatus,
+  OCPP16HeartbeatResponse,
   OCPP16RegistrationStatus,
+  OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
 } from './1.6/Responses';
 
 import { JsonType } from '../JsonType';
+import { OCPP16MeterValuesResponse } from './1.6/MeterValues';
 
 export type ResponseHandler = (
   payload: JsonType | string,
@@ -17,6 +20,12 @@ export type ResponseHandler = (
 ) => void | Promise<void>;
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse;
+
+export type HeartbeatResponse = OCPP16HeartbeatResponse;
+
+export type StatusNotificationResponse = OCPP16StatusNotificationResponse;
+
+export type MeterValuesResponse = OCPP16MeterValuesResponse;
 
 export enum DefaultStatus {
   ACCEPTED = 'Accepted',

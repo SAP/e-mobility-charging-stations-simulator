@@ -10,6 +10,7 @@ import {
 
 import type ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
+import { MeterValuesResponse } from '../types/ocpp/Responses';
 import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { RequestCommand } from '../types/ocpp/Requests';
@@ -274,24 +275,25 @@ export default class AutomaticTransactionGenerator {
         this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
         // Authorize idTag
         const authorizeResponse: AuthorizeResponse =
-          (await this.chargingStation.ocppRequestService.sendMessageHandler(
+          await this.chargingStation.ocppRequestService.sendMessageHandler<AuthorizeResponse>(
             RequestCommand.AUTHORIZE,
             {
               idTag,
             }
-          )) as AuthorizeResponse;
+          );
         this.connectorsStatus.get(connectorId).authorizeRequests++;
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests++;
           logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
           // Start transaction
-          startResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
-            RequestCommand.START_TRANSACTION,
-            {
-              connectorId,
-              idTag,
-            }
-          )) as StartTransactionResponse;
+          startResponse =
+            await this.chargingStation.ocppRequestService.sendMessageHandler<StartTransactionResponse>(
+              RequestCommand.START_TRANSACTION,
+              {
+                connectorId,
+                idTag,
+              }
+            );
           PerformanceStatistics.endMeasure(measureId, beginId);
           return startResponse;
         }
@@ -301,21 +303,23 @@ export default class AutomaticTransactionGenerator {
       }
       logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
       // Start transaction
-      startResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
-        RequestCommand.START_TRANSACTION,
-        {
-          connectorId,
-          idTag,
-        }
-      )) as StartTransactionResponse;
+      startResponse =
+        await this.chargingStation.ocppRequestService.sendMessageHandler<StartTransactionResponse>(
+          RequestCommand.START_TRANSACTION,
+          {
+            connectorId,
+            idTag,
+          }
+        );
       PerformanceStatistics.endMeasure(measureId, beginId);
       return startResponse;
     }
     logger.info(this.logPrefix(connectorId) + ' start transaction without an idTag');
-    startResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
-      RequestCommand.START_TRANSACTION,
-      { connectorId }
-    )) as StartTransactionResponse;
+    startResponse =
+      await this.chargingStation.ocppRequestService.sendMessageHandler<StartTransactionResponse>(
+        RequestCommand.START_TRANSACTION,
+        { connectorId }
+      );
     PerformanceStatistics.endMeasure(measureId, beginId);
     return startResponse;
   }
@@ -341,7 +345,7 @@ export default class AutomaticTransactionGenerator {
           connectorId,
           this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
         );
-        await this.chargingStation.ocppRequestService.sendMessageHandler(
+        await this.chargingStation.ocppRequestService.sendMessageHandler<MeterValuesResponse>(
           RequestCommand.METER_VALUES,
           {
             connectorId,
@@ -350,16 +354,17 @@ export default class AutomaticTransactionGenerator {
           }
         );
       }
-      stopResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
-        RequestCommand.STOP_TRANSACTION,
-        {
-          transactionId,
-          meterStop:
-            this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
-          idTag: this.chargingStation.getTransactionIdTag(transactionId),
-          reason,
-        }
-      )) as StopTransactionResponse;
+      stopResponse =
+        await this.chargingStation.ocppRequestService.sendMessageHandler<StopTransactionResponse>(
+          RequestCommand.STOP_TRANSACTION,
+          {
+            transactionId,
+            meterStop:
+              this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+            idTag: this.chargingStation.getTransactionIdTag(transactionId),
+            reason,
+          }
+        );
       this.connectorsStatus.get(connectorId).stopTransactionRequests++;
     } else {
       logger.warn(

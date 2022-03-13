@@ -14,13 +14,13 @@ import {
   OCPP16RequestCommand,
   StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
+import { MeterValuesRequest, OCPP16MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
 import {
-  HeartbeatResponse,
   OCPP16BootNotificationResponse,
+  OCPP16HeartbeatResponse,
   OCPP16RegistrationStatus,
-  StatusNotificationResponse,
+  OCPP16StatusNotificationResponse,
 } from '../../../types/ocpp/1.6/Responses';
-import { MeterValuesRequest, MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
 
 import type ChargingStation from '../../ChargingStation';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
@@ -135,7 +135,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
   }
 
   private handleResponseHeartbeat(
-    payload: HeartbeatResponse,
+    payload: OCPP16HeartbeatResponse,
     requestPayload: HeartbeatRequest
   ): void {
     logger.debug(
@@ -313,7 +313,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           requestPayload.meterStart
         );
       this.chargingStation.getBeginEndMeterValues() &&
-        (await this.chargingStation.ocppRequestService.sendMessageHandler(
+        (await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16MeterValuesResponse>(
           OCPP16RequestCommand.METER_VALUES,
           {
             connectorId,
@@ -322,7 +322,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
               this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
           }
         ));
-      await this.chargingStation.ocppRequestService.sendMessageHandler(
+      await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         {
           connectorId,
@@ -375,7 +375,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.getConnectorStatus(connectorId).status !==
       OCPP16ChargePointStatus.AVAILABLE
     ) {
-      await this.chargingStation.ocppRequestService.sendMessageHandler(
+      await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         {
           connectorId,
@@ -407,7 +407,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.getBeginEndMeterValues() &&
         !this.chargingStation.getOcppStrictCompliance() &&
         this.chargingStation.getOutOfOrderEndMeterValues() &&
-        (await this.chargingStation.ocppRequestService.sendMessageHandler(
+        (await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16MeterValuesResponse>(
           OCPP16RequestCommand.METER_VALUES,
           {
             connectorId: transactionConnectorId,
@@ -423,7 +423,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         !this.chargingStation.isChargingStationAvailable() ||
         !this.chargingStation.isConnectorAvailable(transactionConnectorId)
       ) {
-        await this.chargingStation.ocppRequestService.sendMessageHandler(
+        await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
           OCPP16RequestCommand.STATUS_NOTIFICATION,
           {
             connectorId: transactionConnectorId,
@@ -434,7 +434,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         this.chargingStation.getConnectorStatus(transactionConnectorId).status =
           OCPP16ChargePointStatus.UNAVAILABLE;
       } else {
-        await this.chargingStation.ocppRequestService.sendMessageHandler(
+        await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16BootNotificationResponse>(
           OCPP16RequestCommand.STATUS_NOTIFICATION,
           {
             connectorId: transactionConnectorId,
@@ -472,7 +472,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   private handleResponseStatusNotification(
     payload: StatusNotificationRequest,
-    requestPayload: StatusNotificationResponse
+    requestPayload: OCPP16StatusNotificationResponse
   ): void {
     logger.debug(
       this.chargingStation.logPrefix() +
@@ -484,7 +484,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   private handleResponseMeterValues(
     payload: MeterValuesRequest,
-    requestPayload: MeterValuesResponse
+    requestPayload: OCPP16MeterValuesResponse
   ): void {
     logger.debug(
       this.chargingStation.logPrefix() +

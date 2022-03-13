@@ -1,28 +1,15 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import {
-  AuthorizeRequest,
-  StartTransactionRequest,
-  StopTransactionRequest,
-} from '../../../types/ocpp/1.6/Transaction';
-import {
-  DiagnosticsStatusNotificationRequest,
-  HeartbeatRequest,
-  OCPP16BootNotificationRequest,
-  OCPP16RequestCommand,
-  StatusNotificationRequest,
-} from '../../../types/ocpp/1.6/Requests';
-import { ResponseType, SendParams } from '../../../types/ocpp/Requests';
-
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { JsonType } from '../../../types/JsonType';
-import { MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
+import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
+import { SendParams } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 
 const moduleName = 'OCPP16RequestService';
@@ -35,18 +22,18 @@ export default class OCPP16RequestService extends OCPPRequestService {
     super(chargingStation, ocppResponseService);
   }
 
-  public async sendMessageHandler(
+  public async sendMessageHandler<Response extends JsonType>(
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType,
     params?: SendParams
-  ): Promise<ResponseType> {
+  ): Promise<Response> {
     if (Object.values(OCPP16RequestCommand).includes(commandName)) {
-      return this.sendMessage(
+      return (await this.sendMessage(
         Utils.generateUUID(),
         this.buildCommandPayload(commandName, commandParams),
         commandName,
         params
-      );
+      )) as unknown as Response;
     }
     throw new OCPPError(
       ErrorType.NOT_SUPPORTED,
@@ -56,10 +43,10 @@ export default class OCPP16RequestService extends OCPPRequestService {
     );
   }
 
-  private buildCommandPayload(
+  private buildCommandPayload<Request extends JsonType>(
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType
-  ): JsonType {
+  ): Request {
     let connectorId: number;
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
@@ -67,7 +54,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           ...(!Utils.isUndefined(commandParams?.idTag)
             ? { idTag: commandParams.idTag }
             : { idTag: Constants.DEFAULT_IDTAG }),
-        } as AuthorizeRequest;
+        } as unknown as Request;
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
         return {
           chargePointModel: commandParams?.chargePointModel,
@@ -89,13 +76,13 @@ export default class OCPP16RequestService extends OCPPRequestService {
           ...(!Utils.isUndefined(commandParams?.meterType) && {
             meterType: commandParams.meterType,
           }),
-        } as OCPP16BootNotificationRequest;
+        } as unknown as Request;
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
         return {
           status: commandParams?.diagnosticsStatus,
-        } as DiagnosticsStatusNotificationRequest;
+        } as unknown as Request;
       case OCPP16RequestCommand.HEARTBEAT:
-        return {} as HeartbeatRequest;
+        return {} as unknown as Request;
       case OCPP16RequestCommand.METER_VALUES:
         return {
           connectorId: commandParams?.connectorId,
@@ -103,13 +90,13 @@ export default class OCPP16RequestService extends OCPPRequestService {
           meterValue: Array.isArray(commandParams?.meterValue)
             ? commandParams?.meterValue
             : [commandParams?.meterValue],
-        } as MeterValuesRequest;
+        } as unknown as Request;
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return {
           connectorId: commandParams?.connectorId,
           status: commandParams?.status,
           errorCode: commandParams?.errorCode,
-        } as StatusNotificationRequest;
+        } as unknown as Request;
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
           connectorId: commandParams?.connectorId,
@@ -120,7 +107,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             commandParams?.connectorId as number
           ),
           timestamp: new Date().toISOString(),
-        } as StartTransactionRequest;
+        } as unknown as Request;
       case OCPP16RequestCommand.STOP_TRANSACTION:
         connectorId = this.chargingStation.getConnectorIdByTransactionId(
           commandParams?.transactionId as number
@@ -141,7 +128,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
               )
             ),
           }),
-        } as StopTransactionRequest;
+        } as unknown as Request;
       default:
         throw new OCPPError(
           ErrorType.NOT_SUPPORTED,

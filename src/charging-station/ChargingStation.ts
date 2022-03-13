@@ -8,7 +8,13 @@ import {
   IncomingRequestCommand,
   RequestCommand,
 } from '../types/ocpp/Requests';
-import { BootNotificationResponse, RegistrationStatus } from '../types/ocpp/Responses';
+import {
+  BootNotificationResponse,
+  HeartbeatResponse,
+  MeterValuesResponse,
+  RegistrationStatus,
+  StatusNotificationResponse,
+} from '../types/ocpp/Responses';
 import ChargingStationConfiguration, {
   ConfigurationKey,
 } from '../types/ChargingStationConfiguration';
@@ -24,6 +30,7 @@ import {
   VendorDefaultParametersKey,
 } from '../types/ocpp/Configuration';
 import { MeterValue, MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
+import { StopTransactionReason, StopTransactionResponse } from '../types/ocpp/Transaction';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import WebSocket, { ClientOptions, Data, OPEN, RawData } from 'ws';
 
@@ -52,7 +59,6 @@ import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
-import { StopTransactionReason } from '../types/ocpp/Transaction';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
@@ -395,7 +401,9 @@ export default class ChargingStation {
     ) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
-        await this.ocppRequestService.sendMessageHandler(RequestCommand.HEARTBEAT);
+        await this.ocppRequestService.sendMessageHandler<HeartbeatResponse>(
+          RequestCommand.HEARTBEAT
+        );
       }, this.getHeartbeatInterval());
       logger.info(
         this.logPrefix() +
@@ -465,11 +473,14 @@ export default class ChargingStation {
             this.getConnectorStatus(connectorId).transactionId,
             interval
           );
-          await this.ocppRequestService.sendMessageHandler(RequestCommand.METER_VALUES, {
-            connectorId,
-            transactionId: this.getConnectorStatus(connectorId).transactionId,
-            meterValue: [meterValue],
-          });
+          await this.ocppRequestService.sendMessageHandler<MeterValuesResponse>(
+            RequestCommand.METER_VALUES,
+            {
+              connectorId,
+              transactionId: this.getConnectorStatus(connectorId).transactionId,
+              meterValue: [meterValue],
+            }
+          );
         },
         interval
       );
@@ -567,11 +578,14 @@ export default class ChargingStation {
     await this.stopMessageSequence(reason);
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0) {
-        await this.ocppRequestService.sendMessageHandler(RequestCommand.STATUS_NOTIFICATION, {
-          connectorId,
-          status: ChargePointStatus.UNAVAILABLE,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        });
+        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
+          RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId,
+            status: ChargePointStatus.UNAVAILABLE,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }
+        );
         this.getConnectorStatus(connectorId).status = ChargePointStatus.UNAVAILABLE;
       }
     }
@@ -1116,21 +1130,22 @@ export default class ChargingStation {
       // Send BootNotification
       let registrationRetryCount = 0;
       do {
-        this.bootNotificationResponse = (await this.ocppRequestService.sendMessageHandler(
-          RequestCommand.BOOT_NOTIFICATION,
-          {
-            chargePointModel: this.bootNotificationRequest.chargePointModel,
-            chargePointVendor: this.bootNotificationRequest.chargePointVendor,
-            chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
-            firmwareVersion: this.bootNotificationRequest.firmwareVersion,
-            chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
-            iccid: this.bootNotificationRequest.iccid,
-            imsi: this.bootNotificationRequest.imsi,
-            meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
-            meterType: this.bootNotificationRequest.meterType,
-          },
-          { skipBufferingOnError: true }
-        )) as BootNotificationResponse;
+        this.bootNotificationResponse =
+          await this.ocppRequestService.sendMessageHandler<BootNotificationResponse>(
+            RequestCommand.BOOT_NOTIFICATION,
+            {
+              chargePointModel: this.bootNotificationRequest.chargePointModel,
+              chargePointVendor: this.bootNotificationRequest.chargePointVendor,
+              chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
+              firmwareVersion: this.bootNotificationRequest.firmwareVersion,
+              chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
+              iccid: this.bootNotificationRequest.iccid,
+              imsi: this.bootNotificationRequest.imsi,
+              meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
+              meterType: this.bootNotificationRequest.meterType,
+            },
+            { skipBufferingOnError: true }
+          );
         if (!this.isInAcceptedState()) {
           this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
           await Utils.sleep(
@@ -1419,7 +1434,7 @@ export default class ChargingStation {
 
   private async startMessageSequence(): Promise<void> {
     if (this.stationInfo.autoRegister) {
-      await this.ocppRequestService.sendMessageHandler(
+      await this.ocppRequestService.sendMessageHandler<BootNotificationResponse>(
         RequestCommand.BOOT_NOTIFICATION,
         {
           chargePointModel: this.bootNotificationRequest.chargePointModel,
@@ -1449,11 +1464,14 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
         // Send status in template at startup
-        await this.ocppRequestService.sendMessageHandler(RequestCommand.STATUS_NOTIFICATION, {
-          connectorId,
-          status: this.getConnectorStatus(connectorId).bootStatus,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        });
+        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
+          RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId,
+            status: this.getConnectorStatus(connectorId).bootStatus,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }
+        );
         this.getConnectorStatus(connectorId).status =
           this.getConnectorStatus(connectorId).bootStatus;
       } else if (
@@ -1462,27 +1480,36 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
         // Send status in template after reset
-        await this.ocppRequestService.sendMessageHandler(RequestCommand.STATUS_NOTIFICATION, {
-          connectorId,
-          status: this.getConnectorStatus(connectorId).bootStatus,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        });
+        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
+          RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId,
+            status: this.getConnectorStatus(connectorId).bootStatus,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }
+        );
         this.getConnectorStatus(connectorId).status =
           this.getConnectorStatus(connectorId).bootStatus;
       } else if (!this.stopped && this.getConnectorStatus(connectorId)?.status) {
         // Send previous status at template reload
-        await this.ocppRequestService.sendMessageHandler(RequestCommand.STATUS_NOTIFICATION, {
-          connectorId,
-          status: this.getConnectorStatus(connectorId).status,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        });
+        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
+          RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId,
+            status: this.getConnectorStatus(connectorId).status,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }
+        );
       } else {
         // Send default status
-        await this.ocppRequestService.sendMessageHandler(RequestCommand.STATUS_NOTIFICATION, {
-          connectorId,
-          status: ChargePointStatus.AVAILABLE,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        });
+        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
+          RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId,
+            status: ChargePointStatus.AVAILABLE,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          }
+        );
         this.getConnectorStatus(connectorId).status = ChargePointStatus.AVAILABLE;
       }
     }
@@ -1529,18 +1556,24 @@ export default class ChargingStation {
               connectorId,
               this.getEnergyActiveImportRegisterByTransactionId(transactionId)
             );
-            await this.ocppRequestService.sendMessageHandler(RequestCommand.METER_VALUES, {
-              connectorId,
-              transactionId,
-              meterValue: transactionEndMeterValue,
-            });
+            await this.ocppRequestService.sendMessageHandler<MeterValuesResponse>(
+              RequestCommand.METER_VALUES,
+              {
+                connectorId,
+                transactionId,
+                meterValue: transactionEndMeterValue,
+              }
+            );
           }
-          await this.ocppRequestService.sendMessageHandler(RequestCommand.STOP_TRANSACTION, {
-            transactionId,
-            meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
-            idTag: this.getTransactionIdTag(transactionId),
-            reason,
-          });
+          await this.ocppRequestService.sendMessageHandler<StopTransactionResponse>(
+            RequestCommand.STOP_TRANSACTION,
+            {
+              transactionId,
+              meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+              idTag: this.getTransactionIdTag(transactionId),
+              reason,
+            }
+          );
         }
       }
     }

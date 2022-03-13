@@ -21,8 +21,12 @@ import {
   ChangeAvailabilityResponse,
   ChangeConfigurationResponse,
   ClearChargingProfileResponse,
+  DiagnosticsStatusNotificationResponse,
   GetConfigurationResponse,
   GetDiagnosticsResponse,
+  OCPP16BootNotificationResponse,
+  OCPP16HeartbeatResponse,
+  OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageResponse,
   SetChargingProfileResponse,
   UnlockConnectorResponse,
@@ -49,6 +53,7 @@ import { JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
+import { OCPP16MeterValuesResponse } from '../../../types/ocpp/1.6/MeterValues';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
@@ -217,7 +222,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           connectorId,
           this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
         );
-        await this.chargingStation.ocppRequestService.sendMessageHandler(
+        await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16MeterValuesResponse>(
           OCPP16RequestCommand.METER_VALUES,
           {
             connectorId,
@@ -226,22 +231,23 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           }
         );
       }
-      const stopResponse = (await this.chargingStation.ocppRequestService.sendMessageHandler(
-        OCPP16RequestCommand.STOP_TRANSACTION,
-        {
-          transactionId,
-          meterStop:
-            this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
-          idTag: this.chargingStation.getTransactionIdTag(transactionId),
-          reason: OCPP16StopTransactionReason.UNLOCK_COMMAND,
-        }
-      )) as OCPP16StopTransactionResponse;
+      const stopResponse =
+        await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StopTransactionResponse>(
+          OCPP16RequestCommand.STOP_TRANSACTION,
+          {
+            transactionId,
+            meterStop:
+              this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+            idTag: this.chargingStation.getTransactionIdTag(transactionId),
+            reason: OCPP16StopTransactionReason.UNLOCK_COMMAND,
+          }
+        );
       if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
         return Constants.OCPP_RESPONSE_UNLOCKED;
       }
       return Constants.OCPP_RESPONSE_UNLOCK_FAILED;
     }
-    await this.chargingStation.ocppRequestService.sendMessageHandler(
+    await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
       OCPP16RequestCommand.STATUS_NOTIFICATION,
       {
         connectorId,
@@ -489,7 +495,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         }
         this.chargingStation.getConnectorStatus(id).availability = commandPayload.type;
         if (response === Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
-          await this.chargingStation.ocppRequestService.sendMessageHandler(
+          await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
             OCPP16RequestCommand.STATUS_NOTIFICATION,
             {
               connectorId: id,
@@ -514,7 +520,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         return Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
       }
       this.chargingStation.getConnectorStatus(connectorId).availability = commandPayload.type;
-      await this.chargingStation.ocppRequestService.sendMessageHandler(
+      await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         { connectorId, status: chargePointStatus, errorCode: OCPP16ChargePointErrorCode.NO_ERROR }
       );
@@ -530,7 +536,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     const transactionConnectorId = commandPayload.connectorId;
     const connectorStatus = this.chargingStation.getConnectorStatus(transactionConnectorId);
     if (transactionConnectorId) {
-      await this.chargingStation.ocppRequestService.sendMessageHandler(
+      await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         {
           connectorId: transactionConnectorId,
@@ -554,12 +560,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           } else if (this.chargingStation.getMayAuthorizeAtRemoteStart()) {
             connectorStatus.authorizeIdTag = commandPayload.idTag;
             const authorizeResponse: OCPP16AuthorizeResponse =
-              (await this.chargingStation.ocppRequestService.sendMessageHandler(
+              await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16AuthorizeResponse>(
                 OCPP16RequestCommand.AUTHORIZE,
                 {
                   idTag: commandPayload.idTag,
                 }
-              )) as OCPP16AuthorizeResponse;
+              );
             if (authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
               authorized = true;
             }
@@ -579,13 +585,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               connectorStatus.transactionRemoteStarted = true;
               if (
                 (
-                  (await this.chargingStation.ocppRequestService.sendMessageHandler(
+                  await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StartTransactionResponse>(
                     OCPP16RequestCommand.START_TRANSACTION,
                     {
                       connectorId: transactionConnectorId,
                       idTag: commandPayload.idTag,
                     }
-                  )) as OCPP16StartTransactionResponse
+                  )
                 ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
               ) {
                 logger.debug(
@@ -624,13 +630,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           connectorStatus.transactionRemoteStarted = true;
           if (
             (
-              (await this.chargingStation.ocppRequestService.sendMessageHandler(
+              await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StartTransactionResponse>(
                 OCPP16RequestCommand.START_TRANSACTION,
                 {
                   connectorId: transactionConnectorId,
                   idTag: commandPayload.idTag,
                 }
-              )) as OCPP16StartTransactionResponse
+              )
             ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
           ) {
             logger.debug(
@@ -670,7 +676,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       this.chargingStation.getConnectorStatus(connectorId).status !==
       OCPP16ChargePointStatus.AVAILABLE
     ) {
-      await this.chargingStation.ocppRequestService.sendMessageHandler(
+      await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         {
           connectorId,
@@ -727,7 +733,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         connectorId > 0 &&
         this.chargingStation.getConnectorStatus(connectorId)?.transactionId === transactionId
       ) {
-        await this.chargingStation.ocppRequestService.sendMessageHandler(
+        await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StatusNotificationResponse>(
           OCPP16RequestCommand.STATUS_NOTIFICATION,
           {
             connectorId,
@@ -748,7 +754,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             connectorId,
             this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
           );
-          await this.chargingStation.ocppRequestService.sendMessageHandler(
+          await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16MeterValuesResponse>(
             OCPP16RequestCommand.METER_VALUES,
             {
               connectorId,
@@ -757,7 +763,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             }
           );
         }
-        await this.chargingStation.ocppRequestService.sendMessageHandler(
+        await this.chargingStation.ocppRequestService.sendMessageHandler<OCPP16StopTransactionResponse>(
           OCPP16RequestCommand.STOP_TRANSACTION,
           {
             transactionId,
@@ -814,7 +820,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 info.bytes / 1024
               } bytes transferred from diagnostics archive ${info.name}`
             );
-            await this.chargingStation.ocppRequestService.sendMessageHandler(
+            await this.chargingStation.ocppRequestService.sendMessageHandler<DiagnosticsStatusNotificationResponse>(
               OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
               {
                 status: OCPP16DiagnosticsStatus.Uploading,
@@ -826,7 +832,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             uri.pathname + diagnosticsArchive
           );
           if (uploadResponse.code === 226) {
-            await this.chargingStation.ocppRequestService.sendMessageHandler(
+            await this.chargingStation.ocppRequestService.sendMessageHandler<DiagnosticsStatusNotificationResponse>(
               OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
               {
                 status: OCPP16DiagnosticsStatus.Uploaded,
@@ -853,7 +859,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
         );
       } catch (error) {
-        await this.chargingStation.ocppRequestService.sendMessageHandler(
+        await this.chargingStation.ocppRequestService.sendMessageHandler<DiagnosticsStatusNotificationResponse>(
           OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
           {
             status: OCPP16DiagnosticsStatus.UploadFailed,
@@ -874,7 +880,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           uri.protocol
         } to transfer the diagnostic logs archive`
       );
-      await this.chargingStation.ocppRequestService.sendMessageHandler(
+      await this.chargingStation.ocppRequestService.sendMessageHandler<DiagnosticsStatusNotificationResponse>(
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
         {
           status: OCPP16DiagnosticsStatus.UploadFailed,
@@ -892,7 +898,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         case MessageTrigger.BootNotification:
           setTimeout(() => {
             this.chargingStation.ocppRequestService
-              .sendMessageHandler(
+              .sendMessageHandler<OCPP16BootNotificationResponse>(
                 OCPP16RequestCommand.BOOT_NOTIFICATION,
                 {
                   chargePointModel:
@@ -921,7 +927,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         case MessageTrigger.Heartbeat:
           setTimeout(() => {
             this.chargingStation.ocppRequestService
-              .sendMessageHandler(OCPP16RequestCommand.HEARTBEAT, null, { triggerMessage: true })
+              .sendMessageHandler<OCPP16HeartbeatResponse>(OCPP16RequestCommand.HEARTBEAT, null, {
+                triggerMessage: true,
+              })
               .catch(() => {
                 /* This is intentional */
               });

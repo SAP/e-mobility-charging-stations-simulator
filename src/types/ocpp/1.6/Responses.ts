@@ -2,7 +2,7 @@ import { EmptyObject } from '../../EmptyObject';
 import { JsonType } from '../../JsonType';
 import { OCPPConfigurationKey } from '../Configuration';
 
-export interface HeartbeatResponse extends JsonType {
+export interface OCPP16HeartbeatResponse extends JsonType {
   currentTime: string;
 }
 
@@ -39,7 +39,7 @@ export interface OCPP16BootNotificationResponse extends JsonType {
   interval: number;
 }
 
-export type StatusNotificationResponse = EmptyObject;
+export type OCPP16StatusNotificationResponse = EmptyObject;
 
 export interface GetConfigurationResponse extends JsonType {
   configurationKey: OCPPConfigurationKey[];

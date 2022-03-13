@@ -315,9 +315,9 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  public abstract sendMessageHandler(
+  public abstract sendMessageHandler<Response extends JsonType>(
     commandName: RequestCommand,
     commandParams?: JsonType,
     params?: SendParams
-  ): Promise<ResponseType>;
+  ): Promise<Response>;
 }
