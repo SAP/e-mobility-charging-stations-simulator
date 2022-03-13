@@ -160,7 +160,7 @@ export default class Configuration {
 
   static getWorkerProcess(): WorkerProcessType {
     Configuration.warnDeprecatedConfigurationKey(
-      'useWorkerPool;',
+      'useWorkerPool',
       null,
       "Use 'workerProcess' to define the type of worker process to use instead"
     );
