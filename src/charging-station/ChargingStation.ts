@@ -80,10 +80,10 @@ export default class ChargingStation {
   public performanceStatistics!: PerformanceStatistics;
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
+  public bootNotificationResponse!: BootNotificationResponse | null;
   private readonly index: number;
   private configurationFile!: string;
   private bootNotificationRequest!: BootNotificationRequest;
-  private bootNotificationResponse!: BootNotificationResponse | null;
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;

@@ -919,6 +919,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 },
                 { skipBufferingOnError: true, triggerMessage: true }
               )
+              .then((value) => {
+                this.chargingStation.bootNotificationResponse = value;
+              })
               .catch(() => {
                 /* This is intentional */
               });
