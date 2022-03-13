@@ -834,6 +834,9 @@ export default class ChargingStation {
       ...(!Utils.isUndefined(this.stationInfo.chargeBoxSerialNumberPrefix) && {
         chargeBoxSerialNumber: this.stationInfo.chargeBoxSerialNumberPrefix,
       }),
+      ...(!Utils.isUndefined(this.stationInfo.chargePointSerialNumberPrefix) && {
+        chargePointSerialNumber: this.stationInfo.chargePointSerialNumberPrefix,
+      }),
       ...(!Utils.isUndefined(this.stationInfo.firmwareVersion) && {
         firmwareVersion: this.stationInfo.firmwareVersion,
       }),

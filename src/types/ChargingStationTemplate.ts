@@ -51,6 +51,7 @@ export default interface ChargingStationTemplate {
   fixedName?: boolean;
   chargePointModel: string;
   chargePointVendor: string;
+  chargePointSerialNumberPrefix?: string;
   chargeBoxSerialNumberPrefix?: string;
   firmwareVersion?: string;
   iccid?: string;
