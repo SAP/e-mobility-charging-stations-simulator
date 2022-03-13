@@ -91,6 +91,8 @@ export default class Constants {
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
   static readonly CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS = 0.25; // Hours
 
+  static readonly DEFAULT_HASH_ALGORITHM = 'sha384';
+
   static readonly DEFAULT_IDTAG = '00000000';
 
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30;

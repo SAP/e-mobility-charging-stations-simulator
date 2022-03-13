@@ -20,10 +20,10 @@ export default abstract class OCPPIncomingRequestService {
     this: new (chargingStation: ChargingStation) => T,
     chargingStation: ChargingStation
   ): T {
-    if (!OCPPIncomingRequestService.instances.has(chargingStation.id)) {
-      OCPPIncomingRequestService.instances.set(chargingStation.id, new this(chargingStation));
+    if (!OCPPIncomingRequestService.instances.has(chargingStation.hashId)) {
+      OCPPIncomingRequestService.instances.set(chargingStation.hashId, new this(chargingStation));
     }
-    return OCPPIncomingRequestService.instances.get(chargingStation.id) as T;
+    return OCPPIncomingRequestService.instances.get(chargingStation.hashId) as T;
   }
 
   protected handleIncomingRequestError<T>(

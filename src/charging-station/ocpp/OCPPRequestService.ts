@@ -41,13 +41,13 @@ export default abstract class OCPPRequestService {
     chargingStation: ChargingStation,
     ocppResponseService: OCPPResponseService
   ): T {
-    if (!OCPPRequestService.instances.has(chargingStation.id)) {
+    if (!OCPPRequestService.instances.has(chargingStation.hashId)) {
       OCPPRequestService.instances.set(
-        chargingStation.id,
+        chargingStation.hashId,
         new this(chargingStation, ocppResponseService)
       );
     }
-    return OCPPRequestService.instances.get(chargingStation.id) as T;
+    return OCPPRequestService.instances.get(chargingStation.hashId) as T;
   }
 
   public async sendResult(

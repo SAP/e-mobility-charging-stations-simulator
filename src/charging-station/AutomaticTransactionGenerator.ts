@@ -35,13 +35,13 @@ export default class AutomaticTransactionGenerator {
   }
 
   public static getInstance(chargingStation: ChargingStation): AutomaticTransactionGenerator {
-    if (!AutomaticTransactionGenerator.instances.has(chargingStation.id)) {
+    if (!AutomaticTransactionGenerator.instances.has(chargingStation.hashId)) {
       AutomaticTransactionGenerator.instances.set(
-        chargingStation.id,
+        chargingStation.hashId,
         new AutomaticTransactionGenerator(chargingStation)
       );
     }
-    return AutomaticTransactionGenerator.instances.get(chargingStation.id);
+    return AutomaticTransactionGenerator.instances.get(chargingStation.hashId);
   }
 
   public start(): void {

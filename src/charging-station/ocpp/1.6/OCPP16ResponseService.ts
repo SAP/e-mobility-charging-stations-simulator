@@ -111,7 +111,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       this.chargingStation.addConfigurationKey(
         OCPP16StandardParametersKey.HeartbeatInterval,
         payload.interval.toString(),
-        { visible: false },
+        { visible: false, reboot: false },
         { overwrite: true, save: true }
       );
       this.chargingStation.heartbeatSetInterval

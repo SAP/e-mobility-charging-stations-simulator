@@ -53,6 +53,10 @@ export default interface ChargingStationTemplate {
   chargePointVendor: string;
   chargeBoxSerialNumberPrefix?: string;
   firmwareVersion?: string;
+  iccid?: string;
+  imsi?: string;
+  meterSerialNumber?: string;
+  meterType?: string;
   power: number | number[];
   powerSharedByConnectors?: boolean;
   powerUnit: PowerUnits;

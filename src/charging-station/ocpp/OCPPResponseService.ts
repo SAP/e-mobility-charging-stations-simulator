@@ -18,10 +18,10 @@ export default abstract class OCPPResponseService {
     this: new (chargingStation: ChargingStation) => T,
     chargingStation: ChargingStation
   ): T {
-    if (!OCPPResponseService.instances.has(chargingStation.id)) {
-      OCPPResponseService.instances.set(chargingStation.id, new this(chargingStation));
+    if (!OCPPResponseService.instances.has(chargingStation.hashId)) {
+      OCPPResponseService.instances.set(chargingStation.hashId, new this(chargingStation));
     }
-    return OCPPResponseService.instances.get(chargingStation.id) as T;
+    return OCPPResponseService.instances.get(chargingStation.hashId) as T;
   }
 
   public abstract handleResponse(

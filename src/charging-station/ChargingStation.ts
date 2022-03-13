@@ -63,7 +63,7 @@ import { parentPort } from 'worker_threads';
 import path from 'path';
 
 export default class ChargingStation {
-  public readonly id: string;
+  public hashId!: string;
   public readonly stationTemplateFile: string;
   public authorizedTags: string[];
   public stationInfo!: ChargingStationInfo;
@@ -89,7 +89,6 @@ export default class ChargingStation {
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
   constructor(index: number, stationTemplateFile: string) {
-    this.id = Utils.generateUUID();
     this.index = index;
     this.stationTemplateFile = stationTemplateFile;
     this.stopped = false;
@@ -815,13 +814,6 @@ export default class ChargingStation {
 
   private initialize(): void {
     this.stationInfo = this.buildStationInfo();
-    this.configurationFile = path.join(
-      path.resolve(__dirname, '../'),
-      'assets/configurations',
-      this.stationInfo.chargingStationId + '.json'
-    );
-    this.configuration = this.getConfiguration();
-    delete this.stationInfo.Configuration;
     this.bootNotificationRequest = {
       chargePointModel: this.stationInfo.chargePointModel,
       chargePointVendor: this.stationInfo.chargePointVendor,
@@ -831,7 +823,29 @@ export default class ChargingStation {
       ...(!Utils.isUndefined(this.stationInfo.firmwareVersion) && {
         firmwareVersion: this.stationInfo.firmwareVersion,
       }),
+      ...(Utils.isUndefined(this.stationInfo.iccid) && { iccid: this.stationInfo.iccid }),
+      ...(Utils.isUndefined(this.stationInfo.imsi) && { imsi: this.stationInfo.imsi }),
+      ...(Utils.isUndefined(this.stationInfo.meterSerialNumber) && {
+        meterSerialNumber: this.stationInfo.meterSerialNumber,
+      }),
+      ...(Utils.isUndefined(this.stationInfo.meterType) && {
+        meterType: this.stationInfo.meterType,
+      }),
     };
+
+    this.hashId = crypto
+      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+      .update(JSON.stringify(this.bootNotificationRequest) + this.stationInfo.chargingStationId)
+      .digest('hex');
+    logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
+    this.configurationFile = path.join(
+      path.resolve(__dirname, '../'),
+      'assets',
+      'configurations',
+      this.hashId + '.json'
+    );
+    this.configuration = this.getConfiguration();
+    delete this.stationInfo.Configuration;
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -870,7 +884,7 @@ export default class ChargingStation {
       this.stationInfo.randomConnectors = true;
     }
     const connectorsConfigHash = crypto
-      .createHash('sha256')
+      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
       .update(JSON.stringify(this.stationInfo.Connectors) + maxConnectors.toString())
       .digest('hex');
     const connectorsConfigChanged =
@@ -927,6 +941,8 @@ export default class ChargingStation {
     this.wsConfiguredConnectionUrl = new URL(
       this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
     );
+    // OCPP parameters
+    this.initOcppParameters();
     switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
@@ -940,8 +956,6 @@ export default class ChargingStation {
         this.handleUnsupportedVersion(this.getOcppVersion());
         break;
     }
-    // OCPP parameters
-    this.initOcppParameters();
     if (this.stationInfo.autoRegister) {
       this.bootNotificationResponse = {
         currentTime: new Date().toISOString(),
@@ -952,7 +966,7 @@ export default class ChargingStation {
     this.stationInfo.powerDivider = this.getPowerDivider();
     if (this.getEnableStatistics()) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
-        this.id,
+        this.hashId,
         this.stationInfo.chargingStationId,
         this.wsConnectionUrl
       );
