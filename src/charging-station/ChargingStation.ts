@@ -823,12 +823,12 @@ export default class ChargingStation {
       ...(!Utils.isUndefined(this.stationInfo.firmwareVersion) && {
         firmwareVersion: this.stationInfo.firmwareVersion,
       }),
-      ...(Utils.isUndefined(this.stationInfo.iccid) && { iccid: this.stationInfo.iccid }),
-      ...(Utils.isUndefined(this.stationInfo.imsi) && { imsi: this.stationInfo.imsi }),
-      ...(Utils.isUndefined(this.stationInfo.meterSerialNumber) && {
+      ...(!Utils.isUndefined(this.stationInfo.iccid) && { iccid: this.stationInfo.iccid }),
+      ...(!Utils.isUndefined(this.stationInfo.imsi) && { imsi: this.stationInfo.imsi }),
+      ...(!Utils.isUndefined(this.stationInfo.meterSerialNumber) && {
         meterSerialNumber: this.stationInfo.meterSerialNumber,
       }),
-      ...(Utils.isUndefined(this.stationInfo.meterType) && {
+      ...(!Utils.isUndefined(this.stationInfo.meterType) && {
         meterType: this.stationInfo.meterType,
       }),
     };
