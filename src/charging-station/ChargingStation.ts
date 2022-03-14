@@ -625,16 +625,10 @@ export default class ChargingStation {
     },
     params: { overwrite?: boolean; save?: boolean } = { overwrite: false, save: false }
   ): void {
-    if (!options || Utils.isEmptyObject(options)) {
-      options = {
-        readonly: false,
-        visible: true,
-        reboot: false,
-      };
-    }
-    const readonly = options.readonly ?? false;
-    const visible = options.visible ?? true;
-    const reboot = options.reboot ?? false;
+    options = options ?? ({} as { readonly?: boolean; visible?: boolean; reboot?: boolean });
+    options.readonly = options?.readonly ?? false;
+    options.visible = options?.visible ?? true;
+    options.reboot = options?.reboot ?? false;
     let keyFound = this.getConfigurationKey(key);
     if (keyFound && params?.overwrite) {
       this.deleteConfigurationKey(keyFound.key, { save: false });
@@ -643,10 +637,10 @@ export default class ChargingStation {
     if (!keyFound) {
       this.configuration.configurationKey.push({
         key,
-        readonly,
+        readonly: options.readonly,
         value,
-        visible,
-        reboot,
+        visible: options.visible,
+        reboot: options.reboot,
       });
       params?.save && this.saveConfiguration();
     } else {
