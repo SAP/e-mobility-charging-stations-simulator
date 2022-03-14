@@ -1129,7 +1129,7 @@ export default class ChargingStation {
     this.saveOcppConfiguration();
   }
 
-  private getConfigurationFromFile(): ChargingStationConfiguration {
+  private getConfigurationFromFile(): ChargingStationConfiguration | null {
     let configuration: ChargingStationConfiguration = null;
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
