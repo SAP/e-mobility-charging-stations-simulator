@@ -265,17 +265,17 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     const configurationKey: OCPPConfigurationKey[] = [];
     const unknownKey: string[] = [];
     if (Utils.isEmptyArray(commandPayload.key)) {
-      for (const configuration of this.chargingStation.configuration.configurationKey) {
-        if (Utils.isUndefined(configuration.visible)) {
-          configuration.visible = true;
+      for (const key of this.chargingStation.ocppConfiguration.configurationKey) {
+        if (Utils.isUndefined(key.visible)) {
+          key.visible = true;
         }
-        if (!configuration.visible) {
+        if (!key.visible) {
           continue;
         }
         configurationKey.push({
-          key: configuration.key,
-          readonly: configuration.readonly,
-          value: configuration.value,
+          key: key.key,
+          readonly: key.readonly,
+          value: key.value,
         });
       }
     } else {

@@ -15,13 +15,15 @@ import {
   RegistrationStatus,
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
-import ChargingStationConfiguration, {
+import ChargingStationConfiguration, { Section } from '../types/ChargingStationConfiguration';
+import ChargingStationOcppConfiguration, {
   ConfigurationKey,
-} from '../types/ChargingStationConfiguration';
+} from '../types/ChargingStationOcppConfiguration';
 import ChargingStationTemplate, {
   CurrentType,
   PowerUnits,
   Voltage,
+  WsOptions,
 } from '../types/ChargingStationTemplate';
 import {
   ConnectorPhaseRotation,
@@ -32,7 +34,7 @@ import {
 import { MeterValue, MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import { StopTransactionReason, StopTransactionResponse } from '../types/ocpp/Transaction';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import WebSocket, { ClientOptions, Data, OPEN, RawData } from 'ws';
+import WebSocket, { Data, OPEN, RawData } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
@@ -40,7 +42,6 @@ import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
 import { ChargingProfile } from '../types/ocpp/ChargingProfile';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
-import { ClientRequestArgs } from 'http';
 import Configuration from '../utils/Configuration';
 import { ConnectorStatus } from '../types/ConnectorStatus';
 import Constants from '../utils/Constants';
@@ -70,11 +71,11 @@ import path from 'path';
 
 export default class ChargingStation {
   public hashId!: string;
-  public readonly stationTemplateFile: string;
+  public readonly templateFile: string;
   public authorizedTags: string[];
   public stationInfo!: ChargingStationInfo;
   public readonly connectors: Map<number, ConnectorStatus>;
-  public configuration!: ChargingStationConfiguration;
+  public ocppConfiguration!: ChargingStationOcppConfiguration;
   public wsConnection!: WebSocket;
   public readonly requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics;
@@ -94,9 +95,9 @@ export default class ChargingStation {
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
-  constructor(index: number, stationTemplateFile: string) {
+  constructor(index: number, templateFile: string) {
     this.index = index;
-    this.stationTemplateFile = stationTemplateFile;
+    this.templateFile = templateFile;
     this.stopped = false;
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
@@ -209,7 +210,7 @@ export default class ChargingStation {
 
   public getVoltageOut(): number | undefined {
     const errMsg = `${this.logPrefix()} Unknown ${this.getCurrentOutType()} currentOutType in template file ${
-      this.stationTemplateFile
+      this.templateFile
     }, cannot define default voltage out`;
     let defaultVoltageOut: number;
     switch (this.getCurrentOutType()) {
@@ -511,14 +512,14 @@ export default class ChargingStation {
     FileUtils.watchJsonFile(
       this.logPrefix(),
       FileType.ChargingStationTemplate,
-      this.stationTemplateFile,
+      this.templateFile,
       null,
       (event, filename): void => {
         if (filename && event === 'change') {
           try {
             logger.debug(
               `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
-                this.stationTemplateFile
+                this.templateFile
               } file have changed, reload`
             );
             // Initialize
@@ -607,7 +608,7 @@ export default class ChargingStation {
     key: string | StandardParametersKey,
     caseInsensitive = false
   ): ConfigurationKey | undefined {
-    return this.configuration.configurationKey.find((configElement) => {
+    return this.ocppConfiguration.configurationKey.find((configElement) => {
       if (caseInsensitive) {
         return configElement.key.toLowerCase() === key.toLowerCase();
       }
@@ -635,14 +636,14 @@ export default class ChargingStation {
       keyFound = undefined;
     }
     if (!keyFound) {
-      this.configuration.configurationKey.push({
+      this.ocppConfiguration.configurationKey.push({
         key,
         readonly: options.readonly,
         value,
         visible: options.visible,
         reboot: options.reboot,
       });
-      params?.save && this.saveConfiguration();
+      params?.save && this.saveOcppConfiguration();
     } else {
       logger.error(
         `${this.logPrefix()} Trying to add an already existing configuration key: %j`,
@@ -658,9 +659,9 @@ export default class ChargingStation {
   ): void {
     const keyFound = this.getConfigurationKey(key, caseInsensitive);
     if (keyFound) {
-      const keyIndex = this.configuration.configurationKey.indexOf(keyFound);
-      this.configuration.configurationKey[keyIndex].value = value;
-      this.saveConfiguration();
+      const keyIndex = this.ocppConfiguration.configurationKey.indexOf(keyFound);
+      this.ocppConfiguration.configurationKey[keyIndex].value = value;
+      this.saveOcppConfiguration();
     } else {
       logger.error(
         `${this.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
@@ -675,11 +676,11 @@ export default class ChargingStation {
   ): ConfigurationKey[] {
     const keyFound = this.getConfigurationKey(key, params?.caseInsensitive);
     if (keyFound) {
-      const deletedConfigurationKey = this.configuration.configurationKey.splice(
-        this.configuration.configurationKey.indexOf(keyFound),
+      const deletedConfigurationKey = this.ocppConfiguration.configurationKey.splice(
+        this.ocppConfiguration.configurationKey.indexOf(keyFound),
         1
       );
-      params?.save && this.saveConfiguration();
+      params?.save && this.saveOcppConfiguration();
       return deletedConfigurationKey;
     }
   }
@@ -766,63 +767,108 @@ export default class ChargingStation {
     return randomSerialNumberSuffix;
   }
 
-  private buildStationInfo(): ChargingStationInfo {
-    let stationTemplateFromFile: ChargingStationTemplate;
+  private getTemplateFromFile(): ChargingStationTemplate {
+    let template: ChargingStationTemplate = null;
     try {
-      // Load template file
-      stationTemplateFromFile = JSON.parse(
-        fs.readFileSync(this.stationTemplateFile, 'utf8')
-      ) as ChargingStationTemplate;
+      template = JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate;
     } catch (error) {
       FileUtils.handleFileException(
         this.logPrefix(),
         FileType.ChargingStationTemplate,
-        this.stationTemplateFile,
+        this.templateFile,
         error as NodeJS.ErrnoException
       );
     }
-    const chargingStationId = this.getChargingStationId(stationTemplateFromFile);
+    return template;
+  }
+
+  private createSerialNumber(
+    stationInfo: ChargingStationInfo,
+    params: { randomSerialNumber: boolean } = { randomSerialNumber: false }
+  ): void {
+    const serialNumberSuffix = params.randomSerialNumber
+      ? this.getRandomSerialNumberSuffix({ upperCase: true })
+      : '';
+    stationInfo.chargePointSerialNumber =
+      stationInfo?.chargePointSerialNumberPrefix &&
+      stationInfo.chargePointSerialNumberPrefix + serialNumberSuffix;
+    delete stationInfo.chargePointSerialNumberPrefix;
+    stationInfo.chargeBoxSerialNumber =
+      stationInfo?.chargeBoxSerialNumberPrefix &&
+      stationInfo.chargeBoxSerialNumberPrefix + serialNumberSuffix;
+    delete stationInfo.chargeBoxSerialNumberPrefix;
+  }
+
+  private getStationInfoFromTemplate(
+    params: { randomSerialNumber: boolean } = { randomSerialNumber: false }
+  ): ChargingStationInfo {
+    const templateFromFile: ChargingStationTemplate = this.getTemplateFromFile();
+    const stationInfo: ChargingStationInfo = templateFromFile ?? ({} as ChargingStationInfo);
+    stationInfo.hash = crypto
+      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+      .update(JSON.stringify(templateFromFile))
+      .digest('hex');
+    const chargingStationId = this.getChargingStationId(templateFromFile);
     // Deprecation template keys section
     this.warnDeprecatedTemplateKey(
-      stationTemplateFromFile,
+      templateFromFile,
       'supervisionUrl',
       chargingStationId,
       "Use 'supervisionUrls' instead"
     );
-    this.convertDeprecatedTemplateKey(stationTemplateFromFile, 'supervisionUrl', 'supervisionUrls');
-    const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? ({} as ChargingStationInfo);
-    stationInfo.chargePointSerialNumber =
-      stationTemplateFromFile?.chargePointSerialNumberPrefix &&
-      stationTemplateFromFile.chargePointSerialNumberPrefix;
-    delete stationInfo.chargePointSerialNumberPrefix;
-    stationInfo.chargeBoxSerialNumber =
-      stationTemplateFromFile?.chargeBoxSerialNumberPrefix &&
-      stationTemplateFromFile.chargeBoxSerialNumberPrefix;
-    delete stationInfo.chargeBoxSerialNumberPrefix;
-    stationInfo.wsOptions = stationTemplateFromFile?.wsOptions ?? {};
-    if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
-      stationTemplateFromFile.power = stationTemplateFromFile.power as number[];
+    this.convertDeprecatedTemplateKey(templateFromFile, 'supervisionUrl', 'supervisionUrls');
+    this.createSerialNumber(stationInfo, params);
+    stationInfo.wsOptions = templateFromFile?.wsOptions ?? {};
+    if (!Utils.isEmptyArray(templateFromFile.power)) {
+      templateFromFile.power = templateFromFile.power as number[];
       const powerArrayRandomIndex = Math.floor(
-        Utils.secureRandom() * stationTemplateFromFile.power.length
+        Utils.secureRandom() * templateFromFile.power.length
       );
       stationInfo.maxPower =
-        stationTemplateFromFile.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplateFromFile.power[powerArrayRandomIndex] * 1000
-          : stationTemplateFromFile.power[powerArrayRandomIndex];
+        templateFromFile.powerUnit === PowerUnits.KILO_WATT
+          ? templateFromFile.power[powerArrayRandomIndex] * 1000
+          : templateFromFile.power[powerArrayRandomIndex];
     } else {
-      stationTemplateFromFile.power = stationTemplateFromFile.power as number;
+      templateFromFile.power = templateFromFile.power as number;
       stationInfo.maxPower =
-        stationTemplateFromFile.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplateFromFile.power * 1000
-          : stationTemplateFromFile.power;
+        templateFromFile.powerUnit === PowerUnits.KILO_WATT
+          ? templateFromFile.power * 1000
+          : templateFromFile.power;
     }
     delete stationInfo.power;
     delete stationInfo.powerUnit;
     stationInfo.chargingStationId = chargingStationId;
-    stationInfo.resetTime = stationTemplateFromFile.resetTime
-      ? stationTemplateFromFile.resetTime * 1000
+    stationInfo.resetTime = templateFromFile.resetTime
+      ? templateFromFile.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     return stationInfo;
+  }
+
+  private getStationInfoFromFile(): ChargingStationInfo | null {
+    return this.getConfigurationFromFile()?.stationInfo ?? null;
+  }
+
+  private getStationInfo(): ChargingStationInfo {
+    const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
+    this.hashId = this.getHashId(
+      this.createBootNotificationRequest(stationInfoFromTemplate),
+      stationInfoFromTemplate.chargingStationId
+    );
+    this.configurationFile = path.join(
+      path.resolve(__dirname, '../'),
+      'assets',
+      'configurations',
+      this.hashId + '.json'
+    );
+    const stationInfoFromFile: ChargingStationInfo = this.getStationInfoFromFile();
+    if (stationInfoFromFile?.hash === stationInfoFromTemplate.hash) {
+      return stationInfoFromFile;
+    }
+    return stationInfoFromTemplate;
+  }
+
+  private saveStationInfo(): void {
+    this.saveConfiguration(Section.stationInfo);
   }
 
   private getOcppVersion(): OCPPVersion {
@@ -835,54 +881,59 @@ export default class ChargingStation {
 
   private handleUnsupportedVersion(version: OCPPVersion) {
     const errMsg = `${this.logPrefix()} Unsupported protocol version '${version}' configured in template file ${
-      this.stationTemplateFile
+      this.templateFile
     }`;
     logger.error(errMsg);
     throw new Error(errMsg);
   }
 
-  private initialize(): void {
-    this.stationInfo = this.buildStationInfo();
-    this.bootNotificationRequest = {
-      chargePointModel: this.stationInfo.chargePointModel,
-      chargePointVendor: this.stationInfo.chargePointVendor,
-      ...(!Utils.isUndefined(this.stationInfo.chargeBoxSerialNumber) && {
-        chargeBoxSerialNumber: this.stationInfo.chargeBoxSerialNumber,
+  private createBootNotificationRequest(stationInfo: ChargingStationInfo): BootNotificationRequest {
+    return {
+      chargePointModel: stationInfo.chargePointModel,
+      chargePointVendor: stationInfo.chargePointVendor,
+      ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
+        chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
       }),
-      ...(!Utils.isUndefined(this.stationInfo.chargePointSerialNumber) && {
-        chargePointSerialNumber: this.stationInfo.chargePointSerialNumber,
+      ...(!Utils.isUndefined(stationInfo.chargePointSerialNumber) && {
+        chargePointSerialNumber: stationInfo.chargePointSerialNumber,
       }),
-      ...(!Utils.isUndefined(this.stationInfo.firmwareVersion) && {
-        firmwareVersion: this.stationInfo.firmwareVersion,
+      ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
+        firmwareVersion: stationInfo.firmwareVersion,
       }),
-      ...(!Utils.isUndefined(this.stationInfo.iccid) && { iccid: this.stationInfo.iccid }),
-      ...(!Utils.isUndefined(this.stationInfo.imsi) && { imsi: this.stationInfo.imsi }),
-      ...(!Utils.isUndefined(this.stationInfo.meterSerialNumber) && {
-        meterSerialNumber: this.stationInfo.meterSerialNumber,
+      ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
+      ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
+      ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
+        meterSerialNumber: stationInfo.meterSerialNumber,
       }),
-      ...(!Utils.isUndefined(this.stationInfo.meterType) && {
-        meterType: this.stationInfo.meterType,
+      ...(!Utils.isUndefined(stationInfo.meterType) && {
+        meterType: stationInfo.meterType,
       }),
     };
-    this.hashId = crypto
+  }
+
+  private getHashId(
+    bootNotificationRequest: BootNotificationRequest,
+    chargingStationId: string
+  ): string {
+    return crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(this.bootNotificationRequest) + this.stationInfo.chargingStationId)
+      .update(JSON.stringify(bootNotificationRequest) + chargingStationId)
       .digest('hex');
+  }
+
+  private initialize(): void {
+    this.stationInfo = this.getStationInfo();
     logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
-    this.configurationFile = path.join(
-      path.resolve(__dirname, '../'),
-      'assets',
-      'configurations',
-      this.hashId + '.json'
-    );
-    this.configuration = this.getConfiguration();
+    this.bootNotificationRequest = this.createBootNotificationRequest(this.stationInfo);
+    this.ocppConfiguration = this.getOcppConfiguration();
     delete this.stationInfo.Configuration;
+    this.saveStationInfo();
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
       logger.warn(
         `${this.logPrefix()} Charging station template ${
-          this.stationTemplateFile
+          this.templateFile
         } with ${maxConnectors} connectors`
       );
     }
@@ -890,14 +941,14 @@ export default class ChargingStation {
     if (templateMaxConnectors <= 0) {
       logger.warn(
         `${this.logPrefix()} Charging station template ${
-          this.stationTemplateFile
+          this.templateFile
         } with no connector configuration`
       );
     }
     if (!this.stationInfo.Connectors[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station template ${
-          this.stationTemplateFile
+          this.templateFile
         } with no connector Id 0 configuration`
       );
     }
@@ -909,7 +960,7 @@ export default class ChargingStation {
     ) {
       logger.warn(
         `${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${
-          this.stationTemplateFile
+          this.templateFile
         }, forcing random connector configurations affectation`
       );
       this.stationInfo.randomConnectors = true;
@@ -972,8 +1023,8 @@ export default class ChargingStation {
     this.wsConfiguredConnectionUrl = new URL(
       this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
     );
-    // OCPP parameters
-    this.initOcppParameters();
+    // OCPP configuration
+    this.initializeOcppConfiguration();
     switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
@@ -1004,7 +1055,7 @@ export default class ChargingStation {
     }
   }
 
-  private initOcppParameters(): void {
+  private initializeOcppConfiguration(): void {
     if (
       this.getSupervisionUrlOcppConfiguration() &&
       !this.getConfigurationKey(this.getSupervisionUrlOcppKey())
@@ -1075,20 +1126,12 @@ export default class ChargingStation {
         Constants.DEFAULT_CONNECTION_TIMEOUT.toString()
       );
     }
-    this.saveConfiguration();
+    this.saveOcppConfiguration();
   }
 
-  private getConfigurationFromTemplate(): ChargingStationConfiguration {
-    return this.stationInfo.Configuration ?? ({} as ChargingStationConfiguration);
-  }
-
-  private getConfigurationFromFile(): ChargingStationConfiguration | null {
+  private getConfigurationFromFile(): ChargingStationConfiguration {
     let configuration: ChargingStationConfiguration = null;
-    if (
-      this.getOcppPersistentConfiguration() &&
-      this.configurationFile &&
-      fs.existsSync(this.configurationFile)
-    ) {
+    if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
         configuration = JSON.parse(
           fs.readFileSync(this.configurationFile, 'utf8')
@@ -1105,38 +1148,70 @@ export default class ChargingStation {
     return configuration;
   }
 
-  private saveConfiguration(): void {
-    if (this.getOcppPersistentConfiguration()) {
-      if (this.configurationFile) {
-        try {
-          if (!fs.existsSync(path.dirname(this.configurationFile))) {
-            fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
-          }
-          const fileDescriptor = fs.openSync(this.configurationFile, 'w');
-          fs.writeFileSync(fileDescriptor, JSON.stringify(this.configuration, null, 2));
-          fs.closeSync(fileDescriptor);
-        } catch (error) {
-          FileUtils.handleFileException(
-            this.logPrefix(),
-            FileType.ChargingStationConfiguration,
-            this.configurationFile,
-            error as NodeJS.ErrnoException
-          );
+  private saveConfiguration(section?: Section): void {
+    if (this.configurationFile) {
+      try {
+        const configurationData: ChargingStationConfiguration =
+          this.getConfigurationFromFile() ?? {};
+        if (!fs.existsSync(path.dirname(this.configurationFile))) {
+          fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
-      } else {
-        logger.error(
-          `${this.logPrefix()} Trying to save charging station configuration to undefined file`
+        switch (section) {
+          case Section.ocppConfiguration:
+            configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+            break;
+          case Section.stationInfo:
+            configurationData.stationInfo = this.stationInfo;
+            break;
+          default:
+            configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+            configurationData.stationInfo = this.stationInfo;
+            break;
+        }
+        const fileDescriptor = fs.openSync(this.configurationFile, 'w');
+        fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
+        fs.closeSync(fileDescriptor);
+      } catch (error) {
+        FileUtils.handleFileException(
+          this.logPrefix(),
+          FileType.ChargingStationConfiguration,
+          this.configurationFile,
+          error as NodeJS.ErrnoException
         );
       }
+    } else {
+      logger.error(
+        `${this.logPrefix()} Trying to save charging station configuration to undefined file`
+      );
     }
   }
 
-  private getConfiguration(): ChargingStationConfiguration {
-    let configuration: ChargingStationConfiguration = this.getConfigurationFromFile();
-    if (!configuration) {
-      configuration = this.getConfigurationFromTemplate();
+  private getOcppConfigurationFromTemplate(): ChargingStationOcppConfiguration {
+    return this.getTemplateFromFile().Configuration ?? ({} as ChargingStationOcppConfiguration);
+  }
+
+  private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | null {
+    let configuration: ChargingStationConfiguration = null;
+    if (this.getOcppPersistentConfiguration()) {
+      configuration =
+        this.getConfigurationFromFile()?.configurationKey && this.getConfigurationFromFile();
     }
+    configuration && delete configuration.stationInfo;
     return configuration;
+  }
+
+  private getOcppConfiguration(): ChargingStationOcppConfiguration {
+    let ocppConfiguration: ChargingStationOcppConfiguration = this.getOcppConfigurationFromFile();
+    if (!ocppConfiguration) {
+      ocppConfiguration = this.getOcppConfigurationFromTemplate();
+    }
+    return ocppConfiguration;
+  }
+
+  private saveOcppConfiguration(): void {
+    if (this.getOcppPersistentConfiguration()) {
+      this.saveConfiguration(Section.ocppConfiguration);
+    }
   }
 
   private async onOpen(): Promise<void> {
@@ -1367,9 +1442,7 @@ export default class ChargingStation {
       }
     } else {
       logger.info(
-        this.logPrefix() +
-          ' No authorization file given in template file ' +
-          this.stationTemplateFile
+        this.logPrefix() + ' No authorization file given in template file ' + this.templateFile
       );
     }
     return authorizedTags;
@@ -1651,7 +1724,7 @@ export default class ChargingStation {
       const logPrefixStr = ` ${chargingStationId} |`;
       logger.warn(
         `${Utils.logPrefix(logPrefixStr)} Deprecated template key '${key}' usage in file '${
-          this.stationTemplateFile
+          this.templateFile
         }'${logMsgToAppend && '. ' + logMsgToAppend}`
       );
     }
@@ -1730,7 +1803,7 @@ export default class ChargingStation {
   }
 
   private openWSConnection(
-    options: ClientOptions & ClientRequestArgs = this.stationInfo.wsOptions,
+    options: WsOptions = this.stationInfo.wsOptions,
     forceCloseOpened = false
   ): void {
     options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;

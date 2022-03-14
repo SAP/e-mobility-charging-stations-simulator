@@ -7,3 +7,7 @@ export default interface ChargingStationInfo extends ChargingStationTemplate {
   maxPower?: number; // Always in Watt
   powerDivider?: number;
 }
+
+export interface ChargingStationInfoConfiguration {
+  stationInfo?: ChargingStationInfo;
+}

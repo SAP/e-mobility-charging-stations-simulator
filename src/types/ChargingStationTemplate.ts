@@ -1,4 +1,4 @@
-import ChargingStationConfiguration from './ChargingStationConfiguration';
+import ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration';
 import { ClientOptions } from 'ws';
 import { ClientRequestArgs } from 'http';
 import { ConnectorStatus } from './ConnectorStatus';
@@ -34,7 +34,10 @@ export interface AutomaticTransactionGenerator {
   requireAuthorize?: boolean;
 }
 
+export type WsOptions = ClientOptions & ClientRequestArgs;
+
 export default interface ChargingStationTemplate {
+  hash?: string;
   supervisionUrls?: string | string[];
   supervisionUrlOcppConfiguration?: boolean;
   supervisionUrlOcppKey?: string;
@@ -44,7 +47,7 @@ export default interface ChargingStationTemplate {
   ocppProtocol?: OCPPProtocol;
   ocppStrictCompliance?: boolean;
   ocppPersistentConfiguration?: boolean;
-  wsOptions?: ClientOptions & ClientRequestArgs;
+  wsOptions?: WsOptions;
   authorizationFile?: string;
   baseName: string;
   nameSuffix?: string;
@@ -80,7 +83,7 @@ export default interface ChargingStationTemplate {
   transactionDataMeterValues?: boolean;
   mainVoltageMeterValues?: boolean;
   phaseLineToLineVoltageMeterValues?: boolean;
-  Configuration?: ChargingStationConfiguration;
+  Configuration?: ChargingStationOcppConfiguration;
   AutomaticTransactionGenerator: AutomaticTransactionGenerator;
   Connectors: Record<string, ConnectorStatus>;
 }

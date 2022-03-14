@@ -162,7 +162,7 @@ export default class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
       null,
-      "Use 'workerProcess' to define the type of worker process to use instead"
+      "Use 'workerProcess' to define the type of worker process model to use instead"
     );
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess')
       ? Configuration.getConfig().workerProcess

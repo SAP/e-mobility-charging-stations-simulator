@@ -1,11 +1,11 @@
-import { JsonType } from './JsonType';
-import { OCPPConfigurationKey } from './ocpp/Configuration';
+import { ChargingStationInfoConfiguration } from './ChargingStationInfo';
+import ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration';
 
-export interface ConfigurationKey extends OCPPConfigurationKey {
-  visible?: boolean;
-  reboot?: boolean;
+export enum Section {
+  ocppConfiguration,
+  stationInfo,
 }
 
-export default interface ChargingStationConfiguration extends JsonType {
-  configurationKey: ConfigurationKey[];
-}
+export default interface ChargingStationConfiguration
+  extends ChargingStationInfoConfiguration,
+    ChargingStationOcppConfiguration {}

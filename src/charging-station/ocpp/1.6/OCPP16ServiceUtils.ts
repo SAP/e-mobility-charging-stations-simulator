@@ -272,7 +272,7 @@ export class OCPP16ServiceUtils {
         powerSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: Unknown ${chargingStation.getCurrentOutType()} currentOutType in template file ${
-        chargingStation.stationTemplateFile
+        chargingStation.templateFile
       }, cannot calculate ${
         powerSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
@@ -449,7 +449,7 @@ export class OCPP16ServiceUtils {
         currentSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: Unknown ${chargingStation.getCurrentOutType()} currentOutType in template file ${
-        chargingStation.stationTemplateFile
+        chargingStation.templateFile
       }, cannot calculate ${
         currentSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
