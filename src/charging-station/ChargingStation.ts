@@ -767,7 +767,7 @@ export default class ChargingStation {
     return randomSerialNumberSuffix;
   }
 
-  private getTemplateFromFile(): ChargingStationTemplate {
+  private getTemplateFromFile(): ChargingStationTemplate | null {
     let template: ChargingStationTemplate = null;
     try {
       template = JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate;
