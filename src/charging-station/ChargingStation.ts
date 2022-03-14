@@ -791,9 +791,13 @@ export default class ChargingStation {
     );
     this.convertDeprecatedTemplateKey(stationTemplateFromFile, 'supervisionUrl', 'supervisionUrls');
     const stationInfo: ChargingStationInfo = stationTemplateFromFile ?? ({} as ChargingStationInfo);
-    stationInfo.chargePointSerialNumber = stationTemplateFromFile?.chargePointSerialNumberPrefix;
+    stationInfo.chargePointSerialNumber =
+      stationTemplateFromFile?.chargePointSerialNumberPrefix &&
+      stationTemplateFromFile.chargePointSerialNumberPrefix;
     delete stationInfo.chargePointSerialNumberPrefix;
-    stationInfo.chargeBoxSerialNumber = stationTemplateFromFile?.chargeBoxSerialNumberPrefix;
+    stationInfo.chargeBoxSerialNumber =
+      stationTemplateFromFile?.chargeBoxSerialNumberPrefix &&
+      stationTemplateFromFile.chargeBoxSerialNumberPrefix;
     delete stationInfo.chargeBoxSerialNumberPrefix;
     stationInfo.wsOptions = stationTemplateFromFile?.wsOptions ?? {};
     if (!Utils.isEmptyArray(stationTemplateFromFile.power)) {
@@ -860,7 +864,6 @@ export default class ChargingStation {
         meterType: this.stationInfo.meterType,
       }),
     };
-
     this.hashId = crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
       .update(JSON.stringify(this.bootNotificationRequest) + this.stationInfo.chargingStationId)
