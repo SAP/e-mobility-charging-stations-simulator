@@ -659,8 +659,9 @@ export default class ChargingStation {
   ): void {
     const keyFound = this.getConfigurationKey(key, caseInsensitive);
     if (keyFound) {
-      const keyIndex = this.ocppConfiguration.configurationKey.indexOf(keyFound);
-      this.ocppConfiguration.configurationKey[keyIndex].value = value;
+      this.ocppConfiguration.configurationKey[
+        this.ocppConfiguration.configurationKey.indexOf(keyFound)
+      ].value = value;
       this.saveOcppConfiguration();
     } else {
       logger.error(
@@ -784,62 +785,69 @@ export default class ChargingStation {
 
   private createSerialNumber(
     stationInfo: ChargingStationInfo,
-    params: { randomSerialNumber: boolean } = { randomSerialNumber: false }
+    existingStationInfo?: ChargingStationInfo,
+    params: { randomSerialNumberUpperCase?: boolean; randomSerialNumber?: boolean } = {
+      randomSerialNumberUpperCase: true,
+      randomSerialNumber: true,
+    }
   ): void {
-    const serialNumberSuffix = params.randomSerialNumber
-      ? this.getRandomSerialNumberSuffix({ upperCase: true })
-      : '';
-    stationInfo.chargePointSerialNumber =
-      stationInfo?.chargePointSerialNumberPrefix &&
-      stationInfo.chargePointSerialNumberPrefix + serialNumberSuffix;
-    delete stationInfo.chargePointSerialNumberPrefix;
-    stationInfo.chargeBoxSerialNumber =
-      stationInfo?.chargeBoxSerialNumberPrefix &&
-      stationInfo.chargeBoxSerialNumberPrefix + serialNumberSuffix;
-    delete stationInfo.chargeBoxSerialNumberPrefix;
+    params = params ?? {};
+    params.randomSerialNumberUpperCase = params?.randomSerialNumberUpperCase ?? true;
+    params.randomSerialNumber = params?.randomSerialNumber ?? true;
+    if (existingStationInfo) {
+      existingStationInfo?.chargePointSerialNumber &&
+        (stationInfo.chargePointSerialNumber = existingStationInfo.chargePointSerialNumber);
+      existingStationInfo?.chargeBoxSerialNumber &&
+        (stationInfo.chargeBoxSerialNumber = existingStationInfo.chargeBoxSerialNumber);
+    } else {
+      const serialNumberSuffix = params?.randomSerialNumber
+        ? this.getRandomSerialNumberSuffix({ upperCase: params.randomSerialNumberUpperCase })
+        : '';
+      stationInfo.chargePointSerialNumber =
+        stationInfo?.chargePointSerialNumberPrefix &&
+        stationInfo.chargePointSerialNumberPrefix + serialNumberSuffix;
+      stationInfo.chargeBoxSerialNumber =
+        stationInfo?.chargeBoxSerialNumberPrefix &&
+        stationInfo.chargeBoxSerialNumberPrefix + serialNumberSuffix;
+    }
   }
 
-  private getStationInfoFromTemplate(
-    params: { randomSerialNumber: boolean } = { randomSerialNumber: false }
-  ): ChargingStationInfo {
-    const templateFromFile: ChargingStationTemplate = this.getTemplateFromFile();
-    const stationInfo: ChargingStationInfo = templateFromFile ?? ({} as ChargingStationInfo);
+  private getStationInfoFromTemplate(): ChargingStationInfo {
+    const stationInfo: ChargingStationInfo =
+      this.getTemplateFromFile() ?? ({} as ChargingStationInfo);
     stationInfo.hash = crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(templateFromFile))
+      .update(JSON.stringify(stationInfo))
       .digest('hex');
-    const chargingStationId = this.getChargingStationId(templateFromFile);
+    const chargingStationId = this.getChargingStationId(stationInfo);
     // Deprecation template keys section
     this.warnDeprecatedTemplateKey(
-      templateFromFile,
+      stationInfo,
       'supervisionUrl',
       chargingStationId,
       "Use 'supervisionUrls' instead"
     );
-    this.convertDeprecatedTemplateKey(templateFromFile, 'supervisionUrl', 'supervisionUrls');
-    this.createSerialNumber(stationInfo, params);
-    stationInfo.wsOptions = templateFromFile?.wsOptions ?? {};
-    if (!Utils.isEmptyArray(templateFromFile.power)) {
-      templateFromFile.power = templateFromFile.power as number[];
-      const powerArrayRandomIndex = Math.floor(
-        Utils.secureRandom() * templateFromFile.power.length
-      );
+    this.convertDeprecatedTemplateKey(stationInfo, 'supervisionUrl', 'supervisionUrls');
+    stationInfo.wsOptions = stationInfo?.wsOptions ?? {};
+    if (!Utils.isEmptyArray(stationInfo.power)) {
+      stationInfo.power = stationInfo.power as number[];
+      const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationInfo.power.length);
       stationInfo.maxPower =
-        templateFromFile.powerUnit === PowerUnits.KILO_WATT
-          ? templateFromFile.power[powerArrayRandomIndex] * 1000
-          : templateFromFile.power[powerArrayRandomIndex];
+        stationInfo.powerUnit === PowerUnits.KILO_WATT
+          ? stationInfo.power[powerArrayRandomIndex] * 1000
+          : stationInfo.power[powerArrayRandomIndex];
     } else {
-      templateFromFile.power = templateFromFile.power as number;
+      stationInfo.power = stationInfo.power as number;
       stationInfo.maxPower =
-        templateFromFile.powerUnit === PowerUnits.KILO_WATT
-          ? templateFromFile.power * 1000
-          : templateFromFile.power;
+        stationInfo.powerUnit === PowerUnits.KILO_WATT
+          ? stationInfo.power * 1000
+          : stationInfo.power;
     }
     delete stationInfo.power;
     delete stationInfo.powerUnit;
     stationInfo.chargingStationId = chargingStationId;
-    stationInfo.resetTime = templateFromFile.resetTime
-      ? templateFromFile.resetTime * 1000
+    stationInfo.resetTime = stationInfo.resetTime
+      ? stationInfo.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     return stationInfo;
   }
@@ -850,10 +858,7 @@ export default class ChargingStation {
 
   private getStationInfo(): ChargingStationInfo {
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
-    this.hashId = this.getHashId(
-      this.createBootNotificationRequest(stationInfoFromTemplate),
-      stationInfoFromTemplate.chargingStationId
-    );
+    this.hashId = this.getHashId(stationInfoFromTemplate);
     this.configurationFile = path.join(
       path.resolve(__dirname, '../'),
       'assets',
@@ -864,6 +869,7 @@ export default class ChargingStation {
     if (stationInfoFromFile?.hash === stationInfoFromTemplate.hash) {
       return stationInfoFromFile;
     }
+    this.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
     return stationInfoFromTemplate;
   }
 
@@ -911,13 +917,31 @@ export default class ChargingStation {
     };
   }
 
-  private getHashId(
-    bootNotificationRequest: BootNotificationRequest,
-    chargingStationId: string
-  ): string {
+  private getHashId(stationInfo: ChargingStationInfo): string {
+    const hashBootNotificationRequest = {
+      chargePointModel: stationInfo.chargePointModel,
+      chargePointVendor: stationInfo.chargePointVendor,
+      ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumberPrefix) && {
+        chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumberPrefix,
+      }),
+      ...(!Utils.isUndefined(stationInfo.chargePointSerialNumberPrefix) && {
+        chargePointSerialNumber: stationInfo.chargePointSerialNumberPrefix,
+      }),
+      ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
+        firmwareVersion: stationInfo.firmwareVersion,
+      }),
+      ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
+      ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
+      ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
+        meterSerialNumber: stationInfo.meterSerialNumber,
+      }),
+      ...(!Utils.isUndefined(stationInfo.meterType) && {
+        meterType: stationInfo.meterType,
+      }),
+    };
     return crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(bootNotificationRequest) + chargingStationId)
+      .update(JSON.stringify(hashBootNotificationRequest) + stationInfo.chargingStationId)
       .digest('hex');
   }
 
@@ -1012,7 +1036,7 @@ export default class ChargingStation {
         }
       }
     }
-    // Avoid duplication of connectors related information
+    // Avoid duplication of connectors related information in RAM
     delete this.stationInfo.Connectors;
     // Initialize transaction attributes on connectors
     for (const connectorId of this.connectors.keys()) {
@@ -1193,8 +1217,8 @@ export default class ChargingStation {
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | null {
     let configuration: ChargingStationConfiguration = null;
     if (this.getOcppPersistentConfiguration()) {
-      configuration =
-        this.getConfigurationFromFile()?.configurationKey && this.getConfigurationFromFile();
+      const configurationFromFile = this.getConfigurationFromFile();
+      configuration = configurationFromFile?.configurationKey && configurationFromFile;
     }
     configuration && delete configuration.stationInfo;
     return configuration;
