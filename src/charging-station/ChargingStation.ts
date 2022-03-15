@@ -771,7 +771,10 @@ export default class ChargingStation {
   private getTemplateFromFile(): ChargingStationTemplate | null {
     let template: ChargingStationTemplate = null;
     try {
+      const measureId = `${FileType.ChargingStationTemplate} read`;
+      const beginId = PerformanceStatistics.beginMeasure(measureId);
       template = JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate;
+      PerformanceStatistics.endMeasure(measureId, beginId);
     } catch (error) {
       FileUtils.handleFileException(
         this.logPrefix(),
@@ -1157,9 +1160,14 @@ export default class ChargingStation {
     let configuration: ChargingStationConfiguration = null;
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
+        const measureId = `${FileType.ChargingStationConfiguration} read`;
+        const beginId = PerformanceStatistics.beginMeasure(
+          `${FileType.ChargingStationConfiguration} read`
+        );
         configuration = JSON.parse(
           fs.readFileSync(this.configurationFile, 'utf8')
         ) as ChargingStationConfiguration;
+        PerformanceStatistics.endMeasure(measureId, beginId);
       } catch (error) {
         FileUtils.handleFileException(
           this.logPrefix(),
@@ -1192,9 +1200,12 @@ export default class ChargingStation {
             configurationData.stationInfo = this.stationInfo;
             break;
         }
+        const measureId = `${FileType.ChargingStationConfiguration} write`;
+        const beginId = PerformanceStatistics.beginMeasure(measureId);
         const fileDescriptor = fs.openSync(this.configurationFile, 'w');
         fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
         fs.closeSync(fileDescriptor);
+        PerformanceStatistics.endMeasure(measureId, beginId);
       } catch (error) {
         FileUtils.handleFileException(
           this.logPrefix(),
