@@ -34,6 +34,8 @@ export default abstract class OCPPRequestService {
     this.chargingStation = chargingStation;
     this.ocppResponseService = ocppResponseService;
     this.sendMessageHandler.bind(this);
+    this.sendResult.bind(this);
+    this.sendError.bind(this);
   }
 
   public static getInstance<T extends OCPPRequestService>(
