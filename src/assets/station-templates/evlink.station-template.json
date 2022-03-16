@@ -44,6 +44,11 @@
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
+      },
+      {
+        "key": "maxintensitysocket",
+        "readonly": false,
+        "value": "32"
       }
     ]
   },

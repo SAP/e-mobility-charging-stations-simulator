@@ -39,6 +39,11 @@
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
+      },
+      {
+        "key": "MaxAvailableCurrent",
+        "readonly": false,
+        "value": "32000"
       }
     ]
   },
