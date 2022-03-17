@@ -26,7 +26,7 @@ brew install node@16
 
 - [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 16.X
 
-## Configuration syntax
+## Configuration files syntax
 
 All configuration files are in the JSON standard format.
 
