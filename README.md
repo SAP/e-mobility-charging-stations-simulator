@@ -97,7 +97,7 @@ But the modifications to test have to be done to the files in the build result d
 
 ### Charging station configuration template
 
-**src/assets/station-templates/<name>.json**:
+**src/assets/station-templates/\<name\>.json**:
 
 | Key                               | Value(s)   | Default Value   | Value type                        | Description                                                                                                                                                  |
 | --------------------------------- | ---------- | --------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -221,7 +221,7 @@ But the modifications to test have to be done to the files in the build result d
 
 ### Charging station configuration
 
-**src/assets/configurations/<hashId>.json**:
+**src/assets/configurations/\<hashId\>.json**:
 
 The charging station configuration file is automatically generated at start from the charging station configuration template file.
 
