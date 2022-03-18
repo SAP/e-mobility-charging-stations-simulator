@@ -1591,8 +1591,8 @@ export default class ChargingStation {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
           this.getNumberOfPhases(),
-          (this.stationInfo['maxPower'] as number) ??
-            this.stationInfo.maximumPower / this.getNumberOfConnectors(),
+          ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
+            this.getNumberOfConnectors(),
           this.getVoltageOut()
         );
       case CurrentType.DC:
