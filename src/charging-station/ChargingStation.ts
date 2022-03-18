@@ -240,7 +240,7 @@ export default class ChargingStation {
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
               this.getVoltageOut(),
-              this.getAmperageLimitation()
+              this.getAmperageLimitation() * this.getNumberOfConnectors()
             )
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation());
     }
