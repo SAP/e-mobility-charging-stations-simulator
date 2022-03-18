@@ -1991,7 +1991,7 @@ export default class ChargingStation {
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
       logger.error(
-        `${this.logPrefix()} WebSocket reconnect failure: max retries reached (${
+        `${this.logPrefix()} WebSocket reconnect failure: maximum retries reached (${
           this.autoReconnectRetryCount
         }) or retry disabled (${this.getAutoReconnectMaxRetries()})`
       );

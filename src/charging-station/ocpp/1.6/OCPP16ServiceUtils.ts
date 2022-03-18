@@ -366,9 +366,10 @@ export class OCPP16ServiceUtils {
         )
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
-      const maxPowerRounded = Utils.roundTo(maximumPower / unitDivider, 2);
+      const maximumPowerRounded = Utils.roundTo(maximumPower / unitDivider, 2);
       if (
-        Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxPowerRounded ||
+        Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) >
+          maximumPowerRounded ||
         debug
       ) {
         logger.error(
@@ -377,7 +378,7 @@ export class OCPP16ServiceUtils {
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
           }: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
             meterValue.sampledValue[sampledValuesIndex].value
-          }/${maxPowerRounded}`
+          }/${maximumPowerRounded}`
         );
       }
       for (
@@ -396,10 +397,10 @@ export class OCPP16ServiceUtils {
           )
         );
         const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1;
-        const maxPowerPerPhaseRounded = Utils.roundTo(maximumPowerPerPhase / unitDivider, 2);
+        const maximumPowerPerPhaseRounded = Utils.roundTo(maximumPowerPerPhase / unitDivider, 2);
         if (
           Utils.convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) >
-            maxPowerPerPhaseRounded ||
+            maximumPowerPerPhaseRounded ||
           debug
         ) {
           logger.error(
@@ -410,7 +411,7 @@ export class OCPP16ServiceUtils {
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
             }, connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-            }/${maxPowerPerPhaseRounded}`
+            }/${maximumPowerPerPhaseRounded}`
           );
         }
       }
