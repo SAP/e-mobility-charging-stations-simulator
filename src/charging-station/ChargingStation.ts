@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
 import {
   AvailabilityType,
   BootNotificationRequest,
@@ -20,6 +21,7 @@ import ChargingStationOcppConfiguration, {
   ConfigurationKey,
 } from '../types/ChargingStationOcppConfiguration';
 import ChargingStationTemplate, {
+  AmpereUnits,
   CurrentType,
   PowerUnits,
   Voltage,
@@ -227,6 +229,22 @@ export default class ChargingStation {
     return !Utils.isUndefined(this.stationInfo.voltageOut)
       ? this.stationInfo.voltageOut
       : defaultVoltageOut;
+  }
+
+  public getMaximumConfiguredPower(): number | undefined {
+    let maximumConfiguredPower =
+      (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
+    if (this.getAmperageLimitation() < this.stationInfo.maximumAmperage) {
+      maximumConfiguredPower =
+        this.getCurrentOutType() === CurrentType.AC
+          ? ACElectricUtils.powerTotal(
+              this.getNumberOfPhases(),
+              this.getVoltageOut(),
+              this.getAmperageLimitation()
+            )
+          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation());
+    }
+    return maximumConfiguredPower;
   }
 
   public getTransactionIdTag(transactionId: number): string | undefined {
@@ -835,13 +853,13 @@ export default class ChargingStation {
     if (!Utils.isEmptyArray(stationInfo.power)) {
       stationInfo.power = stationInfo.power as number[];
       const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationInfo.power.length);
-      stationInfo.maxPower =
+      stationInfo.maximumPower =
         stationInfo.powerUnit === PowerUnits.KILO_WATT
           ? stationInfo.power[powerArrayRandomIndex] * 1000
           : stationInfo.power[powerArrayRandomIndex];
     } else {
       stationInfo.power = stationInfo.power as number;
-      stationInfo.maxPower =
+      stationInfo.maximumPower =
         stationInfo.powerUnit === PowerUnits.KILO_WATT
           ? stationInfo.power * 1000
           : stationInfo.power;
@@ -954,7 +972,6 @@ export default class ChargingStation {
     this.bootNotificationRequest = this.createBootNotificationRequest(this.stationInfo);
     this.ocppConfiguration = this.getOcppConfiguration();
     delete this.stationInfo.Configuration;
-    this.saveStationInfo();
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -1039,6 +1056,9 @@ export default class ChargingStation {
         }
       }
     }
+    // The connectors attribute need to be initialized
+    this.stationInfo.maximumAmperage = this.getMaximumAmperage();
+    this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
     delete this.stationInfo.Connectors;
     // Initialize transaction attributes on connectors
@@ -1097,6 +1117,15 @@ export default class ChargingStation {
       this.getConfigurationKey(this.getSupervisionUrlOcppKey())
     ) {
       this.deleteConfigurationKey(this.getSupervisionUrlOcppKey(), { save: false });
+    }
+    if (
+      this.stationInfo.amperageLimitationOcppKey &&
+      !this.getConfigurationKey(this.stationInfo.amperageLimitationOcppKey)
+    ) {
+      this.addConfigurationKey(
+        this.stationInfo.amperageLimitationOcppKey,
+        (this.stationInfo.maximumAmperage * this.getAmperageLimitationUnitDivider()).toString()
+      );
     }
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(
@@ -1555,6 +1584,49 @@ export default class ChargingStation {
         : this.getTemplateMaxNumberOfConnectors();
     }
     return maxConnectors;
+  }
+
+  private getMaximumAmperage(): number | undefined {
+    switch (this.getCurrentOutType()) {
+      case CurrentType.AC:
+        return ACElectricUtils.amperagePerPhaseFromPower(
+          this.getNumberOfPhases(),
+          (this.stationInfo['maxPower'] as number) ??
+            this.stationInfo.maximumPower / this.getNumberOfConnectors(),
+          this.getVoltageOut()
+        );
+      case CurrentType.DC:
+        return DCElectricUtils.amperage(this.stationInfo.maximumPower, this.getVoltageOut());
+    }
+  }
+
+  private getAmperageLimitationUnitDivider(): number {
+    let unitDivider = 1;
+    switch (this.stationInfo.amperageLimitationUnit) {
+      case AmpereUnits.DECI_AMPERE:
+        unitDivider = 10;
+        break;
+      case AmpereUnits.CENTI_AMPERE:
+        unitDivider = 100;
+        break;
+      case AmpereUnits.MILLI_AMPERE:
+        unitDivider = 1000;
+        break;
+    }
+    return unitDivider;
+  }
+
+  private getAmperageLimitation(): number | undefined {
+    if (
+      this.stationInfo.amperageLimitationOcppKey &&
+      this.getConfigurationKey(this.stationInfo.amperageLimitationOcppKey)
+    ) {
+      return (
+        Utils.convertToInt(
+          this.getConfigurationKey(this.stationInfo.amperageLimitationOcppKey).value
+        ) / this.getAmperageLimitationUnitDivider()
+      );
+    }
   }
 
   private async startMessageSequence(): Promise<void> {

@@ -8,6 +8,8 @@
   "powerUnit": "W",
   "numberOfConnectors": 1,
   "randomConnectors": false,
+  "amperageLimitationOcppKey": "MaxAvailableCurrent",
+  "amperageLimitationUnit": "mA",
   "Configuration": {
     "configurationKey": [
       {
@@ -39,11 +41,6 @@
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
-      },
-      {
-        "key": "MaxAvailableCurrent",
-        "readonly": false,
-        "value": "32000"
       }
     ]
   },

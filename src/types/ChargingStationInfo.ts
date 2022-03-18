@@ -4,8 +4,9 @@ export default interface ChargingStationInfo extends ChargingStationTemplate {
   chargingStationId?: string;
   chargeBoxSerialNumber?: string;
   chargePointSerialNumber?: string;
-  maxPower?: number; // Always in Watt
+  maximumPower?: number; // Always in Watt
   powerDivider?: number;
+  maximumAmperage?: number; // Always in Ampere
 }
 
 export interface ChargingStationInfoConfiguration {

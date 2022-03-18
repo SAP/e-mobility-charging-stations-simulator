@@ -15,6 +15,13 @@ export enum PowerUnits {
   KILO_WATT = 'kW',
 }
 
+export enum AmpereUnits {
+  MILLI_AMPERE = 'mA',
+  CENTI_AMPERE = 'cA',
+  DECI_AMPERE = 'dA',
+  AMPERE = 'A',
+}
+
 export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
@@ -77,6 +84,8 @@ export default interface ChargingStationTemplate {
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
   mayAuthorizeAtRemoteStart: boolean;
+  amperageLimitationOcppKey?: string;
+  amperageLimitationUnit?: AmpereUnits;
   beginEndMeterValues?: boolean;
   outOfOrderEndMeterValues?: boolean;
   meteringPerTransaction?: boolean;

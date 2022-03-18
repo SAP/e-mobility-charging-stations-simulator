@@ -13,6 +13,7 @@
   "numberOfConnectors": 1,
   "randomConnectors": false,
   "voltageOut": 231,
+  "amperageLimitationOcppKey": "maxintensitysocket",
   "Configuration": {
     "configurationKey": [
       {
@@ -44,11 +45,6 @@
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
-      },
-      {
-        "key": "maxintensitysocket",
-        "readonly": false,
-        "value": "32"
       }
     ]
   },

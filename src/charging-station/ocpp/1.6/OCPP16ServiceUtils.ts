@@ -279,11 +279,11 @@ export class OCPP16ServiceUtils {
       } measurand value`;
       const powerMeasurandValues = {} as MeasurandValues;
       const unitDivider = powerSampledValueTemplate?.unit === MeterValueUnit.KILO_WATT ? 1000 : 1;
-      const maxPower = Math.round(
-        chargingStation.stationInfo.maxPower / chargingStation.stationInfo.powerDivider
+      const maximumPower = Math.round(
+        chargingStation.getMaximumConfiguredPower() / chargingStation.stationInfo.powerDivider
       );
-      const maxPowerPerPhase = Math.round(
-        chargingStation.stationInfo.maxPower /
+      const maximumPowerPerPhase = Math.round(
+        chargingStation.getMaximumConfiguredPower() /
           chargingStation.stationInfo.powerDivider /
           chargingStation.getNumberOfPhases()
       );
@@ -321,15 +321,15 @@ export class OCPP16ServiceUtils {
             powerMeasurandValues.L1 =
               phase1FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
-              Utils.getRandomFloatRounded(maxPowerPerPhase / unitDivider);
+              Utils.getRandomFloatRounded(maximumPowerPerPhase / unitDivider);
             powerMeasurandValues.L2 =
               phase2FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
-              Utils.getRandomFloatRounded(maxPowerPerPhase / unitDivider);
+              Utils.getRandomFloatRounded(maximumPowerPerPhase / unitDivider);
             powerMeasurandValues.L3 =
               phase3FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
-              Utils.getRandomFloatRounded(maxPowerPerPhase / unitDivider);
+              Utils.getRandomFloatRounded(maximumPowerPerPhase / unitDivider);
           } else {
             powerMeasurandValues.L1 = powerSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(
@@ -337,7 +337,7 @@ export class OCPP16ServiceUtils {
                   powerSampledValueTemplate.fluctuationPercent ??
                     Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
-              : Utils.getRandomFloatRounded(maxPower / unitDivider);
+              : Utils.getRandomFloatRounded(maximumPower / unitDivider);
             powerMeasurandValues.L2 = 0;
             powerMeasurandValues.L3 = 0;
           }
@@ -353,7 +353,7 @@ export class OCPP16ServiceUtils {
                 powerSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               )
-            : Utils.getRandomFloatRounded(maxPower / unitDivider);
+            : Utils.getRandomFloatRounded(maximumPower / unitDivider);
           break;
         default:
           logger.error(errMsg);
@@ -366,7 +366,7 @@ export class OCPP16ServiceUtils {
         )
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
-      const maxPowerRounded = Utils.roundTo(maxPower / unitDivider, 2);
+      const maxPowerRounded = Utils.roundTo(maximumPower / unitDivider, 2);
       if (
         Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxPowerRounded ||
         debug
@@ -396,7 +396,7 @@ export class OCPP16ServiceUtils {
           )
         );
         const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1;
-        const maxPowerPerPhaseRounded = Utils.roundTo(maxPowerPerPhase / unitDivider, 2);
+        const maxPowerPerPhaseRounded = Utils.roundTo(maximumPowerPerPhase / unitDivider, 2);
         if (
           Utils.convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) >
             maxPowerPerPhaseRounded ||
@@ -455,12 +455,12 @@ export class OCPP16ServiceUtils {
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       } measurand value`;
       const currentMeasurandValues: MeasurandValues = {} as MeasurandValues;
-      let maxAmperage: number;
+      let maximumAmperage: number;
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
-          maxAmperage = ACElectricUtils.amperagePerPhaseFromPower(
+          maximumAmperage = ACElectricUtils.amperagePerPhaseFromPower(
             chargingStation.getNumberOfPhases(),
-            chargingStation.stationInfo.maxPower / chargingStation.stationInfo.powerDivider,
+            chargingStation.getMaximumConfiguredPower() / chargingStation.stationInfo.powerDivider,
             chargingStation.getVoltageOut()
           );
           if (chargingStation.getNumberOfPhases() === 3) {
@@ -495,15 +495,15 @@ export class OCPP16ServiceUtils {
             currentMeasurandValues.L1 =
               phase1FluctuatedValue ??
               defaultFluctuatedAmperagePerPhase ??
-              Utils.getRandomFloatRounded(maxAmperage);
+              Utils.getRandomFloatRounded(maximumAmperage);
             currentMeasurandValues.L2 =
               phase2FluctuatedValue ??
               defaultFluctuatedAmperagePerPhase ??
-              Utils.getRandomFloatRounded(maxAmperage);
+              Utils.getRandomFloatRounded(maximumAmperage);
             currentMeasurandValues.L3 =
               phase3FluctuatedValue ??
               defaultFluctuatedAmperagePerPhase ??
-              Utils.getRandomFloatRounded(maxAmperage);
+              Utils.getRandomFloatRounded(maximumAmperage);
           } else {
             currentMeasurandValues.L1 = currentSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(
@@ -511,7 +511,7 @@ export class OCPP16ServiceUtils {
                   currentSampledValueTemplate.fluctuationPercent ??
                     Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
-              : Utils.getRandomFloatRounded(maxAmperage);
+              : Utils.getRandomFloatRounded(maximumAmperage);
             currentMeasurandValues.L2 = 0;
             currentMeasurandValues.L3 = 0;
           }
@@ -522,8 +522,8 @@ export class OCPP16ServiceUtils {
           );
           break;
         case CurrentType.DC:
-          maxAmperage = DCElectricUtils.amperage(
-            chargingStation.stationInfo.maxPower / chargingStation.stationInfo.powerDivider,
+          maximumAmperage = DCElectricUtils.amperage(
+            chargingStation.getMaximumConfiguredPower() / chargingStation.stationInfo.powerDivider,
             chargingStation.getVoltageOut()
           );
           currentMeasurandValues.allPhases = currentSampledValueTemplate.value
@@ -532,7 +532,7 @@ export class OCPP16ServiceUtils {
                 currentSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               )
-            : Utils.getRandomFloatRounded(maxAmperage);
+            : Utils.getRandomFloatRounded(maximumAmperage);
           break;
         default:
           logger.error(errMsg);
@@ -546,7 +546,7 @@ export class OCPP16ServiceUtils {
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
       if (
-        Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maxAmperage ||
+        Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) > maximumAmperage ||
         debug
       ) {
         logger.error(
@@ -555,7 +555,7 @@ export class OCPP16ServiceUtils {
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
           }: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
             meterValue.sampledValue[sampledValuesIndex].value
-          }/${maxAmperage}`
+          }/${maximumAmperage}`
         );
       }
       for (
@@ -576,7 +576,7 @@ export class OCPP16ServiceUtils {
         const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1;
         if (
           Utils.convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) >
-            maxAmperage ||
+            maximumAmperage ||
           debug
         ) {
           logger.error(
@@ -587,7 +587,7 @@ export class OCPP16ServiceUtils {
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
             }, connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-            }/${maxAmperage}`
+            }/${maximumAmperage}`
           );
         }
       }
@@ -601,8 +601,8 @@ export class OCPP16ServiceUtils {
       );
       const unitDivider =
         energySampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
-      const maxEnergyRounded = Utils.roundTo(
-        ((chargingStation.stationInfo.maxPower / chargingStation.stationInfo.powerDivider) *
+      const maximumEnergyRounded = Utils.roundTo(
+        ((chargingStation.getMaximumConfiguredPower() / chargingStation.stationInfo.powerDivider) *
           interval) /
           (3600 * 1000),
         2
@@ -613,7 +613,7 @@ export class OCPP16ServiceUtils {
             parseInt(energySampledValueTemplate.value),
             energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
-        : Utils.getRandomFloatRounded(maxEnergyRounded);
+        : Utils.getRandomFloatRounded(maximumEnergyRounded);
       // Persist previous value on connector
       if (
         connector &&
@@ -639,14 +639,14 @@ export class OCPP16ServiceUtils {
         )
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
-      if (energyValueRounded > maxEnergyRounded || debug) {
+      if (energyValueRounded > maximumEnergyRounded || debug) {
         logger.error(
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
           }: connectorId ${connectorId}, transaction ${
             connector.transactionId
-          }, value: ${energyValueRounded}/${maxEnergyRounded}, duration: ${Utils.roundTo(
+          }, value: ${energyValueRounded}/${maximumEnergyRounded}, duration: ${Utils.roundTo(
             interval / (3600 * 1000),
             4
           )}h`
