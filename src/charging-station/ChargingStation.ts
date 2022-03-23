@@ -783,7 +783,9 @@ export default class ChargingStation {
       this.stationInfo.powerDivider;
     if (limit > connectorMaximumPower) {
       logger.error(
-        `${this.logPrefix()} Charging profile limit is greater than connector id ${connectorId} maximum, dump their stack: %j`,
+        `${this.logPrefix()} Charging profile id ${
+          matchingChargingProfile.chargingProfileId
+        } limit is greater than connector id ${connectorId} maximum, dump charging profiles' stack: %j`,
         this.getConnectorStatus(connectorId).chargingProfiles
       );
       limit = connectorMaximumPower;
