@@ -16,6 +16,11 @@ import {
   RegistrationStatus,
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
+import {
+  ChargingProfile,
+  ChargingRateUnitType,
+  ChargingSchedulePeriod,
+} from '../types/ocpp/ChargingProfile';
 import ChargingStationConfiguration, { Section } from '../types/ChargingStationConfiguration';
 import ChargingStationOcppConfiguration, {
   ConfigurationKey,
@@ -41,7 +46,6 @@ import WebSocket, { Data, OPEN, RawData } from 'ws';
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
-import { ChargingProfile } from '../types/ocpp/ChargingProfile';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import Configuration from '../utils/Configuration';
@@ -702,6 +706,56 @@ export default class ChargingStation {
       params?.save && this.saveOcppConfiguration();
       return deletedConfigurationKey;
     }
+  }
+
+  public getChargingProfileLimit(
+    connectorId: number
+  ): { limit: number; unit: ChargingRateUnitType } | undefined {
+    const timestamp = new Date().getTime();
+    let matchingChargingProfile: ChargingProfile;
+    let chargingSchedulePeriods: ChargingSchedulePeriod[] = [];
+    if (!Utils.isEmptyArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
+      const chargingProfiles: ChargingProfile[] = this.getConnectorStatus(
+        connectorId
+      ).chargingProfiles.filter(
+        (chargingProfile) =>
+          timestamp >= chargingProfile.chargingSchedule?.startSchedule.getTime() &&
+          timestamp <
+            chargingProfile.chargingSchedule?.startSchedule.getTime() +
+              chargingProfile.chargingSchedule.duration &&
+          chargingProfile?.stackLevel === Math.max(...chargingProfiles.map((cp) => cp?.stackLevel))
+      );
+      if (!Utils.isEmptyArray(chargingProfiles)) {
+        for (const chargingProfile of chargingProfiles) {
+          if (!Utils.isEmptyArray(chargingProfile.chargingSchedule.chargingSchedulePeriod)) {
+            chargingSchedulePeriods =
+              chargingProfile.chargingSchedule.chargingSchedulePeriod.filter(
+                (chargingSchedulePeriod, index) => {
+                  timestamp >=
+                    chargingProfile.chargingSchedule.startSchedule.getTime() +
+                      chargingSchedulePeriod.startPeriod &&
+                    chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1] &&
+                    timestamp <
+                      chargingProfile.chargingSchedule.startSchedule.getTime() +
+                        chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]
+                          ?.startPeriod;
+                }
+              );
+            if (!Utils.isEmptyArray(chargingSchedulePeriods)) {
+              matchingChargingProfile = chargingProfile;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    return (
+      !Utils.isEmptyArray(chargingSchedulePeriods) && {
+        limit: chargingSchedulePeriods[0].limit,
+        unit: matchingChargingProfile.chargingSchedule.chargingRateUnit,
+      }
+    );
   }
 
   public setChargingProfile(connectorId: number, cp: ChargingProfile): void {

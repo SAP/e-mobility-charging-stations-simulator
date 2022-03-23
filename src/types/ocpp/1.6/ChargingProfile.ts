@@ -15,18 +15,18 @@ export interface OCPP16ChargingProfile extends JsonType {
 export interface ChargingSchedule extends JsonType {
   duration?: number;
   startSchedule?: Date;
-  chargingRateUnit: ChargingRateUnitType;
-  chargingSchedulePeriod: ChargingSchedulePeriod[];
+  chargingRateUnit: OCPP16ChargingRateUnitType;
+  chargingSchedulePeriod: OCPP16ChargingSchedulePeriod[];
   minChargeRate?: number;
 }
 
-export interface ChargingSchedulePeriod extends JsonType {
+export interface OCPP16ChargingSchedulePeriod extends JsonType {
   startPeriod: number;
   limit: number;
   numberPhases?: number;
 }
 
-export enum ChargingRateUnitType {
+export enum OCPP16ChargingRateUnitType {
   WATT = 'W',
   AMPERE = 'A',
 }
@@ -46,4 +46,5 @@ export enum ChargingProfilePurposeType {
 export enum RecurrencyKindType {
   DAILY = 'Daily',
   WEEKLY = 'Weekly',
+  MONTHLY = 'Monthly',
 }

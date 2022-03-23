@@ -225,7 +225,7 @@ But the modifications to test have to be done to the files in the build result d
 
 **src/assets/configurations/\<hashId\>.json**:
 
-The charging station configuration file is automatically generated at startup from the charging station configuration template file.
+The charging station configuration file is automatically generated at startup from the charging station configuration template file and are persistent.
 
 The charging station configuration file content can be regenerated partially on matching charging station configuration template file changes. The charging station serial number is kept unchanged.
 
