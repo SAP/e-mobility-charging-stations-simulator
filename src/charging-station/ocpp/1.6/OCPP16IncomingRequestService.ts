@@ -398,7 +398,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       commandPayload.csChargingProfiles
     );
     logger.debug(
-      `${this.chargingStation.logPrefix()} Charging profile(s) set, dump their stack: %j`,
+      `${this.chargingStation.logPrefix()} Charging profile(s) set on connector id ${
+        commandPayload.connectorId
+      }, dump their stack: %j`,
       this.chargingStation.getConnectorStatus(commandPayload.connectorId).chargingProfiles
     );
     return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_ACCEPTED;
@@ -419,7 +421,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (commandPayload.connectorId && !Utils.isEmptyArray(connectorStatus.chargingProfiles)) {
       connectorStatus.chargingProfiles = [];
       logger.debug(
-        `${this.chargingStation.logPrefix()} Charging profile(s) cleared, dump their stack: %j`,
+        `${this.chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${
+          commandPayload.connectorId
+        }, dump their stack: %j`,
         connectorStatus.chargingProfiles
       );
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED;
@@ -458,7 +462,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               if (clearCurrentCP) {
                 connectorStatus.chargingProfiles[index] = {} as OCPP16ChargingProfile;
                 logger.debug(
-                  `${this.chargingStation.logPrefix()} Charging profile(s) cleared, dump their stack: %j`,
+                  `${this.chargingStation.logPrefix()} Matching charging profile(s) cleared on connector id ${
+                    commandPayload.connectorId
+                  }, dump their stack: %j`,
                   connectorStatus.chargingProfiles
                 );
                 clearedCP = true;
@@ -708,7 +714,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (cp && cp.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
       this.chargingStation.setChargingProfile(connectorId, cp);
       logger.debug(
-        `${this.chargingStation.logPrefix()} Charging profile(s) set at remote start transaction, dump their stack: %j`,
+        `${this.chargingStation.logPrefix()} Charging profile(s) set at remote start transaction on connector id ${connectorId}, dump their stack: %j`,
         this.chargingStation.getConnectorStatus(connectorId).chargingProfiles
       );
       return true;

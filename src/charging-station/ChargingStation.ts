@@ -235,11 +235,10 @@ export default class ChargingStation {
       : defaultVoltageOut;
   }
 
-  public getMaximumConfiguredPower(): number | undefined {
-    let maximumConfiguredPower =
-      (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
+  public getConnectorMaximumAvailablePower(connectorId: number): number {
+    let amperageLimitationPowerLimit: number;
     if (this.getAmperageLimitation() < this.stationInfo.maximumAmperage) {
-      maximumConfiguredPower =
+      amperageLimitationPowerLimit =
         this.getCurrentOutType() === CurrentType.AC
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
@@ -248,7 +247,19 @@ export default class ChargingStation {
             )
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation());
     }
-    return maximumConfiguredPower;
+    const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
+    const connectorMaximumPower =
+      ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
+      this.stationInfo.powerDivider;
+    const connectorAmperageLimitationPowerLimit =
+      amperageLimitationPowerLimit / this.stationInfo.powerDivider;
+    return Math.min(
+      isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
+      isNaN(connectorAmperageLimitationPowerLimit)
+        ? Infinity
+        : connectorAmperageLimitationPowerLimit,
+      isNaN(connectorChargingProfilePowerLimit) ? Infinity : connectorChargingProfilePowerLimit
+    );
   }
 
   public getTransactionIdTag(transactionId: number): string | undefined {
@@ -708,13 +719,11 @@ export default class ChargingStation {
     }
   }
 
-  public getChargingProfileLimit(
-    connectorId: number
-  ): { limit: number; unit: ChargingRateUnitType } | undefined {
+  public getChargingProfilePowerLimit(connectorId: number): number | undefined {
     const timestamp = new Date().getTime();
     let matchingChargingProfile: ChargingProfile;
     let chargingSchedulePeriods: ChargingSchedulePeriod[] = [];
-    if (!Utils.isEmptyArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
+    if (!Utils.isEmptyArray(this.getConnectorStatus(connectorId)?.chargingProfiles)) {
       const chargingProfiles: ChargingProfile[] = this.getConnectorStatus(
         connectorId
       ).chargingProfiles.filter(
@@ -749,13 +758,37 @@ export default class ChargingStation {
         }
       }
     }
-
-    return (
-      !Utils.isEmptyArray(chargingSchedulePeriods) && {
-        limit: chargingSchedulePeriods[0].limit,
-        unit: matchingChargingProfile.chargingSchedule.chargingRateUnit,
+    let limit: number;
+    if (!Utils.isEmptyArray(chargingSchedulePeriods)) {
+      switch (this.getCurrentOutType()) {
+        case CurrentType.AC:
+          limit =
+            matchingChargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+              ? chargingSchedulePeriods[0].limit
+              : ACElectricUtils.powerTotal(
+                  this.getNumberOfPhases(),
+                  this.getVoltageOut(),
+                  chargingSchedulePeriods[0].limit
+                );
+          break;
+        case CurrentType.DC:
+          limit =
+            matchingChargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+              ? chargingSchedulePeriods[0].limit
+              : DCElectricUtils.power(this.getVoltageOut(), chargingSchedulePeriods[0].limit);
       }
-    );
+    }
+    const connectorMaximumPower =
+      ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
+      this.stationInfo.powerDivider;
+    if (limit > connectorMaximumPower) {
+      logger.error(
+        `${this.logPrefix()} Charging profile limit is greater than connector id ${connectorId} maximum, dump their stack: %j`,
+        this.getConnectorStatus(connectorId).chargingProfiles
+      );
+      limit = connectorMaximumPower;
+    }
+    return limit;
   }
 
   public setChargingProfile(connectorId: number, cp: ChargingProfile): void {
@@ -1641,16 +1674,16 @@ export default class ChargingStation {
   }
 
   private getMaximumAmperage(): number | undefined {
+    const maximumPower = (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
     switch (this.getCurrentOutType()) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
           this.getNumberOfPhases(),
-          ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
-            this.getNumberOfConnectors(),
+          maximumPower / this.getNumberOfConnectors(),
           this.getVoltageOut()
         );
       case CurrentType.DC:
-        return DCElectricUtils.amperage(this.stationInfo.maximumPower, this.getVoltageOut());
+        return DCElectricUtils.amperage(maximumPower, this.getVoltageOut());
     }
   }
 
