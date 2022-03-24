@@ -247,12 +247,12 @@ export default class ChargingStation {
             )
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation());
     }
-    const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
     const connectorMaximumPower =
       ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
       this.stationInfo.powerDivider;
     const connectorAmperageLimitationPowerLimit =
       amperageLimitationPowerLimit / this.stationInfo.powerDivider;
+    const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
       isNaN(connectorAmperageLimitationPowerLimit)
@@ -731,7 +731,7 @@ export default class ChargingStation {
           timestamp >= chargingProfile.chargingSchedule?.startSchedule.getTime() &&
           timestamp <
             chargingProfile.chargingSchedule?.startSchedule.getTime() +
-              chargingProfile.chargingSchedule.duration &&
+              chargingProfile.chargingSchedule.duration * 1000 &&
           chargingProfile?.stackLevel === Math.max(...chargingProfiles.map((cp) => cp?.stackLevel))
       );
       if (!Utils.isEmptyArray(chargingProfiles)) {
@@ -742,12 +742,13 @@ export default class ChargingStation {
                 (chargingSchedulePeriod, index) => {
                   timestamp >=
                     chargingProfile.chargingSchedule.startSchedule.getTime() +
-                      chargingSchedulePeriod.startPeriod &&
+                      chargingSchedulePeriod.startPeriod * 1000 &&
                     chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1] &&
                     timestamp <
                       chargingProfile.chargingSchedule.startSchedule.getTime() +
                         chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]
-                          ?.startPeriod;
+                          ?.startPeriod *
+                          1000;
                 }
               );
             if (!Utils.isEmptyArray(chargingSchedulePeriods)) {
