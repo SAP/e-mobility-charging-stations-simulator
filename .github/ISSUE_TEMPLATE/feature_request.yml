@@ -22,4 +22,4 @@ body:
   - type: textarea
     attributes:
       label: Attachments
-      description: Logs, screenshots, screencast, etc.
+      description: Logs, configurations, screenshots, screencast, etc.
