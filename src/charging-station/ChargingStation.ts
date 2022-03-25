@@ -237,7 +237,10 @@ export default class ChargingStation {
 
   public getConnectorMaximumAvailablePower(connectorId: number): number {
     let connectorAmperageLimitationPowerLimit: number;
-    if (this.getAmperageLimitation() < this.stationInfo.maximumAmperage) {
+    if (
+      !Utils.isNullOrUndefined(this.getAmperageLimitation()) &&
+      this.getAmperageLimitation() < this.stationInfo.maximumAmperage
+    ) {
       const amperageLimitationPowerLimit =
         this.getCurrentOutType() === CurrentType.AC
           ? ACElectricUtils.powerTotal(
