@@ -236,9 +236,9 @@ export default class ChargingStation {
   }
 
   public getConnectorMaximumAvailablePower(connectorId: number): number {
-    let amperageLimitationPowerLimit: number;
+    let connectorAmperageLimitationPowerLimit: number;
     if (this.getAmperageLimitation() < this.stationInfo.maximumAmperage) {
-      amperageLimitationPowerLimit =
+      const amperageLimitationPowerLimit =
         this.getCurrentOutType() === CurrentType.AC
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
@@ -246,12 +246,12 @@ export default class ChargingStation {
               this.getAmperageLimitation() * this.getNumberOfConnectors()
             )
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation());
+      connectorAmperageLimitationPowerLimit =
+        amperageLimitationPowerLimit / this.stationInfo.powerDivider;
     }
     const connectorMaximumPower =
       ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
       this.stationInfo.powerDivider;
-    const connectorAmperageLimitationPowerLimit =
-      amperageLimitationPowerLimit / this.stationInfo.powerDivider;
     const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
