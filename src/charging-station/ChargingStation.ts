@@ -743,12 +743,13 @@ export default class ChargingStation {
                   timestamp >=
                     chargingProfile.chargingSchedule.startSchedule.getTime() +
                       chargingSchedulePeriod.startPeriod * 1000 &&
-                    chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1] &&
-                    timestamp <
-                      chargingProfile.chargingSchedule.startSchedule.getTime() +
-                        chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]
-                          ?.startPeriod *
-                          1000;
+                    ((chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1] &&
+                      timestamp <
+                        chargingProfile.chargingSchedule.startSchedule.getTime() +
+                          chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]
+                            ?.startPeriod *
+                            1000) ||
+                      !chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]);
                 }
               );
             if (!Utils.isEmptyArray(chargingSchedulePeriods)) {
