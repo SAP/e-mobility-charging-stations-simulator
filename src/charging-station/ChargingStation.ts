@@ -241,16 +241,15 @@ export default class ChargingStation {
       !Utils.isNullOrUndefined(this.getAmperageLimitation()) &&
       this.getAmperageLimitation() < this.stationInfo.maximumAmperage
     ) {
-      const amperageLimitationPowerLimit =
-        this.getCurrentOutType() === CurrentType.AC
+      connectorAmperageLimitationPowerLimit =
+        (this.getCurrentOutType() === CurrentType.AC
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
               this.getVoltageOut(),
               this.getAmperageLimitation() * this.getNumberOfConnectors()
             )
-          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation());
-      connectorAmperageLimitationPowerLimit =
-        amperageLimitationPowerLimit / this.stationInfo.powerDivider;
+          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation())) /
+        this.stationInfo.powerDivider;
     }
     const connectorMaximumPower =
       ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
