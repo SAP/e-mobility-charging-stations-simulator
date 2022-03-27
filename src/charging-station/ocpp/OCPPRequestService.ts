@@ -317,7 +317,8 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  public abstract sendMessageHandler<Response extends JsonType>(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public abstract sendMessageHandler<Request extends JsonType, Response extends JsonType>(
     commandName: RequestCommand,
     commandParams?: JsonType,
     params?: SendParams
