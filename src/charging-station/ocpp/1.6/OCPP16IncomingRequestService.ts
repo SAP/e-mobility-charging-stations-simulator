@@ -54,6 +54,10 @@ import {
   OCPP16MeterValuesRequest,
   OCPP16MeterValuesResponse,
 } from '../../../types/ocpp/1.6/MeterValues';
+import {
+  OCPP16StandardParametersKey,
+  OCPP16SupportedFeatureProfiles,
+} from '../../../types/ocpp/1.6/Configuration';
 
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
@@ -65,7 +69,6 @@ import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointE
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
-import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
@@ -378,6 +381,16 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestSetChargingProfile(
     commandPayload: SetChargingProfileRequest
   ): SetChargingProfileResponse {
+    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Smart_Charging)) {
+      logger.error(
+        `${this.chargingStation.logPrefix()} Trying to set charging profile(s) without '${
+          OCPP16SupportedFeatureProfiles.Smart_Charging
+        }' feature enabled in ${
+          OCPP16StandardParametersKey.SupportedFeatureProfiles
+        } in configuration`
+      );
+      return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_NOT_SUPPORTED;
+    }
     if (!this.chargingStation.getConnectorStatus(commandPayload.connectorId)) {
       logger.error(
         `${this.chargingStation.logPrefix()} Trying to set charging profile(s) to a non existing connector Id ${
@@ -417,6 +430,16 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestClearChargingProfile(
     commandPayload: ClearChargingProfileRequest
   ): ClearChargingProfileResponse {
+    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Smart_Charging)) {
+      logger.error(
+        `${this.chargingStation.logPrefix()} Trying to clear charging profile(s) without '${
+          OCPP16SupportedFeatureProfiles.Smart_Charging
+        }' feature enabled in ${
+          OCPP16StandardParametersKey.SupportedFeatureProfiles
+        } in configuration`
+      );
+      return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
+    }
     const connectorStatus = this.chargingStation.getConnectorStatus(commandPayload.connectorId);
     if (!connectorStatus) {
       logger.error(
@@ -804,6 +827,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private async handleRequestGetDiagnostics(
     commandPayload: GetDiagnosticsRequest
   ): Promise<GetDiagnosticsResponse> {
+    if (
+      !this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Firmware_Management)
+    ) {
+      logger.error(
+        `${this.chargingStation.logPrefix()} Trying to get diagnostics without '${
+          OCPP16SupportedFeatureProfiles.Firmware_Management
+        }' feature enabled in ${
+          OCPP16StandardParametersKey.SupportedFeatureProfiles
+        } in configuration`
+      );
+      return Constants.OCPP_RESPONSE_EMPTY;
+    }
     logger.debug(
       this.chargingStation.logPrefix() +
         ' ' +
@@ -911,6 +946,16 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestTriggerMessage(
     commandPayload: OCPP16TriggerMessageRequest
   ): OCPP16TriggerMessageResponse {
+    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Remote_Trigger)) {
+      logger.error(
+        `${this.chargingStation.logPrefix()} Trying to remote trigger message without '${
+          OCPP16SupportedFeatureProfiles.Remote_Trigger
+        }' feature enabled in ${
+          OCPP16StandardParametersKey.SupportedFeatureProfiles
+        } in configuration`
+      );
+      return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED;
+    }
     try {
       switch (commandPayload.requestedMessage) {
         case MessageTrigger.BootNotification:

@@ -298,7 +298,7 @@ make SUBMODULES_INIT=true
 #### Smart Charging Profile
 
 - :white_check_mark: ClearChargingProfile
-- :white_check_mark: GetCompositeSchedule
+- :x: GetCompositeSchedule
 - :white_check_mark: SetChargingProfile
 
 #### Remote Trigger Profile

@@ -369,7 +369,7 @@ export default class ChargingStation {
     }
     if (
       measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(
+      !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
         measurand
       )
     ) {
@@ -400,7 +400,7 @@ export default class ChargingStation {
         phase &&
         sampledValueTemplates[index]?.phase === phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(
+        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
           measurand
         )
       ) {
@@ -409,7 +409,7 @@ export default class ChargingStation {
         !phase &&
         !sampledValueTemplates[index].phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(
+        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
           measurand
         )
       ) {
@@ -837,6 +837,12 @@ export default class ChargingStation {
     this.stopMeterValues(connectorId);
   }
 
+  public hasFeatureProfile(featureProfile: SupportedFeatureProfiles) {
+    return this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)?.value.includes(
+      featureProfile
+    );
+  }
+
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
   }
@@ -1230,7 +1236,7 @@ export default class ChargingStation {
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(
         StandardParametersKey.SupportedFeatureProfiles,
-        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging}`
+        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Firmware_Management},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging},${SupportedFeatureProfiles.Remote_Trigger}`
       );
     }
     this.addConfigurationKey(
@@ -1270,7 +1276,7 @@ export default class ChargingStation {
     }
     if (
       !this.getConfigurationKey(StandardParametersKey.LocalAuthListEnabled) &&
-      this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles).value.includes(
+      this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)?.value.includes(
         SupportedFeatureProfiles.Local_Auth_List_Management
       )
     ) {
