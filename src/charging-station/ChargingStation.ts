@@ -1236,7 +1236,7 @@ export default class ChargingStation {
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(
         StandardParametersKey.SupportedFeatureProfiles,
-        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Firmware_Management},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging},${SupportedFeatureProfiles.Remote_Trigger}`
+        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.FirmwareManagement},${SupportedFeatureProfiles.LocalAuthListManagement},${SupportedFeatureProfiles.SmartCharging},${SupportedFeatureProfiles.RemoteTrigger}`
       );
     }
     this.addConfigurationKey(
@@ -1277,7 +1277,7 @@ export default class ChargingStation {
     if (
       !this.getConfigurationKey(StandardParametersKey.LocalAuthListEnabled) &&
       this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)?.value.includes(
-        SupportedFeatureProfiles.Local_Auth_List_Management
+        SupportedFeatureProfiles.LocalAuthListManagement
       )
     ) {
       this.addConfigurationKey(StandardParametersKey.LocalAuthListEnabled, 'false');

@@ -1,10 +1,10 @@
 export enum OCPP16SupportedFeatureProfiles {
   Core = 'Core',
-  Firmware_Management = 'FirmwareManagement',
-  Local_Auth_List_Management = 'LocalAuthListManagement',
+  FirmwareManagement = 'FirmwareManagement',
+  LocalAuthListManagement = 'LocalAuthListManagement',
   Reservation = 'Reservation',
-  Smart_Charging = 'SmartCharging',
-  Remote_Trigger = 'RemoteTrigger',
+  SmartCharging = 'SmartCharging',
+  RemoteTrigger = 'RemoteTrigger',
 }
 
 export enum OCPP16StandardParametersKey {

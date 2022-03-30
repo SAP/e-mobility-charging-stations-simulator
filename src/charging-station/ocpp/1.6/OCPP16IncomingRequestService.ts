@@ -381,10 +381,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestSetChargingProfile(
     commandPayload: SetChargingProfileRequest
   ): SetChargingProfileResponse {
-    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Smart_Charging)) {
+    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.SmartCharging)) {
       logger.error(
         `${this.chargingStation.logPrefix()} Trying to set charging profile(s) without '${
-          OCPP16SupportedFeatureProfiles.Smart_Charging
+          OCPP16SupportedFeatureProfiles.SmartCharging
         }' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles
         } in configuration`
@@ -430,10 +430,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestClearChargingProfile(
     commandPayload: ClearChargingProfileRequest
   ): ClearChargingProfileResponse {
-    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Smart_Charging)) {
+    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.SmartCharging)) {
       logger.error(
         `${this.chargingStation.logPrefix()} Trying to clear charging profile(s) without '${
-          OCPP16SupportedFeatureProfiles.Smart_Charging
+          OCPP16SupportedFeatureProfiles.SmartCharging
         }' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles
         } in configuration`
@@ -828,11 +828,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: GetDiagnosticsRequest
   ): Promise<GetDiagnosticsResponse> {
     if (
-      !this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Firmware_Management)
+      !this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.FirmwareManagement)
     ) {
       logger.error(
         `${this.chargingStation.logPrefix()} Trying to get diagnostics without '${
-          OCPP16SupportedFeatureProfiles.Firmware_Management
+          OCPP16SupportedFeatureProfiles.FirmwareManagement
         }' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles
         } in configuration`
@@ -946,10 +946,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestTriggerMessage(
     commandPayload: OCPP16TriggerMessageRequest
   ): OCPP16TriggerMessageResponse {
-    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.Remote_Trigger)) {
+    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.RemoteTrigger)) {
       logger.error(
         `${this.chargingStation.logPrefix()} Trying to remote trigger message without '${
-          OCPP16SupportedFeatureProfiles.Remote_Trigger
+          OCPP16SupportedFeatureProfiles.RemoteTrigger
         }' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles
         } in configuration`
