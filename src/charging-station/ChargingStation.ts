@@ -926,6 +926,8 @@ export default class ChargingStation {
         (stationInfo.chargePointSerialNumber = existingStationInfo.chargePointSerialNumber);
       existingStationInfo?.chargeBoxSerialNumber &&
         (stationInfo.chargeBoxSerialNumber = existingStationInfo.chargeBoxSerialNumber);
+      existingStationInfo?.meterSerialNumber &&
+        (stationInfo.meterSerialNumber = existingStationInfo.meterSerialNumber);
     } else {
       const serialNumberSuffix = params?.randomSerialNumber
         ? this.getRandomSerialNumberSuffix({ upperCase: params.randomSerialNumberUpperCase })
@@ -936,6 +938,9 @@ export default class ChargingStation {
       stationInfo.chargeBoxSerialNumber =
         stationInfo?.chargeBoxSerialNumberPrefix &&
         stationInfo.chargeBoxSerialNumberPrefix + serialNumberSuffix;
+      stationInfo.meterSerialNumber =
+        stationInfo?.meterSerialNumberPrefix &&
+        stationInfo.meterSerialNumberPrefix + serialNumberSuffix;
     }
   }
 
@@ -1059,8 +1064,8 @@ export default class ChargingStation {
       }),
       ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
       ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-      ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
-        meterSerialNumber: stationInfo.meterSerialNumber,
+      ...(!Utils.isUndefined(stationInfo.meterSerialNumberPrefix) && {
+        meterSerialNumber: stationInfo.meterSerialNumberPrefix,
       }),
       ...(!Utils.isUndefined(stationInfo.meterType) && {
         meterType: stationInfo.meterType,
