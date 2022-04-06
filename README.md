@@ -241,6 +241,9 @@ The syntax is similar to the charging station configuration template 'Configurat
 
 To start the program, run: `npm start`.
 
+To start the program with a UI controller, run: `npm start:server`.
+Then, start/stop the simulator connections by going to `https://<hostname:port>` in a browser.
+
 ## Docker
 
 In the [docker](./docker) folder:
