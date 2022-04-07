@@ -1390,58 +1390,64 @@ export default class ChargingStation {
   }
 
   private async onOpen(): Promise<void> {
-    logger.info(
-      `${this.logPrefix()} Connected to OCPP server through ${this.wsConnectionUrl.toString()}`
-    );
-    if (!this.isInAcceptedState()) {
-      // Send BootNotification
-      let registrationRetryCount = 0;
-      do {
-        this.bootNotificationResponse = await this.ocppRequestService.sendMessageHandler<
-          BootNotificationRequest,
-          BootNotificationResponse
-        >(
-          RequestCommand.BOOT_NOTIFICATION,
-          {
-            chargePointModel: this.bootNotificationRequest.chargePointModel,
-            chargePointVendor: this.bootNotificationRequest.chargePointVendor,
-            chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
-            firmwareVersion: this.bootNotificationRequest.firmwareVersion,
-            chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
-            iccid: this.bootNotificationRequest.iccid,
-            imsi: this.bootNotificationRequest.imsi,
-            meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
-            meterType: this.bootNotificationRequest.meterType,
-          },
-          { skipBufferingOnError: true }
-        );
-        if (!this.isInAcceptedState()) {
-          this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
-          await Utils.sleep(
-            this.bootNotificationResponse?.interval
-              ? this.bootNotificationResponse.interval * 1000
-              : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL
+    if (this.isWebSocketConnectionOpened()) {
+      logger.info(
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`
+      );
+      if (!this.isInAcceptedState()) {
+        // Send BootNotification
+        let registrationRetryCount = 0;
+        do {
+          this.bootNotificationResponse = await this.ocppRequestService.sendMessageHandler<
+            BootNotificationRequest,
+            BootNotificationResponse
+          >(
+            RequestCommand.BOOT_NOTIFICATION,
+            {
+              chargePointModel: this.bootNotificationRequest.chargePointModel,
+              chargePointVendor: this.bootNotificationRequest.chargePointVendor,
+              chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
+              firmwareVersion: this.bootNotificationRequest.firmwareVersion,
+              chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
+              iccid: this.bootNotificationRequest.iccid,
+              imsi: this.bootNotificationRequest.imsi,
+              meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
+              meterType: this.bootNotificationRequest.meterType,
+            },
+            { skipBufferingOnError: true }
           );
-        }
-      } while (
-        !this.isInAcceptedState() &&
-        (registrationRetryCount <= this.getRegistrationMaxRetries() ||
-          this.getRegistrationMaxRetries() === -1)
-      );
-    }
-    if (this.isInAcceptedState()) {
-      await this.startMessageSequence();
-      this.stopped && (this.stopped = false);
-      if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
-        this.flushMessageBuffer();
+          if (!this.isInAcceptedState()) {
+            this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
+            await Utils.sleep(
+              this.bootNotificationResponse?.interval
+                ? this.bootNotificationResponse.interval * 1000
+                : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL
+            );
+          }
+        } while (
+          !this.isInAcceptedState() &&
+          (registrationRetryCount <= this.getRegistrationMaxRetries() ||
+            this.getRegistrationMaxRetries() === -1)
+        );
       }
+      if (this.isInAcceptedState()) {
+        await this.startMessageSequence();
+        this.stopped && (this.stopped = false);
+        if (this.wsConnectionRestarted) {
+          this.flushMessageBuffer();
+        }
+      } else {
+        logger.error(
+          `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
+        );
+      }
+      this.autoReconnectRetryCount = 0;
+      this.wsConnectionRestarted = false;
     } else {
-      logger.error(
-        `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
+      logger.warn(
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
       );
     }
-    this.autoReconnectRetryCount = 0;
-    this.wsConnectionRestarted = false;
   }
 
   private async onClose(code: number, reason: string): Promise<void> {
