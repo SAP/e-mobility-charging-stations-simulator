@@ -24,8 +24,8 @@ if (Utils.workerPoolInUse()) {
   addMessageListener();
   if (!Utils.isUndefined(workerData)) {
     startChargingStation({
-      index: (workerData as Record<string, unknown>).index as number,
-      templateFile: (workerData as Record<string, unknown>).templateFile as string,
+      index: (workerData as ChargingStationWorkerData).index,
+      templateFile: (workerData as ChargingStationWorkerData).templateFile,
     });
   }
 }
