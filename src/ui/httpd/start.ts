@@ -5,12 +5,11 @@ const app = express();
 
 app.get('/', (request, response) => {
   response.send(`
- 
- 
+
   <form>
-  <input type="button" onclick="window.location.href='/start';" value="Start" />
-  <input type="button" onclick="window.location.href='/stop';" value="Stop" />
-</form>
+    <input type="button" onclick="window.location.href='/start';" value="Start" />
+    <input type="button" onclick="window.location.href='/stop';" value="Stop" />
+  </form>
 
   `);
 });
