@@ -23,10 +23,7 @@ if (Utils.workerPoolInUse()) {
   // Add message listener to start charging station from main thread
   addMessageListener();
   if (!Utils.isUndefined(workerData)) {
-    startChargingStation({
-      index: (workerData as Record<string, unknown>).index as number,
-      templateFile: (workerData as Record<string, unknown>).templateFile as string,
-    });
+    startChargingStation(workerData as ChargingStationWorkerData);
   }
 }
 
