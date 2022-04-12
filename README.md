@@ -242,7 +242,7 @@ The syntax is similar to the charging station configuration template 'Configurat
 To start the program, run: `npm start`.
 
 To start the program with a UI controller, run: `npm start:server`.
-Then, start/stop the simulator connections by going to `https://<hostname:port>` in a browser.  Localhost port will default to 8080.  For BTP, the port is assigned based on the process.env.PORT environment variable.
+Then, start/stop the simulator connections by going to `https://<hostname:port>` in a browser. Localhost port will default to 8080. For BTP, the port is assigned based on the process.env.PORT environment variable.
 
 ## Docker
 
