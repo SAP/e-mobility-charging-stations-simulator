@@ -1,4 +1,4 @@
-import Bootstrap from '../charging-station/Bootstrap';
+import Bootstrap from '../../charging-station/Bootstrap';
 import express from 'express';
 
 const app = express();

@@ -46,7 +46,7 @@
     "prepare": "node prepare.js",
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.js",
-    "start:server": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/http/start.js",
+    "start:server": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/ui/http/start.js",
     "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.js",
     "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.js",
     "start:dev:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.js",
