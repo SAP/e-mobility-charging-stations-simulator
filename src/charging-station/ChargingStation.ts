@@ -258,9 +258,7 @@ export default class ChargingStation {
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation())) /
         this.stationInfo.powerDivider;
     }
-    const connectorMaximumPower =
-      ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
-      this.stationInfo.powerDivider;
+    const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
     const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
@@ -789,9 +787,7 @@ export default class ChargingStation {
               : DCElectricUtils.power(this.getVoltageOut(), chargingSchedulePeriods[0].limit);
       }
     }
-    const connectorMaximumPower =
-      ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
-      this.stationInfo.powerDivider;
+    const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
     if (limit > connectorMaximumPower) {
       logger.error(
         `${this.logPrefix()} Charging profile id ${
@@ -1083,6 +1079,9 @@ export default class ChargingStation {
     this.bootNotificationRequest = this.createBootNotificationRequest(this.stationInfo);
     this.ocppConfiguration = this.getOcppConfiguration();
     delete this.stationInfo.Configuration;
+    this.wsConfiguredConnectionUrl = new URL(
+      this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
+    );
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -1167,7 +1166,6 @@ export default class ChargingStation {
         }
       }
     }
-    // The connectors attribute need to be initialized
     this.stationInfo.maximumAmperage = this.getMaximumAmperage();
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
@@ -1178,11 +1176,15 @@ export default class ChargingStation {
         this.initializeConnectorStatus(connectorId);
       }
     }
-    this.wsConfiguredConnectionUrl = new URL(
-      this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
-    );
     // OCPP configuration
     this.initializeOcppConfiguration();
+    if (this.getEnableStatistics()) {
+      this.performanceStatistics = PerformanceStatistics.getInstance(
+        this.hashId,
+        this.stationInfo.chargingStationId,
+        this.wsConnectionUrl
+      );
+    }
     switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
@@ -1204,13 +1206,6 @@ export default class ChargingStation {
       };
     }
     this.stationInfo.powerDivider = this.getPowerDivider();
-    if (this.getEnableStatistics()) {
-      this.performanceStatistics = PerformanceStatistics.getInstance(
-        this.hashId,
-        this.stationInfo.chargingStationId,
-        this.wsConnectionUrl
-      );
-    }
   }
 
   private initializeOcppConfiguration(): void {
@@ -1301,9 +1296,7 @@ export default class ChargingStation {
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
         const measureId = `${FileType.ChargingStationConfiguration} read`;
-        const beginId = PerformanceStatistics.beginMeasure(
-          `${FileType.ChargingStationConfiguration} read`
-        );
+        const beginId = PerformanceStatistics.beginMeasure(measureId);
         configuration = JSON.parse(
           fs.readFileSync(this.configurationFile, 'utf8')
         ) as ChargingStationConfiguration;
@@ -1705,8 +1698,12 @@ export default class ChargingStation {
     return maxConnectors;
   }
 
+  private getMaximumPower(): number {
+    return (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
+  }
+
   private getMaximumAmperage(): number | undefined {
-    const maximumPower = (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
+    const maximumPower = this.getMaximumPower();
     switch (this.getCurrentOutType()) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
