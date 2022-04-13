@@ -10,6 +10,7 @@ const pageHeader = `
 const pageFooter = '</html>';
 
 const app = express();
+app.disable('x-powered-by');
 
 app.get('/', (request, response) => {
   response.send(
