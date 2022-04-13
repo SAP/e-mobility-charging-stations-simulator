@@ -16,6 +16,7 @@ import OCPPError from '../../exception/OCPPError';
 import type OCPPResponseService from './OCPPResponseService';
 import PerformanceStatistics from '../../performance/PerformanceStatistics';
 import Utils from '../../utils/Utils';
+import chalk from 'chalk';
 import logger from '../../utils/Logger';
 
 export default abstract class OCPPRequestService {
@@ -151,6 +152,7 @@ export default abstract class OCPPRequestService {
           if (this.chargingStation.isWebSocketConnectionOpened()) {
             // Yes: Send Message
             const beginId = PerformanceStatistics.beginMeasure(commandName);
+            console.log(chalk`{blue >> Sending message = ${messageToSend}}`);
             // FIXME: Handle sending error
             this.chargingStation.wsConnection.send(messageToSend);
             PerformanceStatistics.endMeasure(commandName, beginId);
