@@ -154,20 +154,10 @@ export default abstract class OCPPRequestService {
             // FIXME: Handle sending error
             this.chargingStation.wsConnection.send(messageToSend);
             PerformanceStatistics.endMeasure(commandName, beginId);
-            let msgTypeStr: string;
-            switch (messageType) {
-              case MessageType.CALL_MESSAGE:
-                msgTypeStr = 'request';
-                break;
-              case MessageType.CALL_RESULT_MESSAGE:
-                msgTypeStr = 'response';
-                break;
-              case MessageType.CALL_ERROR_MESSAGE:
-                msgTypeStr = 'error';
-                break;
-            }
             logger.debug(
-              `${this.chargingStation.logPrefix()} >> Command '${commandName}' sent ${msgTypeStr} payload: ${messageToSend}`
+              `${this.chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
+                messageType
+              )} payload: ${messageToSend}`
             );
           } else if (!params.skipBufferingOnError) {
             // Buffer it
@@ -315,6 +305,17 @@ export default abstract class OCPPRequestService {
         break;
     }
     return messageToSend;
+  }
+
+  private getMessageTypeString(messageType: MessageType): string {
+    switch (messageType) {
+      case MessageType.CALL_MESSAGE:
+        return 'request';
+      case MessageType.CALL_RESULT_MESSAGE:
+        return 'response';
+      case MessageType.CALL_ERROR_MESSAGE:
+        return 'error';
+    }
   }
 
   private handleRequestError(
