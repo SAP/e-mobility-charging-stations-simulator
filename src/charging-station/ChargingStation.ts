@@ -76,7 +76,6 @@ import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemp
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
-import chalk from 'chalk';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
@@ -1487,8 +1486,6 @@ export default class ChargingStation {
     let errMsg: string;
     try {
       const request = JSON.parse(data.toString()) as IncomingRequest;
-      const requestAsString = JSON.stringify(request);
-      console.log(chalk`{yellow << Received message = ${requestAsString}}`);
       if (Utils.isIterable(request)) {
         // Parse the message
         [messageType, messageId, commandName, commandPayload, errorDetails] = request;
@@ -1496,7 +1493,8 @@ export default class ChargingStation {
         throw new OCPPError(
           ErrorType.PROTOCOL_ERROR,
           'Incoming request is not iterable',
-          commandName
+          Utils.isString(commandName) && commandName,
+          { payload: request }
         );
       }
       // Check the Type of message
@@ -1512,18 +1510,23 @@ export default class ChargingStation {
             commandName,
             commandPayload
           );
+          logger.debug(
+            `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
+              request
+            )}`
+          );
           break;
         // Outcome Message
         case MessageType.CALL_RESULT_MESSAGE:
           // Respond
           cachedRequest = this.requests.get(messageId);
           if (Utils.isIterable(cachedRequest)) {
-            [responseCallback, , , requestPayload] = cachedRequest;
+            [responseCallback, , requestCommandName, requestPayload] = cachedRequest;
           } else {
             throw new OCPPError(
               ErrorType.PROTOCOL_ERROR,
               `Cached request for message id ${messageId} response is not iterable`,
-              commandName
+              requestCommandName
             );
           }
           if (!responseCallback) {
@@ -1531,10 +1534,15 @@ export default class ChargingStation {
             throw new OCPPError(
               ErrorType.INTERNAL_ERROR,
               `Response for unknown message id ${messageId}`,
-              commandName
+              requestCommandName
             );
           }
           responseCallback(commandName, requestPayload);
+          logger.debug(
+            `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
+              request
+            )}`
+          );
           break;
         // Error Message
         case MessageType.CALL_ERROR_MESSAGE:
@@ -1557,6 +1565,11 @@ export default class ChargingStation {
           }
           rejectCallback(
             new OCPPError(commandName, commandPayload.toString(), requestCommandName, errorDetails)
+          );
+          logger.debug(
+            `${this.logPrefix()} << Command '${requestCommandName}' received error payload: ${JSON.stringify(
+              request
+            )}`
           );
           break;
         // Error

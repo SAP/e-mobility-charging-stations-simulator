@@ -138,17 +138,8 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseHeartbeat(
-    payload: OCPP16HeartbeatResponse,
-    requestPayload: OCPP16HeartbeatRequest
-  ): void {
-    logger.debug(
-      this.chargingStation.logPrefix() +
-        ' Heartbeat response received: %j to Heartbeat request: %j',
-      payload,
-      requestPayload
-    );
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  private handleResponseHeartbeat(): void {}
 
   private handleResponseAuthorize(
     payload: OCPP16AuthorizeResponse,
@@ -474,27 +465,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseStatusNotification(
-    payload: OCPP16StatusNotificationRequest,
-    requestPayload: OCPP16StatusNotificationResponse
-  ): void {
-    logger.debug(
-      this.chargingStation.logPrefix() +
-        ' Status notification response received: %j to StatusNotification request: %j',
-      payload,
-      requestPayload
-    );
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  private handleResponseStatusNotification(): void {}
 
-  private handleResponseMeterValues(
-    payload: OCPP16MeterValuesRequest,
-    requestPayload: OCPP16MeterValuesResponse
-  ): void {
-    logger.debug(
-      this.chargingStation.logPrefix() +
-        ' MeterValues response received: %j to MeterValues request: %j',
-      payload,
-      requestPayload
-    );
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  private handleResponseMeterValues(): void {}
 }
