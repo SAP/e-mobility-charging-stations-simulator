@@ -381,14 +381,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestSetChargingProfile(
     commandPayload: SetChargingProfileRequest
   ): SetChargingProfileResponse {
-    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.SmartCharging)) {
-      logger.error(
-        `${this.chargingStation.logPrefix()} Trying to set charging profile(s) without '${
-          OCPP16SupportedFeatureProfiles.SmartCharging
-        }' feature enabled in ${
-          OCPP16StandardParametersKey.SupportedFeatureProfiles
-        } in configuration`
-      );
+    if (
+      !OCPP16ServiceUtils.checkFeatureProfile(
+        this.chargingStation,
+        OCPP16SupportedFeatureProfiles.SmartCharging,
+        OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE
+      )
+    ) {
       return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_NOT_SUPPORTED;
     }
     if (!this.chargingStation.getConnectorStatus(commandPayload.connectorId)) {
@@ -430,14 +429,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestClearChargingProfile(
     commandPayload: ClearChargingProfileRequest
   ): ClearChargingProfileResponse {
-    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.SmartCharging)) {
-      logger.error(
-        `${this.chargingStation.logPrefix()} Trying to clear charging profile(s) without '${
-          OCPP16SupportedFeatureProfiles.SmartCharging
-        }' feature enabled in ${
-          OCPP16StandardParametersKey.SupportedFeatureProfiles
-        } in configuration`
-      );
+    if (
+      !OCPP16ServiceUtils.checkFeatureProfile(
+        this.chargingStation,
+        OCPP16SupportedFeatureProfiles.SmartCharging,
+        OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE
+      )
+    ) {
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
     const connectorStatus = this.chargingStation.getConnectorStatus(commandPayload.connectorId);
@@ -828,15 +826,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: GetDiagnosticsRequest
   ): Promise<GetDiagnosticsResponse> {
     if (
-      !this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.FirmwareManagement)
+      !OCPP16ServiceUtils.checkFeatureProfile(
+        this.chargingStation,
+        OCPP16SupportedFeatureProfiles.FirmwareManagement,
+        OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
+      )
     ) {
-      logger.error(
-        `${this.chargingStation.logPrefix()} Trying to get diagnostics without '${
-          OCPP16SupportedFeatureProfiles.FirmwareManagement
-        }' feature enabled in ${
-          OCPP16StandardParametersKey.SupportedFeatureProfiles
-        } in configuration`
-      );
       return Constants.OCPP_RESPONSE_EMPTY;
     }
     logger.debug(
@@ -946,14 +941,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestTriggerMessage(
     commandPayload: OCPP16TriggerMessageRequest
   ): OCPP16TriggerMessageResponse {
-    if (!this.chargingStation.hasFeatureProfile(OCPP16SupportedFeatureProfiles.RemoteTrigger)) {
-      logger.error(
-        `${this.chargingStation.logPrefix()} Trying to remote trigger message without '${
-          OCPP16SupportedFeatureProfiles.RemoteTrigger
-        }' feature enabled in ${
-          OCPP16StandardParametersKey.SupportedFeatureProfiles
-        } in configuration`
-      );
+    if (
+      !OCPP16ServiceUtils.checkFeatureProfile(
+        this.chargingStation,
+        OCPP16SupportedFeatureProfiles.RemoteTrigger,
+        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE
+      )
+    ) {
       return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED;
     }
     try {

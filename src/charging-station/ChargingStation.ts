@@ -1492,7 +1492,7 @@ export default class ChargingStation {
       } else {
         throw new OCPPError(
           ErrorType.PROTOCOL_ERROR,
-          'Incoming request is not iterable',
+          'Incoming message is not iterable',
           Utils.isString(commandName) && commandName,
           { payload: request }
         );

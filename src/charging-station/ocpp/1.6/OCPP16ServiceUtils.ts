@@ -14,12 +14,19 @@ import {
   OCPP16MeterValuePhase,
   OCPP16SampledValue,
 } from '../../../types/ocpp/1.6/MeterValues';
+import {
+  OCPP16IncomingRequestCommand,
+  OCPP16RequestCommand,
+} from '../../../types/ocpp/1.6/Requests';
+import {
+  OCPP16StandardParametersKey,
+  OCPP16SupportedFeatureProfiles,
+} from '../../../types/ocpp/1.6/Configuration';
 
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import MeasurandValues from '../../../types/MeasurandValues';
-import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
 import OCPPError from '../../../exception/OCPPError';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
@@ -42,6 +49,22 @@ export class OCPP16ServiceUtils {
       logger.error(errMsg);
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
     }
+  }
+
+  public static checkFeatureProfile(
+    chargingStation: ChargingStation,
+    featureProfile: OCPP16SupportedFeatureProfiles,
+    command: OCPP16RequestCommand | OCPP16IncomingRequestCommand
+  ): boolean {
+    if (!chargingStation.hasFeatureProfile(featureProfile)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} Trying to '${command}' without '${featureProfile}' feature enabled in ${
+          OCPP16StandardParametersKey.SupportedFeatureProfiles
+        } in configuration`
+      );
+      return false;
+    }
+    return true;
   }
 
   public static buildSampledValue(
