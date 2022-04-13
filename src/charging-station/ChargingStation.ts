@@ -1504,16 +1504,16 @@ export default class ChargingStation {
           if (this.getEnableStatistics()) {
             this.performanceStatistics.addRequestStatistic(commandName, messageType);
           }
+          logger.debug(
+            `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
+              request
+            )}`
+          );
           // Process the call
           await this.ocppIncomingRequestService.handleRequest(
             messageId,
             commandName,
             commandPayload
-          );
-          logger.debug(
-            `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
-              request
-            )}`
           );
           break;
         // Outcome Message
@@ -1529,6 +1529,11 @@ export default class ChargingStation {
               requestCommandName
             );
           }
+          logger.debug(
+            `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
+              request
+            )}`
+          );
           if (!responseCallback) {
             // Error
             throw new OCPPError(
@@ -1538,11 +1543,6 @@ export default class ChargingStation {
             );
           }
           responseCallback(commandName, requestPayload);
-          logger.debug(
-            `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
-              request
-            )}`
-          );
           break;
         // Error Message
         case MessageType.CALL_ERROR_MESSAGE:
@@ -1555,6 +1555,11 @@ export default class ChargingStation {
               `Cached request for message id ${messageId} error response is not iterable`
             );
           }
+          logger.debug(
+            `${this.logPrefix()} << Command '${requestCommandName}' received error payload: ${JSON.stringify(
+              request
+            )}`
+          );
           if (!rejectCallback) {
             // Error
             throw new OCPPError(
@@ -1565,11 +1570,6 @@ export default class ChargingStation {
           }
           rejectCallback(
             new OCPPError(commandName, commandPayload.toString(), requestCommandName, errorDetails)
-          );
-          logger.debug(
-            `${this.logPrefix()} << Command '${requestCommandName}' received error payload: ${JSON.stringify(
-              request
-            )}`
           );
           break;
         // Error
