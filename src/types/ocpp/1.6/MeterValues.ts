@@ -97,7 +97,7 @@ export interface OCPP16MeterValue extends JsonType {
   sampledValue: OCPP16SampledValue[];
 }
 
-export interface MeterValuesRequest extends JsonType {
+export interface OCPP16MeterValuesRequest extends JsonType {
   connectorId: number;
   transactionId?: number;
   meterValue: OCPP16MeterValue[];

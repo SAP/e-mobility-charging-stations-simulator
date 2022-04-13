@@ -33,7 +33,7 @@ export enum OCPP16IncomingRequestCommand {
   TRIGGER_MESSAGE = 'TriggerMessage',
 }
 
-export type HeartbeatRequest = EmptyObject;
+export type OCPP16HeartbeatRequest = EmptyObject;
 
 export interface OCPP16BootNotificationRequest extends JsonType {
   chargeBoxSerialNumber?: string;
@@ -47,7 +47,7 @@ export interface OCPP16BootNotificationRequest extends JsonType {
   meterType?: string;
 }
 
-export interface StatusNotificationRequest extends JsonType {
+export interface OCPP16StatusNotificationRequest extends JsonType {
   connectorId: number;
   errorCode: OCPP16ChargePointErrorCode;
   info?: string;

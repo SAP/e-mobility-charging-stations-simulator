@@ -30,7 +30,7 @@ export interface IdTagInfo extends JsonType {
   expiryDate?: Date;
 }
 
-export interface AuthorizeRequest extends JsonType {
+export interface OCPP16AuthorizeRequest extends JsonType {
   idTag: string;
 }
 
@@ -38,7 +38,7 @@ export interface OCPP16AuthorizeResponse extends JsonType {
   idTagInfo: IdTagInfo;
 }
 
-export interface StartTransactionRequest extends JsonType {
+export interface OCPP16StartTransactionRequest extends JsonType {
   connectorId: number;
   idTag: string;
   meterStart: number;
@@ -51,7 +51,7 @@ export interface OCPP16StartTransactionResponse extends JsonType {
   transactionId: number;
 }
 
-export interface StopTransactionRequest extends JsonType {
+export interface OCPP16StopTransactionRequest extends JsonType {
   idTag?: string;
   meterStop: number;
   timestamp: string;

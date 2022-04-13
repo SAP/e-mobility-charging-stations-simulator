@@ -65,7 +65,7 @@ export default interface ChargingStationTemplate {
   firmwareVersion?: string;
   iccid?: string;
   imsi?: string;
-  meterSerialNumber?: string;
+  meterSerialNumberPrefix?: string;
   meterType?: string;
   power: number | number[];
   powerSharedByConnectors?: boolean;

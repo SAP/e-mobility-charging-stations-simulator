@@ -19,7 +19,7 @@
       {
         "key": "MeterValuesSampledData",
         "readonly": false,
-        "value": "Energy.Active.Import.Register"
+        "value": "Energy.Active.Import.Register,Current.Import,Voltage"
       },
       {
         "key": "MeterValueSampleInterval",
@@ -29,7 +29,7 @@
       {
         "key": "SupportedFeatureProfiles",
         "readonly": true,
-        "value": "Core,LocalAuthListManagement"
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger"
       },
       {
         "key": "LocalAuthListEnabled",

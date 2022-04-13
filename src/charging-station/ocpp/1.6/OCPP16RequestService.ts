@@ -22,7 +22,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     super(chargingStation, ocppResponseService);
   }
 
-  public async sendMessageHandler<Response extends JsonType>(
+  public async sendMessageHandler<Request extends JsonType, Response extends JsonType>(
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType,
     params?: SendParams
@@ -30,7 +30,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     if (Object.values(OCPP16RequestCommand).includes(commandName)) {
       return (await this.sendMessage(
         Utils.generateUUID(),
-        this.buildCommandPayload(commandName, commandParams),
+        this.buildCommandPayload<Request>(commandName, commandParams),
         commandName,
         params
       )) as unknown as Response;

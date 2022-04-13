@@ -28,7 +28,7 @@
       {
         "key": "SupportedFeatureProfiles",
         "readonly": true,
-        "value": "Core,LocalAuthListManagement"
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger"
       },
       {
         "key": "LocalAuthListEnabled",

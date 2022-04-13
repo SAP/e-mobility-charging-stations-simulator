@@ -5,9 +5,12 @@ import {
   AvailabilityType,
   BootNotificationRequest,
   CachedRequest,
+  HeartbeatRequest,
   IncomingRequest,
   IncomingRequestCommand,
+  MeterValuesRequest,
   RequestCommand,
+  StatusNotificationRequest,
 } from '../types/ocpp/Requests';
 import {
   BootNotificationResponse,
@@ -39,7 +42,11 @@ import {
   VendorDefaultParametersKey,
 } from '../types/ocpp/Configuration';
 import { MeterValue, MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
-import { StopTransactionReason, StopTransactionResponse } from '../types/ocpp/Transaction';
+import {
+  StopTransactionReason,
+  StopTransactionRequest,
+  StopTransactionResponse,
+} from '../types/ocpp/Transaction';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import WebSocket, { Data, OPEN, RawData } from 'ws';
 
@@ -242,20 +249,17 @@ export default class ChargingStation {
       !Utils.isNullOrUndefined(this.getAmperageLimitation()) &&
       this.getAmperageLimitation() < this.stationInfo.maximumAmperage
     ) {
-      const amperageLimitationPowerLimit =
-        this.getCurrentOutType() === CurrentType.AC
+      connectorAmperageLimitationPowerLimit =
+        (this.getCurrentOutType() === CurrentType.AC
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
               this.getVoltageOut(),
               this.getAmperageLimitation() * this.getNumberOfConnectors()
             )
-          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation());
-      connectorAmperageLimitationPowerLimit =
-        amperageLimitationPowerLimit / this.stationInfo.powerDivider;
+          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation())) /
+        this.stationInfo.powerDivider;
     }
-    const connectorMaximumPower =
-      ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
-      this.stationInfo.powerDivider;
+    const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
     const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
@@ -364,7 +368,7 @@ export default class ChargingStation {
     }
     if (
       measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(
+      !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
         measurand
       )
     ) {
@@ -395,7 +399,7 @@ export default class ChargingStation {
         phase &&
         sampledValueTemplates[index]?.phase === phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(
+        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
           measurand
         )
       ) {
@@ -404,7 +408,7 @@ export default class ChargingStation {
         !phase &&
         !sampledValueTemplates[index].phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData).value.includes(
+        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
           measurand
         )
       ) {
@@ -439,7 +443,7 @@ export default class ChargingStation {
     ) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
-        await this.ocppRequestService.sendMessageHandler<HeartbeatResponse>(
+        await this.ocppRequestService.sendMessageHandler<HeartbeatRequest, HeartbeatResponse>(
           RequestCommand.HEARTBEAT
         );
       }, this.getHeartbeatInterval());
@@ -511,7 +515,7 @@ export default class ChargingStation {
             this.getConnectorStatus(connectorId).transactionId,
             interval
           );
-          await this.ocppRequestService.sendMessageHandler<MeterValuesResponse>(
+          await this.ocppRequestService.sendMessageHandler<MeterValuesRequest, MeterValuesResponse>(
             RequestCommand.METER_VALUES,
             {
               connectorId,
@@ -616,14 +620,14 @@ export default class ChargingStation {
     await this.stopMessageSequence(reason);
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0) {
-        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
-          RequestCommand.STATUS_NOTIFICATION,
-          {
-            connectorId,
-            status: ChargePointStatus.UNAVAILABLE,
-            errorCode: ChargePointErrorCode.NO_ERROR,
-          }
-        );
+        await this.ocppRequestService.sendMessageHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(RequestCommand.STATUS_NOTIFICATION, {
+          connectorId,
+          status: ChargePointStatus.UNAVAILABLE,
+          errorCode: ChargePointErrorCode.NO_ERROR,
+        });
         this.getConnectorStatus(connectorId).status = ChargePointStatus.UNAVAILABLE;
       }
     }
@@ -784,9 +788,7 @@ export default class ChargingStation {
               : DCElectricUtils.power(this.getVoltageOut(), chargingSchedulePeriods[0].limit);
       }
     }
-    const connectorMaximumPower =
-      ((this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower) /
-      this.stationInfo.powerDivider;
+    const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
     if (limit > connectorMaximumPower) {
       logger.error(
         `${this.logPrefix()} Charging profile id ${
@@ -830,6 +832,12 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
     delete this.getConnectorStatus(connectorId).transactionBeginMeterValue;
     this.stopMeterValues(connectorId);
+  }
+
+  public hasFeatureProfile(featureProfile: SupportedFeatureProfiles) {
+    return this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)?.value.includes(
+      featureProfile
+    );
   }
 
   public bufferMessage(message: string): void {
@@ -915,6 +923,8 @@ export default class ChargingStation {
         (stationInfo.chargePointSerialNumber = existingStationInfo.chargePointSerialNumber);
       existingStationInfo?.chargeBoxSerialNumber &&
         (stationInfo.chargeBoxSerialNumber = existingStationInfo.chargeBoxSerialNumber);
+      existingStationInfo?.meterSerialNumber &&
+        (stationInfo.meterSerialNumber = existingStationInfo.meterSerialNumber);
     } else {
       const serialNumberSuffix = params?.randomSerialNumber
         ? this.getRandomSerialNumberSuffix({ upperCase: params.randomSerialNumberUpperCase })
@@ -925,6 +935,9 @@ export default class ChargingStation {
       stationInfo.chargeBoxSerialNumber =
         stationInfo?.chargeBoxSerialNumberPrefix &&
         stationInfo.chargeBoxSerialNumberPrefix + serialNumberSuffix;
+      stationInfo.meterSerialNumber =
+        stationInfo?.meterSerialNumberPrefix &&
+        stationInfo.meterSerialNumberPrefix + serialNumberSuffix;
     }
   }
 
@@ -1048,8 +1061,8 @@ export default class ChargingStation {
       }),
       ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
       ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-      ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
-        meterSerialNumber: stationInfo.meterSerialNumber,
+      ...(!Utils.isUndefined(stationInfo.meterSerialNumberPrefix) && {
+        meterSerialNumber: stationInfo.meterSerialNumberPrefix,
       }),
       ...(!Utils.isUndefined(stationInfo.meterType) && {
         meterType: stationInfo.meterType,
@@ -1067,6 +1080,9 @@ export default class ChargingStation {
     this.bootNotificationRequest = this.createBootNotificationRequest(this.stationInfo);
     this.ocppConfiguration = this.getOcppConfiguration();
     delete this.stationInfo.Configuration;
+    this.wsConfiguredConnectionUrl = new URL(
+      this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
+    );
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
     if (maxConnectors <= 0) {
@@ -1151,7 +1167,6 @@ export default class ChargingStation {
         }
       }
     }
-    // The connectors attribute need to be initialized
     this.stationInfo.maximumAmperage = this.getMaximumAmperage();
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
@@ -1162,11 +1177,15 @@ export default class ChargingStation {
         this.initializeConnectorStatus(connectorId);
       }
     }
-    this.wsConfiguredConnectionUrl = new URL(
-      this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
-    );
     // OCPP configuration
     this.initializeOcppConfiguration();
+    if (this.getEnableStatistics()) {
+      this.performanceStatistics = PerformanceStatistics.getInstance(
+        this.hashId,
+        this.stationInfo.chargingStationId,
+        this.wsConnectionUrl
+      );
+    }
     switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
@@ -1188,13 +1207,6 @@ export default class ChargingStation {
       };
     }
     this.stationInfo.powerDivider = this.getPowerDivider();
-    if (this.getEnableStatistics()) {
-      this.performanceStatistics = PerformanceStatistics.getInstance(
-        this.hashId,
-        this.stationInfo.chargingStationId,
-        this.wsConnectionUrl
-      );
-    }
   }
 
   private initializeOcppConfiguration(): void {
@@ -1225,7 +1237,7 @@ export default class ChargingStation {
     if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
       this.addConfigurationKey(
         StandardParametersKey.SupportedFeatureProfiles,
-        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.Local_Auth_List_Management},${SupportedFeatureProfiles.Smart_Charging}`
+        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.FirmwareManagement},${SupportedFeatureProfiles.LocalAuthListManagement},${SupportedFeatureProfiles.SmartCharging},${SupportedFeatureProfiles.RemoteTrigger}`
       );
     }
     this.addConfigurationKey(
@@ -1265,8 +1277,8 @@ export default class ChargingStation {
     }
     if (
       !this.getConfigurationKey(StandardParametersKey.LocalAuthListEnabled) &&
-      this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles).value.includes(
-        SupportedFeatureProfiles.Local_Auth_List_Management
+      this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)?.value.includes(
+        SupportedFeatureProfiles.LocalAuthListManagement
       )
     ) {
       this.addConfigurationKey(StandardParametersKey.LocalAuthListEnabled, 'false');
@@ -1285,9 +1297,7 @@ export default class ChargingStation {
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
         const measureId = `${FileType.ChargingStationConfiguration} read`;
-        const beginId = PerformanceStatistics.beginMeasure(
-          `${FileType.ChargingStationConfiguration} read`
-        );
+        const beginId = PerformanceStatistics.beginMeasure(measureId);
         configuration = JSON.parse(
           fs.readFileSync(this.configurationFile, 'utf8')
         ) as ChargingStationConfiguration;
@@ -1374,15 +1384,18 @@ export default class ChargingStation {
   }
 
   private async onOpen(): Promise<void> {
-    logger.info(
-      `${this.logPrefix()} Connected to OCPP server through ${this.wsConnectionUrl.toString()}`
-    );
-    if (!this.isInAcceptedState()) {
-      // Send BootNotification
-      let registrationRetryCount = 0;
-      do {
-        this.bootNotificationResponse =
-          await this.ocppRequestService.sendMessageHandler<BootNotificationResponse>(
+    if (this.isWebSocketConnectionOpened()) {
+      logger.info(
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`
+      );
+      if (!this.isInAcceptedState()) {
+        // Send BootNotification
+        let registrationRetryCount = 0;
+        do {
+          this.bootNotificationResponse = await this.ocppRequestService.sendMessageHandler<
+            BootNotificationRequest,
+            BootNotificationResponse
+          >(
             RequestCommand.BOOT_NOTIFICATION,
             {
               chargePointModel: this.bootNotificationRequest.chargePointModel,
@@ -1397,33 +1410,38 @@ export default class ChargingStation {
             },
             { skipBufferingOnError: true }
           );
-        if (!this.isInAcceptedState()) {
-          this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
-          await Utils.sleep(
-            this.bootNotificationResponse?.interval
-              ? this.bootNotificationResponse.interval * 1000
-              : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL
-          );
-        }
-      } while (
-        !this.isInAcceptedState() &&
-        (registrationRetryCount <= this.getRegistrationMaxRetries() ||
-          this.getRegistrationMaxRetries() === -1)
-      );
-    }
-    if (this.isInAcceptedState()) {
-      await this.startMessageSequence();
-      this.stopped && (this.stopped = false);
-      if (this.wsConnectionRestarted && this.isWebSocketConnectionOpened()) {
-        this.flushMessageBuffer();
+          if (!this.isInAcceptedState()) {
+            this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
+            await Utils.sleep(
+              this.bootNotificationResponse?.interval
+                ? this.bootNotificationResponse.interval * 1000
+                : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL
+            );
+          }
+        } while (
+          !this.isInAcceptedState() &&
+          (registrationRetryCount <= this.getRegistrationMaxRetries() ||
+            this.getRegistrationMaxRetries() === -1)
+        );
       }
+      if (this.isInAcceptedState()) {
+        await this.startMessageSequence();
+        this.stopped && (this.stopped = false);
+        if (this.wsConnectionRestarted) {
+          this.flushMessageBuffer();
+        }
+      } else {
+        logger.error(
+          `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
+        );
+      }
+      this.autoReconnectRetryCount = 0;
+      this.wsConnectionRestarted = false;
     } else {
-      logger.error(
-        `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
+      logger.warn(
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
       );
     }
-    this.autoReconnectRetryCount = 0;
-    this.wsConnectionRestarted = false;
   }
 
   private async onClose(code: number, reason: string): Promise<void> {
@@ -1683,8 +1701,12 @@ export default class ChargingStation {
     return maxConnectors;
   }
 
+  private getMaximumPower(): number {
+    return (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
+  }
+
   private getMaximumAmperage(): number | undefined {
-    const maximumPower = (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
+    const maximumPower = this.getMaximumPower();
     switch (this.getCurrentOutType()) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
@@ -1728,7 +1750,10 @@ export default class ChargingStation {
 
   private async startMessageSequence(): Promise<void> {
     if (this.stationInfo.autoRegister) {
-      await this.ocppRequestService.sendMessageHandler<BootNotificationResponse>(
+      await this.ocppRequestService.sendMessageHandler<
+        BootNotificationRequest,
+        BootNotificationResponse
+      >(
         RequestCommand.BOOT_NOTIFICATION,
         {
           chargePointModel: this.bootNotificationRequest.chargePointModel,
@@ -1758,14 +1783,14 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
         // Send status in template at startup
-        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
-          RequestCommand.STATUS_NOTIFICATION,
-          {
-            connectorId,
-            status: this.getConnectorStatus(connectorId).bootStatus,
-            errorCode: ChargePointErrorCode.NO_ERROR,
-          }
-        );
+        await this.ocppRequestService.sendMessageHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(RequestCommand.STATUS_NOTIFICATION, {
+          connectorId,
+          status: this.getConnectorStatus(connectorId).bootStatus,
+          errorCode: ChargePointErrorCode.NO_ERROR,
+        });
         this.getConnectorStatus(connectorId).status =
           this.getConnectorStatus(connectorId).bootStatus;
       } else if (
@@ -1774,36 +1799,36 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
         // Send status in template after reset
-        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
-          RequestCommand.STATUS_NOTIFICATION,
-          {
-            connectorId,
-            status: this.getConnectorStatus(connectorId).bootStatus,
-            errorCode: ChargePointErrorCode.NO_ERROR,
-          }
-        );
+        await this.ocppRequestService.sendMessageHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(RequestCommand.STATUS_NOTIFICATION, {
+          connectorId,
+          status: this.getConnectorStatus(connectorId).bootStatus,
+          errorCode: ChargePointErrorCode.NO_ERROR,
+        });
         this.getConnectorStatus(connectorId).status =
           this.getConnectorStatus(connectorId).bootStatus;
       } else if (!this.stopped && this.getConnectorStatus(connectorId)?.status) {
         // Send previous status at template reload
-        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
-          RequestCommand.STATUS_NOTIFICATION,
-          {
-            connectorId,
-            status: this.getConnectorStatus(connectorId).status,
-            errorCode: ChargePointErrorCode.NO_ERROR,
-          }
-        );
+        await this.ocppRequestService.sendMessageHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(RequestCommand.STATUS_NOTIFICATION, {
+          connectorId,
+          status: this.getConnectorStatus(connectorId).status,
+          errorCode: ChargePointErrorCode.NO_ERROR,
+        });
       } else {
         // Send default status
-        await this.ocppRequestService.sendMessageHandler<StatusNotificationResponse>(
-          RequestCommand.STATUS_NOTIFICATION,
-          {
-            connectorId,
-            status: ChargePointStatus.AVAILABLE,
-            errorCode: ChargePointErrorCode.NO_ERROR,
-          }
-        );
+        await this.ocppRequestService.sendMessageHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(RequestCommand.STATUS_NOTIFICATION, {
+          connectorId,
+          status: ChargePointStatus.AVAILABLE,
+          errorCode: ChargePointErrorCode.NO_ERROR,
+        });
         this.getConnectorStatus(connectorId).status = ChargePointStatus.AVAILABLE;
       }
     }
@@ -1850,24 +1875,24 @@ export default class ChargingStation {
               connectorId,
               this.getEnergyActiveImportRegisterByTransactionId(transactionId)
             );
-            await this.ocppRequestService.sendMessageHandler<MeterValuesResponse>(
-              RequestCommand.METER_VALUES,
-              {
-                connectorId,
-                transactionId,
-                meterValue: transactionEndMeterValue,
-              }
-            );
-          }
-          await this.ocppRequestService.sendMessageHandler<StopTransactionResponse>(
-            RequestCommand.STOP_TRANSACTION,
-            {
+            await this.ocppRequestService.sendMessageHandler<
+              MeterValuesRequest,
+              MeterValuesResponse
+            >(RequestCommand.METER_VALUES, {
+              connectorId,
               transactionId,
-              meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
-              idTag: this.getTransactionIdTag(transactionId),
-              reason,
-            }
-          );
+              meterValue: transactionEndMeterValue,
+            });
+          }
+          await this.ocppRequestService.sendMessageHandler<
+            StopTransactionRequest,
+            StopTransactionResponse
+          >(RequestCommand.STOP_TRANSACTION, {
+            transactionId,
+            meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+            idTag: this.getTransactionIdTag(transactionId),
+            reason,
+          });
         }
       }
     }

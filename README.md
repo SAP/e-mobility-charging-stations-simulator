@@ -34,7 +34,7 @@ All configuration files are in the JSON standard format.
 
 - charging stations simulator configuration: [src/assets/config.json](src/assets/config.json);
 - charging station configuration templates: [src/assets/station-templates](src/assets/station-templates);
-- charging station configurations: [src/assets/configurations](src/assets/configurations);
+- charging station configurations: [dist/assets/configurations](dist/assets/configurations);
 - charging station RFID tags lists in [src/assets](src/assets).
 
 The charging stations simulator's configuration parameters must be within the `src/assets/config.json` file. A charging station simulator configuration template file is available at [src/assets/config-template.json](src/assets/config-template.json).
@@ -45,7 +45,7 @@ A list of RFID tags must be defined for the automatic transaction generator with
 
 **Configuration files hierarchy and priority**:
 
-1. charging station configuration: [src/assets/configurations](src/assets/configurations);
+1. charging station configuration: [dist/assets/configurations](dist/assets/configurations);
 2. charging station configuration template: [src/assets/station-templates](src/assets/station-templates);
 3. charging stations simulator configuration: [src/assets/config.json](src/assets/config.json).
 
@@ -223,9 +223,9 @@ But the modifications to test have to be done to the files in the build result d
 
 ### Charging station configuration
 
-**src/assets/configurations/\<hashId\>.json**:
+**dist/assets/configurations/\<hashId\>.json**:
 
-The charging station configuration file is automatically generated at startup from the charging station configuration template file and are persistent.
+The charging station configuration file is automatically generated at startup from the charging station configuration template file and is persistent.
 
 The charging station configuration file content can be regenerated partially on matching charging station configuration template file changes. The charging station serial number is kept unchanged.
 
@@ -240,6 +240,9 @@ The syntax is similar to the charging station configuration template 'Configurat
 ## Start
 
 To start the program, run: `npm start`.
+
+To start the program with a UI controller, run: `npm start:server`.
+Then, start/stop the simulator by going to `https://<hostname:port>` in a browser. Localhost port will default to 8080. For Cloud Foundry, the port is assigned based on the `process.env.PORT` environment variable.
 
 ## Docker
 
@@ -298,7 +301,7 @@ make SUBMODULES_INIT=true
 #### Smart Charging Profile
 
 - :white_check_mark: ClearChargingProfile
-- :white_check_mark: GetCompositeSchedule
+- :x: GetCompositeSchedule
 - :white_check_mark: SetChargingProfile
 
 #### Remote Trigger Profile
