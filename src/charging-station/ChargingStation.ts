@@ -76,6 +76,7 @@ import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemp
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { URL } from 'url';
 import Utils from '../utils/Utils';
+import chalk from 'chalk';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
@@ -1486,6 +1487,8 @@ export default class ChargingStation {
     let errMsg: string;
     try {
       const request = JSON.parse(data.toString()) as IncomingRequest;
+      const requestAsString = JSON.stringify(request);
+      console.log(chalk`{yellow << Received message = ${requestAsString}}`);
       if (Utils.isIterable(request)) {
         // Parse the message
         [messageType, messageId, commandName, commandPayload, errorDetails] = request;
