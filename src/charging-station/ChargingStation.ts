@@ -541,6 +541,27 @@ export default class ChargingStation {
       this.performanceStatistics.start();
     }
     this.openWSConnection();
+    // Handle WebSocket message
+    this.wsConnection.on(
+      'message',
+      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
+    );
+    // Handle WebSocket error
+    this.wsConnection.on(
+      'error',
+      this.onError.bind(this) as (this: WebSocket, error: Error) => void
+    );
+    // Handle WebSocket close
+    this.wsConnection.on(
+      'close',
+      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
+    );
+    // Handle WebSocket open
+    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
+    // Handle WebSocket ping
+    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
+    // Handle WebSocket pong
+    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
     // Monitor authorization file
     FileUtils.watchJsonFile<string[]>(
       this.logPrefix(),
@@ -587,27 +608,6 @@ export default class ChargingStation {
         }
       }
     );
-    // Handle WebSocket message
-    this.wsConnection.on(
-      'message',
-      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
-    );
-    // Handle WebSocket error
-    this.wsConnection.on(
-      'error',
-      this.onError.bind(this) as (this: WebSocket, error: Error) => void
-    );
-    // Handle WebSocket close
-    this.wsConnection.on(
-      'close',
-      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
-    );
-    // Handle WebSocket open
-    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
-    // Handle WebSocket ping
-    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
-    // Handle WebSocket pong
-    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
     parentPort.postMessage({
       id: ChargingStationWorkerMessageEvents.STARTED,
       data: { id: this.stationInfo.chargingStationId },
@@ -1387,7 +1387,7 @@ export default class ChargingStation {
       logger.info(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`
       );
-      if (!this.isInAcceptedState()) {
+      if (!this.isRegistered()) {
         // Send BootNotification
         let registrationRetryCount = 0;
         do {
@@ -1409,7 +1409,7 @@ export default class ChargingStation {
             },
             { skipBufferingOnError: true }
           );
-          if (!this.isInAcceptedState()) {
+          if (!this.isRegistered()) {
             this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
             await Utils.sleep(
               this.bootNotificationResponse?.interval
@@ -1418,22 +1418,22 @@ export default class ChargingStation {
             );
           }
         } while (
-          !this.isInAcceptedState() &&
+          !this.isRegistered() &&
           (registrationRetryCount <= this.getRegistrationMaxRetries() ||
             this.getRegistrationMaxRetries() === -1)
         );
       }
-      if (this.isInAcceptedState()) {
-        await this.startMessageSequence();
-        this.stopped && (this.stopped = false);
-        if (this.wsConnectionRestarted) {
-          this.flushMessageBuffer();
+      if (this.isRegistered()) {
+        if (this.isInAcceptedState()) {
+          await this.startMessageSequence();
+          this.wsConnectionRestarted && this.flushMessageBuffer();
         }
       } else {
         logger.error(
           `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
         );
       }
+      this.stopped && (this.stopped = false);
       this.autoReconnectRetryCount = 0;
       this.wsConnectionRestarted = false;
     } else {
