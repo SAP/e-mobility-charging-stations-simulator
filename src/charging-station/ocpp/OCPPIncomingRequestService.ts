@@ -47,7 +47,7 @@ export default abstract class OCPPIncomingRequestService {
     }
   }
 
-  public abstract handleRequest(
+  public abstract incomingRequestHandler(
     messageId: string,
     commandName: IncomingRequestCommand,
     commandPayload: JsonType

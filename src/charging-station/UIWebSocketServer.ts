@@ -53,7 +53,7 @@ export default class UIWebSocketServer extends Server {
         }
         this.uiServices
           .get(version)
-          .handleMessage(command, payload)
+          .messageHandler(command, payload)
           .catch(() => {
             logger.error(
               `${this.logPrefix()} Error while handling command %s message: %j`,

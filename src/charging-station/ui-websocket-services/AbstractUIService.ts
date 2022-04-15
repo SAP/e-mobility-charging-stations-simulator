@@ -16,7 +16,7 @@ export default abstract class AbstractUIService {
     ]);
   }
 
-  public async handleMessage(command: ProtocolCommand, payload: JsonType): Promise<void> {
+  public async messageHandler(command: ProtocolCommand, payload: JsonType): Promise<void> {
     let messageResponse: JsonType;
     if (this.messageHandlers.has(command)) {
       try {

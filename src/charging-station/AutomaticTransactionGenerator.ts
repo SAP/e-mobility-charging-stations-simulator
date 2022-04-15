@@ -278,7 +278,7 @@ export default class AutomaticTransactionGenerator {
         this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
         // Authorize idTag
         const authorizeResponse: AuthorizeResponse =
-          await this.chargingStation.ocppRequestService.sendMessageHandler<
+          await this.chargingStation.ocppRequestService.requestHandler<
             AuthorizeRequest,
             AuthorizeResponse
           >(RequestCommand.AUTHORIZE, {
@@ -289,7 +289,7 @@ export default class AutomaticTransactionGenerator {
           this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests++;
           logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
           // Start transaction
-          startResponse = await this.chargingStation.ocppRequestService.sendMessageHandler<
+          startResponse = await this.chargingStation.ocppRequestService.requestHandler<
             StartTransactionRequest,
             StartTransactionResponse
           >(RequestCommand.START_TRANSACTION, {
@@ -305,7 +305,7 @@ export default class AutomaticTransactionGenerator {
       }
       logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
       // Start transaction
-      startResponse = await this.chargingStation.ocppRequestService.sendMessageHandler<
+      startResponse = await this.chargingStation.ocppRequestService.requestHandler<
         StartTransactionRequest,
         StartTransactionResponse
       >(RequestCommand.START_TRANSACTION, {
@@ -316,7 +316,7 @@ export default class AutomaticTransactionGenerator {
       return startResponse;
     }
     logger.info(this.logPrefix(connectorId) + ' start transaction without an idTag');
-    startResponse = await this.chargingStation.ocppRequestService.sendMessageHandler<
+    startResponse = await this.chargingStation.ocppRequestService.requestHandler<
       StartTransactionRequest,
       StartTransactionResponse
     >(RequestCommand.START_TRANSACTION, { connectorId });
@@ -345,7 +345,7 @@ export default class AutomaticTransactionGenerator {
           connectorId,
           this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
         );
-        await this.chargingStation.ocppRequestService.sendMessageHandler<
+        await this.chargingStation.ocppRequestService.requestHandler<
           MeterValuesRequest,
           MeterValuesResponse
         >(RequestCommand.METER_VALUES, {
@@ -354,7 +354,7 @@ export default class AutomaticTransactionGenerator {
           meterValue: transactionEndMeterValue,
         });
       }
-      stopResponse = await this.chargingStation.ocppRequestService.sendMessageHandler<
+      stopResponse = await this.chargingStation.ocppRequestService.requestHandler<
         StopTransactionRequest,
         StopTransactionResponse
       >(RequestCommand.STOP_TRANSACTION, {

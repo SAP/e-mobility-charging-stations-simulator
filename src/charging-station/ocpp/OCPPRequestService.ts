@@ -33,7 +33,7 @@ export default abstract class OCPPRequestService {
   ) {
     this.chargingStation = chargingStation;
     this.ocppResponseService = ocppResponseService;
-    this.sendMessageHandler.bind(this);
+    this.requestHandler.bind(this);
     this.sendResult.bind(this);
     this.sendError.bind(this);
   }
@@ -210,7 +210,7 @@ export default abstract class OCPPRequestService {
             }
             // Handle the request's response
             try {
-              await self.ocppResponseService.handleResponse(
+              await self.ocppResponseService.responseHandler(
                 commandName as RequestCommand,
                 payload,
                 requestPayload
@@ -335,7 +335,7 @@ export default abstract class OCPPRequestService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public abstract sendMessageHandler<Request extends JsonType, Response extends JsonType>(
+  public abstract requestHandler<Request extends JsonType, Response extends JsonType>(
     commandName: RequestCommand,
     commandParams?: JsonType,
     params?: SendParams

@@ -24,7 +24,7 @@ export default abstract class OCPPResponseService {
     return OCPPResponseService.instances.get(chargingStation.hashId) as T;
   }
 
-  public abstract handleResponse(
+  public abstract responseHandler(
     commandName: RequestCommand,
     payload: JsonType | string,
     requestPayload: JsonType

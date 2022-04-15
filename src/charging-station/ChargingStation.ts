@@ -442,7 +442,7 @@ export default class ChargingStation {
     ) {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
-        await this.ocppRequestService.sendMessageHandler<HeartbeatRequest, HeartbeatResponse>(
+        await this.ocppRequestService.requestHandler<HeartbeatRequest, HeartbeatResponse>(
           RequestCommand.HEARTBEAT
         );
       }, this.getHeartbeatInterval());
@@ -514,7 +514,7 @@ export default class ChargingStation {
             this.getConnectorStatus(connectorId).transactionId,
             interval
           );
-          await this.ocppRequestService.sendMessageHandler<MeterValuesRequest, MeterValuesResponse>(
+          await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
             RequestCommand.METER_VALUES,
             {
               connectorId,
@@ -619,7 +619,7 @@ export default class ChargingStation {
     await this.stopMessageSequence(reason);
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0) {
-        await this.ocppRequestService.sendMessageHandler<
+        await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
         >(RequestCommand.STATUS_NOTIFICATION, {
@@ -1391,7 +1391,7 @@ export default class ChargingStation {
         // Send BootNotification
         let registrationRetryCount = 0;
         do {
-          this.bootNotificationResponse = await this.ocppRequestService.sendMessageHandler<
+          this.bootNotificationResponse = await this.ocppRequestService.requestHandler<
             BootNotificationRequest,
             BootNotificationResponse
           >(
@@ -1510,7 +1510,7 @@ export default class ChargingStation {
             )}`
           );
           // Process the call
-          await this.ocppIncomingRequestService.handleRequest(
+          await this.ocppIncomingRequestService.incomingRequestHandler(
             messageId,
             commandName,
             commandPayload
@@ -1763,7 +1763,7 @@ export default class ChargingStation {
 
   private async startMessageSequence(): Promise<void> {
     if (this.stationInfo.autoRegister) {
-      await this.ocppRequestService.sendMessageHandler<
+      await this.ocppRequestService.requestHandler<
         BootNotificationRequest,
         BootNotificationResponse
       >(
@@ -1796,7 +1796,7 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
         // Send status in template at startup
-        await this.ocppRequestService.sendMessageHandler<
+        await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
         >(RequestCommand.STATUS_NOTIFICATION, {
@@ -1812,7 +1812,7 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
         // Send status in template after reset
-        await this.ocppRequestService.sendMessageHandler<
+        await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
         >(RequestCommand.STATUS_NOTIFICATION, {
@@ -1824,7 +1824,7 @@ export default class ChargingStation {
           this.getConnectorStatus(connectorId).bootStatus;
       } else if (!this.stopped && this.getConnectorStatus(connectorId)?.status) {
         // Send previous status at template reload
-        await this.ocppRequestService.sendMessageHandler<
+        await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
         >(RequestCommand.STATUS_NOTIFICATION, {
@@ -1834,7 +1834,7 @@ export default class ChargingStation {
         });
       } else {
         // Send default status
-        await this.ocppRequestService.sendMessageHandler<
+        await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
         >(RequestCommand.STATUS_NOTIFICATION, {
@@ -1888,16 +1888,16 @@ export default class ChargingStation {
               connectorId,
               this.getEnergyActiveImportRegisterByTransactionId(transactionId)
             );
-            await this.ocppRequestService.sendMessageHandler<
-              MeterValuesRequest,
-              MeterValuesResponse
-            >(RequestCommand.METER_VALUES, {
-              connectorId,
-              transactionId,
-              meterValue: transactionEndMeterValue,
-            });
+            await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+              RequestCommand.METER_VALUES,
+              {
+                connectorId,
+                transactionId,
+                meterValue: transactionEndMeterValue,
+              }
+            );
           }
-          await this.ocppRequestService.sendMessageHandler<
+          await this.ocppRequestService.requestHandler<
             StopTransactionRequest,
             StopTransactionResponse
           >(RequestCommand.STOP_TRANSACTION, {
