@@ -126,7 +126,8 @@ export default abstract class OCPPRequestService {
       (!this.chargingStation.getOcppStrictCompliance() &&
         this.chargingStation.isInUnknownState()) ||
       this.chargingStation.isInAcceptedState() ||
-      (this.chargingStation.isInPendingState() && params.triggerMessage)
+      (this.chargingStation.isInPendingState() &&
+        (params.triggerMessage || messageType === MessageType.CALL_RESULT_MESSAGE))
     ) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
