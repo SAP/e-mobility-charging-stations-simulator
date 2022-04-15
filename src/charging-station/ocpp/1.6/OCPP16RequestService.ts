@@ -37,7 +37,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
     throw new OCPPError(
       ErrorType.NOT_SUPPORTED,
-      `${moduleName}.sendMessageHandler: Unsupported OCPP command ${commandName}`,
+      `${moduleName}.requestHandler: Unsupported OCPP command ${commandName}`,
       commandName,
       { commandName }
     );
@@ -133,7 +133,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         throw new OCPPError(
           ErrorType.NOT_SUPPORTED,
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${moduleName}.buildCommandPayload: Unsupported OCPP command: ${commandName}`,
+          `${moduleName}.buildRequestPayload: Unsupported OCPP command: ${commandName}`,
           commandName,
           { commandName }
         );
