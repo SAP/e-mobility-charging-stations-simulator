@@ -13,7 +13,7 @@ import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
 import { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import OCPPError from '../../exception/OCPPError';
 
-export interface SendParams {
+export interface RequestParams {
   skipBufferingOnError?: boolean;
   triggerMessage?: boolean;
 }

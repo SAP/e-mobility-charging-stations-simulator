@@ -1,8 +1,8 @@
 import {
   IncomingRequestCommand,
   RequestCommand,
+  RequestParams,
   ResponseType,
-  SendParams,
 } from '../../types/ocpp/Requests';
 
 import type ChargingStation from '../ChargingStation';
@@ -92,7 +92,7 @@ export default abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType,
     commandName: RequestCommand,
-    params: SendParams = {
+    params: RequestParams = {
       skipBufferingOnError: false,
       triggerMessage: false,
     }
@@ -115,7 +115,7 @@ export default abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName?: RequestCommand | IncomingRequestCommand,
-    params: SendParams = {
+    params: RequestParams = {
       skipBufferingOnError: false,
       triggerMessage: false,
     }
@@ -338,6 +338,6 @@ export default abstract class OCPPRequestService {
   public abstract requestHandler<Request extends JsonType, Response extends JsonType>(
     commandName: RequestCommand,
     commandParams?: JsonType,
-    params?: SendParams
+    params?: RequestParams
   ): Promise<Response>;
 }

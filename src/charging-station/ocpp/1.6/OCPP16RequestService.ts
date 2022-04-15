@@ -9,7 +9,7 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
-import { SendParams } from '../../../types/ocpp/Requests';
+import { RequestParams } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 
 const moduleName = 'OCPP16RequestService';
@@ -25,7 +25,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
   public async requestHandler<Request extends JsonType, Response extends JsonType>(
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType,
-    params?: SendParams
+    params?: RequestParams
   ): Promise<Response> {
     if (Object.values(OCPP16RequestCommand).includes(commandName)) {
       return (await this.sendMessage(
