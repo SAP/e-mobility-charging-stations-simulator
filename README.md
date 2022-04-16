@@ -35,7 +35,7 @@ All configuration files are in the JSON standard format.
 - charging stations simulator configuration: [src/assets/config.json](src/assets/config.json);
 - charging station configuration templates: [src/assets/station-templates](src/assets/station-templates);
 - charging station configurations: [dist/assets/configurations](dist/assets/configurations);
-- charging station RFID tags lists in [src/assets](src/assets).
+- charging station RFID tags lists: [src/assets](src/assets).
 
 The charging stations simulator's configuration parameters must be within the `src/assets/config.json` file. A charging station simulator configuration template file is available at [src/assets/config-template.json](src/assets/config-template.json).
 
