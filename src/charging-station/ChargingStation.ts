@@ -1521,16 +1521,15 @@ export default class ChargingStation {
               );
             }
             logger.debug(
-              `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
-                request
-              )}`
+              `${this.logPrefix()} << Command '${
+                requestCommandName ?? ''
+              }' received response payload: ${JSON.stringify(request)}`
             );
             if (!responseCallback) {
               // Error
               throw new OCPPError(
                 ErrorType.INTERNAL_ERROR,
-                `Response for unknown message id ${messageId}`,
-                requestCommandName
+                `Response for unknown message id ${messageId}`
               );
             }
             responseCallback(commandPayload, requestPayload);
@@ -1548,16 +1547,15 @@ export default class ChargingStation {
               );
             }
             logger.debug(
-              `${this.logPrefix()} << Command '${requestCommandName}' received error payload: ${JSON.stringify(
-                request
-              )}`
+              `${this.logPrefix()} << Command '${
+                requestCommandName ?? ''
+              }' received error payload: ${JSON.stringify(request)}`
             );
             if (!rejectCallback) {
               // Error
               throw new OCPPError(
                 ErrorType.INTERNAL_ERROR,
-                `Error response for unknown message id ${messageId}`,
-                requestCommandName
+                `Error response for unknown message id ${messageId}`
               );
             }
             rejectCallback(
