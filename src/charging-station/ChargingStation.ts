@@ -1486,12 +1486,12 @@ export default class ChargingStation {
     try {
       const request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
       if (Utils.isIterable(request)) {
-        [messageType] = request;
+        [messageType, messageId] = request;
         // Check the type of message
         switch (messageType) {
           // Incoming Message
           case MessageType.CALL_MESSAGE:
-            [, messageId, commandName, commandPayload] = request as IncomingRequest;
+            [, , commandName, commandPayload] = request as IncomingRequest;
             if (this.getEnableStatistics()) {
               this.performanceStatistics.addRequestStatistic(commandName, messageType);
             }
@@ -1509,7 +1509,7 @@ export default class ChargingStation {
             break;
           // Outcome Message
           case MessageType.CALL_RESULT_MESSAGE:
-            [, messageId, commandPayload] = request as Response;
+            [, , commandPayload] = request as Response;
             // Respond
             cachedRequest = this.requests.get(messageId);
             if (Utils.isIterable(cachedRequest)) {
@@ -1536,7 +1536,7 @@ export default class ChargingStation {
             break;
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
-            [, messageId, errorType, errorMessage, errorDetails] = request as ErrorResponse;
+            [, , errorType, errorMessage, errorDetails] = request as ErrorResponse;
             cachedRequest = this.requests.get(messageId);
             if (Utils.isIterable(cachedRequest)) {
               [, rejectCallback, requestCommandName] = cachedRequest;
