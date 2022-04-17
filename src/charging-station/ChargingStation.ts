@@ -1517,8 +1517,7 @@ export default class ChargingStation {
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} response is not iterable`,
-                requestCommandName
+                `Cached request for message id ${messageId} response is not iterable`
               );
             }
             logger.debug(
@@ -1573,12 +1572,9 @@ export default class ChargingStation {
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
       } else {
-        throw new OCPPError(
-          ErrorType.PROTOCOL_ERROR,
-          'Incoming message is not iterable',
-          Utils.isString(commandName) ? commandName : requestCommandName,
-          { payload: request }
-        );
+        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
+          payload: request,
+        });
       }
     } catch (error) {
       // Log
@@ -1594,7 +1590,7 @@ export default class ChargingStation {
         (await this.ocppRequestService.sendError(
           messageId,
           error as OCPPError,
-          Utils.isString(commandName) ? commandName : requestCommandName
+          Utils.isString(commandName) ? commandName : requestCommandName ?? null
         ));
     }
   }
