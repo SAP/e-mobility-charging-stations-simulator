@@ -1517,7 +1517,9 @@ export default class ChargingStation {
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} response is not iterable`
+                `Cached request for message id ${messageId} response is not iterable`,
+                null,
+                cachedRequest as unknown as JsonType
               );
             }
             logger.debug(
@@ -1529,7 +1531,9 @@ export default class ChargingStation {
               // Error
               throw new OCPPError(
                 ErrorType.INTERNAL_ERROR,
-                `Response for unknown message id ${messageId}`
+                `Response for unknown message id ${messageId}`,
+                null,
+                commandPayload
               );
             }
             responseCallback(commandPayload, requestPayload);
@@ -1543,7 +1547,9 @@ export default class ChargingStation {
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} error response is not iterable`
+                `Cached request for message id ${messageId} error response is not iterable`,
+                null,
+                cachedRequest as unknown as JsonType
               );
             }
             logger.debug(
@@ -1555,7 +1561,9 @@ export default class ChargingStation {
               // Error
               throw new OCPPError(
                 ErrorType.INTERNAL_ERROR,
-                `Error response for unknown message id ${messageId}`
+                `Error response for unknown message id ${messageId}`,
+                null,
+                { errorType, errorMessage, errorDetails }
               );
             }
             rejectCallback(
