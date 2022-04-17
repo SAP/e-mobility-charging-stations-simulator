@@ -14,9 +14,11 @@ import {
 } from '../types/ocpp/Requests';
 import {
   BootNotificationResponse,
+  ErrorResponse,
   HeartbeatResponse,
   MeterValuesResponse,
   RegistrationStatus,
+  Response,
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
@@ -1468,116 +1470,115 @@ export default class ChargingStation {
   }
 
   private async onMessage(data: Data): Promise<void> {
-    let [messageType, messageId, commandName, commandPayload, errorDetails]: IncomingRequest = [
-      0,
-      '',
-      '' as IncomingRequestCommand,
-      {},
-      {},
-    ];
-    let responseCallback: (
-      payload: JsonType | string,
-      requestPayload: JsonType | OCPPError
-    ) => void;
+    let messageType: number;
+    let messageId: string;
+    let commandName: IncomingRequestCommand;
+    let commandPayload: JsonType;
+    let errorType: ErrorType;
+    let errorMessage: string;
+    let errorDetails: JsonType;
+    let responseCallback: (payload: JsonType, requestPayload: JsonType) => void;
     let rejectCallback: (error: OCPPError, requestStatistic?: boolean) => void;
     let requestCommandName: RequestCommand | IncomingRequestCommand;
-    let requestPayload: JsonType | OCPPError;
+    let requestPayload: JsonType;
     let cachedRequest: CachedRequest;
     let errMsg: string;
     try {
-      const request = JSON.parse(data.toString()) as IncomingRequest;
+      const request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
       if (Utils.isIterable(request)) {
-        // Parse the message
-        [messageType, messageId, commandName, commandPayload, errorDetails] = request;
+        [messageType] = request;
+        // Check the type of message
+        switch (messageType) {
+          // Incoming Message
+          case MessageType.CALL_MESSAGE:
+            [, messageId, commandName, commandPayload] = request as IncomingRequest;
+            if (this.getEnableStatistics()) {
+              this.performanceStatistics.addRequestStatistic(commandName, messageType);
+            }
+            logger.debug(
+              `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
+                request
+              )}`
+            );
+            // Process the message
+            await this.ocppIncomingRequestService.incomingRequestHandler(
+              messageId,
+              commandName,
+              commandPayload
+            );
+            break;
+          // Outcome Message
+          case MessageType.CALL_RESULT_MESSAGE:
+            [, messageId, commandPayload] = request as Response;
+            // Respond
+            cachedRequest = this.requests.get(messageId);
+            if (Utils.isIterable(cachedRequest)) {
+              [responseCallback, , requestCommandName, requestPayload] = cachedRequest;
+            } else {
+              throw new OCPPError(
+                ErrorType.PROTOCOL_ERROR,
+                `Cached request for message id ${messageId} response is not iterable`,
+                requestCommandName
+              );
+            }
+            logger.debug(
+              `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
+                request
+              )}`
+            );
+            if (!responseCallback) {
+              // Error
+              throw new OCPPError(
+                ErrorType.INTERNAL_ERROR,
+                `Response for unknown message id ${messageId}`,
+                requestCommandName
+              );
+            }
+            responseCallback(commandPayload, requestPayload);
+            break;
+          // Error Message
+          case MessageType.CALL_ERROR_MESSAGE:
+            [, messageId, errorType, errorMessage, errorDetails] = request as ErrorResponse;
+            cachedRequest = this.requests.get(messageId);
+            if (Utils.isIterable(cachedRequest)) {
+              [, rejectCallback, requestCommandName] = cachedRequest;
+            } else {
+              throw new OCPPError(
+                ErrorType.PROTOCOL_ERROR,
+                `Cached request for message id ${messageId} error response is not iterable`
+              );
+            }
+            logger.debug(
+              `${this.logPrefix()} << Command '${requestCommandName}' received error payload: ${JSON.stringify(
+                request
+              )}`
+            );
+            if (!rejectCallback) {
+              // Error
+              throw new OCPPError(
+                ErrorType.INTERNAL_ERROR,
+                `Error response for unknown message id ${messageId}`,
+                requestCommandName
+              );
+            }
+            rejectCallback(
+              new OCPPError(errorType, errorMessage, requestCommandName, errorDetails)
+            );
+            break;
+          // Error
+          default:
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            errMsg = `${this.logPrefix()} Wrong message type ${messageType}`;
+            logger.error(errMsg);
+            throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
+        }
       } else {
         throw new OCPPError(
           ErrorType.PROTOCOL_ERROR,
           'Incoming message is not iterable',
-          Utils.isString(commandName) && commandName,
+          Utils.isString(commandName) ? commandName : requestCommandName,
           { payload: request }
         );
-      }
-      // Check the Type of message
-      switch (messageType) {
-        // Incoming Message
-        case MessageType.CALL_MESSAGE:
-          if (this.getEnableStatistics()) {
-            this.performanceStatistics.addRequestStatistic(commandName, messageType);
-          }
-          logger.debug(
-            `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
-              request
-            )}`
-          );
-          // Process the call
-          await this.ocppIncomingRequestService.incomingRequestHandler(
-            messageId,
-            commandName,
-            commandPayload
-          );
-          break;
-        // Outcome Message
-        case MessageType.CALL_RESULT_MESSAGE:
-          // Respond
-          cachedRequest = this.requests.get(messageId);
-          if (Utils.isIterable(cachedRequest)) {
-            [responseCallback, , requestCommandName, requestPayload] = cachedRequest;
-          } else {
-            throw new OCPPError(
-              ErrorType.PROTOCOL_ERROR,
-              `Cached request for message id ${messageId} response is not iterable`,
-              requestCommandName
-            );
-          }
-          logger.debug(
-            `${this.logPrefix()} << Command '${requestCommandName}' received response payload: ${JSON.stringify(
-              request
-            )}`
-          );
-          if (!responseCallback) {
-            // Error
-            throw new OCPPError(
-              ErrorType.INTERNAL_ERROR,
-              `Response for unknown message id ${messageId}`,
-              requestCommandName
-            );
-          }
-          responseCallback(commandName, requestPayload);
-          break;
-        // Error Message
-        case MessageType.CALL_ERROR_MESSAGE:
-          cachedRequest = this.requests.get(messageId);
-          if (Utils.isIterable(cachedRequest)) {
-            [, rejectCallback, requestCommandName] = cachedRequest;
-          } else {
-            throw new OCPPError(
-              ErrorType.PROTOCOL_ERROR,
-              `Cached request for message id ${messageId} error response is not iterable`
-            );
-          }
-          logger.debug(
-            `${this.logPrefix()} << Command '${requestCommandName}' received error payload: ${JSON.stringify(
-              request
-            )}`
-          );
-          if (!rejectCallback) {
-            // Error
-            throw new OCPPError(
-              ErrorType.INTERNAL_ERROR,
-              `Error response for unknown message id ${messageId}`,
-              requestCommandName
-            );
-          }
-          rejectCallback(
-            new OCPPError(commandName, commandPayload.toString(), requestCommandName, errorDetails)
-          );
-          break;
-        // Error
-        default:
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          errMsg = `${this.logPrefix()} Wrong message type ${messageType}`;
-          logger.error(errMsg);
-          throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
       }
     } catch (error) {
       // Log
@@ -1590,7 +1591,11 @@ export default class ChargingStation {
       );
       // Send error
       messageType === MessageType.CALL_MESSAGE &&
-        (await this.ocppRequestService.sendError(messageId, error as OCPPError, commandName));
+        (await this.ocppRequestService.sendError(
+          messageId,
+          error as OCPPError,
+          Utils.isString(commandName) ? commandName : requestCommandName
+        ));
     }
   }
 

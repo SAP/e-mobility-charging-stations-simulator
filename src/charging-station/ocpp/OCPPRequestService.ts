@@ -1,5 +1,7 @@
+import { ErrorResponse, Response } from '../../types/ocpp/Responses';
 import {
   IncomingRequestCommand,
+  OutgoingRequest,
   RequestCommand,
   RequestParams,
   ResponseType,
@@ -73,7 +75,7 @@ export default abstract class OCPPRequestService {
   public async sendError(
     messageId: string,
     ocppError: OCPPError,
-    commandName: IncomingRequestCommand
+    commandName: RequestCommand | IncomingRequestCommand
   ): Promise<ResponseType> {
     try {
       // Send error message
@@ -199,7 +201,7 @@ export default abstract class OCPPRequestService {
            * @param requestPayload
            */
           async function responseCallback(
-            payload: JsonType | string,
+            payload: JsonType,
             requestPayload: JsonType
           ): Promise<void> {
             if (self.chargingStation.getEnableStatistics()) {
@@ -271,7 +273,7 @@ export default abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName?: RequestCommand | IncomingRequestCommand,
-    responseCallback?: (payload: JsonType | string, requestPayload: JsonType) => Promise<void>,
+    responseCallback?: (payload: JsonType, requestPayload: JsonType) => Promise<void>,
     rejectCallback?: (error: OCPPError, requestStatistic?: boolean) => void
   ): string {
     let messageToSend: string;
@@ -284,14 +286,19 @@ export default abstract class OCPPRequestService {
           responseCallback,
           rejectCallback,
           commandName,
-          messagePayload,
+          messagePayload as JsonType,
         ]);
-        messageToSend = JSON.stringify([messageType, messageId, commandName, messagePayload]);
+        messageToSend = JSON.stringify([
+          messageType,
+          messageId,
+          commandName,
+          messagePayload,
+        ] as OutgoingRequest);
         break;
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
         // Build response
-        messageToSend = JSON.stringify([messageType, messageId, messagePayload]);
+        messageToSend = JSON.stringify([messageType, messageId, messagePayload] as Response);
         break;
       // Error Message
       case MessageType.CALL_ERROR_MESSAGE:
@@ -299,10 +306,10 @@ export default abstract class OCPPRequestService {
         messageToSend = JSON.stringify([
           messageType,
           messageId,
-          messagePayload?.code ?? ErrorType.GENERIC_ERROR,
-          messagePayload?.message ?? '',
-          messagePayload?.details ?? { commandName },
-        ]);
+          (messagePayload as OCPPError)?.code ?? ErrorType.GENERIC_ERROR,
+          (messagePayload as OCPPError)?.message ?? '',
+          (messagePayload as OCPPError)?.details ?? { commandName },
+        ] as ErrorResponse);
         break;
     }
     return messageToSend;

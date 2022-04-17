@@ -7,12 +7,12 @@ import { ErrorType } from '../types/ocpp/ErrorType';
 import { JsonType } from '../types/JsonType';
 
 export default class OCPPError extends BaseError {
-  code: ErrorType | IncomingRequestCommand;
+  code: ErrorType;
   command?: RequestCommand | IncomingRequestCommand;
   details?: JsonType;
 
   constructor(
-    code: ErrorType | IncomingRequestCommand,
+    code: ErrorType,
     message: string,
     command?: RequestCommand | IncomingRequestCommand,
     details?: JsonType

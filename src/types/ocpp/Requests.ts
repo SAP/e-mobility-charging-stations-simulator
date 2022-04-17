@@ -13,14 +13,25 @@ import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
 import { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import OCPPError from '../../exception/OCPPError';
 
+export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType];
+
+export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequestCommand, JsonType];
+
+export type CachedRequest = [
+  (payload: JsonType, requestPayload: JsonType) => void,
+  (error: OCPPError, requestStatistic?: boolean) => void,
+  RequestCommand | IncomingRequestCommand,
+  JsonType
+];
+
+export type IncomingRequestHandler = (commandPayload: JsonType) => JsonType | Promise<JsonType>;
+
+export type ResponseType = JsonType | OCPPError;
+
 export interface RequestParams {
   skipBufferingOnError?: boolean;
   triggerMessage?: boolean;
 }
-
-export type IncomingRequestHandler = (commandPayload: JsonType) => JsonType | Promise<JsonType>;
-
-export type ResponseType = JsonType | OCPPError | string;
 
 export type BootNotificationRequest = OCPP16BootNotificationRequest;
 
@@ -53,14 +64,3 @@ export type DiagnosticsStatus = OCPP16DiagnosticsStatus;
 export const DiagnosticsStatus = {
   ...OCPP16DiagnosticsStatus,
 };
-
-export type Request = [MessageType, string, RequestCommand, JsonType, JsonType];
-
-export type IncomingRequest = [MessageType, string, IncomingRequestCommand, JsonType, JsonType];
-
-export type CachedRequest = [
-  (payload: JsonType, requestPayload: JsonType) => void,
-  (error: OCPPError, requestStatistic?: boolean) => void,
-  RequestCommand | IncomingRequestCommand,
-  JsonType | OCPPError
-];

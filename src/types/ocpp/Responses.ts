@@ -11,11 +11,17 @@ import {
   OCPP16UnlockStatus,
 } from './1.6/Responses';
 
+import { ErrorType } from './ErrorType';
 import { JsonType } from '../JsonType';
+import { MessageType } from './MessageType';
 import { OCPP16MeterValuesResponse } from './1.6/MeterValues';
 
+export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType];
+
+export type ErrorResponse = [MessageType.CALL_ERROR_MESSAGE, string, ErrorType, string, JsonType];
+
 export type ResponseHandler = (
-  payload: JsonType | string,
+  payload: JsonType,
   requestPayload?: JsonType
 ) => void | Promise<void>;
 

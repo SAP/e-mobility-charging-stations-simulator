@@ -26,7 +26,7 @@ export default abstract class OCPPResponseService {
 
   public abstract responseHandler(
     commandName: RequestCommand,
-    payload: JsonType | string,
+    payload: JsonType,
     requestPayload: JsonType
   ): Promise<void>;
 }

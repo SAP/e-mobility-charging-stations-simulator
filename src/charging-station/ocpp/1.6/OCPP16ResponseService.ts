@@ -60,7 +60,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
 
   public async responseHandler(
     commandName: OCPP16RequestCommand,
-    payload: JsonType | string,
+    payload: JsonType,
     requestPayload: JsonType
   ): Promise<void> {
     if (
