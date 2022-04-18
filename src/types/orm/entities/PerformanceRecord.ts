@@ -15,5 +15,5 @@ export class PerformanceRecord {
   // @Property()
   // updatedAt?: Date;
   // @OneToMany('PerformanceData', 'performanceRecord')
-  // performanceData?= new Collection<PerformanceData>(this);
+  // performanceData? = new Collection<PerformanceData>(this);
 }

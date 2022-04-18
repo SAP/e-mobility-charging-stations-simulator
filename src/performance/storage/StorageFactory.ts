@@ -23,7 +23,7 @@ export class StorageFactory {
       // case StorageType.MYSQL:
       // case StorageType.MARIA_DB:
       // case StorageType.SQLITE:
-      //   storageInstance = new MikroOrmStorage(connectionURI, logPrefix, type);
+      //   storageInstance = new MikroOrmStorage(connectionUri, logPrefix, type);
       //   break;
       default:
         throw new Error(`${logPrefix} Unknown storage type: ${type}`);
