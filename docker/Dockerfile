@@ -5,7 +5,11 @@ WORKDIR /usr/builder
 COPY package.json package-lock.json prepare.js ./
 
 RUN npm set progress=false && npm config set depth 0 && npm cache clean --force
-RUN npm install
+RUN apk add --no-cache --virtual .gyp \
+  build-base \
+  python3 \
+  && npm install \
+  && apk del .gyp
 COPY tsconfig.json rollup.config.js ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
