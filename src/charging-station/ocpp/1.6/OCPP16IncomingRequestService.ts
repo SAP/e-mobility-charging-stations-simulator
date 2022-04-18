@@ -950,6 +950,15 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED;
     }
+    // TODO: factor out the check on connector id
+    if (commandPayload?.connectorId < 0) {
+      logger.warn(
+        `${this.chargingStation.logPrefix()} ${
+          OCPP16IncomingRequestCommand.TRIGGER_MESSAGE
+        } incoming request received with invalid connectorId ${commandPayload.connectorId}`
+      );
+      return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED;
+    }
     try {
       switch (commandPayload.requestedMessage) {
         case MessageTrigger.BootNotification:
@@ -997,6 +1006,49 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               .catch(() => {
                 /* This is intentional */
               });
+          }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
+          return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
+        case MessageTrigger.StatusNotification:
+          setTimeout(() => {
+            if (commandPayload?.connectorId) {
+              this.chargingStation.ocppRequestService
+                .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+                  OCPP16RequestCommand.STATUS_NOTIFICATION,
+                  {
+                    connectorId: commandPayload.connectorId,
+                    errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                    status: this.chargingStation.getConnectorStatus(commandPayload.connectorId)
+                      .status,
+                  },
+                  {
+                    triggerMessage: true,
+                  }
+                )
+                .catch(() => {
+                  /* This is intentional */
+                });
+            } else {
+              for (const connectorId of this.chargingStation.connectors.keys()) {
+                this.chargingStation.ocppRequestService
+                  .requestHandler<
+                    OCPP16StatusNotificationRequest,
+                    OCPP16StatusNotificationResponse
+                  >(
+                    OCPP16RequestCommand.STATUS_NOTIFICATION,
+                    {
+                      connectorId,
+                      errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                      status: this.chargingStation.getConnectorStatus(connectorId).status,
+                    },
+                    {
+                      triggerMessage: true,
+                    }
+                  )
+                  .catch(() => {
+                    /* This is intentional */
+                  });
+              }
+            }
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         default:
