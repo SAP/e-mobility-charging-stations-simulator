@@ -1,7 +1,7 @@
 import ChargingStationTemplate from './ChargingStationTemplate';
 
 export default interface ChargingStationInfo extends ChargingStationTemplate {
-  hash?: string;
+  infoHash?: string;
   chargingStationId?: string;
   chargeBoxSerialNumber?: string;
   chargePointSerialNumber?: string;
