@@ -1237,6 +1237,12 @@ export default class ChargingStation {
   }
 
   private initializeOcppConfiguration(): void {
+    if (!this.getConfigurationKey(StandardParametersKey.HeartbeatInterval)) {
+      this.addConfigurationKey(StandardParametersKey.HeartbeatInterval, '0');
+    }
+    if (!this.getConfigurationKey(StandardParametersKey.HeartBeatInterval)) {
+      this.addConfigurationKey(StandardParametersKey.HeartBeatInterval, '0', { visible: false });
+    }
     if (
       this.getSupervisionUrlOcppConfiguration() &&
       !this.getConfigurationKey(this.getSupervisionUrlOcppKey())

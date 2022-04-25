@@ -105,13 +105,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
   private handleResponseBootNotification(payload: OCPP16BootNotificationResponse): void {
     if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
       this.chargingStation.addConfigurationKey(
-        OCPP16StandardParametersKey.HeartBeatInterval,
+        OCPP16StandardParametersKey.HeartbeatInterval,
         payload.interval.toString(),
         {},
         { overwrite: true, save: true }
       );
       this.chargingStation.addConfigurationKey(
-        OCPP16StandardParametersKey.HeartbeatInterval,
+        OCPP16StandardParametersKey.HeartBeatInterval,
         payload.interval.toString(),
         { visible: false },
         { overwrite: true, save: true }
