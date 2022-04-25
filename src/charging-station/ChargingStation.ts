@@ -1002,7 +1002,7 @@ export default class ChargingStation {
       this.hashId + '.json'
     );
     const stationInfoFromFile: ChargingStationInfo = this.getStationInfoFromFile();
-    // Priority: charging stations info from template > charging station info from configuration file > charging station info attribute
+    // Priority: charging station info from template > charging station info from configuration file > charging station info attribute
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
       return stationInfoFromFile;
     } else if (stationInfoFromFile?.templateHash !== stationInfoFromTemplate.templateHash) {
