@@ -45,7 +45,7 @@ export default abstract class AbstractUIService {
     return JSON.stringify([command, payload]);
   }
 
-  private handleListChargingStations(): Set<string> {
-    return this.uiWebSocketServer.chargingStations;
+  private handleListChargingStations(): string[] {
+    return Array.from(this.uiWebSocketServer.chargingStations);
   }
 }
