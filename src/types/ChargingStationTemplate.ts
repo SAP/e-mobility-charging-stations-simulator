@@ -44,6 +44,7 @@ export interface AutomaticTransactionGenerator {
 export type WsOptions = ClientOptions & ClientRequestArgs;
 
 export default interface ChargingStationTemplate {
+  templateHash?: string;
   supervisionUrls?: string | string[];
   supervisionUrlOcppConfiguration?: boolean;
   supervisionUrlOcppKey?: string;

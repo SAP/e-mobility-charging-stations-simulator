@@ -895,8 +895,14 @@ export default class ChargingStation {
     try {
       const measureId = `${FileType.ChargingStationTemplate} read`;
       const beginId = PerformanceStatistics.beginMeasure(measureId);
-      template = JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate;
+      template =
+        (JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate) ??
+        ({} as ChargingStationTemplate);
       PerformanceStatistics.endMeasure(measureId, beginId);
+      template.templateHash = crypto
+        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+        .update(JSON.stringify(template))
+        .digest('hex');
     } catch (error) {
       FileUtils.handleFileException(
         this.logPrefix(),
@@ -943,12 +949,7 @@ export default class ChargingStation {
   }
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
-    const stationInfo: ChargingStationInfo =
-      this.getTemplateFromFile() ?? ({} as ChargingStationInfo);
-    stationInfo.hash = crypto
-      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(stationInfo))
-      .digest('hex');
+    const stationInfo: ChargingStationInfo = this.getTemplateFromFile();
     const chargingStationId = this.getChargingStationId(stationInfo);
     // Deprecation template keys section
     this.warnDeprecatedTemplateKey(
@@ -982,8 +983,13 @@ export default class ChargingStation {
     return stationInfo;
   }
 
-  private getStationInfoFromFile(): ChargingStationInfo | null {
-    return this.getConfigurationFromFile()?.stationInfo ?? null;
+  private getStationInfoFromFile(): ChargingStationInfo {
+    const stationInfo = this.getConfigurationFromFile()?.stationInfo ?? ({} as ChargingStationInfo);
+    stationInfo.infoHash = crypto
+      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+      .update(JSON.stringify(stationInfo))
+      .digest('hex');
+    return stationInfo;
   }
 
   private getStationInfo(): ChargingStationInfo {
@@ -996,11 +1002,17 @@ export default class ChargingStation {
       this.hashId + '.json'
     );
     const stationInfoFromFile: ChargingStationInfo = this.getStationInfoFromFile();
-    if (stationInfoFromFile?.hash === stationInfoFromTemplate.hash) {
+    // Priority: charging station info from template > charging station info from configuration file > charging station info attribute
+    if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
       return stationInfoFromFile;
+    } else if (stationInfoFromFile?.templateHash !== stationInfoFromTemplate.templateHash) {
+      this.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
+      return stationInfoFromTemplate;
     }
-    this.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
-    return stationInfoFromTemplate;
+    if (this.stationInfo?.infoHash === stationInfoFromFile?.infoHash) {
+      return this.stationInfo;
+    }
+    return stationInfoFromFile;
   }
 
   private saveStationInfo(): void {
