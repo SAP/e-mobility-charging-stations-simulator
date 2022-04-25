@@ -54,7 +54,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       id: WorkerMessageEvents.START_WORKER_ELEMENT,
       data: elementData,
     });
-    this.getLastWorkerSetElement().numberOfWorkerElements++; // should there not be a hanshake to be safer ?
+    this.getLastWorkerSetElement().numberOfWorkerElements++;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {
       await Utils.sleep(this.workerOptions.elementStartDelay);

@@ -34,18 +34,17 @@ export default class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerScript = path.join(
-      // wouldn't path.resolve(./ChargingStationWorker.js) faster & simpler ?
-      path.resolve(__dirname, '../'),
+      path.resolve(__dirname, '../'), // wouldn't path.resolve(./ChargingStationWorker.js) achieve the same result ?
       'charging-station',
       'ChargingStationWorker.js'
     );
-    this.initWorkerImplementation(); // init thread
-    Configuration.getUIWebSocketServer().enabled && // create webSocket
+    this.initWorkerImplementation();
+    Configuration.getUIWebSocketServer().enabled &&
       (this.uiWebSocketServer = new UIWebSocketServer({
         ...Configuration.getUIWebSocketServer().options,
         handleProtocols: UIServiceUtils.handleProtocols,
       }));
-    Configuration.getPerformanceStorage().enabled && // create storage ??? but for what
+    Configuration.getPerformanceStorage().enabled &&
       (this.storage = StorageFactory.getStorage(
         Configuration.getPerformanceStorage().type,
         Configuration.getPerformanceStorage().uri,
@@ -152,10 +151,8 @@ export default class Bootstrap {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
         },
         messageHandler: async (msg: ChargingStationWorkerMessage) => {
-          console.log('initWorkerImplementation: messageHandler: ', msg);
           if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
             this.uiWebSocketServer.chargingStations.add(msg.data.id as string);
-            console.log(this.uiWebSocketServer.chargingStations);
           } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
             this.uiWebSocketServer.chargingStations.delete(msg.data.id as string);
           } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {

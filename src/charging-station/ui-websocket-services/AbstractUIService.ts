@@ -42,12 +42,10 @@ export default abstract class AbstractUIService {
   }
 
   protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
-    console.log(JSON.stringify([command, payload])); // DEBUG
     return JSON.stringify([command, payload]);
   }
 
   private handleListChargingStations(): string[] {
-    // FIXED
     return Array.from(this.uiWebSocketServer.chargingStations);
   }
 }
