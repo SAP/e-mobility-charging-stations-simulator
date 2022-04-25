@@ -34,7 +34,7 @@ export default class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerScript = path.join(
-      path.resolve(__dirname, '../'), // wouldn't path.resolve(./ChargingStationWorker.js) achieve the same result ?
+      path.resolve(__dirname, '../'),
       'charging-station',
       'ChargingStationWorker.js'
     );

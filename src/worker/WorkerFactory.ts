@@ -30,9 +30,7 @@ export default class WorkerFactory {
     workerOptions?.messageHandler &&
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
-    console.log('before');
     let workerImplementation: WorkerAbstract<T> = null;
-    console.log(workerImplementation);
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
         workerOptions.elementsPerWorker =
