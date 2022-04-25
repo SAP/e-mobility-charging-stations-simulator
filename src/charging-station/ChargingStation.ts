@@ -983,12 +983,27 @@ export default class ChargingStation {
     return stationInfo;
   }
 
-  private getStationInfoFromFile(): ChargingStationInfo {
-    const stationInfo = this.getConfigurationFromFile()?.stationInfo ?? ({} as ChargingStationInfo);
-    stationInfo.infoHash = crypto
+  private createStationInfoHash(stationInfo: ChargingStationInfo): ChargingStationInfo {
+    const previousInfoHash = stationInfo.infoHash ?? '';
+    delete stationInfo.infoHash;
+    const currentInfoHash = crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
       .update(JSON.stringify(stationInfo))
       .digest('hex');
+    if (
+      Utils.isEmptyString(previousInfoHash) ||
+      (!Utils.isEmptyString(previousInfoHash) && currentInfoHash !== previousInfoHash)
+    ) {
+      stationInfo.infoHash = currentInfoHash;
+    } else {
+      stationInfo.infoHash = previousInfoHash;
+    }
+    return stationInfo;
+  }
+
+  private getStationInfoFromFile(): ChargingStationInfo {
+    let stationInfo = this.getConfigurationFromFile()?.stationInfo ?? ({} as ChargingStationInfo);
+    stationInfo = this.createStationInfoHash(stationInfo);
     return stationInfo;
   }
 
@@ -1004,15 +1019,13 @@ export default class ChargingStation {
     const stationInfoFromFile: ChargingStationInfo = this.getStationInfoFromFile();
     // Priority: charging station info from template > charging station info from configuration file > charging station info attribute
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
+      if (this.stationInfo?.infoHash === stationInfoFromFile?.infoHash) {
+        return this.stationInfo;
+      }
       return stationInfoFromFile;
-    } else if (stationInfoFromFile?.templateHash !== stationInfoFromTemplate.templateHash) {
-      this.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
-      return stationInfoFromTemplate;
     }
-    if (this.stationInfo?.infoHash === stationInfoFromFile?.infoHash) {
-      return this.stationInfo;
-    }
-    return stationInfoFromFile;
+    this.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
+    return stationInfoFromTemplate;
   }
 
   private saveStationInfo(): void {
@@ -1092,7 +1105,7 @@ export default class ChargingStation {
     logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
     this.bootNotificationRequest = this.createBootNotificationRequest(this.stationInfo);
     this.ocppConfiguration = this.getOcppConfiguration();
-    delete this.stationInfo.Configuration;
+    this.stationInfo?.Configuration && delete this.stationInfo.Configuration;
     this.wsConfiguredConnectionUrl = new URL(
       this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
     );
@@ -1181,6 +1194,7 @@ export default class ChargingStation {
       }
     }
     this.stationInfo.maximumAmperage = this.getMaximumAmperage();
+    this.stationInfo = this.createStationInfoHash(this.stationInfo);
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
     delete this.stationInfo.Connectors;
@@ -1340,11 +1354,21 @@ export default class ChargingStation {
             configurationData.configurationKey = this.ocppConfiguration.configurationKey;
             break;
           case Section.stationInfo:
+            if (configurationData?.stationInfo?.infoHash === this.stationInfo?.infoHash) {
+              logger.debug(
+                `${this.logPrefix()} Not saving unchanged charging station info to configuration file ${
+                  this.configurationFile
+                }`
+              );
+              return;
+            }
             configurationData.stationInfo = this.stationInfo;
             break;
           default:
             configurationData.configurationKey = this.ocppConfiguration.configurationKey;
-            configurationData.stationInfo = this.stationInfo;
+            if (configurationData?.stationInfo?.infoHash !== this.stationInfo?.infoHash) {
+              configurationData.stationInfo = this.stationInfo;
+            }
             break;
         }
         const measureId = `${FileType.ChargingStationConfiguration} write`;
@@ -1363,7 +1387,7 @@ export default class ChargingStation {
       }
     } else {
       logger.error(
-        `${this.logPrefix()} Trying to save charging station configuration to undefined file`
+        `${this.logPrefix()} Trying to save charging station configuration to undefined configuration file`
       );
     }
   }
