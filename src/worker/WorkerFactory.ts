@@ -21,16 +21,18 @@ export default class WorkerFactory {
     if (!isMainThread) {
       throw new Error('Trying to get a worker implementation outside the main thread');
     }
-    workerOptions = workerOptions ?? ({} as WorkerOptions);
+    workerOptions = workerOptions ?? ({} as WorkerOptions); // why not default parameter ?
     workerOptions.workerStartDelay =
-      workerOptions?.workerStartDelay ?? WorkerConstants.DEFAULT_WORKER_START_DELAY;
+      workerOptions?.workerStartDelay ?? WorkerConstants.DEFAULT_WORKER_START_DELAY; // why null safety  ?
     workerOptions.elementStartDelay =
       workerOptions?.elementStartDelay ?? WorkerConstants.DEFAULT_ELEMENT_START_DELAY;
     workerOptions.poolOptions = workerOptions?.poolOptions ?? ({} as PoolOptions<Worker>);
     workerOptions?.messageHandler &&
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
-    let workerImplementation: WorkerAbstract<T> = null;
+    console.log('before');
+    let workerImplementation: WorkerAbstract<T> = null; // enabling strictNullChecks would be safer ?
+    console.log(workerImplementation);
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
         workerOptions.elementsPerWorker =
