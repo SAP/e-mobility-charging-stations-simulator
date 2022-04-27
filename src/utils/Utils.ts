@@ -197,7 +197,7 @@ export default class Utils {
     return true;
   }
 
-  public static isEmptyObject(obj: Record<string, unknown>): boolean {
+  public static isEmptyObject(obj: object): boolean {
     return !Object.keys(obj).length;
   }
 

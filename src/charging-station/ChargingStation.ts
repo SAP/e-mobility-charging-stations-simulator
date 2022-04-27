@@ -53,6 +53,7 @@ import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import WebSocket, { Data, OPEN, RawData } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
+import BaseError from '../exception/BaseError';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
 import ChargingStationInfo from '../types/ChargingStationInfo';
@@ -646,6 +647,14 @@ export default class ChargingStation {
     this.stopped = true;
   }
 
+  public async reset(reason?: StopTransactionReason): Promise<void> {
+    await this.stop(reason);
+    await Utils.sleep(this.stationInfo.resetTime);
+    this.stationInfo = this.getStationInfo();
+    this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
+    this.start();
+  }
+
   public getConfigurationKey(
     key: string | StandardParametersKey,
     caseInsensitive = false
@@ -925,7 +934,7 @@ export default class ChargingStation {
     params = params ?? {};
     params.randomSerialNumberUpperCase = params?.randomSerialNumberUpperCase ?? true;
     params.randomSerialNumber = params?.randomSerialNumber ?? true;
-    if (existingStationInfo) {
+    if (!Utils.isEmptyObject(existingStationInfo)) {
       existingStationInfo?.chargePointSerialNumber &&
         (stationInfo.chargePointSerialNumber = existingStationInfo.chargePointSerialNumber);
       existingStationInfo?.chargeBoxSerialNumber &&
@@ -950,6 +959,14 @@ export default class ChargingStation {
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationInfo: ChargingStationInfo = this.getTemplateFromFile();
+    if (Utils.isNullOrUndefined(stationInfo)) {
+      const logMsg = 'Fail to read charging station template file';
+      logger.error(`${this.logPrefix()} ${logMsg}`);
+      throw new BaseError(logMsg);
+    }
+    if (Utils.isEmptyObject(stationInfo)) {
+      logger.warn(this.logPrefix(), 'Empty charging station template file');
+    }
     const chargingStationId = this.getChargingStationId(stationInfo);
     // Deprecation template keys section
     this.warnDeprecatedTemplateKey(
@@ -984,18 +1001,18 @@ export default class ChargingStation {
   }
 
   private createStationInfoHash(stationInfo: ChargingStationInfo): ChargingStationInfo {
-    const previousInfoHash = stationInfo.infoHash ?? '';
+    const previousInfoHash = stationInfo?.infoHash ?? '';
     delete stationInfo.infoHash;
     const currentInfoHash = crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
       .update(JSON.stringify(stationInfo))
       .digest('hex');
     if (
-      Utils.isEmptyString(previousInfoHash) ||
+      (!Utils.isEmptyObject(stationInfo) && Utils.isEmptyString(previousInfoHash)) ||
       (!Utils.isEmptyString(previousInfoHash) && currentInfoHash !== previousInfoHash)
     ) {
       stationInfo.infoHash = currentInfoHash;
-    } else {
+    } else if (!Utils.isEmptyObject(stationInfo)) {
       stationInfo.infoHash = previousInfoHash;
     }
     return stationInfo;
@@ -1119,14 +1136,20 @@ export default class ChargingStation {
       );
     }
     const templateMaxConnectors = this.getTemplateMaxNumberOfConnectors();
-    if (templateMaxConnectors <= 0) {
+    if (templateMaxConnectors === 0) {
       logger.warn(
         `${this.logPrefix()} Charging station template ${
           this.templateFile
-        } with no connector configuration`
+        } with empty connectors configuration`
+      );
+    } else if (templateMaxConnectors < 0) {
+      logger.error(
+        `${this.logPrefix()} Charging station template ${
+          this.templateFile
+        } with no connectors configuration defined`
       );
     }
-    if (!this.stationInfo.Connectors[0]) {
+    if (!this.stationInfo?.Connectors[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station template ${
           this.templateFile
@@ -1136,7 +1159,7 @@ export default class ChargingStation {
     // Sanity check
     if (
       maxConnectors >
-        (this.stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
+        (this.stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
       !this.stationInfo.randomConnectors
     ) {
       logger.warn(
@@ -1148,7 +1171,7 @@ export default class ChargingStation {
     }
     const connectorsConfigHash = crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(this.stationInfo.Connectors) + maxConnectors.toString())
+      .update(JSON.stringify(this.stationInfo?.Connectors) + maxConnectors.toString())
       .digest('hex');
     const connectorsConfigChanged =
       this.connectors?.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;
@@ -1157,16 +1180,16 @@ export default class ChargingStation {
       this.connectorsConfigurationHash = connectorsConfigHash;
       // Add connector Id 0
       let lastConnector = '0';
-      for (lastConnector in this.stationInfo.Connectors) {
+      for (lastConnector in this.stationInfo?.Connectors) {
         const lastConnectorId = Utils.convertToInt(lastConnector);
         if (
           lastConnectorId === 0 &&
           this.getUseConnectorId0() &&
-          this.stationInfo.Connectors[lastConnector]
+          this.stationInfo?.Connectors[lastConnector]
         ) {
           this.connectors.set(
             lastConnectorId,
-            Utils.cloneObject<ConnectorStatus>(this.stationInfo.Connectors[lastConnector])
+            Utils.cloneObject<ConnectorStatus>(this.stationInfo?.Connectors[lastConnector])
           );
           this.getConnectorStatus(lastConnectorId).availability = AvailabilityType.OPERATIVE;
           if (Utils.isUndefined(this.getConnectorStatus(lastConnectorId)?.chargingProfiles)) {
@@ -1176,7 +1199,7 @@ export default class ChargingStation {
       }
       // Generate all connectors
       if (
-        (this.stationInfo.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0
+        (this.stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0
       ) {
         for (let index = 1; index <= maxConnectors; index++) {
           const randConnectorId = this.stationInfo.randomConnectors
@@ -1184,7 +1207,7 @@ export default class ChargingStation {
             : index;
           this.connectors.set(
             index,
-            Utils.cloneObject<ConnectorStatus>(this.stationInfo.Connectors[randConnectorId])
+            Utils.cloneObject<ConnectorStatus>(this.stationInfo?.Connectors[randConnectorId])
           );
           this.getConnectorStatus(index).availability = AvailabilityType.OPERATIVE;
           if (Utils.isUndefined(this.getConnectorStatus(index)?.chargingProfiles)) {
@@ -1197,7 +1220,7 @@ export default class ChargingStation {
     this.stationInfo = this.createStationInfoHash(this.stationInfo);
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
-    delete this.stationInfo.Connectors;
+    this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
     // Initialize transaction attributes on connectors
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0 && !this.getConnectorStatus(connectorId)?.transactionStarted) {
@@ -1744,7 +1767,10 @@ export default class ChargingStation {
   }
 
   private getTemplateMaxNumberOfConnectors(): number {
-    return Object.keys(this.stationInfo.Connectors).length;
+    if (!this.stationInfo?.Connectors) {
+      return -1;
+    }
+    return Object.keys(this.stationInfo?.Connectors).length;
   }
 
   private getMaxNumberOfConnectors(): number {
@@ -1756,7 +1782,7 @@ export default class ChargingStation {
     } else if (!Utils.isUndefined(this.stationInfo.numberOfConnectors)) {
       maxConnectors = this.stationInfo.numberOfConnectors as number;
     } else {
-      maxConnectors = this.stationInfo.Connectors[0]
+      maxConnectors = this.stationInfo?.Connectors[0]
         ? this.getTemplateMaxNumberOfConnectors() - 1
         : this.getTemplateMaxNumberOfConnectors();
     }
