@@ -960,7 +960,7 @@ export default class ChargingStation {
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationInfo: ChargingStationInfo = this.getTemplateFromFile();
     if (Utils.isNullOrUndefined(stationInfo)) {
-      const logMsg = 'Fail to read charging station template file';
+      const logMsg = 'Failed to read charging station template file';
       logger.error(`${this.logPrefix()} ${logMsg}`);
       throw new BaseError(logMsg);
     }
@@ -1001,19 +1001,21 @@ export default class ChargingStation {
   }
 
   private createStationInfoHash(stationInfo: ChargingStationInfo): ChargingStationInfo {
-    const previousInfoHash = stationInfo?.infoHash ?? '';
-    delete stationInfo.infoHash;
-    const currentInfoHash = crypto
-      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(stationInfo))
-      .digest('hex');
-    if (
-      (!Utils.isEmptyObject(stationInfo) && Utils.isEmptyString(previousInfoHash)) ||
-      (!Utils.isEmptyString(previousInfoHash) && currentInfoHash !== previousInfoHash)
-    ) {
-      stationInfo.infoHash = currentInfoHash;
-    } else if (!Utils.isEmptyObject(stationInfo)) {
-      stationInfo.infoHash = previousInfoHash;
+    if (!Utils.isEmptyObject(stationInfo)) {
+      const previousInfoHash = stationInfo?.infoHash ?? '';
+      delete stationInfo.infoHash;
+      const currentInfoHash = crypto
+        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+        .update(JSON.stringify(stationInfo))
+        .digest('hex');
+      if (
+        Utils.isEmptyString(previousInfoHash) ||
+        (!Utils.isEmptyString(previousInfoHash) && currentInfoHash !== previousInfoHash)
+      ) {
+        stationInfo.infoHash = currentInfoHash;
+      } else {
+        stationInfo.infoHash = previousInfoHash;
+      }
     }
     return stationInfo;
   }
