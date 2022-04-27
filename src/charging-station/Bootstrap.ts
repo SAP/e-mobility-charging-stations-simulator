@@ -79,14 +79,16 @@ export default class Bootstrap {
             } catch (error) {
               console.error(
                 chalk.red(
-                  'Charging station start with template file ' + stationTemplateUrl.file + ' error '
+                  'Error at starting charging station with template file ' +
+                    stationTemplateUrl.file +
+                    ': '
                 ),
                 error
               );
             }
           }
         } else {
-          console.warn(chalk.yellow('No stationTemplateUrls defined in configuration, exiting'));
+          console.warn(chalk.yellow("No 'stationTemplateUrls' defined in configuration, exiting"));
         }
         if (this.numberOfChargingStations === 0) {
           console.warn(

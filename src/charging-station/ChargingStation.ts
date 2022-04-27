@@ -965,7 +965,11 @@ export default class ChargingStation {
       throw new BaseError(logMsg);
     }
     if (Utils.isEmptyObject(stationInfo)) {
-      logger.warn(this.logPrefix(), 'Empty charging station template file');
+      logger.warn(
+        `${this.logPrefix()} Empty charging station information from template file ${
+          this.templateFile
+        }`
+      );
     }
     const chargingStationId = this.getChargingStationId(stationInfo);
     // Deprecation template keys section
@@ -1130,35 +1134,9 @@ export default class ChargingStation {
     );
     // Build connectors if needed
     const maxConnectors = this.getMaxNumberOfConnectors();
-    if (maxConnectors <= 0) {
-      logger.warn(
-        `${this.logPrefix()} Charging station template ${
-          this.templateFile
-        } with ${maxConnectors} connectors`
-      );
-    }
+    this.checkMaxConnectors(maxConnectors);
     const templateMaxConnectors = this.getTemplateMaxNumberOfConnectors();
-    if (templateMaxConnectors === 0) {
-      logger.warn(
-        `${this.logPrefix()} Charging station template ${
-          this.templateFile
-        } with empty connectors configuration`
-      );
-    } else if (templateMaxConnectors < 0) {
-      logger.error(
-        `${this.logPrefix()} Charging station template ${
-          this.templateFile
-        } with no connectors configuration defined`
-      );
-    }
-    if (!this.stationInfo?.Connectors[0]) {
-      logger.warn(
-        `${this.logPrefix()} Charging station template ${
-          this.templateFile
-        } with no connector Id 0 configuration`
-      );
-    }
-    // Sanity check
+    this.checkTemplateMaxConnectors(templateMaxConnectors);
     if (
       maxConnectors >
         (this.stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
@@ -1171,64 +1149,12 @@ export default class ChargingStation {
       );
       this.stationInfo.randomConnectors = true;
     }
-    const connectorsConfigHash = crypto
-      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(this.stationInfo?.Connectors) + maxConnectors.toString())
-      .digest('hex');
-    const connectorsConfigChanged =
-      this.connectors?.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;
-    if (this.connectors?.size === 0 || connectorsConfigChanged) {
-      connectorsConfigChanged && this.connectors.clear();
-      this.connectorsConfigurationHash = connectorsConfigHash;
-      // Add connector Id 0
-      let lastConnector = '0';
-      for (lastConnector in this.stationInfo?.Connectors) {
-        const lastConnectorId = Utils.convertToInt(lastConnector);
-        if (
-          lastConnectorId === 0 &&
-          this.getUseConnectorId0() &&
-          this.stationInfo?.Connectors[lastConnector]
-        ) {
-          this.connectors.set(
-            lastConnectorId,
-            Utils.cloneObject<ConnectorStatus>(this.stationInfo?.Connectors[lastConnector])
-          );
-          this.getConnectorStatus(lastConnectorId).availability = AvailabilityType.OPERATIVE;
-          if (Utils.isUndefined(this.getConnectorStatus(lastConnectorId)?.chargingProfiles)) {
-            this.getConnectorStatus(lastConnectorId).chargingProfiles = [];
-          }
-        }
-      }
-      // Generate all connectors
-      if (
-        (this.stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0
-      ) {
-        for (let index = 1; index <= maxConnectors; index++) {
-          const randConnectorId = this.stationInfo.randomConnectors
-            ? Utils.getRandomInteger(Utils.convertToInt(lastConnector), 1)
-            : index;
-          this.connectors.set(
-            index,
-            Utils.cloneObject<ConnectorStatus>(this.stationInfo?.Connectors[randConnectorId])
-          );
-          this.getConnectorStatus(index).availability = AvailabilityType.OPERATIVE;
-          if (Utils.isUndefined(this.getConnectorStatus(index)?.chargingProfiles)) {
-            this.getConnectorStatus(index).chargingProfiles = [];
-          }
-        }
-      }
-    }
+    this.initializeConnectors(this.stationInfo, maxConnectors, templateMaxConnectors);
     this.stationInfo.maximumAmperage = this.getMaximumAmperage();
     this.stationInfo = this.createStationInfoHash(this.stationInfo);
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
     this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
-    // Initialize transaction attributes on connectors
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && !this.getConnectorStatus(connectorId)?.transactionStarted) {
-        this.initializeConnectorStatus(connectorId);
-      }
-    }
     // OCPP configuration
     this.initializeOcppConfiguration();
     if (this.getEnableStatistics()) {
@@ -1350,6 +1276,112 @@ export default class ChargingStation {
     this.saveOcppConfiguration();
   }
 
+  private initializeConnectors(
+    stationInfo: ChargingStationInfo,
+    maxConnectors: number,
+    templateMaxConnectors: number
+  ): void {
+    if (!stationInfo?.Connectors && this.connectors.size === 0) {
+      const logMsg = `${this.logPrefix()} No already defined connectors and charging station information from template ${
+        this.templateFile
+      } with no connectors configuration defined`;
+      logger.error(logMsg);
+      throw new BaseError(logMsg);
+    }
+    if (!stationInfo?.Connectors[0]) {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with no connector Id 0 configuration`
+      );
+    }
+    if (stationInfo?.Connectors) {
+      const connectorsConfigHash = crypto
+        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+        .update(JSON.stringify(stationInfo?.Connectors) + maxConnectors.toString())
+        .digest('hex');
+      const connectorsConfigChanged =
+        this.connectors?.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;
+      if (this.connectors?.size === 0 || connectorsConfigChanged) {
+        connectorsConfigChanged && this.connectors.clear();
+        this.connectorsConfigurationHash = connectorsConfigHash;
+        // Add connector Id 0
+        let lastConnector = '0';
+        for (lastConnector in stationInfo?.Connectors) {
+          const lastConnectorId = Utils.convertToInt(lastConnector);
+          if (
+            lastConnectorId === 0 &&
+            this.getUseConnectorId0() &&
+            stationInfo?.Connectors[lastConnector]
+          ) {
+            this.connectors.set(
+              lastConnectorId,
+              Utils.cloneObject<ConnectorStatus>(stationInfo?.Connectors[lastConnector])
+            );
+            this.getConnectorStatus(lastConnectorId).availability = AvailabilityType.OPERATIVE;
+            if (Utils.isUndefined(this.getConnectorStatus(lastConnectorId)?.chargingProfiles)) {
+              this.getConnectorStatus(lastConnectorId).chargingProfiles = [];
+            }
+          }
+        }
+        // Generate all connectors
+        if ((stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
+          for (let index = 1; index <= maxConnectors; index++) {
+            const randConnectorId = stationInfo.randomConnectors
+              ? Utils.getRandomInteger(Utils.convertToInt(lastConnector), 1)
+              : index;
+            this.connectors.set(
+              index,
+              Utils.cloneObject<ConnectorStatus>(stationInfo?.Connectors[randConnectorId])
+            );
+            this.getConnectorStatus(index).availability = AvailabilityType.OPERATIVE;
+            if (Utils.isUndefined(this.getConnectorStatus(index)?.chargingProfiles)) {
+              this.getConnectorStatus(index).chargingProfiles = [];
+            }
+          }
+        }
+      }
+    } else {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with no connectors configuration defined, using already defined connectors`
+      );
+    }
+    // Initialize transaction attributes on connectors
+    for (const connectorId of this.connectors.keys()) {
+      if (connectorId > 0 && !this.getConnectorStatus(connectorId)?.transactionStarted) {
+        this.initializeConnectorStatus(connectorId);
+      }
+    }
+  }
+
+  private checkMaxConnectors(maxConnectors: number): void {
+    if (maxConnectors <= 0) {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with ${maxConnectors} connectors`
+      );
+    }
+  }
+
+  private checkTemplateMaxConnectors(templateMaxConnectors: number): void {
+    if (templateMaxConnectors === 0) {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with empty connectors configuration`
+      );
+    } else if (templateMaxConnectors < 0) {
+      logger.error(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with no connectors configuration defined`
+      );
+    }
+  }
+
   private getConfigurationFromFile(): ChargingStationConfiguration | null {
     let configuration: ChargingStationConfiguration = null;
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
@@ -1387,7 +1419,7 @@ export default class ChargingStation {
           case Section.stationInfo:
             if (configurationData?.stationInfo?.infoHash === this.stationInfo?.infoHash) {
               logger.debug(
-                `${this.logPrefix()} Not saving unchanged charging station info to configuration file ${
+                `${this.logPrefix()} Not saving unchanged charging station information to configuration file ${
                   this.configurationFile
                 }`
               );
