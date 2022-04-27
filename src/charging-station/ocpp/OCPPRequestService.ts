@@ -36,7 +36,7 @@ export default abstract class OCPPRequestService {
     this.chargingStation = chargingStation;
     this.ocppResponseService = ocppResponseService;
     this.requestHandler.bind(this);
-    this.sendResult.bind(this);
+    this.sendResponse.bind(this);
     this.sendError.bind(this);
   }
 
@@ -54,13 +54,13 @@ export default abstract class OCPPRequestService {
     return OCPPRequestService.instances.get(chargingStation.hashId) as T;
   }
 
-  public async sendResult(
+  public async sendResponse(
     messageId: string,
     messagePayload: JsonType,
     commandName: IncomingRequestCommand
   ): Promise<ResponseType> {
     try {
-      // Send result message
+      // Send response message
       return await this.internalSendMessage(
         messageId,
         messagePayload,

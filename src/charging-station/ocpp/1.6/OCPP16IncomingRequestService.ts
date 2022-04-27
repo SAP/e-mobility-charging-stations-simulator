@@ -131,7 +131,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandName: OCPP16IncomingRequestCommand,
     commandPayload: JsonType
   ): Promise<void> {
-    let result: JsonType;
+    let response: JsonType;
     if (
       this.chargingStation.getOcppStrictCompliance() &&
       this.chargingStation.isInPendingState() &&
@@ -154,8 +154,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       if (this.incomingRequestHandlers.has(commandName)) {
         try {
-          // Call the method to build the result
-          result = await this.incomingRequestHandlers.get(commandName)(commandPayload);
+          // Call the method to build the response
+          response = await this.incomingRequestHandlers.get(commandName)(commandPayload);
         } catch (error) {
           // Log
           logger.error(this.chargingStation.logPrefix() + ' Handle request error: %j', error);
@@ -184,8 +184,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         commandName
       );
     }
-    // Send the built result
-    await this.chargingStation.ocppRequestService.sendResult(messageId, result, commandName);
+    // Send the built response
+    await this.chargingStation.ocppRequestService.sendResponse(messageId, response, commandName);
   }
 
   // Simulate charging station restart
