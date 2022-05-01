@@ -1577,7 +1577,7 @@ export default class ChargingStation {
     let errorMessage: string;
     let errorDetails: JsonType;
     let responseCallback: (payload: JsonType, requestPayload: JsonType) => void;
-    let rejectCallback: (error: OCPPError, requestStatistic?: boolean) => void;
+    let errorCallback: (error: OCPPError, requestStatistic?: boolean) => void;
     let requestCommandName: RequestCommand | IncomingRequestCommand;
     let requestPayload: JsonType;
     let cachedRequest: CachedRequest;
@@ -1609,6 +1609,15 @@ export default class ChargingStation {
           // Outcome Message
           case MessageType.CALL_RESULT_MESSAGE:
             [, , commandPayload] = request as Response;
+            if (!this.requests.has(messageId)) {
+              // Error
+              throw new OCPPError(
+                ErrorType.INTERNAL_ERROR,
+                `Response for unknown message id ${messageId}`,
+                null,
+                commandPayload
+              );
+            }
             // Respond
             cachedRequest = this.requests.get(messageId);
             if (Utils.isIterable(cachedRequest)) {
@@ -1626,23 +1635,23 @@ export default class ChargingStation {
                 requestCommandName ?? ''
               }' received response payload: ${JSON.stringify(request)}`
             );
-            if (!responseCallback) {
-              // Error
-              throw new OCPPError(
-                ErrorType.INTERNAL_ERROR,
-                `Response for unknown message id ${messageId}`,
-                null,
-                commandPayload
-              );
-            }
             responseCallback(commandPayload, requestPayload);
             break;
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
             [, , errorType, errorMessage, errorDetails] = request as ErrorResponse;
+            if (!this.requests.has(messageId)) {
+              // Error
+              throw new OCPPError(
+                ErrorType.INTERNAL_ERROR,
+                `Error response for unknown message id ${messageId}`,
+                null,
+                { errorType, errorMessage, errorDetails }
+              );
+            }
             cachedRequest = this.requests.get(messageId);
             if (Utils.isIterable(cachedRequest)) {
-              [, rejectCallback, requestCommandName] = cachedRequest;
+              [, errorCallback, requestCommandName] = cachedRequest;
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
@@ -1656,18 +1665,7 @@ export default class ChargingStation {
                 requestCommandName ?? ''
               }' received error payload: ${JSON.stringify(request)}`
             );
-            if (!rejectCallback) {
-              // Error
-              throw new OCPPError(
-                ErrorType.INTERNAL_ERROR,
-                `Error response for unknown message id ${messageId}`,
-                null,
-                { errorType, errorMessage, errorDetails }
-              );
-            }
-            rejectCallback(
-              new OCPPError(errorType, errorMessage, requestCommandName, errorDetails)
-            );
+            errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails));
             break;
           // Error
           default:
@@ -1695,7 +1693,7 @@ export default class ChargingStation {
         (await this.ocppRequestService.sendError(
           messageId,
           error as OCPPError,
-          Utils.isString(commandName) ? commandName : requestCommandName ?? null
+          commandName ?? requestCommandName ?? null
         ));
     }
   }
