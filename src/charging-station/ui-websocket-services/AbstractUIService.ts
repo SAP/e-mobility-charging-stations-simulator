@@ -1,7 +1,7 @@
 import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol';
 
 import BaseError from '../../exception/BaseError';
-import { JsonType } from '../../types/JsonType';
+import { JsonValue } from '../../types/JsonType';
 import UIWebSocketServer from '../UIWebSocketServer';
 import logger from '../../utils/Logger';
 
@@ -16,12 +16,12 @@ export default abstract class AbstractUIService {
     ]);
   }
 
-  public async messageHandler(command: ProtocolCommand, payload: JsonType): Promise<void> {
-    let messageResponse: JsonType;
+  public async messageHandler(command: ProtocolCommand, payload: JsonValue): Promise<void> {
+    let messageResponse: JsonValue;
     if (this.messageHandlers.has(command)) {
       try {
         // Call the method to build the message response
-        messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
+        messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonValue;
       } catch (error) {
         // Log
         logger.error(this.uiWebSocketServer.logPrefix() + ' Handle message error: %j', error);
@@ -41,7 +41,7 @@ export default abstract class AbstractUIService {
     this.uiWebSocketServer.broadcastToClients(this.buildProtocolMessage(command, messageResponse));
   }
 
-  protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
+  protected buildProtocolMessage(command: ProtocolCommand, payload: JsonValue): string {
     return JSON.stringify([command, payload]);
   }
 
