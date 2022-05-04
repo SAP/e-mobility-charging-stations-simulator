@@ -142,7 +142,7 @@ export default abstract class OCPPRequestService {
             messageType,
             commandName,
             responseCallback,
-            rejectCallback
+            errorCallback
           );
           if (this.chargingStation.getEnableStatistics()) {
             this.chargingStation.performanceStatistics.addRequestStatistic(
@@ -175,10 +175,10 @@ export default abstract class OCPPRequestService {
               // Reject it but keep the request in the cache
               return reject(ocppError);
             }
-            return rejectCallback(ocppError, false);
+            return errorCallback(ocppError, false);
           } else {
             // Reject it
-            return rejectCallback(
+            return errorCallback(
               new OCPPError(
                 ErrorType.GENERIC_ERROR,
                 `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`,
@@ -231,7 +231,7 @@ export default abstract class OCPPRequestService {
            * @param error
            * @param requestStatistic
            */
-          function rejectCallback(error: OCPPError, requestStatistic = true): void {
+          function errorCallback(error: OCPPError, requestStatistic = true): void {
             if (requestStatistic && self.chargingStation.getEnableStatistics()) {
               self.chargingStation.performanceStatistics.addRequestStatistic(
                 commandName,
@@ -274,7 +274,7 @@ export default abstract class OCPPRequestService {
     messageType: MessageType,
     commandName?: RequestCommand | IncomingRequestCommand,
     responseCallback?: (payload: JsonType, requestPayload: JsonType) => Promise<void>,
-    rejectCallback?: (error: OCPPError, requestStatistic?: boolean) => void
+    errorCallback?: (error: OCPPError, requestStatistic?: boolean) => void
   ): string {
     let messageToSend: string;
     // Type of message
@@ -284,7 +284,7 @@ export default abstract class OCPPRequestService {
         // Build request
         this.chargingStation.requests.set(messageId, [
           responseCallback,
-          rejectCallback,
+          errorCallback,
           commandName,
           messagePayload as JsonType,
         ]);

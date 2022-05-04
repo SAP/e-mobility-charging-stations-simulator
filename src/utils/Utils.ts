@@ -161,10 +161,7 @@ export default class Utils {
   }
 
   public static isIterable<T>(obj: T): boolean {
-    if (obj) {
-      return typeof obj[Symbol.iterator] === 'function';
-    }
-    return false;
+    return obj ? typeof obj[Symbol.iterator] === 'function' : false;
   }
 
   public static isString(value: unknown): boolean {
@@ -180,11 +177,8 @@ export default class Utils {
   }
 
   public static isNullOrUndefined(value: unknown): boolean {
-    // eslint-disable-next-line no-eq-null, eqeqeq
-    if (value == null) {
-      return true;
-    }
-    return false;
+    // eslint-disable-next-line eqeqeq, no-eq-null
+    return value == null ? true : false;
   }
 
   public static isEmptyArray(object: unknown): boolean {
