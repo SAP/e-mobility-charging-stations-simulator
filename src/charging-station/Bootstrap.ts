@@ -2,10 +2,12 @@
 
 import {
   ChargingStationWorkerData,
-  ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
+  InternalChargingStationWorkerData,
+  OverallChargingStationWorkerMessage,
 } from '../types/ChargingStationWorker';
 
+import { ChargingProfileStatus } from '../types/ocpp/Responses';
 import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
@@ -152,13 +154,37 @@ export default class Bootstrap {
         poolOptions: {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
         },
-        messageHandler: async (msg: ChargingStationWorkerMessage) => {
-          if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
-            this.uiWebSocketServer.chargingStations.add(msg.data.id as string);
-          } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
-            this.uiWebSocketServer.chargingStations.delete(msg.data.id as string);
-          } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
-            await this.storage.storePerformanceStatistics(msg.data as unknown as Statistics);
+        messageHandler: async (msg: OverallChargingStationWorkerMessage) => {
+          const WorkerEventStarted = (data: InternalChargingStationWorkerData) => {
+            console.log('started'); // debug
+            console.log(data); // debug
+            this.uiWebSocketServer.chargingStations.add(data.id);
+            ++this.numberOfChargingStations;
+          };
+          const WorkerEventStopped = (data: InternalChargingStationWorkerData) => {
+            console.log('stopped'); // debug
+            console.log(data); // debug
+            this.uiWebSocketServer.chargingStations.delete(data.id);
+            --this.numberOfChargingStations;
+          };
+          const WorkerEventPerformanceStatistics = async (data: Statistics) => {
+            // console.log('statistics'); // debug
+            // console.log(data); // debug
+            await this.storage.storePerformanceStatistics(data);
+          };
+
+          switch (msg.id) {
+            case ChargingStationWorkerMessageEvents.STARTED:
+              WorkerEventStarted(msg.data as InternalChargingStationWorkerData);
+              break;
+            case ChargingStationWorkerMessageEvents.STOPPED:
+              WorkerEventStopped(msg.data as InternalChargingStationWorkerData);
+              break;
+            case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
+              await WorkerEventPerformanceStatistics(msg.data as Statistics);
+              break;
+            default:
+              console.log(msg);
           }
         },
       }
@@ -179,7 +205,7 @@ export default class Bootstrap {
       ),
     };
     await this.workerImplementation.addElement(workerData);
-    this.numberOfChargingStations++;
+    // this.numberOfChargingStations++;
   }
 
   private logPrefix(): string {

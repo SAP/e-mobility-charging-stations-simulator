@@ -1,6 +1,12 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
+import {
+  WorkerData,
+  WorkerMessage,
+  WorkerMessageEvents,
+  WorkerOptions,
+  WorkerSetElement,
+} from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
@@ -53,7 +59,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     this.getLastWorker().postMessage({
       id: WorkerMessageEvents.START_WORKER_ELEMENT,
       data: elementData,
-    });
+    } as WorkerMessage<WorkerData>);
     this.getLastWorkerSetElement().numberOfWorkerElements++;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {
@@ -99,6 +105,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       /* This is intentional */
     });
     worker.on('exit', (code) => {
+      console.log('game over');
       WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });
