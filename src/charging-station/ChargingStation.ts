@@ -1056,7 +1056,7 @@ export default class ChargingStation {
   }
 
   private getOcppVersion(): OCPPVersion {
-    return this.stationInfo.ocppVersion ? this.stationInfo.ocppVersion : OCPPVersion.VERSION_16;
+    return this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
   }
 
   private getOcppPersistentConfiguration(): boolean {
