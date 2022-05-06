@@ -12,7 +12,7 @@ import Constants from '../../utils/Constants';
 import { EmptyObject } from '../../types/EmptyObject';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { HandleErrorParams } from '../../types/Error';
-import { JsonType } from '../../types/JsonType';
+import { JsonObject } from '../../types/JsonType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import OCPPError from '../../exception/OCPPError';
 import type OCPPResponseService from './OCPPResponseService';
@@ -56,7 +56,7 @@ export default abstract class OCPPRequestService {
 
   public async sendResponse(
     messageId: string,
-    messagePayload: JsonType,
+    messagePayload: JsonObject,
     commandName: IncomingRequestCommand
   ): Promise<ResponseType> {
     try {
@@ -92,7 +92,7 @@ export default abstract class OCPPRequestService {
 
   protected async sendMessage(
     messageId: string,
-    messagePayload: JsonType,
+    messagePayload: JsonObject,
     commandName: RequestCommand,
     params: RequestParams = {
       skipBufferingOnError: false,
@@ -114,7 +114,7 @@ export default abstract class OCPPRequestService {
 
   private async internalSendMessage(
     messageId: string,
-    messagePayload: JsonType | OCPPError,
+    messagePayload: JsonObject | OCPPError,
     messageType: MessageType,
     commandName?: RequestCommand | IncomingRequestCommand,
     params: RequestParams = {
@@ -169,7 +169,7 @@ export default abstract class OCPPRequestService {
               ErrorType.GENERIC_ERROR,
               `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
-              (messagePayload?.details as JsonType) ?? {}
+              (messagePayload?.details as JsonObject) ?? {}
             );
             if (messageType === MessageType.CALL_MESSAGE) {
               // Reject it but keep the request in the cache
@@ -183,7 +183,7 @@ export default abstract class OCPPRequestService {
                 ErrorType.GENERIC_ERROR,
                 `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
-                (messagePayload?.details as JsonType) ?? {}
+                (messagePayload?.details as JsonObject) ?? {}
               ),
               false
             );
@@ -201,8 +201,8 @@ export default abstract class OCPPRequestService {
            * @param requestPayload
            */
           async function responseCallback(
-            payload: JsonType,
-            requestPayload: JsonType
+            payload: JsonObject,
+            requestPayload: JsonObject
           ): Promise<void> {
             if (self.chargingStation.getEnableStatistics()) {
               self.chargingStation.performanceStatistics.addRequestStatistic(
@@ -253,7 +253,7 @@ export default abstract class OCPPRequestService {
           ErrorType.GENERIC_ERROR,
           `Timeout for message id '${messageId}'`,
           commandName,
-          (messagePayload?.details as JsonType) ?? {}
+          (messagePayload?.details as JsonObject) ?? {}
         ),
         () => {
           messageType === MessageType.CALL_MESSAGE &&
@@ -270,10 +270,10 @@ export default abstract class OCPPRequestService {
 
   private buildMessageToSend(
     messageId: string,
-    messagePayload: JsonType | OCPPError,
+    messagePayload: JsonObject | OCPPError,
     messageType: MessageType,
     commandName?: RequestCommand | IncomingRequestCommand,
-    responseCallback?: (payload: JsonType, requestPayload: JsonType) => Promise<void>,
+    responseCallback?: (payload: JsonObject, requestPayload: JsonObject) => Promise<void>,
     errorCallback?: (error: OCPPError, requestStatistic?: boolean) => void
   ): string {
     let messageToSend: string;
@@ -286,7 +286,7 @@ export default abstract class OCPPRequestService {
           responseCallback,
           errorCallback,
           commandName,
-          messagePayload as JsonType,
+          messagePayload as JsonObject,
         ]);
         messageToSend = JSON.stringify([
           messageType,
@@ -342,9 +342,9 @@ export default abstract class OCPPRequestService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public abstract requestHandler<Request extends JsonType, Response extends JsonType>(
+  public abstract requestHandler<Request extends JsonObject, Response extends JsonObject>(
     commandName: RequestCommand,
-    commandParams?: JsonType,
+    commandParams?: JsonObject,
     params?: RequestParams
   ): Promise<Response>;
 }

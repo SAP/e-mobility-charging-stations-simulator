@@ -1,4 +1,4 @@
-import { JsonType } from './JsonType';
+import { JsonObject } from './JsonType';
 
 export enum Protocol {
   UI = 'ui',
@@ -15,8 +15,8 @@ export enum ProtocolCommand {
   UNKNOWN = 'unknown',
 }
 
-export type ProtocolRequest = [ProtocolCommand, JsonType];
+export type ProtocolRequest = [ProtocolCommand, JsonObject];
 
 export type ProtocolRequestHandler = (
-  payload: JsonType
-) => void | Promise<void> | JsonType | Promise<JsonType>;
+  payload: JsonObject
+) => void | Promise<void> | JsonObject | Promise<JsonObject>;

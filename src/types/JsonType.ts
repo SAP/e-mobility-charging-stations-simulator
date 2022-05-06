@@ -1,7 +1,7 @@
-type JsonArray = Array<JsonValue>;
+type JsonPrimitive = string | number | boolean | Date | null;
 
-export type JsonValue = string | number | boolean | Date | JsonType | JsonArray;
-
-export type JsonType = {
-  [key in string]: JsonValue;
+export type JsonObject = {
+  [key in string]: JsonType;
 };
+
+export type JsonType = JsonPrimitive | JsonType[] | JsonObject;

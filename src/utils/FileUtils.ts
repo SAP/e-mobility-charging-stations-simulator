@@ -1,4 +1,4 @@
-import { JsonType, JsonValue } from '../types/JsonType';
+import { JsonObject, JsonType } from '../types/JsonType';
 
 import { EmptyObject } from '../types/EmptyObject';
 import { FileType } from '../types/FileType';
@@ -9,7 +9,7 @@ import fs from 'fs';
 import logger from './Logger';
 
 export default class FileUtils {
-  static watchJsonFile<T extends JsonType | JsonValue>(
+  static watchJsonFile<T extends JsonObject | JsonType>(
     logPrefix: string,
     fileType: FileType,
     file: string,

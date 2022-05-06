@@ -3,7 +3,7 @@
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { JsonType } from '../../../types/JsonType';
+import { JsonObject } from '../../../types/JsonType';
 import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
@@ -22,9 +22,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
     super(chargingStation, ocppResponseService);
   }
 
-  public async requestHandler<Request extends JsonType, Response extends JsonType>(
+  public async requestHandler<Request extends JsonObject, Response extends JsonObject>(
     commandName: OCPP16RequestCommand,
-    commandParams?: JsonType,
+    commandParams?: JsonObject,
     params?: RequestParams
   ): Promise<Response> {
     if (Object.values(OCPP16RequestCommand).includes(commandName)) {
@@ -43,9 +43,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
     );
   }
 
-  private buildRequestPayload<Request extends JsonType>(
+  private buildRequestPayload<Request extends JsonObject>(
     commandName: OCPP16RequestCommand,
-    commandParams?: JsonType
+    commandParams?: JsonObject
   ): Request {
     let connectorId: number;
     switch (commandName) {
