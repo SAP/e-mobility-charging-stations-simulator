@@ -38,10 +38,6 @@ import ChargingStationTemplate, {
   WsOptions,
 } from '../types/ChargingStationTemplate';
 import {
-  ChargingStationWorkerMessageEvents,
-  InternalChargingStationWorkerMessage,
-} from '../types/ChargingStationWorker';
-import {
   ConnectorPhaseRotation,
   StandardParametersKey,
   SupportedFeatureProfiles,
@@ -61,6 +57,7 @@ import BaseError from '../exception/BaseError';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
 import ChargingStationInfo from '../types/ChargingStationInfo';
+import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import Configuration from '../utils/Configuration';
 import { ConnectorStatus } from '../types/ConnectorStatus';
 import Constants from '../utils/Constants';
@@ -614,14 +611,7 @@ export default class ChargingStation {
         }
       }
     );
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STARTED,
-      data: {
-        id: this.stationInfo.chargingStationId,
-        hashId: this.hashId,
-        stationInfo: this.stationInfo,
-      },
-    } as InternalChargingStationWorkerMessage);
+    parentPort.postMessage(this.buildStartMessage());
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -647,10 +637,7 @@ export default class ChargingStation {
       this.performanceStatistics.stop();
     }
     this.bootNotificationResponse = null;
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STOPPED,
-      data: { id: this.stationInfo.chargingStationId },
-    });
+    parentPort.postMessage(this.buildStopMessage());
     this.stopped = true;
   }
 
@@ -859,6 +846,24 @@ export default class ChargingStation {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
+  }
+
+  private buildStartMessage(): Record<string, unknown> {
+    return {
+      id: ChargingStationWorkerMessageEvents.STARTED,
+      data: {
+        id: this.stationInfo.chargingStationId,
+        hashId: this.hashId,
+        stationInfo: this.stationInfo,
+      },
+    };
+  }
+
+  private buildStopMessage(): Record<string, unknown> {
+    return {
+      id: ChargingStationWorkerMessageEvents.STOPPED,
+      data: { id: this.stationInfo.chargingStationId },
+    };
   }
 
   private flushMessageBuffer() {

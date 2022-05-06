@@ -14,37 +14,36 @@ export interface ChargingStationWorkerData extends WorkerData {
   chargingStationWorkerOptions?: ChargingStationWorkerOptions;
 }
 
-export interface InternalChargingStationWorkerData {
+export interface ChargingStationData {
   id: string;
   hashId: string;
   stationInfo: ChargingStationInfo;
 }
 
-enum InternalChargingStationWorkerMessageEvents {
+enum ChargingStationMessageEvents {
   STARTED = 'started',
   STOPPED = 'stopped',
   PERFORMANCE_STATISTICS = 'performanceStatistics',
 }
 
-export type ChargingStationWorkerMessageEvents =
-  | WorkerMessageEvents
-  | InternalChargingStationWorkerMessageEvents;
+export interface ChargingStationMessage {
+  data: ChargingStationData;
+  id: ChargingStationMessageEvents;
+}
+
+export type ChargingStationWorkerMessageEvents = WorkerMessageEvents | ChargingStationMessageEvents;
 
 export const ChargingStationWorkerMessageEvents = {
   ...WorkerMessageEvents,
-  ...InternalChargingStationWorkerMessageEvents,
+  ...ChargingStationMessageEvents,
 };
 
-export type ChargingStationWorkerMessage = WorkerMessage<ChargingStationWorkerData>;
-//   extends Omit<WorkerMessage<ChargingStationWorkerData>, 'id'> {
-//   id: WorkerMessageEvents;
-// }
-
-export interface InternalChargingStationWorkerMessage
-  extends Omit<WorkerMessage<InternalChargingStationWorkerData> | WorkerMessage<Statistics>, 'id'> {
-  id: InternalChargingStationWorkerMessageEvents;
+export interface ChargingStationWorkerMessage
+  extends Omit<WorkerMessage<ChargingStationWorkerData>, 'id'> {
+  id: ChargingStationWorkerMessageEvents;
 }
 
-export type OverallChargingStationWorkerMessage =
-  | ChargingStationWorkerMessage
-  | InternalChargingStationWorkerMessage;
+export interface InternalChargingStationWorkerMessage {
+  data: unknown;
+  id: ChargingStationWorkerMessageEvents;
+}
