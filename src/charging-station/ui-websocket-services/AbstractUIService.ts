@@ -1,4 +1,3 @@
-import { JsonObject, JsonType } from '../../types/JsonType';
 import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol';
 
 import BaseError from '../../exception/BaseError';
