@@ -1,9 +1,10 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { JsonObject, JsonType } from '../../../types/JsonType';
+
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { JsonType } from '../../../types/JsonType';
 import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
@@ -48,6 +49,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     commandParams?: JsonType
   ): Request {
     let connectorId: number;
+    commandParams = commandParams as JsonObject;
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
         return {

@@ -6,13 +6,13 @@ import {
   RequestParams,
   ResponseType,
 } from '../../types/ocpp/Requests';
+import { JsonObject, JsonType } from '../../types/JsonType';
 
 import type ChargingStation from '../ChargingStation';
 import Constants from '../../utils/Constants';
 import { EmptyObject } from '../../types/EmptyObject';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { HandleErrorParams } from '../../types/Error';
-import { JsonType } from '../../types/JsonType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import OCPPError from '../../exception/OCPPError';
 import type OCPPResponseService from './OCPPResponseService';
@@ -169,7 +169,7 @@ export default abstract class OCPPRequestService {
               ErrorType.GENERIC_ERROR,
               `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
-              (messagePayload?.details as JsonType) ?? {}
+              (messagePayload as JsonObject)?.details ?? {}
             );
             if (messageType === MessageType.CALL_MESSAGE) {
               // Reject it but keep the request in the cache
@@ -183,7 +183,7 @@ export default abstract class OCPPRequestService {
                 ErrorType.GENERIC_ERROR,
                 `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
-                (messagePayload?.details as JsonType) ?? {}
+                (messagePayload as JsonObject)?.details ?? {}
               ),
               false
             );
@@ -253,7 +253,7 @@ export default abstract class OCPPRequestService {
           ErrorType.GENERIC_ERROR,
           `Timeout for message id '${messageId}'`,
           commandName,
-          (messagePayload?.details as JsonType) ?? {}
+          (messagePayload as JsonObject)?.details ?? {}
         ),
         () => {
           messageType === MessageType.CALL_MESSAGE &&

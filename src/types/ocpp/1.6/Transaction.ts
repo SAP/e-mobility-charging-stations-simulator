@@ -1,4 +1,4 @@
-import { JsonType } from '../../JsonType';
+import { JsonObject } from '../../JsonType';
 import { OCPP16MeterValue } from './MeterValues';
 
 export enum OCPP16StopTransactionReason {
@@ -24,21 +24,21 @@ export enum OCPP16AuthorizationStatus {
   CONCURRENT_TX = 'ConcurrentTx',
 }
 
-export interface IdTagInfo extends JsonType {
+export interface IdTagInfo extends JsonObject {
   status: OCPP16AuthorizationStatus;
   parentIdTag?: string;
   expiryDate?: Date;
 }
 
-export interface OCPP16AuthorizeRequest extends JsonType {
+export interface OCPP16AuthorizeRequest extends JsonObject {
   idTag: string;
 }
 
-export interface OCPP16AuthorizeResponse extends JsonType {
+export interface OCPP16AuthorizeResponse extends JsonObject {
   idTagInfo: IdTagInfo;
 }
 
-export interface OCPP16StartTransactionRequest extends JsonType {
+export interface OCPP16StartTransactionRequest extends JsonObject {
   connectorId: number;
   idTag: string;
   meterStart: number;
@@ -46,12 +46,12 @@ export interface OCPP16StartTransactionRequest extends JsonType {
   timestamp: string;
 }
 
-export interface OCPP16StartTransactionResponse extends JsonType {
+export interface OCPP16StartTransactionResponse extends JsonObject {
   idTagInfo: IdTagInfo;
   transactionId: number;
 }
 
-export interface OCPP16StopTransactionRequest extends JsonType {
+export interface OCPP16StopTransactionRequest extends JsonObject {
   idTag?: string;
   meterStop: number;
   timestamp: string;
@@ -60,6 +60,6 @@ export interface OCPP16StopTransactionRequest extends JsonType {
   transactionData?: OCPP16MeterValue[];
 }
 
-export interface OCPP16StopTransactionResponse extends JsonType {
+export interface OCPP16StopTransactionResponse extends JsonObject {
   idTagInfo?: IdTagInfo;
 }
