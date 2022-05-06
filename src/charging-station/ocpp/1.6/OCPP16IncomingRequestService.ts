@@ -64,7 +64,7 @@ import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { IncomingRequestHandler } from '../../../types/ocpp/Requests';
-import { JsonType } from '../../../types/JsonType';
+import { JsonObject } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
@@ -129,9 +129,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   public async incomingRequestHandler(
     messageId: string,
     commandName: OCPP16IncomingRequestCommand,
-    commandPayload: JsonType
+    commandPayload: JsonObject
   ): Promise<void> {
-    let response: JsonType;
+    let response: JsonObject;
     if (
       this.chargingStation.getOcppStrictCompliance() &&
       this.chargingStation.isInPendingState() &&

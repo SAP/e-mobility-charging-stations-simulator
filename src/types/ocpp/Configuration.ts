@@ -4,7 +4,7 @@ import {
   OCPP16VendorDefaultParametersKey,
 } from './1.6/Configuration';
 
-import { JsonType } from '../JsonType';
+import { JsonObject } from '../JsonType';
 
 export type StandardParametersKey = OCPP16StandardParametersKey;
 
@@ -35,7 +35,7 @@ export enum ConnectorPhaseRotation {
   TSR = 'TSR',
 }
 
-export interface OCPPConfigurationKey extends JsonType {
+export interface OCPPConfigurationKey extends JsonObject {
   key: string | StandardParametersKey;
   readonly: boolean;
   value?: string;

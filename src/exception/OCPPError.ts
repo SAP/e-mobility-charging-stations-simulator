@@ -4,18 +4,18 @@ import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 
 import BaseError from './BaseError';
 import { ErrorType } from '../types/ocpp/ErrorType';
-import { JsonType } from '../types/JsonType';
+import { JsonObject } from '../types/JsonType';
 
 export default class OCPPError extends BaseError {
   code: ErrorType;
   command?: RequestCommand | IncomingRequestCommand;
-  details?: JsonType;
+  details?: JsonObject;
 
   constructor(
     code: ErrorType,
     message: string,
     command?: RequestCommand | IncomingRequestCommand,
-    details?: JsonType
+    details?: JsonObject
   ) {
     super(message);
 

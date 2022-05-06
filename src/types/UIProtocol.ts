@@ -1,4 +1,4 @@
-import { JsonArray, JsonType } from './JsonType';
+import { JsonObject, JsonType } from './JsonType';
 
 export enum Protocol {
   UI = 'ui',
@@ -15,8 +15,8 @@ export enum ProtocolCommand {
   UNKNOWN = 'unknown',
 }
 
-export type JsonTemp = JsonType | JsonArray; // until JsonType is fixed
+export type ProtocolRequest = [ProtocolCommand, JsonType];
 
-export type ProtocolRequest = [ProtocolCommand, JsonTemp];
-
-export type ProtocolRequestHandler = (payload: JsonTemp) => JsonTemp | Promise<JsonTemp>;
+export type ProtocolRequestHandler = (
+  payload: JsonType
+) => void | Promise<void> | JsonType | Promise<JsonType>;

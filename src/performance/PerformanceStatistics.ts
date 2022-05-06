@@ -1,14 +1,11 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import {
-  ChargingStationMessage,
-  ChargingStationWorkerMessageEvents,
-} from '../types/ChargingStationWorker';
 import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import Statistics, { StatisticsData, TimeSeries } from '../types/Statistics';
 
+import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import Configuration from '../utils/Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
 import { URL } from 'url';

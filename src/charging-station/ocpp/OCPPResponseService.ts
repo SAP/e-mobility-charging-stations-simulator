@@ -1,5 +1,5 @@
 import type ChargingStation from '../ChargingStation';
-import { JsonType } from '../../types/JsonType';
+import { JsonObject } from '../../types/JsonType';
 import { RequestCommand } from '../../types/ocpp/Requests';
 
 export default abstract class OCPPResponseService {
@@ -26,7 +26,7 @@ export default abstract class OCPPResponseService {
 
   public abstract responseHandler(
     commandName: RequestCommand,
-    payload: JsonType,
-    requestPayload: JsonType
+    payload: JsonObject,
+    requestPayload: JsonObject
   ): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { JsonType } from './JsonType';
+import { JsonObject } from './JsonType';
 import { PoolOptions } from 'poolifier';
 import { Worker } from 'worker_threads';
 
@@ -18,7 +18,7 @@ export interface WorkerOptions {
   messageHandler?: (message: unknown) => void | Promise<void>;
 }
 
-export type WorkerData = JsonType;
+export type WorkerData = JsonObject;
 
 export interface WorkerSetElement {
   worker: Worker;
