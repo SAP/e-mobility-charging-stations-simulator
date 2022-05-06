@@ -1,15 +1,14 @@
-import { JsonObject, JsonType } from '../types/JsonType';
-
 import { EmptyObject } from '../types/EmptyObject';
 import { FileType } from '../types/FileType';
 import { HandleErrorParams } from '../types/Error';
+import { JsonType } from '../types/JsonType';
 import Utils from './Utils';
 import chalk from 'chalk';
 import fs from 'fs';
 import logger from './Logger';
 
 export default class FileUtils {
-  static watchJsonFile<T extends JsonObject | JsonType>(
+  static watchJsonFile<T extends JsonType>(
     logPrefix: string,
     fileType: FileType,
     file: string,
