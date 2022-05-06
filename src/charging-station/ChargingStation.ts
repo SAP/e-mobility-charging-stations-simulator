@@ -64,7 +64,7 @@ import Constants from '../utils/Constants';
 import { ErrorType } from '../types/ocpp/ErrorType';
 import { FileType } from '../types/FileType';
 import FileUtils from '../utils/FileUtils';
-import { JsonObject } from '../types/JsonType';
+import { JsonType } from '../types/JsonType';
 import { MessageType } from '../types/ocpp/MessageType';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
@@ -1572,14 +1572,14 @@ export default class ChargingStation {
     let messageType: number;
     let messageId: string;
     let commandName: IncomingRequestCommand;
-    let commandPayload: JsonObject;
+    let commandPayload: JsonType;
     let errorType: ErrorType;
     let errorMessage: string;
-    let errorDetails: JsonObject;
-    let responseCallback: (payload: JsonObject, requestPayload: JsonObject) => void;
+    let errorDetails: JsonType;
+    let responseCallback: (payload: JsonType, requestPayload: JsonType) => void;
     let errorCallback: (error: OCPPError, requestStatistic?: boolean) => void;
     let requestCommandName: RequestCommand | IncomingRequestCommand;
-    let requestPayload: JsonObject;
+    let requestPayload: JsonType;
     let cachedRequest: CachedRequest;
     let errMsg: string;
     try {
@@ -1627,7 +1627,7 @@ export default class ChargingStation {
                 ErrorType.PROTOCOL_ERROR,
                 `Cached request for message id ${messageId} response is not iterable`,
                 null,
-                cachedRequest as unknown as JsonObject
+                cachedRequest as unknown as JsonType
               );
             }
             logger.debug(
@@ -1657,7 +1657,7 @@ export default class ChargingStation {
                 ErrorType.PROTOCOL_ERROR,
                 `Cached request for message id ${messageId} error response is not iterable`,
                 null,
-                cachedRequest as unknown as JsonObject
+                cachedRequest as unknown as JsonType
               );
             }
             logger.debug(

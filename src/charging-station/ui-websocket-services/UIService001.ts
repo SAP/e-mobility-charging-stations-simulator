@@ -1,7 +1,7 @@
 import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol';
 
 import AbstractUIService from './AbstractUIService';
-import { JsonObject } from '../../types/JsonType';
+import { JsonType } from '../../types/JsonType';
 import UIWebSocketServer from '../UIWebSocketServer';
 
 export default class UIService001 extends AbstractUIService {
@@ -17,6 +17,6 @@ export default class UIService001 extends AbstractUIService {
     );
   }
 
-  private handleStartTransaction(payload: JsonObject): void {}
-  private handleStopTransaction(payload: JsonObject): void {}
+  private handleStartTransaction(payload: JsonType): void {}
+  private handleStopTransaction(payload: JsonType): void {}
 }

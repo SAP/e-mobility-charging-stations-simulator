@@ -1,9 +1,10 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { JsonObject, JsonType } from '../../../types/JsonType';
+
 import type ChargingStation from '../../ChargingStation';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { JsonObject } from '../../../types/JsonType';
 import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
@@ -22,9 +23,9 @@ export default class OCPP16RequestService extends OCPPRequestService {
     super(chargingStation, ocppResponseService);
   }
 
-  public async requestHandler<Request extends JsonObject, Response extends JsonObject>(
+  public async requestHandler<Request extends JsonType, Response extends JsonType>(
     commandName: OCPP16RequestCommand,
-    commandParams?: JsonObject,
+    commandParams?: JsonType,
     params?: RequestParams
   ): Promise<Response> {
     if (Object.values(OCPP16RequestCommand).includes(commandName)) {
@@ -43,11 +44,12 @@ export default class OCPP16RequestService extends OCPPRequestService {
     );
   }
 
-  private buildRequestPayload<Request extends JsonObject>(
+  private buildRequestPayload<Request extends JsonType>(
     commandName: OCPP16RequestCommand,
-    commandParams?: JsonObject
+    commandParams?: JsonType
   ): Request {
     let connectorId: number;
+    commandParams = commandParams as JsonObject;
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
         return {
