@@ -1,4 +1,4 @@
-import { JsonObject, JsonType } from './JsonType';
+import { JsonType } from './JsonType';
 
 export enum Protocol {
   UI = 'ui',

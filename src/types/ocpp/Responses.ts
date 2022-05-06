@@ -12,17 +12,17 @@ import {
 } from './1.6/Responses';
 
 import { ErrorType } from './ErrorType';
-import { JsonObject } from '../JsonType';
+import { JsonType } from '../JsonType';
 import { MessageType } from './MessageType';
 import { OCPP16MeterValuesResponse } from './1.6/MeterValues';
 
-export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonObject];
+export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType];
 
-export type ErrorResponse = [MessageType.CALL_ERROR_MESSAGE, string, ErrorType, string, JsonObject];
+export type ErrorResponse = [MessageType.CALL_ERROR_MESSAGE, string, ErrorType, string, JsonType];
 
 export type ResponseHandler = (
-  payload: JsonObject,
-  requestPayload?: JsonObject
+  payload: JsonType,
+  requestPayload?: JsonType
 ) => void | Promise<void>;
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse;

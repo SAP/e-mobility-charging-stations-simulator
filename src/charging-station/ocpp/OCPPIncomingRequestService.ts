@@ -1,7 +1,7 @@
 import type ChargingStation from '../ChargingStation';
 import { HandleErrorParams } from '../../types/Error';
 import { IncomingRequestCommand } from '../../types/ocpp/Requests';
-import { JsonObject } from '../../types/JsonType';
+import { JsonType } from '../../types/JsonType';
 import logger from '../../utils/Logger';
 
 export default abstract class OCPPIncomingRequestService {
@@ -50,6 +50,6 @@ export default abstract class OCPPIncomingRequestService {
   public abstract incomingRequestHandler(
     messageId: string,
     commandName: IncomingRequestCommand,
-    commandPayload: JsonObject
+    commandPayload: JsonType
   ): Promise<void>;
 }
