@@ -2238,8 +2238,11 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
   }
 
-  /*
+  /**
    * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
+   *
+   * @param {ChargingProfile[]} chargingProfiles
+   * @returns {{ limit, matchingChargingProfile }}
    */
   private getLimitFromChargingProfiles(chargingProfiles: ChargingProfile[]): {
     limit: number;
