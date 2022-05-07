@@ -302,12 +302,11 @@ export class OCPP16ServiceUtils {
       } measurand value`;
       const powerMeasurandValues = {} as MeasurandValues;
       const unitDivider = powerSampledValueTemplate?.unit === MeterValueUnit.KILO_WATT ? 1000 : 1;
-      const connectorMaximumPower = Math.round(
-        chargingStation.getConnectorMaximumAvailablePower(connectorId)
-      );
+      const connectorMaximumAvailablePower =
+        chargingStation.getConnectorMaximumAvailablePower(connectorId);
+      const connectorMaximumPower = Math.round(connectorMaximumAvailablePower);
       const connectorMaximumPowerPerPhase = Math.round(
-        chargingStation.getConnectorMaximumAvailablePower(connectorId) /
-          chargingStation.getNumberOfPhases()
+        connectorMaximumAvailablePower / chargingStation.getNumberOfPhases()
       );
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
@@ -481,12 +480,14 @@ export class OCPP16ServiceUtils {
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       } measurand value`;
       const currentMeasurandValues: MeasurandValues = {} as MeasurandValues;
+      const connectorMaximumAvailablePower =
+        chargingStation.getConnectorMaximumAvailablePower(connectorId);
       let connectorMaximumAmperage: number;
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
           connectorMaximumAmperage = ACElectricUtils.amperagePerPhaseFromPower(
             chargingStation.getNumberOfPhases(),
-            chargingStation.getConnectorMaximumAvailablePower(connectorId),
+            connectorMaximumAvailablePower,
             chargingStation.getVoltageOut()
           );
           if (chargingStation.getNumberOfPhases() === 3) {
@@ -549,7 +550,7 @@ export class OCPP16ServiceUtils {
           break;
         case CurrentType.DC:
           connectorMaximumAmperage = DCElectricUtils.amperage(
-            chargingStation.getConnectorMaximumAvailablePower(connectorId),
+            connectorMaximumAvailablePower,
             chargingStation.getVoltageOut()
           );
           currentMeasurandValues.allPhases = currentSampledValueTemplate.value
@@ -628,8 +629,10 @@ export class OCPP16ServiceUtils {
       );
       const unitDivider =
         energySampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
+      const connectorMaximumAvailablePower =
+        chargingStation.getConnectorMaximumAvailablePower(connectorId);
       const connectorMaximumEnergyRounded = Utils.roundTo(
-        (chargingStation.getConnectorMaximumAvailablePower(connectorId) * interval) / (3600 * 1000),
+        (connectorMaximumAvailablePower * interval) / (3600 * 1000),
         2
       );
       const energyValueRounded = energySampledValueTemplate.value
