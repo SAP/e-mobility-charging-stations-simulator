@@ -753,7 +753,7 @@ export default class ChargingStation {
       );
     }
     if (!Utils.isEmptyArray(chargingProfiles)) {
-      const result = this.getCurrentLimitFromChargingProfiles(chargingProfiles);
+      const result = this.getLimitFromChargingProfiles(chargingProfiles);
       if (!Utils.isNullOrUndefined(result)) {
         limit = result.limit;
         matchingChargingProfile = result.matchingChargingProfile;
@@ -2241,7 +2241,7 @@ export default class ChargingStation {
   /*
    * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
    */
-  private getCurrentLimitFromChargingProfiles(chargingProfiles: ChargingProfile[]): {
+  private getLimitFromChargingProfiles(chargingProfiles: ChargingProfile[]): {
     limit: number;
     matchingChargingProfile: ChargingProfile;
   } | null {
