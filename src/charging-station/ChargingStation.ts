@@ -740,10 +740,9 @@ export default class ChargingStation {
   }
 
   public getChargingProfilePowerLimit(connectorId: number): number | undefined {
-    let limit: number;
-    let matchingChargingProfile: ChargingProfile;
+    let limit: number, matchingChargingProfile: ChargingProfile;
     let chargingProfiles: ChargingProfile[] = [];
-    // Get profiles for connector and sort by stack level
+    // Get charging profiles for connector and sort by stack level
     chargingProfiles = this.getConnectorStatus(connectorId).chargingProfiles.sort(
       (a, b) => b.stackLevel - a.stackLevel
     );
@@ -754,7 +753,7 @@ export default class ChargingStation {
       );
     }
     if (!Utils.isEmptyArray(chargingProfiles)) {
-      const result = this.getCurrentLimitFromOCPPProfiles(chargingProfiles);
+      const result = this.getCurrentLimitFromChargingProfiles(chargingProfiles);
       if (!Utils.isNullOrUndefined(result)) {
         limit = result.limit;
         matchingChargingProfile = result.matchingChargingProfile;
@@ -790,8 +789,16 @@ export default class ChargingStation {
   }
 
   public setChargingProfile(connectorId: number, cp: ChargingProfile): void {
-    // Add support for connectorID 0
+    if (Utils.isNullOrUndefined(this.getConnectorStatus(connectorId).chargingProfiles)) {
+      logger.error(
+        `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
+      );
+      this.getConnectorStatus(connectorId).chargingProfiles = [];
+    }
     if (!Array.isArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
+      logger.error(
+        `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
+      );
       this.getConnectorStatus(connectorId).chargingProfiles = [];
     }
     let cpReplaced = false;
@@ -2231,21 +2238,23 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
   }
 
-  private getCurrentLimitFromOCPPProfiles(chargingProfiles: ChargingProfile[]): {
+  /*
+   * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
+   */
+  private getCurrentLimitFromChargingProfiles(chargingProfiles: ChargingProfile[]): {
     limit: number;
     matchingChargingProfile: ChargingProfile;
-  } {
+  } | null {
     for (const chargingProfile of chargingProfiles) {
-      // Profiles should already be sorted by connectorID and Stack Level (highest stack level has prio)
       // Set helpers
-      const now = moment();
+      const currentMoment = moment();
       const chargingSchedule = chargingProfile.chargingSchedule;
-      // Check type (Recurring) and if it is already active
-      // Adjust the Daily Recurring Schedule to today
+      // Check type (recurring) and if it is already active
+      // Adjust the daily recurring schedule to today
       if (
         chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
         chargingProfile.recurrencyKind === RecurrencyKindType.DAILY &&
-        now.isAfter(chargingSchedule.startSchedule)
+        currentMoment.isAfter(chargingSchedule.startSchedule)
       ) {
         const currentDate = new Date();
         chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule);
@@ -2255,30 +2264,52 @@ export default class ChargingStation {
           currentDate.getDate()
         );
         // Check if the start of the schedule is yesterday
-        if (moment(chargingSchedule.startSchedule).isAfter(now)) {
+        if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
           chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
         }
-      } else if (moment(chargingSchedule.startSchedule).isAfter(now)) {
+      } else if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
         return null;
       }
-      // Check if the Charging Profile is active
-      if (moment(chargingSchedule.startSchedule).add(chargingSchedule.duration, 's').isAfter(now)) {
+      // Check if the charging profile is active
+      if (
+        moment(chargingSchedule.startSchedule)
+          .add(chargingSchedule.duration, 's')
+          .isAfter(currentMoment)
+      ) {
         let lastButOneSchedule: ChargingSchedulePeriod;
-        // Search the right Schedule Period
+        // Search the right schedule period
         for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
           // Handling of only one period
           if (
             chargingSchedule.chargingSchedulePeriod.length === 1 &&
             schedulePeriod.startPeriod === 0
           ) {
-            return { limit: schedulePeriod.limit, matchingChargingProfile: chargingProfile };
+            const result = {
+              limit: schedulePeriod.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(
+              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
+              result
+            );
+            return result;
           }
-          // Find the right Schedule Periods
+          // Find the right schedule period
           if (
-            moment(chargingSchedule.startSchedule).add(schedulePeriod.startPeriod, 's').isAfter(now)
+            moment(chargingSchedule.startSchedule)
+              .add(schedulePeriod.startPeriod, 's')
+              .isAfter(currentMoment)
           ) {
-            // Found the schedule: Last but one is the correct one
-            return { limit: lastButOneSchedule.limit, matchingChargingProfile: chargingProfile };
+            // Found the schedule: last but one is the correct one
+            const result = {
+              limit: lastButOneSchedule.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(
+              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
+              result
+            );
+            return result;
           }
           // Keep it
           lastButOneSchedule = schedulePeriod;
@@ -2289,7 +2320,15 @@ export default class ChargingStation {
               chargingSchedule.chargingSchedulePeriod.length - 1
             ].startPeriod
           ) {
-            return { limit: lastButOneSchedule.limit, matchingChargingProfile: chargingProfile };
+            const result = {
+              limit: lastButOneSchedule.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(
+              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
+              result
+            );
+            return result;
           }
         }
       }
