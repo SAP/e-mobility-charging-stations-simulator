@@ -314,28 +314,40 @@ export class OCPP16ServiceUtils {
             const defaultFluctuatedPowerPerPhase =
               powerSampledValueTemplate.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(powerSampledValueTemplate.value) / chargingStation.getNumberOfPhases(),
+                Math.min(
+                  parseInt(powerSampledValueTemplate.value),
+                  connectorMaximumPower / unitDivider
+                ) / chargingStation.getNumberOfPhases(),
                 powerSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
             const phase1FluctuatedValue =
               powerPerPhaseSampledValueTemplates?.L1?.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(powerPerPhaseSampledValueTemplates.L1.value),
+                Math.min(
+                  parseInt(powerPerPhaseSampledValueTemplates.L1.value),
+                  connectorMaximumPowerPerPhase / unitDivider
+                ),
                 powerPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
             const phase2FluctuatedValue =
               powerPerPhaseSampledValueTemplates?.L2?.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(powerPerPhaseSampledValueTemplates.L2.value),
+                Math.min(
+                  parseInt(powerPerPhaseSampledValueTemplates.L2.value),
+                  connectorMaximumPowerPerPhase / unitDivider
+                ),
                 powerPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
             const phase3FluctuatedValue =
               powerPerPhaseSampledValueTemplates?.L3?.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(powerPerPhaseSampledValueTemplates.L3.value),
+                Math.min(
+                  parseInt(powerPerPhaseSampledValueTemplates.L3.value),
+                  connectorMaximumPowerPerPhase / unitDivider
+                ),
                 powerPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
@@ -354,7 +366,10 @@ export class OCPP16ServiceUtils {
           } else {
             powerMeasurandValues.L1 = powerSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(
-                  parseInt(powerSampledValueTemplate.value),
+                  Math.min(
+                    parseInt(powerSampledValueTemplate.value),
+                    connectorMaximumPower / unitDivider
+                  ),
                   powerSampledValueTemplate.fluctuationPercent ??
                     Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
@@ -370,7 +385,10 @@ export class OCPP16ServiceUtils {
         case CurrentType.DC:
           powerMeasurandValues.allPhases = powerSampledValueTemplate.value
             ? Utils.getRandomFloatFluctuatedRounded(
-                parseInt(powerSampledValueTemplate.value),
+                Math.min(
+                  parseInt(powerSampledValueTemplate.value),
+                  connectorMaximumPower / unitDivider
+                ),
                 powerSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               )
@@ -494,28 +512,37 @@ export class OCPP16ServiceUtils {
             const defaultFluctuatedAmperagePerPhase =
               currentSampledValueTemplate.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(currentSampledValueTemplate.value),
+                Math.min(parseInt(currentSampledValueTemplate.value), connectorMaximumAmperage),
                 currentSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
             const phase1FluctuatedValue =
               currentPerPhaseSampledValueTemplates?.L1?.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(currentPerPhaseSampledValueTemplates.L1.value),
+                Math.min(
+                  parseInt(currentPerPhaseSampledValueTemplates.L1.value),
+                  connectorMaximumAmperage
+                ),
                 currentPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
             const phase2FluctuatedValue =
               currentPerPhaseSampledValueTemplates?.L2?.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(currentPerPhaseSampledValueTemplates.L2.value),
+                Math.min(
+                  parseInt(currentPerPhaseSampledValueTemplates.L2.value),
+                  connectorMaximumAmperage
+                ),
                 currentPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
             const phase3FluctuatedValue =
               currentPerPhaseSampledValueTemplates?.L3?.value &&
               Utils.getRandomFloatFluctuatedRounded(
-                parseInt(currentPerPhaseSampledValueTemplates.L3.value),
+                Math.min(
+                  parseInt(currentPerPhaseSampledValueTemplates.L3.value),
+                  connectorMaximumAmperage
+                ),
                 currentPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               );
@@ -534,7 +561,7 @@ export class OCPP16ServiceUtils {
           } else {
             currentMeasurandValues.L1 = currentSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(
-                  parseInt(currentSampledValueTemplate.value),
+                  Math.min(parseInt(currentSampledValueTemplate.value), connectorMaximumAmperage),
                   currentSampledValueTemplate.fluctuationPercent ??
                     Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
@@ -555,7 +582,7 @@ export class OCPP16ServiceUtils {
           );
           currentMeasurandValues.allPhases = currentSampledValueTemplate.value
             ? Utils.getRandomFloatFluctuatedRounded(
-                parseInt(currentSampledValueTemplate.value),
+                Math.min(parseInt(currentSampledValueTemplate.value), connectorMaximumAmperage),
                 currentSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               )
@@ -638,7 +665,10 @@ export class OCPP16ServiceUtils {
       const energyValueRounded = energySampledValueTemplate.value
         ? // Cumulate the fluctuated value around the static one
           Utils.getRandomFloatFluctuatedRounded(
-            parseInt(energySampledValueTemplate.value),
+            Math.min(
+              parseInt(energySampledValueTemplate.value) * unitDivider,
+              connectorMaximumEnergyRounded
+            ),
             energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
         : Utils.getRandomFloatRounded(connectorMaximumEnergyRounded);
