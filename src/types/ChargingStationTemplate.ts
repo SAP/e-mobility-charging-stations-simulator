@@ -92,6 +92,7 @@ export default interface ChargingStationTemplate {
   transactionDataMeterValues?: boolean;
   mainVoltageMeterValues?: boolean;
   phaseLineToLineVoltageMeterValues?: boolean;
+  customValueLimitationMeterValues?: boolean;
   Configuration?: ChargingStationOcppConfiguration;
   AutomaticTransactionGenerator: AutomaticTransactionGenerator;
   Connectors: Record<string, ConnectorStatus>;

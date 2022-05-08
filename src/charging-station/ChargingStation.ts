@@ -306,6 +306,10 @@ export default class ChargingStation {
     return this.stationInfo.phaseLineToLineVoltageMeterValues ?? false;
   }
 
+  public getCustomValueLimitationMeterValues(): boolean {
+    return this.stationInfo.customValueLimitationMeterValues ?? true;
+  }
+
   public getConnectorIdByTransactionId(transactionId: number): number | undefined {
     for (const connectorId of this.connectors.keys()) {
       if (
