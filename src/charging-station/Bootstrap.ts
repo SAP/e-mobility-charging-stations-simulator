@@ -157,19 +157,23 @@ export default class Bootstrap {
           const workerEventStarted = (data: ChargingStationData) => {
             console.log('started'); // debug
             // console.log(data); // debug
-            this.uiWebSocketServer.chargingStations.add(data.id);
+            this.uiWebSocketServer.chargingStations.set(data.hashId, data.data);
+            // this.uiWebSocketServer.chargingStations.add(data.id);
             ++this.numberOfChargingStations;
           };
           const workerEventStopped = (data: ChargingStationData) => {
             console.log('stopped'); // debug
-            console.log(data); // debug
-            this.uiWebSocketServer.chargingStations.delete(data.id);
+            // console.log(data); // debug
+            this.uiWebSocketServer.chargingStations.delete(data.hashId);
             --this.numberOfChargingStations;
           };
           const workerEventPerformanceStatistics = (data: Statistics) => {
             console.log('statistics'); // debug
-            console.log(data); // debug
-            (async () => this.storage.storePerformanceStatistics(data))().catch(console.error);
+            // console.log(data); // debug
+            (async () => this.storage.storePerformanceStatistics(data))().catch(() => {
+              /* This is intentional */
+            });
+            // (async () => this.storage.storePerformanceStatistics(data))().catch(console.error);
           };
 
           switch (msg.id) {

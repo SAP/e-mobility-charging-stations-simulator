@@ -26,7 +26,6 @@ export interface WorkerSetElement {
 }
 
 export interface WorkerMessage<T extends WorkerData> {
-  // export interface WorkerMessage<T> {
   id: WorkerMessageEvents;
   data: T;
 }

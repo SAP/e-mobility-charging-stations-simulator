@@ -13,10 +13,14 @@ export interface ChargingStationWorkerData extends WorkerData {
   chargingStationWorkerOptions?: ChargingStationWorkerOptions;
 }
 
-export interface ChargingStationData {
+export interface ChargingStationSubData {
   id: string;
-  hashId: string;
   stationInfo: ChargingStationInfo;
+}
+
+export interface ChargingStationData {
+  hashId: string;
+  data: ChargingStationSubData;
 }
 
 enum ChargingStationMessageEvents {

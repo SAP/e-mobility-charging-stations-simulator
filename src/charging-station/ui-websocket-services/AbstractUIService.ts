@@ -37,6 +37,7 @@ export default abstract class AbstractUIService {
         )}`
       );
     }
+    console.log(messageResponse);
     // Send the built message response
     this.uiWebSocketServer.broadcastToClients(this.buildProtocolMessage(command, messageResponse));
   }
@@ -46,5 +47,9 @@ export default abstract class AbstractUIService {
   }
 
   private handleListChargingStations = (): JsonType =>
-    Array.from(this.uiWebSocketServer.chargingStations);
+    // Array.from(this.uiWebSocketServer.chargingStations);
+    Array.from(
+      this.uiWebSocketServer.chargingStations,
+      ([key, value]) => value as unknown as JsonType
+    );
 }

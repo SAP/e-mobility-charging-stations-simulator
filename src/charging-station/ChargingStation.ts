@@ -852,9 +852,11 @@ export default class ChargingStation {
     return {
       id: ChargingStationWorkerMessageEvents.STARTED,
       data: {
-        id: this.stationInfo.chargingStationId,
         hashId: this.hashId,
-        stationInfo: this.stationInfo,
+        data: {
+          id: this.stationInfo.chargingStationId,
+          stationInfo: this.stationInfo,
+        },
       },
     };
   }
@@ -862,7 +864,7 @@ export default class ChargingStation {
   private buildStopMessage(): Record<string, unknown> {
     return {
       id: ChargingStationWorkerMessageEvents.STOPPED,
-      data: { id: this.stationInfo.chargingStationId },
+      data: { hashId: this.hashId },
     };
   }
 
