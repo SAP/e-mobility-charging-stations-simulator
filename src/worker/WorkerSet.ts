@@ -105,7 +105,6 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       /* This is intentional */
     });
     worker.on('exit', (code) => {
-      console.log('game over');
       WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });

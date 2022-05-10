@@ -19,6 +19,7 @@ import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import chalk from 'chalk';
 import { isMainThread } from 'worker_threads';
+import logger from '../utils/Logger';
 import path from 'path';
 import { version } from '../../package.json';
 
@@ -155,26 +156,23 @@ export default class Bootstrap {
         },
         messageHandler: (msg: InternalChargingStationWorkerMessage) => {
           const workerEventStarted = (data: ChargingStationData) => {
-            console.log('started'); // debug
-            // console.log(data); // debug
             this.uiWebSocketServer.chargingStations.set(data.hashId, data.data);
             // this.uiWebSocketServer.chargingStations.add(data.id);
             ++this.numberOfChargingStations;
           };
           const workerEventStopped = (data: ChargingStationData) => {
-            console.log('stopped'); // debug
-            // console.log(data); // debug
             this.uiWebSocketServer.chargingStations.delete(data.hashId);
             --this.numberOfChargingStations;
           };
           const workerEventPerformanceStatistics = (data: Statistics) => {
-            console.log('statistics'); // debug
-            // console.log(data); // debug
-            (async () => this.storage.storePerformanceStatistics(data))().catch(() => {
-              /* This is intentional */
-            });
-            // (async () => this.storage.storePerformanceStatistics(data))().catch(console.error);
+            (async () => this.storage.storePerformanceStatistics(data))().catch((error: unknown) =>
+              logger.error(`${this.logPrefix()} ${error.toString()}`)
+            );
           };
+
+          logger.debug(
+            `${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.data)}`
+          );
 
           switch (msg.id) {
             case ChargingStationWorkerMessageEvents.STARTED:

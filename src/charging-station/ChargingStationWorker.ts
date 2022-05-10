@@ -11,6 +11,7 @@ import ChargingStation from './ChargingStation';
 import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
+import logger from '../utils/Logger';
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
@@ -32,7 +33,7 @@ if (Utils.workerPoolInUse()) {
  */
 function addMessageListener(): void {
   parentPort?.on('message', (message: ChargingStationWorkerMessage) => {
-    console.log(message); // debug
+    logger.debug(`${logPrefix()} ${JSON.stringify(message)}`);
     if (message.id === ChargingStationWorkerMessageEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.data);
     }
@@ -47,4 +48,11 @@ function addMessageListener(): void {
 function startChargingStation(data: ChargingStationWorkerData): void {
   const station = new ChargingStation(data.index, data.templateFile);
   station.start();
+}
+
+/**
+ * @returns ChargingStationWorker logger prefix
+ */
+function logPrefix(): string {
+  return Utils.logPrefix(' ChargingStationWorker |');
 }

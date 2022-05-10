@@ -3,6 +3,7 @@ import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol'
 import BaseError from '../../exception/BaseError';
 import { JsonType } from '../../types/JsonType';
 import UIWebSocketServer from '../UIWebSocketServer';
+import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
 
 export default abstract class AbstractUIService {
@@ -12,7 +13,7 @@ export default abstract class AbstractUIService {
   constructor(uiWebSocketServer: UIWebSocketServer) {
     this.uiWebSocketServer = uiWebSocketServer;
     this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
-      [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations], // I had a passing idea that we could replace the bind with an arrow function to have the type checking
+      [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations],
     ]);
   }
 
@@ -37,7 +38,7 @@ export default abstract class AbstractUIService {
         )}`
       );
     }
-    console.log(messageResponse);
+    logger.debug(messageResponse);
     // Send the built message response
     this.uiWebSocketServer.broadcastToClients(this.buildProtocolMessage(command, messageResponse));
   }
@@ -52,4 +53,8 @@ export default abstract class AbstractUIService {
       this.uiWebSocketServer.chargingStations,
       ([key, value]) => value as unknown as JsonType
     );
+
+  private logPrefix(): string {
+    return Utils.logPrefix(' AbstractUIService |');
+  }
 }
