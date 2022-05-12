@@ -48,10 +48,9 @@ export default abstract class AbstractUIService {
   }
 
   private handleListChargingStations = (): JsonType =>
-    // Array.from(this.uiWebSocketServer.chargingStations);
     Array.from(
       this.uiWebSocketServer.chargingStations,
-      ([key, value]) => value as unknown as JsonType
+      ([_key, value]) => value as unknown as JsonType
     );
 
   private logPrefix(): string {

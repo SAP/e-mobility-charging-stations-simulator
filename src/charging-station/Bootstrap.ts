@@ -157,7 +157,6 @@ export default class Bootstrap {
         messageHandler: (msg: InternalChargingStationWorkerMessage) => {
           const workerEventStarted = (data: ChargingStationData) => {
             this.uiWebSocketServer.chargingStations.set(data.hashId, data.data);
-            // this.uiWebSocketServer.chargingStations.add(data.id);
             ++this.numberOfChargingStations;
           };
           const workerEventStopped = (data: ChargingStationData) => {
