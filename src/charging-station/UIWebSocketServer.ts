@@ -1,8 +1,7 @@
-import { Protocol, ProtocolCommand, ProtocolRequest, ProtocolVersion } from '../types/UIProtocol';
+import { Protocol, ProtocolVersion } from '../types/UIProtocol';
 import WebSocket, { OPEN, Server, ServerOptions } from 'ws';
 
 import AbstractUIService from './ui-websocket-services/AbstractUIService';
-import BaseError from '../exception/BaseError';
 import Configuration from '../utils/Configuration';
 import { IncomingMessage } from 'http';
 import UIServiceFactory from './ui-websocket-services/UIServiceFactory';
@@ -18,17 +17,6 @@ export default class UIWebSocketServer extends Server {
     super(options ?? Configuration.getUIWebSocketServer().options, callback);
     this.chargingStations = new Set<string>();
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>();
-    for (const version of Object.values(ProtocolVersion)) {
-      this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
-    }
-  }
-
-  public broadcastToClients(message: string): void {
-    for (const client of this.clients) {
-      if (client?.readyState === OPEN) {
-        client.send(message);
-      }
-    }
   }
 
   public start(): void {
@@ -38,28 +26,15 @@ export default class UIWebSocketServer extends Server {
         protocolIndex + Protocol.UI.length
       ) as ProtocolVersion;
       if (!this.uiServices.has(version)) {
-        throw new BaseError(
-          `Could not find a UI service implementation for UI protocol version ${version}`
-        );
+        this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
       }
       // FIXME: check connection validity
       socket.on('message', (messageData) => {
-        let [command, payload]: ProtocolRequest = [ProtocolCommand.UNKNOWN, {}];
-        const protocolRequest = JSON.parse(messageData.toString()) as ProtocolRequest;
-        if (Utils.isIterable(protocolRequest)) {
-          [command, payload] = protocolRequest;
-        } else {
-          throw new BaseError('UI protocol request is not iterable');
-        }
         this.uiServices
           .get(version)
-          .messageHandler(command, payload)
+          .messageHandler(messageData)
           .catch(() => {
-            logger.error(
-              `${this.logPrefix()} Error while handling command %s message: %j`,
-              command,
-              payload
-            );
+            logger.error(`${this.logPrefix()} Error while handling message data: %j`, messageData);
           });
       });
       socket.on('error', (error) => {
@@ -72,7 +47,19 @@ export default class UIWebSocketServer extends Server {
     this.close();
   }
 
+  public sendResponse(message: string): void {
+    this.broadcastToClients(message);
+  }
+
   public logPrefix(): string {
     return Utils.logPrefix(' UI WebSocket Server:');
+  }
+
+  private broadcastToClients(message: string): void {
+    for (const client of this.clients) {
+      if (client?.readyState === OPEN) {
+        client.send(message);
+      }
+    }
   }
 }

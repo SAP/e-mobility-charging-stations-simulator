@@ -1,8 +1,10 @@
-import { ProtocolCommand, ProtocolRequestHandler } from '../../types/UIProtocol';
+import { ProtocolCommand, ProtocolRequest, ProtocolRequestHandler } from '../../types/UIProtocol';
 
 import BaseError from '../../exception/BaseError';
 import { JsonType } from '../../types/JsonType';
+import { RawData } from 'ws';
 import UIWebSocketServer from '../UIWebSocketServer';
+import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
 
 export default abstract class AbstractUIService {
@@ -16,11 +18,19 @@ export default abstract class AbstractUIService {
     ]);
   }
 
-  public async messageHandler(command: ProtocolCommand, payload: JsonType): Promise<void> {
+  public async messageHandler(request: RawData): Promise<void> {
+    let command: ProtocolCommand;
+    let payload: JsonType;
+    const protocolRequest = JSON.parse(request.toString()) as ProtocolRequest;
+    if (Utils.isIterable(protocolRequest)) {
+      [command, payload] = protocolRequest;
+    } else {
+      throw new BaseError('UI protocol request is not iterable');
+    }
     let messageResponse: JsonType;
     if (this.messageHandlers.has(command)) {
       try {
-        // Call the method to build the message response
+        // Call the message handler to build the message response
         messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
       } catch (error) {
         // Log
@@ -37,15 +47,15 @@ export default abstract class AbstractUIService {
         )}`
       );
     }
-    // Send the built message response
-    this.uiWebSocketServer.broadcastToClients(this.buildProtocolMessage(command, messageResponse));
+    // Send the message response
+    this.uiWebSocketServer.sendResponse(this.buildProtocolMessage(command, messageResponse));
   }
 
   protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
     return JSON.stringify([command, payload]);
   }
 
-  private handleListChargingStations(): string[] {
+  private handleListChargingStations(): JsonType {
     return Array.from(this.uiWebSocketServer.chargingStations);
   }
 }

@@ -12,7 +12,6 @@ export enum ProtocolCommand {
   LIST_CHARGING_STATIONS = 'listChargingStations',
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
-  UNKNOWN = 'unknown',
 }
 
 export type ProtocolRequest = [ProtocolCommand, JsonType];
