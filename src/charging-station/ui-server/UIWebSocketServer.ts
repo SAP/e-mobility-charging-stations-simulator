@@ -1,27 +1,23 @@
 import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
-import WebSocket, { OPEN, Server, ServerOptions } from 'ws';
+import WebSocket, { OPEN, Server } from 'ws';
 
-import { ChargingStationSubData } from '../../types/ChargingStationWorker';
-import AbstractUIService from './ui-services/AbstractUIService';
+import { AbstractUIServer } from './AbstractUIServer';
 import Configuration from '../../utils/Configuration';
 import { IncomingMessage } from 'http';
+import { ServerOptions } from '../../types/ConfigurationData';
+import { ChargingStationSubData } from '../../types/ChargingStationWorker';
 import UIServiceFactory from './ui-services/UIServiceFactory';
 import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
 
-export default class UIWebSocketServer extends Server {
-  public readonly chargingStations: Map<string, ChargingStationSubData>;
-  public readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
-
+export default class UIWebSocketServer extends AbstractUIServer {
   public constructor(options?: ServerOptions, callback?: () => void) {
-    // Create the WebSocket Server
-    super(options ?? Configuration.getUIServer().options, callback);
-    this.chargingStations = new Map<string, ChargingStationSubData>();
-    this.uiServices = new Map<ProtocolVersion, AbstractUIService>();
+    super();
+    this.uiServer = new Server(options ?? Configuration.getUIServer().options, callback);
   }
 
   public start(): void {
-    this.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
+    this.uiServer.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
       const protocolIndex = socket.protocol.indexOf(Protocol.UI);
       const version = socket.protocol.substring(
         protocolIndex + Protocol.UI.length
@@ -45,7 +41,7 @@ export default class UIWebSocketServer extends Server {
   }
 
   public stop(): void {
-    this.close();
+    this.uiServer.close();
   }
 
   public sendResponse(message: string): void {
@@ -57,7 +53,7 @@ export default class UIWebSocketServer extends Server {
   }
 
   private broadcastToClients(message: string): void {
-    for (const client of this.clients) {
+    for (const client of (this.uiServer as Server).clients) {
       if (client?.readyState === OPEN) {
         client.send(message);
       }
