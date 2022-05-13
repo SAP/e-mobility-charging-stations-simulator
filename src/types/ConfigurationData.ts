@@ -1,5 +1,5 @@
-import { ServerOptions } from 'ws';
 import { StorageType } from './Storage';
+import { ServerOptions as WSServerOptions } from 'ws';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
 
@@ -16,7 +16,7 @@ export interface StationTemplateUrl {
 
 export interface UIServerConfiguration {
   enabled?: boolean;
-  options?: ServerOptions;
+  options?: WSServerOptions;
 }
 
 export interface StorageConfiguration {

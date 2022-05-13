@@ -10,7 +10,7 @@ import logger from '../../utils/Logger';
 
 export default class UIWebSocketServer extends Server {
   public readonly chargingStations: Set<string>;
-  public readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
+  private readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
 
   public constructor(options?: ServerOptions, callback?: () => void) {
     // Create the WebSocket Server
