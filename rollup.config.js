@@ -27,6 +27,7 @@ export default {
     'fs',
     '@mikro-orm/core',
     '@mikro-orm/reflection',
+    'moment',
     'mongodb',
     'path',
     'perf_hooks',

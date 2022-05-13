@@ -26,6 +26,7 @@ import {
   ChargingRateUnitType,
   ChargingSchedulePeriod,
 } from '../types/ocpp/ChargingProfile';
+import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
 import ChargingStationConfiguration, { Section } from '../types/ChargingStationConfiguration';
 import ChargingStationOcppConfiguration, {
   ConfigurationKey,
@@ -82,6 +83,7 @@ import Utils from '../utils/Utils';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
+import moment from 'moment';
 import { parentPort } from 'worker_threads';
 import path from 'path';
 
@@ -302,6 +304,10 @@ export default class ChargingStation {
 
   public getPhaseLineToLineVoltageMeterValues(): boolean {
     return this.stationInfo.phaseLineToLineVoltageMeterValues ?? false;
+  }
+
+  public getCustomValueLimitationMeterValues(): boolean {
+    return this.stationInfo.customValueLimitationMeterValues ?? true;
   }
 
   public getConnectorIdByTransactionId(transactionId: number): number | undefined {
@@ -732,80 +738,67 @@ export default class ChargingStation {
   }
 
   public getChargingProfilePowerLimit(connectorId: number): number | undefined {
-    const timestamp = new Date().getTime();
-    let matchingChargingProfile: ChargingProfile;
-    let chargingSchedulePeriods: ChargingSchedulePeriod[] = [];
-    if (!Utils.isEmptyArray(this.getConnectorStatus(connectorId)?.chargingProfiles)) {
-      const chargingProfiles: ChargingProfile[] = this.getConnectorStatus(
-        connectorId
-      ).chargingProfiles.filter(
-        (chargingProfile) =>
-          timestamp >= chargingProfile.chargingSchedule?.startSchedule.getTime() &&
-          timestamp <
-            chargingProfile.chargingSchedule?.startSchedule.getTime() +
-              chargingProfile.chargingSchedule.duration * 1000 &&
-          chargingProfile?.stackLevel === Math.max(...chargingProfiles.map((cp) => cp?.stackLevel))
+    let limit: number, matchingChargingProfile: ChargingProfile;
+    let chargingProfiles: ChargingProfile[] = [];
+    // Get charging profiles for connector and sort by stack level
+    chargingProfiles = this.getConnectorStatus(connectorId).chargingProfiles.sort(
+      (a, b) => b.stackLevel - a.stackLevel
+    );
+    // Get profiles on connector 0
+    if (this.getConnectorStatus(0).chargingProfiles) {
+      chargingProfiles.push(
+        ...this.getConnectorStatus(0).chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel)
       );
-      if (!Utils.isEmptyArray(chargingProfiles)) {
-        for (const chargingProfile of chargingProfiles) {
-          if (!Utils.isEmptyArray(chargingProfile.chargingSchedule.chargingSchedulePeriod)) {
-            chargingSchedulePeriods =
-              chargingProfile.chargingSchedule.chargingSchedulePeriod.filter(
-                (chargingSchedulePeriod, index) => {
-                  timestamp >=
-                    chargingProfile.chargingSchedule.startSchedule.getTime() +
-                      chargingSchedulePeriod.startPeriod * 1000 &&
-                    ((chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1] &&
-                      timestamp <
-                        chargingProfile.chargingSchedule.startSchedule.getTime() +
-                          chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]
-                            ?.startPeriod *
-                            1000) ||
-                      !chargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]);
-                }
-              );
-            if (!Utils.isEmptyArray(chargingSchedulePeriods)) {
-              matchingChargingProfile = chargingProfile;
-              break;
-            }
-          }
+    }
+    if (!Utils.isEmptyArray(chargingProfiles)) {
+      const result = this.getLimitFromChargingProfiles(chargingProfiles);
+      if (!Utils.isNullOrUndefined(result)) {
+        limit = result.limit;
+        matchingChargingProfile = result.matchingChargingProfile;
+        switch (this.getCurrentOutType()) {
+          case CurrentType.AC:
+            limit =
+              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
+              ChargingRateUnitType.WATT
+                ? limit
+                : ACElectricUtils.powerTotal(this.getNumberOfPhases(), this.getVoltageOut(), limit);
+            break;
+          case CurrentType.DC:
+            limit =
+              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
+              ChargingRateUnitType.WATT
+                ? limit
+                : DCElectricUtils.power(this.getVoltageOut(), limit);
+        }
+
+        const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
+        if (limit > connectorMaximumPower) {
+          logger.error(
+            `${this.logPrefix()} Charging profile id ${
+              matchingChargingProfile.chargingProfileId
+            } limit is greater than connector id ${connectorId} maximum, dump charging profiles' stack: %j`,
+            this.getConnectorStatus(connectorId).chargingProfiles
+          );
+          limit = connectorMaximumPower;
         }
       }
-    }
-    let limit: number;
-    if (!Utils.isEmptyArray(chargingSchedulePeriods)) {
-      switch (this.getCurrentOutType()) {
-        case CurrentType.AC:
-          limit =
-            matchingChargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
-              ? chargingSchedulePeriods[0].limit
-              : ACElectricUtils.powerTotal(
-                  this.getNumberOfPhases(),
-                  this.getVoltageOut(),
-                  chargingSchedulePeriods[0].limit
-                );
-          break;
-        case CurrentType.DC:
-          limit =
-            matchingChargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
-              ? chargingSchedulePeriods[0].limit
-              : DCElectricUtils.power(this.getVoltageOut(), chargingSchedulePeriods[0].limit);
-      }
-    }
-    const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
-    if (limit > connectorMaximumPower) {
-      logger.error(
-        `${this.logPrefix()} Charging profile id ${
-          matchingChargingProfile.chargingProfileId
-        } limit is greater than connector id ${connectorId} maximum, dump charging profiles' stack: %j`,
-        this.getConnectorStatus(connectorId).chargingProfiles
-      );
-      limit = connectorMaximumPower;
     }
     return limit;
   }
 
   public setChargingProfile(connectorId: number, cp: ChargingProfile): void {
+    if (Utils.isNullOrUndefined(this.getConnectorStatus(connectorId).chargingProfiles)) {
+      logger.error(
+        `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
+      );
+      this.getConnectorStatus(connectorId).chargingProfiles = [];
+    }
+    if (!Array.isArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
+      logger.error(
+        `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
+      );
+      this.getConnectorStatus(connectorId).chargingProfiles = [];
+    }
     let cpReplaced = false;
     if (!Utils.isEmptyArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
       this.getConnectorStatus(connectorId).chargingProfiles?.forEach(
@@ -2261,5 +2254,106 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionStarted = false;
     this.getConnectorStatus(connectorId).energyActiveImportRegisterValue = 0;
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
+  }
+
+  /**
+   * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
+   *
+   * @param {ChargingProfile[]} chargingProfiles
+   * @returns {{ limit, matchingChargingProfile }}
+   */
+  private getLimitFromChargingProfiles(chargingProfiles: ChargingProfile[]): {
+    limit: number;
+    matchingChargingProfile: ChargingProfile;
+  } | null {
+    for (const chargingProfile of chargingProfiles) {
+      // Set helpers
+      const currentMoment = moment();
+      const chargingSchedule = chargingProfile.chargingSchedule;
+      // Check type (recurring) and if it is already active
+      // Adjust the daily recurring schedule to today
+      if (
+        chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
+        chargingProfile.recurrencyKind === RecurrencyKindType.DAILY &&
+        currentMoment.isAfter(chargingSchedule.startSchedule)
+      ) {
+        const currentDate = new Date();
+        chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule);
+        chargingSchedule.startSchedule.setFullYear(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate()
+        );
+        // Check if the start of the schedule is yesterday
+        if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
+          chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
+        }
+      } else if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
+        return null;
+      }
+      // Check if the charging profile is active
+      if (
+        moment(chargingSchedule.startSchedule)
+          .add(chargingSchedule.duration, 's')
+          .isAfter(currentMoment)
+      ) {
+        let lastButOneSchedule: ChargingSchedulePeriod;
+        // Search the right schedule period
+        for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
+          // Handling of only one period
+          if (
+            chargingSchedule.chargingSchedulePeriod.length === 1 &&
+            schedulePeriod.startPeriod === 0
+          ) {
+            const result = {
+              limit: schedulePeriod.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(
+              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
+              result
+            );
+            return result;
+          }
+          // Find the right schedule period
+          if (
+            moment(chargingSchedule.startSchedule)
+              .add(schedulePeriod.startPeriod, 's')
+              .isAfter(currentMoment)
+          ) {
+            // Found the schedule: last but one is the correct one
+            const result = {
+              limit: lastButOneSchedule.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(
+              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
+              result
+            );
+            return result;
+          }
+          // Keep it
+          lastButOneSchedule = schedulePeriod;
+          // Handle the last schedule period
+          if (
+            schedulePeriod.startPeriod ===
+            chargingSchedule.chargingSchedulePeriod[
+              chargingSchedule.chargingSchedulePeriod.length - 1
+            ].startPeriod
+          ) {
+            const result = {
+              limit: lastButOneSchedule.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(
+              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
+              result
+            );
+            return result;
+          }
+        }
+      }
+    }
+    return null;
   }
 }

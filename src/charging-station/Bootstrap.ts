@@ -12,8 +12,8 @@ import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
-import { UIServiceUtils } from './ui-websocket-services/UIServiceUtils';
-import UIWebSocketServer from './UIWebSocketServer';
+import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
+import UIWebSocketServer from './ui-server/UIWebSocketServer';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
@@ -26,7 +26,7 @@ import { version } from '../../package.json';
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
-  private readonly uiWebSocketServer!: UIWebSocketServer;
+  private readonly uiServer!: UIWebSocketServer;
   private readonly storage!: Storage;
   private numberOfChargingStations: number;
   private readonly version: string = version;
@@ -41,9 +41,9 @@ export default class Bootstrap {
       'ChargingStationWorker.js'
     );
     this.initWorkerImplementation();
-    Configuration.getUIWebSocketServer().enabled &&
-      (this.uiWebSocketServer = new UIWebSocketServer({
-        ...Configuration.getUIWebSocketServer().options,
+    Configuration.getUIServer().enabled &&
+      (this.uiServer = new UIWebSocketServer({
+        ...Configuration.getUIServer().options,
         handleProtocols: UIServiceUtils.handleProtocols,
       }));
     Configuration.getPerformanceStorage().enabled &&
@@ -68,7 +68,7 @@ export default class Bootstrap {
         this.numberOfChargingStations = 0;
         await this.storage?.open();
         await this.workerImplementation.start();
-        this.uiWebSocketServer?.start();
+        this.uiServer?.start();
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
         // Start ChargingStation object in worker thread
         if (stationTemplateUrls) {
@@ -127,7 +127,7 @@ export default class Bootstrap {
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
       await this.workerImplementation.stop();
-      this.uiWebSocketServer?.stop();
+      this.uiServer?.stop();
       await this.storage?.close();
     } else {
       console.error(chalk.red('Trying to stop the charging stations simulator while not started'));
@@ -156,11 +156,11 @@ export default class Bootstrap {
         },
         messageHandler: (msg: InternalChargingStationWorkerMessage) => {
           const workerEventStarted = (data: ChargingStationData) => {
-            this.uiWebSocketServer.chargingStations.set(data.hashId, data.data);
+            this.uiServer.chargingStations.set(data.hashId, data.data);
             ++this.numberOfChargingStations;
           };
           const workerEventStopped = (data: ChargingStationData) => {
-            this.uiWebSocketServer.chargingStations.delete(data.hashId);
+            this.uiServer.chargingStations.delete(data.hashId);
             --this.numberOfChargingStations;
           };
           const workerEventPerformanceStatistics = (data: Statistics) => {

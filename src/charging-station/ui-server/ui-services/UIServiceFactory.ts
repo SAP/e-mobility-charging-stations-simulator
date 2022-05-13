@@ -1,5 +1,5 @@
 import AbstractUIService from './AbstractUIService';
-import { ProtocolVersion } from '../../types/UIProtocol';
+import { ProtocolVersion } from '../../../types/UIProtocol';
 import UIService001 from './UIService001';
 import UIWebSocketServer from '../UIWebSocketServer';
 
@@ -10,11 +10,11 @@ export default class UIServiceFactory {
 
   public static getUIServiceImplementation(
     version: ProtocolVersion,
-    uiWebSocketServer: UIWebSocketServer
+    uiServer: UIWebSocketServer
   ): AbstractUIService | null {
     switch (version) {
       case ProtocolVersion['0.0.1']:
-        return new UIService001(uiWebSocketServer);
+        return new UIService001(uiServer);
       default:
         return null;
     }

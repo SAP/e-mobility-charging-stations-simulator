@@ -1,8 +1,8 @@
-import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
+import { Protocol, ProtocolVersion } from '../../../types/UIProtocol';
 
 import { IncomingMessage } from 'http';
-import Utils from '../../utils/Utils';
-import logger from '../../utils/Logger';
+import Utils from '../../../utils/Utils';
+import logger from '../../../utils/Logger';
 
 export class UIServiceUtils {
   public static handleProtocols = (
