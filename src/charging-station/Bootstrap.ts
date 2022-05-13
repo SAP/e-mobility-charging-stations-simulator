@@ -6,13 +6,15 @@ import {
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
 
+import { AbstractUIServer } from './ui-server/AbstractUIServer';
+import { ApplicationProtocol } from '../types/UIProtocol';
 import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
+import UIServerFactory from './ui-server/UIServerFactory';
 import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
-import UIWebSocketServer from './ui-server/UIWebSocketServer';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
@@ -24,7 +26,7 @@ import { version } from '../../package.json';
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
-  private readonly uiServer!: UIWebSocketServer;
+  private readonly uiServer!: AbstractUIServer;
   private readonly storage!: Storage;
   private numberOfChargingStations: number;
   private readonly version: string = version;
@@ -40,7 +42,7 @@ export default class Bootstrap {
     );
     this.initWorkerImplementation();
     Configuration.getUIServer().enabled &&
-      (this.uiServer = new UIWebSocketServer({
+      (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
         ...Configuration.getUIServer().options,
         handleProtocols: UIServiceUtils.handleProtocols,
       }));

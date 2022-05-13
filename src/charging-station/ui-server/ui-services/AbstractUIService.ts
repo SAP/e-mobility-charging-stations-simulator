@@ -4,18 +4,18 @@ import {
   ProtocolRequestHandler,
 } from '../../../types/UIProtocol';
 
+import { AbstractUIServer } from '../AbstractUIServer';
 import BaseError from '../../../exception/BaseError';
 import { JsonType } from '../../../types/JsonType';
 import { RawData } from 'ws';
-import UIWebSocketServer from '../UIWebSocketServer';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
 
 export default abstract class AbstractUIService {
-  protected readonly uiServer: UIWebSocketServer;
+  protected readonly uiServer: AbstractUIServer;
   protected readonly messageHandlers: Map<ProtocolCommand, ProtocolRequestHandler>;
 
-  constructor(uiServer: UIWebSocketServer) {
+  constructor(uiServer: AbstractUIServer) {
     this.uiServer = uiServer;
     this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
       [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
