@@ -1,7 +1,10 @@
+import { ServerOptions as HttpServerOptions } from 'http';
 import { StorageType } from './Storage';
 import { ServerOptions as WSServerOptions } from 'ws';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
+
+export type ServerOptions = WSServerOptions & HttpServerOptions;
 
 export enum SupervisionUrlDistribution {
   ROUND_ROBIN = 'round-robin',
@@ -16,7 +19,7 @@ export interface StationTemplateUrl {
 
 export interface UIServerConfiguration {
   enabled?: boolean;
-  options?: WSServerOptions;
+  options?: ServerOptions;
 }
 
 export interface StorageConfiguration {

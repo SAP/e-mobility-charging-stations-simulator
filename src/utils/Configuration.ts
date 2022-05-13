@@ -1,4 +1,5 @@
 import ConfigurationData, {
+  ServerOptions,
   StationTemplateUrl,
   StorageConfiguration,
   SupervisionUrlDistribution,
@@ -9,7 +10,6 @@ import Constants from './Constants';
 import { EmptyObject } from '../types/EmptyObject';
 import { FileType } from '../types/FileType';
 import { HandleErrorParams } from '../types/Error';
-import { ServerOptions } from 'ws';
 import { StorageType } from '../types/Storage';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import WorkerConstants from '../worker/WorkerConstants';
@@ -46,6 +46,11 @@ export default class Configuration {
   }
 
   static getUIServer(): UIServerConfiguration {
+    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiWebSocketServer')) {
+      console.error(
+        chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead}`
+      );
+    }
     let options: ServerOptions = {
       host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
       port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
