@@ -4,6 +4,11 @@ export enum Protocol {
   UI = 'ui',
 }
 
+export enum ApplicationProtocol {
+  HTTP = 'http',
+  WS = 'ws',
+}
+
 export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
 }

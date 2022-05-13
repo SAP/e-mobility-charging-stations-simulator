@@ -1,12 +1,12 @@
-import { Protocol, ProtocolVersion } from '../types/UIProtocol';
+import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
 import WebSocket, { OPEN, Server, ServerOptions } from 'ws';
 
-import AbstractUIService from './ui-websocket-services/AbstractUIService';
-import Configuration from '../utils/Configuration';
+import AbstractUIService from './ui-services/AbstractUIService';
+import Configuration from '../../utils/Configuration';
 import { IncomingMessage } from 'http';
-import UIServiceFactory from './ui-websocket-services/UIServiceFactory';
-import Utils from '../utils/Utils';
-import logger from '../utils/Logger';
+import UIServiceFactory from './ui-services/UIServiceFactory';
+import Utils from '../../utils/Utils';
+import logger from '../../utils/Logger';
 
 export default class UIWebSocketServer extends Server {
   public readonly chargingStations: Set<string>;
@@ -14,7 +14,7 @@ export default class UIWebSocketServer extends Server {
 
   public constructor(options?: ServerOptions, callback?: () => void) {
     // Create the WebSocket Server
-    super(options ?? Configuration.getUIWebSocketServer().options, callback);
+    super(options ?? Configuration.getUIServer().options, callback);
     this.chargingStations = new Set<string>();
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>();
   }

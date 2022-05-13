@@ -14,7 +14,7 @@ export interface StationTemplateUrl {
   numberOfStations: number;
 }
 
-export interface UIWebSocketServerConfiguration {
+export interface UIServerConfiguration {
   enabled?: boolean;
   options?: ServerOptions;
 }
@@ -29,7 +29,7 @@ export default interface ConfigurationData {
   supervisionUrls?: string | string[];
   supervisionUrlDistribution?: SupervisionUrlDistribution;
   stationTemplateUrls: StationTemplateUrl[];
-  uiWebSocketServer?: UIWebSocketServerConfiguration;
+  uiServer?: UIServerConfiguration;
   performanceStorage?: StorageConfiguration;
   autoReconnectMaxRetries?: number;
   workerProcess?: WorkerProcessType;

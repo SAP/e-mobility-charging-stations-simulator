@@ -2,7 +2,7 @@ import ConfigurationData, {
   StationTemplateUrl,
   StorageConfiguration,
   SupervisionUrlDistribution,
-  UIWebSocketServerConfiguration,
+  UIServerConfiguration,
 } from '../types/ConfigurationData';
 
 import Constants from './Constants';
@@ -45,41 +45,38 @@ export default class Configuration {
       : Constants.DEFAULT_LOG_STATISTICS_INTERVAL;
   }
 
-  static getUIWebSocketServer(): UIWebSocketServerConfiguration {
+  static getUIServer(): UIServerConfiguration {
     let options: ServerOptions = {
       host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
       port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
     };
-    let uiWebSocketServerConfiguration: UIWebSocketServerConfiguration = {
+    let uiServerConfiguration: UIServerConfiguration = {
       enabled: true,
       options,
     };
-    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiWebSocketServer')) {
-      if (
-        Configuration.objectHasOwnProperty(Configuration.getConfig().uiWebSocketServer, 'options')
-      ) {
+    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
+      if (Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'options')) {
         options = {
           ...options,
           ...(Configuration.objectHasOwnProperty(
-            Configuration.getConfig().uiWebSocketServer.options,
+            Configuration.getConfig().uiServer.options,
             'host'
-          ) && { host: Configuration.getConfig().uiWebSocketServer.options.host }),
+          ) && { host: Configuration.getConfig().uiServer.options.host }),
           ...(Configuration.objectHasOwnProperty(
-            Configuration.getConfig().uiWebSocketServer.options,
+            Configuration.getConfig().uiServer.options,
             'port'
-          ) && { port: Configuration.getConfig().uiWebSocketServer.options.port }),
+          ) && { port: Configuration.getConfig().uiServer.options.port }),
         };
       }
-      uiWebSocketServerConfiguration = {
-        ...uiWebSocketServerConfiguration,
-        ...(Configuration.objectHasOwnProperty(
-          Configuration.getConfig().uiWebSocketServer,
-          'enabled'
-        ) && { enabled: Configuration.getConfig().uiWebSocketServer.enabled }),
+      uiServerConfiguration = {
+        ...uiServerConfiguration,
+        ...(Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'enabled') && {
+          enabled: Configuration.getConfig().uiServer.enabled,
+        }),
         options,
       };
     }
-    return uiWebSocketServerConfiguration;
+    return uiServerConfiguration;
   }
 
   static getPerformanceStorage(): StorageConfiguration {

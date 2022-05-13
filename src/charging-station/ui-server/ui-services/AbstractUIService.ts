@@ -1,18 +1,22 @@
-import { ProtocolCommand, ProtocolRequest, ProtocolRequestHandler } from '../../types/UIProtocol';
+import {
+  ProtocolCommand,
+  ProtocolRequest,
+  ProtocolRequestHandler,
+} from '../../../types/UIProtocol';
 
-import BaseError from '../../exception/BaseError';
-import { JsonType } from '../../types/JsonType';
+import BaseError from '../../../exception/BaseError';
+import { JsonType } from '../../../types/JsonType';
 import { RawData } from 'ws';
 import UIWebSocketServer from '../UIWebSocketServer';
-import Utils from '../../utils/Utils';
-import logger from '../../utils/Logger';
+import Utils from '../../../utils/Utils';
+import logger from '../../../utils/Logger';
 
 export default abstract class AbstractUIService {
-  protected readonly uiWebSocketServer: UIWebSocketServer;
+  protected readonly uiServer: UIWebSocketServer;
   protected readonly messageHandlers: Map<ProtocolCommand, ProtocolRequestHandler>;
 
-  constructor(uiWebSocketServer: UIWebSocketServer) {
-    this.uiWebSocketServer = uiWebSocketServer;
+  constructor(uiServer: UIWebSocketServer) {
+    this.uiServer = uiServer;
     this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
       [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
     ]);
@@ -34,7 +38,7 @@ export default abstract class AbstractUIService {
         messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
       } catch (error) {
         // Log
-        logger.error(this.uiWebSocketServer.logPrefix() + ' Handle message error: %j', error);
+        logger.error(this.uiServer.logPrefix() + ' Handle message error: %j', error);
         throw error;
       }
     } else {
@@ -48,7 +52,7 @@ export default abstract class AbstractUIService {
       );
     }
     // Send the message response
-    this.uiWebSocketServer.sendResponse(this.buildProtocolMessage(command, messageResponse));
+    this.uiServer.sendResponse(this.buildProtocolMessage(command, messageResponse));
   }
 
   protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
@@ -56,6 +60,6 @@ export default abstract class AbstractUIService {
   }
 
   private handleListChargingStations(): JsonType {
-    return Array.from(this.uiWebSocketServer.chargingStations);
+    return Array.from(this.uiServer.chargingStations);
   }
 }
