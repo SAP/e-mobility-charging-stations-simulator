@@ -6,7 +6,7 @@ import { Server as WSServer } from 'ws';
 export abstract class AbstractUIServer {
   public readonly chargingStations: Set<string>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
-  protected uiServer: WSServer | HttpServer;
+  protected server: WSServer | HttpServer;
 
   public constructor() {
     this.chargingStations = new Set<string>();

@@ -12,11 +12,11 @@ import logger from '../../utils/Logger';
 export default class UIWebSocketServer extends AbstractUIServer {
   public constructor(options?: ServerOptions) {
     super();
-    this.uiServer = new Server(options ?? Configuration.getUIServer().options);
+    this.server = new Server(options ?? Configuration.getUIServer().options);
   }
 
   public start(): void {
-    this.uiServer.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
+    this.server.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
       const protocolIndex = socket.protocol.indexOf(Protocol.UI);
       const version = socket.protocol.substring(
         protocolIndex + Protocol.UI.length
@@ -40,7 +40,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public stop(): void {
-    this.uiServer.close();
+    this.server.close();
   }
 
   public sendResponse(message: string): void {
@@ -52,7 +52,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   private broadcastToClients(message: string): void {
-    for (const client of (this.uiServer as Server).clients) {
+    for (const client of (this.server as Server).clients) {
       if (client?.readyState === OPEN) {
         client.send(message);
       }
