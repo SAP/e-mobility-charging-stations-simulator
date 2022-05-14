@@ -10,9 +10,9 @@ import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
 
 export default class UIWebSocketServer extends AbstractUIServer {
-  public constructor(options?: ServerOptions, callback?: () => void) {
+  public constructor(options?: ServerOptions) {
     super();
-    this.uiServer = new Server(options ?? Configuration.getUIServer().options, callback);
+    this.uiServer = new Server(options ?? Configuration.getUIServer().options);
   }
 
   public start(): void {
