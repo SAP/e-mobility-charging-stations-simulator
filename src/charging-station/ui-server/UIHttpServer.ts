@@ -26,6 +26,6 @@ export default class UIHttpServer extends AbstractUIServer {
   public sendResponse(message: string): void {}
 
   public logPrefix(): string {
-    return Utils.logPrefix(' UI WebSocket Server:');
+    return Utils.logPrefix(' UI HTTP Server:');
   }
 }
