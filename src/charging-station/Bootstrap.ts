@@ -43,7 +43,7 @@ export default class Bootstrap {
     );
     this.initWorkerImplementation();
     Configuration.getUIServer().enabled &&
-      (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
+      (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer().type, {
         ...Configuration.getUIServer().options,
         handleProtocols: UIServiceUtils.handleProtocols,
       }));

@@ -6,6 +6,7 @@ import ConfigurationData, {
   UIServerConfiguration,
 } from '../types/ConfigurationData';
 
+import { ApplicationProtocol } from '../types/UIProtocol';
 import Constants from './Constants';
 import { EmptyObject } from '../types/EmptyObject';
 import { FileType } from '../types/FileType';
@@ -57,6 +58,7 @@ export default class Configuration {
     };
     let uiServerConfiguration: UIServerConfiguration = {
       enabled: true,
+      type: ApplicationProtocol.WS,
       options,
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
@@ -77,6 +79,9 @@ export default class Configuration {
         ...uiServerConfiguration,
         ...(Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'enabled') && {
           enabled: Configuration.getConfig().uiServer.enabled,
+        }),
+        ...(Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'type') && {
+          type: Configuration.getConfig().uiServer.type,
         }),
         options,
       };
