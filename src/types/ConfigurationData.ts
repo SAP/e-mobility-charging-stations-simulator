@@ -1,3 +1,4 @@
+import { ApplicationProtocol } from './UIProtocol';
 import { ListenOptions } from 'net';
 import { StorageType } from './Storage';
 import { ServerOptions as WSServerOptions } from 'ws';
@@ -19,6 +20,7 @@ export interface StationTemplateUrl {
 
 export interface UIServerConfiguration {
   enabled?: boolean;
+  type?: ApplicationProtocol;
   options?: ServerOptions;
 }
 

@@ -25,6 +25,7 @@ export default {
     'crypto',
     'express',
     'fs',
+    'http',
     '@mikro-orm/core',
     '@mikro-orm/reflection',
     'moment',
