@@ -281,7 +281,7 @@ export default class AutomaticTransactionGenerator {
           await this.chargingStation.ocppRequestService.requestHandler<
             AuthorizeRequest,
             AuthorizeResponse
-          >(RequestCommand.AUTHORIZE, {
+          >(this.chargingStation, RequestCommand.AUTHORIZE, {
             idTag,
           });
         this.connectorsStatus.get(connectorId).authorizeRequests++;
@@ -292,7 +292,7 @@ export default class AutomaticTransactionGenerator {
           startResponse = await this.chargingStation.ocppRequestService.requestHandler<
             StartTransactionRequest,
             StartTransactionResponse
-          >(RequestCommand.START_TRANSACTION, {
+          >(this.chargingStation, RequestCommand.START_TRANSACTION, {
             connectorId,
             idTag,
           });
@@ -308,7 +308,7 @@ export default class AutomaticTransactionGenerator {
       startResponse = await this.chargingStation.ocppRequestService.requestHandler<
         StartTransactionRequest,
         StartTransactionResponse
-      >(RequestCommand.START_TRANSACTION, {
+      >(this.chargingStation, RequestCommand.START_TRANSACTION, {
         connectorId,
         idTag,
       });
@@ -319,7 +319,7 @@ export default class AutomaticTransactionGenerator {
     startResponse = await this.chargingStation.ocppRequestService.requestHandler<
       StartTransactionRequest,
       StartTransactionResponse
-    >(RequestCommand.START_TRANSACTION, { connectorId });
+    >(this.chargingStation, RequestCommand.START_TRANSACTION, { connectorId });
     PerformanceStatistics.endMeasure(measureId, beginId);
     return startResponse;
   }
@@ -348,7 +348,7 @@ export default class AutomaticTransactionGenerator {
         await this.chargingStation.ocppRequestService.requestHandler<
           MeterValuesRequest,
           MeterValuesResponse
-        >(RequestCommand.METER_VALUES, {
+        >(this.chargingStation, RequestCommand.METER_VALUES, {
           connectorId,
           transactionId,
           meterValue: transactionEndMeterValue,
@@ -357,7 +357,7 @@ export default class AutomaticTransactionGenerator {
       stopResponse = await this.chargingStation.ocppRequestService.requestHandler<
         StopTransactionRequest,
         StopTransactionResponse
-      >(RequestCommand.STOP_TRANSACTION, {
+      >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
         transactionId,
         meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
         idTag: this.chargingStation.getTransactionIdTag(transactionId),

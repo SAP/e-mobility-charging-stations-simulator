@@ -7,6 +7,7 @@ import {
   OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
 
+import ChargingStation from '../../charging-station/ChargingStation';
 import { JsonType } from '../JsonType';
 import { MessageType } from './MessageType';
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
@@ -24,7 +25,10 @@ export type CachedRequest = [
   JsonType
 ];
 
-export type IncomingRequestHandler = (commandPayload: JsonType) => JsonType | Promise<JsonType>;
+export type IncomingRequestHandler = (
+  chargingStation: ChargingStation,
+  commandPayload: JsonType
+) => JsonType | Promise<JsonType>;
 
 export type ResponseType = JsonType | OCPPError;
 

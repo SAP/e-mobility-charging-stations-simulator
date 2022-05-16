@@ -452,6 +452,7 @@ export default class ChargingStation {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
         await this.ocppRequestService.requestHandler<HeartbeatRequest, HeartbeatResponse>(
+          this,
           RequestCommand.HEARTBEAT
         );
       }, this.getHeartbeatInterval());
@@ -524,6 +525,7 @@ export default class ChargingStation {
             interval
           );
           await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+            this,
             RequestCommand.METER_VALUES,
             {
               connectorId,
@@ -631,7 +633,7 @@ export default class ChargingStation {
         await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-        >(RequestCommand.STATUS_NOTIFICATION, {
+        >(this, RequestCommand.STATUS_NOTIFICATION, {
           connectorId,
           status: ChargePointStatus.UNAVAILABLE,
           errorCode: ChargePointErrorCode.NO_ERROR,
@@ -1160,10 +1162,9 @@ export default class ChargingStation {
     switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
-          OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>(this);
+          OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>();
         this.ocppRequestService = OCPP16RequestService.getInstance<OCPP16RequestService>(
-          this,
-          OCPP16ResponseService.getInstance<OCPP16ResponseService>(this)
+          OCPP16ResponseService.getInstance<OCPP16ResponseService>()
         );
         break;
       default:
@@ -1489,6 +1490,7 @@ export default class ChargingStation {
             BootNotificationRequest,
             BootNotificationResponse
           >(
+            this,
             RequestCommand.BOOT_NOTIFICATION,
             {
               chargePointModel: this.bootNotificationRequest.chargePointModel,
@@ -1594,6 +1596,7 @@ export default class ChargingStation {
             );
             // Process the message
             await this.ocppIncomingRequestService.incomingRequestHandler(
+              this,
               messageId,
               commandName,
               commandPayload
@@ -1684,6 +1687,7 @@ export default class ChargingStation {
       // Send error
       messageType === MessageType.CALL_MESSAGE &&
         (await this.ocppRequestService.sendError(
+          this,
           messageId,
           error as OCPPError,
           commandName ?? requestCommandName ?? null
@@ -1867,6 +1871,7 @@ export default class ChargingStation {
         BootNotificationRequest,
         BootNotificationResponse
       >(
+        this,
         RequestCommand.BOOT_NOTIFICATION,
         {
           chargePointModel: this.bootNotificationRequest.chargePointModel,
@@ -1899,7 +1904,7 @@ export default class ChargingStation {
         await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-        >(RequestCommand.STATUS_NOTIFICATION, {
+        >(this, RequestCommand.STATUS_NOTIFICATION, {
           connectorId,
           status: this.getConnectorStatus(connectorId).bootStatus,
           errorCode: ChargePointErrorCode.NO_ERROR,
@@ -1915,7 +1920,7 @@ export default class ChargingStation {
         await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-        >(RequestCommand.STATUS_NOTIFICATION, {
+        >(this, RequestCommand.STATUS_NOTIFICATION, {
           connectorId,
           status: this.getConnectorStatus(connectorId).bootStatus,
           errorCode: ChargePointErrorCode.NO_ERROR,
@@ -1927,7 +1932,7 @@ export default class ChargingStation {
         await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-        >(RequestCommand.STATUS_NOTIFICATION, {
+        >(this, RequestCommand.STATUS_NOTIFICATION, {
           connectorId,
           status: this.getConnectorStatus(connectorId).status,
           errorCode: ChargePointErrorCode.NO_ERROR,
@@ -1937,7 +1942,7 @@ export default class ChargingStation {
         await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-        >(RequestCommand.STATUS_NOTIFICATION, {
+        >(this, RequestCommand.STATUS_NOTIFICATION, {
           connectorId,
           status: ChargePointStatus.AVAILABLE,
           errorCode: ChargePointErrorCode.NO_ERROR,
@@ -1989,6 +1994,7 @@ export default class ChargingStation {
               this.getEnergyActiveImportRegisterByTransactionId(transactionId)
             );
             await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+              this,
               RequestCommand.METER_VALUES,
               {
                 connectorId,
@@ -2000,7 +2006,7 @@ export default class ChargingStation {
           await this.ocppRequestService.requestHandler<
             StopTransactionRequest,
             StopTransactionResponse
-          >(RequestCommand.STOP_TRANSACTION, {
+          >(this, RequestCommand.STOP_TRANSACTION, {
             transactionId,
             meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
             idTag: this.getTransactionIdTag(transactionId),
