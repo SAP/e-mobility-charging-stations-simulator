@@ -7,7 +7,7 @@ import {
   OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
 
-import ChargingStation from '../../charging-station/ChargingStation';
+import type ChargingStation from '../../charging-station/ChargingStation';
 import { JsonType } from '../JsonType';
 import { MessageType } from './MessageType';
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';

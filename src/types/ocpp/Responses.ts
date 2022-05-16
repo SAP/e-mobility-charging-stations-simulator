@@ -11,7 +11,7 @@ import {
   OCPP16UnlockStatus,
 } from './1.6/Responses';
 
-import ChargingStation from '../../charging-station/ChargingStation';
+import type ChargingStation from '../../charging-station/ChargingStation';
 import { ErrorType } from './ErrorType';
 import { JsonType } from '../JsonType';
 import { MessageType } from './MessageType';

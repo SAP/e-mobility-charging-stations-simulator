@@ -8,7 +8,7 @@ import {
 } from '../../types/ocpp/Requests';
 import { JsonObject, JsonType } from '../../types/JsonType';
 
-import ChargingStation from '../ChargingStation';
+import type ChargingStation from '../ChargingStation';
 import Constants from '../../utils/Constants';
 import { EmptyObject } from '../../types/EmptyObject';
 import { ErrorType } from '../../types/ocpp/ErrorType';
@@ -188,7 +188,6 @@ export default abstract class OCPPRequestService {
           /**
            * Function that will receive the request's response
            *
-           * @param chargingStation
            * @param payload
            * @param requestPayload
            */
