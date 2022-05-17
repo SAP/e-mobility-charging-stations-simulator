@@ -1,6 +1,3 @@
-import Configuration from './Configuration';
-import { WebSocketCloseEventStatusString } from '../types/WebSocket';
-import { WorkerProcessType } from '../types/Worker';
 import crypto from 'crypto';
 import { v4 as uuid } from 'uuid';
 
@@ -206,42 +203,6 @@ export default class Utils {
     const delay = Math.pow(2, retryNumber) * 100;
     const randomSum = delay * 0.2 * Utils.secureRandom(); // 0-20% of the delay
     return delay + randomSum;
-  }
-
-  /**
-   * Convert websocket error code to human readable string message
-   *
-   * @param code websocket error code
-   * @returns human readable string message
-   */
-  public static getWebSocketCloseEventStatusString(code: number): string {
-    if (code >= 0 && code <= 999) {
-      return '(Unused)';
-    } else if (code >= 1016) {
-      if (code <= 1999) {
-        return '(For WebSocket standard)';
-      } else if (code <= 2999) {
-        return '(For WebSocket extensions)';
-      } else if (code <= 3999) {
-        return '(For libraries and frameworks)';
-      } else if (code <= 4999) {
-        return '(For applications)';
-      }
-    }
-    if (!Utils.isUndefined(WebSocketCloseEventStatusString[code])) {
-      return WebSocketCloseEventStatusString[code] as string;
-    }
-    return '(Unknown)';
-  }
-
-  public static workerPoolInUse(): boolean {
-    return [WorkerProcessType.DYNAMIC_POOL, WorkerProcessType.STATIC_POOL].includes(
-      Configuration.getWorkerProcess()
-    );
-  }
-
-  public static workerDynamicPoolInUse(): boolean {
-    return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL;
   }
 
   public static async promiseWithTimeout<T>(

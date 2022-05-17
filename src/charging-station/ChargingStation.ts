@@ -21,18 +21,9 @@ import {
   Response,
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
-import {
-  ChargingProfile,
-  ChargingRateUnitType,
-  ChargingSchedulePeriod,
-} from '../types/ocpp/ChargingProfile';
-import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
+import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
 import ChargingStationConfiguration, { Section } from '../types/ChargingStationConfiguration';
-import ChargingStationOcppConfiguration, {
-  ConfigurationKey,
-} from '../types/ChargingStationOcppConfiguration';
 import ChargingStationTemplate, {
-  AmpereUnits,
   CurrentType,
   PowerUnits,
   Voltage,
@@ -57,7 +48,10 @@ import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import BaseError from '../exception/BaseError';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
+import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import ChargingStationInfo from '../types/ChargingStationInfo';
+import ChargingStationOcppConfiguration from '../types/ChargingStationOcppConfiguration';
+import { ChargingStationUtils } from './ChargingStationUtils';
 import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import Configuration from '../utils/Configuration';
 import { ConnectorStatus } from '../types/ConnectorStatus';
@@ -83,7 +77,6 @@ import Utils from '../utils/Utils';
 import crypto from 'crypto';
 import fs from 'fs';
 import logger from '../utils/Logger';
-import moment from 'moment';
 import { parentPort } from 'worker_threads';
 import path from 'path';
 
@@ -129,7 +122,10 @@ export default class ChargingStation {
   private get wsConnectionUrl(): URL {
     return this.getSupervisionUrlOcppConfiguration()
       ? new URL(
-          this.getConfigurationKey(this.getSupervisionUrlOcppKey()).value +
+          ChargingStationConfigurationUtils.getConfigurationKey(
+            this,
+            this.getSupervisionUrlOcppKey()
+          ).value +
             '/' +
             this.stationInfo.chargingStationId
         )
@@ -340,7 +336,8 @@ export default class ChargingStation {
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
-    const authorizeRemoteTxRequests = this.getConfigurationKey(
+    const authorizeRemoteTxRequests = ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
       StandardParametersKey.AuthorizeRemoteTxRequests
     );
     return authorizeRemoteTxRequests
@@ -349,17 +346,11 @@ export default class ChargingStation {
   }
 
   public getLocalAuthListEnabled(): boolean {
-    const localAuthListEnabled = this.getConfigurationKey(
+    const localAuthListEnabled = ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
       StandardParametersKey.LocalAuthListEnabled
     );
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
-  }
-
-  public restartWebSocketPing(): void {
-    // Stop WebSocket ping
-    this.stopWebSocketPing();
-    // Start WebSocket ping
-    this.startWebSocketPing();
   }
 
   public getSampledValueTemplate(
@@ -376,9 +367,10 @@ export default class ChargingStation {
     }
     if (
       measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      !this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
-        measurand
-      )
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.MeterValuesSampledData
+      )?.value.includes(measurand)
     ) {
       logger.debug(
         `${this.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
@@ -407,18 +399,20 @@ export default class ChargingStation {
         phase &&
         sampledValueTemplates[index]?.phase === phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
-          measurand
-        )
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          this,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand)
       ) {
         return sampledValueTemplates[index];
       } else if (
         !phase &&
         !sampledValueTemplates[index].phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)?.value.includes(
-          measurand
-        )
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          this,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand)
       ) {
         return sampledValueTemplates[index];
       } else if (
@@ -483,6 +477,13 @@ export default class ChargingStation {
     this.stopHeartbeat();
     // Start heartbeat
     this.startHeartbeat();
+  }
+
+  public restartWebSocketPing(): void {
+    // Stop WebSocket ping
+    this.stopWebSocketPing();
+    // Start WebSocket ping
+    this.startWebSocketPing();
   }
 
   public startMeterValues(connectorId: number, interval: number): void {
@@ -663,85 +664,9 @@ export default class ChargingStation {
     this.start();
   }
 
-  public getConfigurationKey(
-    key: string | StandardParametersKey,
-    caseInsensitive = false
-  ): ConfigurationKey | undefined {
-    return this.ocppConfiguration.configurationKey.find((configElement) => {
-      if (caseInsensitive) {
-        return configElement.key.toLowerCase() === key.toLowerCase();
-      }
-      return configElement.key === key;
-    });
-  }
-
-  public addConfigurationKey(
-    key: string | StandardParametersKey,
-    value: string,
-    options: { readonly?: boolean; visible?: boolean; reboot?: boolean } = {
-      readonly: false,
-      visible: true,
-      reboot: false,
-    },
-    params: { overwrite?: boolean; save?: boolean } = { overwrite: false, save: false }
-  ): void {
-    options = options ?? ({} as { readonly?: boolean; visible?: boolean; reboot?: boolean });
-    options.readonly = options?.readonly ?? false;
-    options.visible = options?.visible ?? true;
-    options.reboot = options?.reboot ?? false;
-    let keyFound = this.getConfigurationKey(key);
-    if (keyFound && params?.overwrite) {
-      this.deleteConfigurationKey(keyFound.key, { save: false });
-      keyFound = undefined;
-    }
-    if (!keyFound) {
-      this.ocppConfiguration.configurationKey.push({
-        key,
-        readonly: options.readonly,
-        value,
-        visible: options.visible,
-        reboot: options.reboot,
-      });
-      params?.save && this.saveOcppConfiguration();
-    } else {
-      logger.error(
-        `${this.logPrefix()} Trying to add an already existing configuration key: %j`,
-        keyFound
-      );
-    }
-  }
-
-  public setConfigurationKeyValue(
-    key: string | StandardParametersKey,
-    value: string,
-    caseInsensitive = false
-  ): void {
-    const keyFound = this.getConfigurationKey(key, caseInsensitive);
-    if (keyFound) {
-      this.ocppConfiguration.configurationKey[
-        this.ocppConfiguration.configurationKey.indexOf(keyFound)
-      ].value = value;
-      this.saveOcppConfiguration();
-    } else {
-      logger.error(
-        `${this.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
-        { key, value }
-      );
-    }
-  }
-
-  public deleteConfigurationKey(
-    key: string | StandardParametersKey,
-    params: { save?: boolean; caseInsensitive?: boolean } = { save: true, caseInsensitive: false }
-  ): ConfigurationKey[] {
-    const keyFound = this.getConfigurationKey(key, params?.caseInsensitive);
-    if (keyFound) {
-      const deletedConfigurationKey = this.ocppConfiguration.configurationKey.splice(
-        this.ocppConfiguration.configurationKey.indexOf(keyFound),
-        1
-      );
-      params?.save && this.saveOcppConfiguration();
-      return deletedConfigurationKey;
+  public saveOcppConfiguration(): void {
+    if (this.getOcppPersistentConfiguration()) {
+      this.saveConfiguration(Section.ocppConfiguration);
     }
   }
 
@@ -759,7 +684,10 @@ export default class ChargingStation {
       );
     }
     if (!Utils.isEmptyArray(chargingProfiles)) {
-      const result = this.getLimitFromChargingProfiles(chargingProfiles);
+      const result = ChargingStationUtils.getLimitFromChargingProfiles(
+        chargingProfiles,
+        Utils.logPrefix()
+      );
       if (!Utils.isNullOrUndefined(result)) {
         limit = result.limit;
         matchingChargingProfile = result.matchingChargingProfile;
@@ -840,9 +768,10 @@ export default class ChargingStation {
   }
 
   public hasFeatureProfile(featureProfile: SupportedFeatureProfiles) {
-    return this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)?.value.includes(
-      featureProfile
-    );
+    return ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
+      StandardParametersKey.SupportedFeatureProfiles
+    )?.value.includes(featureProfile);
   }
 
   public bufferMessage(message: string): void {
@@ -865,33 +794,6 @@ export default class ChargingStation {
 
   private getSupervisionUrlOcppKey(): string {
     return this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl;
-  }
-
-  private getChargingStationId(stationTemplate: ChargingStationTemplate): string {
-    // In case of multiple instances: add instance index to charging station id
-    const instanceIndex = process.env.CF_INSTANCE_INDEX ?? 0;
-    const idSuffix = stationTemplate.nameSuffix ?? '';
-    const idStr = '000000000' + this.index.toString();
-    return stationTemplate.fixedName
-      ? stationTemplate.baseName
-      : stationTemplate.baseName +
-          '-' +
-          instanceIndex.toString() +
-          idStr.substring(idStr.length - 4) +
-          idSuffix;
-  }
-
-  private getRandomSerialNumberSuffix(params?: {
-    randomBytesLength?: number;
-    upperCase?: boolean;
-  }): string {
-    const randomSerialNumberSuffix = crypto
-      .randomBytes(params?.randomBytesLength ?? 16)
-      .toString('hex');
-    if (params?.upperCase) {
-      return randomSerialNumberSuffix.toUpperCase();
-    }
-    return randomSerialNumberSuffix;
   }
 
   private getTemplateFromFile(): ChargingStationTemplate | null {
@@ -918,40 +820,6 @@ export default class ChargingStation {
     return template;
   }
 
-  private createSerialNumber(
-    stationInfo: ChargingStationInfo,
-    existingStationInfo?: ChargingStationInfo,
-    params: { randomSerialNumberUpperCase?: boolean; randomSerialNumber?: boolean } = {
-      randomSerialNumberUpperCase: true,
-      randomSerialNumber: true,
-    }
-  ): void {
-    params = params ?? {};
-    params.randomSerialNumberUpperCase = params?.randomSerialNumberUpperCase ?? true;
-    params.randomSerialNumber = params?.randomSerialNumber ?? true;
-    if (!Utils.isEmptyObject(existingStationInfo)) {
-      existingStationInfo?.chargePointSerialNumber &&
-        (stationInfo.chargePointSerialNumber = existingStationInfo.chargePointSerialNumber);
-      existingStationInfo?.chargeBoxSerialNumber &&
-        (stationInfo.chargeBoxSerialNumber = existingStationInfo.chargeBoxSerialNumber);
-      existingStationInfo?.meterSerialNumber &&
-        (stationInfo.meterSerialNumber = existingStationInfo.meterSerialNumber);
-    } else {
-      const serialNumberSuffix = params?.randomSerialNumber
-        ? this.getRandomSerialNumberSuffix({ upperCase: params.randomSerialNumberUpperCase })
-        : '';
-      stationInfo.chargePointSerialNumber =
-        stationInfo?.chargePointSerialNumberPrefix &&
-        stationInfo.chargePointSerialNumberPrefix + serialNumberSuffix;
-      stationInfo.chargeBoxSerialNumber =
-        stationInfo?.chargeBoxSerialNumberPrefix &&
-        stationInfo.chargeBoxSerialNumberPrefix + serialNumberSuffix;
-      stationInfo.meterSerialNumber =
-        stationInfo?.meterSerialNumberPrefix &&
-        stationInfo.meterSerialNumberPrefix + serialNumberSuffix;
-    }
-  }
-
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationInfo: ChargingStationInfo = this.getTemplateFromFile();
     if (Utils.isNullOrUndefined(stationInfo)) {
@@ -966,15 +834,20 @@ export default class ChargingStation {
         }`
       );
     }
-    const chargingStationId = this.getChargingStationId(stationInfo);
+    const chargingStationId = ChargingStationUtils.getChargingStationId(this.index, stationInfo);
     // Deprecation template keys section
-    this.warnDeprecatedTemplateKey(
+    ChargingStationUtils.warnDeprecatedTemplateKey(
       stationInfo,
       'supervisionUrl',
-      chargingStationId,
+      this.templateFile,
+      this.logPrefix(),
       "Use 'supervisionUrls' instead"
     );
-    this.convertDeprecatedTemplateKey(stationInfo, 'supervisionUrl', 'supervisionUrls');
+    ChargingStationUtils.convertDeprecatedTemplateKey(
+      stationInfo,
+      'supervisionUrl',
+      'supervisionUrls'
+    );
     stationInfo.wsOptions = stationInfo?.wsOptions ?? {};
     if (!Utils.isEmptyArray(stationInfo.power)) {
       stationInfo.power = stationInfo.power as number[];
@@ -999,35 +872,15 @@ export default class ChargingStation {
     return stationInfo;
   }
 
-  private createStationInfoHash(stationInfo: ChargingStationInfo): ChargingStationInfo {
-    if (!Utils.isEmptyObject(stationInfo)) {
-      const previousInfoHash = stationInfo?.infoHash ?? '';
-      delete stationInfo.infoHash;
-      const currentInfoHash = crypto
-        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(JSON.stringify(stationInfo))
-        .digest('hex');
-      if (
-        Utils.isEmptyString(previousInfoHash) ||
-        (!Utils.isEmptyString(previousInfoHash) && currentInfoHash !== previousInfoHash)
-      ) {
-        stationInfo.infoHash = currentInfoHash;
-      } else {
-        stationInfo.infoHash = previousInfoHash;
-      }
-    }
-    return stationInfo;
-  }
-
   private getStationInfoFromFile(): ChargingStationInfo {
     let stationInfo = this.getConfigurationFromFile()?.stationInfo ?? ({} as ChargingStationInfo);
-    stationInfo = this.createStationInfoHash(stationInfo);
+    stationInfo = ChargingStationUtils.createStationInfoHash(stationInfo);
     return stationInfo;
   }
 
   private getStationInfo(): ChargingStationInfo {
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
-    this.hashId = this.getHashId(stationInfoFromTemplate);
+    this.hashId = ChargingStationUtils.getHashId(stationInfoFromTemplate);
     this.configurationFile = path.join(
       path.resolve(__dirname, '../'),
       'assets',
@@ -1042,7 +895,7 @@ export default class ChargingStation {
       }
       return stationInfoFromFile;
     }
-    this.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
+    ChargingStationUtils.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
     return stationInfoFromTemplate;
   }
 
@@ -1066,62 +919,12 @@ export default class ChargingStation {
     throw new Error(errMsg);
   }
 
-  private createBootNotificationRequest(stationInfo: ChargingStationInfo): BootNotificationRequest {
-    return {
-      chargePointModel: stationInfo.chargePointModel,
-      chargePointVendor: stationInfo.chargePointVendor,
-      ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
-        chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
-      }),
-      ...(!Utils.isUndefined(stationInfo.chargePointSerialNumber) && {
-        chargePointSerialNumber: stationInfo.chargePointSerialNumber,
-      }),
-      ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
-        firmwareVersion: stationInfo.firmwareVersion,
-      }),
-      ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-      ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-      ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
-        meterSerialNumber: stationInfo.meterSerialNumber,
-      }),
-      ...(!Utils.isUndefined(stationInfo.meterType) && {
-        meterType: stationInfo.meterType,
-      }),
-    };
-  }
-
-  private getHashId(stationInfo: ChargingStationInfo): string {
-    const hashBootNotificationRequest = {
-      chargePointModel: stationInfo.chargePointModel,
-      chargePointVendor: stationInfo.chargePointVendor,
-      ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumberPrefix) && {
-        chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumberPrefix,
-      }),
-      ...(!Utils.isUndefined(stationInfo.chargePointSerialNumberPrefix) && {
-        chargePointSerialNumber: stationInfo.chargePointSerialNumberPrefix,
-      }),
-      ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
-        firmwareVersion: stationInfo.firmwareVersion,
-      }),
-      ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-      ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-      ...(!Utils.isUndefined(stationInfo.meterSerialNumberPrefix) && {
-        meterSerialNumber: stationInfo.meterSerialNumberPrefix,
-      }),
-      ...(!Utils.isUndefined(stationInfo.meterType) && {
-        meterType: stationInfo.meterType,
-      }),
-    };
-    return crypto
-      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(hashBootNotificationRequest) + stationInfo.chargingStationId)
-      .digest('hex');
-  }
-
   private initialize(): void {
     this.stationInfo = this.getStationInfo();
     logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
-    this.bootNotificationRequest = this.createBootNotificationRequest(this.stationInfo);
+    this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
+      this.stationInfo
+    );
     this.ocppConfiguration = this.getOcppConfiguration();
     this.stationInfo?.Configuration && delete this.stationInfo.Configuration;
     this.wsConfiguredConnectionUrl = new URL(
@@ -1146,7 +949,7 @@ export default class ChargingStation {
     }
     this.initializeConnectors(this.stationInfo, maxConnectors, templateMaxConnectors);
     this.stationInfo.maximumAmperage = this.getMaximumAmperage();
-    this.stationInfo = this.createStationInfoHash(this.stationInfo);
+    this.stationInfo = ChargingStationUtils.createStationInfoHash(this.stationInfo);
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
     this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
@@ -1182,55 +985,104 @@ export default class ChargingStation {
   }
 
   private initializeOcppConfiguration(): void {
-    if (!this.getConfigurationKey(StandardParametersKey.HeartbeatInterval)) {
-      this.addConfigurationKey(StandardParametersKey.HeartbeatInterval, '0');
+    if (
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.HeartbeatInterval
+      )
+    ) {
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
+        StandardParametersKey.HeartbeatInterval,
+        '0'
+      );
     }
-    if (!this.getConfigurationKey(StandardParametersKey.HeartBeatInterval)) {
-      this.addConfigurationKey(StandardParametersKey.HeartBeatInterval, '0', { visible: false });
+    if (
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.HeartBeatInterval
+      )
+    ) {
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
+        StandardParametersKey.HeartBeatInterval,
+        '0',
+        { visible: false }
+      );
     }
     if (
       this.getSupervisionUrlOcppConfiguration() &&
-      !this.getConfigurationKey(this.getSupervisionUrlOcppKey())
+      !ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
-      this.addConfigurationKey(
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
         this.getSupervisionUrlOcppKey(),
         this.getConfiguredSupervisionUrl().href,
         { reboot: true }
       );
     } else if (
       !this.getSupervisionUrlOcppConfiguration() &&
-      this.getConfigurationKey(this.getSupervisionUrlOcppKey())
+      ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
-      this.deleteConfigurationKey(this.getSupervisionUrlOcppKey(), { save: false });
+      ChargingStationConfigurationUtils.deleteConfigurationKey(
+        this,
+        this.getSupervisionUrlOcppKey(),
+        { save: false }
+      );
     }
     if (
       this.stationInfo.amperageLimitationOcppKey &&
-      !this.getConfigurationKey(this.stationInfo.amperageLimitationOcppKey)
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        this.stationInfo.amperageLimitationOcppKey
+      )
     ) {
-      this.addConfigurationKey(
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
         this.stationInfo.amperageLimitationOcppKey,
-        (this.stationInfo.maximumAmperage * this.getAmperageLimitationUnitDivider()).toString()
+        (
+          this.stationInfo.maximumAmperage *
+          ChargingStationUtils.getAmperageLimitationUnitDivider(this.stationInfo)
+        ).toString()
       );
     }
-    if (!this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)) {
-      this.addConfigurationKey(
+    if (
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.SupportedFeatureProfiles
+      )
+    ) {
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
         StandardParametersKey.SupportedFeatureProfiles,
         `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.FirmwareManagement},${SupportedFeatureProfiles.LocalAuthListManagement},${SupportedFeatureProfiles.SmartCharging},${SupportedFeatureProfiles.RemoteTrigger}`
       );
     }
-    this.addConfigurationKey(
+    ChargingStationConfigurationUtils.addConfigurationKey(
+      this,
       StandardParametersKey.NumberOfConnectors,
       this.getNumberOfConnectors().toString(),
       { readonly: true },
       { overwrite: true }
     );
-    if (!this.getConfigurationKey(StandardParametersKey.MeterValuesSampledData)) {
-      this.addConfigurationKey(
+    if (
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.MeterValuesSampledData
+      )
+    ) {
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
         StandardParametersKey.MeterValuesSampledData,
         MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       );
     }
-    if (!this.getConfigurationKey(StandardParametersKey.ConnectorPhaseRotation)) {
+    if (
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.ConnectorPhaseRotation
+      )
+    ) {
       const connectorPhaseRotation = [];
       for (const connectorId of this.connectors.keys()) {
         // AC/DC
@@ -1245,24 +1097,48 @@ export default class ChargingStation {
           connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
         }
       }
-      this.addConfigurationKey(
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
         StandardParametersKey.ConnectorPhaseRotation,
         connectorPhaseRotation.toString()
       );
     }
-    if (!this.getConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests)) {
-      this.addConfigurationKey(StandardParametersKey.AuthorizeRemoteTxRequests, 'true');
-    }
     if (
-      !this.getConfigurationKey(StandardParametersKey.LocalAuthListEnabled) &&
-      this.getConfigurationKey(StandardParametersKey.SupportedFeatureProfiles)?.value.includes(
-        SupportedFeatureProfiles.LocalAuthListManagement
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.AuthorizeRemoteTxRequests
       )
     ) {
-      this.addConfigurationKey(StandardParametersKey.LocalAuthListEnabled, 'false');
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
+        StandardParametersKey.AuthorizeRemoteTxRequests,
+        'true'
+      );
     }
-    if (!this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut)) {
-      this.addConfigurationKey(
+    if (
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.LocalAuthListEnabled
+      ) &&
+      ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.SupportedFeatureProfiles
+      )?.value.includes(SupportedFeatureProfiles.LocalAuthListManagement)
+    ) {
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
+        StandardParametersKey.LocalAuthListEnabled,
+        'false'
+      );
+    }
+    if (
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.ConnectionTimeOut
+      )
+    ) {
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        this,
         StandardParametersKey.ConnectionTimeOut,
         Constants.DEFAULT_CONNECTION_TIMEOUT.toString()
       );
@@ -1471,12 +1347,6 @@ export default class ChargingStation {
     return ocppConfiguration;
   }
 
-  private saveOcppConfiguration(): void {
-    if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration(Section.ocppConfiguration);
-    }
-  }
-
   private async onOpen(): Promise<void> {
     if (this.isWebSocketConnectionOpened()) {
       logger.info(
@@ -1545,7 +1415,7 @@ export default class ChargingStation {
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
         logger.info(
-          `${this.logPrefix()} WebSocket normally closed with status '${Utils.getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} WebSocket normally closed with status '${ChargingStationUtils.getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason}'`
         );
@@ -1554,7 +1424,7 @@ export default class ChargingStation {
       // Abnormal close
       default:
         logger.error(
-          `${this.logPrefix()} WebSocket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} WebSocket abnormally closed with status '${ChargingStationUtils.getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason}'`
         );
@@ -1759,10 +1629,19 @@ export default class ChargingStation {
 
   // 0 for disabling
   private getConnectionTimeout(): number | undefined {
-    if (this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut)) {
+    if (
+      ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.ConnectionTimeOut
+      )
+    ) {
       return (
-        parseInt(this.getConfigurationKey(StandardParametersKey.ConnectionTimeOut).value) ??
-        Constants.DEFAULT_CONNECTION_TIMEOUT
+        parseInt(
+          ChargingStationConfigurationUtils.getConfigurationKey(
+            this,
+            StandardParametersKey.ConnectionTimeOut
+          ).value
+        ) ?? Constants.DEFAULT_CONNECTION_TIMEOUT
       );
     }
     return Constants.DEFAULT_CONNECTION_TIMEOUT;
@@ -1836,31 +1715,21 @@ export default class ChargingStation {
     }
   }
 
-  private getAmperageLimitationUnitDivider(): number {
-    let unitDivider = 1;
-    switch (this.stationInfo.amperageLimitationUnit) {
-      case AmpereUnits.DECI_AMPERE:
-        unitDivider = 10;
-        break;
-      case AmpereUnits.CENTI_AMPERE:
-        unitDivider = 100;
-        break;
-      case AmpereUnits.MILLI_AMPERE:
-        unitDivider = 1000;
-        break;
-    }
-    return unitDivider;
-  }
-
   private getAmperageLimitation(): number | undefined {
     if (
       this.stationInfo.amperageLimitationOcppKey &&
-      this.getConfigurationKey(this.stationInfo.amperageLimitationOcppKey)
+      ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        this.stationInfo.amperageLimitationOcppKey
+      )
     ) {
       return (
         Utils.convertToInt(
-          this.getConfigurationKey(this.stationInfo.amperageLimitationOcppKey).value
-        ) / this.getAmperageLimitationUnitDivider()
+          ChargingStationConfigurationUtils.getConfigurationKey(
+            this,
+            this.stationInfo.amperageLimitationOcppKey
+          ).value
+        ) / ChargingStationUtils.getAmperageLimitationUnitDivider(this.stationInfo)
       );
     }
   }
@@ -2018,11 +1887,15 @@ export default class ChargingStation {
   }
 
   private startWebSocketPing(): void {
-    const webSocketPingInterval: number = this.getConfigurationKey(
+    const webSocketPingInterval: number = ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
       StandardParametersKey.WebSocketPingInterval
     )
       ? Utils.convertToInt(
-          this.getConfigurationKey(StandardParametersKey.WebSocketPingInterval).value
+          ChargingStationConfigurationUtils.getConfigurationKey(
+            this,
+            StandardParametersKey.WebSocketPingInterval
+          ).value
         )
       : 0;
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
@@ -2059,33 +1932,6 @@ export default class ChargingStation {
   private stopWebSocketPing(): void {
     if (this.webSocketPingSetInterval) {
       clearInterval(this.webSocketPingSetInterval);
-    }
-  }
-
-  private warnDeprecatedTemplateKey(
-    template: ChargingStationTemplate,
-    key: string,
-    chargingStationId: string,
-    logMsgToAppend = ''
-  ): void {
-    if (!Utils.isUndefined(template[key])) {
-      const logPrefixStr = ` ${chargingStationId} |`;
-      logger.warn(
-        `${Utils.logPrefix(logPrefixStr)} Deprecated template key '${key}' usage in file '${
-          this.templateFile
-        }'${logMsgToAppend && '. ' + logMsgToAppend}`
-      );
-    }
-  }
-
-  private convertDeprecatedTemplateKey(
-    template: ChargingStationTemplate,
-    deprecatedKey: string,
-    key: string
-  ): void {
-    if (!Utils.isUndefined(template[deprecatedKey])) {
-      template[key] = template[deprecatedKey] as unknown;
-      delete template[deprecatedKey];
     }
   }
 
@@ -2127,11 +1973,17 @@ export default class ChargingStation {
   }
 
   private getHeartbeatInterval(): number | undefined {
-    const HeartbeatInterval = this.getConfigurationKey(StandardParametersKey.HeartbeatInterval);
+    const HeartbeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
+      StandardParametersKey.HeartbeatInterval
+    );
     if (HeartbeatInterval) {
       return Utils.convertToInt(HeartbeatInterval.value) * 1000;
     }
-    const HeartBeatInterval = this.getConfigurationKey(StandardParametersKey.HeartBeatInterval);
+    const HeartBeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
+      StandardParametersKey.HeartBeatInterval
+    );
     if (HeartBeatInterval) {
       return Utils.convertToInt(HeartBeatInterval.value) * 1000;
     }
@@ -2246,106 +2098,5 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionStarted = false;
     this.getConnectorStatus(connectorId).energyActiveImportRegisterValue = 0;
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
-  }
-
-  /**
-   * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
-   *
-   * @param {ChargingProfile[]} chargingProfiles
-   * @returns {{ limit, matchingChargingProfile }}
-   */
-  private getLimitFromChargingProfiles(chargingProfiles: ChargingProfile[]): {
-    limit: number;
-    matchingChargingProfile: ChargingProfile;
-  } | null {
-    for (const chargingProfile of chargingProfiles) {
-      // Set helpers
-      const currentMoment = moment();
-      const chargingSchedule = chargingProfile.chargingSchedule;
-      // Check type (recurring) and if it is already active
-      // Adjust the daily recurring schedule to today
-      if (
-        chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-        chargingProfile.recurrencyKind === RecurrencyKindType.DAILY &&
-        currentMoment.isAfter(chargingSchedule.startSchedule)
-      ) {
-        const currentDate = new Date();
-        chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule);
-        chargingSchedule.startSchedule.setFullYear(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          currentDate.getDate()
-        );
-        // Check if the start of the schedule is yesterday
-        if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
-          chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
-        }
-      } else if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
-        return null;
-      }
-      // Check if the charging profile is active
-      if (
-        moment(chargingSchedule.startSchedule)
-          .add(chargingSchedule.duration, 's')
-          .isAfter(currentMoment)
-      ) {
-        let lastButOneSchedule: ChargingSchedulePeriod;
-        // Search the right schedule period
-        for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
-          // Handling of only one period
-          if (
-            chargingSchedule.chargingSchedulePeriod.length === 1 &&
-            schedulePeriod.startPeriod === 0
-          ) {
-            const result = {
-              limit: schedulePeriod.limit,
-              matchingChargingProfile: chargingProfile,
-            };
-            logger.debug(
-              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
-              result
-            );
-            return result;
-          }
-          // Find the right schedule period
-          if (
-            moment(chargingSchedule.startSchedule)
-              .add(schedulePeriod.startPeriod, 's')
-              .isAfter(currentMoment)
-          ) {
-            // Found the schedule: last but one is the correct one
-            const result = {
-              limit: lastButOneSchedule.limit,
-              matchingChargingProfile: chargingProfile,
-            };
-            logger.debug(
-              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
-              result
-            );
-            return result;
-          }
-          // Keep it
-          lastButOneSchedule = schedulePeriod;
-          // Handle the last schedule period
-          if (
-            schedulePeriod.startPeriod ===
-            chargingSchedule.chargingSchedulePeriod[
-              chargingSchedule.chargingSchedulePeriod.length - 1
-            ].startPeriod
-          ) {
-            const result = {
-              limit: lastButOneSchedule.limit,
-              matchingChargingProfile: chargingProfile,
-            };
-            logger.debug(
-              `${this.logPrefix()} Matching charging profile found for power limitation: %j`,
-              result
-            );
-            return result;
-          }
-        }
-      }
-    }
-    return null;
   }
 }

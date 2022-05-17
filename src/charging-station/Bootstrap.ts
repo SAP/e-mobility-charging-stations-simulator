@@ -8,6 +8,7 @@ import {
 
 import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { ApplicationProtocol } from '../types/UIProtocol';
+import { ChargingStationUtils } from './ChargingStationUtils';
 import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
@@ -102,11 +103,13 @@ export default class Bootstrap {
               `Charging stations simulator ${
                 this.version
               } started with ${this.numberOfChargingStations.toString()} charging station(s) and ${
-                Utils.workerDynamicPoolInUse()
+                ChargingStationUtils.workerDynamicPoolInUse()
                   ? `${Configuration.getWorkerPoolMinSize().toString()}/`
                   : ''
               }${this.workerImplementation.size}${
-                Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''
+                ChargingStationUtils.workerPoolInUse()
+                  ? `/${Configuration.getWorkerPoolMaxSize().toString()}`
+                  : ''
               } worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${
                 this.workerImplementation.maxElementsPerWorker
                   ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`

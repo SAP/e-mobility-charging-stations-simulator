@@ -60,6 +60,7 @@ import {
 } from '../../../types/ocpp/1.6/Configuration';
 
 import type ChargingStation from '../../ChargingStation';
+import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
 import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
@@ -301,7 +302,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       }
     } else {
       for (const key of commandPayload.key) {
-        const keyFound = chargingStation.getConfigurationKey(key);
+        const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          key
+        );
         if (keyFound) {
           if (Utils.isUndefined(keyFound.visible)) {
             keyFound.visible = true;
@@ -346,7 +350,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         commandPayload
       );
     }
-    const keyToChange = chargingStation.getConfigurationKey(commandPayload.key, true);
+    const keyToChange = ChargingStationConfigurationUtils.getConfigurationKey(
+      chargingStation,
+      commandPayload.key,
+      true
+    );
     if (!keyToChange) {
       return Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED;
     } else if (keyToChange && keyToChange.readonly) {
@@ -354,19 +362,26 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     } else if (keyToChange && !keyToChange.readonly) {
       let valueChanged = false;
       if (keyToChange.value !== commandPayload.value) {
-        chargingStation.setConfigurationKeyValue(commandPayload.key, commandPayload.value, true);
+        ChargingStationConfigurationUtils.setConfigurationKeyValue(
+          chargingStation,
+          commandPayload.key,
+          commandPayload.value,
+          true
+        );
         valueChanged = true;
       }
       let triggerHeartbeatRestart = false;
       if (keyToChange.key === OCPP16StandardParametersKey.HeartBeatInterval && valueChanged) {
-        chargingStation.setConfigurationKeyValue(
+        ChargingStationConfigurationUtils.setConfigurationKeyValue(
+          chargingStation,
           OCPP16StandardParametersKey.HeartbeatInterval,
           commandPayload.value
         );
         triggerHeartbeatRestart = true;
       }
       if (keyToChange.key === OCPP16StandardParametersKey.HeartbeatInterval && valueChanged) {
-        chargingStation.setConfigurationKeyValue(
+        ChargingStationConfigurationUtils.setConfigurationKeyValue(
+          chargingStation,
           OCPP16StandardParametersKey.HeartBeatInterval,
           commandPayload.value
         );

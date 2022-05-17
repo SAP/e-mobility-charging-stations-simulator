@@ -25,6 +25,7 @@ import {
 } from '../../../types/ocpp/1.6/MeterValues';
 
 import type ChargingStation from '../../ChargingStation';
+import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
@@ -102,13 +103,15 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16BootNotificationResponse
   ): void {
     if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
-      chargingStation.addConfigurationKey(
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        chargingStation,
         OCPP16StandardParametersKey.HeartbeatInterval,
         payload.interval.toString(),
         {},
         { overwrite: true, save: true }
       );
-      chargingStation.addConfigurationKey(
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        chargingStation,
         OCPP16StandardParametersKey.HeartBeatInterval,
         payload.interval.toString(),
         { visible: false },
@@ -334,9 +337,11 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       if (chargingStation.stationInfo.powerSharedByConnectors) {
         chargingStation.stationInfo.powerDivider++;
       }
-      const configuredMeterValueSampleInterval = chargingStation.getConfigurationKey(
-        OCPP16StandardParametersKey.MeterValueSampleInterval
-      );
+      const configuredMeterValueSampleInterval =
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          OCPP16StandardParametersKey.MeterValueSampleInterval
+        );
       chargingStation.startMeterValues(
         connectorId,
         configuredMeterValueSampleInterval
