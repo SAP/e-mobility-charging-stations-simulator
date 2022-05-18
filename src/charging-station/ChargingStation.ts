@@ -840,7 +840,7 @@ export default class ChargingStation {
       stationInfo,
       'supervisionUrl',
       this.templateFile,
-      this.logPrefix(),
+      Utils.logPrefix(` ${chargingStationId} |`),
       "Use 'supervisionUrls' instead"
     );
     ChargingStationUtils.convertDeprecatedTemplateKey(
