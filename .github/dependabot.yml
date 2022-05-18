@@ -9,4 +9,5 @@ updates:
       - 'dependencies'
     reviewers:
       - 'jerome-benoit'
+      - 'olivierbagot'
     versioning-strategy: increase
