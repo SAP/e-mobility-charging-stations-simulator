@@ -22,7 +22,7 @@ body:
       description: Description of the bug.
   - type: input
     attributes:
-      label: charging-stations-simulator version
+      label: emobility-charging-stations-simulator version
   - type: input
     attributes:
       label: Node.js Version
