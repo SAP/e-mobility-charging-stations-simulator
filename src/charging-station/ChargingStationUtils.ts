@@ -129,7 +129,6 @@ export class ChargingStationUtils {
     logMsgToAppend = ''
   ): void {
     if (!Utils.isUndefined(template[key])) {
-      // const logPrefixStr = ` ${chargingStationId} |`;
       logger.warn(
         `${logPrefix} Deprecated template key '${key}' usage in file '${templateFile}'${
           logMsgToAppend && '. ' + logMsgToAppend
