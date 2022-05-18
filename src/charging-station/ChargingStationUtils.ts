@@ -1,11 +1,20 @@
 import { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
 import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
-import ChargingStationTemplate, { AmpereUnits } from '../types/ChargingStationTemplate';
+import ChargingStationTemplate, {
+  AmpereUnits,
+  CurrentType,
+  Voltage,
+} from '../types/ChargingStationTemplate';
+import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 
 import { BootNotificationRequest } from '../types/ocpp/Requests';
+import ChargingStation from './ChargingStation';
+import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
+import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
+import { StandardParametersKey } from '../types/ocpp/Configuration';
 import Utils from '../utils/Utils';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
@@ -323,6 +332,108 @@ export class ChargingStationUtils {
       }
     }
     return null;
+  }
+
+  public static getDefaultVoltageOut(
+    currentType: CurrentType,
+    templateFile: string,
+    logPrefix: string
+  ): Voltage {
+    const errMsg = `${logPrefix} Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
+    let defaultVoltageOut: number;
+    switch (currentType) {
+      case CurrentType.AC:
+        defaultVoltageOut = Voltage.VOLTAGE_230;
+        break;
+      case CurrentType.DC:
+        defaultVoltageOut = Voltage.VOLTAGE_400;
+        break;
+      default:
+        logger.error(errMsg);
+        throw new Error(errMsg);
+    }
+    return defaultVoltageOut;
+  }
+
+  public static getSampledValueTemplate(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+    phase?: MeterValuePhase
+  ): SampledValueTemplate | undefined {
+    const onPhaseStr = phase ? `on phase ${phase} ` : '';
+    if (!Constants.SUPPORTED_MEASURANDS.includes(measurand)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+      );
+      return;
+    }
+    if (
+      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        chargingStation,
+        StandardParametersKey.MeterValuesSampledData
+      )?.value.includes(measurand)
+    ) {
+      logger.debug(
+        `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
+          StandardParametersKey.MeterValuesSampledData
+        }' OCPP parameter`
+      );
+      return;
+    }
+    const sampledValueTemplates: SampledValueTemplate[] =
+      chargingStation.getConnectorStatus(connectorId).MeterValues;
+    for (
+      let index = 0;
+      !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length;
+      index++
+    ) {
+      if (
+        !Constants.SUPPORTED_MEASURANDS.includes(
+          sampledValueTemplates[index]?.measurand ??
+            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        )
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+        );
+      } else if (
+        phase &&
+        sampledValueTemplates[index]?.phase === phase &&
+        sampledValueTemplates[index]?.measurand === measurand &&
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand)
+      ) {
+        return sampledValueTemplates[index];
+      } else if (
+        !phase &&
+        !sampledValueTemplates[index].phase &&
+        sampledValueTemplates[index]?.measurand === measurand &&
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand)
+      ) {
+        return sampledValueTemplates[index];
+      } else if (
+        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
+        (!sampledValueTemplates[index].measurand ||
+          sampledValueTemplates[index].measurand === measurand)
+      ) {
+        return sampledValueTemplates[index];
+      }
+    }
+    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+      const errorMsg = `${chargingStation.logPrefix()} Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
+      logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    logger.debug(
+      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+    );
   }
 
   private static getRandomSerialNumberSuffix(params?: {
