@@ -24,6 +24,7 @@ import {
 } from '../../../types/ocpp/1.6/Configuration';
 
 import type ChargingStation from '../../ChargingStation';
+import { ChargingStationUtils } from '../../ChargingStationUtils';
 import Constants from '../../../utils/Constants';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import MeasurandValues from '../../../types/MeasurandValues';
@@ -62,7 +63,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     };
     const connector = chargingStation.getConnectorStatus(connectorId);
     // SoC measurand
-    const socSampledValueTemplate = chargingStation.getSampledValueTemplate(
+    const socSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+      chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.STATE_OF_CHARGE
     );
@@ -89,7 +91,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Voltage measurand
-    const voltageSampledValueTemplate = chargingStation.getSampledValueTemplate(
+    const voltageSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+      chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.VOLTAGE
     );
@@ -118,7 +121,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       ) {
         const phaseLineToNeutralValue = `L${phase}-N`;
         const voltagePhaseLineToNeutralSampledValueTemplate =
-          chargingStation.getSampledValueTemplate(
+          ChargingStationUtils.getSampledValueTemplate(
+            chargingStation,
             connectorId,
             OCPP16MeterValueMeasurand.VOLTAGE,
             phaseLineToNeutralValue as OCPP16MeterValuePhase
@@ -152,7 +156,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               : chargingStation.getNumberOfPhases()
           }`;
           const voltagePhaseLineToLineSampledValueTemplate =
-            chargingStation.getSampledValueTemplate(
+            ChargingStationUtils.getSampledValueTemplate(
+              chargingStation,
               connectorId,
               OCPP16MeterValueMeasurand.VOLTAGE,
               phaseLineToLineValue as OCPP16MeterValuePhase
@@ -187,24 +192,28 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Power.Active.Import measurand
-    const powerSampledValueTemplate = chargingStation.getSampledValueTemplate(
+    const powerSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+      chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT
     );
     let powerPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
     if (chargingStation.getNumberOfPhases() === 3) {
       powerPerPhaseSampledValueTemplates = {
-        L1: chargingStation.getSampledValueTemplate(
+        L1: ChargingStationUtils.getSampledValueTemplate(
+          chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
           OCPP16MeterValuePhase.L1_N
         ),
-        L2: chargingStation.getSampledValueTemplate(
+        L2: ChargingStationUtils.getSampledValueTemplate(
+          chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
           OCPP16MeterValuePhase.L2_N
         ),
-        L3: chargingStation.getSampledValueTemplate(
+        L3: ChargingStationUtils.getSampledValueTemplate(
+          chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
           OCPP16MeterValuePhase.L3_N
@@ -390,24 +399,28 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Current.Import measurand
-    const currentSampledValueTemplate = chargingStation.getSampledValueTemplate(
+    const currentSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+      chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.CURRENT_IMPORT
     );
     let currentPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
     if (chargingStation.getNumberOfPhases() === 3) {
       currentPerPhaseSampledValueTemplates = {
-        L1: chargingStation.getSampledValueTemplate(
+        L1: ChargingStationUtils.getSampledValueTemplate(
+          chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
           OCPP16MeterValuePhase.L1
         ),
-        L2: chargingStation.getSampledValueTemplate(
+        L2: ChargingStationUtils.getSampledValueTemplate(
+          chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
           OCPP16MeterValuePhase.L2
         ),
-        L3: chargingStation.getSampledValueTemplate(
+        L3: ChargingStationUtils.getSampledValueTemplate(
+          chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
           OCPP16MeterValuePhase.L3
@@ -594,7 +607,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Energy.Active.Import.Register measurand (default)
-    const energySampledValueTemplate = chargingStation.getSampledValueTemplate(connectorId);
+    const energySampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+      chargingStation,
+      connectorId
+    );
     if (energySampledValueTemplate) {
       OCPP16ServiceUtils.checkMeasurandPowerDivider(
         chargingStation,
@@ -674,7 +690,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       sampledValue: [],
     };
     // Energy.Active.Import.Register measurand (default)
-    const sampledValueTemplate = chargingStation.getSampledValueTemplate(connectorId);
+    const sampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+      chargingStation,
+      connectorId
+    );
     const unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
     meterValue.sampledValue.push(
       OCPP16ServiceUtils.buildSampledValue(
@@ -696,7 +715,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       sampledValue: [],
     };
     // Energy.Active.Import.Register measurand (default)
-    const sampledValueTemplate = chargingStation.getSampledValueTemplate(connectorId);
+    const sampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+      chargingStation,
+      connectorId
+    );
     const unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
     meterValue.sampledValue.push(
       OCPP16ServiceUtils.buildSampledValue(

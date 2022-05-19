@@ -46,8 +46,6 @@ test
 temp
 outputs
 coverage
-charging-stations-simulator-start.sh
-charging-stations-simulator-start.bat
 node_modules
 sonar-project.properties
 performanceRecords.json

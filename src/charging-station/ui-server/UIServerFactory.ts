@@ -11,12 +11,11 @@ export default class UIServerFactory {
 
   public static getUIServerImplementation(
     applicationProtocol: ApplicationProtocol,
-    options?: ServerOptions,
-    callback?: () => void
+    options?: ServerOptions
   ): AbstractUIServer | null {
     switch (applicationProtocol) {
       case ApplicationProtocol.WS:
-        return new UIWebSocketServer(options ?? Configuration.getUIServer().options, callback);
+        return new UIWebSocketServer(options ?? Configuration.getUIServer().options);
       default:
         return null;
     }

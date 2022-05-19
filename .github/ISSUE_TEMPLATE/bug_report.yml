@@ -7,7 +7,7 @@ body:
       value: |
         Thank you for reporting an issue.
 
-        This issue tracker is for bugs and issues found in charging-stations-simulator.
+        This issue tracker is for bugs and issues found in emobility-charging-stations-simulator.
 
         Please fill in as much of the template below as you're able.
   - type: checkboxes
@@ -22,7 +22,7 @@ body:
       description: Description of the bug.
   - type: input
     attributes:
-      label: charging-stations-simulator version
+      label: emobility-charging-stations-simulator version
   - type: input
     attributes:
       label: Node.js Version

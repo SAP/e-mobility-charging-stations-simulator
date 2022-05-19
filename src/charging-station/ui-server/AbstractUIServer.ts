@@ -7,7 +7,7 @@ import { ChargingStationSubData } from '../../types/ChargingStationWorker';
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationSubData>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
-  protected uiServer: WSServer | HttpServer;
+  protected server: WSServer | HttpServer;
 
   public constructor() {
     this.chargingStations = new Map<string, ChargingStationSubData>();

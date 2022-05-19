@@ -1,13 +1,13 @@
 {
-  "name": "charging-stations-simulator",
-  "version": "1.1.59",
+  "name": "emobility-charging-stations-simulator",
+  "version": "1.1.60",
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=8.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jerome-benoit/charging-stations-simulator.git"
+    "url": "https://github.com/jerome-benoit/emobility-charging-stations-simulator.git"
   },
   "description": "Electric Vehicle charging stations simulator",
   "author": "SAP E-Mobility <e-mobility@sap.com>",
@@ -33,10 +33,10 @@
     ]
   },
   "auto-changelog": {
-    "commitUrl": "https://github.com/jerome-benoit/charging-stations-simulator/commit/{id}",
-    "issueUrl": "https://github.com/jerome-benoit/charging-stations-simulator/issues/{id}",
-    "mergeUrl": "https://github.com/jerome-benoit/charging-stations-simulator/pull/{id}",
-    "compareUrl": "https://github.com/jerome-benoit/charging-stations-simulator/compare/{from}...{to}"
+    "commitUrl": "https://github.com/jerome-benoit/emobility-charging-stations-simulator/commit/{id}",
+    "issueUrl": "https://github.com/jerome-benoit/emobility-charging-stations-simulator/issues/{id}",
+    "mergeUrl": "https://github.com/jerome-benoit/emobility-charging-stations-simulator/pull/{id}",
+    "compareUrl": "https://github.com/jerome-benoit/emobility-charging-stations-simulator/compare/{from}...{to}"
   },
   "mikro-orm": {
     "tsConfigPath": "./tsconfig-orm.json",
@@ -106,13 +106,13 @@
     "@types/express": "^4.17.13",
     "@types/mocha": "^9.1.1",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^16.11.33",
+    "@types/node": "^16.11.35",
     "@types/proper-lockfile": "^4.1.2",
     "@types/tar": "^6.1.1",
     "@types/uuid": "^8.3.4",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.23.0",
-    "@typescript-eslint/parser": "^5.23.0",
+    "@typescript-eslint/eslint-plugin": "^5.24.0",
+    "@typescript-eslint/parser": "^5.24.0",
     "auto-changelog": "^2.4.0",
     "clinic": "^11.1.0",
     "cross-env": "^7.0.3",
@@ -131,7 +131,7 @@
     "prettier": "^2.6.2",
     "release-it": "^15.0.0",
     "robohydra": "^0.6.9",
-    "rollup": "^2.72.1",
+    "rollup": "^2.73.0",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",

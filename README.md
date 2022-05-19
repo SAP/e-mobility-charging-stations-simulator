@@ -1,4 +1,4 @@
-# [charging-stations-simulator](https://github.com/jerome-benoit/charging-stations-simulator)
+# [emobility-charging-stations-simulator](https://github.com/jerome-benoit/emobility-charging-stations-simulator)
 
 ## Summary
 
@@ -365,8 +365,14 @@ All kind of OCPP parameters are supported in a charging station configuration or
 
 - _none_
 
-## License
+## Support, Feedback, Contributing
 
-This file and all other files in this repository are licensed under the Apache Software License, v.2 and copyrighted under the copyright in [NOTICE](NOTICE) file, except as noted otherwise in the [LICENSE](LICENSE) file or the code source file header.
+This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/emobility-charging-stations-simulator/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md).
 
-Please note that Docker images can contain other software which may be licensed under different licenses. This LICENSE and NOTICE files are also included in the Docker image. For any usage of built Docker images please make sure to check the licenses of the artifacts contained in the images.
+## Code of Conduct
+
+We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone. By participating in this project, you agree to abide by its [Code of Conduct](CODE_OF_CONDUCT.md) at all times.
+
+## Licensing
+
+Copyright 2020-2022 SAP SE or an SAP affiliate company and emobility-charging-stations-simulator contributors. Please see our [LICENSE](LICENSE) for copyright and license information. Detailed information including third-party components and their licensing/copyright information is available [via the REUSE tool](https://api.reuse.software/info/github.com/SAP/emobility-charging-stations-simulator).

@@ -16,22 +16,24 @@ import Utils from '../../../utils/Utils';
 const moduleName = 'OCPP16RequestService';
 
 export default class OCPP16RequestService extends OCPPRequestService {
-  public constructor(chargingStation: ChargingStation, ocppResponseService: OCPPResponseService) {
+  public constructor(ocppResponseService: OCPPResponseService) {
     if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
-    super(chargingStation, ocppResponseService);
+    super(ocppResponseService);
   }
 
   public async requestHandler<Request extends JsonType, Response extends JsonType>(
+    chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<Response> {
     if (Object.values(OCPP16RequestCommand).includes(commandName)) {
       return (await this.sendMessage(
+        chargingStation,
         Utils.generateUUID(),
-        this.buildRequestPayload<Request>(commandName, commandParams),
+        this.buildRequestPayload<Request>(chargingStation, commandName, commandParams),
         commandName,
         params
       )) as unknown as Response;
@@ -45,6 +47,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
   }
 
   private buildRequestPayload<Request extends JsonType>(
+    chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType
   ): Request {
@@ -105,13 +108,13 @@ export default class OCPP16RequestService extends OCPPRequestService {
           ...(!Utils.isUndefined(commandParams?.idTag)
             ? { idTag: commandParams?.idTag }
             : { idTag: Constants.DEFAULT_IDTAG }),
-          meterStart: this.chargingStation.getEnergyActiveImportRegisterByConnectorId(
+          meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
             commandParams?.connectorId as number
           ),
           timestamp: new Date().toISOString(),
         } as unknown as Request;
       case OCPP16RequestCommand.STOP_TRANSACTION:
-        connectorId = this.chargingStation.getConnectorIdByTransactionId(
+        connectorId = chargingStation.getConnectorIdByTransactionId(
           commandParams?.transactionId as number
         );
         return {
@@ -120,11 +123,11 @@ export default class OCPP16RequestService extends OCPPRequestService {
           meterStop: commandParams?.meterStop,
           timestamp: new Date().toISOString(),
           ...(commandParams?.reason && { reason: commandParams.reason }),
-          ...(this.chargingStation.getTransactionDataMeterValues() && {
+          ...(chargingStation.getTransactionDataMeterValues() && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-              this.chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
+              chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
-                this.chargingStation,
+                chargingStation,
                 connectorId,
                 commandParams?.meterStop as number
               )

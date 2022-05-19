@@ -26,7 +26,7 @@ ENV NODE_OPTIONS="--stack-trace-limit=${STACK_TRACE_LIMIT} --max-old-space-size=
 
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist
-COPY README.md NOTICE LICENSE ./
+COPY README.md LICENSE ./
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN chmod +x /autoconfig.sh
 
