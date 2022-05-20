@@ -131,7 +131,12 @@ export default class ChargingStation {
   }
 
   public logPrefix(): string {
-    return Utils.logPrefix(` ${this.stationInfo.chargingStationId} |`);
+    return Utils.logPrefix(
+      ` ${
+        this?.stationInfo?.chargingStationId ??
+        ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())
+      } |`
+    );
   }
 
   public getBootNotificationRequest(): BootNotificationRequest {
@@ -217,7 +222,7 @@ export default class ChargingStation {
   }
 
   public getOcppStrictCompliance(): boolean {
-    return this.stationInfo.ocppStrictCompliance ?? false;
+    return this.stationInfo?.ocppStrictCompliance ?? false;
   }
 
   public getVoltageOut(): number | undefined {
@@ -267,31 +272,31 @@ export default class ChargingStation {
   }
 
   public getOutOfOrderEndMeterValues(): boolean {
-    return this.stationInfo.outOfOrderEndMeterValues ?? false;
+    return this.stationInfo?.outOfOrderEndMeterValues ?? false;
   }
 
   public getBeginEndMeterValues(): boolean {
-    return this.stationInfo.beginEndMeterValues ?? false;
+    return this.stationInfo?.beginEndMeterValues ?? false;
   }
 
   public getMeteringPerTransaction(): boolean {
-    return this.stationInfo.meteringPerTransaction ?? true;
+    return this.stationInfo?.meteringPerTransaction ?? true;
   }
 
   public getTransactionDataMeterValues(): boolean {
-    return this.stationInfo.transactionDataMeterValues ?? false;
+    return this.stationInfo?.transactionDataMeterValues ?? false;
   }
 
   public getMainVoltageMeterValues(): boolean {
-    return this.stationInfo.mainVoltageMeterValues ?? true;
+    return this.stationInfo?.mainVoltageMeterValues ?? true;
   }
 
   public getPhaseLineToLineVoltageMeterValues(): boolean {
-    return this.stationInfo.phaseLineToLineVoltageMeterValues ?? false;
+    return this.stationInfo?.phaseLineToLineVoltageMeterValues ?? false;
   }
 
   public getCustomValueLimitationMeterValues(): boolean {
-    return this.stationInfo.customValueLimitationMeterValues ?? true;
+    return this.stationInfo?.customValueLimitationMeterValues ?? true;
   }
 
   public getConnectorIdByTransactionId(transactionId: number): number | undefined {
@@ -339,10 +344,6 @@ export default class ChargingStation {
       StandardParametersKey.LocalAuthListEnabled
     );
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
-  }
-
-  public getAutomaticTransactionGeneratorRequireAuthorize(): boolean {
-    return this.stationInfo.AutomaticTransactionGenerator.requireAuthorize ?? true;
   }
 
   public startHeartbeat(): void {
@@ -709,9 +710,7 @@ export default class ChargingStation {
     try {
       const measureId = `${FileType.ChargingStationTemplate} read`;
       const beginId = PerformanceStatistics.beginMeasure(measureId);
-      template =
-        (JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate) ??
-        ({} as ChargingStationTemplate);
+      template = JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate;
       PerformanceStatistics.endMeasure(measureId, beginId);
       template.templateHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
@@ -731,16 +730,14 @@ export default class ChargingStation {
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationInfo: ChargingStationInfo = this.getTemplateFromFile();
     if (Utils.isNullOrUndefined(stationInfo)) {
-      const logMsg = 'Failed to read charging station template file';
-      logger.error(`${this.logPrefix()} ${logMsg}`);
-      throw new BaseError(logMsg);
+      const errorMsg = 'Failed to read charging station template file';
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
     }
     if (Utils.isEmptyObject(stationInfo)) {
-      logger.warn(
-        `${this.logPrefix()} Empty charging station information from template file ${
-          this.templateFile
-        }`
-      );
+      const errorMsg = `Empty charging station information from template file ${this.templateFile}`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
     }
     const chargingStationId = ChargingStationUtils.getChargingStationId(this.index, stationInfo);
     // Deprecation template keys section
@@ -748,7 +745,7 @@ export default class ChargingStation {
       stationInfo,
       'supervisionUrl',
       this.templateFile,
-      Utils.logPrefix(` ${chargingStationId} |`),
+      this.logPrefix(),
       "Use 'supervisionUrls' instead"
     );
     ChargingStationUtils.convertDeprecatedTemplateKey(
@@ -756,7 +753,6 @@ export default class ChargingStation {
       'supervisionUrl',
       'supervisionUrls'
     );
-    stationInfo.wsOptions = stationInfo?.wsOptions ?? {};
     if (!Utils.isEmptyArray(stationInfo.power)) {
       stationInfo.power = stationInfo.power as number[];
       const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationInfo.power.length);
@@ -780,9 +776,14 @@ export default class ChargingStation {
     return stationInfo;
   }
 
-  private getStationInfoFromFile(): ChargingStationInfo {
-    let stationInfo = this.getConfigurationFromFile()?.stationInfo ?? ({} as ChargingStationInfo);
-    stationInfo = ChargingStationUtils.createStationInfoHash(stationInfo);
+  private getStationInfoFromFile(): ChargingStationInfo | null {
+    let stationInfo: ChargingStationInfo = null;
+    if (this.getStationInfoPersistentConfiguration()) {
+      stationInfo = this.getConfigurationFromFile()?.stationInfo ?? null;
+    }
+    if (stationInfo) {
+      stationInfo = ChargingStationUtils.createStationInfoHash(stationInfo);
+    }
     return stationInfo;
   }
 
@@ -808,7 +809,9 @@ export default class ChargingStation {
   }
 
   private saveStationInfo(): void {
-    this.saveConfiguration(Section.stationInfo);
+    if (this.getStationInfoPersistentConfiguration()) {
+      this.saveConfiguration(Section.stationInfo);
+    }
   }
 
   private getOcppVersion(): OCPPVersion {
@@ -816,7 +819,11 @@ export default class ChargingStation {
   }
 
   private getOcppPersistentConfiguration(): boolean {
-    return this.stationInfo.ocppPersistentConfiguration ?? true;
+    return this.stationInfo?.ocppPersistentConfiguration ?? true;
+  }
+
+  private getStationInfoPersistentConfiguration(): boolean {
+    return this.stationInfo?.stationInfoPersistentConfiguration ?? true;
   }
 
   private handleUnsupportedVersion(version: OCPPVersion) {
@@ -846,7 +853,7 @@ export default class ChargingStation {
     if (
       maxConnectors >
         (this.stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
-      !this.stationInfo.randomConnectors
+      !this.stationInfo?.randomConnectors
     ) {
       logger.warn(
         `${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${
@@ -857,7 +864,9 @@ export default class ChargingStation {
     }
     this.initializeConnectors(this.stationInfo, maxConnectors, templateMaxConnectors);
     this.stationInfo.maximumAmperage = this.getMaximumAmperage();
-    this.stationInfo = ChargingStationUtils.createStationInfoHash(this.stationInfo);
+    if (this.stationInfo) {
+      this.stationInfo = ChargingStationUtils.createStationInfoHash(this.stationInfo);
+    }
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
     this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
@@ -1105,7 +1114,7 @@ export default class ChargingStation {
         // Generate all connectors
         if ((stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
           for (let index = 1; index <= maxConnectors; index++) {
-            const randConnectorId = stationInfo.randomConnectors
+            const randConnectorId = stationInfo?.randomConnectors
               ? Utils.getRandomInteger(Utils.convertToInt(lastConnector), 1)
               : index;
             this.connectors.set(
@@ -1185,11 +1194,11 @@ export default class ChargingStation {
   private saveConfiguration(section?: Section): void {
     if (this.configurationFile) {
       try {
-        const configurationData: ChargingStationConfiguration =
-          this.getConfigurationFromFile() ?? {};
         if (!fs.existsSync(path.dirname(this.configurationFile))) {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
+        const configurationData: ChargingStationConfiguration =
+          this.getConfigurationFromFile() ?? {};
         switch (section) {
           case Section.ocppConfiguration:
             configurationData.configurationKey = this.ocppConfiguration.configurationKey;
@@ -1233,8 +1242,8 @@ export default class ChargingStation {
     }
   }
 
-  private getOcppConfigurationFromTemplate(): ChargingStationOcppConfiguration {
-    return this.getTemplateFromFile().Configuration ?? ({} as ChargingStationOcppConfiguration);
+  private getOcppConfigurationFromTemplate(): ChargingStationOcppConfiguration | null {
+    return this.getTemplateFromFile()?.Configuration ?? null;
   }
 
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | null {
@@ -1247,7 +1256,7 @@ export default class ChargingStation {
     return configuration;
   }
 
-  private getOcppConfiguration(): ChargingStationOcppConfiguration {
+  private getOcppConfiguration(): ChargingStationOcppConfiguration | null {
     let ocppConfiguration: ChargingStationOcppConfiguration = this.getOcppConfigurationFromFile();
     if (!ocppConfiguration) {
       ocppConfiguration = this.getOcppConfigurationFromTemplate();
@@ -1911,7 +1920,7 @@ export default class ChargingStation {
   }
 
   private openWSConnection(
-    options: WsOptions = this.stationInfo.wsOptions,
+    options: WsOptions = this.stationInfo?.wsOptions ?? {},
     forceCloseOpened = false
   ): void {
     options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
@@ -1986,7 +1995,7 @@ export default class ChargingStation {
           this.autoReconnectRetryCount.toString()
       );
       this.openWSConnection(
-        { ...this.stationInfo.wsOptions, handshakeTimeout: reconnectTimeout },
+        { ...(this.stationInfo?.wsOptions ?? {}), handshakeTimeout: reconnectTimeout },
         true
       );
       this.wsConnectionRestarted = true;

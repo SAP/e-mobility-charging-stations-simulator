@@ -31,7 +31,7 @@ export class ChargingStationUtils {
     const instanceIndex = process.env.CF_INSTANCE_INDEX ?? 0;
     const idSuffix = stationTemplate.nameSuffix ?? '';
     const idStr = '000000000' + index.toString();
-    return stationTemplate.fixedName
+    return stationTemplate?.fixedName
       ? stationTemplate.baseName
       : stationTemplate.baseName +
           '-' +
@@ -158,28 +158,26 @@ export class ChargingStationUtils {
   }
 
   public static createStationInfoHash(stationInfo: ChargingStationInfo): ChargingStationInfo {
-    if (!Utils.isEmptyObject(stationInfo)) {
-      const previousInfoHash = stationInfo?.infoHash ?? '';
-      delete stationInfo.infoHash;
-      const currentInfoHash = crypto
-        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(JSON.stringify(stationInfo))
-        .digest('hex');
-      if (
-        Utils.isEmptyString(previousInfoHash) ||
-        (!Utils.isEmptyString(previousInfoHash) && currentInfoHash !== previousInfoHash)
-      ) {
-        stationInfo.infoHash = currentInfoHash;
-      } else {
-        stationInfo.infoHash = previousInfoHash;
-      }
+    const previousInfoHash = stationInfo?.infoHash ?? '';
+    delete stationInfo.infoHash;
+    const currentInfoHash = crypto
+      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+      .update(JSON.stringify(stationInfo))
+      .digest('hex');
+    if (
+      Utils.isEmptyString(previousInfoHash) ||
+      (!Utils.isEmptyString(previousInfoHash) && currentInfoHash !== previousInfoHash)
+    ) {
+      stationInfo.infoHash = currentInfoHash;
+    } else {
+      stationInfo.infoHash = previousInfoHash;
     }
     return stationInfo;
   }
 
   public static createSerialNumber(
     stationInfo: ChargingStationInfo,
-    existingStationInfo?: ChargingStationInfo,
+    existingStationInfo?: ChargingStationInfo | null,
     params: { randomSerialNumberUpperCase?: boolean; randomSerialNumber?: boolean } = {
       randomSerialNumberUpperCase: true,
       randomSerialNumber: true,
@@ -188,7 +186,7 @@ export class ChargingStationUtils {
     params = params ?? {};
     params.randomSerialNumberUpperCase = params?.randomSerialNumberUpperCase ?? true;
     params.randomSerialNumber = params?.randomSerialNumber ?? true;
-    if (!Utils.isEmptyObject(existingStationInfo)) {
+    if (existingStationInfo) {
       existingStationInfo?.chargePointSerialNumber &&
         (stationInfo.chargePointSerialNumber = existingStationInfo.chargePointSerialNumber);
       existingStationInfo?.chargeBoxSerialNumber &&

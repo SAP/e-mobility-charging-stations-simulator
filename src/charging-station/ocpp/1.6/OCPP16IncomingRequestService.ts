@@ -511,7 +511,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 clearCurrentCP = true;
               }
               if (clearCurrentCP) {
-                connectorStatus.chargingProfiles[index] = {} as OCPP16ChargingProfile;
+                connectorStatus.chargingProfiles.splice(index, 1);
                 logger.debug(
                   `${chargingStation.logPrefix()} Matching charging profile(s) cleared on connector id ${
                     commandPayload.connectorId

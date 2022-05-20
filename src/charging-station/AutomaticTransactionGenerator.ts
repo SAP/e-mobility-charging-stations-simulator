@@ -274,7 +274,7 @@ export default class AutomaticTransactionGenerator {
     let startResponse: StartTransactionResponse;
     if (this.chargingStation.hasAuthorizedTags()) {
       const idTag = this.chargingStation.getRandomIdTag();
-      if (this.chargingStation.getAutomaticTransactionGeneratorRequireAuthorize()) {
+      if (this.getRequireAuthorize()) {
         this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
         // Authorize idTag
         const authorizeResponse: AuthorizeResponse =
@@ -373,6 +373,12 @@ export default class AutomaticTransactionGenerator {
     }
     PerformanceStatistics.endMeasure(measureId, beginId);
     return stopResponse;
+  }
+
+  private getRequireAuthorize(): boolean {
+    return (
+      this.chargingStation.stationInfo?.AutomaticTransactionGenerator?.requireAuthorize ?? true
+    );
   }
 
   private logPrefix(connectorId?: number): string {
