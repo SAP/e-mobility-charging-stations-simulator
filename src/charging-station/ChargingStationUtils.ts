@@ -287,7 +287,9 @@ export class ChargingStationUtils {
     stationInfoDst: ChargingStationInfo = {} as ChargingStationInfo
   ) {
     if (!stationInfoSrc || !stationTemplate) {
-      throw new BaseError('Missing charging station template or info to propagate serial number');
+      throw new BaseError(
+        'Missing charging station template or existing configuration to propagate serial number'
+      );
     }
     stationTemplate?.chargePointSerialNumberPrefix && stationInfoSrc?.chargePointSerialNumber
       ? (stationInfoDst.chargePointSerialNumber = stationInfoSrc.chargePointSerialNumber)
