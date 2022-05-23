@@ -36,15 +36,15 @@ export enum OCPP16IncomingRequestCommand {
 export type OCPP16HeartbeatRequest = EmptyObject;
 
 export interface OCPP16BootNotificationRequest extends JsonObject {
-  chargeBoxSerialNumber?: string;
+  chargePointVendor: string;
   chargePointModel: string;
   chargePointSerialNumber?: string;
-  chargePointVendor: string;
+  chargeBoxSerialNumber?: string;
   firmwareVersion?: string;
   iccid?: string;
   imsi?: string;
-  meterSerialNumber?: string;
   meterType?: string;
+  meterSerialNumber?: string;
 }
 
 export interface OCPP16StatusNotificationRequest extends JsonObject {

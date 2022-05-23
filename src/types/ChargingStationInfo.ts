@@ -9,6 +9,7 @@ export default interface ChargingStationInfo
     | 'powerUnit'
     | 'chargeBoxSerialNumberPrefix'
     | 'chargePointSerialNumberPrefix'
+    | 'meterSerialNumberPrefix'
   > {
   infoHash?: string;
   chargingStationId?: string;

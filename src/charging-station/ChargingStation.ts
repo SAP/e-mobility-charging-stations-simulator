@@ -826,7 +826,12 @@ export default class ChargingStation {
       }
       return stationInfoFromFile;
     }
-    ChargingStationUtils.createSerialNumber(this.getTemplateFromFile(), stationInfoFromFile);
+    stationInfoFromFile &&
+      ChargingStationUtils.propagateSerialNumber(
+        this.getTemplateFromFile(),
+        stationInfoFromFile,
+        stationInfoFromTemplate
+      );
     return stationInfoFromTemplate;
   }
 

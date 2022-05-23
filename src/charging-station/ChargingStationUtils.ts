@@ -7,6 +7,7 @@ import ChargingStationTemplate, {
 } from '../types/ChargingStationTemplate';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 
+import BaseError from '../exception/BaseError';
 import { BootNotificationRequest } from '../types/ocpp/Requests';
 import ChargingStation from './ChargingStation';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
@@ -229,6 +230,7 @@ export class ChargingStationUtils {
     delete stationTemplate.AutomaticTransactionGenerator;
     delete stationTemplate.chargeBoxSerialNumberPrefix;
     delete stationTemplate.chargePointSerialNumberPrefix;
+    delete stationTemplate.meterSerialNumberPrefix;
     return stationTemplate;
   }
 
@@ -251,7 +253,7 @@ export class ChargingStationUtils {
 
   public static createSerialNumber(
     stationTemplate: ChargingStationTemplate,
-    stationInfo: ChargingStationInfo,
+    stationInfo: ChargingStationInfo = {} as ChargingStationInfo,
     params: {
       randomSerialNumberUpperCase?: boolean;
       randomSerialNumber?: boolean;
@@ -268,24 +270,34 @@ export class ChargingStationUtils {
           upperCase: params.randomSerialNumberUpperCase,
         })
       : '';
-    stationTemplate?.chargePointSerialNumberPrefix &&
-    stationInfo &&
-    Utils.isNullOrUndefined(stationInfo?.chargePointSerialNumber)
-      ? (stationInfo.chargePointSerialNumber =
-          stationTemplate.chargePointSerialNumberPrefix + serialNumberSuffix)
-      : stationInfo && delete stationInfo.chargePointSerialNumber;
-    stationTemplate?.chargeBoxSerialNumberPrefix &&
-    stationInfo &&
-    Utils.isNullOrUndefined(stationInfo?.chargeBoxSerialNumber)
-      ? (stationInfo.chargeBoxSerialNumber =
-          stationTemplate.chargeBoxSerialNumberPrefix + serialNumberSuffix)
-      : stationInfo && delete stationInfo.chargeBoxSerialNumber;
-    stationTemplate?.meterSerialNumberPrefix &&
-    stationInfo &&
-    Utils.isNullOrUndefined(stationInfo?.meterSerialNumber)
-      ? (stationInfo.meterSerialNumber =
-          stationTemplate.meterSerialNumberPrefix + serialNumberSuffix)
-      : stationInfo && delete stationInfo.meterSerialNumber;
+    stationInfo.chargePointSerialNumber =
+      stationTemplate?.chargePointSerialNumberPrefix &&
+      stationTemplate.chargePointSerialNumberPrefix + serialNumberSuffix;
+    stationInfo.chargeBoxSerialNumber =
+      stationTemplate?.chargeBoxSerialNumberPrefix &&
+      stationTemplate.chargeBoxSerialNumberPrefix + serialNumberSuffix;
+    stationInfo.meterSerialNumber =
+      stationTemplate?.meterSerialNumberPrefix &&
+      stationTemplate.meterSerialNumberPrefix + serialNumberSuffix;
+  }
+
+  public static propagateSerialNumber(
+    stationTemplate: ChargingStationTemplate,
+    stationInfoSrc: ChargingStationInfo,
+    stationInfoDst: ChargingStationInfo = {} as ChargingStationInfo
+  ) {
+    if (!stationInfoSrc || !stationTemplate) {
+      throw new BaseError('Missing charging station template or info to propagate serial number');
+    }
+    stationTemplate?.chargePointSerialNumberPrefix && stationInfoSrc?.chargePointSerialNumber
+      ? (stationInfoDst.chargePointSerialNumber = stationInfoSrc.chargePointSerialNumber)
+      : stationInfoDst?.chargePointSerialNumber && delete stationInfoDst.chargePointSerialNumber;
+    stationTemplate?.chargeBoxSerialNumberPrefix && stationInfoSrc?.chargeBoxSerialNumber
+      ? (stationInfoDst.chargeBoxSerialNumber = stationInfoSrc.chargeBoxSerialNumber)
+      : stationInfoDst?.chargeBoxSerialNumber && delete stationInfoDst.chargeBoxSerialNumber;
+    stationTemplate?.meterSerialNumberPrefix && stationInfoSrc?.meterSerialNumber
+      ? (stationInfoDst.meterSerialNumber = stationInfoSrc.meterSerialNumber)
+      : stationInfoDst?.meterSerialNumber && delete stationInfoDst.meterSerialNumber;
   }
 
   public static getAmperageLimitationUnitDivider(stationInfo: ChargingStationInfo): number {
