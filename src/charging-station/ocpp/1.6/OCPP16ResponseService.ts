@@ -335,7 +335,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           requestPayload.idTag
       );
       if (chargingStation.stationInfo.powerSharedByConnectors) {
-        chargingStation.stationInfo.powerDivider++;
+        chargingStation.powerDivider++;
       }
       const configuredMeterValueSampleInterval =
         ChargingStationConfigurationUtils.getConfigurationKey(
@@ -441,7 +441,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           OCPP16ChargePointStatus.AVAILABLE;
       }
       if (chargingStation.stationInfo.powerSharedByConnectors) {
-        chargingStation.stationInfo.powerDivider--;
+        chargingStation.powerDivider--;
       }
       logger.info(
         chargingStation.logPrefix() +

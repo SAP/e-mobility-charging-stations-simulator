@@ -1,3 +1,4 @@
+import { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
 import ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration';
 import { ClientOptions } from 'ws';
 import { ClientRequestArgs } from 'http';
@@ -27,18 +28,6 @@ export enum Voltage {
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
   VOLTAGE_800 = 800,
-}
-
-export interface AutomaticTransactionGenerator {
-  enable: boolean;
-  minDuration: number;
-  maxDuration: number;
-  minDelayBetweenTwoTransactions: number;
-  maxDelayBetweenTwoTransactions: number;
-  probabilityOfStart: number;
-  stopAfterHours: number;
-  stopOnConnectionFailure: boolean;
-  requireAuthorize?: boolean;
 }
 
 export type WsOptions = ClientOptions & ClientRequestArgs;
@@ -95,6 +84,6 @@ export default interface ChargingStationTemplate {
   phaseLineToLineVoltageMeterValues?: boolean;
   customValueLimitationMeterValues?: boolean;
   Configuration?: ChargingStationOcppConfiguration;
-  AutomaticTransactionGenerator: AutomaticTransactionGenerator;
+  AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   Connectors: Record<string, ConnectorStatus>;
 }

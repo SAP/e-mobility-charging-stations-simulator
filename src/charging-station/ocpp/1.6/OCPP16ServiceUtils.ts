@@ -770,16 +770,16 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     chargingStation: ChargingStation,
     measurandType: OCPP16MeterValueMeasurand
   ): void {
-    if (Utils.isUndefined(chargingStation.stationInfo.powerDivider)) {
+    if (Utils.isUndefined(chargingStation.powerDivider)) {
       const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${
         measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: powerDivider is undefined`;
       logger.error(errMsg);
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
-    } else if (chargingStation.stationInfo?.powerDivider <= 0) {
+    } else if (chargingStation?.powerDivider <= 0) {
       const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${
         measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-      }: powerDivider have zero or below value ${chargingStation.stationInfo.powerDivider}`;
+      }: powerDivider have zero or below value ${chargingStation.powerDivider}`;
       logger.error(errMsg);
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
     }

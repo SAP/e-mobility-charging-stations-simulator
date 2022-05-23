@@ -13,14 +13,18 @@ import { ChargingStationConfigurationUtils } from './ChargingStationConfiguratio
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
+import { FileType } from '../types/FileType';
+import FileUtils from '../utils/FileUtils';
 import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import Utils from '../utils/Utils';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
 import crypto from 'crypto';
+import fs from 'fs';
 import logger from '../utils/Logger';
 import moment from 'moment';
+import path from 'path';
 
 export class ChargingStationUtils {
   public static getChargingStationId(
@@ -40,32 +44,90 @@ export class ChargingStationUtils {
           idSuffix;
   }
 
-  public static getHashId(stationInfo: ChargingStationInfo): string {
+  public static getHashId(index: number, stationTemplate: ChargingStationTemplate): string {
     const hashBootNotificationRequest = {
-      chargePointModel: stationInfo.chargePointModel,
-      chargePointVendor: stationInfo.chargePointVendor,
-      ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumberPrefix) && {
-        chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumberPrefix,
+      chargePointModel: stationTemplate.chargePointModel,
+      chargePointVendor: stationTemplate.chargePointVendor,
+      ...(!Utils.isUndefined(stationTemplate.chargeBoxSerialNumberPrefix) && {
+        chargeBoxSerialNumber: stationTemplate.chargeBoxSerialNumberPrefix,
       }),
-      ...(!Utils.isUndefined(stationInfo.chargePointSerialNumberPrefix) && {
-        chargePointSerialNumber: stationInfo.chargePointSerialNumberPrefix,
+      ...(!Utils.isUndefined(stationTemplate.chargePointSerialNumberPrefix) && {
+        chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix,
       }),
-      ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
-        firmwareVersion: stationInfo.firmwareVersion,
+      ...(!Utils.isUndefined(stationTemplate.firmwareVersion) && {
+        firmwareVersion: stationTemplate.firmwareVersion,
       }),
-      ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-      ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-      ...(!Utils.isUndefined(stationInfo.meterSerialNumberPrefix) && {
-        meterSerialNumber: stationInfo.meterSerialNumberPrefix,
+      ...(!Utils.isUndefined(stationTemplate.iccid) && { iccid: stationTemplate.iccid }),
+      ...(!Utils.isUndefined(stationTemplate.imsi) && { imsi: stationTemplate.imsi }),
+      ...(!Utils.isUndefined(stationTemplate.meterSerialNumberPrefix) && {
+        meterSerialNumber: stationTemplate.meterSerialNumberPrefix,
       }),
-      ...(!Utils.isUndefined(stationInfo.meterType) && {
-        meterType: stationInfo.meterType,
+      ...(!Utils.isUndefined(stationTemplate.meterType) && {
+        meterType: stationTemplate.meterType,
       }),
     };
     return crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(hashBootNotificationRequest) + stationInfo.chargingStationId)
+      .update(
+        JSON.stringify(hashBootNotificationRequest) +
+          ChargingStationUtils.getChargingStationId(index, stationTemplate)
+      )
       .digest('hex');
+  }
+
+  public static getTemplateMaxNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
+    const templateConnectors = stationTemplate?.Connectors;
+    if (!templateConnectors) {
+      return -1;
+    }
+    return Object.keys(templateConnectors).length;
+  }
+
+  public static checkTemplateMaxConnectors(
+    templateMaxConnectors: number,
+    templateFile: string,
+    logPrefix: string
+  ): void {
+    if (templateMaxConnectors === 0) {
+      logger.warn(
+        `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`
+      );
+    } else if (templateMaxConnectors < 0) {
+      logger.error(
+        `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`
+      );
+    }
+  }
+
+  public static getConfiguredNumberOfConnectors(
+    index: number,
+    stationTemplate: ChargingStationTemplate
+  ): number {
+    let configuredMaxConnectors: number;
+    if (!Utils.isEmptyArray(stationTemplate.numberOfConnectors)) {
+      const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
+      // Distribute evenly the number of connectors
+      configuredMaxConnectors = numberOfConnectors[(index - 1) % numberOfConnectors.length];
+    } else if (!Utils.isUndefined(stationTemplate.numberOfConnectors)) {
+      configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
+    } else {
+      configuredMaxConnectors = stationTemplate?.Connectors[0]
+        ? ChargingStationUtils.getTemplateMaxNumberOfConnectors(stationTemplate) - 1
+        : ChargingStationUtils.getTemplateMaxNumberOfConnectors(stationTemplate);
+    }
+    return configuredMaxConnectors;
+  }
+
+  public static checkConfiguredMaxConnectors(
+    configuredMaxConnectors: number,
+    templateFile: string,
+    logPrefix: string
+  ): void {
+    if (configuredMaxConnectors <= 0) {
+      logger.warn(
+        `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`
+      );
+    }
   }
 
   public static createBootNotificationRequest(
@@ -157,7 +219,20 @@ export class ChargingStationUtils {
     }
   }
 
-  public static createStationInfoHash(stationInfo: ChargingStationInfo): ChargingStationInfo {
+  public static stationTemplateToStationInfo(
+    stationTemplate: ChargingStationTemplate
+  ): ChargingStationInfo {
+    stationTemplate = Utils.cloneObject(stationTemplate);
+    delete stationTemplate.power;
+    delete stationTemplate.powerUnit;
+    delete stationTemplate.Configuration;
+    delete stationTemplate.AutomaticTransactionGenerator;
+    delete stationTemplate.chargeBoxSerialNumberPrefix;
+    delete stationTemplate.chargePointSerialNumberPrefix;
+    return stationTemplate;
+  }
+
+  public static createStationInfoHash(stationInfo: ChargingStationInfo): void {
     const previousInfoHash = stationInfo?.infoHash ?? '';
     delete stationInfo.infoHash;
     const currentInfoHash = crypto
@@ -172,13 +247,15 @@ export class ChargingStationUtils {
     } else {
       stationInfo.infoHash = previousInfoHash;
     }
-    return stationInfo;
   }
 
   public static createSerialNumber(
+    stationTemplate: ChargingStationTemplate,
     stationInfo: ChargingStationInfo,
-    existingStationInfo?: ChargingStationInfo | null,
-    params: { randomSerialNumberUpperCase?: boolean; randomSerialNumber?: boolean } = {
+    params: {
+      randomSerialNumberUpperCase?: boolean;
+      randomSerialNumber?: boolean;
+    } = {
       randomSerialNumberUpperCase: true,
       randomSerialNumber: true,
     }
@@ -186,29 +263,29 @@ export class ChargingStationUtils {
     params = params ?? {};
     params.randomSerialNumberUpperCase = params?.randomSerialNumberUpperCase ?? true;
     params.randomSerialNumber = params?.randomSerialNumber ?? true;
-    if (existingStationInfo) {
-      existingStationInfo?.chargePointSerialNumber &&
-        (stationInfo.chargePointSerialNumber = existingStationInfo.chargePointSerialNumber);
-      existingStationInfo?.chargeBoxSerialNumber &&
-        (stationInfo.chargeBoxSerialNumber = existingStationInfo.chargeBoxSerialNumber);
-      existingStationInfo?.meterSerialNumber &&
-        (stationInfo.meterSerialNumber = existingStationInfo.meterSerialNumber);
-    } else {
-      const serialNumberSuffix = params?.randomSerialNumber
-        ? ChargingStationUtils.getRandomSerialNumberSuffix({
-            upperCase: params.randomSerialNumberUpperCase,
-          })
-        : '';
-      stationInfo.chargePointSerialNumber =
-        stationInfo?.chargePointSerialNumberPrefix &&
-        stationInfo.chargePointSerialNumberPrefix + serialNumberSuffix;
-      stationInfo.chargeBoxSerialNumber =
-        stationInfo?.chargeBoxSerialNumberPrefix &&
-        stationInfo.chargeBoxSerialNumberPrefix + serialNumberSuffix;
-      stationInfo.meterSerialNumber =
-        stationInfo?.meterSerialNumberPrefix &&
-        stationInfo.meterSerialNumberPrefix + serialNumberSuffix;
-    }
+    const serialNumberSuffix = params?.randomSerialNumber
+      ? ChargingStationUtils.getRandomSerialNumberSuffix({
+          upperCase: params.randomSerialNumberUpperCase,
+        })
+      : '';
+    stationTemplate?.chargePointSerialNumberPrefix &&
+    stationInfo &&
+    Utils.isNullOrUndefined(stationInfo?.chargePointSerialNumber)
+      ? (stationInfo.chargePointSerialNumber =
+          stationTemplate.chargePointSerialNumberPrefix + serialNumberSuffix)
+      : stationInfo && delete stationInfo.chargePointSerialNumber;
+    stationTemplate?.chargeBoxSerialNumberPrefix &&
+    stationInfo &&
+    Utils.isNullOrUndefined(stationInfo?.chargeBoxSerialNumber)
+      ? (stationInfo.chargeBoxSerialNumber =
+          stationTemplate.chargeBoxSerialNumberPrefix + serialNumberSuffix)
+      : stationInfo && delete stationInfo.chargeBoxSerialNumber;
+    stationTemplate?.meterSerialNumberPrefix &&
+    stationInfo &&
+    Utils.isNullOrUndefined(stationInfo?.meterSerialNumber)
+      ? (stationInfo.meterSerialNumber =
+          stationTemplate.meterSerialNumberPrefix + serialNumberSuffix)
+      : stationInfo && delete stationInfo.meterSerialNumber;
   }
 
   public static getAmperageLimitationUnitDivider(stationInfo: ChargingStationInfo): number {
@@ -431,6 +508,42 @@ export class ChargingStationUtils {
     }
     logger.debug(
       `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+    );
+  }
+
+  public static getAuthorizedTags(
+    stationInfo: ChargingStationInfo,
+    templateFile: string,
+    logPrefix: string
+  ): string[] {
+    let authorizedTags: string[] = [];
+    const authorizationFile = ChargingStationUtils.getAuthorizationFile(stationInfo);
+    if (authorizationFile) {
+      try {
+        // Load authorization file
+        authorizedTags = JSON.parse(fs.readFileSync(authorizationFile, 'utf8')) as string[];
+      } catch (error) {
+        FileUtils.handleFileException(
+          logPrefix,
+          FileType.Authorization,
+          authorizationFile,
+          error as NodeJS.ErrnoException
+        );
+      }
+    } else {
+      logger.info(logPrefix + ' No authorization file given in template file ' + templateFile);
+    }
+    return authorizedTags;
+  }
+
+  public static getAuthorizationFile(stationInfo: ChargingStationInfo): string | undefined {
+    return (
+      stationInfo.authorizationFile &&
+      path.join(
+        path.resolve(__dirname, '../'),
+        'assets',
+        path.basename(stationInfo.authorizationFile)
+      )
     );
   }
 

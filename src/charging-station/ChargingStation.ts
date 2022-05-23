@@ -44,6 +44,7 @@ import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import WebSocket, { Data, OPEN, RawData } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
+import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
 import BaseError from '../exception/BaseError';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
@@ -91,16 +92,17 @@ export default class ChargingStation {
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
   public bootNotificationResponse!: BootNotificationResponse | null;
+  public powerDivider!: number;
   private readonly index: number;
   private configurationFile!: string;
   private bootNotificationRequest!: BootNotificationRequest;
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
-  private wsConfiguredConnectionUrl!: URL;
+  private configuredSupervisionUrl!: URL;
   private wsConnectionRestarted: boolean;
-  private stopped: boolean;
   private autoReconnectRetryCount: number;
+  private stopped: boolean;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
@@ -114,20 +116,19 @@ export default class ChargingStation {
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
     this.initialize();
-    this.authorizedTags = this.getAuthorizedTags();
   }
 
   private get wsConnectionUrl(): URL {
-    return this.getSupervisionUrlOcppConfiguration()
-      ? new URL(
-          ChargingStationConfigurationUtils.getConfigurationKey(
+    return new URL(
+      (this.getSupervisionUrlOcppConfiguration()
+        ? ChargingStationConfigurationUtils.getConfigurationKey(
             this,
             this.getSupervisionUrlOcppKey()
-          ).value +
-            '/' +
-            this.stationInfo.chargingStationId
-        )
-      : this.wsConfiguredConnectionUrl;
+          ).value
+        : this.configuredSupervisionUrl.href) +
+        '/' +
+        this.stationInfo.chargingStationId
+    );
   }
 
   public logPrefix(): string {
@@ -162,11 +163,12 @@ export default class ChargingStation {
     return this.stationInfo.mayAuthorizeAtRemoteStart ?? true;
   }
 
-  public getNumberOfPhases(): number | undefined {
-    switch (this.getCurrentOutType()) {
+  public getNumberOfPhases(stationInfo?: ChargingStationInfo): number | undefined {
+    const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
+    switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
-        return !Utils.isUndefined(this.stationInfo.numberOfPhases)
-          ? this.stationInfo.numberOfPhases
+        return !Utils.isUndefined(localStationInfo.numberOfPhases)
+          ? localStationInfo.numberOfPhases
           : 3;
       case CurrentType.DC:
         return 0;
@@ -217,22 +219,23 @@ export default class ChargingStation {
     return this.connectors.get(id);
   }
 
-  public getCurrentOutType(): CurrentType | undefined {
-    return this.stationInfo.currentOutType ?? CurrentType.AC;
+  public getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
+    return (stationInfo ?? this.stationInfo).currentOutType ?? CurrentType.AC;
   }
 
   public getOcppStrictCompliance(): boolean {
     return this.stationInfo?.ocppStrictCompliance ?? false;
   }
 
-  public getVoltageOut(): number | undefined {
+  public getVoltageOut(stationInfo?: ChargingStationInfo): number | undefined {
     const defaultVoltageOut = ChargingStationUtils.getDefaultVoltageOut(
-      this.getCurrentOutType(),
+      this.getCurrentOutType(stationInfo),
       this.templateFile,
       this.logPrefix()
     );
-    return !Utils.isUndefined(this.stationInfo.voltageOut)
-      ? this.stationInfo.voltageOut
+    const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
+    return !Utils.isUndefined(localStationInfo.voltageOut)
+      ? localStationInfo.voltageOut
       : defaultVoltageOut;
   }
 
@@ -250,9 +253,9 @@ export default class ChargingStation {
               this.getAmperageLimitation() * this.getNumberOfConnectors()
             )
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation())) /
-        this.stationInfo.powerDivider;
+        this.powerDivider;
     }
-    const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
+    const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
     const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
@@ -487,7 +490,7 @@ export default class ChargingStation {
     FileUtils.watchJsonFile<string[]>(
       this.logPrefix(),
       FileType.Authorization,
-      this.getAuthorizationFile(),
+      ChargingStationUtils.getAuthorizationFile(this.stationInfo),
       this.authorizedTags
     );
     // Monitor charging station template file
@@ -507,12 +510,7 @@ export default class ChargingStation {
             // Initialize
             this.initialize();
             // Restart the ATG
-            if (
-              !this.stationInfo.AutomaticTransactionGenerator.enable &&
-              this.automaticTransactionGenerator
-            ) {
-              this.automaticTransactionGenerator.stop();
-            }
+            this.stopAutomaticTransactionGenerator();
             this.startAutomaticTransactionGenerator();
             if (this.getEnableStatistics()) {
               this.performanceStatistics.restart();
@@ -568,8 +566,7 @@ export default class ChargingStation {
   public async reset(reason?: StopTransactionReason): Promise<void> {
     await this.stop(reason);
     await Utils.sleep(this.stationInfo.resetTime);
-    this.stationInfo = this.getStationInfo();
-    this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
+    this.initialize();
     this.start();
   }
 
@@ -616,7 +613,7 @@ export default class ChargingStation {
                 : DCElectricUtils.power(this.getVoltageOut(), limit);
         }
 
-        const connectorMaximumPower = this.getMaximumPower() / this.stationInfo.powerDivider;
+        const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
         if (limit > connectorMaximumPower) {
           logger.error(
             `${this.logPrefix()} Charging profile id ${
@@ -728,74 +725,99 @@ export default class ChargingStation {
   }
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
-    const stationInfo: ChargingStationInfo = this.getTemplateFromFile();
-    if (Utils.isNullOrUndefined(stationInfo)) {
+    const stationTemplate: ChargingStationTemplate = this.getTemplateFromFile();
+    if (Utils.isNullOrUndefined(stationTemplate)) {
       const errorMsg = 'Failed to read charging station template file';
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    if (Utils.isEmptyObject(stationInfo)) {
+    if (Utils.isEmptyObject(stationTemplate)) {
       const errorMsg = `Empty charging station information from template file ${this.templateFile}`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    const chargingStationId = ChargingStationUtils.getChargingStationId(this.index, stationInfo);
     // Deprecation template keys section
     ChargingStationUtils.warnDeprecatedTemplateKey(
-      stationInfo,
+      stationTemplate,
       'supervisionUrl',
       this.templateFile,
       this.logPrefix(),
       "Use 'supervisionUrls' instead"
     );
     ChargingStationUtils.convertDeprecatedTemplateKey(
-      stationInfo,
+      stationTemplate,
       'supervisionUrl',
       'supervisionUrls'
     );
-    if (!Utils.isEmptyArray(stationInfo.power)) {
-      stationInfo.power = stationInfo.power as number[];
-      const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationInfo.power.length);
+    const stationInfo: ChargingStationInfo =
+      ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);
+    stationInfo.chargingStationId = ChargingStationUtils.getChargingStationId(
+      this.index,
+      stationTemplate
+    );
+    ChargingStationUtils.createSerialNumber(stationTemplate, stationInfo);
+    if (!Utils.isEmptyArray(stationTemplate.power)) {
+      stationTemplate.power = stationTemplate.power as number[];
+      const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationTemplate.power.length);
       stationInfo.maximumPower =
-        stationInfo.powerUnit === PowerUnits.KILO_WATT
-          ? stationInfo.power[powerArrayRandomIndex] * 1000
-          : stationInfo.power[powerArrayRandomIndex];
+        stationTemplate.powerUnit === PowerUnits.KILO_WATT
+          ? stationTemplate.power[powerArrayRandomIndex] * 1000
+          : stationTemplate.power[powerArrayRandomIndex];
     } else {
-      stationInfo.power = stationInfo.power as number;
+      stationTemplate.power = stationTemplate.power as number;
       stationInfo.maximumPower =
-        stationInfo.powerUnit === PowerUnits.KILO_WATT
-          ? stationInfo.power * 1000
-          : stationInfo.power;
+        stationTemplate.powerUnit === PowerUnits.KILO_WATT
+          ? stationTemplate.power * 1000
+          : stationTemplate.power;
     }
-    delete stationInfo.power;
-    delete stationInfo.powerUnit;
-    stationInfo.chargingStationId = chargingStationId;
-    stationInfo.resetTime = stationInfo.resetTime
-      ? stationInfo.resetTime * 1000
+    stationInfo.resetTime = stationTemplate.resetTime
+      ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
+    const configuredMaxConnectors = ChargingStationUtils.getConfiguredNumberOfConnectors(
+      this.index,
+      stationTemplate
+    );
+    ChargingStationUtils.checkConfiguredMaxConnectors(
+      configuredMaxConnectors,
+      this.templateFile,
+      Utils.logPrefix()
+    );
+    const templateMaxConnectors =
+      ChargingStationUtils.getTemplateMaxNumberOfConnectors(stationTemplate);
+    ChargingStationUtils.checkTemplateMaxConnectors(
+      templateMaxConnectors,
+      this.templateFile,
+      Utils.logPrefix()
+    );
+    if (
+      configuredMaxConnectors >
+        (stationTemplate?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
+      !stationTemplate?.randomConnectors
+    ) {
+      logger.warn(
+        `${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${
+          this.templateFile
+        }, forcing random connector configurations affectation`
+      );
+      stationInfo.randomConnectors = true;
+    }
+    // Build connectors if needed (FIXME: should be factored out)
+    this.initializeConnectors(stationInfo, configuredMaxConnectors, templateMaxConnectors);
+    stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
+    ChargingStationUtils.createStationInfoHash(stationInfo);
     return stationInfo;
   }
 
   private getStationInfoFromFile(): ChargingStationInfo | null {
     let stationInfo: ChargingStationInfo = null;
-    if (this.getStationInfoPersistentConfiguration()) {
-      stationInfo = this.getConfigurationFromFile()?.stationInfo ?? null;
-    }
-    if (stationInfo) {
-      stationInfo = ChargingStationUtils.createStationInfoHash(stationInfo);
-    }
+    this.getStationInfoPersistentConfiguration() &&
+      (stationInfo = this.getConfigurationFromFile()?.stationInfo ?? null);
+    stationInfo && ChargingStationUtils.createStationInfoHash(stationInfo);
     return stationInfo;
   }
 
   private getStationInfo(): ChargingStationInfo {
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
-    this.hashId = ChargingStationUtils.getHashId(stationInfoFromTemplate);
-    this.configurationFile = path.join(
-      path.resolve(__dirname, '../'),
-      'assets',
-      'configurations',
-      this.hashId + '.json'
-    );
     const stationInfoFromFile: ChargingStationInfo = this.getStationInfoFromFile();
     // Priority: charging station info from template > charging station info from configuration file > charging station info attribute
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
@@ -804,7 +826,7 @@ export default class ChargingStation {
       }
       return stationInfoFromFile;
     }
-    ChargingStationUtils.createSerialNumber(stationInfoFromTemplate, stationInfoFromFile);
+    ChargingStationUtils.createSerialNumber(this.getTemplateFromFile(), stationInfoFromFile);
     return stationInfoFromTemplate;
   }
 
@@ -835,50 +857,38 @@ export default class ChargingStation {
   }
 
   private initialize(): void {
-    this.stationInfo = this.getStationInfo();
+    this.hashId = ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile());
     logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
-    this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
-      this.stationInfo
+    this.configurationFile = path.join(
+      path.resolve(__dirname, '../'),
+      'assets',
+      'configurations',
+      this.hashId + '.json'
     );
-    this.ocppConfiguration = this.getOcppConfiguration();
-    this.stationInfo?.Configuration && delete this.stationInfo.Configuration;
-    this.wsConfiguredConnectionUrl = new URL(
-      this.getConfiguredSupervisionUrl().href + '/' + this.stationInfo.chargingStationId
-    );
-    // Build connectors if needed
-    const maxConnectors = this.getMaxNumberOfConnectors();
-    this.checkMaxConnectors(maxConnectors);
-    const templateMaxConnectors = this.getTemplateMaxNumberOfConnectors();
-    this.checkTemplateMaxConnectors(templateMaxConnectors);
-    if (
-      maxConnectors >
-        (this.stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
-      !this.stationInfo?.randomConnectors
-    ) {
-      logger.warn(
-        `${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${
-          this.templateFile
-        }, forcing random connector configurations affectation`
-      );
-      this.stationInfo.randomConnectors = true;
-    }
-    this.initializeConnectors(this.stationInfo, maxConnectors, templateMaxConnectors);
-    this.stationInfo.maximumAmperage = this.getMaximumAmperage();
-    if (this.stationInfo) {
-      this.stationInfo = ChargingStationUtils.createStationInfoHash(this.stationInfo);
-    }
+    this.stationInfo = this.getStationInfo();
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
     this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
-    // OCPP configuration
-    this.initializeOcppConfiguration();
+    this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
     if (this.getEnableStatistics()) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
         this.hashId,
         this.stationInfo.chargingStationId,
-        this.wsConnectionUrl
+        this.configuredSupervisionUrl
       );
     }
+    this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
+      this.stationInfo
+    );
+    this.authorizedTags = ChargingStationUtils.getAuthorizedTags(
+      this.stationInfo,
+      this.templateFile,
+      this.logPrefix()
+    );
+    this.powerDivider = this.getPowerDivider();
+    // OCPP configuration
+    this.ocppConfiguration = this.getOcppConfiguration();
+    this.initializeOcppConfiguration();
     switch (this.getOcppVersion()) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
@@ -898,7 +908,6 @@ export default class ChargingStation {
         status: RegistrationStatus.ACCEPTED,
       };
     }
-    this.stationInfo.powerDivider = this.getPowerDivider();
   }
 
   private initializeOcppConfiguration(): void {
@@ -934,7 +943,7 @@ export default class ChargingStation {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         this.getSupervisionUrlOcppKey(),
-        this.getConfiguredSupervisionUrl().href,
+        this.configuredSupervisionUrl.href,
         { reboot: true }
       );
     } else if (
@@ -1065,7 +1074,7 @@ export default class ChargingStation {
 
   private initializeConnectors(
     stationInfo: ChargingStationInfo,
-    maxConnectors: number,
+    configuredMaxConnectors: number,
     templateMaxConnectors: number
   ): void {
     if (!stationInfo?.Connectors && this.connectors.size === 0) {
@@ -1085,7 +1094,7 @@ export default class ChargingStation {
     if (stationInfo?.Connectors) {
       const connectorsConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(JSON.stringify(stationInfo?.Connectors) + maxConnectors.toString())
+        .update(JSON.stringify(stationInfo?.Connectors) + configuredMaxConnectors.toString())
         .digest('hex');
       const connectorsConfigChanged =
         this.connectors?.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;
@@ -1098,7 +1107,7 @@ export default class ChargingStation {
           const lastConnectorId = Utils.convertToInt(lastConnector);
           if (
             lastConnectorId === 0 &&
-            this.getUseConnectorId0() &&
+            this.getUseConnectorId0(stationInfo) &&
             stationInfo?.Connectors[lastConnector]
           ) {
             this.connectors.set(
@@ -1113,7 +1122,7 @@ export default class ChargingStation {
         }
         // Generate all connectors
         if ((stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
-          for (let index = 1; index <= maxConnectors; index++) {
+          for (let index = 1; index <= configuredMaxConnectors; index++) {
             const randConnectorId = stationInfo?.randomConnectors
               ? Utils.getRandomInteger(Utils.convertToInt(lastConnector), 1)
               : index;
@@ -1140,32 +1149,6 @@ export default class ChargingStation {
       if (connectorId > 0 && !this.getConnectorStatus(connectorId)?.transactionStarted) {
         this.initializeConnectorStatus(connectorId);
       }
-    }
-  }
-
-  private checkMaxConnectors(maxConnectors: number): void {
-    if (maxConnectors <= 0) {
-      logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
-          this.templateFile
-        } with ${maxConnectors} connectors`
-      );
-    }
-  }
-
-  private checkTemplateMaxConnectors(templateMaxConnectors: number): void {
-    if (templateMaxConnectors === 0) {
-      logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
-          this.templateFile
-        } with empty connectors configuration`
-      );
-    } else if (templateMaxConnectors < 0) {
-      logger.error(
-        `${this.logPrefix()} Charging station information from template ${
-          this.templateFile
-        } with no connectors configuration defined`
-      );
     }
   }
 
@@ -1494,43 +1477,10 @@ export default class ChargingStation {
     logger.error(this.logPrefix() + ' WebSocket error: %j', error);
   }
 
-  private getAuthorizationFile(): string | undefined {
-    return (
-      this.stationInfo.authorizationFile &&
-      path.join(
-        path.resolve(__dirname, '../'),
-        'assets',
-        path.basename(this.stationInfo.authorizationFile)
-      )
-    );
-  }
-
-  private getAuthorizedTags(): string[] {
-    let authorizedTags: string[] = [];
-    const authorizationFile = this.getAuthorizationFile();
-    if (authorizationFile) {
-      try {
-        // Load authorization file
-        authorizedTags = JSON.parse(fs.readFileSync(authorizationFile, 'utf8')) as string[];
-      } catch (error) {
-        FileUtils.handleFileException(
-          this.logPrefix(),
-          FileType.Authorization,
-          authorizationFile,
-          error as NodeJS.ErrnoException
-        );
-      }
-    } else {
-      logger.info(
-        this.logPrefix() + ' No authorization file given in template file ' + this.templateFile
-      );
-    }
-    return authorizedTags;
-  }
-
-  private getUseConnectorId0(): boolean | undefined {
-    return !Utils.isUndefined(this.stationInfo.useConnectorId0)
-      ? this.stationInfo.useConnectorId0
+  private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean | undefined {
+    const localStationInfo = stationInfo ?? this.stationInfo;
+    return !Utils.isUndefined(localStationInfo.useConnectorId0)
+      ? localStationInfo.useConnectorId0
       : true;
   }
 
@@ -1585,50 +1535,28 @@ export default class ChargingStation {
 
   private getPowerDivider(): number {
     let powerDivider = this.getNumberOfConnectors();
-    if (this.stationInfo.powerSharedByConnectors) {
+    if (this.stationInfo?.powerSharedByConnectors) {
       powerDivider = this.getNumberOfRunningTransactions();
     }
     return powerDivider;
   }
 
-  private getTemplateMaxNumberOfConnectors(): number {
-    if (!this.stationInfo?.Connectors) {
-      return -1;
-    }
-    return Object.keys(this.stationInfo?.Connectors).length;
+  private getMaximumPower(stationInfo?: ChargingStationInfo): number {
+    const localStationInfo = stationInfo ?? this.stationInfo;
+    return (localStationInfo['maxPower'] as number) ?? localStationInfo.maximumPower;
   }
 
-  private getMaxNumberOfConnectors(): number {
-    let maxConnectors: number;
-    if (!Utils.isEmptyArray(this.stationInfo.numberOfConnectors)) {
-      const numberOfConnectors = this.stationInfo.numberOfConnectors as number[];
-      // Distribute evenly the number of connectors
-      maxConnectors = numberOfConnectors[(this.index - 1) % numberOfConnectors.length];
-    } else if (!Utils.isUndefined(this.stationInfo.numberOfConnectors)) {
-      maxConnectors = this.stationInfo.numberOfConnectors as number;
-    } else {
-      maxConnectors = this.stationInfo?.Connectors[0]
-        ? this.getTemplateMaxNumberOfConnectors() - 1
-        : this.getTemplateMaxNumberOfConnectors();
-    }
-    return maxConnectors;
-  }
-
-  private getMaximumPower(): number {
-    return (this.stationInfo['maxPower'] as number) ?? this.stationInfo.maximumPower;
-  }
-
-  private getMaximumAmperage(): number | undefined {
-    const maximumPower = this.getMaximumPower();
-    switch (this.getCurrentOutType()) {
+  private getMaximumAmperage(stationInfo: ChargingStationInfo): number | undefined {
+    const maximumPower = this.getMaximumPower(stationInfo);
+    switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
-          this.getNumberOfPhases(),
+          this.getNumberOfPhases(stationInfo),
           maximumPower / this.getNumberOfConnectors(),
-          this.getVoltageOut()
+          this.getVoltageOut(stationInfo)
         );
       case CurrentType.DC:
-        return DCElectricUtils.amperage(maximumPower, this.getVoltageOut());
+        return DCElectricUtils.amperage(maximumPower, this.getVoltageOut(stationInfo));
     }
   }
 
@@ -1741,13 +1669,23 @@ export default class ChargingStation {
   }
 
   private startAutomaticTransactionGenerator() {
-    if (this.stationInfo.AutomaticTransactionGenerator.enable) {
+    if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable) {
       if (!this.automaticTransactionGenerator) {
-        this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this);
+        this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
+          this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
+          this
+        );
       }
       if (!this.automaticTransactionGenerator.started) {
         this.automaticTransactionGenerator.start();
       }
+    }
+  }
+
+  private stopAutomaticTransactionGenerator(): void {
+    if (this.automaticTransactionGenerator?.started) {
+      this.automaticTransactionGenerator.stop();
+      this.automaticTransactionGenerator = null;
     }
   }
 
@@ -1758,12 +1696,9 @@ export default class ChargingStation {
     this.stopWebSocketPing();
     // Stop heartbeat
     this.stopHeartbeat();
-    // Stop the ATG
-    if (
-      this.stationInfo.AutomaticTransactionGenerator.enable &&
-      this.automaticTransactionGenerator?.started
-    ) {
-      this.automaticTransactionGenerator.stop();
+    // Stop ongoing transactions
+    if (this.automaticTransactionGenerator?.configuration?.enable) {
+      this.stopAutomaticTransactionGenerator();
     } else {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted) {
@@ -1966,12 +1901,8 @@ export default class ChargingStation {
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop the ATG if needed
-    if (
-      this.stationInfo.AutomaticTransactionGenerator.enable &&
-      this.stationInfo.AutomaticTransactionGenerator.stopOnConnectionFailure &&
-      this.automaticTransactionGenerator?.started
-    ) {
-      this.automaticTransactionGenerator.stop();
+    if (this.automaticTransactionGenerator?.configuration?.stopOnConnectionFailure) {
+      this.stopAutomaticTransactionGenerator();
     }
     if (
       this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() ||
@@ -2006,6 +1937,10 @@ export default class ChargingStation {
         }) or retry disabled (${this.getAutoReconnectMaxRetries()})`
       );
     }
+  }
+
+  private getAutomaticTransactionGeneratorConfigurationFromTemplate(): AutomaticTransactionGeneratorConfiguration | null {
+    return this.getTemplateFromFile()?.AutomaticTransactionGenerator ?? null;
   }
 
   private initializeConnectorStatus(connectorId: number): void {
