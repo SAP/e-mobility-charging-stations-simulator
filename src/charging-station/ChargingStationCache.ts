@@ -1,7 +1,7 @@
 import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate from '../types/ChargingStationTemplate';
-import { ChargingStationUtils } from './ChargingStationUtils';
 import LRUCache from 'mnemonist/lru-map-with-delete';
+import Utils from '../utils/Utils';
 
 enum CacheType {
   CHARGING_STATION_TEMPLATE = 'chargingStationTemplate',
@@ -30,9 +30,7 @@ export class ChargingStationCache {
   public setChargingStationConfiguration(
     chargingStationConfiguration: ChargingStationConfiguration
   ): void {
-    if (
-      ChargingStationUtils.isChargingStationConfigurationCacheable(chargingStationConfiguration)
-    ) {
+    if (this.isChargingStationConfigurationCacheable(chargingStationConfiguration)) {
       this.set(
         CacheType.CHARGING_STATION_CONFIGURATION + chargingStationConfiguration.configurationHash,
         chargingStationConfiguration
@@ -91,5 +89,18 @@ export class ChargingStationCache {
 
   private delete(key: string): void {
     this.lruCache.delete(key);
+  }
+
+  private isChargingStationConfigurationCacheable(
+    chargingStationConfiguration: ChargingStationConfiguration
+  ): boolean {
+    return (
+      !Utils.isNullOrUndefined(chargingStationConfiguration?.configurationKey) &&
+      !Utils.isNullOrUndefined(chargingStationConfiguration?.stationInfo) &&
+      !Utils.isNullOrUndefined(chargingStationConfiguration?.configurationHash) &&
+      !Utils.isEmptyArray(chargingStationConfiguration?.configurationKey) &&
+      !Utils.isEmptyObject(chargingStationConfiguration?.stationInfo) &&
+      !Utils.isEmptyString(chargingStationConfiguration?.configurationHash)
+    );
   }
 }

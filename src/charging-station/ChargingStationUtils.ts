@@ -10,7 +10,6 @@ import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues'
 import BaseError from '../exception/BaseError';
 import { BootNotificationRequest } from '../types/ocpp/Requests';
 import ChargingStation from './ChargingStation';
-import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
@@ -550,19 +549,6 @@ export class ChargingStationUtils {
         'assets',
         path.basename(stationInfo.authorizationFile)
       )
-    );
-  }
-
-  public static isChargingStationConfigurationCacheable(
-    chargingStationConfiguration: ChargingStationConfiguration
-  ): boolean {
-    return (
-      !Utils.isNullOrUndefined(chargingStationConfiguration?.configurationKey) &&
-      !Utils.isNullOrUndefined(chargingStationConfiguration?.stationInfo) &&
-      !Utils.isNullOrUndefined(chargingStationConfiguration?.configurationHash) &&
-      !Utils.isEmptyArray(chargingStationConfiguration?.configurationKey) &&
-      !Utils.isEmptyObject(chargingStationConfiguration?.stationInfo) &&
-      !Utils.isEmptyString(chargingStationConfiguration?.configurationHash)
     );
   }
 
