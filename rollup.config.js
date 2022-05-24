@@ -27,6 +27,7 @@ export default {
     'fs',
     '@mikro-orm/core',
     '@mikro-orm/reflection',
+    'mnemonist/lru-map-with-delete',
     'moment',
     'mongodb',
     'path',

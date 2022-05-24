@@ -29,7 +29,8 @@ export default class Bootstrap {
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
   private readonly uiServer!: AbstractUIServer;
   private readonly storage!: Storage;
-  private numberOfChargingStations: number;
+  private numberOfChargingStationTemplates!: number;
+  private numberOfChargingStations!: number;
   private readonly version: string = version;
   private started: boolean;
   private readonly workerScript: string;
@@ -41,6 +42,7 @@ export default class Bootstrap {
       'charging-station',
       'ChargingStationWorker.js'
     );
+    this.initialize();
     this.initWorkerImplementation();
     Configuration.getUIServer().enabled &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
@@ -66,11 +68,12 @@ export default class Bootstrap {
   public async start(): Promise<void> {
     if (isMainThread && !this.started) {
       try {
-        this.numberOfChargingStations = 0;
+        this.initialize();
         await this.storage?.open();
         await this.workerImplementation.start();
         this.uiServer?.start();
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
+        this.numberOfChargingStationTemplates = stationTemplateUrls.length;
         // Start ChargingStation object in worker thread
         if (stationTemplateUrls) {
           for (const stationTemplateUrl of stationTemplateUrls) {
@@ -102,7 +105,7 @@ export default class Bootstrap {
             chalk.green(
               `Charging stations simulator ${
                 this.version
-              } started with ${this.numberOfChargingStations.toString()} charging station(s) and ${
+              } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
                 ChargingStationUtils.workerDynamicPoolInUse()
                   ? `${Configuration.getWorkerPoolMinSize().toString()}/`
                   : ''
@@ -140,6 +143,7 @@ export default class Bootstrap {
 
   public async restart(): Promise<void> {
     await this.stop();
+    this.initialize();
     this.initWorkerImplementation();
     await this.start();
   }
@@ -168,6 +172,11 @@ export default class Bootstrap {
         },
       }
     );
+  }
+
+  private initialize() {
+    this.numberOfChargingStations = 0;
+    this.numberOfChargingStationTemplates = 0;
   }
 
   private async startChargingStation(

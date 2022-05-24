@@ -68,7 +68,7 @@ export default interface ChargingStationTemplate {
   useConnectorId0?: boolean;
   randomConnectors?: boolean;
   resetTime?: number;
-  autoRegister: boolean;
+  autoRegister?: boolean;
   autoReconnectMaxRetries?: number;
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;

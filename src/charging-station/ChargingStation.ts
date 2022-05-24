@@ -22,7 +22,6 @@ import {
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
-import ChargingStationConfiguration, { Section } from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate, {
   CurrentType,
   PowerUnits,
@@ -48,6 +47,8 @@ import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTr
 import BaseError from '../exception/BaseError';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
+import { ChargingStationCache } from './ChargingStationCache';
+import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import ChargingStationOcppConfiguration from '../types/ChargingStationOcppConfiguration';
@@ -95,6 +96,7 @@ export default class ChargingStation {
   public powerDivider!: number;
   private readonly index: number;
   private configurationFile!: string;
+  private configurationFileHash!: string;
   private bootNotificationRequest!: BootNotificationRequest;
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
@@ -103,6 +105,7 @@ export default class ChargingStation {
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
   private stopped: boolean;
+  private readonly cache: ChargingStationCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
@@ -112,6 +115,7 @@ export default class ChargingStation {
     this.stopped = false;
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
+    this.cache = ChargingStationCache.getInstance();
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
@@ -507,6 +511,7 @@ export default class ChargingStation {
                 this.templateFile
               } file have changed, reload`
             );
+            this.cache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
             // Initialize
             this.initialize();
             // Restart the ATG
@@ -555,6 +560,8 @@ export default class ChargingStation {
     if (this.getEnableStatistics()) {
       this.performanceStatistics.stop();
     }
+    this.cache.deleteChargingStationConfiguration(this.configurationFileHash);
+    this.cache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
     parentPort.postMessage({
       id: ChargingStationWorkerMessageEvents.STOPPED,
@@ -572,7 +579,7 @@ export default class ChargingStation {
 
   public saveOcppConfiguration(): void {
     if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration(Section.ocppConfiguration);
+      this.saveConfiguration();
     }
   }
 
@@ -705,14 +712,21 @@ export default class ChargingStation {
   private getTemplateFromFile(): ChargingStationTemplate | null {
     let template: ChargingStationTemplate = null;
     try {
-      const measureId = `${FileType.ChargingStationTemplate} read`;
-      const beginId = PerformanceStatistics.beginMeasure(measureId);
-      template = JSON.parse(fs.readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate;
-      PerformanceStatistics.endMeasure(measureId, beginId);
-      template.templateHash = crypto
-        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(JSON.stringify(template))
-        .digest('hex');
+      if (this.cache.hasChargingStationTemplate(this.stationInfo?.templateHash)) {
+        template = this.cache.getChargingStationTemplate(this.stationInfo.templateHash);
+      } else {
+        const measureId = `${FileType.ChargingStationTemplate} read`;
+        const beginId = PerformanceStatistics.beginMeasure(measureId);
+        template = JSON.parse(
+          fs.readFileSync(this.templateFile, 'utf8')
+        ) as ChargingStationTemplate;
+        PerformanceStatistics.endMeasure(measureId, beginId);
+        template.templateHash = crypto
+          .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+          .update(JSON.stringify(template))
+          .digest('hex');
+        this.cache.setChargingStationTemplate(template);
+      }
     } catch (error) {
       FileUtils.handleFileException(
         this.logPrefix(),
@@ -837,7 +851,7 @@ export default class ChargingStation {
 
   private saveStationInfo(): void {
     if (this.getStationInfoPersistentConfiguration()) {
-      this.saveConfiguration(Section.stationInfo);
+      this.saveConfiguration();
     }
   }
 
@@ -906,7 +920,7 @@ export default class ChargingStation {
         this.handleUnsupportedVersion(this.getOcppVersion());
         break;
     }
-    if (this.stationInfo.autoRegister) {
+    if (this.stationInfo?.autoRegister) {
       this.bootNotificationResponse = {
         currentTime: new Date().toISOString(),
         interval: this.getHeartbeatInterval() / 1000,
@@ -1161,12 +1175,18 @@ export default class ChargingStation {
     let configuration: ChargingStationConfiguration = null;
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
-        const measureId = `${FileType.ChargingStationConfiguration} read`;
-        const beginId = PerformanceStatistics.beginMeasure(measureId);
-        configuration = JSON.parse(
-          fs.readFileSync(this.configurationFile, 'utf8')
-        ) as ChargingStationConfiguration;
-        PerformanceStatistics.endMeasure(measureId, beginId);
+        if (this.cache.hasChargingStationConfiguration(this.configurationFileHash)) {
+          configuration = this.cache.getChargingStationConfiguration(this.configurationFileHash);
+        } else {
+          const measureId = `${FileType.ChargingStationConfiguration} read`;
+          const beginId = PerformanceStatistics.beginMeasure(measureId);
+          configuration = JSON.parse(
+            fs.readFileSync(this.configurationFile, 'utf8')
+          ) as ChargingStationConfiguration;
+          PerformanceStatistics.endMeasure(measureId, beginId);
+          this.configurationFileHash = configuration.configurationHash;
+          this.cache.setChargingStationConfiguration(configuration);
+        }
       } catch (error) {
         FileUtils.handleFileException(
           this.logPrefix(),
@@ -1179,7 +1199,7 @@ export default class ChargingStation {
     return configuration;
   }
 
-  private saveConfiguration(section?: Section): void {
+  private saveConfiguration(): void {
     if (this.configurationFile) {
       try {
         if (!fs.existsSync(path.dirname(this.configurationFile))) {
@@ -1187,34 +1207,32 @@ export default class ChargingStation {
         }
         const configurationData: ChargingStationConfiguration =
           this.getConfigurationFromFile() ?? {};
-        switch (section) {
-          case Section.ocppConfiguration:
-            configurationData.configurationKey = this.ocppConfiguration.configurationKey;
-            break;
-          case Section.stationInfo:
-            if (configurationData?.stationInfo?.infoHash === this.stationInfo?.infoHash) {
-              logger.debug(
-                `${this.logPrefix()} Not saving unchanged charging station information to configuration file ${
-                  this.configurationFile
-                }`
-              );
-              return;
-            }
-            configurationData.stationInfo = this.stationInfo;
-            break;
-          default:
-            configurationData.configurationKey = this.ocppConfiguration.configurationKey;
-            if (configurationData?.stationInfo?.infoHash !== this.stationInfo?.infoHash) {
-              configurationData.stationInfo = this.stationInfo;
-            }
-            break;
+        this.ocppConfiguration?.configurationKey &&
+          (configurationData.configurationKey = this.ocppConfiguration.configurationKey);
+        this.stationInfo && (configurationData.stationInfo = this.stationInfo);
+        delete configurationData.configurationHash;
+        const configurationHash = crypto
+          .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+          .update(JSON.stringify(configurationData))
+          .digest('hex');
+        if (this.configurationFileHash !== configurationHash) {
+          configurationData.configurationHash = configurationHash;
+          const measureId = `${FileType.ChargingStationConfiguration} write`;
+          const beginId = PerformanceStatistics.beginMeasure(measureId);
+          const fileDescriptor = fs.openSync(this.configurationFile, 'w');
+          fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
+          fs.closeSync(fileDescriptor);
+          PerformanceStatistics.endMeasure(measureId, beginId);
+          this.cache.deleteChargingStationConfiguration(this.configurationFileHash);
+          this.configurationFileHash = configurationHash;
+          this.cache.setChargingStationConfiguration(configurationData);
+        } else {
+          logger.debug(
+            `${this.logPrefix()} Not saving unchanged charging station configuration file ${
+              this.configurationFile
+            }`
+          );
         }
-        const measureId = `${FileType.ChargingStationConfiguration} write`;
-        const beginId = PerformanceStatistics.beginMeasure(measureId);
-        const fileDescriptor = fs.openSync(this.configurationFile, 'w');
-        fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
-        fs.closeSync(fileDescriptor);
-        PerformanceStatistics.endMeasure(measureId, beginId);
       } catch (error) {
         FileUtils.handleFileException(
           this.logPrefix(),
@@ -1585,7 +1603,7 @@ export default class ChargingStation {
   }
 
   private async startMessageSequence(): Promise<void> {
-    if (this.stationInfo.autoRegister) {
+    if (this.stationInfo?.autoRegister) {
       await this.ocppRequestService.requestHandler<
         BootNotificationRequest,
         BootNotificationResponse
@@ -1844,7 +1862,7 @@ export default class ChargingStation {
     if (HeartBeatInterval) {
       return Utils.convertToInt(HeartBeatInterval.value) * 1000;
     }
-    !this.stationInfo.autoRegister &&
+    !this.stationInfo?.autoRegister &&
       logger.warn(
         `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${
           Constants.DEFAULT_HEARTBEAT_INTERVAL
