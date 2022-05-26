@@ -1879,17 +1879,25 @@ export default class ChargingStation {
 
   private openWSConnection(
     options: WsOptions = this.stationInfo?.wsOptions ?? {},
-    forceCloseOpened = false
+    params: { closeOpened?: boolean; terminateOpened?: boolean } = {
+      closeOpened: false,
+      terminateOpened: false,
+    }
   ): void {
     options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+    params.closeOpened = params?.closeOpened ?? false;
+    params.terminateOpened = params?.closeOpened ?? false;
     if (
       !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
       !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)
     ) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
     }
-    if (this.isWebSocketConnectionOpened() && forceCloseOpened) {
+    if (this.isWebSocketConnectionOpened() && params?.closeOpened) {
       this.wsConnection.close();
+    }
+    if (this.isWebSocketConnectionOpened() && params?.terminateOpened) {
+      this.wsConnection.terminate();
     }
     let protocol: string;
     switch (this.getOcppVersion()) {
@@ -1935,7 +1943,11 @@ export default class ChargingStation {
       const reconnectDelay = this.getReconnectExponentialDelay()
         ? Utils.exponentialDelay(this.autoReconnectRetryCount)
         : this.getConnectionTimeout() * 1000;
-      const reconnectTimeout = reconnectDelay - 100 > 0 && reconnectDelay;
+      const reconnectDelayWithdraw = 1000;
+      const reconnectTimeout =
+        reconnectDelay && reconnectDelay - reconnectDelayWithdraw > 0
+          ? reconnectDelay - reconnectDelayWithdraw
+          : 0;
       logger.error(
         `${this.logPrefix()} WebSocket: connection retry in ${Utils.roundTo(
           reconnectDelay,
@@ -1950,7 +1962,7 @@ export default class ChargingStation {
       );
       this.openWSConnection(
         { ...(this.stationInfo?.wsOptions ?? {}), handshakeTimeout: reconnectTimeout },
-        true
+        { closeOpened: true }
       );
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {

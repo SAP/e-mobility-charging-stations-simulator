@@ -96,6 +96,8 @@ export default class Constants {
     'configurationHash',
   ]);
 
+  static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = Number.MAX_SAFE_INTEGER;
+
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384';
 
   static readonly DEFAULT_IDTAG = '00000000';
