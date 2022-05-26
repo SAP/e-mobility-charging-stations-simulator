@@ -1886,7 +1886,7 @@ export default class ChargingStation {
   ): void {
     options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     params.closeOpened = params?.closeOpened ?? false;
-    params.terminateOpened = params?.closeOpened ?? false;
+    params.terminateOpened = params?.terminateOpened ?? false;
     if (
       !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
       !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)
