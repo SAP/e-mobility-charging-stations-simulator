@@ -554,9 +554,7 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId).status = ChargePointStatus.UNAVAILABLE;
       }
     }
-    if (this.isWebSocketConnectionOpened()) {
-      this.wsConnection.close();
-    }
+    this.closeWSConnection();
     if (this.getEnableStatistics()) {
       this.performanceStatistics.stop();
     }
@@ -1893,11 +1891,11 @@ export default class ChargingStation {
     ) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
     }
-    if (this.isWebSocketConnectionOpened() && params?.closeOpened) {
-      this.wsConnection.close();
+    if (params?.closeOpened) {
+      this.closeWSConnection();
     }
-    if (this.isWebSocketConnectionOpened() && params?.terminateOpened) {
-      this.wsConnection.terminate();
+    if (params?.terminateOpened) {
+      this.terminateWSConnection();
     }
     let protocol: string;
     switch (this.getOcppVersion()) {
@@ -1912,6 +1910,20 @@ export default class ChargingStation {
     logger.info(
       this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString()
     );
+  }
+
+  private closeWSConnection(): void {
+    if (this.isWebSocketConnectionOpened()) {
+      this.wsConnection.close();
+      this.wsConnection = null;
+    }
+  }
+
+  private terminateWSConnection(): void {
+    if (this.isWebSocketConnectionOpened()) {
+      this.wsConnection.terminate();
+      this.wsConnection = null;
+    }
   }
 
   private stopMeterValues(connectorId: number) {
