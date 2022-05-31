@@ -10,7 +10,7 @@ RUN apk add --no-cache --virtual .gyp \
   python3 \
   && npm install \
   && apk del .gyp
-COPY tsconfig.json rollup.config.js ./
+COPY tsconfig.json rollup.config.mjs ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 RUN npm run build
