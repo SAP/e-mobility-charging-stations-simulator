@@ -63,7 +63,7 @@
     "lint:fix": "cross-env TIMING=1 eslint --cache --fix --ext .js,.ts src",
     "format": "prettier --write .",
     "import-sort": "npx import-sort-cli --write 'src/**/*.ts{,x}'",
-    "test": "cross-env TS_NODE_COMPILER_OPTIONS={\"module\": \"commonjs\"} nyc mocha test/**/*Test.ts",
+    "test": "cross-env TS_NODE_COMPILER_OPTIONS={\\\"module\\\":\\\"commonjs\\\"} nyc mocha test/**/*Test.ts",
     "coverage": "nyc report --reporter=lcov",
     "coverage:html": "nyc report --reporter=html",
     "clinic:clean": "clinic clean",
