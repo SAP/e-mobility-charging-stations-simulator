@@ -32,7 +32,7 @@ jobs:
       - name: npm run coverage
         run: npm run coverage
       - name: SonarCloud Scan
-        if: "github.repository == 'sap/emobility-charging-stations-simulator' && matrix.node == '16.x'"
+        if: "github.repository == 'sap/emobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
         uses: sonarsource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
@@ -41,8 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
