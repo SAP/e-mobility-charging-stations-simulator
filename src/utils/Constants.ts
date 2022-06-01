@@ -119,7 +119,7 @@ export default class Constants {
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5;
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json';
-  static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'emobility-charging-stations-simulator';
+  static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator';
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records';
 
   static readonly DEFAULT_UI_WEBSOCKET_SERVER_HOST = 'localhost';

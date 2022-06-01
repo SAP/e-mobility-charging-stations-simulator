@@ -32,7 +32,7 @@ jobs:
       - name: npm run coverage
         run: npm run coverage
       - name: SonarCloud Scan
-        if: "github.repository == 'sap/emobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
+        if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
         uses: sonarsource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any

@@ -1,5 +1,5 @@
 {
-  "name": "emobility-charging-stations-simulator",
+  "name": "e-mobility-charging-stations-simulator",
   "version": "1.1.60",
   "engines": {
     "node": ">=16.0.0",
@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sap/emobility-charging-stations-simulator.git"
+    "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
   },
   "description": "Electric Vehicle charging stations simulator",
   "author": "SAP E-Mobility <e-mobility@sap.com>",
@@ -33,10 +33,10 @@
     ]
   },
   "auto-changelog": {
-    "commitUrl": "https://github.com/sap/emobility-charging-stations-simulator/commit/{id}",
-    "issueUrl": "https://github.com/sap/emobility-charging-stations-simulator/issues/{id}",
-    "mergeUrl": "https://github.com/sap/emobility-charging-stations-simulator/pull/{id}",
-    "compareUrl": "https://github.com/sap/emobility-charging-stations-simulator/compare/{from}...{to}"
+    "commitUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/commit/{id}",
+    "issueUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/issues/{id}",
+    "mergeUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/pull/{id}",
+    "compareUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/compare/{from}...{to}"
   },
   "mikro-orm": {
     "tsConfigPath": "./tsconfig-orm.json",

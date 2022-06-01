@@ -6,7 +6,7 @@ const fs = require('fs');
 // This script deletes charging stations
 // Filter charging stations by id pattern
 
-// Use Case: emobility-charging-stations-simulator creates thousands of charging stations, which are not longer needed.
+// Use Case: e-mobility-charging-stations-simulator creates thousands of charging stations, which are not longer needed.
 // Delete these charging stations all at once
 
 // Config
