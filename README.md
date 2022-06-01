@@ -1,4 +1,4 @@
-# [e-mobility-charging-stations-simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
+# [e-mobility charging stations simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
 
 ## Summary
 
