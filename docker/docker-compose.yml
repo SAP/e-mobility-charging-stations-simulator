@@ -3,7 +3,7 @@ networks:
   ev_network:
     driver: bridge
 services:
-  charging-stations-simulator:
+  e-mobility-charging-stations-simulator:
     build:
       context: ..
       dockerfile: docker/Dockerfile

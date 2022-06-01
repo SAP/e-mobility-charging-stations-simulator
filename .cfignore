@@ -38,6 +38,7 @@
 *.tar.gz
 *.mta
 rollup.config.js
+rollup.config.mjs
 mta.yaml
 mta_archives
 docker
@@ -46,8 +47,6 @@ test
 temp
 outputs
 coverage
-charging-stations-simulator-start.sh
-charging-stations-simulator-start.bat
 node_modules
 sonar-project.properties
 performanceRecords.json

@@ -21,19 +21,11 @@ import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
 
 export default abstract class OCPPRequestService {
-  private static readonly instances: Map<string, OCPPRequestService> = new Map<
-    string,
-    OCPPRequestService
-  >();
+  private static instance: OCPPRequestService | null = null;
 
-  protected readonly chargingStation: ChargingStation;
   private readonly ocppResponseService: OCPPResponseService;
 
-  protected constructor(
-    chargingStation: ChargingStation,
-    ocppResponseService: OCPPResponseService
-  ) {
-    this.chargingStation = chargingStation;
+  protected constructor(ocppResponseService: OCPPResponseService) {
     this.ocppResponseService = ocppResponseService;
     this.requestHandler.bind(this);
     this.sendResponse.bind(this);
@@ -41,20 +33,17 @@ export default abstract class OCPPRequestService {
   }
 
   public static getInstance<T extends OCPPRequestService>(
-    this: new (chargingStation: ChargingStation, ocppResponseService: OCPPResponseService) => T,
-    chargingStation: ChargingStation,
+    this: new (ocppResponseService: OCPPResponseService) => T,
     ocppResponseService: OCPPResponseService
   ): T {
-    if (!OCPPRequestService.instances.has(chargingStation.hashId)) {
-      OCPPRequestService.instances.set(
-        chargingStation.hashId,
-        new this(chargingStation, ocppResponseService)
-      );
+    if (!OCPPRequestService.instance) {
+      OCPPRequestService.instance = new this(ocppResponseService);
     }
-    return OCPPRequestService.instances.get(chargingStation.hashId) as T;
+    return OCPPRequestService.instance as T;
   }
 
   public async sendResponse(
+    chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType,
     commandName: IncomingRequestCommand
@@ -62,17 +51,19 @@ export default abstract class OCPPRequestService {
     try {
       // Send response message
       return await this.internalSendMessage(
+        chargingStation,
         messageId,
         messagePayload,
         MessageType.CALL_RESULT_MESSAGE,
         commandName
       );
     } catch (error) {
-      this.handleRequestError(commandName, error as Error);
+      this.handleRequestError(chargingStation, commandName, error as Error);
     }
   }
 
   public async sendError(
+    chargingStation: ChargingStation,
     messageId: string,
     ocppError: OCPPError,
     commandName: RequestCommand | IncomingRequestCommand
@@ -80,17 +71,19 @@ export default abstract class OCPPRequestService {
     try {
       // Send error message
       return await this.internalSendMessage(
+        chargingStation,
         messageId,
         ocppError,
         MessageType.CALL_ERROR_MESSAGE,
         commandName
       );
     } catch (error) {
-      this.handleRequestError(commandName, error as Error);
+      this.handleRequestError(chargingStation, commandName, error as Error);
     }
   }
 
   protected async sendMessage(
+    chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType,
     commandName: RequestCommand,
@@ -101,6 +94,7 @@ export default abstract class OCPPRequestService {
   ): Promise<ResponseType> {
     try {
       return await this.internalSendMessage(
+        chargingStation,
         messageId,
         messagePayload,
         MessageType.CALL_MESSAGE,
@@ -108,11 +102,12 @@ export default abstract class OCPPRequestService {
         params
       );
     } catch (error) {
-      this.handleRequestError(commandName, error as Error, { throwError: false });
+      this.handleRequestError(chargingStation, commandName, error as Error, { throwError: false });
     }
   }
 
   private async internalSendMessage(
+    chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
@@ -123,12 +118,10 @@ export default abstract class OCPPRequestService {
     }
   ): Promise<ResponseType> {
     if (
-      (this.chargingStation.isInUnknownState() &&
-        commandName === RequestCommand.BOOT_NOTIFICATION) ||
-      (!this.chargingStation.getOcppStrictCompliance() &&
-        this.chargingStation.isInUnknownState()) ||
-      this.chargingStation.isInAcceptedState() ||
-      (this.chargingStation.isInPendingState() &&
+      (chargingStation.isInUnknownState() && commandName === RequestCommand.BOOT_NOTIFICATION) ||
+      (!chargingStation.getOcppStrictCompliance() && chargingStation.isInUnknownState()) ||
+      chargingStation.isInAcceptedState() ||
+      (chargingStation.isInPendingState() &&
         (params.triggerMessage || messageType === MessageType.CALL_RESULT_MESSAGE))
     ) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -137,6 +130,7 @@ export default abstract class OCPPRequestService {
       return Utils.promiseWithTimeout(
         new Promise((resolve, reject) => {
           const messageToSend = this.buildMessageToSend(
+            chargingStation,
             messageId,
             messagePayload,
             messageType,
@@ -144,27 +138,24 @@ export default abstract class OCPPRequestService {
             responseCallback,
             errorCallback
           );
-          if (this.chargingStation.getEnableStatistics()) {
-            this.chargingStation.performanceStatistics.addRequestStatistic(
-              commandName,
-              messageType
-            );
+          if (chargingStation.getEnableStatistics()) {
+            chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
           }
           // Check if wsConnection opened
-          if (this.chargingStation.isWebSocketConnectionOpened()) {
+          if (chargingStation.isWebSocketConnectionOpened()) {
             // Yes: Send Message
             const beginId = PerformanceStatistics.beginMeasure(commandName);
             // FIXME: Handle sending error
-            this.chargingStation.wsConnection.send(messageToSend);
+            chargingStation.wsConnection.send(messageToSend);
             PerformanceStatistics.endMeasure(commandName, beginId);
             logger.debug(
-              `${this.chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
+              `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
                 messageType
               )} payload: ${messageToSend}`
             );
           } else if (!params.skipBufferingOnError) {
             // Buffer it
-            this.chargingStation.bufferMessage(messageToSend);
+            chargingStation.bufferMessage(messageToSend);
             const ocppError = new OCPPError(
               ErrorType.GENERIC_ERROR,
               `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`,
@@ -204,8 +195,8 @@ export default abstract class OCPPRequestService {
             payload: JsonType,
             requestPayload: JsonType
           ): Promise<void> {
-            if (self.chargingStation.getEnableStatistics()) {
-              self.chargingStation.performanceStatistics.addRequestStatistic(
+            if (chargingStation.getEnableStatistics()) {
+              chargingStation.performanceStatistics.addRequestStatistic(
                 commandName,
                 MessageType.CALL_RESULT_MESSAGE
               );
@@ -213,6 +204,7 @@ export default abstract class OCPPRequestService {
             // Handle the request's response
             try {
               await self.ocppResponseService.responseHandler(
+                chargingStation,
                 commandName as RequestCommand,
                 payload,
                 requestPayload
@@ -221,7 +213,7 @@ export default abstract class OCPPRequestService {
             } catch (error) {
               reject(error);
             } finally {
-              self.chargingStation.requests.delete(messageId);
+              chargingStation.requests.delete(messageId);
             }
           }
 
@@ -232,19 +224,19 @@ export default abstract class OCPPRequestService {
            * @param requestStatistic
            */
           function errorCallback(error: OCPPError, requestStatistic = true): void {
-            if (requestStatistic && self.chargingStation.getEnableStatistics()) {
-              self.chargingStation.performanceStatistics.addRequestStatistic(
+            if (requestStatistic && chargingStation.getEnableStatistics()) {
+              chargingStation.performanceStatistics.addRequestStatistic(
                 commandName,
                 MessageType.CALL_ERROR_MESSAGE
               );
             }
             logger.error(
-              `${self.chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`,
+              `${chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`,
               error,
               commandName,
               messagePayload
             );
-            self.chargingStation.requests.delete(messageId);
+            chargingStation.requests.delete(messageId);
             reject(error);
           }
         }),
@@ -256,19 +248,19 @@ export default abstract class OCPPRequestService {
           (messagePayload as JsonObject)?.details ?? {}
         ),
         () => {
-          messageType === MessageType.CALL_MESSAGE &&
-            this.chargingStation.requests.delete(messageId);
+          messageType === MessageType.CALL_MESSAGE && chargingStation.requests.delete(messageId);
         }
       );
     }
     throw new OCPPError(
       ErrorType.SECURITY_ERROR,
-      `Cannot send command ${commandName} payload when the charging station is in ${this.chargingStation.getRegistrationStatus()} state on the central server`,
+      `Cannot send command ${commandName} payload when the charging station is in ${chargingStation.getRegistrationStatus()} state on the central server`,
       commandName
     );
   }
 
   private buildMessageToSend(
+    chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
@@ -282,7 +274,7 @@ export default abstract class OCPPRequestService {
       // Request
       case MessageType.CALL_MESSAGE:
         // Build request
-        this.chargingStation.requests.set(messageId, [
+        chargingStation.requests.set(messageId, [
           responseCallback,
           errorCallback,
           commandName,
@@ -327,15 +319,12 @@ export default abstract class OCPPRequestService {
   }
 
   private handleRequestError(
+    chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     error: Error,
     params: HandleErrorParams<EmptyObject> = { throwError: true }
   ): void {
-    logger.error(
-      this.chargingStation.logPrefix() + ' Request command %s error: %j',
-      commandName,
-      error
-    );
+    logger.error(chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
     if (params?.throwError) {
       throw error;
     }
@@ -343,6 +332,7 @@ export default abstract class OCPPRequestService {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public abstract requestHandler<Request extends JsonType, Response extends JsonType>(
+    chargingStation: ChargingStation,
     commandName: RequestCommand,
     commandParams?: JsonType,
     params?: RequestParams

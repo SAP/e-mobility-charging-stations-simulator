@@ -1,3 +1,15 @@
+export interface AutomaticTransactionGeneratorConfiguration {
+  enable: boolean;
+  minDuration: number;
+  maxDuration: number;
+  minDelayBetweenTwoTransactions: number;
+  maxDelayBetweenTwoTransactions: number;
+  probabilityOfStart: number;
+  stopAfterHours: number;
+  stopOnConnectionFailure: boolean;
+  requireAuthorize?: boolean;
+}
+
 export interface Status {
   start?: boolean;
   startDate?: Date;

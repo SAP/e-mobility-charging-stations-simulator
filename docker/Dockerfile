@@ -10,7 +10,7 @@ RUN apk add --no-cache --virtual .gyp \
   python3 \
   && npm install \
   && apk del .gyp
-COPY tsconfig.json rollup.config.js ./
+COPY tsconfig.json rollup.config.mjs ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 RUN npm run build
@@ -26,7 +26,7 @@ ENV NODE_OPTIONS="--stack-trace-limit=${STACK_TRACE_LIMIT} --max-old-space-size=
 
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist
-COPY README.md NOTICE LICENSE ./
+COPY README.md LICENSE ./
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN chmod +x /autoconfig.sh
 
