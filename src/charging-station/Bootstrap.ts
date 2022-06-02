@@ -75,7 +75,7 @@ export default class Bootstrap {
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
         // Start ChargingStation object in worker thread
-        if (stationTemplateUrls) {
+        if (!Utils.isEmptyArray(stationTemplateUrls)) {
           for (const stationTemplateUrl of stationTemplateUrls) {
             try {
               const nbStations = stationTemplateUrl.numberOfStations ?? 0;
@@ -94,7 +94,9 @@ export default class Bootstrap {
             }
           }
         } else {
-          console.warn(chalk.yellow("No 'stationTemplateUrls' defined in configuration, exiting"));
+          console.warn(
+            chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
+          );
         }
         if (this.numberOfChargingStations === 0) {
           console.warn(
