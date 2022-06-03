@@ -10,15 +10,28 @@ const isDevelopmentBuild = process.env.BUILD === 'development';
 
 export default {
   input: ['src/start.ts', 'src/ui/httpd/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
-  output: {
-    dir: 'dist',
-    format: 'cjs',
-    exports: 'auto',
-    sourcemap: true,
-    preserveModules: true,
-    preserveModulesRoot: 'src',
-    ...(!isDevelopmentBuild && { plugins: [terser({ numWorkers: 2 })] }),
-  },
+  output: [
+    {
+      dir: 'dist',
+      format: 'es',
+      exports: 'auto',
+      sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: 'src',
+      entryFileNames: '[name].mjs',
+      ...(!isDevelopmentBuild && { plugins: [terser({ numWorkers: 2 })] }),
+    },
+    {
+      dir: 'dist',
+      format: 'cjs',
+      exports: 'auto',
+      sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: 'src',
+      entryFileNames: '[name].cjs',
+      ...(!isDevelopmentBuild && { plugins: [terser({ numWorkers: 2 })] }),
+    },
+  ],
   external: [
     'basic-ftp',
     'chalk',

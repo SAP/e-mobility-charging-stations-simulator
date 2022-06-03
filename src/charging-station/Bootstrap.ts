@@ -41,7 +41,7 @@ export default class Bootstrap {
     this.workerScript = path.join(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',
-      'ChargingStationWorker.js'
+      'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
     this.initialize();
     this.initWorkerImplementation();

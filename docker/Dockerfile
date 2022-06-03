@@ -30,5 +30,5 @@ COPY README.md LICENSE ./
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN chmod +x /autoconfig.sh
 
-#CMD ["node", "dist/start.js"]
-CMD /autoconfig.sh && node -r source-map-support/register dist/start.js
+#CMD ["node", "dist/start.cjs"]
+CMD /autoconfig.sh && node -r source-map-support/register dist/start.cjs

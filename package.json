@@ -25,7 +25,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "main": "./dist/start.js",
+  "main": "./dist/start.cjs",
   "lint-staged": {
     "src/**/*.{js,ts}": [
       "prettier --write",
@@ -45,16 +45,17 @@
   "scripts": {
     "prepare": "node prepare.js",
     "prestart": "npm run build",
-    "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.js",
-    "start:server": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/ui/httpd/start.js",
-    "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.js",
-    "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.js",
-    "start:dev:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.js",
-    "start:prof": "cross-env NODE_ENV=production node -r source-map-support/register --prof dist/start.js",
-    "start:doctorprof": "cross-env NODE_ENV=production clinic doctor -- node -r source-map-support/register dist/start.js",
-    "start:flameprof": "cross-env NODE_ENV=production clinic flame -- node -r source-map-support/register dist/start.js",
-    "start:bubbleprof": "cross-env NODE_ENV=production clinic bubbleprof -- node -r source-map-support/register dist/start.js",
-    "start:heapprofiler": "cross-env NODE_ENV=production clinic heapprofiler -- node -r source-map-support/register dist/start.js",
+    "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.cjs",
+    "start:esm": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.mjs",
+    "start:server": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/ui/httpd/start.cjs",
+    "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.cjs",
+    "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.cjs",
+    "start:dev:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.cjs",
+    "start:prof": "cross-env NODE_ENV=production node -r source-map-support/register --prof dist/start.cjs",
+    "start:doctorprof": "cross-env NODE_ENV=production clinic doctor -- node -r source-map-support/register dist/start.cjs",
+    "start:flameprof": "cross-env NODE_ENV=production clinic flame -- node -r source-map-support/register dist/start.cjs",
+    "start:bubbleprof": "cross-env NODE_ENV=production clinic bubbleprof -- node -r source-map-support/register dist/start.cjs",
+    "start:heapprofiler": "cross-env NODE_ENV=production clinic heapprofiler -- node -r source-map-support/register dist/start.cjs",
     "rollup": "rollup --config",
     "build": "npm run rollup",
     "build:dev": "npm run rollup -- --environment BUILD:development",
