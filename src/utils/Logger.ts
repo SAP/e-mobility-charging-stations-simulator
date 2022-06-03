@@ -1,9 +1,9 @@
-import { Console, File } from 'winston/lib/winston/transports';
 import { Logger, createLogger, format, transport } from 'winston';
 
 import Configuration from './Configuration';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { Format } from 'logform';
+import TransportType from 'winston/lib/winston/transports/index.js';
 import Utils from './Utils';
 
 let transports: transport[];
@@ -30,8 +30,8 @@ if (Configuration.getLogRotate()) {
   ];
 } else {
   transports = [
-    new File({ filename: Configuration.getLogErrorFile(), level: 'error' }),
-    new File({ filename: Configuration.getLogFile() }),
+    new TransportType.File({ filename: Configuration.getLogErrorFile(), level: 'error' }),
+    new TransportType.File({ filename: Configuration.getLogFile() }),
   ];
 }
 
@@ -47,7 +47,7 @@ const logger: Logger = createLogger({
 //
 if (Configuration.getLogConsole()) {
   logger.add(
-    new Console({
+    new TransportType.Console({
       format: format.combine(
         format.splat(),
         (format[Configuration.getLogFormat()] as () => Format)()

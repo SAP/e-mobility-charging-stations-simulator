@@ -20,6 +20,7 @@ import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import chalk from 'chalk';
+import { fileURLToPath } from 'url';
 import { isMainThread } from 'worker_threads';
 import path from 'path';
 import { version } from '../../package.json';
@@ -38,7 +39,7 @@ export default class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerScript = path.join(
-      path.resolve(__dirname, '../'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',
       'ChargingStationWorker.js'
     );
@@ -188,7 +189,7 @@ export default class Bootstrap {
     const workerData: ChargingStationWorkerData = {
       index,
       templateFile: path.join(
-        path.resolve(__dirname, '../'),
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
         'assets',
         'station-templates',
         path.basename(stationTemplateUrl.file)

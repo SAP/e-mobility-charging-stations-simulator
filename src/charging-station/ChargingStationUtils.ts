@@ -22,6 +22,7 @@ import Utils from '../utils/Utils';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
 import logger from '../utils/Logger';
 import moment from 'moment';
@@ -545,7 +546,7 @@ export class ChargingStationUtils {
     return (
       stationInfo.authorizationFile &&
       path.join(
-        path.resolve(__dirname, '../'),
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
         'assets',
         path.basename(stationInfo.authorizationFile)
       )

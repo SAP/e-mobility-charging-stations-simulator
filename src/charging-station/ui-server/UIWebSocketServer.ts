@@ -1,5 +1,4 @@
 import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
-import WebSocket, { OPEN, Server } from 'ws';
 
 import { AbstractUIServer } from './AbstractUIServer';
 import Configuration from '../../utils/Configuration';
@@ -7,12 +6,13 @@ import { IncomingMessage } from 'http';
 import { ServerOptions } from '../../types/ConfigurationData';
 import UIServiceFactory from './ui-services/UIServiceFactory';
 import Utils from '../../utils/Utils';
+import WebSocket from 'ws';
 import logger from '../../utils/Logger';
 
 export default class UIWebSocketServer extends AbstractUIServer {
   public constructor(options?: ServerOptions) {
     super();
-    this.server = new Server(options ?? Configuration.getUIServer().options);
+    this.server = new WebSocket.Server(options ?? Configuration.getUIServer().options);
   }
 
   public start(): void {
@@ -52,8 +52,8 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   private broadcastToClients(message: string): void {
-    for (const client of (this.server as Server).clients) {
-      if (client?.readyState === OPEN) {
+    for (const client of (this.server as WebSocket.Server).clients) {
+      if (client?.readyState === WebSocket.OPEN) {
         client.send(message);
       }
     }

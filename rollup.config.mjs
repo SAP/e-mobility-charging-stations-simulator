@@ -40,7 +40,7 @@ export default {
     'uuid',
     'ws',
     'winston-daily-rotate-file',
-    'winston/lib/winston/transports',
+    'winston/lib/winston/transports/index.js',
     'winston',
     'worker_threads',
   ],
