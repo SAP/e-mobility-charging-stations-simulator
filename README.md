@@ -1,5 +1,7 @@
 # [e-mobility charging stations simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
 
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator)
+
 ## Summary
 
 Simple [node.js](https://nodejs.org/) software to simulate a set of charging stations based on the OCPP-J 1.6 protocol as part of SAP e-Mobility solution.
