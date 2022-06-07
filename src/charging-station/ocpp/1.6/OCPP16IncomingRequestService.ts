@@ -58,6 +58,7 @@ import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
 } from '../../../types/ocpp/1.6/Configuration';
+import { URL, fileURLToPath } from 'url';
 
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
@@ -73,7 +74,6 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import OCPPError from '../../../exception/OCPPError';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
-import { URL } from 'url';
 import Utils from '../../../utils/Utils';
 import fs from 'fs';
 import logger from '../../../utils/Logger';
@@ -881,7 +881,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       let ftpClient: Client;
       try {
         const logFiles = fs
-          .readdirSync(path.resolve(__dirname, '../../../../'))
+          .readdirSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'))
           .filter((file) => file.endsWith('.log'))
           .map((file) => path.join('./', file));
         const diagnosticsArchive = chargingStation.stationInfo.chargingStationId + '_logs.tar.gz';
@@ -910,7 +910,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             });
           });
           uploadResponse = await ftpClient.uploadFrom(
-            path.join(path.resolve(__dirname, '../../../../'), diagnosticsArchive),
+            path.join(
+              path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'),
+              diagnosticsArchive
+            ),
             uri.pathname + diagnosticsArchive
           );
           if (uploadResponse.code === 226) {

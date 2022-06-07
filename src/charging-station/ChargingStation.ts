@@ -39,8 +39,9 @@ import {
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
+import { URL, fileURLToPath } from 'url';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import WebSocket, { Data, OPEN, RawData } from 'ws';
+import WebSocket, { Data, RawData } from 'ws';
 
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
@@ -72,7 +73,6 @@ import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
-import { URL } from 'url';
 import Utils from '../utils/Utils';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -180,7 +180,7 @@ export default class ChargingStation {
   }
 
   public isWebSocketConnectionOpened(): boolean {
-    return this?.wsConnection?.readyState === OPEN;
+    return this?.wsConnection?.readyState === WebSocket.OPEN;
   }
 
   public getRegistrationStatus(): RegistrationStatus {
@@ -877,7 +877,7 @@ export default class ChargingStation {
     this.hashId = ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile());
     logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
     this.configurationFile = path.join(
-      path.resolve(__dirname, '../'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'assets',
       'configurations',
       this.hashId + '.json'

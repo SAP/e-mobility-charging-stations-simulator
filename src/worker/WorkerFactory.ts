@@ -19,7 +19,7 @@ export default class WorkerFactory {
     workerOptions?: WorkerOptions
   ): WorkerAbstract<T> | null {
     if (!isMainThread) {
-      throw new Error('Trying to get a worker implementation outside the main thread');
+      throw new Error('Cannot get a worker implementation outside the main thread');
     }
     workerOptions = workerOptions ?? ({} as WorkerOptions);
     workerOptions.workerStartDelay =

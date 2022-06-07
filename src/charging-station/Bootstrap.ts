@@ -20,6 +20,7 @@ import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import chalk from 'chalk';
+import { fileURLToPath } from 'url';
 import { isMainThread } from 'worker_threads';
 import path from 'path';
 import { version } from '../../package.json';
@@ -38,9 +39,9 @@ export default class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerScript = path.join(
-      path.resolve(__dirname, '../'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',
-      'ChargingStationWorker.js'
+      'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
     this.initialize();
     this.initWorkerImplementation();
@@ -75,7 +76,7 @@ export default class Bootstrap {
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
         // Start ChargingStation object in worker thread
-        if (stationTemplateUrls) {
+        if (!Utils.isEmptyArray(stationTemplateUrls)) {
           for (const stationTemplateUrl of stationTemplateUrls) {
             try {
               const nbStations = stationTemplateUrl.numberOfStations ?? 0;
@@ -94,7 +95,9 @@ export default class Bootstrap {
             }
           }
         } else {
-          console.warn(chalk.yellow("No 'stationTemplateUrls' defined in configuration, exiting"));
+          console.warn(
+            chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
+          );
         }
         if (this.numberOfChargingStations === 0) {
           console.warn(
@@ -186,7 +189,7 @@ export default class Bootstrap {
     const workerData: ChargingStationWorkerData = {
       index,
       templateFile: path.join(
-        path.resolve(__dirname, '../'),
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
         'assets',
         'station-templates',
         path.basename(stationTemplateUrl.file)

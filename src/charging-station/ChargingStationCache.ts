@@ -8,12 +8,14 @@ enum CacheType {
   CHARGING_STATION_CONFIGURATION = 'chargingStationConfiguration',
 }
 
+type CacheableType = ChargingStationTemplate | ChargingStationConfiguration;
+
 export class ChargingStationCache {
   private static instance: ChargingStationCache | null = null;
-  private readonly lruCache: LRUCache<string, any>;
+  private readonly lruCache: LRUCache<string, CacheableType>;
 
   private constructor() {
-    this.lruCache = new LRUCache<string, any>(1000);
+    this.lruCache = new LRUCache<string, CacheableType>(1000);
   }
 
   public static getInstance(): ChargingStationCache {
@@ -79,11 +81,11 @@ export class ChargingStationCache {
     return this.lruCache.has(key);
   }
 
-  private get(key: string): any {
+  private get(key: string): CacheableType {
     return this.lruCache.get(key);
   }
 
-  private set(key: string, value: any): void {
+  private set(key: string, value: CacheableType): void {
     this.lruCache.set(key, value);
   }
 

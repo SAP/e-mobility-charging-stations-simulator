@@ -103,7 +103,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   private async internalStartConnector(connectorId: number): Promise<void> {
-    this.initStartConnectorStatus(connectorId);
+    this.initializeConnectorStatus(connectorId);
     logger.info(
       this.logPrefix(connectorId) +
         ' started on connector and will run for ' +
@@ -238,7 +238,7 @@ export default class AutomaticTransactionGenerator {
     });
   }
 
-  private initStartConnectorStatus(connectorId: number): void {
+  private initializeConnectorStatus(connectorId: number): void {
     this.connectorsStatus.get(connectorId).authorizeRequests =
       this?.connectorsStatus.get(connectorId)?.authorizeRequests ?? 0;
     this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests =
@@ -388,15 +388,10 @@ export default class AutomaticTransactionGenerator {
   }
 
   private logPrefix(connectorId?: number): string {
-    if (connectorId) {
-      return Utils.logPrefix(
-        ' ' +
-          this.chargingStation.stationInfo.chargingStationId +
-          ' | ATG on connector #' +
-          connectorId.toString() +
-          ':'
-      );
-    }
-    return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' | ATG:');
+    return Utils.logPrefix(
+      ` ${this.chargingStation.stationInfo.chargingStationId} | ATG${
+        connectorId && ` on connector #${connectorId.toString()}`
+      }:`
+    );
   }
 }

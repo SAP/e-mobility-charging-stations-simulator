@@ -16,12 +16,13 @@ import type { WorkerChoiceStrategy } from 'poolifier';
 import WorkerConstants from '../worker/WorkerConstants';
 import { WorkerProcessType } from '../types/Worker';
 import chalk from 'chalk';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
 
 export default class Configuration {
   private static configurationFile = path.join(
-    path.resolve(__dirname, '../'),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
     'assets',
     'config.json'
   );
@@ -375,11 +376,14 @@ export default class Configuration {
     switch (storageType) {
       case StorageType.JSON_FILE:
         return `file://${path.join(
-          path.resolve(__dirname, '../../'),
+          path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
           Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME
         )}`;
       case StorageType.SQLITE:
-        return `file://${path.join(path.resolve(__dirname, '../../'), SQLiteFileName)}`;
+        return `file://${path.join(
+          path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
+          SQLiteFileName
+        )}`;
       default:
         throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);
     }

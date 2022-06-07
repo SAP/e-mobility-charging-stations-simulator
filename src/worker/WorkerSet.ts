@@ -46,6 +46,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
     }
     if (
+      this.workerSet.size === 0 ||
       this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker
     ) {
       await this.startWorker();

@@ -1,12 +1,12 @@
 import AbstractUIService from './ui-services/AbstractUIService';
 import { Server as HttpServer } from 'http';
 import { ProtocolVersion } from '../../types/UIProtocol';
-import { Server as WSServer } from 'ws';
+import WebSocket from 'ws';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Set<string>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
-  protected server: WSServer | HttpServer;
+  protected server: WebSocket.Server | HttpServer;
 
   public constructor() {
     this.chargingStations = new Set<string>();

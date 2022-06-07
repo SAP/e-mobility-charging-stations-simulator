@@ -30,6 +30,7 @@ jobs:
       - name: npm test
         run: npm test
       - name: npm run coverage
+        if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
         run: npm run coverage
       - name: SonarCloud Scan
         if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
