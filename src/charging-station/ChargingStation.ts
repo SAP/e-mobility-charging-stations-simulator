@@ -83,7 +83,7 @@ import path from 'path';
 export default class ChargingStation {
   public hashId!: string;
   public readonly templateFile: string;
-  public authorizedTags: string[];
+  public authorizedTags!: string[];
   public stationInfo!: ChargingStationInfo;
   public readonly connectors: Map<number, ConnectorStatus>;
   public ocppConfiguration!: ChargingStationOcppConfiguration;
