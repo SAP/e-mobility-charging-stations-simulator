@@ -8,16 +8,16 @@ import fs from 'fs';
 import logger from './Logger';
 
 export default class FileUtils {
-  static watchJsonFile<T extends JsonType>(
+  public static watchJsonFile<T extends JsonType>(
     logPrefix: string,
     fileType: FileType,
     file: string,
-    attribute?: T,
+    refreshedVariable?: T,
     listener: fs.WatchListener<string> = (event, filename) => {
       if (filename && event === 'change') {
         try {
           logger.debug(logPrefix + ' ' + fileType + ' file ' + file + ' have changed, reload');
-          attribute && (attribute = JSON.parse(fs.readFileSync(file, 'utf8')) as T);
+          refreshedVariable && (refreshedVariable = JSON.parse(fs.readFileSync(file, 'utf8')) as T);
         } catch (error) {
           FileUtils.handleFileException(logPrefix, fileType, file, error as NodeJS.ErrnoException, {
             throwError: false,
@@ -25,10 +25,10 @@ export default class FileUtils {
         }
       }
     }
-  ) {
+  ): fs.FSWatcher {
     if (file) {
       try {
-        fs.watch(file, listener);
+        return fs.watch(file, listener);
       } catch (error) {
         FileUtils.handleFileException(logPrefix, fileType, file, error as NodeJS.ErrnoException, {
           throwError: false,
@@ -39,7 +39,7 @@ export default class FileUtils {
     }
   }
 
-  static handleFileException(
+  public static handleFileException(
     logPrefix: string,
     fileType: FileType,
     file: string,
