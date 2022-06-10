@@ -10,6 +10,10 @@ import {
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
+import {
+  AutomaticTransactionGeneratorConfiguration,
+  Status,
+} from '../types/AutomaticTransactionGenerator';
 import { MeterValuesRequest, RequestCommand } from '../types/ocpp/Requests';
 
 import type ChargingStation from './ChargingStation';
@@ -17,7 +21,6 @@ import Constants from '../utils/Constants';
 import { MeterValuesResponse } from '../types/ocpp/Responses';
 import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
-import { Status } from '../types/AutomaticTransactionGenerator';
 import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
 
@@ -27,22 +30,33 @@ export default class AutomaticTransactionGenerator {
     AutomaticTransactionGenerator
   >();
 
+  public readonly configuration: AutomaticTransactionGeneratorConfiguration;
   public started: boolean;
   private readonly chargingStation: ChargingStation;
   private readonly connectorsStatus: Map<number, Status>;
 
-  private constructor(chargingStation: ChargingStation) {
+  private constructor(
+    automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
+    chargingStation: ChargingStation
+  ) {
+    this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
     this.connectorsStatus = new Map<number, Status>();
     this.stopConnectors();
     this.started = false;
   }
 
-  public static getInstance(chargingStation: ChargingStation): AutomaticTransactionGenerator {
+  public static getInstance(
+    automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
+    chargingStation: ChargingStation
+  ): AutomaticTransactionGenerator {
     if (!AutomaticTransactionGenerator.instances.has(chargingStation.hashId)) {
       AutomaticTransactionGenerator.instances.set(
         chargingStation.hashId,
-        new AutomaticTransactionGenerator(chargingStation)
+        new AutomaticTransactionGenerator(
+          automaticTransactionGeneratorConfiguration,
+          chargingStation
+        )
       );
     }
     return AutomaticTransactionGenerator.instances.get(chargingStation.hashId);
@@ -89,7 +103,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   private async internalStartConnector(connectorId: number): Promise<void> {
-    this.initStartConnectorStatus(connectorId);
+    this.initializeConnectorStatus(connectorId);
     logger.info(
       this.logPrefix(connectorId) +
         ' started on connector and will run for ' +
@@ -140,19 +154,15 @@ export default class AutomaticTransactionGenerator {
       }
       const wait =
         Utils.getRandomInteger(
-          this.chargingStation.stationInfo.AutomaticTransactionGenerator
-            .maxDelayBetweenTwoTransactions,
-          this.chargingStation.stationInfo.AutomaticTransactionGenerator
-            .minDelayBetweenTwoTransactions
+          this.configuration.maxDelayBetweenTwoTransactions,
+          this.configuration.minDelayBetweenTwoTransactions
         ) * 1000;
       logger.info(
         this.logPrefix(connectorId) + ' waiting for ' + Utils.formatDurationMilliSeconds(wait)
       );
       await Utils.sleep(wait);
       const start = Utils.secureRandom();
-      if (
-        start < this.chargingStation.stationInfo.AutomaticTransactionGenerator.probabilityOfStart
-      ) {
+      if (start < this.configuration.probabilityOfStart) {
         this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
         // Start transaction
         const startResponse = await this.startTransaction(connectorId);
@@ -163,10 +173,8 @@ export default class AutomaticTransactionGenerator {
         } else {
           // Wait until end of transaction
           const waitTrxEnd =
-            Utils.getRandomInteger(
-              this.chargingStation.stationInfo.AutomaticTransactionGenerator.maxDuration,
-              this.chargingStation.stationInfo.AutomaticTransactionGenerator.minDuration
-            ) * 1000;
+            Utils.getRandomInteger(this.configuration.maxDuration, this.configuration.minDuration) *
+            1000;
           logger.info(
             this.logPrefix(connectorId) +
               ' transaction ' +
@@ -230,7 +238,7 @@ export default class AutomaticTransactionGenerator {
     });
   }
 
-  private initStartConnectorStatus(connectorId: number): void {
+  private initializeConnectorStatus(connectorId: number): void {
     this.connectorsStatus.get(connectorId).authorizeRequests =
       this?.connectorsStatus.get(connectorId)?.authorizeRequests ?? 0;
     this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests =
@@ -257,7 +265,7 @@ export default class AutomaticTransactionGenerator {
     this.connectorsStatus.get(connectorId).startDate = new Date();
     this.connectorsStatus.get(connectorId).stopDate = new Date(
       this.connectorsStatus.get(connectorId).startDate.getTime() +
-        (this.chargingStation.stationInfo?.AutomaticTransactionGenerator?.stopAfterHours ??
+        (this.configuration.stopAfterHours ??
           Constants.CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS) *
           3600 *
           1000 -
@@ -274,14 +282,14 @@ export default class AutomaticTransactionGenerator {
     let startResponse: StartTransactionResponse;
     if (this.chargingStation.hasAuthorizedTags()) {
       const idTag = this.chargingStation.getRandomIdTag();
-      if (this.chargingStation.getAutomaticTransactionGeneratorRequireAuthorize()) {
+      if (this.getRequireAuthorize()) {
         this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
         // Authorize idTag
         const authorizeResponse: AuthorizeResponse =
           await this.chargingStation.ocppRequestService.requestHandler<
             AuthorizeRequest,
             AuthorizeResponse
-          >(RequestCommand.AUTHORIZE, {
+          >(this.chargingStation, RequestCommand.AUTHORIZE, {
             idTag,
           });
         this.connectorsStatus.get(connectorId).authorizeRequests++;
@@ -292,7 +300,7 @@ export default class AutomaticTransactionGenerator {
           startResponse = await this.chargingStation.ocppRequestService.requestHandler<
             StartTransactionRequest,
             StartTransactionResponse
-          >(RequestCommand.START_TRANSACTION, {
+          >(this.chargingStation, RequestCommand.START_TRANSACTION, {
             connectorId,
             idTag,
           });
@@ -308,7 +316,7 @@ export default class AutomaticTransactionGenerator {
       startResponse = await this.chargingStation.ocppRequestService.requestHandler<
         StartTransactionRequest,
         StartTransactionResponse
-      >(RequestCommand.START_TRANSACTION, {
+      >(this.chargingStation, RequestCommand.START_TRANSACTION, {
         connectorId,
         idTag,
       });
@@ -319,7 +327,7 @@ export default class AutomaticTransactionGenerator {
     startResponse = await this.chargingStation.ocppRequestService.requestHandler<
       StartTransactionRequest,
       StartTransactionResponse
-    >(RequestCommand.START_TRANSACTION, { connectorId });
+    >(this.chargingStation, RequestCommand.START_TRANSACTION, { connectorId });
     PerformanceStatistics.endMeasure(measureId, beginId);
     return startResponse;
   }
@@ -348,7 +356,7 @@ export default class AutomaticTransactionGenerator {
         await this.chargingStation.ocppRequestService.requestHandler<
           MeterValuesRequest,
           MeterValuesResponse
-        >(RequestCommand.METER_VALUES, {
+        >(this.chargingStation, RequestCommand.METER_VALUES, {
           connectorId,
           transactionId,
           meterValue: transactionEndMeterValue,
@@ -357,7 +365,7 @@ export default class AutomaticTransactionGenerator {
       stopResponse = await this.chargingStation.ocppRequestService.requestHandler<
         StopTransactionRequest,
         StopTransactionResponse
-      >(RequestCommand.STOP_TRANSACTION, {
+      >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
         transactionId,
         meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
         idTag: this.chargingStation.getTransactionIdTag(transactionId),
@@ -375,16 +383,15 @@ export default class AutomaticTransactionGenerator {
     return stopResponse;
   }
 
+  private getRequireAuthorize(): boolean {
+    return this.configuration?.requireAuthorize ?? true;
+  }
+
   private logPrefix(connectorId?: number): string {
-    if (connectorId) {
-      return Utils.logPrefix(
-        ' ' +
-          this.chargingStation.stationInfo.chargingStationId +
-          ' | ATG on connector #' +
-          connectorId.toString() +
-          ':'
-      );
-    }
-    return Utils.logPrefix(' ' + this.chargingStation.stationInfo.chargingStationId + ' | ATG:');
+    return Utils.logPrefix(
+      ` ${this.chargingStation.stationInfo.chargingStationId} | ATG${
+        connectorId && ` on connector #${connectorId.toString()}`
+      }:`
+    );
   }
 }

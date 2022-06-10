@@ -8,6 +8,7 @@ import {
 import { parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
 import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
@@ -15,7 +16,7 @@ import logger from '../utils/Logger';
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
-if (Utils.workerPoolInUse()) {
+if (ChargingStationUtils.workerPoolInUse()) {
   threadWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
     maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
     async: false,

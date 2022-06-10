@@ -5,34 +5,27 @@ import { JsonType } from '../../types/JsonType';
 import logger from '../../utils/Logger';
 
 export default abstract class OCPPIncomingRequestService {
-  private static readonly instances: Map<string, OCPPIncomingRequestService> = new Map<
-    string,
-    OCPPIncomingRequestService
-  >();
+  private static instance: OCPPIncomingRequestService | null = null;
 
-  protected chargingStation: ChargingStation;
-
-  protected constructor(chargingStation: ChargingStation) {
-    this.chargingStation = chargingStation;
+  protected constructor() {
+    // This is intentional
   }
 
-  public static getInstance<T extends OCPPIncomingRequestService>(
-    this: new (chargingStation: ChargingStation) => T,
-    chargingStation: ChargingStation
-  ): T {
-    if (!OCPPIncomingRequestService.instances.has(chargingStation.hashId)) {
-      OCPPIncomingRequestService.instances.set(chargingStation.hashId, new this(chargingStation));
+  public static getInstance<T extends OCPPIncomingRequestService>(this: new () => T): T {
+    if (!OCPPIncomingRequestService.instance) {
+      OCPPIncomingRequestService.instance = new this();
     }
-    return OCPPIncomingRequestService.instances.get(chargingStation.hashId) as T;
+    return OCPPIncomingRequestService.instance as T;
   }
 
   protected handleIncomingRequestError<T>(
+    chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
     error: Error,
     params: HandleErrorParams<T> = { throwError: true }
   ): T {
     logger.error(
-      this.chargingStation.logPrefix() + ' Incoming request command %s error: %j',
+      chargingStation.logPrefix() + ' Incoming request command %s error: %j',
       commandName,
       error
     );
@@ -48,6 +41,7 @@ export default abstract class OCPPIncomingRequestService {
   }
 
   public abstract incomingRequestHandler(
+    chargingStation: ChargingStation,
     messageId: string,
     commandName: IncomingRequestCommand,
     commandPayload: JsonType

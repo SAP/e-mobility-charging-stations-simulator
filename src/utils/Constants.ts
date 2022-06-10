@@ -90,6 +90,13 @@ export default class Constants {
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
   static readonly CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS = 0.25; // Hours
+  static readonly CHARGING_STATION_CONFIGURATION_SECTIONS = Object.freeze([
+    'stationInfo',
+    'configurationKey',
+    'configurationHash',
+  ]);
+
+  static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = Number.MAX_SAFE_INTEGER;
 
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384';
 
@@ -112,7 +119,7 @@ export default class Constants {
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5;
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json';
-  static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'charging-stations-simulator';
+  static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator';
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records';
 
   static readonly DEFAULT_UI_WEBSOCKET_SERVER_HOST = 'localhost';

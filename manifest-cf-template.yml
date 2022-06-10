@@ -1,5 +1,5 @@
 applications:
-  - name: charging-stations-simulator
+  - name: e-mobility-charging-stations-simulator
     memory: 1G
     disk_quota: 1G
     instances: 1
@@ -9,8 +9,8 @@ applications:
     no-route: true
     health-check-type: process
     health-check-invocation-timeout: 10
-    command: node -r source-map-support/register dist/start.js
-    # command: node -r source-map-support/register dist/httpd/ui/start.js
+    command: node -r source-map-support/register dist/start.cjs
+    # command: node -r source-map-support/register dist/httpd/ui/start.cjs
     env:
       # OPTIMIZE_MEMORY: true
       NODE_OPTIONS: --stack-trace-limit=1024 --max-old-space-size=768

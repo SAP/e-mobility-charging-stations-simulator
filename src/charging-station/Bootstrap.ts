@@ -9,6 +9,7 @@ import {
 
 import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { ApplicationProtocol } from '../types/UIProtocol';
+import { ChargingStationUtils } from './ChargingStationUtils';
 import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
@@ -20,6 +21,7 @@ import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import chalk from 'chalk';
+import { fileURLToPath } from 'url';
 import { isMainThread } from 'worker_threads';
 import logger from '../utils/Logger';
 import path from 'path';
@@ -30,7 +32,8 @@ export default class Bootstrap {
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
   private readonly uiServer!: AbstractUIServer;
   private readonly storage!: Storage;
-  private numberOfChargingStations: number;
+  private numberOfChargingStationTemplates!: number;
+  private numberOfChargingStations!: number;
   private readonly version: string = version;
   private started: boolean;
   private readonly workerScript: string;
@@ -38,10 +41,11 @@ export default class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerScript = path.join(
-      path.resolve(__dirname, '../'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',
-      'ChargingStationWorker.js'
+      'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
+    this.initialize();
     this.initWorkerImplementation();
     Configuration.getUIServer().enabled &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
@@ -67,13 +71,14 @@ export default class Bootstrap {
   public async start(): Promise<void> {
     if (isMainThread && !this.started) {
       try {
-        this.numberOfChargingStations = 0;
+        this.initialize();
         await this.storage?.open();
         await this.workerImplementation.start();
         this.uiServer?.start();
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
+        this.numberOfChargingStationTemplates = stationTemplateUrls.length;
         // Start ChargingStation object in worker thread
-        if (stationTemplateUrls) {
+        if (!Utils.isEmptyArray(stationTemplateUrls)) {
           for (const stationTemplateUrl of stationTemplateUrls) {
             try {
               const nbStations = stationTemplateUrl.numberOfStations ?? 0;
@@ -92,7 +97,9 @@ export default class Bootstrap {
             }
           }
         } else {
-          console.warn(chalk.yellow("No 'stationTemplateUrls' defined in configuration, exiting"));
+          console.warn(
+            chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
+          );
         }
         if (this.numberOfChargingStations === 0) {
           console.warn(
@@ -103,12 +110,14 @@ export default class Bootstrap {
             chalk.green(
               `Charging stations simulator ${
                 this.version
-              } started with ${this.numberOfChargingStations.toString()} charging station(s) and ${
-                Utils.workerDynamicPoolInUse()
+              } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
+                ChargingStationUtils.workerDynamicPoolInUse()
                   ? `${Configuration.getWorkerPoolMinSize().toString()}/`
                   : ''
               }${this.workerImplementation.size}${
-                Utils.workerPoolInUse() ? `/${Configuration.getWorkerPoolMaxSize().toString()}` : ''
+                ChargingStationUtils.workerPoolInUse()
+                  ? `/${Configuration.getWorkerPoolMaxSize().toString()}`
+                  : ''
               } worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${
                 this.workerImplementation.maxElementsPerWorker
                   ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
@@ -139,6 +148,7 @@ export default class Bootstrap {
 
   public async restart(): Promise<void> {
     await this.stop();
+    this.initialize();
     this.initWorkerImplementation();
     await this.start();
   }
@@ -193,6 +203,11 @@ export default class Bootstrap {
     );
   }
 
+  private initialize() {
+    this.numberOfChargingStations = 0;
+    this.numberOfChargingStationTemplates = 0;
+  }
+
   private async startChargingStation(
     index: number,
     stationTemplateUrl: StationTemplateUrl
@@ -200,7 +215,7 @@ export default class Bootstrap {
     const workerData: ChargingStationWorkerData = {
       index,
       templateFile: path.join(
-        path.resolve(__dirname, '../'),
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
         'assets',
         'station-templates',
         path.basename(stationTemplateUrl.file)
