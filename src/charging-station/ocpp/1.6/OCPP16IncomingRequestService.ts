@@ -62,6 +62,7 @@ import { URL, fileURLToPath } from 'url';
 
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
+import { ChargingStationUtils } from '../../ChargingStationUtils';
 import Constants from '../../../utils/Constants';
 import { DefaultResponse } from '../../../types/ocpp/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
@@ -614,7 +615,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           if (
             chargingStation.getLocalAuthListEnabled() &&
             chargingStation.hasAuthorizedTags() &&
-            chargingStation.authorizedTags.find((value) => value === commandPayload.idTag)
+            chargingStation.authorizedTagsCache
+              .getAuthorizedTags(
+                ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
+              )
+              .find((value) => value === commandPayload.idTag)
           ) {
             connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
             connectorStatus.idTagLocalAuthorized = true;

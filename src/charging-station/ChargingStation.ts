@@ -43,6 +43,7 @@ import { URL, fileURLToPath } from 'url';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import WebSocket, { Data, RawData } from 'ws';
 
+import AuthorizedTagsCache from './AuthorizedTagsCache';
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
 import BaseError from '../exception/BaseError';
@@ -83,7 +84,7 @@ import path from 'path';
 export default class ChargingStation {
   public hashId!: string;
   public readonly templateFile: string;
-  public authorizedTags: string[];
+  public authorizedTagsCache: AuthorizedTagsCache;
   public stationInfo!: ChargingStationInfo;
   public readonly connectors: Map<number, ConnectorStatus>;
   public ocppConfiguration!: ChargingStationOcppConfiguration;
@@ -105,6 +106,7 @@ export default class ChargingStation {
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
   private stopped: boolean;
+  private templateFileWatcher!: fs.FSWatcher;
   private readonly cache: ChargingStationCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
@@ -116,6 +118,7 @@ export default class ChargingStation {
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
     this.cache = ChargingStationCache.getInstance();
+    this.authorizedTagsCache = AuthorizedTagsCache.getInstance();
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
@@ -149,12 +152,19 @@ export default class ChargingStation {
   }
 
   public getRandomIdTag(): string {
-    const index = Math.floor(Utils.secureRandom() * this.authorizedTags.length);
-    return this.authorizedTags[index];
+    const authorizationFile = ChargingStationUtils.getAuthorizationFile(this.stationInfo);
+    const index = Math.floor(
+      Utils.secureRandom() * this.authorizedTagsCache.getAuthorizedTags(authorizationFile).length
+    );
+    return this.authorizedTagsCache.getAuthorizedTags(authorizationFile)[index];
   }
 
   public hasAuthorizedTags(): boolean {
-    return !Utils.isEmptyArray(this.authorizedTags);
+    return !Utils.isEmptyArray(
+      this.authorizedTagsCache.getAuthorizedTags(
+        ChargingStationUtils.getAuthorizationFile(this.stationInfo)
+      )
+    );
   }
 
   public getEnableStatistics(): boolean | undefined {
@@ -490,15 +500,8 @@ export default class ChargingStation {
     this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
     // Handle WebSocket pong
     this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
-    // Monitor authorization file
-    FileUtils.watchJsonFile<string[]>(
-      this.logPrefix(),
-      FileType.Authorization,
-      ChargingStationUtils.getAuthorizationFile(this.stationInfo),
-      this.authorizedTags
-    );
     // Monitor charging station template file
-    FileUtils.watchJsonFile(
+    this.templateFileWatcher = FileUtils.watchJsonFile(
       this.logPrefix(),
       FileType.ChargingStationTemplate,
       this.templateFile,
@@ -559,6 +562,7 @@ export default class ChargingStation {
       this.performanceStatistics.stop();
     }
     this.cache.deleteChargingStationConfiguration(this.configurationFileHash);
+    this.templateFileWatcher.close();
     this.cache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
     parentPort.postMessage({
@@ -896,11 +900,6 @@ export default class ChargingStation {
     }
     this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
       this.stationInfo
-    );
-    this.authorizedTags = ChargingStationUtils.getAuthorizedTags(
-      this.stationInfo,
-      this.templateFile,
-      this.logPrefix()
     );
     this.powerDivider = this.getPowerDivider();
     // OCPP configuration

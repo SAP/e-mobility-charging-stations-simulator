@@ -14,8 +14,6 @@ import { ChargingStationConfigurationUtils } from './ChargingStationConfiguratio
 import ChargingStationInfo from '../types/ChargingStationInfo';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
-import { FileType } from '../types/FileType';
-import FileUtils from '../utils/FileUtils';
 import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import Utils from '../utils/Utils';
@@ -23,7 +21,6 @@ import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 import logger from '../utils/Logger';
 import moment from 'moment';
 import path from 'path';
@@ -515,31 +512,6 @@ export class ChargingStationUtils {
     logger.debug(
       `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
     );
-  }
-
-  public static getAuthorizedTags(
-    stationInfo: ChargingStationInfo,
-    templateFile: string,
-    logPrefix: string
-  ): string[] {
-    let authorizedTags: string[] = [];
-    const authorizationFile = ChargingStationUtils.getAuthorizationFile(stationInfo);
-    if (authorizationFile) {
-      try {
-        // Load authorization file
-        authorizedTags = JSON.parse(fs.readFileSync(authorizationFile, 'utf8')) as string[];
-      } catch (error) {
-        FileUtils.handleFileException(
-          logPrefix,
-          FileType.Authorization,
-          authorizationFile,
-          error as NodeJS.ErrnoException
-        );
-      }
-    } else {
-      logger.info(logPrefix + ' No authorization file given in template file ' + templateFile);
-    }
-    return authorizedTags;
   }
 
   public static getAuthorizationFile(stationInfo: ChargingStationInfo): string | undefined {
