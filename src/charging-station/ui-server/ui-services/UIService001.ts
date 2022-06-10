@@ -3,8 +3,11 @@ import { ProtocolCommand, ProtocolRequestHandler } from '../../../types/UIProtoc
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 import { JsonType } from '../../../types/JsonType';
+import { BroadcastChannel, isMainThread } from 'worker_threads';
 
 export default class UIService001 extends AbstractUIService {
+  private test = new BroadcastChannel('test');
+
   constructor(uiServer: AbstractUIServer) {
     super(uiServer);
     this.messageHandlers.set(
@@ -17,6 +20,10 @@ export default class UIService001 extends AbstractUIService {
     );
   }
 
-  private handleStartTransaction(payload: JsonType): void {}
+  private handleStartTransaction(payload: JsonType): void {
+    console.log('handleStartTransaction');
+    this.test.postMessage('ceci est un test');
+  }
+
   private handleStopTransaction(payload: JsonType): void {}
 }

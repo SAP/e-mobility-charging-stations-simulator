@@ -5,7 +5,7 @@ import {
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-import { parentPort, workerData } from 'worker_threads';
+import { BroadcastChannel, parentPort, workerData } from 'worker_threads';
 
 import ChargingStation from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
@@ -29,6 +29,8 @@ if (ChargingStationUtils.workerPoolInUse()) {
   }
 }
 
+const test = new BroadcastChannel('test');
+
 /**
  * Listen messages send by the main thread
  */
@@ -39,6 +41,7 @@ function addMessageListener(): void {
       startChargingStation(message.data);
     }
   });
+  test.onmessage(console.log);
 }
 
 /**
