@@ -135,6 +135,7 @@ export default class Bootstrap {
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
       await this.workerImplementation.stop();
+      this.workerImplementation = null;
       this.uiServer?.stop();
       await this.storage?.close();
     } else {
