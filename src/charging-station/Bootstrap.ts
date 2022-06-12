@@ -44,7 +44,6 @@ export default class Bootstrap {
       'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
     this.initialize();
-    this.initWorkerImplementation();
     Configuration.getUIServer().enabled &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
         ...Configuration.getUIServer().options,
@@ -147,39 +146,40 @@ export default class Bootstrap {
   public async restart(): Promise<void> {
     await this.stop();
     this.initialize();
-    this.initWorkerImplementation();
     await this.start();
   }
 
-  private initWorkerImplementation(): void {
-    this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
-      this.workerScript,
-      Configuration.getWorkerProcess(),
-      {
-        workerStartDelay: Configuration.getWorkerStartDelay(),
-        elementStartDelay: Configuration.getElementStartDelay(),
-        poolMaxSize: Configuration.getWorkerPoolMaxSize(),
-        poolMinSize: Configuration.getWorkerPoolMinSize(),
-        elementsPerWorker: Configuration.getChargingStationsPerWorker(),
-        poolOptions: {
-          workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
-        },
-        messageHandler: async (msg: ChargingStationWorkerMessage) => {
-          if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
-            this.uiServer.chargingStations.add(msg.data.id as string);
-          } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
-            this.uiServer.chargingStations.delete(msg.data.id as string);
-          } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
-            await this.storage.storePerformanceStatistics(msg.data as unknown as Statistics);
-          }
-        },
-      }
-    );
+  private initializeWorkerImplementation(): void {
+    !this.workerImplementation &&
+      (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
+        this.workerScript,
+        Configuration.getWorkerProcess(),
+        {
+          workerStartDelay: Configuration.getWorkerStartDelay(),
+          elementStartDelay: Configuration.getElementStartDelay(),
+          poolMaxSize: Configuration.getWorkerPoolMaxSize(),
+          poolMinSize: Configuration.getWorkerPoolMinSize(),
+          elementsPerWorker: Configuration.getChargingStationsPerWorker(),
+          poolOptions: {
+            workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
+          },
+          messageHandler: async (msg: ChargingStationWorkerMessage) => {
+            if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
+              this.uiServer.chargingStations.add(msg.data.id as string);
+            } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
+              this.uiServer.chargingStations.delete(msg.data.id as string);
+            } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
+              await this.storage.storePerformanceStatistics(msg.data as unknown as Statistics);
+            }
+          },
+        }
+      ));
   }
 
   private initialize() {
     this.numberOfChargingStations = 0;
     this.numberOfChargingStationTemplates = 0;
+    this.initializeWorkerImplementation();
   }
 
   private async startChargingStation(
