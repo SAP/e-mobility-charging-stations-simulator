@@ -1,14 +1,16 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { BroadcastChannel, parentPort, threadId, workerData } from 'worker_threads';
 import {
   ChargingStationWorkerData,
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-import { BroadcastChannel, parentPort, workerData } from 'worker_threads';
+import { Protocol, ProtocolCommand } from '../types/UIProtocol';
 
 import ChargingStation from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
+import { MessageEvent } from 'ws';
 import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
@@ -27,21 +29,27 @@ if (ChargingStationUtils.workerPoolInUse()) {
   if (!Utils.isUndefined(workerData)) {
     startChargingStation(workerData as ChargingStationWorkerData);
   }
+  console.log('debug: ', threadId); // debug
 }
-
-const test = new BroadcastChannel('test');
 
 /**
  * Listen messages send by the main thread
  */
 function addMessageListener(): void {
-  parentPort?.on('message', (message: ChargingStationWorkerMessage) => {
+  parentPort.on('message', (message: ChargingStationWorkerMessage) => {
     logger.debug(`${logPrefix()} ${JSON.stringify(message)}`);
     if (message.id === ChargingStationWorkerMessageEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.data);
     }
   });
-  test.onmessage(console.log);
+  const test = new BroadcastChannel('test');
+  test.onmessage = (msg: MessageEvent) => {
+    console.log(msg.data);
+
+    switch (msg.data[0]) {
+      case ProtocolCommand.START_TRANSACTION:
+    }
+  };
 }
 
 /**

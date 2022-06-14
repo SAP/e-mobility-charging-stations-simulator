@@ -2,8 +2,8 @@ import { ProtocolCommand, ProtocolRequestHandler } from '../../../types/UIProtoc
 
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
+import { BroadcastChannel } from 'worker_threads';
 import { JsonType } from '../../../types/JsonType';
-import { BroadcastChannel, isMainThread } from 'worker_threads';
 
 export default class UIService001 extends AbstractUIService {
   private test = new BroadcastChannel('test');
@@ -22,7 +22,7 @@ export default class UIService001 extends AbstractUIService {
 
   private handleStartTransaction(payload: JsonType): void {
     console.log('handleStartTransaction');
-    this.test.postMessage('ceci est un test');
+    this.test.postMessage([ProtocolCommand.START_TRANSACTION, payload]);
   }
 
   private handleStopTransaction(payload: JsonType): void {}

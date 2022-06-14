@@ -97,6 +97,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   private async startWorker(): Promise<void> {
     const worker = new Worker(this.workerScript);
+    const threadId = worker.threadId;
     worker.on('message', (msg) => {
       (async () => {
         await this.messageHandler(msg);
@@ -108,6 +109,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       /* This is intentional */
     });
     worker.on('exit', (code) => {
+      console.log(threadId); // debug
       WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });
