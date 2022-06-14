@@ -10,19 +10,19 @@ enum CacheType {
 
 type CacheableType = ChargingStationTemplate | ChargingStationConfiguration;
 
-export class ChargingStationCache {
-  private static instance: ChargingStationCache | null = null;
+export default class SharedLRUCache {
+  private static instance: SharedLRUCache | null = null;
   private readonly lruCache: LRUCache<string, CacheableType>;
 
   private constructor() {
     this.lruCache = new LRUCache<string, CacheableType>(1000);
   }
 
-  public static getInstance(): ChargingStationCache {
-    if (!ChargingStationCache.instance) {
-      ChargingStationCache.instance = new ChargingStationCache();
+  public static getInstance(): SharedLRUCache {
+    if (!SharedLRUCache.instance) {
+      SharedLRUCache.instance = new SharedLRUCache();
     }
-    return ChargingStationCache.instance;
+    return SharedLRUCache.instance;
   }
 
   public hasChargingStationConfiguration(chargingStationConfigurationHash: string): boolean {
