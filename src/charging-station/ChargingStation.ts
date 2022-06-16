@@ -1475,7 +1475,7 @@ export default class ChargingStation {
   }
 
   private onError(error: WSError): void {
-    this.wsConnection.close();
+    this.closeWSConnection();
     logger.error(this.logPrefix() + ' WebSocket error: %j', error);
   }
 
