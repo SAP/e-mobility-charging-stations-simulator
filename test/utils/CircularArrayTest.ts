@@ -1,5 +1,5 @@
 import { CircularArray } from '../../src/utils/CircularArray';
-import expect from 'expect';
+import { expect } from 'expect';
 
 describe('Circular array test suite', () => {
   it('Verify that circular array can be instantiated', () => {
