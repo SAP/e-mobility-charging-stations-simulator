@@ -1,5 +1,4 @@
 import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
-import WebSocket, { OPEN, Server } from 'ws';
 
 import { AbstractUIServer } from './AbstractUIServer';
 import Configuration from '../../utils/Configuration';
@@ -8,16 +7,17 @@ import { ServerOptions } from '../../types/ConfigurationData';
 import { ChargingStationSubData } from '../../types/ChargingStationWorker';
 import UIServiceFactory from './ui-services/UIServiceFactory';
 import Utils from '../../utils/Utils';
+import WebSocket from 'ws';
 import logger from '../../utils/Logger';
 
 export default class UIWebSocketServer extends AbstractUIServer {
-  public constructor(options?: ServerOptions, callback?: () => void) {
+  public constructor(options?: ServerOptions) {
     super();
-    this.uiServer = new Server(options ?? Configuration.getUIServer().options, callback);
+    this.server = new WebSocket.Server(options ?? Configuration.getUIServer().options);
   }
 
   public start(): void {
-    this.uiServer.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
+    this.server.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
       const protocolIndex = socket.protocol.indexOf(Protocol.UI);
       const version = socket.protocol.substring(
         protocolIndex + Protocol.UI.length
@@ -41,7 +41,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public stop(): void {
-    this.uiServer.close();
+    this.server.close();
   }
 
   public sendResponse(message: string): void {
@@ -53,8 +53,8 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   private broadcastToClients(message: string): void {
-    for (const client of (this.uiServer as Server).clients) {
-      if (client?.readyState === OPEN) {
+    for (const client of (this.server as WebSocket.Server).clients) {
+      if (client?.readyState === WebSocket.OPEN) {
         client.send(message);
       }
     }

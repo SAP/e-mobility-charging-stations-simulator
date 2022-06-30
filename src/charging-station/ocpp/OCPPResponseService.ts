@@ -3,28 +3,21 @@ import { JsonType } from '../../types/JsonType';
 import { RequestCommand } from '../../types/ocpp/Requests';
 
 export default abstract class OCPPResponseService {
-  private static readonly instances: Map<string, OCPPResponseService> = new Map<
-    string,
-    OCPPResponseService
-  >();
+  private static instance: OCPPResponseService | null = null;
 
-  protected readonly chargingStation: ChargingStation;
-
-  protected constructor(chargingStation: ChargingStation) {
-    this.chargingStation = chargingStation;
+  protected constructor() {
+    // This is intentional
   }
 
-  public static getInstance<T extends OCPPResponseService>(
-    this: new (chargingStation: ChargingStation) => T,
-    chargingStation: ChargingStation
-  ): T {
-    if (!OCPPResponseService.instances.has(chargingStation.hashId)) {
-      OCPPResponseService.instances.set(chargingStation.hashId, new this(chargingStation));
+  public static getInstance<T extends OCPPResponseService>(this: new () => T): T {
+    if (!OCPPResponseService.instance) {
+      OCPPResponseService.instance = new this();
     }
-    return OCPPResponseService.instances.get(chargingStation.hashId) as T;
+    return OCPPResponseService.instance as T;
   }
 
   public abstract responseHandler(
+    chargingStation: ChargingStation,
     commandName: RequestCommand,
     payload: JsonType,
     requestPayload: JsonType

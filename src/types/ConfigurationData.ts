@@ -1,10 +1,10 @@
-import { ServerOptions as HttpServerOptions } from 'http';
+import { ListenOptions } from 'net';
 import { StorageType } from './Storage';
 import { ServerOptions as WSServerOptions } from 'ws';
 import type { WorkerChoiceStrategy } from 'poolifier';
 import { WorkerProcessType } from './Worker';
 
-export type ServerOptions = WSServerOptions & HttpServerOptions;
+export type ServerOptions = WSServerOptions & ListenOptions;
 
 export enum SupervisionUrlDistribution {
   ROUND_ROBIN = 'round-robin',

@@ -1,6 +1,7 @@
 import { WorkerData, WorkerOptions } from '../types/Worker';
 
 import WorkerConstants from './WorkerConstants';
+import fs from 'fs';
 
 export default abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;
@@ -28,6 +29,12 @@ export default abstract class WorkerAbstract<T extends WorkerData> {
       },
     }
   ) {
+    if (!workerScript) {
+      throw new Error('Worker script is not defined');
+    }
+    if (!fs.existsSync(workerScript)) {
+      throw new Error('Worker script file does not exist');
+    }
     this.workerScript = workerScript;
     this.workerOptions = workerOptions;
   }
