@@ -5,20 +5,39 @@
       :loading="EMobility.isWaitingValue"
       @click="load()"
     />
-    <ChargingStationsList id="list"/>
+    <CSList id="list"/>
   </Container>
+  <!-- <ReloadButton
+    id="reload-button"
+    :loading="EMobility.isWaitingValue"
+    @click="load()"
+  />
+  <br/>
+  <br/>
+  <br/>
+  <ReloadButton
+    id="reload-button"
+    :loading="EMobility.isWaitingValue"
+    @click="load()"
+  />
+  <br/>
+  <ReloadButton
+    id="reload-button"
+    :loading="EMobility.isWaitingValue"
+    @click="load()"
+  /> -->
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import EMobility from '@/composable/EMobility';
-import ChargingStationsList from '@/components/ChargingStationsList.vue';
+
+import CSList from '@/components/charging-stations/CSList.vue';
 import ReloadButton from '@/components/ReloadButton.vue';
 import Container from '@/components/Container.vue';
 
 onMounted(() => {
-  console.log('mounted');
-  load();
+  // load();
 });
 
 function load() {

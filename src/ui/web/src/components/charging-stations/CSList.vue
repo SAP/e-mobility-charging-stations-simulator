@@ -1,7 +1,6 @@
 <template>
   <div class="charging-station-container">
-    <ChargingStations
-      class="charging-station"
+    <CSButton
       v-for="chargingStation in EMobility.chargingStations.value"
       :id="chargingStation['id']"
       :info="chargingStation['stationInfo']"
@@ -11,7 +10,7 @@
 
 <script setup lang="ts">
 import EMobility from '@/composable/EMobility';
-import ChargingStations from '@/components/ChargingStations.vue';
+import CSButton from '@/components/charging-stations/CSButton.vue';
 </script>
 
 <style>

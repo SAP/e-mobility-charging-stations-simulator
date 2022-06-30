@@ -1,16 +1,12 @@
 <template>
-  <div>
-    <FlatButton class="charging_stations" @click="show()">{{ props.id }}</FlatButton>
-    <Modal :show="isShown" @close="hide()">
-      <h2>Test</h2>
-    </Modal>
-  </div>
+  <FlatButton class="charging_stations" @click="show()">{{ props.id }}</FlatButton>
+  <CSInfo :info="info" :show="isShown" @close="hide()" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import FlatButton from './buttons/FlatButton.vue';
-import Modal from '@/components/Modal.vue';
+import FlatButton from '@/components/buttons/FlatButton.vue';
+import CSInfo from './CSInfo.vue';
 
 const props = defineProps(['id', 'info']);
 
