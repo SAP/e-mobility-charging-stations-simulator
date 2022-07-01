@@ -97,7 +97,7 @@
     "tar": "^6.1.11",
     "tslib": "^2.4.0",
     "uuid": "^8.3.2",
-    "winston": "^3.8.0",
+    "winston": "^3.8.1",
     "winston-daily-rotate-file": "^4.7.1",
     "ws": "^8.8.0"
   },
