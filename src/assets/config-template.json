@@ -1,6 +1,6 @@
 {
   "supervisionUrls": ["ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"],
-  "supervisionUrlDistribution": "sequential",
+  "supervisionUrlDistribution": "round-robin",
   "performanceStorage": {
     "enabled": true,
     "type": "jsonfile"
