@@ -40,8 +40,10 @@ npm install
 
 ## Initial configuration
 
-Copy the configuration template file [src/assets/config-template.json](src/assets/config-template.json) to [src/assets/config.json](src/assets/config.json).
-Tweak it to your needs by following the section [charging stations simulator configuration](README.md#charging-stations-simulator-configuration).
+Copy the configuration template file [src/assets/config-template.json](src/assets/config-template.json) to [src/assets/config.json](src/assets/config.json).  
+Copy the authorization RFID tags template file [src/assets/authorization-tags-template.json](src/assets/authorization-tags-template.json) to [src/assets/authorization-tags.json](src/assets/authorization-tags.json).
+
+Tweak them to your needs by following the section [configuration files syntax](README.md#configuration-files-syntax).
 
 ## Start
 
