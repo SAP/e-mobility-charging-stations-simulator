@@ -81,7 +81,7 @@ The charging stations simulator have an automatic configuration files reload fea
 - charging station configuration templates;
 - charging station authorization RFID tags lists.
 
-But the modifications to test have to be done to the files in the build result directory [dist/assets](dist/assets). Once the modifications are finished, they have to be reported or copied to the matching files in the build source directory [src/assets](src/assets) to ensure they will be taken into account at next build.
+But the modifications to test have to be done to the files in the build target directory [dist/assets](dist/assets). Once the modifications are finished, they have to be reported or copied to the matching files in the build source directory [src/assets](src/assets) to ensure they will be taken into account at next build.
 
 ### Charging stations simulator configuration
 
