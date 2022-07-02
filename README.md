@@ -8,6 +8,8 @@ Simple [node.js](https://nodejs.org/) software to simulate a set of charging sta
 
 ## Prerequisites
 
+Install the [node.js](https://nodejs.org/) LTS runtime environment:
+
 ### Windows
 
 - [Chocolatey](https://chocolatey.org/):
@@ -28,11 +30,33 @@ brew install node@16
 
 - [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version 16.X
 
+## Installation
+
+In the repository root, run the following command:
+
+```shell
+npm install
+```
+
+## Initial configuration
+
+Copy the configuration template file [src/assets/config-template.json](src/assets/config-template.json) to [src/assets/config.json](src/assets/config.json).  
+Copy the authorization RFID tags template file [src/assets/authorization-tags-template.json](src/assets/authorization-tags-template.json) to [src/assets/authorization-tags.json](src/assets/authorization-tags.json).
+
+Tweak them to your needs by following the section [configuration files syntax](README.md#configuration-files-syntax).
+
+## Start
+
+To start the program, run: `npm start`.
+
+To start the program with a UI controller, run: `npm start:server`.
+Then, start/stop the simulator by going to `https://<hostname:port>` in a browser. Localhost port will default to 8080. For Cloud Foundry, the port is assigned based on the `process.env.PORT` environment variable.
+
 ## Configuration files syntax
 
 All configuration files are in the JSON standard format.
 
-**Configuration files list**:
+**Configuration files locations**:
 
 - charging stations simulator configuration: [src/assets/config.json](src/assets/config.json);
 - charging station configuration templates: [src/assets/station-templates](src/assets/station-templates);
@@ -240,13 +264,6 @@ The syntax is similar to charging station configuration template with some added
 #### configurationKey section
 
 The syntax is similar to the charging station configuration template 'Configuration' section.
-
-## Start
-
-To start the program, run: `npm start`.
-
-To start the program with a UI controller, run: `npm start:server`.
-Then, start/stop the simulator by going to `https://<hostname:port>` in a browser. Localhost port will default to 8080. For Cloud Foundry, the port is assigned based on the `process.env.PORT` environment variable.
 
 ## Docker
 
