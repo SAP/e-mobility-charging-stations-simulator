@@ -56,7 +56,7 @@ Then, start/stop the simulator by going to `https://<hostname:port>` in a browse
 
 All configuration files are in the JSON standard format.
 
-**Configuration files list**:
+**Configuration files locations**:
 
 - charging stations simulator configuration: [src/assets/config.json](src/assets/config.json);
 - charging station configuration templates: [src/assets/station-templates](src/assets/station-templates);
