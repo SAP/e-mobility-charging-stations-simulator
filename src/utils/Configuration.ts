@@ -1,5 +1,4 @@
 import ConfigurationData, {
-  ServerOptions,
   StationTemplateUrl,
   StorageConfiguration,
   SupervisionUrlDistribution,
@@ -52,34 +51,17 @@ export default class Configuration {
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead}`
       );
     }
-    let options: ServerOptions = {
-      host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
-      port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
-    };
     let uiServerConfiguration: UIServerConfiguration = {
       enabled: true,
-      options,
+      options: {
+        host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
+        port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
+      },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
-      if (Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'options')) {
-        options = {
-          ...options,
-          ...(Configuration.objectHasOwnProperty(
-            Configuration.getConfig().uiServer.options,
-            'host'
-          ) && { host: Configuration.getConfig().uiServer.options.host }),
-          ...(Configuration.objectHasOwnProperty(
-            Configuration.getConfig().uiServer.options,
-            'port'
-          ) && { port: Configuration.getConfig().uiServer.options.port }),
-        };
-      }
       uiServerConfiguration = {
         ...uiServerConfiguration,
-        ...(Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'enabled') && {
-          enabled: Configuration.getConfig().uiServer.enabled,
-        }),
-        options,
+        ...Configuration.getConfig().uiServer,
       };
     }
     return uiServerConfiguration;
@@ -95,22 +77,7 @@ export default class Configuration {
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration = {
         ...storageConfiguration,
-        ...(Configuration.objectHasOwnProperty(
-          Configuration.getConfig().performanceStorage,
-          'enabled'
-        ) && { enabled: Configuration.getConfig().performanceStorage.enabled }),
-        ...(Configuration.objectHasOwnProperty(
-          Configuration.getConfig().performanceStorage,
-          'type'
-        ) && { type: Configuration.getConfig().performanceStorage.type }),
-        ...(Configuration.objectHasOwnProperty(
-          Configuration.getConfig().performanceStorage,
-          'uri'
-        ) && {
-          uri: this.getDefaultPerformanceStorageUri(
-            Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE
-          ),
-        }),
+        ...Configuration.getConfig().performanceStorage,
       };
     }
     return storageConfiguration;
@@ -207,7 +174,7 @@ export default class Configuration {
       null,
       "Use 'worker' section to define the worker pool strategy instead"
     );
-    const workerConfiguration: WorkerConfiguration = {
+    let workerConfiguration: WorkerConfiguration = {
       processType: Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess')
         ? Configuration.getConfig().workerProcess
         : WorkerProcessType.WORKER_SET,
@@ -241,7 +208,7 @@ export default class Configuration {
       poolStrategy: Configuration.getConfig().workerPoolStrategy,
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'worker')) {
-      return { ...workerConfiguration, ...Configuration.getConfig().worker };
+      workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig().worker };
     }
     return workerConfiguration;
   }
