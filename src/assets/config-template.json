@@ -1,14 +1,16 @@
 {
   "supervisionUrls": ["ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"],
   "supervisionUrlDistribution": "round-robin",
+  "worker": {
+    "processType": "workerSet",
+    "elementsPerWorker": 1,
+    "poolMinSize": 4,
+    "poolMaxSize": 16
+  },
   "performanceStorage": {
     "enabled": true,
     "type": "jsonfile"
   },
-  "chargingStationsPerWorker": 1,
-  "workerProcess": "workerSet",
-  "workerPoolMinSize": 4,
-  "workerPoolMaxSize": 16,
   "stationTemplateUrls": [
     {
       "file": "siemens.station-template.json",

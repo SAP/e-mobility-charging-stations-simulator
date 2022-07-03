@@ -109,13 +109,13 @@ export default class Bootstrap {
                 this.version
               } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
                 ChargingStationUtils.workerDynamicPoolInUse()
-                  ? `${Configuration.getWorkerPoolMinSize().toString()}/`
+                  ? `${Configuration.getWorker().poolMinSize.toString()}/`
                   : ''
               }${this.workerImplementation.size}${
                 ChargingStationUtils.workerPoolInUse()
-                  ? `/${Configuration.getWorkerPoolMaxSize().toString()}`
+                  ? `/${Configuration.getWorker().poolMaxSize.toString()}`
                   : ''
-              } worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${
+              } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
                 this.workerImplementation.maxElementsPerWorker
                   ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
                   : ''
@@ -154,15 +154,15 @@ export default class Bootstrap {
     !this.workerImplementation &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
         this.workerScript,
-        Configuration.getWorkerProcess(),
+        Configuration.getWorker().processType,
         {
-          workerStartDelay: Configuration.getWorkerStartDelay(),
-          elementStartDelay: Configuration.getElementStartDelay(),
-          poolMaxSize: Configuration.getWorkerPoolMaxSize(),
-          poolMinSize: Configuration.getWorkerPoolMinSize(),
-          elementsPerWorker: Configuration.getChargingStationsPerWorker(),
+          workerStartDelay: Configuration.getWorker().startDelay,
+          elementStartDelay: Configuration.getWorker().elementStartDelay,
+          poolMaxSize: Configuration.getWorker().poolMaxSize,
+          poolMinSize: Configuration.getWorker().poolMinSize,
+          elementsPerWorker: Configuration.getWorker().elementsPerWorker,
           poolOptions: {
-            workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
+            workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
           messageHandler: async (msg: ChargingStationWorkerMessage) => {
             if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
