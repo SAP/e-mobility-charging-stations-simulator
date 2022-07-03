@@ -49,7 +49,7 @@ Tweak them to your needs by following the section [configuration files syntax](R
 
 To start the program, run: `npm start`.
 
-To start the program with a UI controller, run: `npm start:server`.
+To start the program with a UI controller, run: `npm run start:server`.
 Then, start/stop the simulator by going to `https://<hostname:port>` in a browser. Localhost port will default to 8080. For Cloud Foundry, the port is assigned based on the `process.env.PORT` environment variable.
 
 ## Configuration files syntax
