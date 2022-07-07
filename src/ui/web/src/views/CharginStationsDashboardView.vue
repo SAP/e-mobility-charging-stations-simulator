@@ -2,46 +2,32 @@
   <Container id="dash">
     <ReloadButton
       id="reload-button"
-      :loading="EMobility.isWaitingValue"
+      :loading="isLoading"
       @click="load()"
     />
-    <CSList id="list"/>
+    <CSList :chargingStations="chargingStations" id="list"/>
   </Container>
-  <!-- <ReloadButton
-    id="reload-button"
-    :loading="EMobility.isWaitingValue"
-    @click="load()"
-  />
-  <br/>
-  <br/>
-  <br/>
-  <ReloadButton
-    id="reload-button"
-    :loading="EMobility.isWaitingValue"
-    @click="load()"
-  />
-  <br/>
-  <ReloadButton
-    id="reload-button"
-    :loading="EMobility.isWaitingValue"
-    @click="load()"
-  /> -->
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import EMobility from '@/composable/EMobility';
+import { ref } from 'vue';
+import CentralServer from '@/composable/CentralServer';
 
-import CSList from '@/components/charging-stations/CSList.vue';
-import ReloadButton from '@/components/ReloadButton.vue';
 import Container from '@/components/Container.vue';
+import ReloadButton from '@/components/ReloadButton.vue';
+import CSList from '@/components/charging-stations/CSList.vue';
 
-onMounted(() => {
-  // load();
-});
+let isLoading = ref<boolean>(false);
+let chargingStations = ref<Array<Record<string, unknown>>>(new Array());
 
 function load() {
-  EMobility.listChargingStations();
+  isLoading.value = true;
+  CentralServer.listChargingStations()
+  .then((list) => {
+    isLoading.value = false;
+    // chargingStations.value.concat(list);
+    chargingStations.value = list;
+  });
 }
 </script>
 

@@ -29,7 +29,10 @@ if (ChargingStationUtils.workerPoolInUse()) {
   }
 }
 
-const test = new BroadcastChannel('test');
+const channel = new BroadcastChannel('test');
+channel.onmessage = (event: unknown) => {
+  console.debug('test: ', event);
+};
 
 /**
  * Listen messages send by the main thread
@@ -41,7 +44,6 @@ function addMessageListener(): void {
       startChargingStation(message.data);
     }
   });
-  test.onmessage(console.log);
 }
 
 /**

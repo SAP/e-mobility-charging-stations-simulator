@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import EMobility from '@/composable/EMobility';
+import CentralServer from '@/composable/CentralServer';
 
-const em = EMobility.Instance;
+const em = CentralServer.Instance;
 </script>

@@ -1,23 +1,26 @@
 <template>
   <div class="charging-station-container">
-    <CSButton
-      v-for="chargingStation in EMobility.chargingStations.value"
-      :id="chargingStation['id']"
-      :info="chargingStation['stationInfo']"
+    <CSButtonView
+      v-for="chargingStation in chargingStations"
+      :data="(chargingStation['data'] as Record<string, unknown>)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import EMobility from '@/composable/EMobility';
-import CSButton from '@/components/charging-stations/CSButton.vue';
+import CSButtonView from '@/components/charging-stations/CSButtonView.vue';
+
+const props = defineProps<{
+  chargingStations: Record<string, unknown>[]
+}>();
 </script>
 
 <style>
 .charging-station-container {
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  flex-direction: column;
+  /* flex-wrap: wrap;
+  align-content: flex-start; */
   /* justify-content: space-evenly; */
   /* justify-content: flex-start; */
   gap: 1%;

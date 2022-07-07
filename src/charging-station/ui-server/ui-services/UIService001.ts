@@ -6,7 +6,7 @@ import { JsonType } from '../../../types/JsonType';
 import { BroadcastChannel, isMainThread } from 'worker_threads';
 
 export default class UIService001 extends AbstractUIService {
-  private test = new BroadcastChannel('test');
+  private channel = new BroadcastChannel('test');
 
   constructor(uiServer: AbstractUIServer) {
     super(uiServer);
@@ -18,11 +18,14 @@ export default class UIService001 extends AbstractUIService {
       ProtocolCommand.STOP_TRANSACTION,
       this.handleStopTransaction.bind(this) as ProtocolRequestHandler
     );
+    this.channel.onmessage = (ev: unknown) => {
+      console.debug('test');
+    };
   }
 
   private handleStartTransaction(payload: JsonType): void {
-    console.log('handleStartTransaction');
-    this.test.postMessage('ceci est un test');
+    console.debug('handleStartTransaction');
+    this.channel.postMessage('ceci est un test');
   }
 
   private handleStopTransaction(payload: JsonType): void {}

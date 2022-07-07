@@ -13,25 +13,18 @@ export interface ChargingStationWorkerData extends WorkerData {
   chargingStationWorkerOptions?: ChargingStationWorkerOptions;
 }
 
-export interface ChargingStationSubData {
-  id: string;
-  stationInfo: ChargingStationInfo;
-}
-
-export interface ChargingStationData {
-  hashId: string;
-  data: ChargingStationSubData;
-}
+// export interface ChargingStationUI {
+//   hashId: string;
+//   data: {
+//     id: string;
+//     stationInfo: ChargingStationInfo;
+//   };
+// }
 
 enum ChargingStationMessageEvents {
   STARTED = 'started',
   STOPPED = 'stopped',
   PERFORMANCE_STATISTICS = 'performanceStatistics',
-}
-
-export interface ChargingStationMessage {
-  data: ChargingStationData;
-  id: ChargingStationMessageEvents;
 }
 
 export type ChargingStationWorkerMessageEvents = WorkerMessageEvents | ChargingStationMessageEvents;

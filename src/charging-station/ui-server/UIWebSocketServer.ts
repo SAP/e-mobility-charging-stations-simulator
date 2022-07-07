@@ -4,7 +4,6 @@ import { AbstractUIServer } from './AbstractUIServer';
 import Configuration from '../../utils/Configuration';
 import { IncomingMessage } from 'http';
 import { ServerOptions } from '../../types/ConfigurationData';
-import { ChargingStationSubData } from '../../types/ChargingStationWorker';
 import UIServiceFactory from './ui-services/UIServiceFactory';
 import Utils from '../../utils/Utils';
 import WebSocket from 'ws';

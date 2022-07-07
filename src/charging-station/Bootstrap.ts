@@ -1,7 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
 import {
-  ChargingStationData,
   ChargingStationWorkerData,
   ChargingStationWorkerMessageEvents,
   InternalChargingStationWorkerMessage,
@@ -26,6 +25,7 @@ import { isMainThread } from 'worker_threads';
 import logger from '../utils/Logger';
 import path from 'path';
 import { version } from '../../package.json';
+import { ChargingStationUI } from '../types/SimulatorUI';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
@@ -167,39 +167,41 @@ export default class Bootstrap {
           workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
         },
         messageHandler: (msg: InternalChargingStationWorkerMessage) => {
-          const workerEventStarted = (data: ChargingStationData) => {
-            this.uiServer.chargingStations.set(data.hashId, data.data);
-            ++this.numberOfChargingStations;
-          };
-          const workerEventStopped = (data: ChargingStationData) => {
-            this.uiServer.chargingStations.delete(data.hashId);
-            --this.numberOfChargingStations;
-          };
-          const workerEventPerformanceStatistics = (data: Statistics) => {
-            (async () => this.storage.storePerformanceStatistics(data))().catch((error: unknown) =>
-              logger.error(`${this.logPrefix()} ${error.toString()}`)
-            );
-          };
-
           logger.debug(
             `${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.data)}`
           );
 
           switch (msg.id) {
             case ChargingStationWorkerMessageEvents.STARTED:
-              workerEventStarted(msg.data as ChargingStationData);
+              this.workerEventStarted(msg.data as ChargingStationUI);
               break;
             case ChargingStationWorkerMessageEvents.STOPPED:
-              workerEventStopped(msg.data as ChargingStationData);
+              this.workerEventStopped(msg.data as ChargingStationUI);
               break;
             case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
-              workerEventPerformanceStatistics(msg.data as Statistics);
+              this.workerEventPerformanceStatistics(msg.data as Statistics);
               break;
             default:
               console.error(msg);
           }
         },
       }
+    );
+  }
+
+  private workerEventStarted(payload: ChargingStationUI) {
+    this.uiServer.chargingStations.set(payload.hashId, payload);
+    ++this.numberOfChargingStations;
+  }
+
+  private workerEventStopped(payload: ChargingStationUI) {
+    this.uiServer.chargingStations.delete(payload.hashId);
+    --this.numberOfChargingStations;
+  }
+
+  private workerEventPerformanceStatistics(payload: Statistics) {
+    (async () => this.storage.storePerformanceStatistics(payload))().catch((error: unknown) =>
+      logger.error(`${this.logPrefix()} ${error.toString()}`)
     );
   }
 

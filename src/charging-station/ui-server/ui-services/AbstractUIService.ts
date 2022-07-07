@@ -10,6 +10,7 @@ import { JsonType } from '../../../types/JsonType';
 import { RawData } from 'ws';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
+import { Message } from '../../../types/SimulatorUI';
 
 export default abstract class AbstractUIService {
   protected readonly uiServer: AbstractUIServer;
@@ -18,30 +19,38 @@ export default abstract class AbstractUIService {
   constructor(uiServer: AbstractUIServer) {
     this.uiServer = uiServer;
     this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
-      [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations],
+      [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
     ]);
   }
 
   public async messageHandler(request: RawData): Promise<void> {
-    let command: ProtocolCommand;
-    let payload: JsonType;
-    const protocolRequest = JSON.parse(request.toString()) as ProtocolRequest;
-    if (Utils.isIterable(protocolRequest)) {
-      [command, payload] = protocolRequest;
-    } else {
+    const message = JSON.parse(request.toString()) as Message;
+    console.debug(message);
+    if (!Utils.isIterable(message)) {
+      throw new BaseError('UI packet is not iterable');
+    }
+
+    const [msgId, protocolRequest] = message;
+    if (!Utils.isIterable(protocolRequest)) {
       throw new BaseError('UI protocol request is not iterable');
     }
-    let messageResponse: JsonType;
-    if (this.messageHandlers.has(command)) {
-      try {
-        // Call the message handler to build the message response
-        messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
-      } catch (error) {
-        // Log
-        logger.error(this.uiServer.logPrefix() + ' Handle message error: %j', error);
-        throw error;
-      }
-    } else {
+
+    const commandResponse = await this.handleCommand(...protocolRequest);
+    logger.debug(`${this.logPrefix()} messageHandler | ${JSON.stringify(commandResponse)}`);
+
+    // Send the message response
+    const packetResponse = this.buildPacketMessage(msgId, commandResponse);
+    this.uiServer.sendResponse(packetResponse);
+  }
+
+  private buildPacketMessage(msgId: number, payload: JsonType): string {
+    return JSON.stringify([msgId, payload]);
+  }
+
+  private async handleCommand(command: ProtocolCommand, payload: JsonType): Promise<JsonType> {
+    console.debug(command, payload);
+    const commandHandler = this.messageHandlers.get(command);
+    if (Utils.isUndefined(commandHandler)) {
       // Throw exception
       throw new BaseError(
         `${command} is not implemented to handle message payload ${JSON.stringify(
@@ -51,17 +60,25 @@ export default abstract class AbstractUIService {
         )}`
       );
     }
-    logger.debug(`${this.logPrefix()} messageHandler | ${JSON.stringify(messageResponse)}`);
-    // Send the message response
-    this.uiServer.sendResponse(this.buildProtocolMessage(command, messageResponse));
+
+    try {
+      return [command, (await commandHandler(payload)) as JsonType];
+    } catch (error: unknown) {
+      logger.error(this.uiServer.logPrefix() + ' Handle message error: %j', error);
+      throw error;
+    }
   }
 
-  protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
+  private buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
     return JSON.stringify([command, payload]);
   }
 
-  private handleListChargingStations = (): JsonType =>
-    Array.from(this.uiServer.chargingStations, ([_key, value]) => value as unknown as JsonType);
+  private handleListChargingStations(): JsonType {
+    return Array.from(
+      this.uiServer.chargingStations,
+      ([_key, value]) => value as unknown as JsonType
+    );
+  }
 
   private logPrefix(): string {
     return Utils.logPrefix(' AbstractUIService |');
