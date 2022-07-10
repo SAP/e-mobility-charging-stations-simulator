@@ -90,11 +90,6 @@ export default class Constants {
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
   static readonly CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS = 0.25; // Hours
-  static readonly CHARGING_STATION_CONFIGURATION_SECTIONS = Object.freeze([
-    'stationInfo',
-    'configurationKey',
-    'configurationHash',
-  ]);
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = Number.MAX_SAFE_INTEGER;
 
