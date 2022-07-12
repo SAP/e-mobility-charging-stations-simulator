@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import FlatButton from './buttons/FlatButton.vue';
+import FlatButton from '@/components/buttons/FlatButton.vue';
 
 const props = defineProps<{
   loading: boolean

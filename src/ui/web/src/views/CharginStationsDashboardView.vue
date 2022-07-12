@@ -1,38 +1,50 @@
 <template>
-  <Container id="dash">
+  <Container id="charging-stations">
     <ReloadButton
       id="reload-button"
-      :loading="isLoading"
+      :loading="state.isLoading"
       @click="load()"
     />
-    <CSList :chargingStations="chargingStations" id="list"/>
+    <CSTable :chargingStations="state.chargingStations" />
+    <!-- <CSList :chargingStations="state.chargingStations" id="list"/> -->
   </Container>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, reactive } from 'vue';
 import CentralServer from '@/composable/CentralServer';
 
 import Container from '@/components/Container.vue';
-import ReloadButton from '@/components/ReloadButton.vue';
-import CSList from '@/components/charging-stations/CSList.vue';
+import ReloadButton from '@/components/buttons/ReloadButton.vue';
+import CSTable from '@/components/charging-stations/CSTable.vue';
 
-let isLoading = ref<boolean>(false);
-let chargingStations = ref<Array<Record<string, unknown>>>(new Array());
+onMounted(() => {
+  load();
+});
 
-function load() {
-  isLoading.value = true;
-  CentralServer.listChargingStations()
-  .then((list) => {
-    isLoading.value = false;
-    // chargingStations.value.concat(list);
-    chargingStations.value = list;
-  });
+interface State {
+  isLoading: boolean,
+  chargingStations: Array<Record<string, unknown>>
+}
+
+const state: State = reactive({
+  isLoading: false,
+  chargingStations: []
+});
+
+async function load(): Promise<void> {
+  if (state.isLoading === true) return;
+  state.isLoading = true;
+  const list = await CentralServer.listChargingStations();
+  console.debug(list);
+  state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
+  // state.chargingStations = list;
+  state.isLoading = false;
 }
 </script>
 
 <style>
-#dash {
+#charging-stations {
   height: 100%;
   width: 100%;
   padding: 30px;
@@ -47,11 +59,12 @@ function load() {
 }
 
 #list {
-  flex-grow: 1;
+  /* flex-grow: 1; */
+  height: 100;
   overflow-y: auto;
   scroll-behavior: smooth;
-  /* background-color: pink; */
   background-color: white;
+  /* background-color: pink; */
   /* border: 5px solid black; */
 }
 </style> 

@@ -1,6 +1,6 @@
 <template>
   <teleport to="body">
-    <div class="modal" v-if="isVisible" @click.self="close()">
+    <div id="backdrop" v-if="visibility" @click.self="close()">
       <slot></slot>
     </div>
   </teleport>
@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
   const props = defineProps<{
-    isVisible: boolean
+    visibility: boolean
   }>();
 
   const emit = defineEmits(['close']);
@@ -19,7 +19,7 @@
 </script>
 
 <style>
-.modal {
+#backdrop {
   position: fixed;
   display: flex;
   justify-content: center;

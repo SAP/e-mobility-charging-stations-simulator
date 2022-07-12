@@ -1,5 +1,5 @@
 <template>
-<Modal :isVisible="isVisible">
+<Modal :visibility="isVisible">
   <div class="card-info">
     vendor: {{info['chargePointVendor']}}
   </div>

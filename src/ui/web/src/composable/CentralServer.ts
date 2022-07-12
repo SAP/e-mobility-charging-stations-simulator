@@ -1,7 +1,7 @@
 import { ref, Ref } from 'vue';
 import config from '@/assets/config';
 import { JsonArray, JsonType } from '@/type/JsonType';
-import { ProtocolCommand, ProtocolRequest } from '@/../../../types/UIProtocol';
+import { CommandCode, ProtocolCommand } from '@/type/UIProtocol';
 import SynchronousWS from './SynchronousWS';
 
 export default class CentralServer {
@@ -21,14 +21,16 @@ export default class CentralServer {
 
   public static async listChargingStations(): Promise<Record<string, unknown>[]> {
     console.debug('listChargingStations');
-    const [command, list] = (await CentralServer.send([
-      ProtocolCommand.LIST_CHARGING_STATIONS,
+
+    const [_, list] = (await CentralServer.send([
+      CommandCode.LIST_CHARGING_STATIONS,
       {},
-    ])) as ProtocolRequest;
+    ])) as ProtocolCommand;
+
     return list as Record<string, unknown>[];
   }
 
-  private static async send(data: JsonType): Promise<JsonType> {
+  private static async send(data: JsonArray): Promise<JsonArray> {
     return CentralServer.Instance._socket.send(data);
   }
 }
