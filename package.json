@@ -90,7 +90,7 @@
     "express": "^4.18.1",
     "mnemonist": "^0.39.2",
     "moment": "^2.29.4",
-    "mongodb": "^4.7.0",
+    "mongodb": "^4.8.0",
     "poolifier": "^2.2.0",
     "proper-lockfile": "^4.1.2",
     "source-map-support": "^0.5.21",
