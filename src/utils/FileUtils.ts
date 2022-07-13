@@ -8,6 +8,10 @@ import fs from 'fs';
 import logger from './Logger';
 
 export default class FileUtils {
+  private constructor() {
+    // This is intentional
+  }
+
   public static watchJsonFile<T extends JsonType>(
     logPrefix: string,
     fileType: FileType,

@@ -2,6 +2,10 @@ import crypto from 'crypto';
 import { v4 as uuid } from 'uuid';
 
 export default class Utils {
+  private constructor() {
+    // This is intentional
+  }
+
   public static logPrefix(prefixString = ''): string {
     return new Date().toLocaleString() + prefixString;
   }

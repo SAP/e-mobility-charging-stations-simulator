@@ -4,6 +4,10 @@ import { StandardParametersKey } from '../types/ocpp/Configuration';
 import logger from '../utils/Logger';
 
 export class ChargingStationConfigurationUtils {
+  private constructor() {
+    // This is intentional
+  }
+
   public static getConfigurationKey(
     chargingStation: ChargingStation,
     key: string | StandardParametersKey,
