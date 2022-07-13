@@ -157,12 +157,12 @@ export class ChargingStationUtils {
 
   public static workerPoolInUse(): boolean {
     return [WorkerProcessType.DYNAMIC_POOL, WorkerProcessType.STATIC_POOL].includes(
-      Configuration.getWorkerProcess()
+      Configuration.getWorker().processType
     );
   }
 
   public static workerDynamicPoolInUse(): boolean {
-    return Configuration.getWorkerProcess() === WorkerProcessType.DYNAMIC_POOL;
+    return Configuration.getWorker().processType === WorkerProcessType.DYNAMIC_POOL;
   }
 
   /**

@@ -1,9 +1,9 @@
 import ConfigurationData, {
-  ServerOptions,
   StationTemplateUrl,
   StorageConfiguration,
   SupervisionUrlDistribution,
   UIServerConfiguration,
+  WorkerConfiguration,
 } from '../types/ConfigurationData';
 
 import Constants from './Constants';
@@ -11,7 +11,6 @@ import { EmptyObject } from '../types/EmptyObject';
 import { FileType } from '../types/FileType';
 import { HandleErrorParams } from '../types/Error';
 import { StorageType } from '../types/Storage';
-import type { WorkerChoiceStrategy } from 'poolifier';
 import WorkerConstants from '../worker/WorkerConstants';
 import { WorkerProcessType } from '../types/Worker';
 import chalk from 'chalk';
@@ -52,34 +51,17 @@ export default class Configuration {
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead}`
       );
     }
-    let options: ServerOptions = {
-      host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
-      port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
-    };
     let uiServerConfiguration: UIServerConfiguration = {
       enabled: true,
-      options,
+      options: {
+        host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
+        port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
+      },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
-      if (Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'options')) {
-        options = {
-          ...options,
-          ...(Configuration.objectHasOwnProperty(
-            Configuration.getConfig().uiServer.options,
-            'host'
-          ) && { host: Configuration.getConfig().uiServer.options.host }),
-          ...(Configuration.objectHasOwnProperty(
-            Configuration.getConfig().uiServer.options,
-            'port'
-          ) && { port: Configuration.getConfig().uiServer.options.port }),
-        };
-      }
       uiServerConfiguration = {
         ...uiServerConfiguration,
-        ...(Configuration.objectHasOwnProperty(Configuration.getConfig().uiServer, 'enabled') && {
-          enabled: Configuration.getConfig().uiServer.enabled,
-        }),
-        options,
+        ...Configuration.getConfig().uiServer,
       };
     }
     return uiServerConfiguration;
@@ -95,22 +77,7 @@ export default class Configuration {
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration = {
         ...storageConfiguration,
-        ...(Configuration.objectHasOwnProperty(
-          Configuration.getConfig().performanceStorage,
-          'enabled'
-        ) && { enabled: Configuration.getConfig().performanceStorage.enabled }),
-        ...(Configuration.objectHasOwnProperty(
-          Configuration.getConfig().performanceStorage,
-          'type'
-        ) && { type: Configuration.getConfig().performanceStorage.type }),
-        ...(Configuration.objectHasOwnProperty(
-          Configuration.getConfig().performanceStorage,
-          'uri'
-        ) && {
-          uri: this.getDefaultPerformanceStorageUri(
-            Configuration.getConfig()?.performanceStorage?.type ?? StorageType.JSON_FILE
-          ),
-        }),
+        ...Configuration.getConfig().performanceStorage,
       };
     }
     return storageConfiguration;
@@ -161,57 +128,89 @@ export default class Configuration {
     return Configuration.getConfig().stationTemplateUrls;
   }
 
-  static getWorkerProcess(): WorkerProcessType {
+  static getWorker(): WorkerConfiguration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
       null,
-      "Use 'workerProcess' to define the type of worker process model to use instead"
+      "Use 'worker' section to define the type of worker process model instead"
     );
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess')
-      ? Configuration.getConfig().workerProcess
-      : WorkerProcessType.WORKER_SET;
-  }
-
-  static getWorkerStartDelay(): number {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerStartDelay')
-      ? Configuration.getConfig().workerStartDelay
-      : WorkerConstants.DEFAULT_WORKER_START_DELAY;
-  }
-
-  static getElementStartDelay(): number {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'elementStartDelay')
-      ? Configuration.getConfig().elementStartDelay
-      : WorkerConstants.DEFAULT_ELEMENT_START_DELAY;
-  }
-
-  static getWorkerPoolMinSize(): number {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMinSize')
-      ? Configuration.getConfig().workerPoolMinSize
-      : WorkerConstants.DEFAULT_POOL_MIN_SIZE;
-  }
-
-  static getWorkerPoolMaxSize(): number {
+    Configuration.warnDeprecatedConfigurationKey(
+      'workerProcess',
+      null,
+      "Use 'worker' section to define the type of worker process model instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'workerStartDelay',
+      null,
+      "Use 'worker' section to define the worker start delay instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'chargingStationsPerWorker',
+      null,
+      "Use 'worker' section to define the number of element(s) per worker instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'elementStartDelay',
+      null,
+      "Use 'worker' section to define the worker's element start delay instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'workerPoolMinSize',
+      null,
+      "Use 'worker' section to define the worker pool minimum size instead"
+    );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolSize;',
       null,
-      "Use 'workerPoolMaxSize' instead"
+      "Use 'worker' section to define the worker pool maximum size instead"
     );
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize')
-      ? Configuration.getConfig().workerPoolMaxSize
-      : WorkerConstants.DEFAULT_POOL_MAX_SIZE;
-  }
-
-  static getWorkerPoolStrategy(): WorkerChoiceStrategy {
-    return Configuration.getConfig().workerPoolStrategy;
-  }
-
-  static getChargingStationsPerWorker(): number {
-    return Configuration.objectHasOwnProperty(
-      Configuration.getConfig(),
-      'chargingStationsPerWorker'
-    )
-      ? Configuration.getConfig().chargingStationsPerWorker
-      : WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER;
+    Configuration.warnDeprecatedConfigurationKey(
+      'workerPoolMaxSize;',
+      null,
+      "Use 'worker' section to define the worker pool maximum size instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'workerPoolStrategy;',
+      null,
+      "Use 'worker' section to define the worker pool strategy instead"
+    );
+    let workerConfiguration: WorkerConfiguration = {
+      processType: Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess')
+        ? Configuration.getConfig().workerProcess
+        : WorkerProcessType.WORKER_SET,
+      startDelay: Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerStartDelay')
+        ? Configuration.getConfig().workerStartDelay
+        : WorkerConstants.DEFAULT_WORKER_START_DELAY,
+      elementsPerWorker: Configuration.objectHasOwnProperty(
+        Configuration.getConfig(),
+        'chargingStationsPerWorker'
+      )
+        ? Configuration.getConfig().chargingStationsPerWorker
+        : WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
+      elementStartDelay: Configuration.objectHasOwnProperty(
+        Configuration.getConfig(),
+        'elementStartDelay'
+      )
+        ? Configuration.getConfig().elementStartDelay
+        : WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
+      poolMinSize: Configuration.objectHasOwnProperty(
+        Configuration.getConfig(),
+        'workerPoolMinSize'
+      )
+        ? Configuration.getConfig().workerPoolMinSize
+        : WorkerConstants.DEFAULT_POOL_MIN_SIZE,
+      poolMaxSize: Configuration.objectHasOwnProperty(
+        Configuration.getConfig(),
+        'workerPoolMaxSize'
+      )
+        ? Configuration.getConfig().workerPoolMaxSize
+        : WorkerConstants.DEFAULT_POOL_MAX_SIZE,
+      poolStrategy: Configuration.getConfig().workerPoolStrategy,
+    };
+    if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'worker')) {
+      workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig().worker };
+    }
+    return workerConfiguration;
   }
 
   static getLogConsole(): boolean {

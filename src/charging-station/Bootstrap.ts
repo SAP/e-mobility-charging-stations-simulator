@@ -8,6 +8,7 @@ import {
 
 import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { ApplicationProtocol } from '../types/UIProtocol';
+import { ChargingStationUI } from '../types/SimulatorUI';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
@@ -25,7 +26,6 @@ import { isMainThread } from 'worker_threads';
 import logger from '../utils/Logger';
 import path from 'path';
 import { version } from '../../package.json';
-import { ChargingStationUI } from '../types/SimulatorUI';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
@@ -46,7 +46,6 @@ export default class Bootstrap {
       'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
     this.initialize();
-    this.initWorkerImplementation();
     Configuration.getUIServer().enabled &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
         ...Configuration.getUIServer().options,
@@ -112,13 +111,13 @@ export default class Bootstrap {
                 this.version
               } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
                 ChargingStationUtils.workerDynamicPoolInUse()
-                  ? `${Configuration.getWorkerPoolMinSize().toString()}/`
+                  ? `${Configuration.getWorker().poolMinSize.toString()}/`
                   : ''
               }${this.workerImplementation.size}${
                 ChargingStationUtils.workerPoolInUse()
-                  ? `/${Configuration.getWorkerPoolMaxSize().toString()}`
+                  ? `/${Configuration.getWorker().poolMaxSize.toString()}`
                   : ''
-              } worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${
+              } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
                 this.workerImplementation.maxElementsPerWorker
                   ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
                   : ''
@@ -138,6 +137,7 @@ export default class Bootstrap {
   public async stop(): Promise<void> {
     if (isMainThread && this.started) {
       await this.workerImplementation.stop();
+      this.workerImplementation = null;
       this.uiServer?.stop();
       await this.storage?.close();
     } else {
@@ -149,44 +149,44 @@ export default class Bootstrap {
   public async restart(): Promise<void> {
     await this.stop();
     this.initialize();
-    this.initWorkerImplementation();
     await this.start();
   }
 
-  private initWorkerImplementation(): void {
-    this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
-      this.workerScript,
-      Configuration.getWorkerProcess(),
-      {
-        workerStartDelay: Configuration.getWorkerStartDelay(),
-        elementStartDelay: Configuration.getElementStartDelay(),
-        poolMaxSize: Configuration.getWorkerPoolMaxSize(),
-        poolMinSize: Configuration.getWorkerPoolMinSize(),
-        elementsPerWorker: Configuration.getChargingStationsPerWorker(),
-        poolOptions: {
-          workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
-        },
-        messageHandler: (msg: InternalChargingStationWorkerMessage) => {
-          logger.debug(
-            `${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.data)}`
-          );
+  private initializeWorkerImplementation(): void {
+    !this.workerImplementation &&
+      (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
+        this.workerScript,
+        Configuration.getWorker().processType,
+        {
+          workerStartDelay: Configuration.getWorker().startDelay,
+          elementStartDelay: Configuration.getWorker().elementStartDelay,
+          poolMaxSize: Configuration.getWorker().poolMaxSize,
+          poolMinSize: Configuration.getWorker().poolMinSize,
+          elementsPerWorker: Configuration.getWorker().elementsPerWorker,
+          poolOptions: {
+            workerChoiceStrategy: Configuration.getWorker().poolStrategy,
+          },
+          messageHandler: (msg: InternalChargingStationWorkerMessage) => {
+            logger.debug(
+              `${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.data)}`
+            );
 
-          switch (msg.id) {
-            case ChargingStationWorkerMessageEvents.STARTED:
-              this.workerEventStarted(msg.data as ChargingStationUI);
-              break;
-            case ChargingStationWorkerMessageEvents.STOPPED:
-              this.workerEventStopped(msg.data as ChargingStationUI);
-              break;
-            case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
-              this.workerEventPerformanceStatistics(msg.data as Statistics);
-              break;
-            default:
-              console.error(msg);
-          }
-        },
-      }
-    );
+            switch (msg.id) {
+              case ChargingStationWorkerMessageEvents.STARTED:
+                this.workerEventStarted(msg.data as ChargingStationUI);
+                break;
+              case ChargingStationWorkerMessageEvents.STOPPED:
+                this.workerEventStopped(msg.data as ChargingStationUI);
+                break;
+              case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
+                this.workerEventPerformanceStatistics(msg.data as Statistics);
+                break;
+              default:
+                console.error(msg);
+            }
+          },
+        }
+      ));
   }
 
   private workerEventStarted(payload: ChargingStationUI) {
@@ -208,6 +208,7 @@ export default class Bootstrap {
   private initialize() {
     this.numberOfChargingStations = 0;
     this.numberOfChargingStationTemplates = 0;
+    this.initializeWorkerImplementation();
   }
 
   private async startChargingStation(

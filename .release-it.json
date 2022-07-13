@@ -13,6 +13,6 @@
     "releaseName": "Version ${version}"
   },
   "hooks": {
-    "after:bump": "npx auto-changelog -p -u"
+    "after:bump": "npx auto-changelog -p -u && npm run sonar:properties"
   }
 }

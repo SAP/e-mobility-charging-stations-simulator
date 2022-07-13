@@ -49,7 +49,6 @@ import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTr
 import BaseError from '../exception/BaseError';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
-import { ChargingStationCache } from './ChargingStationCache';
 import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import ChargingStationInfo from '../types/ChargingStationInfo';
@@ -73,6 +72,7 @@ import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
+import SharedLRUCache from './SharedLRUCache';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import Utils from '../utils/Utils';
 import crypto from 'crypto';
@@ -107,7 +107,7 @@ export default class ChargingStation {
   private autoReconnectRetryCount: number;
   private stopped: boolean;
   private templateFileWatcher!: fs.FSWatcher;
-  private readonly cache: ChargingStationCache;
+  private readonly sharedLRUCache: SharedLRUCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
 
@@ -117,7 +117,7 @@ export default class ChargingStation {
     this.stopped = false;
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
-    this.cache = ChargingStationCache.getInstance();
+    this.sharedLRUCache = SharedLRUCache.getInstance();
     this.authorizedTagsCache = AuthorizedTagsCache.getInstance();
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
@@ -479,27 +479,6 @@ export default class ChargingStation {
       this.performanceStatistics.start();
     }
     this.openWSConnection();
-    // Handle WebSocket message
-    this.wsConnection.on(
-      'message',
-      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
-    );
-    // Handle WebSocket error
-    this.wsConnection.on(
-      'error',
-      this.onError.bind(this) as (this: WebSocket, error: Error) => void
-    );
-    // Handle WebSocket close
-    this.wsConnection.on(
-      'close',
-      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
-    );
-    // Handle WebSocket open
-    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
-    // Handle WebSocket ping
-    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
-    // Handle WebSocket pong
-    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
     // Monitor charging station template file
     this.templateFileWatcher = FileUtils.watchJsonFile(
       this.logPrefix(),
@@ -514,7 +493,7 @@ export default class ChargingStation {
                 this.templateFile
               } file have changed, reload`
             );
-            this.cache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
+            this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
             // Initialize
             this.initialize();
             // Restart the ATG
@@ -558,9 +537,9 @@ export default class ChargingStation {
     if (this.getEnableStatistics()) {
       this.performanceStatistics.stop();
     }
-    this.cache.deleteChargingStationConfiguration(this.configurationFileHash);
+    this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
     this.templateFileWatcher.close();
-    this.cache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
+    this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
     parentPort.postMessage(this.buildStopMessage());
     this.stopped = true;
@@ -728,8 +707,8 @@ export default class ChargingStation {
   private getTemplateFromFile(): ChargingStationTemplate | null {
     let template: ChargingStationTemplate = null;
     try {
-      if (this.cache.hasChargingStationTemplate(this.stationInfo?.templateHash)) {
-        template = this.cache.getChargingStationTemplate(this.stationInfo.templateHash);
+      if (this.sharedLRUCache.hasChargingStationTemplate(this.stationInfo?.templateHash)) {
+        template = this.sharedLRUCache.getChargingStationTemplate(this.stationInfo.templateHash);
       } else {
         const measureId = `${FileType.ChargingStationTemplate} read`;
         const beginId = PerformanceStatistics.beginMeasure(measureId);
@@ -741,7 +720,7 @@ export default class ChargingStation {
           .createHash(Constants.DEFAULT_HASH_ALGORITHM)
           .update(JSON.stringify(template))
           .digest('hex');
-        this.cache.setChargingStationTemplate(template);
+        this.sharedLRUCache.setChargingStationTemplate(template);
       }
     } catch (error) {
       FileUtils.handleFileException(
@@ -1186,8 +1165,10 @@ export default class ChargingStation {
     let configuration: ChargingStationConfiguration = null;
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
-        if (this.cache.hasChargingStationConfiguration(this.configurationFileHash)) {
-          configuration = this.cache.getChargingStationConfiguration(this.configurationFileHash);
+        if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
+          configuration = this.sharedLRUCache.getChargingStationConfiguration(
+            this.configurationFileHash
+          );
         } else {
           const measureId = `${FileType.ChargingStationConfiguration} read`;
           const beginId = PerformanceStatistics.beginMeasure(measureId);
@@ -1196,7 +1177,7 @@ export default class ChargingStation {
           ) as ChargingStationConfiguration;
           PerformanceStatistics.endMeasure(measureId, beginId);
           this.configurationFileHash = configuration.configurationHash;
-          this.cache.setChargingStationConfiguration(configuration);
+          this.sharedLRUCache.setChargingStationConfiguration(configuration);
         }
       } catch (error) {
         FileUtils.handleFileException(
@@ -1234,9 +1215,9 @@ export default class ChargingStation {
           fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
           fs.closeSync(fileDescriptor);
           PerformanceStatistics.endMeasure(measureId, beginId);
-          this.cache.deleteChargingStationConfiguration(this.configurationFileHash);
+          this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
           this.configurationFileHash = configurationHash;
-          this.cache.setChargingStationConfiguration(configurationData);
+          this.sharedLRUCache.setChargingStationConfiguration(configurationData);
         } else {
           logger.debug(
             `${this.logPrefix()} Not saving unchanged charging station configuration file ${
@@ -1508,6 +1489,7 @@ export default class ChargingStation {
   }
 
   private onError(error: WSError): void {
+    this.closeWSConnection();
     logger.error(this.logPrefix() + ' WebSocket error: %j', error);
   }
 
@@ -1919,10 +1901,34 @@ export default class ChargingStation {
         this.handleUnsupportedVersion(this.getOcppVersion());
         break;
     }
-    this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
+
     logger.info(
       this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString()
     );
+
+    this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
+
+    // Handle WebSocket message
+    this.wsConnection.on(
+      'message',
+      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
+    );
+    // Handle WebSocket error
+    this.wsConnection.on(
+      'error',
+      this.onError.bind(this) as (this: WebSocket, error: Error) => void
+    );
+    // Handle WebSocket close
+    this.wsConnection.on(
+      'close',
+      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
+    );
+    // Handle WebSocket open
+    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
+    // Handle WebSocket ping
+    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
+    // Handle WebSocket pong
+    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
   }
 
   private closeWSConnection(): void {
