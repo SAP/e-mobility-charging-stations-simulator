@@ -119,4 +119,8 @@ export default class Constants {
 
   static readonly DEFAULT_UI_WEBSOCKET_SERVER_HOST = 'localhost';
   static readonly DEFAULT_UI_WEBSOCKET_SERVER_PORT = 8080;
+
+  private constructor() {
+    // This is intentional
+  }
 }
