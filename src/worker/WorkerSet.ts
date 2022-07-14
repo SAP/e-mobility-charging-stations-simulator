@@ -1,6 +1,12 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
+import {
+  WorkerData,
+  WorkerMessage,
+  WorkerMessageEvents,
+  WorkerOptions,
+  WorkerSetElement,
+} from '../types/Worker';
 
 import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
@@ -42,10 +48,10 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    * @public
    */
   public async addElement(elementData: WorkerData): Promise<void> {
+    // debug
     if (!this.workerSet) {
       throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
-    }
-    if (
+    } else if (
       this.workerSet.size === 0 ||
       this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker
     ) {
@@ -54,7 +60,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     this.getLastWorker().postMessage({
       id: WorkerMessageEvents.START_WORKER_ELEMENT,
       data: elementData,
-    });
+    } as WorkerMessage<WorkerData>);
     this.getLastWorkerSetElement().numberOfWorkerElements++;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {

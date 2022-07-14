@@ -1,5 +1,8 @@
 import {
+  CommandCode,
+  MessageCode,
   ProtocolCommand,
+  ProtocolMessage,
   ProtocolRequest,
   ProtocolRequestHandler,
 } from '../../../types/UIProtocol';
@@ -13,35 +16,37 @@ import logger from '../../../utils/Logger';
 
 export default abstract class AbstractUIService {
   protected readonly uiServer: AbstractUIServer;
-  protected readonly messageHandlers: Map<ProtocolCommand, ProtocolRequestHandler>;
+  protected readonly messageHandlers: Map<CommandCode, ProtocolRequestHandler>;
 
   constructor(uiServer: AbstractUIServer) {
     this.uiServer = uiServer;
-    this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
-      [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
+    this.messageHandlers = new Map<CommandCode, ProtocolRequestHandler>([
+      [CommandCode.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
     ]);
   }
 
-  public async messageHandler(request: RawData): Promise<void> {
-    let command: ProtocolCommand;
-    let payload: JsonType;
-    const protocolRequest = JSON.parse(request.toString()) as ProtocolRequest;
-    if (Utils.isIterable(protocolRequest)) {
-      [command, payload] = protocolRequest;
-    } else {
-      throw new BaseError('UI protocol request is not iterable');
+  public messageHandler(message: RawData): void {
+    const [code, ...payload] = JSON.parse(message.toString()) as ProtocolMessage;
+    console.debug(code, payload);
+
+    switch (code) {
+      case MessageCode.REQUEST:
+        this.requestHandler(payload as unknown as ProtocolRequest).catch(console.error);
+        break;
+      case MessageCode.ANSWER:
+        break;
+      case MessageCode.ERROR:
+        break;
+      default:
     }
-    let messageResponse: JsonType;
-    if (this.messageHandlers.has(command)) {
-      try {
-        // Call the message handler to build the message response
-        messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
-      } catch (error) {
-        // Log
-        logger.error(this.uiServer.logPrefix() + ' Handle message error: %j', error);
-        throw error;
-      }
-    } else {
+  }
+
+  private async requestHandler(request: ProtocolRequest): Promise<void> {
+    const [id, command, payload] = request;
+    console.debug(command, payload);
+
+    const commandHandler = this.messageHandlers.get(command);
+    if (Utils.isUndefined(commandHandler)) {
       // Throw exception
       throw new BaseError(
         `${command} is not implemented to handle message payload ${JSON.stringify(
@@ -51,15 +56,26 @@ export default abstract class AbstractUIService {
         )}`
       );
     }
-    // Send the message response
-    this.uiServer.sendResponse(this.buildProtocolMessage(command, messageResponse));
-  }
 
-  protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
-    return JSON.stringify([command, payload]);
+    let commandOutput: JsonType;
+    try {
+      commandOutput = (await commandHandler(payload)) as JsonType;
+    } catch (error: unknown) {
+      logger.error(this.uiServer.logPrefix() + ' Handle message error: %j', error);
+      throw error;
+    }
+
+    this.uiServer.sendResponse(JSON.stringify([MessageCode.ANSWER, id, command, commandOutput]));
   }
 
   private handleListChargingStations(): JsonType {
-    return Array.from(this.uiServer.chargingStations);
+    return Array.from(
+      this.uiServer.chargingStations,
+      ([_key, value]) => value as unknown as JsonType
+    );
+  }
+
+  private logPrefix(): string {
+    return Utils.logPrefix(' AbstractUIService |');
   }
 }

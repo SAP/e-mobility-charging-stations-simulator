@@ -514,10 +514,7 @@ export default class ChargingStation {
         }
       }
     );
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STARTED,
-      data: { id: this.stationInfo.chargingStationId },
-    });
+    parentPort.postMessage(this.buildStartMessage());
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -544,10 +541,7 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STOPPED,
-      data: { id: this.stationInfo.chargingStationId },
-    });
+    parentPort.postMessage(this.buildStopMessage());
     this.stopped = true;
   }
 
@@ -670,6 +664,26 @@ export default class ChargingStation {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
+  }
+
+  private buildStartMessage(): Record<string, unknown> {
+    return {
+      id: ChargingStationWorkerMessageEvents.STARTED,
+      data: {
+        hashId: this.hashId,
+        data: {
+          id: this.stationInfo.chargingStationId,
+          stationInfo: this.stationInfo,
+        },
+      },
+    };
+  }
+
+  private buildStopMessage(): Record<string, unknown> {
+    return {
+      id: ChargingStationWorkerMessageEvents.STOPPED,
+      data: { hashId: this.hashId },
+    };
   }
 
   private flushMessageBuffer() {

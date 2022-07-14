@@ -279,11 +279,15 @@ export default class PerformanceStatistics {
       )
     );
     if (Configuration.getPerformanceStorage().enabled) {
-      parentPort.postMessage({
-        id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS,
-        data: this.statistics,
-      });
+      parentPort.postMessage(this.buildPerformanceStatisticsMessage());
     }
+  }
+
+  private buildPerformanceStatisticsMessage(): Record<string, unknown> {
+    return {
+      id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS,
+      data: this.statistics,
+    };
   }
 
   private extractTimeSeriesValues(timeSeries: CircularArray<TimeSeries>): number[] {
