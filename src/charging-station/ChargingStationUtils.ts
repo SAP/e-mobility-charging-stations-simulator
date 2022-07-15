@@ -26,6 +26,10 @@ import moment from 'moment';
 import path from 'path';
 
 export class ChargingStationUtils {
+  private constructor() {
+    // This is intentional
+  }
+
   public static getChargingStationId(
     index: number,
     stationTemplate: ChargingStationTemplate

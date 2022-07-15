@@ -8,6 +8,10 @@
  * Targeted to AC related values calculation.
  */
 export class ACElectricUtils {
+  private constructor() {
+    // This is intentional
+  }
+
   static amperageTotal(nbOfPhases: number, Iph: number): number {
     return nbOfPhases * Iph;
   }

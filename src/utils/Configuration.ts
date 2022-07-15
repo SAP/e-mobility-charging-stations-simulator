@@ -29,6 +29,10 @@ export default class Configuration {
   private static configuration: ConfigurationData | null = null;
   private static configurationChangeCallback: () => Promise<void>;
 
+  private constructor() {
+    // This is intentional
+  }
+
   static setConfigurationChangeCallback(cb: () => Promise<void>): void {
     Configuration.configurationChangeCallback = cb;
   }
@@ -59,10 +63,10 @@ export default class Configuration {
       },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
-      uiServerConfiguration = {
-        ...uiServerConfiguration,
-        ...Configuration.getConfig().uiServer,
-      };
+      uiServerConfiguration = Configuration.deepMerge(
+        uiServerConfiguration,
+        Configuration.getConfig().uiServer
+      );
     }
     return uiServerConfiguration;
   }
@@ -381,6 +385,33 @@ export default class Configuration {
       default:
         throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);
     }
+  }
+
+  private static isObject(item): boolean {
+    return item && typeof item === 'object' && !Array.isArray(item);
+  }
+
+  private static deepMerge(target: object, ...sources: object[]): object {
+    if (!sources.length) {
+      return target;
+    }
+    const source = sources.shift();
+
+    if (Configuration.isObject(target) && Configuration.isObject(source)) {
+      for (const key in source) {
+        if (Configuration.isObject(source[key])) {
+          if (!target[key]) {
+            Object.assign(target, { [key]: {} });
+          }
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          Configuration.deepMerge(target[key], source[key]);
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          Object.assign(target, { [key]: source[key] });
+        }
+      }
+    }
+    return Configuration.deepMerge(target, ...sources);
   }
 
   private static objectHasOwnProperty(object: unknown, property: string): boolean {

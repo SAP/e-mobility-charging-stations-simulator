@@ -5,4 +5,8 @@ export default class WorkerConstants {
   static readonly DEFAULT_POOL_MIN_SIZE = 4;
   static readonly DEFAULT_POOL_MAX_SIZE = 16;
   static readonly DEFAULT_ELEMENTS_PER_WORKER = 1;
+
+  private constructor() {
+    // This is intentional
+  }
 }

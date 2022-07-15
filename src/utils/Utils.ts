@@ -2,16 +2,16 @@ import crypto from 'crypto';
 import { v4 as uuid } from 'uuid';
 
 export default class Utils {
+  private constructor() {
+    // This is intentional
+  }
+
   public static logPrefix(prefixString = ''): string {
     return new Date().toLocaleString() + prefixString;
   }
 
   public static generateUUID(): string {
     return uuid();
-  }
-
-  public static equals(obj1: unknown, obj2: unknown): boolean {
-    return JSON.stringify(obj1) === JSON.stringify(obj2);
   }
 
   public static async sleep(milliSeconds: number): Promise<NodeJS.Timeout> {
