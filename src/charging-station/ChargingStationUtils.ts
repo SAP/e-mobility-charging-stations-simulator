@@ -1,29 +1,30 @@
-import { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
-import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
+import crypto from 'crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import moment from 'moment';
+
+import BaseError from '../exception/BaseError';
+import ChargingStationInfo from '../types/ChargingStationInfo';
 import ChargingStationTemplate, {
   AmpereUnits,
   CurrentType,
   Voltage,
 } from '../types/ChargingStationTemplate';
-import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
-
-import BaseError from '../exception/BaseError';
-import { BootNotificationRequest } from '../types/ocpp/Requests';
-import ChargingStation from './ChargingStation';
-import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
-import ChargingStationInfo from '../types/ChargingStationInfo';
-import Configuration from '../utils/Configuration';
-import Constants from '../utils/Constants';
 import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
+import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
+import { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
-import Utils from '../utils/Utils';
+import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
+import { BootNotificationRequest } from '../types/ocpp/Requests';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
-import crypto from 'crypto';
-import { fileURLToPath } from 'url';
+import Configuration from '../utils/Configuration';
+import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
-import moment from 'moment';
-import path from 'path';
+import Utils from '../utils/Utils';
+import ChargingStation from './ChargingStation';
+import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 
 export class ChargingStationUtils {
   private constructor() {

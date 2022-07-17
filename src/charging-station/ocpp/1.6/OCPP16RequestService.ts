@@ -1,17 +1,16 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { JsonObject, JsonType } from '../../../types/JsonType';
-
-import type ChargingStation from '../../ChargingStation';
-import Constants from '../../../utils/Constants';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
+import { JsonObject, JsonType } from '../../../types/JsonType';
+import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
+import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { RequestParams } from '../../../types/ocpp/Requests';
+import Constants from '../../../utils/Constants';
+import Utils from '../../../utils/Utils';
+import type ChargingStation from '../../ChargingStation';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
-import { RequestParams } from '../../../types/ocpp/Requests';
-import Utils from '../../../utils/Utils';
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 
 const moduleName = 'OCPP16RequestService';
 

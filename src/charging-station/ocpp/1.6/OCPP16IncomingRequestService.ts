@@ -1,5 +1,29 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import fs from 'fs';
+import path from 'path';
+import { URL, fileURLToPath } from 'url';
+
+import { Client, FTPResponse } from 'basic-ftp';
+import tar from 'tar';
+
+import OCPPError from '../../../exception/OCPPError';
+import { JsonType } from '../../../types/JsonType';
+import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
+import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
+import {
+  ChargingProfilePurposeType,
+  OCPP16ChargingProfile,
+} from '../../../types/ocpp/1.6/ChargingProfile';
+import {
+  OCPP16StandardParametersKey,
+  OCPP16SupportedFeatureProfiles,
+} from '../../../types/ocpp/1.6/Configuration';
+import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
+import {
+  OCPP16MeterValuesRequest,
+  OCPP16MeterValuesResponse,
+} from '../../../types/ocpp/1.6/MeterValues';
 import {
   ChangeAvailabilityRequest,
   ChangeConfigurationRequest,
@@ -36,11 +60,6 @@ import {
   UnlockConnectorResponse,
 } from '../../../types/ocpp/1.6/Responses';
 import {
-  ChargingProfilePurposeType,
-  OCPP16ChargingProfile,
-} from '../../../types/ocpp/1.6/ChargingProfile';
-import { Client, FTPResponse } from 'basic-ftp';
-import {
   OCPP16AuthorizationStatus,
   OCPP16AuthorizeRequest,
   OCPP16AuthorizeResponse,
@@ -50,36 +69,18 @@ import {
   OCPP16StopTransactionRequest,
   OCPP16StopTransactionResponse,
 } from '../../../types/ocpp/1.6/Transaction';
-import {
-  OCPP16MeterValuesRequest,
-  OCPP16MeterValuesResponse,
-} from '../../../types/ocpp/1.6/MeterValues';
-import {
-  OCPP16StandardParametersKey,
-  OCPP16SupportedFeatureProfiles,
-} from '../../../types/ocpp/1.6/Configuration';
-import { URL, fileURLToPath } from 'url';
-
+import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
+import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { IncomingRequestHandler } from '../../../types/ocpp/Requests';
+import { DefaultResponse } from '../../../types/ocpp/Responses';
+import Constants from '../../../utils/Constants';
+import logger from '../../../utils/Logger';
+import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
 import { ChargingStationUtils } from '../../ChargingStationUtils';
-import Constants from '../../../utils/Constants';
-import { DefaultResponse } from '../../../types/ocpp/Responses';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { IncomingRequestHandler } from '../../../types/ocpp/Requests';
-import { JsonType } from '../../../types/JsonType';
-import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
-import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
-import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
-import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
-import OCPPError from '../../../exception/OCPPError';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
-import Utils from '../../../utils/Utils';
-import fs from 'fs';
-import logger from '../../../utils/Logger';
-import path from 'path';
-import tar from 'tar';
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 
 const moduleName = 'OCPP16IncomingRequestService';
 

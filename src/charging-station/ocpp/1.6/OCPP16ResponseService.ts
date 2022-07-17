@@ -1,14 +1,14 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import OCPPError from '../../../exception/OCPPError';
+import { JsonType } from '../../../types/JsonType';
+import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
+import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
+import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
 import {
-  OCPP16AuthorizationStatus,
-  OCPP16AuthorizeRequest,
-  OCPP16AuthorizeResponse,
-  OCPP16StartTransactionRequest,
-  OCPP16StartTransactionResponse,
-  OCPP16StopTransactionRequest,
-  OCPP16StopTransactionResponse,
-} from '../../../types/ocpp/1.6/Transaction';
+  OCPP16MeterValuesRequest,
+  OCPP16MeterValuesResponse,
+} from '../../../types/ocpp/1.6/MeterValues';
 import {
   OCPP16BootNotificationRequest,
   OCPP16RequestCommand,
@@ -20,23 +20,22 @@ import {
   OCPP16StatusNotificationResponse,
 } from '../../../types/ocpp/1.6/Responses';
 import {
-  OCPP16MeterValuesRequest,
-  OCPP16MeterValuesResponse,
-} from '../../../types/ocpp/1.6/MeterValues';
-
+  OCPP16AuthorizationStatus,
+  OCPP16AuthorizeRequest,
+  OCPP16AuthorizeResponse,
+  OCPP16StartTransactionRequest,
+  OCPP16StartTransactionResponse,
+  OCPP16StopTransactionRequest,
+  OCPP16StopTransactionResponse,
+} from '../../../types/ocpp/1.6/Transaction';
+import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { ResponseHandler } from '../../../types/ocpp/Responses';
+import logger from '../../../utils/Logger';
+import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { JsonType } from '../../../types/JsonType';
-import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
-import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
-import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
-import OCPPError from '../../../exception/OCPPError';
 import OCPPResponseService from '../OCPPResponseService';
-import { ResponseHandler } from '../../../types/ocpp/Responses';
-import Utils from '../../../utils/Utils';
-import logger from '../../../utils/Logger';
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 
 const moduleName = 'OCPP16ResponseService';
 

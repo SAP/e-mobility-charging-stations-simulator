@@ -1,15 +1,15 @@
+import { RawData } from 'ws';
+
+import BaseError from '../../../exception/BaseError';
+import { JsonType } from '../../../types/JsonType';
 import {
   ProtocolCommand,
   ProtocolRequest,
   ProtocolRequestHandler,
 } from '../../../types/UIProtocol';
-
-import { AbstractUIServer } from '../AbstractUIServer';
-import BaseError from '../../../exception/BaseError';
-import { JsonType } from '../../../types/JsonType';
-import { RawData } from 'ws';
-import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
+import Utils from '../../../utils/Utils';
+import { AbstractUIServer } from '../AbstractUIServer';
 
 export default abstract class AbstractUIService {
   protected readonly uiServer: AbstractUIServer;

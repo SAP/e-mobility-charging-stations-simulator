@@ -1,6 +1,43 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { URL, fileURLToPath } from 'url';
+import { parentPort } from 'worker_threads';
+
+import WebSocket, { Data, RawData } from 'ws';
+
+import BaseError from '../exception/BaseError';
+import OCPPError from '../exception/OCPPError';
+import PerformanceStatistics from '../performance/PerformanceStatistics';
+import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
+import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
+import ChargingStationInfo from '../types/ChargingStationInfo';
+import ChargingStationOcppConfiguration from '../types/ChargingStationOcppConfiguration';
+import ChargingStationTemplate, {
+  CurrentType,
+  PowerUnits,
+  WsOptions,
+} from '../types/ChargingStationTemplate';
+import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
+import { SupervisionUrlDistribution } from '../types/ConfigurationData';
+import { ConnectorStatus } from '../types/ConnectorStatus';
+import { FileType } from '../types/FileType';
+import { JsonType } from '../types/JsonType';
+import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
+import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
+import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
+import {
+  ConnectorPhaseRotation,
+  StandardParametersKey,
+  SupportedFeatureProfiles,
+  VendorDefaultParametersKey,
+} from '../types/ocpp/Configuration';
+import { ErrorType } from '../types/ocpp/ErrorType';
+import { MessageType } from '../types/ocpp/MessageType';
+import { MeterValue, MeterValueMeasurand } from '../types/ocpp/MeterValues';
+import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import {
   AvailabilityType,
   BootNotificationRequest,
@@ -21,65 +58,29 @@ import {
   Response,
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
-import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
-import ChargingStationTemplate, {
-  CurrentType,
-  PowerUnits,
-  WsOptions,
-} from '../types/ChargingStationTemplate';
-import {
-  ConnectorPhaseRotation,
-  StandardParametersKey,
-  SupportedFeatureProfiles,
-  VendorDefaultParametersKey,
-} from '../types/ocpp/Configuration';
-import { MeterValue, MeterValueMeasurand } from '../types/ocpp/MeterValues';
 import {
   StopTransactionReason,
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
-import { URL, fileURLToPath } from 'url';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import WebSocket, { Data, RawData } from 'ws';
-
+import Configuration from '../utils/Configuration';
+import Constants from '../utils/Constants';
+import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
+import FileUtils from '../utils/FileUtils';
+import logger from '../utils/Logger';
+import Utils from '../utils/Utils';
 import AuthorizedTagsCache from './AuthorizedTagsCache';
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
-import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
-import BaseError from '../exception/BaseError';
-import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
-import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
-import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
-import ChargingStationInfo from '../types/ChargingStationInfo';
-import ChargingStationOcppConfiguration from '../types/ChargingStationOcppConfiguration';
 import { ChargingStationUtils } from './ChargingStationUtils';
-import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
-import Configuration from '../utils/Configuration';
-import { ConnectorStatus } from '../types/ConnectorStatus';
-import Constants from '../utils/Constants';
-import { ErrorType } from '../types/ocpp/ErrorType';
-import { FileType } from '../types/FileType';
-import FileUtils from '../utils/FileUtils';
-import { JsonType } from '../types/JsonType';
-import { MessageType } from '../types/ocpp/MessageType';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
 import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
-import OCPPError from '../exception/OCPPError';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
-import { OCPPVersion } from '../types/ocpp/OCPPVersion';
-import PerformanceStatistics from '../performance/PerformanceStatistics';
 import SharedLRUCache from './SharedLRUCache';
-import { SupervisionUrlDistribution } from '../types/ConfigurationData';
-import Utils from '../utils/Utils';
-import crypto from 'crypto';
-import fs from 'fs';
-import logger from '../utils/Logger';
-import { parentPort } from 'worker_threads';
-import path from 'path';
 
 export default class ChargingStation {
   public hashId!: string;

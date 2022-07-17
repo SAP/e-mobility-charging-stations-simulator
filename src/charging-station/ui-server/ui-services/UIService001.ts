@@ -1,8 +1,7 @@
+import { JsonType } from '../../../types/JsonType';
 import { ProtocolCommand, ProtocolRequestHandler } from '../../../types/UIProtocol';
-
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
-import { JsonType } from '../../../types/JsonType';
 
 export default class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {

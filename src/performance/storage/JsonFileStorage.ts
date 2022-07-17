@@ -1,11 +1,13 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { FileType } from '../../types/FileType';
-import FileUtils from '../../utils/FileUtils';
-import Statistics from '../../types/Statistics';
-import { Storage } from './Storage';
 import fs from 'fs';
+
 import lockfile from 'proper-lockfile';
+
+import { FileType } from '../../types/FileType';
+import Statistics from '../../types/Statistics';
+import FileUtils from '../../utils/FileUtils';
+import { Storage } from './Storage';
 
 export class JsonFileStorage extends Storage {
   private fd: number | null = null;

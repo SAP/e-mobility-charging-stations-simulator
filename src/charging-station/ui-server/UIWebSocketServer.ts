@@ -1,13 +1,14 @@
-import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
-
-import { AbstractUIServer } from './AbstractUIServer';
-import Configuration from '../../utils/Configuration';
 import { IncomingMessage } from 'http';
-import { ServerOptions } from '../../types/ConfigurationData';
-import UIServiceFactory from './ui-services/UIServiceFactory';
-import Utils from '../../utils/Utils';
+
 import WebSocket from 'ws';
+
+import { ServerOptions } from '../../types/ConfigurationData';
+import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
+import Configuration from '../../utils/Configuration';
 import logger from '../../utils/Logger';
+import Utils from '../../utils/Utils';
+import { AbstractUIServer } from './AbstractUIServer';
+import UIServiceFactory from './ui-services/UIServiceFactory';
 
 export default class UIWebSocketServer extends AbstractUIServer {
   public constructor(options?: ServerOptions) {

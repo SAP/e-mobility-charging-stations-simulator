@@ -1,29 +1,30 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { isMainThread } from 'worker_threads';
+
+import chalk from 'chalk';
+
+import { version } from '../../package.json';
+import { Storage } from '../performance/storage/Storage';
+import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
   ChargingStationWorkerData,
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-
-import { AbstractUIServer } from './ui-server/AbstractUIServer';
-import { ApplicationProtocol } from '../types/UIProtocol';
-import { ChargingStationUtils } from './ChargingStationUtils';
-import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
-import { Storage } from '../performance/storage/Storage';
-import { StorageFactory } from '../performance/storage/StorageFactory';
-import UIServerFactory from './ui-server/UIServerFactory';
-import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
+import { ApplicationProtocol } from '../types/UIProtocol';
+import Configuration from '../utils/Configuration';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
-import chalk from 'chalk';
-import { fileURLToPath } from 'url';
-import { isMainThread } from 'worker_threads';
-import path from 'path';
-import { version } from '../../package.json';
+import { ChargingStationUtils } from './ChargingStationUtils';
+import { AbstractUIServer } from './ui-server/AbstractUIServer';
+import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
+import UIServerFactory from './ui-server/UIServerFactory';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;

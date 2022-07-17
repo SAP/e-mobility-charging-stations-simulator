@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-const MongoClient = require('mongodb');
 const fs = require('fs');
+
+const MongoClient = require('mongodb');
 
 // This script sets charging stations public or private
 // Filter charging stations by id pattern

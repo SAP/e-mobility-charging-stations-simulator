@@ -1,10 +1,15 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
+import OCPPError from '../../../exception/OCPPError';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
 import MeasurandPerPhaseSampledValueTemplates, {
   SampledValueTemplate,
 } from '../../../types/MeasurandPerPhaseSampledValueTemplates';
+import MeasurandValues from '../../../types/MeasurandValues';
+import {
+  OCPP16StandardParametersKey,
+  OCPP16SupportedFeatureProfiles,
+} from '../../../types/ocpp/1.6/Configuration';
 import {
   MeterValueContext,
   MeterValueLocation,
@@ -18,20 +23,14 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
 } from '../../../types/ocpp/1.6/Requests';
-import {
-  OCPP16StandardParametersKey,
-  OCPP16SupportedFeatureProfiles,
-} from '../../../types/ocpp/1.6/Configuration';
-
+import { ErrorType } from '../../../types/ocpp/ErrorType';
+import Constants from '../../../utils/Constants';
+import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
+import logger from '../../../utils/Logger';
+import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationUtils } from '../../ChargingStationUtils';
-import Constants from '../../../utils/Constants';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import MeasurandValues from '../../../types/MeasurandValues';
-import OCPPError from '../../../exception/OCPPError';
 import { OCPPServiceUtils } from '../OCPPServiceUtils';
-import Utils from '../../../utils/Utils';
-import logger from '../../../utils/Logger';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static checkFeatureProfile(

@@ -1,9 +1,9 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
-
-import Utils from '../utils/Utils';
 import { Worker } from 'worker_threads';
+
+import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
+import Utils from '../utils/Utils';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
 
