@@ -26,24 +26,27 @@ export default abstract class AbstractUIService {
   }
 
   public messageHandler(message: RawData): void {
-    const [code, ...payload] = JSON.parse(message.toString()) as ProtocolMessage;
-    console.debug(code, payload);
+    try {
+      const [code, ...payload] = JSON.parse(message.toString()) as ProtocolMessage;
+      console.debug(code, payload);
 
-    switch (code) {
-      case MessageCode.REQUEST:
-        this.requestHandler(payload as unknown as ProtocolRequest).catch(console.error);
-        break;
-      case MessageCode.ANSWER:
-        break;
-      case MessageCode.ERROR:
-        break;
-      default:
+      switch (code) {
+        case MessageCode.REQUEST:
+          this.requestHandler(payload as unknown as ProtocolRequest).catch(console.error);
+          break;
+        case MessageCode.ANSWER:
+          break;
+        case MessageCode.ERROR:
+          break;
+        default:
+      }
+    } catch (error) {
+      console.error(error);
     }
   }
 
   private async requestHandler(request: ProtocolRequest): Promise<void> {
     const [id, command, payload] = request;
-    console.debug(command, payload);
 
     const commandHandler = this.messageHandlers.get(command);
     if (Utils.isUndefined(commandHandler)) {

@@ -26,12 +26,10 @@ export default class UIWebSocketServer extends AbstractUIServer {
       }
       // FIXME: check connection validity
       socket.on('message', (messageData) => {
-        this.uiServices
-          .get(version)
-          .messageHandler(messageData)
-          .catch(() => {
-            logger.error(`${this.logPrefix()} Error while handling message data: %j`, messageData);
-          });
+        this.uiServices.get(version).messageHandler(messageData);
+        // .catch(() => {
+        //   logger.error(`${this.logPrefix()} Error while handling message data: %j`, messageData);
+        // });
       });
       socket.on('error', (error) => {
         logger.error(`${this.logPrefix()} Error on WebSocket: %j`, error);
