@@ -4,8 +4,8 @@
       <Button @click="startTransaction(connector)">Start Transaction</Button>
       <Button @click="stopTransaction(connector)">Stop Transaction</Button>
     </td>
-    <td class="cs-table__data">{{ connector }}</td>
     <td class="cs-table__data">{{ getID() }}</td>
+    <td class="cs-table__data">{{ connector }}</td>
     <td class="cs-table__data">{{ getModel() }}</td>
     <td class="cs-table__data">{{ getVendor() }}</td>
     <td class="cs-table__data">{{ getFirmwareVersion() }}</td>

@@ -3,8 +3,8 @@
     <thead id="cs-table__head">
       <tr class="cs-table__row">
         <th scope="col" class="cs-table__header">Action</th>
-        <th scope="col" class="cs-table__header">Connector</th>
         <th scope="col" class="cs-table__header">Name</th>
+        <th scope="col" class="cs-table__header">Connector</th>
         <th scope="col" class="cs-table__header">Model</th>
         <th scope="col" class="cs-table__header">Vendor</th>
         <th scope="col" class="cs-table__header">Firmware Version</th>
@@ -29,7 +29,7 @@ const props = defineProps<{
   flex-grow: 1;
 
   background-color: white;
-  
+
   height:100%;
   width: 100%;
 

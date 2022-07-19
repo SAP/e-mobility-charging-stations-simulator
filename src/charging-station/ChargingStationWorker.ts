@@ -51,13 +51,13 @@ class TEMP {
 let station: ChargingStation;
 const channel = new BroadcastChannel('test');
 channel.onmessage = (message: MessageEvent) => {
-  console.debug(threadId, typeof message.data);
   const data = message.data as unknown as TEMP;
 
   if (data.hashId !== station.hashId) {
     return;
   }
 
+  console.debug(station.connectors);
   switch (data.command) {
     case CommandCode.START_TRANSACTION:
       void startTransaction(data.connectorId, data.idTag);
