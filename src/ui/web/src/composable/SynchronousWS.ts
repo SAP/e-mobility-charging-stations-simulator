@@ -58,7 +58,6 @@ export default class SynchronousWS {
 
   private onMessage(ev: MessageEvent<string>): void {
     const [code, ...payload] = JSON.parse(ev.data) as ProtocolMessage;
-    console.debug('code:', code);
 
     switch (code) {
       case MessageCode.REQUEST:

@@ -97,7 +97,6 @@ async function startTransaction(connectorId: number, idTag: string): Promise<voi
 
 /**
  * @param connectorId Id of the connector used
- * @param idTag RFID tag used
  */
 async function stopTransaction(connectorId: number): Promise<void> {
   try {
