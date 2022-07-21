@@ -358,7 +358,7 @@ export default class AutomaticTransactionGenerator {
         >(this.chargingStation, RequestCommand.METER_VALUES, {
           connectorId,
           transactionId,
-          meterValue: transactionEndMeterValue,
+          meterValue: [transactionEndMeterValue],
         });
       }
       stopResponse = await this.chargingStation.ocppRequestService.requestHandler<

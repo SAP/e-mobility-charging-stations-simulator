@@ -1400,7 +1400,7 @@ export default class ChargingStation {
             }
             logger.debug(
               `${this.logPrefix()} << Command '${
-                requestCommandName ?? ''
+                requestCommandName ?? 'unknown'
               }' received response payload: ${JSON.stringify(request)}`
             );
             responseCallback(commandPayload, requestPayload);
@@ -1430,7 +1430,7 @@ export default class ChargingStation {
             }
             logger.debug(
               `${this.logPrefix()} << Command '${
-                requestCommandName ?? ''
+                requestCommandName ?? 'unknown'
               }' received error payload: ${JSON.stringify(request)}`
             );
             errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails));
@@ -1723,7 +1723,7 @@ export default class ChargingStation {
               {
                 connectorId,
                 transactionId,
-                meterValue: transactionEndMeterValue,
+                meterValue: [transactionEndMeterValue],
               }
             );
           }

@@ -81,7 +81,8 @@ export default class OCPP16ResponseService extends OCPPResponseService {
             null,
             2
           )}`,
-          commandName
+          commandName,
+          payload
         );
       }
     } else {
@@ -92,7 +93,8 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           null,
           2
         )} while the charging station is not registered on the central server. `,
-        commandName
+        commandName,
+        payload
       );
     }
   }
@@ -311,7 +313,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
           connectorId,
           transactionId: payload.transactionId,
-          meterValue: chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
+          meterValue: [chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue],
         }));
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16StatusNotificationRequest,
@@ -407,11 +409,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
           connectorId: transactionConnectorId,
           transactionId: requestPayload.transactionId,
-          meterValue: OCPP16ServiceUtils.buildTransactionEndMeterValue(
-            chargingStation,
-            transactionConnectorId,
-            requestPayload.meterStop
-          ),
+          meterValue: [
+            OCPP16ServiceUtils.buildTransactionEndMeterValue(
+              chargingStation,
+              transactionConnectorId,
+              requestPayload.meterStop
+            ),
+          ],
         }));
       if (
         !chargingStation.isChargingStationAvailable() ||

@@ -149,7 +149,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           null,
           2
         )} while the charging station is in pending state on the central server`,
-        commandName
+        commandName,
+        commandPayload
       );
     }
     if (
@@ -177,7 +178,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             null,
             2
           )}`,
-          commandName
+          commandName,
+          commandPayload
         );
       }
     } else {
@@ -188,7 +190,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           null,
           2
         )} while the charging station is not registered on the central server.`,
-        commandName
+        commandName,
+        commandPayload
       );
     }
     // Send the built response
@@ -253,7 +256,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
           connectorId,
           transactionId,
-          meterValue: transactionEndMeterValue,
+          meterValue: [transactionEndMeterValue],
         });
       }
       const stopResponse = await chargingStation.ocppRequestService.requestHandler<
@@ -840,7 +843,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
             connectorId,
             transactionId,
-            meterValue: transactionEndMeterValue,
+            meterValue: [transactionEndMeterValue],
           });
         }
         await chargingStation.ocppRequestService.requestHandler<

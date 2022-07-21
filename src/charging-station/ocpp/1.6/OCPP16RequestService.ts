@@ -41,7 +41,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       ErrorType.NOT_SUPPORTED,
       `${moduleName}.requestHandler: Unsupported OCPP command ${commandName}`,
       commandName,
-      { commandName }
+      commandParams
     );
   }
 
@@ -88,12 +88,19 @@ export default class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.HEARTBEAT:
         return {} as unknown as Request;
       case OCPP16RequestCommand.METER_VALUES:
+        // Sanity check
+        if (!Array.isArray(commandParams?.meterValue)) {
+          throw new OCPPError(
+            ErrorType.TYPERAINT_VIOLATION,
+            `${moduleName}.buildRequestPayload ${commandName}: Invalid array type for meterValue payload field`,
+            commandName,
+            commandParams
+          );
+        }
         return {
           connectorId: commandParams?.connectorId,
           transactionId: commandParams?.transactionId,
-          meterValue: Array.isArray(commandParams?.meterValue)
-            ? commandParams?.meterValue
-            : [commandParams?.meterValue],
+          meterValue: commandParams?.meterValue,
         } as unknown as Request;
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return {
@@ -139,7 +146,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `${moduleName}.buildRequestPayload: Unsupported OCPP command: ${commandName}`,
           commandName,
-          { commandName }
+          commandParams
         );
     }
   }
