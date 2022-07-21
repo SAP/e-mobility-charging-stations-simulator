@@ -11,12 +11,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue';
-import CentralServer from '@/composable/CentralServer';
-
 import Container from '@/components/Container.vue';
 import ReloadButton from '@/components/buttons/ReloadButton.vue';
 import CSTable from '@/components/charging-stations/CSTable.vue';
+
+import { onMounted, reactive } from 'vue';
+import CentralServer from '@/composable/CentralServer';
+import { SimulatorUI } from '@/type/SimulatorUI';
 
 onMounted(() => {
   load();
@@ -24,7 +25,7 @@ onMounted(() => {
 
 interface State {
   isLoading: boolean,
-  chargingStations: Array<Record<string, unknown>>
+  chargingStations: Array<SimulatorUI>
 }
 
 const state: State = reactive({
@@ -35,9 +36,11 @@ const state: State = reactive({
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
+  // state.chargingStations = await CentralServer.listChargingStations();
   const list = await CentralServer.listChargingStations();
   console.debug(list);
-  state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
+  state.chargingStations = list;
+  // state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
   // state.chargingStations = list;
   state.isLoading = false;
 }
@@ -48,10 +51,10 @@ async function load(): Promise<void> {
   height: 100%;
   width: 100%;
   padding: 30px;
+  background-color: rgb(233, 227, 227);
+
   flex-direction: column;
   gap: 1%;
-  /* background-color: black; */
-  background-color: rgb(233, 227, 227);
 }
 
 #reload-button {

@@ -1,5 +1,6 @@
 import config from '@/assets/config';
 import { JsonArray } from '@/type/JsonType';
+import { SimulatorUI } from '@/type/SimulatorUI';
 import { CommandCode, ProtocolCommand } from '@/type/UIProtocol';
 import SynchronousWS from './SynchronousWS';
 
@@ -18,7 +19,7 @@ export default class CentralServer {
     return CentralServer._instance || (CentralServer._instance = new CentralServer());
   }
 
-  public static async listChargingStations(): Promise<Record<string, unknown>[]> {
+  public static async listChargingStations(): Promise<SimulatorUI[]> {
     console.debug('listChargingStations');
 
     const [_, list] = (await CentralServer.send([
@@ -26,7 +27,7 @@ export default class CentralServer {
       {},
     ])) as ProtocolCommand;
 
-    return list as Record<string, unknown>[];
+    return list as unknown as SimulatorUI[];
   }
 
   public static async startTransaction(

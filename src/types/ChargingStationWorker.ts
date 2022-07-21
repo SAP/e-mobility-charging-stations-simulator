@@ -2,6 +2,8 @@ import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
 import ChargingStationInfo from './ChargingStationInfo';
 import { JsonObject } from './JsonType';
+import { SimulatorUI } from './SimulatorUI';
+import Statistics from './Statistics';
 
 export interface ChargingStationWorkerOptions extends JsonObject {
   elementStartDelay?: number;
@@ -12,14 +14,6 @@ export interface ChargingStationWorkerData extends WorkerData {
   templateFile: string;
   chargingStationWorkerOptions?: ChargingStationWorkerOptions;
 }
-
-// export interface ChargingStationUI {
-//   hashId: string;
-//   data: {
-//     id: string;
-//     stationInfo: ChargingStationInfo;
-//   };
-// }
 
 enum ChargingStationMessageEvents {
   STARTED = 'started',
@@ -40,6 +34,6 @@ export interface ChargingStationWorkerMessage
 }
 
 export interface InternalChargingStationWorkerMessage {
-  data: unknown;
   id: ChargingStationWorkerMessageEvents;
+  payload: SimulatorUI | Statistics;
 }

@@ -5,6 +5,7 @@
         <th scope="col" class="cs-table__header">Action</th>
         <th scope="col" class="cs-table__header">Name</th>
         <th scope="col" class="cs-table__header">Connector</th>
+        <th scope="col" class="cs-table__header">Status</th>
         <th scope="col" class="cs-table__header">Model</th>
         <th scope="col" class="cs-table__header">Vendor</th>
         <th scope="col" class="cs-table__header">Firmware Version</th>
@@ -18,9 +19,10 @@
 
 <script setup lang="ts">
 import CSTableData from './CSTableData.vue';
+import { SimulatorUI } from '@/type/SimulatorUI';
 
 const props = defineProps<{
-  chargingStations: Array<Record<string, unknown>>
+  chargingStations: Array<SimulatorUI>
 }>();
 </script>
 

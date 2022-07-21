@@ -8,7 +8,7 @@ import {
 
 import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { ApplicationProtocol } from '../types/UIProtocol';
-import { ChargingStationUI } from '../types/SimulatorUI';
+import { SimulatorUI } from '../types/SimulatorUI';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
@@ -166,35 +166,38 @@ export default class Bootstrap {
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
-          messageHandler: (msg: InternalChargingStationWorkerMessage) => {
-            logger.debug(
-              `${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.data)}`
-            );
-
-            switch (msg.id) {
-              case ChargingStationWorkerMessageEvents.STARTED:
-                this.workerEventStarted(msg.data as ChargingStationUI);
-                break;
-              case ChargingStationWorkerMessageEvents.STOPPED:
-                this.workerEventStopped(msg.data as ChargingStationUI);
-                break;
-              case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
-                this.workerEventPerformanceStatistics(msg.data as Statistics);
-                break;
-              default:
-                console.error(msg);
-            }
-          },
+          messageHandler: this.messageHandler.bind(this) as (
+            msg: InternalChargingStationWorkerMessage
+          ) => void,
         }
       ));
   }
 
-  private workerEventStarted(payload: ChargingStationUI) {
+  private messageHandler(msg: InternalChargingStationWorkerMessage): void {
+    logger.debug(`${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.payload)}`);
+
+    switch (msg.id) {
+      case ChargingStationWorkerMessageEvents.STARTED:
+        this.workerEventStarted(msg.payload as SimulatorUI);
+        break;
+      case ChargingStationWorkerMessageEvents.STOPPED:
+        this.workerEventStopped(msg.payload as SimulatorUI);
+        break;
+      case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
+        this.workerEventPerformanceStatistics(msg.payload as Statistics);
+        break;
+      default:
+        console.error(msg);
+    }
+  }
+
+  private workerEventStarted(payload: SimulatorUI) {
+    console.debug(JSON.stringify(payload.connectors));
     this.uiServer.chargingStations.set(payload.hashId, payload);
     ++this.numberOfChargingStations;
   }
 
-  private workerEventStopped(payload: ChargingStationUI) {
+  private workerEventStopped(payload: SimulatorUI) {
     this.uiServer.chargingStations.delete(payload.hashId);
     --this.numberOfChargingStations;
   }

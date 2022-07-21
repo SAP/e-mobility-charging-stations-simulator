@@ -1,11 +1,12 @@
 <template>
-  <tr v-for="connector in getNumberOfConnector()" class="cs-table__row">
+  <tr v-for="(connector, index) in getConnectors()" class="cs-table__row">
     <td class="cs-table__data">
-      <Button @click="startTransaction(connector)">Start Transaction</Button>
-      <Button @click="stopTransaction(connector)">Stop Transaction</Button>
+      <Button @click="startTransaction(index)">Start Transaction</Button>
+      <Button @click="stopTransaction(index)">Stop Transaction</Button>
     </td>
     <td class="cs-table__data">{{ getID() }}</td>
-    <td class="cs-table__data">{{ connector }}</td>
+    <td class="cs-table__data">{{ index + 1 }}</td>
+    <td class="cs-table__data">{{ connector.bootStatus }}</td>
     <td class="cs-table__data">{{ getModel() }}</td>
     <td class="cs-table__data">{{ getVendor() }}</td>
     <td class="cs-table__data">{{ getFirmwareVersion() }}</td>
@@ -13,41 +14,41 @@
 </template>
 
 <script setup lang="ts">
+import Button from '@/components/buttons/Button.vue';
 import CentralServer from '@/composable/CentralServer';
-import Button from '../buttons/Button.vue';
+import Utils from '@/composable/Utils';
+import { SimulatorUI, ChargingStationInfoUI, ConnectorStatus } from '@/type/SimulatorUI';
 
 const props = defineProps<{
-  chargingStation: Record<string, unknown>
+  chargingStation: SimulatorUI
 }>();
 
 function getHashId(): string {
-  return props.chargingStation['hashId'] as string;
+  return props.chargingStation.hashId;
 }
 
-function getData(): Record<string, unknown> {
-  return props.chargingStation['data'] as Record<string, unknown>;
+function getConnectors(): Array<ConnectorStatus> {
+  return props.chargingStation.connectors.slice(1);
+}
+
+function getInfo(): ChargingStationInfoUI {
+  return props.chargingStation.stationInfo;
 }
 
 function getID(): string {
-  return getData()['id'] as string;
-}
-
-function getInfo(): Record<string, unknown> {
-  return getData()['stationInfo'] as Record<string, unknown>;
+  return Utils.ifUndefined<string>(getInfo().chargingStationId, 'Ø');
 }
 
 function getModel(): string {
-  return getInfo()['chargePointModel'] as string;
+  return getInfo().chargePointModel;
 }
 
 function getVendor(): string {
-  return getInfo()['chargePointVendor'] as string;
+  return getInfo().chargePointVendor;
 }
 
 function getFirmwareVersion(): string {
-  const firmwareVersion = getInfo()['firmwareVersion'] as string;
-  if (typeof firmwareVersion === 'undefined') return 'Ø';
-  return firmwareVersion;
+  return Utils.ifUndefined<string>(getInfo().firmwareVersion, 'Ø');
 }
 
 function getNumberOfConnector(): number {
@@ -55,10 +56,10 @@ function getNumberOfConnector(): number {
 }
 
 function startTransaction(connectorId: number): void {
-  CentralServer.startTransaction(getHashId(), connectorId, 'TEST');
+  CentralServer.startTransaction(getHashId(), connectorId + 1, 'TEST');
 }
 
 function stopTransaction(connectorId: number): void {
-  CentralServer.stopTransaction(getHashId(), connectorId);
+  CentralServer.stopTransaction(getHashId(), connectorId + 1);
 }
 </script>

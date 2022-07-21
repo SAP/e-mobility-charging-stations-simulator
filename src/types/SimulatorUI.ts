@@ -1,9 +1,16 @@
 import ChargingStationInfo from './ChargingStationInfo';
+import { ConnectorStatus } from './ConnectorStatus';
 
-export interface ChargingStationUI {
+export type SimulatorUI = {
   hashId: string;
-  data: {
-    id: string;
-    stationInfo: ChargingStationInfo;
-  };
-}
+  stationInfo: ChargingStationInfo;
+  connectors: Array<ConnectorStatus>;
+};
+
+export type ChargingStationInfoUI = {
+  chargePointModel: string;
+  chargePointVendor: string;
+  chargingStationId?: string;
+  firmwareVersion?: string;
+  numberOfConnectors?: number | number[];
+};

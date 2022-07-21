@@ -80,6 +80,8 @@ import fs from 'fs';
 import logger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 import path from 'path';
+import { throws } from 'assert';
+import { ChargingStationInfoUI } from '../types/SimulatorUI';
 
 export default class ChargingStation {
   public hashId!: string;
@@ -514,6 +516,11 @@ export default class ChargingStation {
         }
       }
     );
+    try {
+      console.debug('works:', Array.from(Object.values(this.stationInfo.Connectors))); // DEBUG
+    } catch (e) {
+      console.debug('crash:', e);
+    }
     parentPort.postMessage(this.buildStartMessage());
   }
 
@@ -669,13 +676,22 @@ export default class ChargingStation {
   private buildStartMessage(): Record<string, unknown> {
     return {
       id: ChargingStationWorkerMessageEvents.STARTED,
-      data: {
+      payload: {
         hashId: this.hashId,
-        data: {
-          id: this.stationInfo.chargingStationId,
-          stationInfo: this.stationInfo,
-        },
+        stationInfo: this.buildChargingStationInfoUI(),
+        connectors: Array.from(this.connectors.values()),
       },
+    };
+  }
+
+  private buildChargingStationInfoUI(): ChargingStationInfoUI {
+    return <ChargingStationInfoUI>{
+      chargingStationId: this.stationInfo.chargingStationId,
+      chargePointModel: this.stationInfo.chargePointModel,
+      chargePointVendor: this.stationInfo.chargePointVendor,
+      firmwareVersion: this.stationInfo.firmwareVersion,
+      numberOfConnectors: this.stationInfo.numberOfConnectors,
+      Connectors: [],
     };
   }
 

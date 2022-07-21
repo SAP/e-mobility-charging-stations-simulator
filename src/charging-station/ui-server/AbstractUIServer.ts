@@ -2,15 +2,15 @@ import AbstractUIService from './ui-services/AbstractUIService';
 import { Server as HttpServer } from 'http';
 import { ProtocolVersion } from '../../types/UIProtocol';
 import WebSocket from 'ws';
-import { ChargingStationUI } from '../../types/SimulatorUI';
+import { SimulatorUI } from '../../types/SimulatorUI';
 
 export abstract class AbstractUIServer {
-  public readonly chargingStations: Map<string, ChargingStationUI>;
+  public readonly chargingStations: Map<string, SimulatorUI>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
   protected server: WebSocket.Server | HttpServer;
 
   public constructor() {
-    this.chargingStations = new Map<string, ChargingStationUI>();
+    this.chargingStations = new Map<string, SimulatorUI>();
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>();
   }
 
