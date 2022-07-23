@@ -1450,12 +1450,22 @@ export default class ChargingStation {
     } catch (error) {
       // Log
       logger.error(
-        '%s Incoming OCPP message %j matching cached request %j processing error %j',
+        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error: %j",
         this.logPrefix(),
+        commandName ?? requestCommandName ?? null,
         data.toString(),
         this.requests.get(messageId),
         error
       );
+      if (!(error instanceof OCPPError)) {
+        logger.warn(
+          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError: %j",
+          this.logPrefix(),
+          commandName ?? requestCommandName ?? null,
+          data.toString(),
+          error
+        );
+      }
       // Send error
       messageType === MessageType.CALL_MESSAGE &&
         (await this.ocppRequestService.sendError(
