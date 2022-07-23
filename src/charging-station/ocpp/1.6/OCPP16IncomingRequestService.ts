@@ -857,7 +857,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         return Constants.OCPP_RESPONSE_ACCEPTED;
       }
     }
-    logger.info(
+    logger.warn(
       chargingStation.logPrefix() +
         ' Trying to remote stop a non existing transaction ' +
         transactionId.toString()
