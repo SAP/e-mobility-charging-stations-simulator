@@ -8,9 +8,9 @@ import {
 
 import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { ApplicationProtocol } from '../types/UIProtocol';
-import { SimulatorUI } from '../types/SimulatorUI';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import Configuration from '../utils/Configuration';
+import { SimulatorUI } from '../types/SimulatorUI';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
 import { Storage } from '../performance/storage/Storage';
@@ -183,6 +183,9 @@ export default class Bootstrap {
       case ChargingStationWorkerMessageEvents.STOPPED:
         this.workerEventStopped(msg.payload as SimulatorUI);
         break;
+      case ChargingStationWorkerMessageEvents.UPDATE:
+        this.workerEventUpdated(msg.payload as SimulatorUI);
+        break;
       case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
         this.workerEventPerformanceStatistics(msg.payload as Statistics);
         break;
@@ -200,6 +203,10 @@ export default class Bootstrap {
   private workerEventStopped(payload: SimulatorUI) {
     this.uiServer.chargingStations.delete(payload.hashId);
     --this.numberOfChargingStations;
+  }
+
+  private workerEventUpdated(payload: SimulatorUI) {
+    this.uiServer.chargingStations.set(payload.hashId, payload);
   }
 
   private workerEventPerformanceStatistics(payload: Statistics) {

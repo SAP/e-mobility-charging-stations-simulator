@@ -81,7 +81,7 @@ import logger from '../utils/Logger';
 import { parentPort } from 'worker_threads';
 import path from 'path';
 import { throws } from 'assert';
-import { ChargingStationInfoUI } from '../types/SimulatorUI';
+import { ChargingStationInfoUI, SimulatorUI } from '../types/SimulatorUI';
 
 export default class ChargingStation {
   public hashId!: string;
@@ -516,11 +516,6 @@ export default class ChargingStation {
         }
       }
     );
-    try {
-      console.debug('works:', Array.from(Object.values(this.stationInfo.Connectors))); // DEBUG
-    } catch (e) {
-      console.debug('crash:', e);
-    }
     parentPort.postMessage(this.buildStartMessage());
   }
 
@@ -676,29 +671,39 @@ export default class ChargingStation {
   private buildStartMessage(): Record<string, unknown> {
     return {
       id: ChargingStationWorkerMessageEvents.STARTED,
-      payload: {
-        hashId: this.hashId,
-        stationInfo: this.buildChargingStationInfoUI(),
-        connectors: Array.from(this.connectors.values()),
-      },
+      payload: this.buildMessagePayload(),
     };
   }
 
-  private buildChargingStationInfoUI(): ChargingStationInfoUI {
+  private buildUpdateMessage() {
+    return {
+      id: ChargingStationWorkerMessageEvents.UPDATE,
+      payload: this.buildMessagePayload(),
+    };
+  }
+
+  private buildMessagePayload(): SimulatorUI {
+    return {
+      hashId: this.hashId,
+      stationInfo: this.buildPayloadStationInfo(),
+      connectors: Array.from(this.connectors.values()),
+    };
+  }
+
+  private buildPayloadStationInfo(): ChargingStationInfoUI {
     return <ChargingStationInfoUI>{
       chargingStationId: this.stationInfo.chargingStationId,
       chargePointModel: this.stationInfo.chargePointModel,
       chargePointVendor: this.stationInfo.chargePointVendor,
       firmwareVersion: this.stationInfo.firmwareVersion,
       numberOfConnectors: this.stationInfo.numberOfConnectors,
-      Connectors: [],
     };
   }
 
   private buildStopMessage(): Record<string, unknown> {
     return {
       id: ChargingStationWorkerMessageEvents.STOPPED,
-      data: { hashId: this.hashId },
+      payload: { hashId: this.hashId },
     };
   }
 
@@ -1471,6 +1476,7 @@ export default class ChargingStation {
             logger.error(errMsg);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
+        parentPort.postMessage(this.buildUpdateMessage());
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
           payload: request,

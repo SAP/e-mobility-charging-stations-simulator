@@ -89,7 +89,7 @@ const props = defineProps<{
   /* padding-top: 0.5em; */
   height: 2em;
   width: 20em;
-  min-width: 16.7%;
+  min-width: 14.3%;
 
   display: table-cell;
   text-align: center;

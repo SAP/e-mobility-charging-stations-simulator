@@ -18,6 +18,7 @@ export interface ChargingStationWorkerData extends WorkerData {
 enum ChargingStationMessageEvents {
   STARTED = 'started',
   STOPPED = 'stopped',
+  UPDATE = 'update',
   PERFORMANCE_STATISTICS = 'performanceStatistics',
 }
 
