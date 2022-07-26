@@ -6,16 +6,19 @@ import {
   ProtocolCommand,
   ProtocolRequest,
   ProtocolRequestHandler,
+  ProtocolVersion,
 } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import { AbstractUIServer } from '../AbstractUIServer';
 
 export default abstract class AbstractUIService {
+  protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
   protected readonly messageHandlers: Map<ProtocolCommand, ProtocolRequestHandler>;
 
-  constructor(uiServer: AbstractUIServer) {
+  constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
+    this.version = version;
     this.uiServer = uiServer;
     this.messageHandlers = new Map<ProtocolCommand, ProtocolRequestHandler>([
       [ProtocolCommand.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
