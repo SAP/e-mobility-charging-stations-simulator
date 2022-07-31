@@ -1,12 +1,15 @@
-import { ProtocolCommand, ProtocolRequestHandler } from '../../../types/UIProtocol';
-
+import { JsonType } from '../../../types/JsonType';
+import {
+  ProtocolCommand,
+  ProtocolRequestHandler,
+  ProtocolVersion,
+} from '../../../types/UIProtocol';
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
-import { JsonType } from '../../../types/JsonType';
 
 export default class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {
-    super(uiServer);
+    super(uiServer, ProtocolVersion['0.0.1']);
     this.messageHandlers.set(
       ProtocolCommand.START_TRANSACTION,
       this.handleStartTransaction.bind(this) as ProtocolRequestHandler

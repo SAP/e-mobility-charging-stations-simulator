@@ -1,6 +1,6 @@
-import { WorkerData, WorkerOptions } from '../types/Worker';
-
 import { DynamicThreadPool } from 'poolifier';
+
+import { WorkerData, WorkerOptions } from '../types/Worker';
 import Utils from '../utils/Utils';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';

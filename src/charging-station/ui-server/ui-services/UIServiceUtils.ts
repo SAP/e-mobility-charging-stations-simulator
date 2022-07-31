@@ -1,10 +1,14 @@
-import { Protocol, ProtocolVersion } from '../../../types/UIProtocol';
-
 import { IncomingMessage } from 'http';
-import Utils from '../../../utils/Utils';
+
+import { Protocol, ProtocolVersion } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
+import Utils from '../../../utils/Utils';
 
 export class UIServiceUtils {
+  private constructor() {
+    // This is intentional
+  }
+
   public static handleProtocols = (
     protocols: Set<string>,
     request: IncomingMessage
@@ -33,4 +37,13 @@ export class UIServiceUtils {
     );
     return false;
   };
+
+  public static isLoopback(address: string): boolean {
+    const isLoopbackRegExp = new RegExp(
+      // eslint-disable-next-line no-useless-escape
+      /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*\:)*?:?0*1$/,
+      'i'
+    );
+    return isLoopbackRegExp.test(address);
+  }
 }

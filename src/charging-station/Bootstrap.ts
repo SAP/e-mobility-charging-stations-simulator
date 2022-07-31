@@ -1,29 +1,29 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { isMainThread } from 'worker_threads';
+
+import chalk from 'chalk';
+
+import { version } from '../../package.json';
+import { Storage } from '../performance/storage/Storage';
+import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
   ChargingStationWorkerData,
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-
-import { AbstractUIServer } from './ui-server/AbstractUIServer';
-import { ApplicationProtocol } from '../types/UIProtocol';
-import { ChargingStationUtils } from './ChargingStationUtils';
-import Configuration from '../utils/Configuration';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
-import { Storage } from '../performance/storage/Storage';
-import { StorageFactory } from '../performance/storage/StorageFactory';
-import UIServerFactory from './ui-server/UIServerFactory';
-import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
+import Configuration from '../utils/Configuration';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
-import chalk from 'chalk';
-import { fileURLToPath } from 'url';
-import { isMainThread } from 'worker_threads';
-import path from 'path';
-import { version } from '../../package.json';
+import { ChargingStationUtils } from './ChargingStationUtils';
+import { AbstractUIServer } from './ui-server/AbstractUIServer';
+import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
+import UIServerFactory from './ui-server/UIServerFactory';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
@@ -109,13 +109,13 @@ export default class Bootstrap {
                 this.version
               } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
                 ChargingStationUtils.workerDynamicPoolInUse()
-                  ? `${Configuration.getWorkerPoolMinSize().toString()}/`
+                  ? `${Configuration.getWorker().poolMinSize.toString()}/`
                   : ''
               }${this.workerImplementation.size}${
                 ChargingStationUtils.workerPoolInUse()
-                  ? `/${Configuration.getWorkerPoolMaxSize().toString()}`
+                  ? `/${Configuration.getWorker().poolMaxSize.toString()}`
                   : ''
-              } worker(s) concurrently running in '${Configuration.getWorkerProcess()}' mode${
+              } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
                 this.workerImplementation.maxElementsPerWorker
                   ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
                   : ''
@@ -154,15 +154,15 @@ export default class Bootstrap {
     !this.workerImplementation &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
         this.workerScript,
-        Configuration.getWorkerProcess(),
+        Configuration.getWorker().processType,
         {
-          workerStartDelay: Configuration.getWorkerStartDelay(),
-          elementStartDelay: Configuration.getElementStartDelay(),
-          poolMaxSize: Configuration.getWorkerPoolMaxSize(),
-          poolMinSize: Configuration.getWorkerPoolMinSize(),
-          elementsPerWorker: Configuration.getChargingStationsPerWorker(),
+          workerStartDelay: Configuration.getWorker().startDelay,
+          elementStartDelay: Configuration.getWorker().elementStartDelay,
+          poolMaxSize: Configuration.getWorker().poolMaxSize,
+          poolMinSize: Configuration.getWorker().poolMinSize,
+          elementsPerWorker: Configuration.getWorker().elementsPerWorker,
           poolOptions: {
-            workerChoiceStrategy: Configuration.getWorkerPoolStrategy(),
+            workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
           messageHandler: async (msg: ChargingStationWorkerMessage) => {
             if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {

@@ -19,6 +19,11 @@
   "settings": {
     "jsdoc": {
       "mode": "typescript"
+    },
+    "import/resolver": {
+      "typescript": {
+        "project": "./tsconfig.json"
+      }
     }
   },
   "rules": {
@@ -95,9 +100,31 @@
       "warn",
       {
         "ignoreCase": false,
-        "ignoreDeclarationSort": false,
+        "ignoreDeclarationSort": true,
         "ignoreMemberSort": false,
-        "memberSyntaxSortOrder": ["none", "all", "multiple", "single"]
+        "memberSyntaxSortOrder": ["none", "all", "multiple", "single"],
+        "allowSeparatedGroups": true
+      }
+    ],
+    "import/no-unresolved": "error",
+    "import/order": [
+      "error",
+      {
+        "groups": [
+          "builtin", // Built-in imports (come from NodeJS native) go first
+          "external", // <- External imports
+          "internal", // <- Absolute imports
+          ["sibling", "parent"], // <- Relative imports, the sibling and parent types they can be mingled together
+          "index", // <- Index imports
+          "unknown" // <- Unknown
+        ],
+        "newlines-between": "always",
+        "alphabetize": {
+          /* Sort in ascending order. Options: ["ignore", "asc", "desc"] */
+          "order": "asc",
+          /* Ignore case. Options: [true, false] */
+          "caseInsensitive": true
+        }
       }
     ],
     "object-curly-spacing": ["error", "always"],

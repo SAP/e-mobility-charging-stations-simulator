@@ -1,12 +1,12 @@
 import { IncomingMessage, Server } from 'http';
-import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
 
-import { AbstractUIServer } from './AbstractUIServer';
-import Configuration from '../../utils/Configuration';
 import { ServerOptions } from '../../types/ConfigurationData';
-import UIServiceFactory from './ui-services/UIServiceFactory';
-import Utils from '../../utils/Utils';
+import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
+import Configuration from '../../utils/Configuration';
 import logger from '../../utils/Logger';
+import Utils from '../../utils/Utils';
+import { AbstractUIServer } from './AbstractUIServer';
+import UIServiceFactory from './ui-services/UIServiceFactory';
 
 export default class UIHttpServer extends AbstractUIServer {
   public constructor(private options?: ServerOptions) {

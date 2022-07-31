@@ -1,7 +1,9 @@
-import AbstractUIService from './ui-services/AbstractUIService';
 import { Server as HttpServer } from 'http';
-import { ProtocolVersion } from '../../types/UIProtocol';
+
 import WebSocket from 'ws';
+
+import { ProtocolVersion } from '../../types/UIProtocol';
+import AbstractUIService from './ui-services/AbstractUIService';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Set<string>;

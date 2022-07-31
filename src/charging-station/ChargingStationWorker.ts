@@ -1,17 +1,18 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { parentPort, workerData } from 'worker_threads';
+
+import { ThreadWorker } from 'poolifier';
+
 import {
   ChargingStationWorkerData,
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-import { parentPort, workerData } from 'worker_threads';
-
-import ChargingStation from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
-import { ThreadWorker } from 'poolifier';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
+import ChargingStation from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;

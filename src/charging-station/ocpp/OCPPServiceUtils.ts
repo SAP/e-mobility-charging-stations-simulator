@@ -1,4 +1,8 @@
 export class OCPPServiceUtils {
+  protected constructor() {
+    // This is intentional
+  }
+
   protected static getLimitFromSampledValueTemplateCustomValue(
     value: string,
     limit: number,

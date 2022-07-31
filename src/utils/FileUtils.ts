@@ -1,13 +1,19 @@
-import { EmptyObject } from '../types/EmptyObject';
-import { FileType } from '../types/FileType';
-import { HandleErrorParams } from '../types/Error';
-import { JsonType } from '../types/JsonType';
-import Utils from './Utils';
-import chalk from 'chalk';
 import fs from 'fs';
+
+import chalk from 'chalk';
+
+import { EmptyObject } from '../types/EmptyObject';
+import { HandleErrorParams } from '../types/Error';
+import { FileType } from '../types/FileType';
+import { JsonType } from '../types/JsonType';
 import logger from './Logger';
+import Utils from './Utils';
 
 export default class FileUtils {
+  private constructor() {
+    // This is intentional
+  }
+
   public static watchJsonFile<T extends JsonType>(
     logPrefix: string,
     fileType: FileType,

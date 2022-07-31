@@ -1,13 +1,13 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { DBName, StorageType } from '../../types/Storage';
+import { URL } from 'url';
 
 import { EmptyObject } from '../../types/EmptyObject';
 import { HandleErrorParams } from '../../types/Error';
 import Statistics from '../../types/Statistics';
-import { URL } from 'url';
-import Utils from '../../utils/Utils';
+import { DBName, StorageType } from '../../types/Storage';
 import logger from '../../utils/Logger';
+import Utils from '../../utils/Utils';
 
 export abstract class Storage {
   protected readonly storageUri: URL;

@@ -1,6 +1,7 @@
+import LRUCache from 'mnemonist/lru-map-with-delete';
+
 import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
 import ChargingStationTemplate from '../types/ChargingStationTemplate';
-import LRUCache from 'mnemonist/lru-map-with-delete';
 import Utils from '../utils/Utils';
 
 enum CacheType {
@@ -26,7 +27,7 @@ export default class SharedLRUCache {
   }
 
   public hasChargingStationConfiguration(chargingStationConfigurationHash: string): boolean {
-    return this.has(CacheType.CHARGING_STATION_CONFIGURATION + chargingStationConfigurationHash);
+    return this.has(this.getChargingStationConfigurationKey(chargingStationConfigurationHash));
   }
 
   public setChargingStationConfiguration(
@@ -34,7 +35,7 @@ export default class SharedLRUCache {
   ): void {
     if (this.isChargingStationConfigurationCacheable(chargingStationConfiguration)) {
       this.set(
-        CacheType.CHARGING_STATION_CONFIGURATION + chargingStationConfiguration.configurationHash,
+        this.getChargingStationConfigurationKey(chargingStationConfiguration.configurationHash),
         chargingStationConfiguration
       );
     }
@@ -44,37 +45,45 @@ export default class SharedLRUCache {
     chargingStationConfigurationHash: string
   ): ChargingStationConfiguration {
     return this.get(
-      CacheType.CHARGING_STATION_CONFIGURATION + chargingStationConfigurationHash
+      this.getChargingStationConfigurationKey(chargingStationConfigurationHash)
     ) as ChargingStationConfiguration;
   }
 
   public deleteChargingStationConfiguration(chargingStationConfigurationHash: string): void {
-    this.delete(CacheType.CHARGING_STATION_CONFIGURATION + chargingStationConfigurationHash);
+    this.delete(this.getChargingStationConfigurationKey(chargingStationConfigurationHash));
   }
 
   public hasChargingStationTemplate(chargingStationTemplateHash: string): boolean {
-    return this.has(CacheType.CHARGING_STATION_TEMPLATE + chargingStationTemplateHash);
+    return this.has(this.getChargingStationTemplateKey(chargingStationTemplateHash));
   }
 
   public setChargingStationTemplate(chargingStationTemplate: ChargingStationTemplate): void {
     this.set(
-      CacheType.CHARGING_STATION_TEMPLATE + chargingStationTemplate.templateHash,
+      this.getChargingStationTemplateKey(chargingStationTemplate.templateHash),
       chargingStationTemplate
     );
   }
 
   public getChargingStationTemplate(chargingStationTemplateHash: string): ChargingStationTemplate {
     return this.get(
-      CacheType.CHARGING_STATION_TEMPLATE + chargingStationTemplateHash
+      this.getChargingStationTemplateKey(chargingStationTemplateHash)
     ) as ChargingStationTemplate;
   }
 
   public deleteChargingStationTemplate(chargingStationTemplateHash: string): void {
-    this.delete(CacheType.CHARGING_STATION_TEMPLATE + chargingStationTemplateHash);
+    this.delete(this.getChargingStationTemplateKey(chargingStationTemplateHash));
   }
 
   public clear(): void {
     this.lruCache.clear();
+  }
+
+  private getChargingStationConfigurationKey(hash: string): string {
+    return CacheType.CHARGING_STATION_CONFIGURATION + hash;
+  }
+
+  private getChargingStationTemplateKey(hash: string): string {
+    return CacheType.CHARGING_STATION_TEMPLATE + hash;
   }
 
   private has(key: string): boolean {

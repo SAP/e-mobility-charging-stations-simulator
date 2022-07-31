@@ -1,8 +1,8 @@
-import type ChargingStation from '../ChargingStation';
 import { HandleErrorParams } from '../../types/Error';
-import { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import { JsonType } from '../../types/JsonType';
+import { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import logger from '../../utils/Logger';
+import type ChargingStation from '../ChargingStation';
 
 export default abstract class OCPPIncomingRequestService {
   private static instance: OCPPIncomingRequestService | null = null;

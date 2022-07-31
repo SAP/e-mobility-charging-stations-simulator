@@ -1,5 +1,12 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import PerformanceStatistics from '../performance/PerformanceStatistics';
+import {
+  AutomaticTransactionGeneratorConfiguration,
+  Status,
+} from '../types/AutomaticTransactionGenerator';
+import { MeterValuesRequest, RequestCommand } from '../types/ocpp/Requests';
+import { MeterValuesResponse } from '../types/ocpp/Responses';
 import {
   AuthorizationStatus,
   AuthorizeRequest,
@@ -10,19 +17,11 @@ import {
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
-import {
-  AutomaticTransactionGeneratorConfiguration,
-  Status,
-} from '../types/AutomaticTransactionGenerator';
-import { MeterValuesRequest, RequestCommand } from '../types/ocpp/Requests';
-
-import type ChargingStation from './ChargingStation';
 import Constants from '../utils/Constants';
-import { MeterValuesResponse } from '../types/ocpp/Responses';
-import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
-import PerformanceStatistics from '../performance/PerformanceStatistics';
-import Utils from '../utils/Utils';
 import logger from '../utils/Logger';
+import Utils from '../utils/Utils';
+import type ChargingStation from './ChargingStation';
+import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 
 export default class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
@@ -359,7 +358,7 @@ export default class AutomaticTransactionGenerator {
         >(this.chargingStation, RequestCommand.METER_VALUES, {
           connectorId,
           transactionId,
-          meterValue: transactionEndMeterValue,
+          meterValue: [transactionEndMeterValue],
         });
       }
       stopResponse = await this.chargingStation.ocppRequestService.requestHandler<
