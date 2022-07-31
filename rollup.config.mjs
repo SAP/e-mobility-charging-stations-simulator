@@ -38,6 +38,7 @@ export default {
     'crypto',
     'express',
     'fs',
+    'http',
     '@mikro-orm/core',
     '@mikro-orm/reflection',
     'mnemonist/lru-map-with-delete',

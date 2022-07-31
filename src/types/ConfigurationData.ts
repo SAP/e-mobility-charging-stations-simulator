@@ -4,6 +4,7 @@ import type { WorkerChoiceStrategy } from 'poolifier';
 import { ServerOptions as WSServerOptions } from 'ws';
 
 import { StorageType } from './Storage';
+import { ApplicationProtocol } from './UIProtocol';
 import { WorkerProcessType } from './Worker';
 
 export type ServerOptions = WSServerOptions & ListenOptions;
@@ -21,6 +22,7 @@ export interface StationTemplateUrl {
 
 export interface UIServerConfiguration {
   enabled?: boolean;
+  type?: ApplicationProtocol;
   options?: ServerOptions;
 }
 

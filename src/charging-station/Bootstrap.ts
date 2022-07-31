@@ -16,7 +16,6 @@ import {
 } from '../types/ChargingStationWorker';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
-import { ApplicationProtocol } from '../types/UIProtocol';
 import Configuration from '../utils/Configuration';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
@@ -46,7 +45,7 @@ export default class Bootstrap {
     );
     this.initialize();
     Configuration.getUIServer().enabled &&
-      (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
+      (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer().type, {
         ...Configuration.getUIServer().options,
         handleProtocols: UIServiceUtils.handleProtocols,
       }));
