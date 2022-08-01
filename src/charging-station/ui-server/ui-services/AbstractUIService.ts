@@ -35,6 +35,10 @@ export default abstract class AbstractUIService {
     } else {
       throw new BaseError('UI protocol request is not iterable');
     }
+    // TODO: should probably be moved to the ws verify clients callback
+    if (protocolRequest.length !== 3) {
+      throw new BaseError('UI protocol request is malformed');
+    }
     let messageResponse: JsonType;
     if (this.messageHandlers.has(command)) {
       try {
