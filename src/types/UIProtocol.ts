@@ -19,7 +19,7 @@ export enum ProtocolCommand {
   STOP_TRANSACTION = 'stopTransaction',
 }
 
-export type ProtocolRequest = [ProtocolCommand, JsonType];
+export type ProtocolRequest = [string, ProtocolCommand, JsonType];
 
 export type ProtocolRequestHandler = (
   payload: JsonType

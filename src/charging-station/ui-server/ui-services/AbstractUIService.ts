@@ -26,13 +26,18 @@ export default abstract class AbstractUIService {
   }
 
   public async messageHandler(request: RawData): Promise<void> {
+    let messageId: string;
     let command: ProtocolCommand;
     let payload: JsonType;
     const protocolRequest = JSON.parse(request.toString()) as ProtocolRequest;
     if (Utils.isIterable(protocolRequest)) {
-      [command, payload] = protocolRequest;
+      [messageId, command, payload] = protocolRequest;
     } else {
       throw new BaseError('UI protocol request is not iterable');
+    }
+    // TODO: should probably be moved to the ws verify clients callback
+    if (protocolRequest.length !== 3) {
+      throw new BaseError('UI protocol request is malformed');
     }
     let messageResponse: JsonType;
     if (this.messageHandlers.has(command)) {
@@ -55,11 +60,15 @@ export default abstract class AbstractUIService {
       );
     }
     // Send the message response
-    this.uiServer.sendResponse(this.buildProtocolMessage(command, messageResponse));
+    this.uiServer.sendResponse(this.buildProtocolMessage(messageId, command, messageResponse));
   }
 
-  protected buildProtocolMessage(command: ProtocolCommand, payload: JsonType): string {
-    return JSON.stringify([command, payload]);
+  protected buildProtocolMessage(
+    messageId: string,
+    command: ProtocolCommand,
+    payload: JsonType
+  ): string {
+    return JSON.stringify([messageId, command, payload]);
   }
 
   private handleListChargingStations(): JsonType {
