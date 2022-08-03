@@ -1,10 +1,6 @@
 <template>
   <Container id="charging-stations">
-    <ReloadButton
-      id="reload-button"
-      :loading="state.isLoading"
-      @click="load()"
-    />
+    <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
     <CSTable :chargingStations="state.chargingStations" />
     <!-- <CSList :chargingStations="state.chargingStations" id="list"/> -->
   </Container>
@@ -16,28 +12,28 @@ import ReloadButton from '@/components/buttons/ReloadButton.vue';
 import CSTable from '@/components/charging-stations/CSTable.vue';
 
 import { onMounted, reactive } from 'vue';
-import CentralServer from '@/composable/CentralServer';
+import UIServer from '@/composable/UIServer';
 import { SimulatorUI } from '@/type/SimulatorUI';
 
 onMounted(() => {
   load();
 });
 
-interface State {
-  isLoading: boolean,
-  chargingStations: Array<SimulatorUI>
-}
+type State = {
+  isLoading: boolean;
+  chargingStations: Array<SimulatorUI>;
+};
 
 const state: State = reactive({
   isLoading: false,
-  chargingStations: []
+  chargingStations: [],
 });
 
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
-  // state.chargingStations = await CentralServer.listChargingStations();
-  const list = await CentralServer.listChargingStations();
+  // state.chargingStations = await UIServer.listChargingStations();
+  const list = await UIServer.listChargingStations();
   console.debug(list);
   state.chargingStations = list;
   // state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
@@ -58,7 +54,22 @@ async function load(): Promise<void> {
 }
 
 #reload-button {
-  width:100%;
+  width: 100%;
+  padding: 6px 14px;
+  background-color: rgb(25, 118, 210);
+  border-radius: 5px;
+
+  color: white;
+  font-size: 35px;
+  font-weight: bold;
+}
+
+#reload-button:hover {
+  background-color: rgb(10, 113, 195);
+}
+
+#reload-button:active {
+  background-color: rgb(255, 113, 195);
 }
 
 #list {
@@ -70,4 +81,4 @@ async function load(): Promise<void> {
   /* background-color: pink; */
   /* border: 5px solid black; */
 }
-</style> 
+</style>

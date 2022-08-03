@@ -7,15 +7,15 @@
 </template>
 
 <script setup lang="ts">
-  const props = defineProps<{
-    visibility: boolean
-  }>();
+const props = defineProps<{
+  visibility: boolean;
+}>();
 
-  const emit = defineEmits(['close']);
+const emit = defineEmits(['close']);
 
-  function close() {
-    emit('close');
-  }
+function close() {
+  emit('close');
+}
 </script>
 
 <style>

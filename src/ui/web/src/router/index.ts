@@ -1,19 +1,11 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
-import ChargingStationsDashboardView from '../views/CharginStationsDashboardView.vue';
+import ChargingStationsView from '@/views/ChargingStationsView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    name: 'charging_stations_dash',
-    component: ChargingStationsDashboardView,
-  },
-  {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue'),
+    name: 'charging-stations',
+    component: ChargingStationsView,
   },
 ];
 

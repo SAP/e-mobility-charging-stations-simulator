@@ -1,8 +1,8 @@
-import { JsonArray } from '@/type/JsonType';
-import { MessageCode, ProtocolMessage, ProtocolRequest } from '@/type/UIProtocol';
-
+// import { JsonArray } from '@/type/JsonType';
+// import { ProtocolMessage, ProtocolRequest } from '@/type/UIProtocol';
+//to be deleted
 // let test = false;
-export default class SynchronousWS {
+/*export default class SynchronousWS {
   private _ws: WebSocket;
   private _msgId: number;
   private _toBeSent: Array<string>;
@@ -31,7 +31,7 @@ export default class SynchronousWS {
     return new Promise((resolve, reject) => {
       const msg = JSON.stringify([0, this._msgId, ...payload]);
 
-      if (this._ws.readyState !== this._ws.OPEN /* || !test*/) {
+      if (this._ws.readyState !== this._ws.OPEN ) {
         this._toBeSent.push(msg);
       } else {
         console.debug('send:', msg);
@@ -93,3 +93,4 @@ export default class SynchronousWS {
     handler.reject('error lel'); //TODO
   }
 }
+*/

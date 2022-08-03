@@ -1,12 +1,13 @@
 {
-  "name": "ui",
+  "name": "web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "local": "npm run build && node start.js",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "test:unit": "vue-cli-service test:unit",
+    "lint": "vue-cli-service lint",
+    "start": "npm run build && node start.js"
   },
   "dependencies": {
     "core-js": "^3.8.3",
@@ -14,23 +15,31 @@
     "vue-router": "^4.0.3"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.15",
+    "@types/mocha": "^8.2.1",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-plugin-router": "~5.0.0",
     "@vue/cli-plugin-typescript": "~5.0.0",
+    "@vue/cli-plugin-unit-mocha": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
     "@vue/eslint-config-typescript": "^9.1.0",
+    "@vue/test-utils": "^2.0.0-0",
+    "chai": "^4.2.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-vue": "^8.0.3",
     "lint-staged": "^11.1.2",
     "prettier": "^2.4.1",
-    "typescript": "~4.5.5"
+    "typescript": "~4.5.5",
+    "vue-eslint-parser": "^9.0.3"
   },
+  "_id": "web@0.1.0",
   "gitHooks": {
     "pre-commit": "lint-staged"
-  }
+  },
+  "readme": "ERROR: No README data found!"
 }

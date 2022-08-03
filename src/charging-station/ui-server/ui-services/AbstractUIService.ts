@@ -1,11 +1,4 @@
-import {
-  CommandCode,
-  MessageCode,
-  ProtocolCommand,
-  ProtocolMessage,
-  ProtocolRequest,
-  ProtocolRequestHandler,
-} from '../../../types/UIProtocol';
+import { CommandCode, ProtocolMessage, ProtocolRequestHandler } from '../../../types/UIProtocol';
 
 import { AbstractUIServer } from '../AbstractUIServer';
 import BaseError from '../../../exception/BaseError';
@@ -13,6 +6,7 @@ import { JsonType } from '../../../types/JsonType';
 import { RawData } from 'ws';
 import Utils from '../../../utils/Utils';
 import logger from '../../../utils/Logger';
+import { JsonArray } from '../../../ui/web/src/type/JsonType';
 
 export default abstract class AbstractUIService {
   protected readonly uiServer: AbstractUIServer;
@@ -21,32 +15,21 @@ export default abstract class AbstractUIService {
   constructor(uiServer: AbstractUIServer) {
     this.uiServer = uiServer;
     this.messageHandlers = new Map<CommandCode, ProtocolRequestHandler>([
-      [CommandCode.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
+      [
+        CommandCode.LIST_CHARGING_STATIONS,
+        this.handleListChargingStations.bind(this) as ProtocolRequestHandler,
+      ],
     ]);
   }
 
-  public messageHandler(message: RawData): void {
-    try {
-      const [code, ...payload] = JSON.parse(message.toString()) as ProtocolMessage;
-      console.debug(code, payload);
+  public async messageHandler(rdata: RawData): Promise<void> {
+    const data = JSON.parse(rdata.toString()) as unknown;
 
-      switch (code) {
-        case MessageCode.REQUEST:
-          this.requestHandler(payload as unknown as ProtocolRequest).catch(console.error);
-          break;
-        case MessageCode.ANSWER:
-          break;
-        case MessageCode.ERROR:
-          break;
-        default:
-      }
-    } catch (error) {
-      console.error(error);
+    if (Utils.isIterable(data) === false) {
+      throw new BaseError('UI protocol request is not iterable');
     }
-  }
 
-  private async requestHandler(request: ProtocolRequest): Promise<void> {
-    const [id, command, payload] = request;
+    const [uuid, command, payload] = data as ProtocolMessage;
 
     const commandHandler = this.messageHandlers.get(command);
     if (Utils.isUndefined(commandHandler)) {
@@ -60,15 +43,15 @@ export default abstract class AbstractUIService {
       );
     }
 
-    let commandOutput: JsonType;
+    const responseMessage: JsonArray = [uuid, command];
     try {
-      commandOutput = (await commandHandler(payload)) as JsonType;
+      responseMessage.push((await commandHandler(payload)) as JsonType);
     } catch (error: unknown) {
       logger.error(this.uiServer.logPrefix() + ' Handle message error: %j', error);
       throw error;
     }
 
-    this.uiServer.sendResponse(JSON.stringify([MessageCode.ANSWER, id, command, commandOutput]));
+    this.uiServer.sendResponse(JSON.stringify(responseMessage));
   }
 
   private handleListChargingStations(): JsonType {

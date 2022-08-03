@@ -75,7 +75,7 @@ export enum OCPPProtocol {
 }
 */
 
-export interface ConnectorStatus {
+export type ConnectorStatus = {
   availability: AvailabilityType;
   bootStatus?: ChargePointStatus;
   status?: ChargePointStatus;
@@ -89,7 +89,7 @@ export interface ConnectorStatus {
   transactionIdTag?: string;
   energyActiveImportRegisterValue?: number; // In Wh
   transactionEnergyActiveImportRegisterValue?: number; // In Wh
-}
+};
 
 export type AvailabilityType = OCPP16AvailabilityType;
 

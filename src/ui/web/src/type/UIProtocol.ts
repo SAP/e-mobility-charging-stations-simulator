@@ -13,23 +13,17 @@ export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
 }
 
-export enum MessageCode {
-  REQUEST = 0,
-  ANSWER = 1,
-  ERROR = 2,
-}
-
-export type ProtocolMessage = [MessageCode, ...ProtocolRequest];
-
-export type ProtocolRequest = [number, ...ProtocolCommand];
-
 export enum CommandCode {
   LIST_CHARGING_STATIONS = 'listChargingStations',
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
 }
 
-export type ProtocolCommand = [CommandCode, JsonType];
+export type ProtocolMessage = ProtocolRequest;
+
+export type ProtocolRequest = [uuidType, CommandCode, JsonType];
+
+export type uuidType = string;
 
 export type ProtocolRequestHandler = (
   payload: JsonType

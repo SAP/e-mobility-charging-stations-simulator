@@ -1,8 +1,6 @@
 <template>
-  <FlatButton class="def-btn">
-    <span style="display: inline-block" :class="{ 'spin': loading }">
-      &#8635;
-    </span>
+  <FlatButton>
+    <span style="display: inline-block" :class="{ spin: loading }"> &#8635; </span>
   </FlatButton>
 </template>
 
@@ -10,14 +8,18 @@
 import FlatButton from '@/components/buttons/FlatButton.vue';
 
 const props = defineProps<{
-  loading: boolean
+  loading: boolean;
 }>();
 </script>
 
 <style>
 @keyframes rotation {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(359deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
 }
 
 .spin {

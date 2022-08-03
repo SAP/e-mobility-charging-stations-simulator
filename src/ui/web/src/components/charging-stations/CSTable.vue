@@ -3,26 +3,30 @@
     <thead id="cs-table__head">
       <tr class="cs-table__row">
         <th scope="col" class="cs-table__header">Action</th>
-        <th scope="col" class="cs-table__header">Name</th>
         <th scope="col" class="cs-table__header">Connector</th>
         <th scope="col" class="cs-table__header">Status</th>
+        <th scope="col" class="cs-table__header">Name</th>
         <th scope="col" class="cs-table__header">Model</th>
         <th scope="col" class="cs-table__header">Vendor</th>
         <th scope="col" class="cs-table__header">Firmware Version</th>
       </tr>
     </thead>
     <tbody id="cs-table__body">
-      <CSTableData v-for="chargingStation in chargingStations" :charging-station="chargingStation"/>
+      <CSData
+        v-for="chargingStation in chargingStations"
+        :key="chargingStation.hashId"
+        :charging-station="chargingStation"
+      />
     </tbody>
   </table>
 </template>
 
 <script setup lang="ts">
-import CSTableData from './CSTableData.vue';
+import CSData from './CSData.vue';
 import { SimulatorUI } from '@/type/SimulatorUI';
 
 const props = defineProps<{
-  chargingStations: Array<SimulatorUI>
+  chargingStations: Array<SimulatorUI>;
 }>();
 </script>
 
@@ -32,7 +36,7 @@ const props = defineProps<{
 
   background-color: white;
 
-  height:100%;
+  height: 100%;
   width: 100%;
 
   /* display: block; */
@@ -64,7 +68,7 @@ const props = defineProps<{
 }
 
 .cs-table__row {
-  display:block;
+  display: block;
 }
 
 #cs-table__head .cs-table__row {
@@ -84,7 +88,8 @@ const props = defineProps<{
   /* text-align: center; */
 }
 
-.cs-table__header, .cs-table__data {
+.cs-table__header,
+.cs-table__data {
   /* border-right-style: solid; */
   /* padding-top: 0.5em; */
   height: 2em;
