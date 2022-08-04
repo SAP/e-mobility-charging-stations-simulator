@@ -1,10 +1,11 @@
-import { AbstractUIServer } from './AbstractUIServer';
+import chalk from 'chalk';
+
+import { ServerOptions } from '../../types/ConfigurationData';
 import { ApplicationProtocol } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
-import { ServerOptions } from '../../types/ConfigurationData';
+import { AbstractUIServer } from './AbstractUIServer';
 import { UIServiceUtils } from './ui-services/UIServiceUtils';
 import UIWebSocketServer from './UIWebSocketServer';
-import chalk from 'chalk';
 
 export default class UIServerFactory {
   private constructor() {

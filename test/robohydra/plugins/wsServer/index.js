@@ -1,7 +1,10 @@
-const RoboHydraHead = require('robohydra').heads.RoboHydraHead;
-const RoboHydraWebSocketHead = require('robohydra').heads.RoboHydraWebSocketHead;
-const RoboHydraWebSocketHeadProxy = require('robohydra').heads.RoboHydraWebSocketHeadProxy;
+// eslint-disable-next-line node/no-unpublished-require
+const RoboHydra = require('robohydra');
+const RoboHydraHead = RoboHydra.heads.RoboHydraHead;
+const RoboHydraWebSocketHead = RoboHydra.heads.RoboHydraWebSocketHead;
+const RoboHydraWebSocketHeadProxy = RoboHydra.heads.RoboHydraWebSocketHeadProxy;
 
+// eslint-disable-next-line no-unused-vars
 exports.getBodyParts = function (conf) {
   let wsSocket;
   return {

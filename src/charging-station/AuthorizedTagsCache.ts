@@ -1,8 +1,9 @@
+import fs from 'fs';
+
 import { FileType } from '../types/FileType';
 import FileUtils from '../utils/FileUtils';
-import Utils from '../utils/Utils';
-import fs from 'fs';
 import logger from '../utils/Logger';
+import Utils from '../utils/Utils';
 
 export default class AuthorizedTagsCache {
   private static instance: AuthorizedTagsCache | null = null;

@@ -1,10 +1,11 @@
 // Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import Constants from '../../utils/Constants';
 import { MongoClient } from 'mongodb';
+
 import Statistics from '../../types/Statistics';
-import { Storage } from './Storage';
 import { StorageType } from '../../types/Storage';
+import Constants from '../../utils/Constants';
+import { Storage } from './Storage';
 
 export class MongoDBStorage extends Storage {
   private readonly client: MongoClient | null;

@@ -1,3 +1,8 @@
+import type ChargingStation from '../../charging-station/ChargingStation';
+import OCPPError from '../../exception/OCPPError';
+import { JsonType } from '../JsonType';
+import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
+import { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
@@ -6,13 +11,7 @@ import {
   OCPP16RequestCommand,
   OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
-
-import type ChargingStation from '../../charging-station/ChargingStation';
-import { JsonType } from '../JsonType';
 import { MessageType } from './MessageType';
-import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
-import { OCPP16MeterValuesRequest } from './1.6/MeterValues';
-import OCPPError from '../../exception/OCPPError';
 
 export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType];
 

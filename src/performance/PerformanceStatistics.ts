@@ -1,17 +1,17 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
-import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
-import Statistics, { StatisticsData, TimeSeries } from '../types/Statistics';
+import { URL } from 'url';
+import { parentPort } from 'worker_threads';
 
 import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
-import Configuration from '../utils/Configuration';
 import { MessageType } from '../types/ocpp/MessageType';
-import { URL } from 'url';
-import Utils from '../utils/Utils';
+import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
+import Statistics, { StatisticsData, TimeSeries } from '../types/Statistics';
+import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
+import Configuration from '../utils/Configuration';
 import logger from '../utils/Logger';
-import { parentPort } from 'worker_threads';
+import Utils from '../utils/Utils';
 
 export default class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<

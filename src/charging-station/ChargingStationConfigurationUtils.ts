@@ -1,7 +1,7 @@
-import ChargingStation from './ChargingStation';
 import { ConfigurationKey } from '../types/ChargingStationOcppConfiguration';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import logger from '../utils/Logger';
+import ChargingStation from './ChargingStation';
 
 export class ChargingStationConfigurationUtils {
   private constructor() {

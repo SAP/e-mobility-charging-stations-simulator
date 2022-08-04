@@ -1,3 +1,4 @@
+import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
 import {
   AvailabilityStatus,
   ChargingProfileStatus,
@@ -7,8 +8,6 @@ import {
   TriggerMessageStatus,
   UnlockStatus,
 } from '../types/ocpp/Responses';
-
-import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
 
 export default class Constants {
   static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
