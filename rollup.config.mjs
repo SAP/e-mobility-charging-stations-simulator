@@ -1,8 +1,8 @@
+import json from '@rollup/plugin-json';
 import analyze from 'rollup-plugin-analyzer';
 import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
 import istanbul from 'rollup-plugin-istanbul';
-import json from '@rollup/plugin-json';
 import { terser } from 'rollup-plugin-terser';
 import ts from 'rollup-plugin-ts';
 

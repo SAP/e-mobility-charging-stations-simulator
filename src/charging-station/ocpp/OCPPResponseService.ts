@@ -1,6 +1,6 @@
-import type ChargingStation from '../ChargingStation';
 import { JsonType } from '../../types/JsonType';
 import { RequestCommand } from '../../types/ocpp/Requests';
+import type ChargingStation from '../ChargingStation';
 
 export default abstract class OCPPResponseService {
   private static instance: OCPPResponseService | null = null;

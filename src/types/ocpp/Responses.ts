@@ -1,3 +1,6 @@
+import type ChargingStation from '../../charging-station/ChargingStation';
+import { JsonType } from '../JsonType';
+import { OCPP16MeterValuesResponse } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityStatus,
   OCPP16BootNotificationResponse,
@@ -10,12 +13,8 @@ import {
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
 } from './1.6/Responses';
-
-import type ChargingStation from '../../charging-station/ChargingStation';
 import { ErrorType } from './ErrorType';
-import { JsonType } from '../JsonType';
 import { MessageType } from './MessageType';
-import { OCPP16MeterValuesResponse } from './1.6/MeterValues';
 
 export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType];
 

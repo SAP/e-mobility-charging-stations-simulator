@@ -1,7 +1,9 @@
+import { ClientRequestArgs } from 'http';
+
+import { ClientOptions } from 'ws';
+
 import { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
 import ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration';
-import { ClientOptions } from 'ws';
-import { ClientRequestArgs } from 'http';
 import { ConnectorStatus } from './ConnectorStatus';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';

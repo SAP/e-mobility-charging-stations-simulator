@@ -1,31 +1,32 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { isMainThread } from 'worker_threads';
+
+import chalk from 'chalk';
+
+import { version } from '../../package.json';
+import { Storage } from '../performance/storage/Storage';
+import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
   ChargingStationWorkerData,
   ChargingStationWorkerMessageEvents,
   InternalChargingStationWorkerMessage,
 } from '../types/ChargingStationWorker';
-
-import { AbstractUIServer } from './ui-server/AbstractUIServer';
-import { ApplicationProtocol } from '../types/UIProtocol';
-import { ChargingStationUtils } from './ChargingStationUtils';
-import Configuration from '../utils/Configuration';
-import { SimulatorUI } from '../types/SimulatorUI';
 import { StationTemplateUrl } from '../types/ConfigurationData';
+import { SimulatorUI } from '../types/SimulatorUI';
 import Statistics from '../types/Statistics';
-import { Storage } from '../performance/storage/Storage';
-import { StorageFactory } from '../performance/storage/StorageFactory';
-import UIServerFactory from './ui-server/UIServerFactory';
-import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
+import { ApplicationProtocol } from '../types/UIProtocol';
+import Configuration from '../utils/Configuration';
+import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
-import chalk from 'chalk';
-import { fileURLToPath } from 'url';
-import { isMainThread } from 'worker_threads';
-import logger from '../utils/Logger';
-import path from 'path';
-import { version } from '../../package.json';
+import { ChargingStationUtils } from './ChargingStationUtils';
+import { AbstractUIServer } from './ui-server/AbstractUIServer';
+import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
+import UIServerFactory from './ui-server/UIServerFactory';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
@@ -209,11 +210,11 @@ export default class Bootstrap {
     this.uiServer.chargingStations.set(payload.hashId, payload);
   }
 
-  private workerEventPerformanceStatistics(payload: Statistics) {
-    (async () => this.storage.storePerformanceStatistics(payload))().catch((error: unknown) =>
-      logger.error(`${this.logPrefix()} ${error.toString()}`)
-    );
-  }
+  private workerEventPerformanceStatistics = (payload: Statistics) => {
+    (this.storage.storePerformanceStatistics(payload) as Promise<void>).catch((error) => {
+      logger.error(`${this.logPrefix()} %j`, error);
+    });
+  };
 
   private initialize() {
     this.numberOfChargingStations = 0;
@@ -231,7 +232,7 @@ export default class Bootstrap {
         path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
         'assets',
         'station-templates',
-        path.basename(stationTemplateUrl.file)
+        stationTemplateUrl.file
       ),
     };
     await this.workerImplementation.addElement(workerData);

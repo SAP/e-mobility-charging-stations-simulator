@@ -6,11 +6,12 @@ const app = express(),
   uiPath = path.join(__dirname, './dist/');
 
 function rateLimiter(window, max) {
-  const reset = () => setTimeout(() => {
-    console.log('reset');
-    requests = 0;
-    reset();
-  }, window);
+  const reset = () =>
+    setTimeout(() => {
+      console.log('reset');
+      requests = 0;
+      reset();
+    }, window);
 
   let requests = 0;
   reset();
@@ -23,7 +24,7 @@ function rateLimiter(window, max) {
 
     ++requests;
     next();
-  }
+  };
 }
 
 app.use(rateLimiter(10000, 15));

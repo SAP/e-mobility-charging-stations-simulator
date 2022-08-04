@@ -1,7 +1,8 @@
 import { Worker, isMainThread } from 'worker_threads';
-import { WorkerData, WorkerOptions, WorkerProcessType } from '../types/Worker';
 
 import { PoolOptions } from 'poolifier';
+
+import { WorkerData, WorkerOptions, WorkerProcessType } from '../types/Worker';
 import type WorkerAbstract from './WorkerAbstract';
 import WorkerConstants from './WorkerConstants';
 import WorkerDynamicPool from './WorkerDynamicPool';

@@ -1,4 +1,10 @@
-import { ErrorResponse, Response } from '../../types/ocpp/Responses';
+import OCPPError from '../../exception/OCPPError';
+import PerformanceStatistics from '../../performance/PerformanceStatistics';
+import { EmptyObject } from '../../types/EmptyObject';
+import { HandleErrorParams } from '../../types/Error';
+import { JsonObject, JsonType } from '../../types/JsonType';
+import { ErrorType } from '../../types/ocpp/ErrorType';
+import { MessageType } from '../../types/ocpp/MessageType';
 import {
   IncomingRequestCommand,
   OutgoingRequest,
@@ -6,19 +12,12 @@ import {
   RequestParams,
   ResponseType,
 } from '../../types/ocpp/Requests';
-import { JsonObject, JsonType } from '../../types/JsonType';
-
-import type ChargingStation from '../ChargingStation';
+import { ErrorResponse, Response } from '../../types/ocpp/Responses';
 import Constants from '../../utils/Constants';
-import { EmptyObject } from '../../types/EmptyObject';
-import { ErrorType } from '../../types/ocpp/ErrorType';
-import { HandleErrorParams } from '../../types/Error';
-import { MessageType } from '../../types/ocpp/MessageType';
-import OCPPError from '../../exception/OCPPError';
-import type OCPPResponseService from './OCPPResponseService';
-import PerformanceStatistics from '../../performance/PerformanceStatistics';
-import Utils from '../../utils/Utils';
 import logger from '../../utils/Logger';
+import Utils from '../../utils/Utils';
+import type ChargingStation from '../ChargingStation';
+import type OCPPResponseService from './OCPPResponseService';
 
 export default abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;

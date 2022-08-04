@@ -1,8 +1,8 @@
-import { Protocol, ProtocolVersion } from '../../../types/UIProtocol';
-
 import { IncomingMessage } from 'http';
-import Utils from '../../../utils/Utils';
+
+import { Protocol, ProtocolVersion } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
+import Utils from '../../../utils/Utils';
 
 export class UIServiceUtils {
   private constructor() {

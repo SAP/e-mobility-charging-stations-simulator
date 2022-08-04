@@ -1,3 +1,9 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import chalk from 'chalk';
+
 import ConfigurationData, {
   StationTemplateUrl,
   StorageConfiguration,
@@ -5,18 +11,13 @@ import ConfigurationData, {
   UIServerConfiguration,
   WorkerConfiguration,
 } from '../types/ConfigurationData';
-
-import Constants from './Constants';
 import { EmptyObject } from '../types/EmptyObject';
-import { FileType } from '../types/FileType';
 import { HandleErrorParams } from '../types/Error';
+import { FileType } from '../types/FileType';
 import { StorageType } from '../types/Storage';
-import WorkerConstants from '../worker/WorkerConstants';
 import { WorkerProcessType } from '../types/Worker';
-import chalk from 'chalk';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-import path from 'path';
+import WorkerConstants from '../worker/WorkerConstants';
+import Constants from './Constants';
 
 export default class Configuration {
   private static configurationFile = path.join(

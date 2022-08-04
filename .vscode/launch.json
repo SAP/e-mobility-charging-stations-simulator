@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
       "name": "Debug Simulator via npm",
       "cwd": "${workspaceFolder}",
@@ -16,7 +16,7 @@
       "stopOnEntry": true
     },
     {
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
       "name": "Debug Simulator Development Build via npm",
       "cwd": "${workspaceFolder}",

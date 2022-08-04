@@ -1,9 +1,7 @@
-import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
-
-import ChargingStationInfo from './ChargingStationInfo';
 import { JsonObject } from './JsonType';
 import { SimulatorUI } from './SimulatorUI';
 import Statistics from './Statistics';
+import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
 export interface ChargingStationWorkerOptions extends JsonObject {
   elementStartDelay?: number;

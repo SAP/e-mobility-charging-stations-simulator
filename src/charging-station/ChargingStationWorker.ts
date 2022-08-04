@@ -1,5 +1,16 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { BroadcastChannel, parentPort, workerData } from 'worker_threads';
+
+import { ThreadWorker } from 'poolifier';
+import { MessageEvent } from 'ws';
+
+import {
+  ChargingStationWorkerData,
+  ChargingStationWorkerMessage,
+  ChargingStationWorkerMessageEvents,
+} from '../types/ChargingStationWorker';
+import { RequestCommand } from '../types/ocpp/Requests';
 import {
   AuthorizeRequest,
   AuthorizeResponse,
@@ -9,22 +20,12 @@ import {
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
-import { BroadcastChannel, parentPort, threadId, workerData } from 'worker_threads';
-import {
-  ChargingStationWorkerData,
-  ChargingStationWorkerMessage,
-  ChargingStationWorkerMessageEvents,
-} from '../types/ChargingStationWorker';
-
-import ChargingStation from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
-import { CommandCode } from '../types/UIProtocol';
-import { MessageEvent } from 'ws';
-import { RequestCommand } from '../types/ocpp/Requests';
-import { ThreadWorker } from 'poolifier';
+import { ProtocolCommand } from '../types/UIProtocol';
+import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
-import logger from '../utils/Logger';
+import ChargingStation from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
@@ -43,7 +44,7 @@ if (ChargingStationUtils.workerPoolInUse()) {
 
 class TEMP {
   public hashId: string;
-  public command: CommandCode;
+  public command: ProtocolCommand;
   public connectorId: number;
   public idTag: string | null;
 }
@@ -59,10 +60,10 @@ channel.onmessage = (message: MessageEvent) => {
 
   console.debug(station.connectors);
   switch (data.command) {
-    case CommandCode.START_TRANSACTION:
+    case ProtocolCommand.START_TRANSACTION:
       void startTransaction(data.connectorId, data.idTag);
       break;
-    case CommandCode.STOP_TRANSACTION:
+    case ProtocolCommand.STOP_TRANSACTION:
       void stopTransaction(data.connectorId);
       break;
   }
@@ -73,7 +74,7 @@ channel.onmessage = (message: MessageEvent) => {
  * @param idTag RFID tag used
  */
 async function startTransaction(connectorId: number, idTag: string): Promise<void> {
-  station.getConnectorStatus(connectorId).authorizeIdTag = 'TEST';
+  station.getConnectorStatus(connectorId).authorizeIdTag = idTag;
   try {
     const authorizeResponse = await station.ocppRequestService.requestHandler<
       AuthorizeRequest,

@@ -1,5 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { Worker } from 'worker_threads';
+
 import {
   WorkerData,
   WorkerMessage,
@@ -7,9 +9,7 @@ import {
   WorkerOptions,
   WorkerSetElement,
 } from '../types/Worker';
-
 import Utils from '../utils/Utils';
-import { Worker } from 'worker_threads';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
 
@@ -48,10 +48,10 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    * @public
    */
   public async addElement(elementData: WorkerData): Promise<void> {
-    // debug
     if (!this.workerSet) {
       throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
-    } else if (
+    }
+    if (
       this.workerSet.size === 0 ||
       this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker
     ) {

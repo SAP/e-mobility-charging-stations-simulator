@@ -1,21 +1,25 @@
-import { BroadcastChannel, isMainThread } from 'worker_threads';
-import { CommandCode, ProtocolRequestHandler } from '../../../types/UIProtocol';
+import { BroadcastChannel } from 'worker_threads';
 
+import { JsonType } from '../../../types/JsonType';
+import {
+  ProtocolCommand,
+  ProtocolRequestHandler,
+  ProtocolVersion,
+} from '../../../types/UIProtocol';
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
-import { JsonType } from '../../../types/JsonType';
 
 export default class UIService001 extends AbstractUIService {
   private channel = new BroadcastChannel('test');
 
   constructor(uiServer: AbstractUIServer) {
-    super(uiServer);
+    super(uiServer, ProtocolVersion['0.0.1']);
     this.messageHandlers.set(
-      CommandCode.START_TRANSACTION,
+      ProtocolCommand.START_TRANSACTION,
       this.handleStartTransaction.bind(this) as ProtocolRequestHandler
     );
     this.messageHandlers.set(
-      CommandCode.STOP_TRANSACTION,
+      ProtocolCommand.STOP_TRANSACTION,
       this.handleStopTransaction.bind(this) as ProtocolRequestHandler
     );
   }
