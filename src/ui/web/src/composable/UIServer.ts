@@ -1,8 +1,8 @@
 import config from '@/assets/config';
 import { JsonArray } from '@/type/JsonType';
 import { SimulatorUI } from '@/type/SimulatorUI';
-import { CommandCode, ProtocolMessage, uuidType } from '@/type/UIProtocol';
-import { v4 } from 'uuid';
+import { CommandCode, ProtocolMessage } from '@/type/UIProtocol';
+import { v4 as uuidv4 } from 'uuid';
 import Utils from './Utils';
 
 export default class UIServer {
@@ -10,7 +10,7 @@ export default class UIServer {
 
   private _server: WebSocket;
   private _responseHandler: Map<
-    uuidType,
+    string,
     {
       resolve: (value: JsonArray | PromiseLike<JsonArray>) => void;
       reject: (reason?: any) => void;
@@ -24,7 +24,7 @@ export default class UIServer {
     );
 
     this._responseHandler = new Map<
-      uuidType,
+      string,
       {
         resolve: (value: unknown | PromiseLike<unknown>) => void;
         reject: (reason?: any) => void;
@@ -80,19 +80,19 @@ export default class UIServer {
   }
 
   private static setHandler(
-    id: uuidType,
+    id: string,
     resolve: (value: JsonArray | PromiseLike<JsonArray>) => void,
     reject: (reason?: any) => void
   ) {
     UIServer.Instance._responseHandler.set(id, { resolve, reject });
   }
-  private static getHandler(id: uuidType) {
+  private static getHandler(id: string) {
     return UIServer.Instance._responseHandler.get(id);
   }
 
   private static async send(data: JsonArray): Promise<JsonArray> {
     return new Promise((resolve, reject) => {
-      const uuid = v4();
+      const uuid = uuidv4();
       const msg = JSON.stringify([uuid, ...data]);
 
       console.debug('send:', msg);

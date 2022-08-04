@@ -21,9 +21,7 @@ export enum CommandCode {
 
 export type ProtocolMessage = ProtocolRequest;
 
-export type ProtocolRequest = [uuidType, CommandCode, JsonType];
-
-export type uuidType = string;
+export type ProtocolRequest = [string, CommandCode, JsonType];
 
 export type ProtocolRequestHandler = (
   payload: JsonType

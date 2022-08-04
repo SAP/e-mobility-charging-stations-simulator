@@ -19,7 +19,7 @@ export default class Utils {
     if (this.isIterable(obj) === false) cb();
   }
 
-  // FUNCTIONNAL
+  // FUNCTIONAL
   public static compose<T>(...fns: ((arg: T) => T)[]): (x: T) => T {
     return (x: T) => fns.reduceRight((y, fn) => fn(y), x);
   }
