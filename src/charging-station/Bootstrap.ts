@@ -194,7 +194,7 @@ export default class Bootstrap {
         path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
         'assets',
         'station-templates',
-        path.basename(stationTemplateUrl.file)
+        stationTemplateUrl.file
       ),
     };
     await this.workerImplementation.addElement(workerData);
