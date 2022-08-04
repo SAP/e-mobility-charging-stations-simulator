@@ -3,7 +3,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { URL, fileURLToPath } from 'url';
+import { URL } from 'url';
 import { parentPort } from 'worker_threads';
 
 import WebSocket, { Data, RawData } from 'ws';
@@ -861,9 +861,7 @@ export default class ChargingStation {
     this.hashId = ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile());
     logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
     this.configurationFile = path.join(
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
-      'assets',
-      'configurations',
+      path.dirname(this.templateFile.replace('station-templates', 'configurations')),
       this.hashId + '.json'
     );
     this.stationInfo = this.getStationInfo();
