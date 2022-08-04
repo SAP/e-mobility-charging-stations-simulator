@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "core-js": "^3.24.1",
+    "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "uuid": "^8.3.2",
     "vue": "^3.2.37",
