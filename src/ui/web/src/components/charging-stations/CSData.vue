@@ -1,6 +1,7 @@
 <template>
   <tr v-for="(connector, index) in getConnectors()" class="cs-table__row">
     <CSConnector :hash-id="getHashId()" :connector="connector" :connector-id="index + 1" />
+    <!--
     <td class="cs-table__data">{{ connector.bootStatus }}</td>
     -->
     <td class="cs-table__data">{{ getID() }}</td>
