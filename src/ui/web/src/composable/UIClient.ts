@@ -71,10 +71,6 @@ export default class UIClient {
     // return list as Record<string, unknown>[];
   }
 
-  private get server() {
-    return this._ws;
-  }
-
   private setHandler(
     id: string,
     resolve: (value: JsonArray | PromiseLike<JsonArray>) => void,
@@ -92,7 +88,7 @@ export default class UIClient {
       const msg = JSON.stringify([uuid, ...data]);
 
       console.debug('send:', msg);
-      this.server.send(msg);
+      this._ws.send(msg);
 
       this.setHandler(uuid, resolve, reject);
     });
