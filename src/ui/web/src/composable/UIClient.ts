@@ -5,11 +5,11 @@ import { CommandCode, ProtocolMessage } from '@/type/UIProtocol';
 import { v4 as uuidv4 } from 'uuid';
 import Utils from './Utils';
 
-export default class UIServer {
-  private static _instance: UIServer | null = null;
+export default class UIClient {
+  private static _instance: UIClient | null = null;
 
-  private _server: WebSocket;
-  private _responseHandler: Map<
+  private _ws: WebSocket;
+  private _responseHandlers: Map<
     string,
     {
       resolve: (value: JsonArray | PromiseLike<JsonArray>) => void;
@@ -18,12 +18,12 @@ export default class UIServer {
   >;
 
   private constructor() {
-    this._server = new WebSocket(
+    this._ws = new WebSocket(
       `ws://${config.emobility.host}:${config.emobility.port}`,
       config.emobility.protocol
     );
 
-    this._responseHandler = new Map<
+    this._responseHandlers = new Map<
       string,
       {
         resolve: (value: unknown | PromiseLike<unknown>) => void;
@@ -31,17 +31,17 @@ export default class UIServer {
       }
     >();
 
-    this._server.onmessage = UIServer.handleMessage;
+    this._ws.onmessage = this.handleMessage;
   }
 
-  public static get Instance() {
-    return UIServer._instance || (UIServer._instance = new UIServer());
+  public static get instance() {
+    return UIClient._instance || (UIClient._instance = new UIClient());
   }
 
-  public static async listChargingStations(): Promise<SimulatorUI[]> {
+  public async listChargingStations(): Promise<SimulatorUI[]> {
     console.debug('listChargingStations');
 
-    const [_, list] = (await UIServer.send([
+    const [_, list] = (await this.send([
       CommandCode.LIST_CHARGING_STATIONS,
       {},
     ])) as ProtocolMessage;
@@ -49,14 +49,10 @@ export default class UIServer {
     return list as unknown as SimulatorUI[];
   }
 
-  public static async startTransaction(
-    hashId: string,
-    connectorId: number,
-    idTag: string
-  ): Promise<void> {
+  public async startTransaction(hashId: string, connectorId: number, idTag: string): Promise<void> {
     console.debug('startTransaction');
 
-    const [_] = (await UIServer.send([
+    const [_] = (await this.send([
       CommandCode.START_TRANSACTION,
       { hashId, connectorId, idTag, command: CommandCode.START_TRANSACTION },
     ])) as ProtocolMessage;
@@ -64,10 +60,10 @@ export default class UIServer {
     // return list as Record<string, unknown>[];
   }
 
-  public static async stopTransaction(hashId: string, connectorId: number): Promise<void> {
+  public async stopTransaction(hashId: string, connectorId: number): Promise<void> {
     console.debug('stopTransaction');
 
-    const _ = (await UIServer.send([
+    const _ = (await this.send([
       CommandCode.STOP_TRANSACTION,
       { hashId, connectorId, command: CommandCode.STOP_TRANSACTION },
     ])) as ProtocolMessage;
@@ -75,34 +71,34 @@ export default class UIServer {
     // return list as Record<string, unknown>[];
   }
 
-  private static get Server() {
-    return UIServer.Instance._server;
+  private get server() {
+    return this._ws;
   }
 
-  private static setHandler(
+  private setHandler(
     id: string,
     resolve: (value: JsonArray | PromiseLike<JsonArray>) => void,
     reject: (reason?: any) => void
   ) {
-    UIServer.Instance._responseHandler.set(id, { resolve, reject });
+    this._responseHandlers.set(id, { resolve, reject });
   }
-  private static getHandler(id: string) {
-    return UIServer.Instance._responseHandler.get(id);
+  private getHandler(id: string) {
+    return this._responseHandlers.get(id);
   }
 
-  private static async send(data: JsonArray): Promise<JsonArray> {
+  private async send(data: JsonArray): Promise<JsonArray> {
     return new Promise((resolve, reject) => {
       const uuid = uuidv4();
       const msg = JSON.stringify([uuid, ...data]);
 
       console.debug('send:', msg);
-      UIServer.Server.send(msg);
+      this.server.send(msg);
 
-      UIServer.setHandler(uuid, resolve, reject);
+      this.setHandler(uuid, resolve, reject);
     });
   }
 
-  private static handleMessage(ev: MessageEvent<any>): void {
+  private handleMessage(ev: MessageEvent<any>): void {
     const data = JSON.parse(ev.data);
 
     if (Utils.isIterable(data) === false) {

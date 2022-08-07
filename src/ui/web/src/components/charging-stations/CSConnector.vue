@@ -26,7 +26,7 @@ import TagInputModal from './TagInputModal.vue';
 import Button from '../buttons/Button.vue';
 
 import { reactive } from 'vue';
-import UIServer from '@/composable/UIServer';
+import UIClient from '@/composable/UIClient';
 import { ConnectorStatus } from '@/type/SimulatorUI';
 import Utils from '@/composable/Utils';
 
@@ -61,9 +61,9 @@ function hideTagModal(): void {
 }
 
 function startTransaction(): void {
-  UIServer.startTransaction(props.hashId, props.connectorId, state.tag);
+  UIClient.instance.startTransaction(props.hashId, props.connectorId, state.tag);
 }
 function stopTransaction(): void {
-  UIServer.stopTransaction(props.hashId, props.connectorId);
+  UIClient.instance.stopTransaction(props.hashId, props.connectorId);
 }
 </script>
