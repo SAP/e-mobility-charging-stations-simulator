@@ -11,7 +11,7 @@ import ReloadButton from '@/components/buttons/ReloadButton.vue';
 import CSTable from '@/components/charging-stations/CSTable.vue';
 
 import { onMounted, reactive } from 'vue';
-import UIClient from '@/composable/UIClient';
+import UIServer from '@/composable/UIServer';
 import { SimulatorUI } from '@/type/SimulatorUI';
 
 onMounted(() => {
@@ -31,8 +31,7 @@ const state: State = reactive({
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
-  // state.chargingStations = await UIClient.listChargingStations();
-  const list = await UIClient.listChargingStations();
+  const list = await UIServer.listChargingStations();
   state.chargingStations = list;
   // state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
   // state.chargingStations = list;
