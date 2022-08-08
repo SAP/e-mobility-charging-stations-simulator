@@ -1,13 +1,6 @@
 <template>
   <tr v-for="(connector, index) in getConnectors()" class="cs-table__row">
     <CSConnector :hash-id="getHashId()" :connector="connector" :connector-id="index + 1" />
-    <!-- <td class="cs-table__data">
-      <Button @click="showTagModal()">Start Transaction</Button>
-      <TagInputModal :visibility="state.isTagModalVisible" :tag="state.tag" :hash-id="getHashId()" :connector-id="index" @close="hideTagModal()" @done="startTransaction(index)"/>
-      <Button @click="stopTransaction(index)">Stop Transaction</Button>
-    </td>
-    <td class="cs-table__data">{{ index + 1 }}</td>
-    <td class="cs-table__data">{{ connector.bootStatus }}</td> -->
     <td class="cs-table__data">{{ getID() }}</td>
     <td class="cs-table__data">{{ getModel() }}</td>
     <td class="cs-table__data">{{ getVendor() }}</td>
@@ -66,9 +59,9 @@ function hideTagModal(): void {
 
 // function startTransaction(connectorId: number): void {
 //   hideTagModal();
-//   UIServer.startTransaction(getHashId(), connectorId + 1, state.tag);
+//   UIClient.startTransaction(getHashId(), connectorId + 1, state.tag);
 // }
 // function stopTransaction(connectorId: number): void {
-//   UIServer.stopTransaction(getHashId(), connectorId + 1);
+//   UIClient.stopTransaction(getHashId(), connectorId + 1);
 // }
 </script>

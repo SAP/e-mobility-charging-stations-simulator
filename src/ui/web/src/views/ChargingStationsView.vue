@@ -2,7 +2,6 @@
   <Container id="charging-stations">
     <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
     <CSTable :chargingStations="state.chargingStations" />
-    <!-- <CSList :chargingStations="state.chargingStations" id="list"/> -->
   </Container>
 </template>
 
@@ -12,7 +11,7 @@ import ReloadButton from '@/components/buttons/ReloadButton.vue';
 import CSTable from '@/components/charging-stations/CSTable.vue';
 
 import { onMounted, reactive } from 'vue';
-import UIServer from '@/composable/UIServer';
+import UIClient from '@/composable/UIClient';
 import { SimulatorUI } from '@/type/SimulatorUI';
 
 onMounted(() => {
@@ -32,9 +31,8 @@ const state: State = reactive({
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
-  // state.chargingStations = await UIServer.listChargingStations();
-  const list = await UIServer.listChargingStations();
-  console.debug(list);
+  // state.chargingStations = await UIClient.listChargingStations();
+  const list = await UIClient.listChargingStations();
   state.chargingStations = list;
   // state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
   // state.chargingStations = list;
@@ -70,15 +68,5 @@ async function load(): Promise<void> {
 
 #reload-button:active {
   background-color: rgb(255, 113, 195);
-}
-
-#list {
-  /* flex-grow: 1; */
-  height: 100;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  background-color: white;
-  /* background-color: pink; */
-  /* border: 5px solid black; */
 }
 </style>

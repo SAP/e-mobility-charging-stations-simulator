@@ -14,11 +14,6 @@
   </td>
   <td class="cs-table__data">{{ connectorId }}</td>
   <td class="cs-table__data">{{ connector.bootStatus }}</td>
-  <!-- <td class="cs-table__data">{{ getID() }}</td>
-    <td class="cs-table__data">{{ getModel() }}</td>
-    <td class="cs-table__data">{{ getVendor() }}</td>
-    <td class="cs-table__data">{{ getFirmwareVersion() }}</td> -->
-  <!-- </tr> -->
 </template>
 
 <script setup lang="ts">
@@ -26,7 +21,7 @@ import TagInputModal from './TagInputModal.vue';
 import Button from '../buttons/Button.vue';
 
 import { reactive } from 'vue';
-import UIServer from '@/composable/UIServer';
+import UIClient from '@/composable/UIClient';
 import { ConnectorStatus } from '@/type/SimulatorUI';
 import Utils from '@/composable/Utils';
 
@@ -56,14 +51,13 @@ function showTagModal(): void {
   state.isTagModalVisible = true;
 }
 function hideTagModal(): void {
-  console.debug('2');
   state.isTagModalVisible = false;
 }
 
 function startTransaction(): void {
-  UIServer.startTransaction(props.hashId, props.connectorId, state.tag);
+  UIClient.startTransaction(props.hashId, props.connectorId, state.tag);
 }
 function stopTransaction(): void {
-  UIServer.stopTransaction(props.hashId, props.connectorId);
+  UIClient.stopTransaction(props.hashId, props.connectorId);
 }
 </script>
