@@ -59,9 +59,9 @@ function hideTagModal(): void {
 
 // function startTransaction(connectorId: number): void {
 //   hideTagModal();
-//   UIClient.startTransaction(getHashId(), connectorId + 1, state.tag);
+//   UIServer.startTransaction(getHashId(), connectorId + 1, state.tag);
 // }
 // function stopTransaction(connectorId: number): void {
-//   UIClient.stopTransaction(getHashId(), connectorId + 1);
+//   UIServer.stopTransaction(getHashId(), connectorId + 1);
 // }
 </script>
