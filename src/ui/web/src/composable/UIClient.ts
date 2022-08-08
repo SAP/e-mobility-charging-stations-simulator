@@ -41,10 +41,7 @@ export default class UIClient {
   public async listChargingStations(): Promise<SimulatorUI[]> {
     console.debug('listChargingStations');
 
-    const [_, list] = (await this.send(
-      ProcedureName.LIST_CHARGING_STATIONS,
-      {}
-    )) as ProtocolResponse;
+    const list = (await this.send(ProcedureName.LIST_CHARGING_STATIONS, {})) as ProtocolResponse;
 
     return list as unknown as SimulatorUI[];
   }
