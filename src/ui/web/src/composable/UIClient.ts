@@ -1,7 +1,7 @@
 import config from '@/assets/config';
 import { JsonType } from '@/type/JsonType';
 import { SimulatorUI } from '@/type/SimulatorUI';
-import { ProcedureName, ProtocolRequest, ProtocolResponse } from '@/type/UIProtocol';
+import { ProcedureName, ProtocolResponse } from '@/type/UIProtocol';
 import { v4 as uuidv4 } from 'uuid';
 import Utils from './Utils';
 
@@ -44,7 +44,7 @@ export default class UIClient {
     const [_, list] = (await this.send(
       ProcedureName.LIST_CHARGING_STATIONS,
       {}
-    )) as ProtocolRequest;
+    )) as ProtocolResponse;
 
     return list as unknown as SimulatorUI[];
   }
@@ -52,26 +52,22 @@ export default class UIClient {
   public async startTransaction(hashId: string, connectorId: number, idTag: string): Promise<void> {
     console.debug('startTransaction');
 
-    const [_] = (await this.send(ProcedureName.START_TRANSACTION, {
+    const _ = await this.send(ProcedureName.START_TRANSACTION, {
       hashId,
       connectorId,
       idTag,
       command: ProcedureName.START_TRANSACTION,
-    })) as ProtocolRequest;
-
-    // return list as Record<string, unknown>[];
+    });
   }
 
   public async stopTransaction(hashId: string, connectorId: number): Promise<void> {
     console.debug('stopTransaction');
 
-    const _ = (await this.send(ProcedureName.STOP_TRANSACTION, {
+    const _ = await this.send(ProcedureName.STOP_TRANSACTION, {
       hashId,
       connectorId,
       command: ProcedureName.STOP_TRANSACTION,
-    })) as ProtocolRequest;
-
-    // return list as Record<string, unknown>[];
+    });
   }
 
   private setHandler(
@@ -104,7 +100,7 @@ export default class UIClient {
       console.error('message not iterable:', data);
     }
 
-    const [uuid, response] = data as ProtocolResponse;
+    const [uuid, response] = data;
 
     const messageHandler = this.getHandler(uuid);
     if (Utils.isUndefined(messageHandler)) {
