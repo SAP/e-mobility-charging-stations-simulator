@@ -196,7 +196,6 @@ export default class Bootstrap {
   }
 
   private workerEventStarted(payload: SimulatorUI) {
-    console.debug(JSON.stringify(payload.connectors));
     this.uiServer.chargingStations.set(payload.hashId, payload);
     ++this.numberOfChargingStations;
   }

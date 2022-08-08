@@ -13,13 +13,14 @@ export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
 }
 
-export enum ProtocolCommand {
+export enum ProcedureName {
   LIST_CHARGING_STATIONS = 'listChargingStations',
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
 }
 
-export type ProtocolRequest = [string, ProtocolCommand, JsonType];
+export type ProtocolRequest = [string, ProcedureName, JsonType];
+export type ProtocolResponse = [string, JsonType];
 
 export type ProtocolRequestHandler = (
   payload: JsonType

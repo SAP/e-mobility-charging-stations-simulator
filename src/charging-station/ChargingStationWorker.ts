@@ -20,7 +20,7 @@ import {
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
-import { ProtocolCommand } from '../types/UIProtocol';
+import { ProcedureName } from '../types/UIProtocol';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
@@ -42,9 +42,10 @@ if (ChargingStationUtils.workerPoolInUse()) {
   }
 }
 
+// TODO: change the type and put it in it's own file in the types folder
 class TEMP {
   public hashId: string;
-  public command: ProtocolCommand;
+  public command: ProcedureName;
   public connectorId: number;
   public idTag: string | null;
 }
@@ -58,12 +59,11 @@ channel.onmessage = (message: MessageEvent) => {
     return;
   }
 
-  console.debug(station.connectors);
   switch (data.command) {
-    case ProtocolCommand.START_TRANSACTION:
+    case ProcedureName.START_TRANSACTION:
       void startTransaction(data.connectorId, data.idTag);
       break;
-    case ProtocolCommand.STOP_TRANSACTION:
+    case ProcedureName.STOP_TRANSACTION:
       void stopTransaction(data.connectorId);
       break;
   }
@@ -74,6 +74,7 @@ channel.onmessage = (message: MessageEvent) => {
  * @param idTag RFID tag used
  */
 async function startTransaction(connectorId: number, idTag: string): Promise<void> {
+  // TODO: change to allow the user to test an unauthorised badge
   station.getConnectorStatus(connectorId).authorizeIdTag = idTag;
   try {
     const authorizeResponse = await station.ocppRequestService.requestHandler<
@@ -82,7 +83,7 @@ async function startTransaction(connectorId: number, idTag: string): Promise<voi
     >(station, RequestCommand.AUTHORIZE, {
       idTag,
     });
-    console.debug('Authorize:', authorizeResponse);
+
     const startResponse = await station.ocppRequestService.requestHandler<
       StartTransactionRequest,
       StartTransactionResponse
@@ -90,7 +91,6 @@ async function startTransaction(connectorId: number, idTag: string): Promise<voi
       connectorId,
       idTag,
     });
-    console.debug('StartT:', startResponse);
   } catch (error: unknown) {
     console.error(error);
   }
@@ -102,7 +102,6 @@ async function startTransaction(connectorId: number, idTag: string): Promise<voi
 async function stopTransaction(connectorId: number): Promise<void> {
   try {
     const transactionId = station.getConnectorStatus(connectorId).transactionId;
-    console.debug('transactionId:', transactionId);
 
     const stopResponse = await station.ocppRequestService.requestHandler<
       StopTransactionRequest,
@@ -113,8 +112,6 @@ async function stopTransaction(connectorId: number): Promise<void> {
       idTag: station.getTransactionIdTag(transactionId),
       reason: StopTransactionReason.NONE,
     });
-
-    console.debug('stopT:', stopResponse);
   } catch (error: unknown) {
     console.error(error);
   }

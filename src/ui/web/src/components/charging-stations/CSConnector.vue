@@ -14,11 +14,6 @@
   </td>
   <td class="cs-table__data">{{ connectorId }}</td>
   <td class="cs-table__data">{{ connector.bootStatus }}</td>
-  <!-- <td class="cs-table__data">{{ getID() }}</td>
-    <td class="cs-table__data">{{ getModel() }}</td>
-    <td class="cs-table__data">{{ getVendor() }}</td>
-    <td class="cs-table__data">{{ getFirmwareVersion() }}</td> -->
-  <!-- </tr> -->
 </template>
 
 <script setup lang="ts">
@@ -56,7 +51,6 @@ function showTagModal(): void {
   state.isTagModalVisible = true;
 }
 function hideTagModal(): void {
-  console.debug('2');
   state.isTagModalVisible = false;
 }
 
