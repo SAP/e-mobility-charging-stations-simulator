@@ -1,10 +1,9 @@
-import { ProcedureName, ProtocolRequest, ProtocolResponse } from '@/type/UIProtocol';
+import { ProcedureName, ProtocolResponse } from '@/type/UIProtocol';
 
 import { JsonType } from '@/type/JsonType';
 import { SimulatorUI } from '@/type/SimulatorUI';
 import Utils from './Utils';
 import config from '@/assets/config';
-import { toNumber } from '@vue/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 export default class UIServer {

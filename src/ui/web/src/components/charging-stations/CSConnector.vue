@@ -1,5 +1,4 @@
 <template>
-  <!-- <tr class="cs-table__row"> -->
   <td class="cs-table__data">
     <Button @click="getTag(startTransaction)">Start Transaction</Button>
     <TagInputModal
