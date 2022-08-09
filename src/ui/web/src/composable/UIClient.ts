@@ -16,6 +16,7 @@ export default class UIClient {
       reject: (reason?: any) => void;
     }
   >;
+  private _toBeSent: Array<string>;
 
   private constructor() {
     this._ws = new WebSocket(
@@ -30,8 +31,10 @@ export default class UIClient {
         reject: (reason?: any) => void;
       }
     >();
+    this._toBeSent = [];
 
-    this._ws.onmessage = this.handleMessage;
+    this._ws.onopen = this.handleOpen.bind(this);
+    this._ws.onmessage = this.handleMessage.bind(this);
   }
 
   public static get instance() {
@@ -41,9 +44,9 @@ export default class UIClient {
   public async listChargingStations(): Promise<SimulatorUI[]> {
     console.debug('listChargingStations');
 
-    const list = (await this.send(ProcedureName.LIST_CHARGING_STATIONS, {})) as ProtocolResponse;
+    const list = await this.send(ProcedureName.LIST_CHARGING_STATIONS, {});
 
-    return list as unknown as SimulatorUI[];
+    return list as SimulatorUI[];
   }
 
   public async startTransaction(hashId: string, connectorId: number, idTag: string): Promise<void> {
@@ -83,10 +86,20 @@ export default class UIClient {
       const uuid = uuidv4();
       const msg = JSON.stringify([uuid, command, data]);
 
-      console.debug('send:', msg);
-      this._ws.send(msg);
+      if (this._ws.readyState === this._ws.OPEN) {
+        console.debug('send:', msg);
+        this._ws.send(msg);
+      } else {
+        this._toBeSent.push(msg);
+      }
 
       this.setHandler(uuid, resolve, reject);
+    });
+  }
+
+  private handleOpen(ev: Event): void {
+    this._toBeSent.forEach((msg) => {
+      this._ws.send(msg);
     });
   }
 
