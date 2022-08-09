@@ -1,7 +1,7 @@
 import config from '@/assets/config';
 import { JsonType } from '@/type/JsonType';
 import { SimulatorUI } from '@/type/SimulatorUI';
-import { ProcedureName, ProtocolResponse } from '@/type/UIProtocol';
+import { ProcedureName } from '@/type/UIProtocol';
 import { v4 as uuidv4 } from 'uuid';
 import Utils from './Utils';
 
@@ -77,6 +77,7 @@ export default class UIClient {
   ) {
     this._responseHandlers.set(id, { resolve, reject });
   }
+
   private getHandler(id: string) {
     return this._responseHandlers.get(id);
   }

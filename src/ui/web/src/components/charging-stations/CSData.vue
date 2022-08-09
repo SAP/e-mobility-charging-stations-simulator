@@ -53,7 +53,7 @@ function getFirmwareVersion(): string {
 // function showTagModal(): void {
 //   state.isTagModalVisible = true;
 // }
-function hideTagModal(): void {
-  state.isTagModalVisible = false;
-}
+// function hideTagModal(): void {
+//   state.isTagModalVisible = false;
+// }
 </script>
