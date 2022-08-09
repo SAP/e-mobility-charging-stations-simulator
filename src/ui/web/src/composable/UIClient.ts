@@ -108,14 +108,16 @@ export default class UIClient {
     const data = JSON.parse(ev.data);
 
     if (Utils.isIterable(data) === false) {
-      console.error('message not iterable:', data);
+      throw new Error('Message not iterable: ' + JSON.stringify(data, null, 2));
     }
 
     const [uuid, response] = data;
 
-    const messageHandler = this.getHandler(uuid);
-    if (Utils.isUndefined(messageHandler)) {
-      console.error('message not a response/timed out:', data);
+    let messageHandler;
+    if (this._responseHandlers.has(uuid) === true) {
+      messageHandler = this.getHandler(uuid);
+    } else {
+      throw new Error('Message not a response/timed out: ' + JSON.stringify(data, null, 2));
     }
 
     messageHandler?.resolve(response);
