@@ -56,12 +56,4 @@ function getFirmwareVersion(): string {
 function hideTagModal(): void {
   state.isTagModalVisible = false;
 }
-
-// function startTransaction(connectorId: number): void {
-//   hideTagModal();
-//   UIServer.startTransaction(getHashId(), connectorId + 1, state.tag);
-// }
-// function stopTransaction(connectorId: number): void {
-//   UIServer.stopTransaction(getHashId(), connectorId + 1);
-// }
 </script>
