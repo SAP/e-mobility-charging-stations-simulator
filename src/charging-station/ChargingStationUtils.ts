@@ -538,9 +538,21 @@ export class ChargingStationUtils {
     command: RequestCommand | IncomingRequestCommand,
     stationInfo: ChargingStationInfo
   ): boolean {
+    if (
+      Object.values(IncomingRequestCommand).includes(command as IncomingRequestCommand) &&
+      !stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return true;
+    }
+    if (
+      Object.values(RequestCommand).includes(command as RequestCommand) &&
+      !stationInfo?.commandsSupport?.outgoingCommands
+    ) {
+      return true;
+    }
     return (
-      ((stationInfo?.commandsSupport?.incomingCommands[command] as boolean) ?? true) ||
-      ((stationInfo?.commandsSupport?.outgoingCommands[command] as boolean) ?? true)
+      ((stationInfo?.commandsSupport?.incomingCommands[command] as boolean) ?? false) ||
+      ((stationInfo?.commandsSupport?.outgoingCommands[command] as boolean) ?? false)
     );
   }
 
