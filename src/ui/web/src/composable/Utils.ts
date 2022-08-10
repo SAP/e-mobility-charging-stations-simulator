@@ -20,6 +20,26 @@ export default class Utils {
   //   if (this.isIterable(obj) === false) cb();
   // }
 
+  public static async promiseWithTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    timeoutError: Error,
+    timeoutCallback: () => void = () => {
+      /* This is intentional */
+    }
+  ): Promise<T> {
+    // Create a timeout promise that rejects in timeout milliseconds
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        timeoutCallback();
+        reject(timeoutError);
+      }, timeoutMs);
+    });
+
+    // Returns a race between timeout promise and the passed promise
+    return Promise.race<T>([promise, timeoutPromise]);
+  }
+
   // FUNCTIONAL
   public static compose<T>(...fns: ((arg: T) => T)[]): (x: T) => T {
     return (x: T) => fns.reduceRight((y, fn) => fn(y), x);
