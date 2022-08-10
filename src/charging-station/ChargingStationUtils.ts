@@ -535,14 +535,14 @@ export class ChargingStationUtils {
   }
 
   public static isCommandSupported(
-    command: IncomingRequestCommand | RequestCommand,
+    command: RequestCommand | IncomingRequestCommand,
     stationInfo: ChargingStationInfo
   ): boolean {
     return (
-      (stationInfo?.commandsSupport?.incomingCommands
+      (stationInfo?.commandsSupport?.incomingCommands[command] !== undefined
         ? (stationInfo.commandsSupport.incomingCommands[command] as boolean)
         : true) ||
-      (stationInfo?.commandsSupport?.outgoingCommands
+      (stationInfo?.commandsSupport?.outgoingCommands[command] !== undefined
         ? (stationInfo.commandsSupport.outgoingCommands[command] as boolean)
         : true)
     );
