@@ -83,19 +83,27 @@ export default class UIClient {
   }
 
   private async send(command: ProcedureName, data: JsonType): Promise<JsonType> {
-    return new Promise((resolve, reject) => {
-      const uuid = uuidv4();
-      const msg = JSON.stringify([uuid, command, data]);
+    let uuid: string;
+    return Utils.promiseWithTimeout(
+      new Promise((resolve, reject) => {
+        uuid = uuidv4();
+        const msg = JSON.stringify([uuid, command, data]);
 
-      if (this._ws.readyState === this._ws.OPEN) {
-        console.debug('send:', msg);
-        this._ws.send(msg);
-      } else {
-        this._toBeSent.push(msg);
+        if (this._ws.readyState === this._ws.OPEN) {
+          console.debug('send:', msg);
+          this._ws.send(msg);
+        } else {
+          this._toBeSent.push(msg);
+        }
+
+        this.setHandler(uuid, resolve, reject);
+      }),
+      60 * 1000,
+      Error('Send message timeout'),
+      () => {
+        this._responseHandlers.delete(uuid);
       }
-
-      this.setHandler(uuid, resolve, reject);
-    });
+    );
   }
 
   private handleOpen(ev: Event): void {
