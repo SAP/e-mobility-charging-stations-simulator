@@ -539,12 +539,8 @@ export class ChargingStationUtils {
     stationInfo: ChargingStationInfo
   ): boolean {
     return (
-      (stationInfo?.commandsSupport?.incomingCommands[command] !== undefined
-        ? (stationInfo.commandsSupport.incomingCommands[command] as boolean)
-        : true) ||
-      (stationInfo?.commandsSupport?.outgoingCommands[command] !== undefined
-        ? (stationInfo.commandsSupport.outgoingCommands[command] as boolean)
-        : true)
+      ((stationInfo?.commandsSupport?.incomingCommands[command] as boolean) ?? true) ||
+      ((stationInfo?.commandsSupport?.outgoingCommands[command] as boolean) ?? true)
     );
   }
 
