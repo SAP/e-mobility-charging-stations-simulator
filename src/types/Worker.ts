@@ -17,6 +17,7 @@ export interface WorkerOptions {
   poolMinSize?: number;
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
+  data?: any;
   messageHandler?: (message: unknown) => void | Promise<void>;
 }
 

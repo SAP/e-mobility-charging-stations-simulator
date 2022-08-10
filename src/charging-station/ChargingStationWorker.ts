@@ -26,6 +26,7 @@ import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
 import ChargingStation from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
+import WorkerChannel from './WorkerChannel';
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
@@ -37,9 +38,26 @@ if (ChargingStationUtils.workerPoolInUse()) {
 } else {
   // Add message listener to start charging station from main thread
   addMessageListener();
+  console.debug('workerData:', workerData);
   if (!Utils.isUndefined(workerData)) {
-    startChargingStation(workerData as ChargingStationWorkerData);
+    const data = workerData as string;
+    try {
+      WorkerChannel.start(data);
+      console.debug('bc start worker:', WorkerChannel.instance);
+      WorkerChannel.instance.onmessage = handleChannelMessage;
+    } catch (error) {
+      console.debug(error);
+    }
+    // startChargingStation(data);
   }
+}
+
+/**
+ *
+ * @param message
+ */
+function handleChannelMessage(message: MessageEvent): void {
+  console.debug('message:', message.data);
 }
 
 // TODO: change the type and put it in it's own file in the types folder
@@ -51,23 +69,6 @@ class TEMP {
 }
 
 let station: ChargingStation;
-const channel = new BroadcastChannel('test');
-channel.onmessage = (message: MessageEvent) => {
-  const data = message.data as unknown as TEMP;
-
-  if (data.hashId !== station.hashId) {
-    return;
-  }
-
-  switch (data.command) {
-    case ProcedureName.START_TRANSACTION:
-      void startTransaction(data.connectorId, data.idTag);
-      break;
-    case ProcedureName.STOP_TRANSACTION:
-      void stopTransaction(data.connectorId);
-      break;
-  }
-};
 
 /**
  * @param connectorId Id of the connector used

@@ -27,6 +27,7 @@ import { ChargingStationUtils } from './ChargingStationUtils';
 import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
 import UIServerFactory from './ui-server/UIServerFactory';
+import WorkerChannel from './WorkerChannel';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
@@ -46,6 +47,7 @@ export default class Bootstrap {
       'charging-station',
       'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
+    WorkerChannel.start('test');
     this.initialize();
     Configuration.getUIServer().enabled &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
@@ -167,6 +169,7 @@ export default class Bootstrap {
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
+          data: WorkerChannel.instance.name,
           messageHandler: this.messageHandler.bind(this) as (
             msg: InternalChargingStationWorkerMessage
           ) => void,
@@ -233,6 +236,7 @@ export default class Bootstrap {
         'station-templates',
         stationTemplateUrl.file
       ),
+      workerChannelName: WorkerChannel.instance.name,
     };
     await this.workerImplementation.addElement(workerData);
   }

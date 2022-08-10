@@ -94,7 +94,8 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    * @private
    */
   private async startWorker(): Promise<void> {
-    const worker = new Worker(this.workerScript);
+    // eslint-disable-next-line  @typescript-eslint/no-unsafe-assignment
+    const worker = new Worker(this.workerScript, { workerData: this.workerOptions.data });
     worker.on('message', (msg) => {
       (async () => {
         await this.messageHandler(msg);

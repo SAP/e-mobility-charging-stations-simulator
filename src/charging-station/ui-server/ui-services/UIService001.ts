@@ -2,12 +2,11 @@ import { BroadcastChannel } from 'worker_threads';
 
 import { JsonType } from '../../../types/JsonType';
 import { ProcedureName, ProtocolRequestHandler, ProtocolVersion } from '../../../types/UIProtocol';
+import WorkerChannel from '../../WorkerChannel';
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 
 export default class UIService001 extends AbstractUIService {
-  private channel = new BroadcastChannel('test');
-
   constructor(uiServer: AbstractUIServer) {
     super(uiServer, ProtocolVersion['0.0.1']);
     this.messageHandlers.set(
@@ -21,10 +20,11 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStartTransaction(payload: JsonType): void {
-    this.channel.postMessage(payload);
+    const msg = [ProcedureName.START_TRANSACTION, payload];
+    WorkerChannel.instance.postMessage([ProcedureName.START_TRANSACTION, payload]);
   }
 
   private handleStopTransaction(payload: JsonType): void {
-    this.channel.postMessage(payload);
+    WorkerChannel.instance.postMessage(payload);
   }
 }
