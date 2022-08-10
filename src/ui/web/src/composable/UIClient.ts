@@ -16,7 +16,6 @@ export default class UIClient {
       reject: (reason?: any) => void;
     }
   >;
-  private _toBeSent: Array<string>;
 
   private constructor() {
     this._ws = new WebSocket(
@@ -31,9 +30,7 @@ export default class UIClient {
         reject: (reason?: any) => void;
       }
     >();
-    this._toBeSent = [];
 
-    this._ws.onopen = this.handleOpen.bind(this);
     this._ws.onmessage = this.handleMessage.bind(this);
   }
 
@@ -90,10 +87,10 @@ export default class UIClient {
         const msg = JSON.stringify([uuid, command, data]);
 
         if (this._ws.readyState === this._ws.OPEN) {
-          console.debug('send:', msg);
+          console.debug('Send message:', msg);
           this._ws.send(msg);
         } else {
-          this._toBeSent.push(msg);
+          throw new Error('Send message: connection not opened');
         }
 
         this.setHandler(uuid, resolve, reject);
@@ -104,12 +101,6 @@ export default class UIClient {
         this._responseHandlers.delete(uuid);
       }
     );
-  }
-
-  private handleOpen(ev: Event): void {
-    this._toBeSent.forEach((msg) => {
-      this._ws.send(msg);
-    });
   }
 
   private handleMessage(ev: MessageEvent<any>): void {
@@ -125,7 +116,7 @@ export default class UIClient {
     if (this._responseHandlers.has(uuid) === true) {
       messageHandler = this.getHandler(uuid);
     } else {
-      throw new Error('Message not a response/timed out: ' + JSON.stringify(data, null, 2));
+      throw new Error('Message not a response: ' + JSON.stringify(data, null, 2));
     }
 
     messageHandler?.resolve(response);
