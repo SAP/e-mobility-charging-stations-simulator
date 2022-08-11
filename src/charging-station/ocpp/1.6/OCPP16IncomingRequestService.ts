@@ -159,7 +159,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       if (
         this.incomingRequestHandlers.has(commandName) &&
-        ChargingStationUtils.isCommandSupported(commandName, chargingStation)
+        ChargingStationUtils.isIncomingRequestCommandSupported(commandName, chargingStation)
       ) {
         try {
           // Call the method to build the response

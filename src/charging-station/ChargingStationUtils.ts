@@ -27,7 +27,7 @@ import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
-import ChargingStation from './ChargingStation';
+import type ChargingStation from './ChargingStation';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 
 export class ChargingStationUtils {
@@ -534,14 +534,25 @@ export class ChargingStationUtils {
     );
   }
 
-  public static isCommandSupported(
-    command: RequestCommand | IncomingRequestCommand,
+  public static isRequestCommandSupported(
+    command: RequestCommand,
     chargingStation: ChargingStation
   ): boolean {
-    const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(
-      command as IncomingRequestCommand
-    );
-    const isRequestCommand = Object.values(RequestCommand).includes(command as RequestCommand);
+    const isRequestCommand = Object.values(RequestCommand).includes(command);
+    if (isRequestCommand && !chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
+      return true;
+    } else if (isRequestCommand && chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
+      return chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] ?? false;
+    }
+    logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`);
+    return false;
+  }
+
+  public static isIncomingRequestCommandSupported(
+    command: IncomingRequestCommand,
+    chargingStation: ChargingStation
+  ): boolean {
+    const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(command);
     if (
       isIncomingRequestCommand &&
       !chargingStation.stationInfo?.commandsSupport?.incomingCommands
@@ -551,22 +562,9 @@ export class ChargingStationUtils {
       isIncomingRequestCommand &&
       chargingStation.stationInfo?.commandsSupport?.incomingCommands
     ) {
-      return (
-        (chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] as boolean) ??
-        false
-      );
-    } else if (
-      isRequestCommand &&
-      !chargingStation.stationInfo?.commandsSupport?.outgoingCommands
-    ) {
-      return true;
-    } else if (isRequestCommand && chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
-      return (
-        (chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] as boolean) ??
-        false
-      );
+      return chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] ?? false;
     }
-    logger.error(`${chargingStation.logPrefix()} Unknown OCPP command '${command}'`);
+    logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`);
     return false;
   }
 
