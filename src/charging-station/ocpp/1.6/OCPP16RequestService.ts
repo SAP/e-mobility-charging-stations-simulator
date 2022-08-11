@@ -31,7 +31,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
   ): Promise<Response> {
     if (
       Object.values(OCPP16RequestCommand).includes(commandName) &&
-      ChargingStationUtils.isCommandSupported(commandName, chargingStation.stationInfo)
+      ChargingStationUtils.isCommandSupported(commandName, chargingStation)
     ) {
       return (await this.sendMessage(
         chargingStation,

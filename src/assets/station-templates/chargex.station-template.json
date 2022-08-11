@@ -12,7 +12,6 @@
   "outOfOrderEndMeterValues": true,
   "commandsSupport": {
     "incomingCommands": {
-      "Authorize": true,
       "Reset": true,
       "GetConfiguration": true,
       "ChangeConfiguration": true,

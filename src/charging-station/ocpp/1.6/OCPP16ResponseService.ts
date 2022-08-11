@@ -68,7 +68,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     if (chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
       if (
         this.responseHandlers.has(commandName) &&
-        ChargingStationUtils.isCommandSupported(commandName, chargingStation.stationInfo)
+        ChargingStationUtils.isCommandSupported(commandName, chargingStation)
       ) {
         try {
           await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);

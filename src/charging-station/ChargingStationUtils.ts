@@ -536,24 +536,38 @@ export class ChargingStationUtils {
 
   public static isCommandSupported(
     command: RequestCommand | IncomingRequestCommand,
-    stationInfo: ChargingStationInfo
+    chargingStation: ChargingStation
   ): boolean {
-    if (
-      Object.values(IncomingRequestCommand).includes(command as IncomingRequestCommand) &&
-      !stationInfo?.commandsSupport?.incomingCommands
-    ) {
-      return true;
-    }
-    if (
-      Object.values(RequestCommand).includes(command as RequestCommand) &&
-      !stationInfo?.commandsSupport?.outgoingCommands
-    ) {
-      return true;
-    }
-    return (
-      ((stationInfo?.commandsSupport?.incomingCommands[command] as boolean) ?? false) ||
-      ((stationInfo?.commandsSupport?.outgoingCommands[command] as boolean) ?? false)
+    const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(
+      command as IncomingRequestCommand
     );
+    const isRequestCommand = Object.values(RequestCommand).includes(command as RequestCommand);
+    if (
+      isIncomingRequestCommand &&
+      !chargingStation.stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return true;
+    } else if (
+      isIncomingRequestCommand &&
+      chargingStation.stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return (
+        (chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] as boolean) ??
+        false
+      );
+    } else if (
+      isRequestCommand &&
+      !chargingStation.stationInfo?.commandsSupport?.outgoingCommands
+    ) {
+      return true;
+    } else if (isRequestCommand && chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
+      return (
+        (chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] as boolean) ??
+        false
+      );
+    }
+    logger.error(`${chargingStation.logPrefix()} Unknown OCPP command '${command}'`);
+    return false;
   }
 
   private static getRandomSerialNumberSuffix(params?: {
