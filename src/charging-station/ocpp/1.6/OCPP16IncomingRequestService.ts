@@ -157,7 +157,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       chargingStation.isRegistered() ||
       (!chargingStation.getOcppStrictCompliance() && chargingStation.isInUnknownState())
     ) {
-      if (this.incomingRequestHandlers.has(commandName)) {
+      if (
+        this.incomingRequestHandlers.has(commandName) &&
+        ChargingStationUtils.isIncomingRequestCommandSupported(commandName, chargingStation)
+      ) {
         try {
           // Call the method to build the response
           response = await this.incomingRequestHandlers.get(commandName)(

@@ -34,6 +34,7 @@ import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
+import { ChargingStationUtils } from '../../ChargingStationUtils';
 import OCPPResponseService from '../OCPPResponseService';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 
@@ -65,7 +66,10 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     requestPayload: JsonType
   ): Promise<void> {
     if (chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
-      if (this.responseHandlers.has(commandName)) {
+      if (
+        this.responseHandlers.has(commandName) &&
+        ChargingStationUtils.isRequestCommandSupported(commandName, chargingStation)
+      ) {
         try {
           await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);
         } catch (error) {

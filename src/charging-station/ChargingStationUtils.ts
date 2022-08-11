@@ -16,14 +16,18 @@ import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/C
 import { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
-import { BootNotificationRequest } from '../types/ocpp/Requests';
+import {
+  BootNotificationRequest,
+  IncomingRequestCommand,
+  RequestCommand,
+} from '../types/ocpp/Requests';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
-import ChargingStation from './ChargingStation';
+import type ChargingStation from './ChargingStation';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 
 export class ChargingStationUtils {
@@ -528,6 +532,40 @@ export class ChargingStationUtils {
         path.basename(stationInfo.authorizationFile)
       )
     );
+  }
+
+  public static isRequestCommandSupported(
+    command: RequestCommand,
+    chargingStation: ChargingStation
+  ): boolean {
+    const isRequestCommand = Object.values(RequestCommand).includes(command);
+    if (isRequestCommand && !chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
+      return true;
+    } else if (isRequestCommand && chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
+      return chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] ?? false;
+    }
+    logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`);
+    return false;
+  }
+
+  public static isIncomingRequestCommandSupported(
+    command: IncomingRequestCommand,
+    chargingStation: ChargingStation
+  ): boolean {
+    const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(command);
+    if (
+      isIncomingRequestCommand &&
+      !chargingStation.stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return true;
+    } else if (
+      isIncomingRequestCommand &&
+      chargingStation.stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] ?? false;
+    }
+    logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`);
+    return false;
   }
 
   private static getRandomSerialNumberSuffix(params?: {

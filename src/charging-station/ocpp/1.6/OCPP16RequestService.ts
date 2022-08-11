@@ -8,6 +8,7 @@ import { RequestParams } from '../../../types/ocpp/Requests';
 import Constants from '../../../utils/Constants';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
+import { ChargingStationUtils } from '../../ChargingStationUtils';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
@@ -28,7 +29,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<Response> {
-    if (Object.values(OCPP16RequestCommand).includes(commandName)) {
+    if (ChargingStationUtils.isRequestCommandSupported(commandName, chargingStation)) {
       return (await this.sendMessage(
         chargingStation,
         Utils.generateUUID(),
@@ -39,7 +40,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     }
     throw new OCPPError(
       ErrorType.NOT_SUPPORTED,
-      `${moduleName}.requestHandler: Unsupported OCPP command ${commandName}`,
+      `${moduleName}.requestHandler: Unsupported OCPP command '${commandName}'`,
       commandName,
       commandParams
     );
@@ -144,7 +145,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         throw new OCPPError(
           ErrorType.NOT_SUPPORTED,
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `${moduleName}.buildRequestPayload: Unsupported OCPP command: ${commandName}`,
+          `${moduleName}.buildRequestPayload: Unsupported OCPP command '${commandName}'`,
           commandName,
           commandParams
         );
