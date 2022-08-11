@@ -7,6 +7,7 @@ import ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration
 import { ConnectorStatus } from './ConnectorStatus';
 import { OCPPProtocol } from './ocpp/OCPPProtocol';
 import { OCPPVersion } from './ocpp/OCPPVersion';
+import { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
 
 export enum CurrentType {
   AC = 'AC',
@@ -33,6 +34,11 @@ export enum Voltage {
 }
 
 export type WsOptions = ClientOptions & ClientRequestArgs;
+
+interface CommandsSupport {
+  incomingCommands: Record<IncomingRequestCommand, boolean>;
+  outgoingCommands?: Record<RequestCommand, boolean>;
+}
 
 export default interface ChargingStationTemplate {
   templateHash?: string;
@@ -85,6 +91,7 @@ export default interface ChargingStationTemplate {
   mainVoltageMeterValues?: boolean;
   phaseLineToLineVoltageMeterValues?: boolean;
   customValueLimitationMeterValues?: boolean;
+  commandsSupport?: CommandsSupport;
   Configuration?: ChargingStationOcppConfiguration;
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   Connectors: Record<string, ConnectorStatus>;
