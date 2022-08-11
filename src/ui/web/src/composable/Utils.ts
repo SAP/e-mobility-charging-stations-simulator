@@ -41,7 +41,7 @@ export default class Utils {
   }
 
   // FUNCTIONAL
-  public static compose<T>(...fns: ((arg: T) => T)[]): (x: T) => T {
-    return (x: T) => fns.reduceRight((y, fn) => fn(y), x);
-  }
+  // public static compose<T>(...fns: ((arg: T) => T)[]): (x: T) => T {
+  //   return (x: T) => fns.reduceRight((y, fn) => fn(y), x);
+  // }
 }
