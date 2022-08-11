@@ -8,6 +8,7 @@ import { RequestParams } from '../../../types/ocpp/Requests';
 import Constants from '../../../utils/Constants';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
+import { ChargingStationUtils } from '../../ChargingStationUtils';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
@@ -28,7 +29,10 @@ export default class OCPP16RequestService extends OCPPRequestService {
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<Response> {
-    if (Object.values(OCPP16RequestCommand).includes(commandName)) {
+    if (
+      Object.values(OCPP16RequestCommand).includes(commandName) &&
+      ChargingStationUtils.isCommandSupported(commandName, chargingStation.stationInfo)
+    ) {
       return (await this.sendMessage(
         chargingStation,
         Utils.generateUUID(),

@@ -16,7 +16,11 @@ import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/C
 import { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
-import { BootNotificationRequest } from '../types/ocpp/Requests';
+import {
+  BootNotificationRequest,
+  IncomingRequestCommand,
+  RequestCommand,
+} from '../types/ocpp/Requests';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
 import Configuration from '../utils/Configuration';
@@ -527,6 +531,28 @@ export class ChargingStationUtils {
         'assets',
         path.basename(stationInfo.authorizationFile)
       )
+    );
+  }
+
+  public static isCommandSupported(
+    command: RequestCommand | IncomingRequestCommand,
+    stationInfo: ChargingStationInfo
+  ): boolean {
+    if (
+      Object.values(IncomingRequestCommand).includes(command as IncomingRequestCommand) &&
+      !stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return true;
+    }
+    if (
+      Object.values(RequestCommand).includes(command as RequestCommand) &&
+      !stationInfo?.commandsSupport?.outgoingCommands
+    ) {
+      return true;
+    }
+    return (
+      ((stationInfo?.commandsSupport?.incomingCommands[command] as boolean) ?? false) ||
+      ((stationInfo?.commandsSupport?.outgoingCommands[command] as boolean) ?? false)
     );
   }
 
