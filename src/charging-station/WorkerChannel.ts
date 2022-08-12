@@ -1,20 +1,18 @@
-import { Worker } from 'cluster';
 import { BroadcastChannel } from 'worker_threads';
-
-import { MessageEvent } from 'ws';
-
-import BaseError from '../exception/BaseError';
 
 export default class WorkerChannel {
   private static _instance: WorkerChannel | null = null;
 
   public _channel: BroadcastChannel;
 
-  private constructor(name: string) {
-    this._channel = new BroadcastChannel(name);
+  private constructor() {
+    this._channel = new BroadcastChannel('worker');
   }
 
   public static get instance(): WorkerChannel {
+    if (WorkerChannel._instance === null) {
+      WorkerChannel._instance = new WorkerChannel();
+    }
     return WorkerChannel._instance;
   }
 
@@ -26,17 +24,10 @@ export default class WorkerChannel {
     this._channel.onmessage = messageHandler;
   }
 
-  public static start(name: string) {
-    if (this._instance !== null) {
-      throw new BaseError('channel already open');
-    }
-    this._instance = new WorkerChannel(name);
-  }
+  public start() {}
 
-  public static stop() {
-    this._instance._channel.close();
-    delete this._instance;
-    this._instance = null;
+  public stop() {
+    this._channel.close();
   }
 
   public postMessage(message: unknown) {
