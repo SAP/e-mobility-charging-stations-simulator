@@ -18,7 +18,6 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStartTransaction(payload: JsonType): void {
-    const msg = [ProcedureName.START_TRANSACTION, payload];
     WorkerChannel.instance.postMessage([ProcedureName.START_TRANSACTION, payload]);
   }
 
