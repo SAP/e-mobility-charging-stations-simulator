@@ -47,7 +47,6 @@ export default class Bootstrap {
       'charging-station',
       'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
-    WorkerChannel.start('test');
     this.initialize();
     Configuration.getUIServer().enabled &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(ApplicationProtocol.WS, {
@@ -61,6 +60,7 @@ export default class Bootstrap {
         this.logPrefix()
       ));
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
+    WorkerChannel.instance.start();
   }
 
   public static getInstance(): Bootstrap {
@@ -143,6 +143,7 @@ export default class Bootstrap {
       this.workerImplementation = null;
       this.uiServer?.stop();
       await this.storage?.close();
+      WorkerChannel.instance.stop();
     } else {
       console.error(chalk.red('Trying to stop the charging stations simulator while not started'));
     }
@@ -169,7 +170,7 @@ export default class Bootstrap {
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
-          data: WorkerChannel.instance.name,
+          // data: WorkerChannel.instance.name,
           messageHandler: this.messageHandler.bind(this) as (
             msg: InternalChargingStationWorkerMessage
           ) => void,

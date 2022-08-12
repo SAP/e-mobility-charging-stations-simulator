@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import { BroadcastChannel, parentPort, workerData } from 'worker_threads';
+import { parentPort, workerData } from 'worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 import { MessageEvent } from 'ws';
@@ -42,7 +42,7 @@ if (ChargingStationUtils.workerPoolInUse()) {
   if (!Utils.isUndefined(workerData)) {
     const data = workerData as string;
     try {
-      WorkerChannel.start(data);
+      WorkerChannel.instance.start();
       console.debug('bc start worker:', WorkerChannel.instance);
       WorkerChannel.instance.onmessage = handleChannelMessage;
     } catch (error) {

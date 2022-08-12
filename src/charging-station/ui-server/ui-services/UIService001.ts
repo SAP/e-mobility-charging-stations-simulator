@@ -1,5 +1,3 @@
-import { BroadcastChannel } from 'worker_threads';
-
 import { JsonType } from '../../../types/JsonType';
 import { ProcedureName, ProtocolRequestHandler, ProtocolVersion } from '../../../types/UIProtocol';
 import WorkerChannel from '../../WorkerChannel';

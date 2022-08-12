@@ -35,7 +35,10 @@ export default class UIClient {
   }
 
   public static get instance() {
-    return UIClient._instance || (UIClient._instance = new UIClient());
+    if (UIClient._instance === null) {
+      UIClient._instance = new UIClient();
+    }
+    return UIClient._instance;
   }
 
   public async listChargingStations(): Promise<SimulatorUI[]> {
