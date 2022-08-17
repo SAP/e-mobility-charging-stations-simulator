@@ -93,7 +93,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         if (!Array.isArray(commandParams?.meterValue)) {
           throw new OCPPError(
             ErrorType.TYPERAINT_VIOLATION,
-            `${moduleName}.buildRequestPayload ${commandName}: Invalid array type for meterValue payload field`,
+            `${moduleName}.buildRequestPayload ${commandName}: Invalid array type for meterValue PDU field`,
             commandName,
             commandParams
           );

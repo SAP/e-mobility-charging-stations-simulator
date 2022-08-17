@@ -206,7 +206,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request payload ${JSON.stringify(
+        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           null,
           2
@@ -238,7 +238,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request payload ${JSON.stringify(
+          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
             commandPayload,
             null,
             2
@@ -250,7 +250,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     } else {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request payload ${JSON.stringify(
+        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           null,
           2
@@ -436,23 +436,6 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       this.changeConfigurationJsonSchema,
       commandPayload
     );
-    // // JSON request fields type sanity check
-    // if (!Utils.isString(commandPayload.key)) {
-    //   logger.error(
-    //     `${chargingStation.logPrefix()} ${
-    //       OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-    //     } request key field is not a string:`,
-    //     commandPayload
-    //   );
-    // }
-    // if (!Utils.isString(commandPayload.value)) {
-    //   logger.error(
-    //     `${chargingStation.logPrefix()} ${
-    //       OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-    //     } request value field is not a string:`,
-    //     commandPayload
-    //   );
-    // }
     const keyToChange = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
       commandPayload.key,
