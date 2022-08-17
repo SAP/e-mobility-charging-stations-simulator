@@ -1,9 +1,9 @@
-import config from '@/assets/config';
 import { JsonType } from '@/type/JsonType';
-import { SimulatorUI } from '@/type/SimulatorUI';
 import { ProcedureName } from '@/type/UIProtocol';
-import { v4 as uuidv4 } from 'uuid';
+import { SimulatorUI } from '@/type/SimulatorUI';
 import Utils from './Utils';
+import config from '@/assets/config';
+import { v4 as uuidv4 } from 'uuid';
 
 export default class UIClient {
   private static _instance: UIClient | null = null;
@@ -39,6 +39,10 @@ export default class UIClient {
       UIClient._instance = new UIClient();
     }
     return UIClient._instance;
+  }
+
+  public onOpen(listener: (this: WebSocket, ev: Event) => void) {
+    this._ws.addEventListener('open', listener);
   }
 
   public async listChargingStations(): Promise<SimulatorUI[]> {

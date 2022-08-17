@@ -2,13 +2,13 @@
   <table id="cs-table">
     <thead id="cs-table__head">
       <tr class="cs-table__row">
-        <th scope="col" class="cs-table__header">Action</th>
-        <th scope="col" class="cs-table__header">Connector</th>
-        <th scope="col" class="cs-table__header">Status</th>
-        <th scope="col" class="cs-table__header">Name</th>
-        <th scope="col" class="cs-table__header">Model</th>
-        <th scope="col" class="cs-table__header">Vendor</th>
-        <th scope="col" class="cs-table__header">Firmware Version</th>
+        <th scope="col" class="cs-table__action-col">Action</th>
+        <th scope="col" class="cs-table__connector-col">Connector</th>
+        <th scope="col" class="cs-table__status-col">Status</th>
+        <th scope="col" class="cs-table__name-col">Name</th>
+        <th scope="col" class="cs-table__model-col">Model</th>
+        <th scope="col" class="cs-table__vendor-col">Vendor</th>
+        <th scope="col" class="cs-table__firmware-col">Firmware Version</th>
       </tr>
     </thead>
     <tbody id="cs-table__body">
@@ -39,65 +39,77 @@ const props = defineProps<{
   height: 100%;
   width: 100%;
 
-  /* display: block; */
   display: flex;
   flex-direction: column;
   overflow: auto hidden;
   border-collapse: collapse;
-  white-space: nowrap;
   empty-cells: show;
 }
 
-#cs-table__head {
-  /* position: sticky; */
-  /* box-sizing: border-box; */
-  /* top: 0; */
-  /* border-style: solid; */
-
-  display: block;
-}
-
+#cs-table__head,
 #cs-table__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  /* width: 100%; */
+  /* min-width: 934px; */
   /* box-sizing: border-box; */
-  /* border-style: none solid solid; */
-  overflow: hidden auto;
-  max-width: 100%;
-
-  display: block;
+}
+#cs-table__head {
+  /* width: 100%; */
+  /* display: block; */
+}
+#cs-table__body {
+  /* width: 100%; */
+  /* direction: rtl; */
+  /* overflow: visible scroll; */
+  overflow: visible overlay;
   flex-grow: 1;
 }
 
 .cs-table__row {
-  display: block;
+  width: 1647px;
+  /* width: 100%; */
+  display: inline-block;
 }
-
 #cs-table__head .cs-table__row {
   background-color: rgb(194, 188, 188);
 }
-
 .cs-table__row:nth-of-type(even) {
   background-color: rgb(223, 217, 217);
 }
 
-.cs-table__header {
-  /* padding-left:  1em;
-  padding-right: 1em; */
+.cs-table__action-col,
+.cs-table__connector-col,
+.cs-table__status-col,
+.cs-table__name-col,
+.cs-table__model-col,
+.cs-table__vendor-col,
+.cs-table__firmware-col {
+  /* height: 2em; */
+  width: 14.3%;
+  /* text-align: center;
+  vertical-align: middle; */
 }
-
-.cs-table__data {
-  /* text-align: center; */
+.cs-table__action-col {
+  /* min-width: 200px; */
 }
-
-.cs-table__header,
-.cs-table__data {
-  /* border-right-style: solid; */
-  /* padding-top: 0.5em; */
-  height: 2em;
-  width: 20em;
-  min-width: 14.3%;
-
-  display: table-cell;
-  text-align: center;
-  vertical-align: middle;
+.cs-table__connector-col {
+  /* min-width: 120px; */
+}
+.cs-table__status-col {
+  /* min-width: 120px; */
+}
+.cs-table__name-col {
+  /* min-width: 120px; */
+}
+.cs-table__model-col {
+  /* min-width: 120px; */
+}
+.cs-table__vendor-col {
+  /* min-width: 120px; */
+}
+.cs-table__firmware-col {
+  /* min-width: 120px; */
 }
 </style>

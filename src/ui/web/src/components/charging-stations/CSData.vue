@@ -1,10 +1,10 @@
 <template>
   <tr v-for="(connector, index) in getConnectors()" class="cs-table__row">
     <CSConnector :hash-id="getHashId()" :connector="connector" :connector-id="index + 1" />
-    <td class="cs-table__data">{{ getID() }}</td>
-    <td class="cs-table__data">{{ getModel() }}</td>
-    <td class="cs-table__data">{{ getVendor() }}</td>
-    <td class="cs-table__data">{{ getFirmwareVersion() }}</td>
+    <td class="cs-table__name-col">{{ getID() }}</td>
+    <td class="cs-table__model-col">{{ getModel() }}</td>
+    <td class="cs-table__vendor-col">{{ getVendor() }}</td>
+    <td class="cs-table__firmware-col">{{ getFirmwareVersion() }}</td>
   </tr>
 </template>
 

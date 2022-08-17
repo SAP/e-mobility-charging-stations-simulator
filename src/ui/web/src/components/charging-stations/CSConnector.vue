@@ -1,5 +1,5 @@
 <template>
-  <td class="cs-table__data">
+  <td class="cs-table__action-col">
     <Button @click="getTag(startTransaction)">Start Transaction</Button>
     <TagInputModal
       :visibility="state.isTagModalVisible"
@@ -11,8 +11,8 @@
     </TagInputModal>
     <Button @click="getTag(stopTransaction)">Stop Transaction</Button>
   </td>
-  <td class="cs-table__data">{{ connectorId }}</td>
-  <td class="cs-table__data">{{ connector.bootStatus }}</td>
+  <td class="cs-table__connector-col">{{ connectorId }}</td>
+  <td class="cs-table__status-col">{{ connector.bootStatus }}</td>
 </template>
 
 <script setup lang="ts">
