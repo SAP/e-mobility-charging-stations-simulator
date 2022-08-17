@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { URL, fileURLToPath } from 'url';
 
+import { JSONSchemaType } from 'ajv';
 import { Client, FTPResponse } from 'basic-ftp';
 import tar from 'tar';
 
@@ -34,6 +35,7 @@ import {
   MessageTrigger,
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
+  OCPP16ClearCacheRequest,
   OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
@@ -86,6 +88,9 @@ const moduleName = 'OCPP16IncomingRequestService';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
+  private clearCacheJsonSchema: JSONSchemaType<OCPP16ClearCacheRequest>;
+  private getConfigurationJsonSchema: JSONSchemaType<GetConfigurationRequest>;
+  private changeConfigurationJsonSchema: JSONSchemaType<ChangeConfigurationRequest>;
 
   public constructor() {
     if (new.target?.name === moduleName) {
@@ -127,6 +132,33 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
       [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
     ]);
+    this.clearCacheJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/ClearCache.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16ClearCacheRequest>;
+    this.getConfigurationJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/GetConfiguration.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<GetConfigurationRequest>;
+    this.changeConfigurationJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/ChangeConfiguration.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<ChangeConfigurationRequest>;
   }
 
   public async incomingRequestHandler(
@@ -225,7 +257,16 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  private handleRequestClearCache(): DefaultResponse {
+  private handleRequestClearCache(
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16ClearCacheRequest
+  ): DefaultResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.CLEAR_CACHE,
+      this.clearCacheJsonSchema,
+      commandPayload
+    );
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -292,6 +333,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: GetConfigurationRequest
   ): GetConfigurationResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.GET_CONFIGURATION,
+      this.getConfigurationJsonSchema,
+      commandPayload
+    );
     const configurationKey: OCPPConfigurationKey[] = [];
     const unknownKey: string[] = [];
     if (Utils.isEmptyArray(commandPayload.key)) {
@@ -341,6 +388,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ChangeConfigurationRequest
   ): ChangeConfigurationResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
+      this.changeConfigurationJsonSchema,
+      commandPayload
+    );
     // JSON request fields type sanity check
     if (!Utils.isString(commandPayload.key)) {
       logger.error(

@@ -33,6 +33,7 @@ export default {
     },
   ],
   external: [
+    'ajv',
     'basic-ftp',
     'chalk',
     'crypto',
@@ -51,11 +52,11 @@ export default {
     'tar',
     'url',
     'uuid',
-    'ws',
     'winston-daily-rotate-file',
     'winston/lib/winston/transports/index.js',
     'winston',
     'worker_threads',
+    'ws',
   ],
   plugins: [
     json(),

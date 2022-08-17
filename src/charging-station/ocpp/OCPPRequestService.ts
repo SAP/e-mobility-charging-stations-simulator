@@ -19,6 +19,8 @@ import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
 import type OCPPResponseService from './OCPPResponseService';
 
+const moduleName = 'OCPPRequestService';
+
 export default abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
 
