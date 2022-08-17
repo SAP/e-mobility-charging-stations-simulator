@@ -88,9 +88,12 @@ const moduleName = 'OCPP16IncomingRequestService';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
+  private resetJsonSchema: JSONSchemaType<ResetRequest>;
   private clearCacheJsonSchema: JSONSchemaType<OCPP16ClearCacheRequest>;
   private getConfigurationJsonSchema: JSONSchemaType<GetConfigurationRequest>;
   private changeConfigurationJsonSchema: JSONSchemaType<ChangeConfigurationRequest>;
+  private unlockConnectorJsonSchema: JSONSchemaType<UnlockConnectorRequest>;
+  private getDiagnosticsJsonSchema: JSONSchemaType<GetDiagnosticsRequest>;
 
   public constructor() {
     if (new.target?.name === moduleName) {
@@ -132,6 +135,15 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
       [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
     ]);
+    this.resetJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/Reset.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<ResetRequest>;
     this.clearCacheJsonSchema = JSON.parse(
       fs.readFileSync(
         path.resolve(
@@ -159,6 +171,24 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         'utf8'
       )
     ) as JSONSchemaType<ChangeConfigurationRequest>;
+    this.unlockConnectorJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/UnlockConnector.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<UnlockConnectorRequest>;
+    this.getDiagnosticsJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<UnlockConnectorRequest>;
   }
 
   public async incomingRequestHandler(
@@ -243,6 +273,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): DefaultResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.RESET,
+      this.resetJsonSchema,
+      commandPayload
+    );
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     setImmediate(async (): Promise<void> => {
       await chargingStation.reset((commandPayload.type + 'Reset') as OCPP16StopTransactionReason);
@@ -274,6 +310,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: UnlockConnectorRequest
   ): Promise<UnlockConnectorResponse> {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
+      this.unlockConnectorJsonSchema,
+      commandPayload
+    );
     const connectorId = commandPayload.connectorId;
     if (connectorId === 0) {
       logger.error(
@@ -394,23 +436,23 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       this.changeConfigurationJsonSchema,
       commandPayload
     );
-    // JSON request fields type sanity check
-    if (!Utils.isString(commandPayload.key)) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${
-          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-        } request key field is not a string:`,
-        commandPayload
-      );
-    }
-    if (!Utils.isString(commandPayload.value)) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${
-          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-        } request value field is not a string:`,
-        commandPayload
-      );
-    }
+    // // JSON request fields type sanity check
+    // if (!Utils.isString(commandPayload.key)) {
+    //   logger.error(
+    //     `${chargingStation.logPrefix()} ${
+    //       OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
+    //     } request key field is not a string:`,
+    //     commandPayload
+    //   );
+    // }
+    // if (!Utils.isString(commandPayload.value)) {
+    //   logger.error(
+    //     `${chargingStation.logPrefix()} ${
+    //       OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
+    //     } request value field is not a string:`,
+    //     commandPayload
+    //   );
+    // }
     const keyToChange = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
       commandPayload.key,
@@ -925,6 +967,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: GetDiagnosticsRequest
   ): Promise<GetDiagnosticsResponse> {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
+      this.getDiagnosticsJsonSchema,
+      commandPayload
+    );
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,

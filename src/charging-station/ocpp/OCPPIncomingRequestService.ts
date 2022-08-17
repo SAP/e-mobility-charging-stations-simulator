@@ -1,4 +1,6 @@
-import Ajv, { JSONSchemaType } from 'ajv';
+import { JSONSchemaType } from 'ajv';
+import Ajv from 'ajv-draft-04';
+import ajvFormats from 'ajv-formats';
 
 import OCPPError from '../../exception/OCPPError';
 import { HandleErrorParams } from '../../types/Error';
@@ -16,6 +18,7 @@ export default abstract class OCPPIncomingRequestService {
 
   protected constructor() {
     this.ajv = new Ajv();
+    ajvFormats(this.ajv);
   }
 
   public static getInstance<T extends OCPPIncomingRequestService>(this: new () => T): T {
@@ -58,12 +61,12 @@ export default abstract class OCPPIncomingRequestService {
       return true;
     }
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Incoming request payload is invalid: %j`,
+      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Incoming request PDU is invalid: %j`,
       validate.errors
     );
     throw new OCPPError(
       ErrorType.FORMATION_VIOLATION,
-      'Incoming request payload is invalid',
+      'Incoming request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)
     );
