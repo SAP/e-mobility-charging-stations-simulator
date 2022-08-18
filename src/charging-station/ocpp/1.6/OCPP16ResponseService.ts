@@ -80,7 +80,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request response payload ${JSON.stringify(
+          `${commandName} is not implemented to handle request response PDU ${JSON.stringify(
             payload,
             null,
             2
@@ -92,7 +92,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     } else {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request response payload ${JSON.stringify(
+        `${commandName} cannot be issued to handle request response PDU ${JSON.stringify(
           payload,
           null,
           2

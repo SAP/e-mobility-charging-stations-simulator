@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { URL, fileURLToPath } from 'url';
 
+import { JSONSchemaType } from 'ajv';
 import { Client, FTPResponse } from 'basic-ftp';
 import tar from 'tar';
 
@@ -34,6 +35,7 @@ import {
   MessageTrigger,
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
+  OCPP16ClearCacheRequest,
   OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
@@ -86,6 +88,18 @@ const moduleName = 'OCPP16IncomingRequestService';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
+  private resetJsonSchema: JSONSchemaType<ResetRequest>;
+  private clearCacheJsonSchema: JSONSchemaType<OCPP16ClearCacheRequest>;
+  private getConfigurationJsonSchema: JSONSchemaType<GetConfigurationRequest>;
+  private changeConfigurationJsonSchema: JSONSchemaType<ChangeConfigurationRequest>;
+  private unlockConnectorJsonSchema: JSONSchemaType<UnlockConnectorRequest>;
+  private getDiagnosticsJsonSchema: JSONSchemaType<GetDiagnosticsRequest>;
+  private setChargingProfileJsonSchema: JSONSchemaType<SetChargingProfileRequest>;
+  private clearChargingProfileJsonSchema: JSONSchemaType<ClearChargingProfileRequest>;
+  private changeAvailabilityJsonSchema: JSONSchemaType<ChangeAvailabilityRequest>;
+  private remoteStartTransactionJsonSchema: JSONSchemaType<RemoteStartTransactionRequest>;
+  private remoteStopTransactionJsonSchema: JSONSchemaType<RemoteStopTransactionRequest>;
+  private triggerMessageJsonSchema: JSONSchemaType<OCPP16TriggerMessageRequest>;
 
   public constructor() {
     if (new.target?.name === moduleName) {
@@ -127,6 +141,114 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
       [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
     ]);
+    this.resetJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/Reset.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<ResetRequest>;
+    this.clearCacheJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/ClearCache.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16ClearCacheRequest>;
+    this.getConfigurationJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/GetConfiguration.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<GetConfigurationRequest>;
+    this.changeConfigurationJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/ChangeConfiguration.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<ChangeConfigurationRequest>;
+    this.unlockConnectorJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/UnlockConnector.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<UnlockConnectorRequest>;
+    this.getDiagnosticsJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<GetDiagnosticsRequest>;
+    this.setChargingProfileJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/SetChargingProfile.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<SetChargingProfileRequest>;
+    this.clearChargingProfileJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfile.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<ClearChargingProfileRequest>;
+    this.changeAvailabilityJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/ChangeAvailability.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<ChangeAvailabilityRequest>;
+    this.remoteStartTransactionJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<RemoteStartTransactionRequest>;
+    this.remoteStopTransactionJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<RemoteStopTransactionRequest>;
+    this.triggerMessageJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/TriggerMessage.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16TriggerMessageRequest>;
   }
 
   public async incomingRequestHandler(
@@ -144,7 +266,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request payload ${JSON.stringify(
+        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           null,
           2
@@ -176,7 +298,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request payload ${JSON.stringify(
+          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
             commandPayload,
             null,
             2
@@ -188,7 +310,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     } else {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request payload ${JSON.stringify(
+        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           null,
           2
@@ -211,6 +333,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): DefaultResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.RESET,
+      this.resetJsonSchema,
+      commandPayload
+    );
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     setImmediate(async (): Promise<void> => {
       await chargingStation.reset((commandPayload.type + 'Reset') as OCPP16StopTransactionReason);
@@ -225,7 +353,16 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  private handleRequestClearCache(): DefaultResponse {
+  private handleRequestClearCache(
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16ClearCacheRequest
+  ): DefaultResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.CLEAR_CACHE,
+      this.clearCacheJsonSchema,
+      commandPayload
+    );
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -233,6 +370,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: UnlockConnectorRequest
   ): Promise<UnlockConnectorResponse> {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
+      this.unlockConnectorJsonSchema,
+      commandPayload
+    );
     const connectorId = commandPayload.connectorId;
     if (connectorId === 0) {
       logger.error(
@@ -292,6 +435,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: GetConfigurationRequest
   ): GetConfigurationResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.GET_CONFIGURATION,
+      this.getConfigurationJsonSchema,
+      commandPayload
+    );
     const configurationKey: OCPPConfigurationKey[] = [];
     const unknownKey: string[] = [];
     if (Utils.isEmptyArray(commandPayload.key)) {
@@ -341,23 +490,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ChangeConfigurationRequest
   ): ChangeConfigurationResponse {
-    // JSON request fields type sanity check
-    if (!Utils.isString(commandPayload.key)) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${
-          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-        } request key field is not a string:`,
-        commandPayload
-      );
-    }
-    if (!Utils.isString(commandPayload.value)) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${
-          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-        } request value field is not a string:`,
-        commandPayload
-      );
-    }
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
+      this.changeConfigurationJsonSchema,
+      commandPayload
+    );
     const keyToChange = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
       commandPayload.key,
@@ -412,6 +550,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: SetChargingProfileRequest
   ): SetChargingProfileResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
+      this.setChargingProfileJsonSchema,
+      commandPayload
+    );
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
@@ -461,6 +605,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ClearChargingProfileRequest
   ): ClearChargingProfileResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
+      this.clearChargingProfileJsonSchema,
+      commandPayload
+    );
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
@@ -542,6 +692,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ChangeAvailabilityRequest
   ): Promise<ChangeAvailabilityResponse> {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
+      this.changeAvailabilityJsonSchema,
+      commandPayload
+    );
     const connectorId: number = commandPayload.connectorId;
     if (!chargingStation.getConnectorStatus(connectorId)) {
       logger.error(
@@ -603,6 +759,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: RemoteStartTransactionRequest
   ): Promise<DefaultResponse> {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+      this.remoteStartTransactionJsonSchema,
+      commandPayload
+    );
     const transactionConnectorId = commandPayload.connectorId;
     const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId);
     if (transactionConnectorId) {
@@ -814,6 +976,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: RemoteStopTransactionRequest
   ): Promise<DefaultResponse> {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
+      this.remoteStopTransactionJsonSchema,
+      commandPayload
+    );
     const transactionId = commandPayload.transactionId;
     for (const connectorId of chargingStation.connectors.keys()) {
       if (
@@ -872,6 +1040,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: GetDiagnosticsRequest
   ): Promise<GetDiagnosticsResponse> {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
+      this.getDiagnosticsJsonSchema,
+      commandPayload
+    );
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
@@ -992,6 +1166,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: OCPP16TriggerMessageRequest
   ): OCPP16TriggerMessageResponse {
+    this.validateIncomingRequestPayload(
+      chargingStation,
+      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+      this.triggerMessageJsonSchema,
+      commandPayload
+    );
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,

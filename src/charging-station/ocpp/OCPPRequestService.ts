@@ -19,6 +19,8 @@ import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
 import type OCPPResponseService from './OCPPResponseService';
 
+const moduleName = 'OCPPRequestService';
+
 export default abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
 
@@ -253,7 +255,7 @@ export default abstract class OCPPRequestService {
     }
     throw new OCPPError(
       ErrorType.SECURITY_ERROR,
-      `Cannot send command ${commandName} payload when the charging station is in ${chargingStation.getRegistrationStatus()} state on the central server`,
+      `Cannot send command ${commandName} PDU when the charging station is in ${chargingStation.getRegistrationStatus()} state on the central server`,
       commandName
     );
   }
