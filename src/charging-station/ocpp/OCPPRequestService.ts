@@ -1,3 +1,7 @@
+import { JSONSchemaType } from 'ajv';
+import Ajv from 'ajv-draft-04';
+import ajvFormats from 'ajv-formats';
+
 import OCPPError from '../../exception/OCPPError';
 import PerformanceStatistics from '../../performance/PerformanceStatistics';
 import { EmptyObject } from '../../types/EmptyObject';
@@ -23,6 +27,7 @@ const moduleName = 'OCPPRequestService';
 
 export default abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
+  private ajv: Ajv;
 
   private readonly ocppResponseService: OCPPResponseService;
 
@@ -31,6 +36,8 @@ export default abstract class OCPPRequestService {
     this.requestHandler.bind(this);
     this.sendResponse.bind(this);
     this.sendError.bind(this);
+    this.ajv = new Ajv();
+    ajvFormats(this.ajv);
   }
 
   public static getInstance<T extends OCPPRequestService>(
@@ -105,6 +112,31 @@ export default abstract class OCPPRequestService {
     } catch (error) {
       this.handleRequestError(chargingStation, commandName, error as Error, { throwError: false });
     }
+  }
+
+  protected validateRequestPayload<T extends JsonType>(
+    chargingStation: ChargingStation,
+    commandName: RequestCommand,
+    schema: JSONSchemaType<T>,
+    payload: T
+  ): boolean {
+    if (!chargingStation.getPayloadSchemaValidation()) {
+      return true;
+    }
+    const validate = this.ajv.compile(schema);
+    if (validate(payload)) {
+      return true;
+    }
+    logger.error(
+      `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: Request PDU is invalid: %j`,
+      validate.errors
+    );
+    throw new OCPPError(
+      ErrorType.FORMATION_VIOLATION,
+      'Request PDU is invalid',
+      commandName,
+      JSON.stringify(validate.errors, null, 2)
+    );
   }
 
   private async internalSendMessage(
