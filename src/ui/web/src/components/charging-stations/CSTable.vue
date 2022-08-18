@@ -48,11 +48,11 @@ const props = defineProps<{
 
 #cs-table__head,
 #cs-table__body {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  /* width: 100%; */
-  /* min-width: 934px; */
+  display: block;
+  /* flex-direction: column;
+  justify-content: space-evenly; */
+  width: 100%;
+  min-width: 934px;
   /* box-sizing: border-box; */
 }
 #cs-table__head {
@@ -68,9 +68,12 @@ const props = defineProps<{
 }
 
 .cs-table__row {
-  width: 1647px;
-  /* width: 100%; */
-  display: inline-block;
+  /* width: 1647px; */
+  width: 100%;
+  /* display: inline-block; */
+  display: flex;
+  /* align-content: stretch; */
+  /* align-items: baseline; */
 }
 #cs-table__head .cs-table__row {
   background-color: rgb(194, 188, 188);
@@ -88,7 +91,11 @@ const props = defineProps<{
 .cs-table__firmware-col {
   /* height: 2em; */
   width: 14.3%;
-  /* text-align: center;
+  padding-top: 0.5em;
+  /* background-color: red; */
+  /* width: 14.3%; */
+  text-align: center;
+  /* display: table-cell;
   vertical-align: middle; */
 }
 .cs-table__action-col {
