@@ -1,5 +1,11 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { JSONSchemaType } from 'ajv';
+
 import OCPPError from '../../../exception/OCPPError';
 import { JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
@@ -16,6 +22,7 @@ import {
 } from '../../../types/ocpp/1.6/Requests';
 import {
   OCPP16BootNotificationResponse,
+  OCPP16HeartbeatResponse,
   OCPP16RegistrationStatus,
   OCPP16StatusNotificationResponse,
 } from '../../../types/ocpp/1.6/Responses';
@@ -42,6 +49,13 @@ const moduleName = 'OCPP16ResponseService';
 
 export default class OCPP16ResponseService extends OCPPResponseService {
   private responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>;
+  private bootNotificationResponseJsonSchema: JSONSchemaType<OCPP16BootNotificationResponse>;
+  private heartbeatResponseJsonSchema: JSONSchemaType<OCPP16HeartbeatResponse>;
+  private authorizeResponseJsonSchema: JSONSchemaType<OCPP16AuthorizeResponse>;
+  private startTransactionResponseJsonSchema: JSONSchemaType<OCPP16StartTransactionResponse>;
+  private stopTransactionResponseJsonSchema: JSONSchemaType<OCPP16StopTransactionResponse>;
+  private statusNotificationResponseJsonSchema: JSONSchemaType<OCPP16StatusNotificationResponse>;
+  private meterValuesResponseJsonSchema: JSONSchemaType<OCPP16MeterValuesResponse>;
 
   public constructor() {
     if (new.target?.name === moduleName) {
@@ -57,6 +71,69 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       [OCPP16RequestCommand.STATUS_NOTIFICATION, this.handleResponseStatusNotification.bind(this)],
       [OCPP16RequestCommand.METER_VALUES, this.handleResponseMeterValues.bind(this)],
     ]);
+    this.bootNotificationResponseJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/BootNotificationResponse.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16BootNotificationResponse>;
+    this.heartbeatResponseJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/HeartbeatResponse.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16HeartbeatResponse>;
+    this.authorizeResponseJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/AuthorizeResponse.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16AuthorizeResponse>;
+    this.startTransactionResponseJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/StartTransactionResponse.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16StartTransactionResponse>;
+    this.stopTransactionResponseJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/StopTransactionResponse.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16StopTransactionResponse>;
+    this.statusNotificationResponseJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16StatusNotificationResponse>;
+    this.meterValuesResponseJsonSchema = JSON.parse(
+      fs.readFileSync(
+        path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../../../assets/json-schemas/ocpp/1.6/MeterValuesResponse.json'
+        ),
+        'utf8'
+      )
+    ) as JSONSchemaType<OCPP16MeterValuesResponse>;
   }
 
   public async responseHandler(
@@ -107,6 +184,12 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     payload: OCPP16BootNotificationResponse
   ): void {
+    this.validateResponsePayload(
+      chargingStation,
+      OCPP16RequestCommand.BOOT_NOTIFICATION,
+      this.bootNotificationResponseJsonSchema,
+      payload
+    );
     if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         chargingStation,
@@ -142,14 +225,29 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private handleResponseHeartbeat(): void {}
+  private handleResponseHeartbeat(
+    chargingStation: ChargingStation,
+    payload: OCPP16HeartbeatResponse
+  ): void {
+    this.validateResponsePayload(
+      chargingStation,
+      OCPP16RequestCommand.HEARTBEAT,
+      this.heartbeatResponseJsonSchema,
+      payload
+    );
+  }
 
   private handleResponseAuthorize(
     chargingStation: ChargingStation,
     payload: OCPP16AuthorizeResponse,
     requestPayload: OCPP16AuthorizeRequest
   ): void {
+    this.validateResponsePayload(
+      chargingStation,
+      OCPP16RequestCommand.AUTHORIZE,
+      this.authorizeResponseJsonSchema,
+      payload
+    );
     let authorizeConnectorId: number;
     for (const connectorId of chargingStation.connectors.keys()) {
       if (
@@ -183,6 +281,12 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16StartTransactionResponse,
     requestPayload: OCPP16StartTransactionRequest
   ): Promise<void> {
+    this.validateResponsePayload(
+      chargingStation,
+      OCPP16RequestCommand.START_TRANSACTION,
+      this.startTransactionResponseJsonSchema,
+      payload
+    );
     const connectorId = requestPayload.connectorId;
 
     let transactionConnectorId: number;
@@ -392,6 +496,12 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16StopTransactionResponse,
     requestPayload: OCPP16StopTransactionRequest
   ): Promise<void> {
+    this.validateResponsePayload(
+      chargingStation,
+      OCPP16RequestCommand.STOP_TRANSACTION,
+      this.stopTransactionResponseJsonSchema,
+      payload
+    );
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     );
@@ -472,9 +582,27 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private handleResponseStatusNotification(): void {}
+  private handleResponseStatusNotification(
+    chargingStation: ChargingStation,
+    payload: OCPP16StatusNotificationResponse
+  ): void {
+    this.validateResponsePayload(
+      chargingStation,
+      OCPP16RequestCommand.STATUS_NOTIFICATION,
+      this.statusNotificationResponseJsonSchema,
+      payload
+    );
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private handleResponseMeterValues(): void {}
+  private handleResponseMeterValues(
+    chargingStation: ChargingStation,
+    payload: OCPP16MeterValuesResponse
+  ): void {
+    this.validateResponsePayload(
+      chargingStation,
+      OCPP16RequestCommand.METER_VALUES,
+      this.meterValuesResponseJsonSchema,
+      payload
+    );
+  }
 }
