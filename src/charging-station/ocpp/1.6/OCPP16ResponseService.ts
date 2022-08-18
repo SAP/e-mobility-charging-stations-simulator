@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { JSONSchemaType } from 'ajv';
 
 import OCPPError from '../../../exception/OCPPError';
-import { JsonType } from '../../../types/JsonType';
+import { JsonObject, JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
@@ -21,6 +21,7 @@ import {
   OCPP16StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
 import {
+  DiagnosticsStatusNotificationResponse,
   OCPP16BootNotificationResponse,
   OCPP16HeartbeatResponse,
   OCPP16RegistrationStatus,
@@ -49,13 +50,7 @@ const moduleName = 'OCPP16ResponseService';
 
 export default class OCPP16ResponseService extends OCPPResponseService {
   private responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>;
-  private bootNotificationResponseJsonSchema: JSONSchemaType<OCPP16BootNotificationResponse>;
-  private heartbeatResponseJsonSchema: JSONSchemaType<OCPP16HeartbeatResponse>;
-  private authorizeResponseJsonSchema: JSONSchemaType<OCPP16AuthorizeResponse>;
-  private startTransactionResponseJsonSchema: JSONSchemaType<OCPP16StartTransactionResponse>;
-  private stopTransactionResponseJsonSchema: JSONSchemaType<OCPP16StopTransactionResponse>;
-  private statusNotificationResponseJsonSchema: JSONSchemaType<OCPP16StatusNotificationResponse>;
-  private meterValuesResponseJsonSchema: JSONSchemaType<OCPP16MeterValuesResponse>;
+  private jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor() {
     if (new.target?.name === moduleName) {
@@ -64,76 +59,112 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     super();
     this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
       [OCPP16RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],
-      [OCPP16RequestCommand.HEARTBEAT, this.handleResponseHeartbeat.bind(this)],
+      [OCPP16RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this)],
       [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this)],
       [OCPP16RequestCommand.START_TRANSACTION, this.handleResponseStartTransaction.bind(this)],
       [OCPP16RequestCommand.STOP_TRANSACTION, this.handleResponseStopTransaction.bind(this)],
-      [OCPP16RequestCommand.STATUS_NOTIFICATION, this.handleResponseStatusNotification.bind(this)],
-      [OCPP16RequestCommand.METER_VALUES, this.handleResponseMeterValues.bind(this)],
+      [OCPP16RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
+      [OCPP16RequestCommand.METER_VALUES, this.emptyResponseHandler.bind(this)],
+      [OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
     ]);
-    this.bootNotificationResponseJsonSchema = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../../../assets/json-schemas/ocpp/1.6/BootNotificationResponse.json'
-        ),
-        'utf8'
-      )
-    ) as JSONSchemaType<OCPP16BootNotificationResponse>;
-    this.heartbeatResponseJsonSchema = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../../../assets/json-schemas/ocpp/1.6/HeartbeatResponse.json'
-        ),
-        'utf8'
-      )
-    ) as JSONSchemaType<OCPP16HeartbeatResponse>;
-    this.authorizeResponseJsonSchema = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../../../assets/json-schemas/ocpp/1.6/AuthorizeResponse.json'
-        ),
-        'utf8'
-      )
-    ) as JSONSchemaType<OCPP16AuthorizeResponse>;
-    this.startTransactionResponseJsonSchema = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../../../assets/json-schemas/ocpp/1.6/StartTransactionResponse.json'
-        ),
-        'utf8'
-      )
-    ) as JSONSchemaType<OCPP16StartTransactionResponse>;
-    this.stopTransactionResponseJsonSchema = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../../../assets/json-schemas/ocpp/1.6/StopTransactionResponse.json'
-        ),
-        'utf8'
-      )
-    ) as JSONSchemaType<OCPP16StopTransactionResponse>;
-    this.statusNotificationResponseJsonSchema = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../../../assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json'
-        ),
-        'utf8'
-      )
-    ) as JSONSchemaType<OCPP16StatusNotificationResponse>;
-    this.meterValuesResponseJsonSchema = JSON.parse(
-      fs.readFileSync(
-        path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../../../assets/json-schemas/ocpp/1.6/MeterValuesResponse.json'
-        ),
-        'utf8'
-      )
-    ) as JSONSchemaType<OCPP16MeterValuesResponse>;
+    this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
+      [
+        OCPP16RequestCommand.BOOT_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/BootNotificationResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16BootNotificationResponse>,
+      ],
+      [
+        OCPP16RequestCommand.HEARTBEAT,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/HeartbeatResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16HeartbeatResponse>,
+      ],
+      [
+        OCPP16RequestCommand.AUTHORIZE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/AuthorizeResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16AuthorizeResponse>,
+      ],
+      [
+        OCPP16RequestCommand.START_TRANSACTION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/StartTransactionResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16StartTransactionResponse>,
+      ],
+      [
+        OCPP16RequestCommand.STOP_TRANSACTION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/StopTransactionResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16StopTransactionResponse>,
+      ],
+      [
+        OCPP16RequestCommand.STATUS_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16StatusNotificationResponse>,
+      ],
+      [
+        OCPP16RequestCommand.METER_VALUES,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/MeterValuesResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16MeterValuesResponse>,
+      ],
+      [
+        OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotificationResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<DiagnosticsStatusNotificationResponse>,
+      ],
+    ]);
   }
 
   public async responseHandler(
@@ -148,6 +179,18 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         ChargingStationUtils.isRequestCommandSupported(commandName, chargingStation)
       ) {
         try {
+          if (this.jsonSchemas.has(commandName)) {
+            this.validateResponsePayload(
+              chargingStation,
+              commandName,
+              this.jsonSchemas.get(commandName),
+              payload
+            );
+          } else {
+            logger.warn(
+              `${chargingStation.logPrefix()} ${moduleName}.responseHandler: No JSON schema found for command ${commandName} PDU validation`
+            );
+          }
           await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);
         } catch (error) {
           logger.error(chargingStation.logPrefix() + ' Handle request response error: %j', error);
@@ -184,12 +227,6 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     payload: OCPP16BootNotificationResponse
   ): void {
-    this.validateResponsePayload(
-      chargingStation,
-      OCPP16RequestCommand.BOOT_NOTIFICATION,
-      this.bootNotificationResponseJsonSchema,
-      payload
-    );
     if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         chargingStation,
@@ -225,29 +262,11 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseHeartbeat(
-    chargingStation: ChargingStation,
-    payload: OCPP16HeartbeatResponse
-  ): void {
-    this.validateResponsePayload(
-      chargingStation,
-      OCPP16RequestCommand.HEARTBEAT,
-      this.heartbeatResponseJsonSchema,
-      payload
-    );
-  }
-
   private handleResponseAuthorize(
     chargingStation: ChargingStation,
     payload: OCPP16AuthorizeResponse,
     requestPayload: OCPP16AuthorizeRequest
   ): void {
-    this.validateResponsePayload(
-      chargingStation,
-      OCPP16RequestCommand.AUTHORIZE,
-      this.authorizeResponseJsonSchema,
-      payload
-    );
     let authorizeConnectorId: number;
     for (const connectorId of chargingStation.connectors.keys()) {
       if (
@@ -281,12 +300,6 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16StartTransactionResponse,
     requestPayload: OCPP16StartTransactionRequest
   ): Promise<void> {
-    this.validateResponsePayload(
-      chargingStation,
-      OCPP16RequestCommand.START_TRANSACTION,
-      this.startTransactionResponseJsonSchema,
-      payload
-    );
     const connectorId = requestPayload.connectorId;
 
     let transactionConnectorId: number;
@@ -496,12 +509,6 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16StopTransactionResponse,
     requestPayload: OCPP16StopTransactionRequest
   ): Promise<void> {
-    this.validateResponsePayload(
-      chargingStation,
-      OCPP16RequestCommand.STOP_TRANSACTION,
-      this.stopTransactionResponseJsonSchema,
-      payload
-    );
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     );
@@ -580,29 +587,5 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           "'"
       );
     }
-  }
-
-  private handleResponseStatusNotification(
-    chargingStation: ChargingStation,
-    payload: OCPP16StatusNotificationResponse
-  ): void {
-    this.validateResponsePayload(
-      chargingStation,
-      OCPP16RequestCommand.STATUS_NOTIFICATION,
-      this.statusNotificationResponseJsonSchema,
-      payload
-    );
-  }
-
-  private handleResponseMeterValues(
-    chargingStation: ChargingStation,
-    payload: OCPP16MeterValuesResponse
-  ): void {
-    this.validateResponsePayload(
-      chargingStation,
-      OCPP16RequestCommand.METER_VALUES,
-      this.meterValuesResponseJsonSchema,
-      payload
-    );
   }
 }

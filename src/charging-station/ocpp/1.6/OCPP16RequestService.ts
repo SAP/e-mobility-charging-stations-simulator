@@ -1,11 +1,30 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { JSONSchemaType } from 'ajv';
+
 import OCPPError from '../../../exception/OCPPError';
 import { JsonObject, JsonType } from '../../../types/JsonType';
-import { OCPP16RequestCommand } from '../../../types/ocpp/1.6/Requests';
+import { OCPP16MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
+import {
+  DiagnosticsStatusNotificationRequest,
+  OCPP16BootNotificationRequest,
+  OCPP16HeartbeatRequest,
+  OCPP16RequestCommand,
+  OCPP16StatusNotificationRequest,
+} from '../../../types/ocpp/1.6/Requests';
+import {
+  OCPP16AuthorizeRequest,
+  OCPP16StartTransactionRequest,
+  OCPP16StopTransactionRequest,
+} from '../../../types/ocpp/1.6/Transaction';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { RequestParams } from '../../../types/ocpp/Requests';
 import Constants from '../../../utils/Constants';
+import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationUtils } from '../../ChargingStationUtils';
@@ -16,11 +35,111 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 const moduleName = 'OCPP16RequestService';
 
 export default class OCPP16RequestService extends OCPPRequestService {
+  private jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
+
   public constructor(ocppResponseService: OCPPResponseService) {
     if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
     super(ocppResponseService);
+    this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
+      [
+        OCPP16RequestCommand.AUTHORIZE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/Authorize.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16AuthorizeRequest>,
+      ],
+      [
+        OCPP16RequestCommand.BOOT_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/BootNotification.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16BootNotificationRequest>,
+      ],
+      [
+        OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotification.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<DiagnosticsStatusNotificationRequest>,
+      ],
+      [
+        OCPP16RequestCommand.HEARTBEAT,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/Heartbeat.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16HeartbeatRequest>,
+      ],
+      [
+        OCPP16RequestCommand.METER_VALUES,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/MeterValues.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16MeterValuesRequest>,
+      ],
+      [
+        OCPP16RequestCommand.STATUS_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/StatusNotification.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16StatusNotificationRequest>,
+      ],
+      [
+        OCPP16RequestCommand.START_TRANSACTION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/StartTransaction.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16StartTransactionRequest>,
+      ],
+      [
+        OCPP16RequestCommand.STOP_TRANSACTION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/StopTransaction.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16StopTransactionRequest>,
+      ],
+    ]);
   }
 
   public async requestHandler<Request extends JsonType, Response extends JsonType>(
@@ -30,10 +149,27 @@ export default class OCPP16RequestService extends OCPPRequestService {
     params?: RequestParams
   ): Promise<Response> {
     if (ChargingStationUtils.isRequestCommandSupported(commandName, chargingStation)) {
+      const requestPayload = this.buildRequestPayload<Request>(
+        chargingStation,
+        commandName,
+        commandParams
+      );
+      if (this.jsonSchemas.has(commandName)) {
+        this.validateRequestPayload(
+          chargingStation,
+          commandName,
+          this.jsonSchemas.get(commandName),
+          requestPayload
+        );
+      } else {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: No JSON schema found for command ${commandName} PDU validation`
+        );
+      }
       return (await this.sendMessage(
         chargingStation,
         Utils.generateUUID(),
-        this.buildRequestPayload<Request>(chargingStation, commandName, commandParams),
+        requestPayload,
         commandName,
         params
       )) as unknown as Response;
