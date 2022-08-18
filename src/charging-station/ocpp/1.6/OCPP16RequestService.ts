@@ -225,15 +225,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.HEARTBEAT:
         return {} as unknown as Request;
       case OCPP16RequestCommand.METER_VALUES:
-        // Sanity check
-        if (!Array.isArray(commandParams?.meterValue)) {
-          throw new OCPPError(
-            ErrorType.TYPE_CONSTRAINT_VIOLATION,
-            `${moduleName}.buildRequestPayload ${commandName}: Invalid array type for meterValue PDU field`,
-            commandName,
-            commandParams
-          );
-        }
         return {
           connectorId: commandParams?.connectorId,
           transactionId: commandParams?.transactionId,
