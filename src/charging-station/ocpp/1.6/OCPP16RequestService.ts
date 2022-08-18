@@ -92,7 +92,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         // Sanity check
         if (!Array.isArray(commandParams?.meterValue)) {
           throw new OCPPError(
-            ErrorType.TYPERAINT_VIOLATION,
+            ErrorType.TYPE_CONSTRAINT_VIOLATION,
             `${moduleName}.buildRequestPayload ${commandName}: Invalid array type for meterValue PDU field`,
             commandName,
             commandParams

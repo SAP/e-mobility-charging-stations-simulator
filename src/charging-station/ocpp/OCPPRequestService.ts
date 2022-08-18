@@ -255,7 +255,7 @@ export default abstract class OCPPRequestService {
     }
     throw new OCPPError(
       ErrorType.SECURITY_ERROR,
-      `Cannot send command ${commandName} payload when the charging station is in ${chargingStation.getRegistrationStatus()} state on the central server`,
+      `Cannot send command ${commandName} PDU when the charging station is in ${chargingStation.getRegistrationStatus()} state on the central server`,
       commandName
     );
   }
