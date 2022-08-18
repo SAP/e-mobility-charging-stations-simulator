@@ -4,11 +4,12 @@ import fs from 'fs';
 import path from 'path';
 import { URL, fileURLToPath } from 'url';
 
+import { JSONSchemaType } from 'ajv';
 import { Client, FTPResponse } from 'basic-ftp';
 import tar from 'tar';
 
 import OCPPError from '../../../exception/OCPPError';
-import { JsonType } from '../../../types/JsonType';
+import { JsonObject, JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import {
@@ -34,6 +35,7 @@ import {
   MessageTrigger,
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
+  OCPP16ClearCacheRequest,
   OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
@@ -86,6 +88,7 @@ const moduleName = 'OCPP16IncomingRequestService';
 
 export default class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
+  private jsonSchemas: Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor() {
     if (new.target?.name === moduleName) {
@@ -127,6 +130,152 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
       [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
     ]);
+    this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([
+      [
+        OCPP16IncomingRequestCommand.RESET,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/Reset.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<ResetRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.CLEAR_CACHE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/ClearCache.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16ClearCacheRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/UnlockConnector.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<UnlockConnectorRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.GET_CONFIGURATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/GetConfiguration.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<GetConfigurationRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/ChangeConfiguration.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<ChangeConfigurationRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<GetDiagnosticsRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/SetChargingProfile.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<SetChargingProfileRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfile.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<ClearChargingProfileRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/ChangeAvailability.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<ChangeAvailabilityRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<RemoteStartTransactionRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<RemoteStopTransactionRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/TriggerMessage.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16TriggerMessageRequest>,
+      ],
+    ]);
   }
 
   public async incomingRequestHandler(
@@ -144,7 +293,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request payload ${JSON.stringify(
+        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           null,
           2
@@ -162,6 +311,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         ChargingStationUtils.isIncomingRequestCommandSupported(commandName, chargingStation)
       ) {
         try {
+          if (this.jsonSchemas.has(commandName)) {
+            this.validateIncomingRequestPayload(
+              chargingStation,
+              commandName,
+              this.jsonSchemas.get(commandName),
+              commandPayload
+            );
+          } else {
+            logger.warn(
+              `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler: No JSON schema found for command ${commandName} PDU validation`
+            );
+          }
           // Call the method to build the response
           response = await this.incomingRequestHandlers.get(commandName)(
             chargingStation,
@@ -176,7 +337,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request payload ${JSON.stringify(
+          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
             commandPayload,
             null,
             2
@@ -188,7 +349,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     } else {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request payload ${JSON.stringify(
+        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           null,
           2
@@ -341,23 +502,6 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ChangeConfigurationRequest
   ): ChangeConfigurationResponse {
-    // JSON request fields type sanity check
-    if (!Utils.isString(commandPayload.key)) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${
-          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-        } request key field is not a string:`,
-        commandPayload
-      );
-    }
-    if (!Utils.isString(commandPayload.value)) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${
-          OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION
-        } request value field is not a string:`,
-        commandPayload
-      );
-    }
     const keyToChange = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
       commandPayload.key,

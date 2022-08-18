@@ -38,7 +38,11 @@ export default class PerformanceStatistics {
     };
   }
 
-  public static getInstance(objId: string, objName: string, uri: URL): PerformanceStatistics {
+  public static getInstance(
+    objId: string,
+    objName: string,
+    uri: URL
+  ): PerformanceStatistics | undefined {
     if (!PerformanceStatistics.instances.has(objId)) {
       PerformanceStatistics.instances.set(objId, new PerformanceStatistics(objId, objName, uri));
     }
