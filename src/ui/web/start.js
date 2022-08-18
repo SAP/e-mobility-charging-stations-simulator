@@ -12,4 +12,4 @@ const server = http.createServer(function onRequest(req, res) {
   serve(req, res, finalhandler(req, res));
 });
 
-server.listen(PORT);
+server.listen(PORT, () => console.log(`http://localhost:${PORT}`));

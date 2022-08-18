@@ -45,8 +45,8 @@ async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
   const list = await UIClient.instance.listChargingStations();
-  // state.chargingStations = list;
-  state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
+  state.chargingStations = list;
+  // state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
   state.isLoading = false;
 }
 </script>
