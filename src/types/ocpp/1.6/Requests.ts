@@ -17,21 +17,6 @@ export enum OCPP16RequestCommand {
   DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
 }
 
-export enum OCPP16IncomingRequestCommand {
-  RESET = 'Reset',
-  CLEAR_CACHE = 'ClearCache',
-  CHANGE_AVAILABILITY = 'ChangeAvailability',
-  UNLOCK_CONNECTOR = 'UnlockConnector',
-  GET_CONFIGURATION = 'GetConfiguration',
-  CHANGE_CONFIGURATION = 'ChangeConfiguration',
-  SET_CHARGING_PROFILE = 'SetChargingProfile',
-  CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
-  REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
-  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
-  GET_DIAGNOSTICS = 'GetDiagnostics',
-  TRIGGER_MESSAGE = 'TriggerMessage',
-}
-
 export type OCPP16HeartbeatRequest = EmptyObject;
 
 export interface OCPP16BootNotificationRequest extends JsonObject {
@@ -55,6 +40,23 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
   vendorId?: string;
   vendorErrorCode?: string;
 }
+
+export enum OCPP16IncomingRequestCommand {
+  RESET = 'Reset',
+  CLEAR_CACHE = 'ClearCache',
+  CHANGE_AVAILABILITY = 'ChangeAvailability',
+  UNLOCK_CONNECTOR = 'UnlockConnector',
+  GET_CONFIGURATION = 'GetConfiguration',
+  CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  SET_CHARGING_PROFILE = 'SetChargingProfile',
+  CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
+  REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
+  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
+  GET_DIAGNOSTICS = 'GetDiagnostics',
+  TRIGGER_MESSAGE = 'TriggerMessage',
+}
+
+export type OCPP16ClearCacheRequest = EmptyObject;
 
 export interface ChangeConfigurationRequest extends JsonObject {
   key: string | OCPP16StandardParametersKey;

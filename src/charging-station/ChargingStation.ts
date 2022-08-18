@@ -178,6 +178,10 @@ export default class ChargingStation {
     return this.stationInfo.mayAuthorizeAtRemoteStart ?? true;
   }
 
+  public getPayloadSchemaValidation(): boolean | undefined {
+    return this.stationInfo.payloadSchemaValidation ?? true;
+  }
+
   public getNumberOfPhases(stationInfo?: ChargingStationInfo): number | undefined {
     const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
     switch (this.getCurrentOutType(stationInfo)) {

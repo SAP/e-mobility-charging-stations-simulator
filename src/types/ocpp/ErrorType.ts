@@ -11,12 +11,13 @@ export enum ErrorType {
   SECURITY_ERROR = 'SecurityError',
   // Payload for Action is syntactically incorrect or not conform the PDU structure for Action
   FORMATION_VIOLATION = 'FormationViolation',
+  FORMAT_VIOLATION = 'FormatViolation',
   // Payload is syntactically correct but at least one field contains an invalid value
-  PROPERTY_RAINT_VIOLATION = 'PropertyraintViolation',
-  // Payload for Action is syntactically correct but at least one of the fields violates occurrence raints
-  OCCURRENCE_RAINT_VIOLATION = 'OccurrenceraintViolation',
-  // Payload for Action is syntactically correct but at least one of the fields violates data type raints (e.g. "somestring" = 12)
-  TYPERAINT_VIOLATION = 'TyperaintViolation',
+  PROPERTY_CONSTRAINT_VIOLATION = 'PropertyConstraintViolation',
+  // Payload for Action is syntactically correct but at least one of the fields violates occurrence constraints
+  OCCURRENCE_CONSTRAINT_VIOLATION = 'OccurrenceConstraintViolation',
+  // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. "somestring" = 12)
+  TYPE_CONSTRAINT_VIOLATION = 'TypeConstraintViolation',
   // Any other error not covered by the previous ones
   GENERIC_ERROR = 'GenericError',
 }
