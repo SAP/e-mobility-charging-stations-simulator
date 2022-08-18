@@ -16,6 +16,7 @@
         v-for="chargingStation in chargingStations"
         :key="chargingStation.hashId"
         :charging-station="chargingStation"
+        :tag="props.tag"
       />
     </tbody>
   </table>
@@ -27,6 +28,7 @@ import { SimulatorUI } from '@/type/SimulatorUI';
 
 const props = defineProps<{
   chargingStations: Array<SimulatorUI>;
+  tag: string;
 }>();
 </script>
 

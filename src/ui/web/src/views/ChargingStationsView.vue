@@ -1,7 +1,16 @@
 <template>
   <Container id="charging-stations">
-    <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
-    <CSTable :chargingStations="state.chargingStations" />
+    <Container id="reload-button_tag-field">
+      <input
+        id="tag-field"
+        type="text"
+        name="tag-field"
+        placeholder="Badge Authentication ID"
+        v-model="state.tag"
+      />
+      <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
+    </Container>
+    <CSTable :chargingStations="state.chargingStations" :tag="state.tag" />
   </Container>
 </template>
 
@@ -23,11 +32,13 @@ onMounted(() => {
 type State = {
   isLoading: boolean;
   chargingStations: Array<SimulatorUI>;
+  tag: string;
 };
 
 const state: State = reactive({
   isLoading: false,
   chargingStations: [],
+  tag: '',
 });
 
 async function load(): Promise<void> {
@@ -52,7 +63,7 @@ async function load(): Promise<void> {
 }
 
 #reload-button {
-  width: 100%;
+  /* width: 100%; */
   padding: 6px 14px;
   background-color: rgb(25, 118, 210);
   border-radius: 5px;
@@ -68,5 +79,14 @@ async function load(): Promise<void> {
 
 #reload-button:active {
   background-color: rgb(255, 113, 195);
+}
+
+#reload-button_tag-field {
+  display: flex;
+  justify-content: space-between;
+}
+
+#tag-field {
+  flex-grow: 1;
 }
 </style>

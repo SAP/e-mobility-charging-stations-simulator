@@ -2,7 +2,7 @@
   <Modal :visibility="visibility">
     <label for="tag">Tags</label>
     <!-- eslint-disable-next-line -->
-    <input type="text" name="tag" v-model="tag" @keypress.enter="done()" />
+    <input type="text" name="tag" v-model="props.tag" @keypress.enter="done()" />
     <Button @click="done()">
       <slot></slot>
     </Button>

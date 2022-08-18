@@ -1,15 +1,15 @@
 <template>
   <td class="cs-table__action-col">
-    <Button @click="getTag(startTransaction)">Start Transaction</Button>
-    <TagInputModal
+    <Button @click="startTransaction()">Start Transaction</Button>
+    <!-- <TagInputModal
       :visibility="state.isTagModalVisible"
       :tag="state.tag"
       @close="hideTagModal()"
       @done="Utils.compose(state.transaction, hideTagModal)()"
     >
       Start Charging Session
-    </TagInputModal>
-    <Button @click="getTag(stopTransaction)">Stop Transaction</Button>
+    </TagInputModal> -->
+    <Button @click="stopTransaction()">Stop Transaction</Button>
   </td>
   <td class="cs-table__connector-col">{{ connectorId }}</td>
   <td class="cs-table__status-col">{{ connector.bootStatus }}</td>
@@ -28,6 +28,7 @@ const props = defineProps<{
   hashId: string;
   connector: ConnectorStatus;
   connectorId: number;
+  tag: string;
 }>();
 
 type State = {
@@ -54,7 +55,8 @@ function hideTagModal(): void {
 }
 
 function startTransaction(): void {
-  UIClient.instance.startTransaction(props.hashId, props.connectorId, state.tag);
+  console.log('test');
+  UIClient.instance.startTransaction(props.hashId, props.connectorId, props.tag);
 }
 function stopTransaction(): void {
   UIClient.instance.stopTransaction(props.hashId, props.connectorId);

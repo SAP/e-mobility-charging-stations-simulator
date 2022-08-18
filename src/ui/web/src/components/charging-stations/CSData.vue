@@ -1,6 +1,11 @@
 <template>
   <tr v-for="(connector, index) in getConnectors()" class="cs-table__row">
-    <CSConnector :hash-id="getHashId()" :connector="connector" :connector-id="index + 1" />
+    <CSConnector
+      :hash-id="getHashId()"
+      :connector="connector"
+      :connector-id="index + 1"
+      :tag="props.tag"
+    />
     <td class="cs-table__name-col">{{ getID() }}</td>
     <td class="cs-table__model-col">{{ getModel() }}</td>
     <td class="cs-table__vendor-col">{{ getVendor() }}</td>
@@ -17,15 +22,16 @@ import { SimulatorUI, ChargingStationInfoUI, ConnectorStatus } from '@/type/Simu
 
 const props = defineProps<{
   chargingStation: SimulatorUI;
+  tag: string;
 }>();
 
 type State = {
   isTagModalVisible: boolean;
-  tag: string;
+  // tag: string;
 };
 const state: State = reactive({
   isTagModalVisible: false,
-  tag: '',
+  // tag: '',
 });
 
 function getHashId(): string {
