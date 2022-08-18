@@ -22,6 +22,6 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStopTransaction(payload: JsonType): void {
-    WorkerChannel.instance.postMessage(payload);
+    WorkerChannel.instance.postMessage([ProcedureName.STOP_TRANSACTION, payload]);
   }
 }

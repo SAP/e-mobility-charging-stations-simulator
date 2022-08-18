@@ -60,7 +60,6 @@ export default class UIClient {
       hashId,
       connectorId,
       idTag,
-      command: ProcedureName.START_TRANSACTION,
     });
   }
 
@@ -70,7 +69,6 @@ export default class UIClient {
     const _ = await this.send(ProcedureName.STOP_TRANSACTION, {
       hashId,
       connectorId,
-      command: ProcedureName.STOP_TRANSACTION,
     });
   }
 

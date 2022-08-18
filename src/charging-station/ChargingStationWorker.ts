@@ -10,6 +10,7 @@ import {
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
+import { JsonType } from '../types/JsonType';
 import { RequestCommand } from '../types/ocpp/Requests';
 import {
   AuthorizeRequest,
@@ -20,7 +21,7 @@ import {
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
-import { ProcedureName } from '../types/UIProtocol';
+import { ProcedureName, ProtocolRequest } from '../types/UIProtocol';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
@@ -38,37 +39,42 @@ if (ChargingStationUtils.workerPoolInUse()) {
 } else {
   // Add message listener to start charging station from main thread
   addMessageListener();
-  console.debug('workerData:', workerData);
+  WorkerChannel.instance.start();
+  WorkerChannel.instance.onmessage = handleChannelMessage;
   if (!Utils.isUndefined(workerData)) {
-    const data = workerData as string;
-    try {
-      WorkerChannel.instance.start();
-      console.debug('bc start worker:', WorkerChannel.instance);
-      WorkerChannel.instance.onmessage = handleChannelMessage;
-    } catch (error) {
-      console.debug(error);
-    }
-    // startChargingStation(data);
+    startChargingStation(workerData as ChargingStationWorkerData);
   }
 }
+
+// TODO: change the type and put it in it's own file in the types folder
+class TEMP {
+  public hashId: string;
+  public connectorId: number;
+  public idTag: string | null;
+}
+
+let station: ChargingStation;
 
 /**
  *
  * @param message
  */
 function handleChannelMessage(message: MessageEvent): void {
-  console.debug('message:', message.data);
-}
+  const [command, payload] = message.data as unknown as [ProcedureName, TEMP];
 
-// TODO: change the type and put it in it's own file in the types folder
-class TEMP {
-  public hashId: string;
-  public command: ProcedureName;
-  public connectorId: number;
-  public idTag: string | null;
-}
+  if (payload.hashId !== station.hashId) {
+    return;
+  }
 
-let station: ChargingStation;
+  switch (command) {
+    case ProcedureName.START_TRANSACTION:
+      void startTransaction(payload.connectorId, payload.idTag);
+      break;
+    case ProcedureName.STOP_TRANSACTION:
+      void stopTransaction(payload.connectorId);
+      break;
+  }
+}
 
 /**
  * @param connectorId Id of the connector used
