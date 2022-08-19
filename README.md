@@ -381,6 +381,65 @@ All kind of OCPP parameters are supported in a charging station configuration or
 
 - _none_
 
+## UI protocol
+
+Protocol to control the simulator via Websocket
+
+### Version 0.0.1
+
+Set the http header Sec-Websocket-Protocol to `ui0.0.1`
+
+#### Protocol
+
+Request:
+[`uuid`, `ProcedureName`, `PDU`]
+
+`uuid`: String uniquely representing this requests
+`ProcedureName`: The procedure to run on the simulator
+`PDU (for Protocol Data Unit)`: The parameters (if any) for said procedure
+
+Response:
+[`uuid`, `PDU`]
+
+`uuid`: String linking the response to the request
+`PDU`: Response data to requested procedure
+
+#### Procedures
+
+##### List Charging stations
+
+Request:
+`ProcedureName`: 'listChargingStation'
+`PDU`: {}
+
+Response:
+`PDU`: An array of SimulatorUI as described in `SimulatorUI.ts` file
+
+##### Start Transaction
+
+Request:
+`ProcedureName`: 'startTransaction'
+`PDU`: {
+  `hashId`: the unique identifier of a chargingStation
+  `connectorId`: the id of the connector (start at 1)
+  `idTag`: An allowed badge authetification ID
+}
+
+Response:
+`PDU`: **null**
+
+##### Stop Transaction
+
+Request:
+`ProcedureName`: 'stopTransaction'
+`PDU`: {
+  `hashId`: the unique identifier of a chargingStation
+  `connectorId`: the id of the connector (start at 1)
+}
+
+Response:
+`PDU`: **null**
+
 ## Support, Feedback, Contributing
 
 This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/e-mobility-charging-stations-simulator/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md).
