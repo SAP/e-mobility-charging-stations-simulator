@@ -140,7 +140,7 @@
     "prettier": "^2.7.1",
     "release-it": "^15.3.0",
     "robohydra": "^0.6.9",
-    "rollup": "^2.78.0",
+    "rollup": "^2.78.1",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
