@@ -4,9 +4,9 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { URL } from 'url';
-import { parentPort } from 'worker_threads';
+import { parentPort, threadId } from 'worker_threads';
 
-import WebSocket, { Data, RawData } from 'ws';
+import WebSocket, { Data, MessageEvent, RawData } from 'ws';
 
 import BaseError from '../exception/BaseError';
 import OCPPError from '../exception/OCPPError';
@@ -59,11 +59,16 @@ import {
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
+  AuthorizeRequest,
+  AuthorizeResponse,
+  StartTransactionRequest,
+  StartTransactionResponse,
   StopTransactionReason,
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
 import { ChargingStationInfoUI, SimulatorUI } from '../types/SimulatorUI';
+import { ProcedureName } from '../types/UIProtocol';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
@@ -82,6 +87,14 @@ import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
+import WorkerChannel from './WorkerChannel';
+
+// TODO: change the type and put it in it's own file in the types folder
+class TEMP {
+  public hashId: string;
+  public connectorId: number;
+  public idTag: string | null;
+}
 
 export default class ChargingStation {
   public hashId!: string;
@@ -112,6 +125,7 @@ export default class ChargingStation {
   private readonly sharedLRUCache: SharedLRUCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
+  private channel: WorkerChannel;
 
   constructor(index: number, templateFile: string) {
     this.index = index;
@@ -124,6 +138,12 @@ export default class ChargingStation {
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
+    this.channel = new WorkerChannel();
+
+    this.channel.onmessage = this.handleChannelMessage.bind(this) as (
+      message: MessageEvent
+    ) => void;
+
     this.initialize();
   }
 
@@ -2050,5 +2070,63 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionStarted = false;
     this.getConnectorStatus(connectorId).energyActiveImportRegisterValue = 0;
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
+  }
+
+  private handleChannelMessage(message: MessageEvent): void {
+    const [command, payload] = message.data as unknown as [ProcedureName, TEMP];
+
+    if (payload.hashId !== this.hashId) {
+      return;
+    }
+
+    switch (command) {
+      case ProcedureName.START_TRANSACTION:
+        void this.startTransaction(payload.connectorId, payload.idTag);
+        break;
+      case ProcedureName.STOP_TRANSACTION:
+        void this.stopTransaction(payload.connectorId);
+        break;
+    }
+  }
+
+  private async startTransaction(connectorId: number, idTag: string): Promise<void> {
+    // TODO: change to allow the user to test an unauthorised badge
+    this.getConnectorStatus(connectorId).authorizeIdTag = idTag;
+    try {
+      const authorizeResponse = await this.ocppRequestService.requestHandler<
+        AuthorizeRequest,
+        AuthorizeResponse
+      >(this, RequestCommand.AUTHORIZE, {
+        idTag,
+      });
+
+      const startResponse = await this.ocppRequestService.requestHandler<
+        StartTransactionRequest,
+        StartTransactionResponse
+      >(this, RequestCommand.START_TRANSACTION, {
+        connectorId,
+        idTag,
+      });
+    } catch (error: unknown) {
+      console.error(error);
+    }
+  }
+
+  private async stopTransaction(connectorId: number): Promise<void> {
+    try {
+      const transactionId = this.getConnectorStatus(connectorId).transactionId;
+
+      const stopResponse = await this.ocppRequestService.requestHandler<
+        StopTransactionRequest,
+        StopTransactionResponse
+      >(this, RequestCommand.STOP_TRANSACTION, {
+        transactionId,
+        meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+        idTag: this.getTransactionIdTag(transactionId),
+        reason: StopTransactionReason.NONE,
+      });
+    } catch (error: unknown) {
+      console.error(error);
+    }
   }
 }

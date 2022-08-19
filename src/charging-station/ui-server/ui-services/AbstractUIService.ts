@@ -10,12 +10,14 @@ import {
 } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
+import WorkerChannel from '../../WorkerChannel';
 import { AbstractUIServer } from '../AbstractUIServer';
 
 export default abstract class AbstractUIService {
   protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
   protected readonly messageHandlers: Map<ProcedureName, ProtocolRequestHandler>;
+  protected channel: WorkerChannel;
 
   constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.version = version;
@@ -26,6 +28,7 @@ export default abstract class AbstractUIService {
         this.handleListChargingStations.bind(this) as ProtocolRequestHandler,
       ],
     ]);
+    this.channel = new WorkerChannel();
   }
 
   public async messageHandler(request: RawData): Promise<void> {

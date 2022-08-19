@@ -1,6 +1,5 @@
 import { JsonType } from '../../../types/JsonType';
 import { ProcedureName, ProtocolRequestHandler, ProtocolVersion } from '../../../types/UIProtocol';
-import WorkerChannel from '../../WorkerChannel';
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 
@@ -18,10 +17,10 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStartTransaction(payload: JsonType): void {
-    WorkerChannel.instance.postMessage([ProcedureName.START_TRANSACTION, payload]);
+    this.channel.postMessage([ProcedureName.START_TRANSACTION, payload]);
   }
 
   private handleStopTransaction(payload: JsonType): void {
-    WorkerChannel.instance.postMessage([ProcedureName.STOP_TRANSACTION, payload]);
+    this.channel.postMessage([ProcedureName.STOP_TRANSACTION, payload]);
   }
 }
