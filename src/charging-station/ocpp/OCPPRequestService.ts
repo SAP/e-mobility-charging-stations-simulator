@@ -21,8 +21,8 @@ import Constants from '../../utils/Constants';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
-import { OCPP16ServiceUtils } from './1.6/OCPP16ServiceUtils';
 import type OCPPResponseService from './OCPPResponseService';
+import { OCPPServiceUtils } from './OCPPServiceUtils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -133,7 +133,7 @@ export default abstract class OCPPRequestService {
       validate.errors
     );
     throw new OCPPError(
-      OCPP16ServiceUtils.AjvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.AjvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)

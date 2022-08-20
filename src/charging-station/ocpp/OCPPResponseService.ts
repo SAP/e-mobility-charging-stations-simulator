@@ -7,7 +7,7 @@ import { JsonType } from '../../types/JsonType';
 import { RequestCommand } from '../../types/ocpp/Requests';
 import logger from '../../utils/Logger';
 import type ChargingStation from '../ChargingStation';
-import { OCPP16ServiceUtils } from './1.6/OCPP16ServiceUtils';
+import { OCPPServiceUtils } from './OCPPServiceUtils';
 
 const moduleName = 'OCPPResponseService';
 
@@ -45,7 +45,7 @@ export default abstract class OCPPResponseService {
       validate.errors
     );
     throw new OCPPError(
-      OCPP16ServiceUtils.AjvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.AjvErrorsToErrorType(validate.errors),
       'Response PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)
