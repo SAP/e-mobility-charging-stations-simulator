@@ -282,7 +282,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.requestHandler: No JSON schema found for command ${commandName} PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
     );
     return false;
   }

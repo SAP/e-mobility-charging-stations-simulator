@@ -370,7 +370,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler: No JSON schema found for command ${commandName} PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
     );
     return false;
   }
