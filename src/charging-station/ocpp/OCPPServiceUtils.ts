@@ -7,7 +7,7 @@ export class OCPPServiceUtils {
     // This is intentional
   }
 
-  public static AjvErrorsToErrorType(errors: ErrorObject[]): ErrorType {
+  public static ajvErrorsToErrorType(errors: ErrorObject[]): ErrorType {
     for (const error of errors as DefinedError[]) {
       switch (error.keyword) {
         case 'type':

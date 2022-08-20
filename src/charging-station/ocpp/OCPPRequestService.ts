@@ -133,7 +133,7 @@ export default abstract class OCPPRequestService {
       validate.errors
     );
     throw new OCPPError(
-      OCPPServiceUtils.AjvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)
