@@ -21,6 +21,7 @@ import Constants from '../../utils/Constants';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
+import { OCPP16ServiceUtils } from './1.6/OCPP16ServiceUtils';
 import type OCPPResponseService from './OCPPResponseService';
 
 const moduleName = 'OCPPRequestService';
@@ -132,7 +133,7 @@ export default abstract class OCPPRequestService {
       validate.errors
     );
     throw new OCPPError(
-      ErrorType.FORMATION_VIOLATION,
+      OCPP16ServiceUtils.AjvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)

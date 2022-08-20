@@ -5,10 +5,10 @@ import ajvFormats from 'ajv-formats';
 import OCPPError from '../../exception/OCPPError';
 import { HandleErrorParams } from '../../types/Error';
 import { JsonType } from '../../types/JsonType';
-import { ErrorType } from '../../types/ocpp/ErrorType';
 import { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import logger from '../../utils/Logger';
 import type ChargingStation from '../ChargingStation';
+import { OCPP16ServiceUtils } from './1.6/OCPP16ServiceUtils';
 
 const moduleName = 'OCPPIncomingRequestService';
 
@@ -68,7 +68,7 @@ export default abstract class OCPPIncomingRequestService {
       validate.errors
     );
     throw new OCPPError(
-      ErrorType.FORMATION_VIOLATION,
+      OCPP16ServiceUtils.AjvErrorsToErrorType(validate.errors),
       'Incoming request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)

@@ -1,6 +1,26 @@
+import { DefinedError, ErrorObject } from 'ajv';
+
+import { ErrorType } from '../../types/ocpp/ErrorType';
+
 export class OCPPServiceUtils {
   protected constructor() {
     // This is intentional
+  }
+
+  public static AjvErrorsToErrorType(errors: ErrorObject[]): ErrorType {
+    for (const error of errors as DefinedError[]) {
+      switch (error.keyword) {
+        case 'type':
+          return ErrorType.TYPE_CONSTRAINT_VIOLATION;
+        case 'dependencies':
+        case 'required':
+          return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION;
+        case 'pattern':
+        case 'format':
+          return ErrorType.PROPERTY_CONSTRAINT_VIOLATION;
+      }
+    }
+    return ErrorType.FORMAT_VIOLATION;
   }
 
   protected static getLimitFromSampledValueTemplateCustomValue(
