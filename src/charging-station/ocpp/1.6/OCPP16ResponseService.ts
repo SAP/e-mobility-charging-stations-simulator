@@ -179,18 +179,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         ChargingStationUtils.isRequestCommandSupported(commandName, chargingStation)
       ) {
         try {
-          if (this.jsonSchemas.has(commandName)) {
-            this.validateResponsePayload(
-              chargingStation,
-              commandName,
-              this.jsonSchemas.get(commandName),
-              payload
-            );
-          } else {
-            logger.warn(
-              `${chargingStation.logPrefix()} ${moduleName}.responseHandler: No JSON schema found for command ${commandName} PDU validation`
-            );
-          }
+          this.validatePayload(chargingStation, commandName, payload);
           await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);
         } catch (error) {
           logger.error(chargingStation.logPrefix() + ' Handle request response error: %j', error);
@@ -221,6 +210,25 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         payload
       );
     }
+  }
+
+  private validatePayload(
+    chargingStation: ChargingStation,
+    commandName: OCPP16RequestCommand,
+    payload: JsonType
+  ): boolean {
+    if (this.jsonSchemas.has(commandName)) {
+      return this.validateResponsePayload(
+        chargingStation,
+        commandName,
+        this.jsonSchemas.get(commandName),
+        payload
+      );
+    }
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.responseHandler: No JSON schema found for command ${commandName} PDU validation`
+    );
+    return false;
   }
 
   private handleResponseBootNotification(
