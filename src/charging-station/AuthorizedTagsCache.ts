@@ -16,7 +16,7 @@ export default class AuthorizedTagsCache {
   }
 
   public static getInstance(): AuthorizedTagsCache {
-    if (!AuthorizedTagsCache.instance) {
+    if (AuthorizedTagsCache.instance === null) {
       AuthorizedTagsCache.instance = new AuthorizedTagsCache();
     }
     return AuthorizedTagsCache.instance;

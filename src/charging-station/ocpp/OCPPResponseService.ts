@@ -21,7 +21,7 @@ export default abstract class OCPPResponseService {
   }
 
   public static getInstance<T extends OCPPResponseService>(this: new () => T): T {
-    if (!OCPPResponseService.instance) {
+    if (OCPPResponseService.instance === null) {
       OCPPResponseService.instance = new this();
     }
     return OCPPResponseService.instance as T;
