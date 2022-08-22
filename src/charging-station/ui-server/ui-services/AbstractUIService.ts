@@ -8,6 +8,8 @@ import {
   ProtocolRequestHandler,
   ProtocolResponse,
   ProtocolVersion,
+  ResponsePayload,
+  ResponseStatus,
 } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
@@ -35,37 +37,51 @@ export default abstract class AbstractUIService {
   }
 
   public async messageHandler(request: RawData): Promise<void> {
-    const [messageId, command, payload] = this.dataValidation(request);
-
-    if (this.messageHandlers.has(command) === false) {
-      // Throw exception
-      throw new BaseError(
-        `${command} is not implemented to handle message payload ${JSON.stringify(
-          payload,
-          null,
-          2
-        )}`
-      );
-    }
-
-    let responsePayload: JsonType;
+    let messageId: string;
+    let command: ProcedureName;
+    let requestPayload: JsonType;
+    let responsePayload: ResponsePayload;
     try {
-      // Call the message handler to build the message response
-      responsePayload = (await this.messageHandlers.get(command)(payload)) as JsonType;
+      [messageId, command, requestPayload] = this.dataValidation(request);
+
+      if (this.messageHandlers.has(command) === false) {
+        // Throw exception
+        throw new BaseError(
+          `${command} is not implemented to handle message payload ${JSON.stringify(
+            requestPayload,
+            null,
+            2
+          )}`
+        );
+      }
+      // Call the message handler to build the response payload
+      responsePayload = (await this.messageHandlers.get(command)(
+        requestPayload
+      )) as ResponsePayload;
     } catch (error) {
       // Log
       logger.error(
-        `${this.uiServer.logPrefix(moduleName, 'messageHandler')} Handle message error: %j`,
+        `${this.uiServer.logPrefix(moduleName, 'messageHandler')} Handle message error:`,
         error
+      );
+      // Send the message response failure
+      this.uiServer.sendResponse(
+        this.buildProtocolResponse(messageId ?? 'error', {
+          status: ResponseStatus.FAILURE,
+          command,
+          requestPayload,
+          errorMessage: (error as Error).message,
+          errorStack: (error as Error).stack,
+        })
       );
       throw error;
     }
 
-    // Send the message response
+    // Send the message response success
     this.uiServer.sendResponse(this.buildProtocolResponse(messageId, responsePayload));
   }
 
-  protected buildProtocolResponse(messageId: string, payload: JsonType): string {
+  protected buildProtocolResponse(messageId: string, payload: ResponsePayload): string {
     return JSON.stringify([messageId, payload] as ProtocolResponse);
   }
 
@@ -92,14 +108,19 @@ export default abstract class AbstractUIService {
   }
 
   private handleListChargingStations(): JsonType {
-    return Array.from(this.uiServer.chargingStations.values()) as JsonType;
+    return {
+      status: ResponseStatus.SUCCESS,
+      ...Array.from(this.uiServer.chargingStations.values()),
+    } as JsonType;
   }
 
-  private async handleStartSimulator(): Promise<void> {
+  private async handleStartSimulator(): Promise<ResponsePayload> {
     await Bootstrap.getInstance().start();
+    return { status: ResponseStatus.SUCCESS };
   }
 
-  private async handleStopSimulator(): Promise<void> {
+  private async handleStopSimulator(): Promise<ResponsePayload> {
     await Bootstrap.getInstance().stop();
+    return { status: ResponseStatus.SUCCESS };
   }
 }

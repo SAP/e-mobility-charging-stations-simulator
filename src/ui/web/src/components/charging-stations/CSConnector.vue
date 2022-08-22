@@ -9,7 +9,8 @@
     >
       Start Charging Session
     </TagInputModal> -->
-    <Button @click="stopTransaction()">Stop Transaction</Button>
+    <!-- TODO: Use transactionId to stop transaction -->
+    <!-- <Button @click="stopTransaction()">Stop Transaction</Button> -->
   </td>
   <td class="cs-table__connector-col">{{ connectorId }}</td>
   <td class="cs-table__status-col">{{ connector.bootStatus }}</td>

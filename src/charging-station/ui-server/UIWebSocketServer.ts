@@ -32,15 +32,21 @@ export default class UIWebSocketServer extends AbstractUIServer {
         this.uiServices
           .get(version)
           .messageHandler(messageData)
-          .catch(() => {
+          .catch((error) => {
             logger.error(
-              `${this.logPrefix(moduleName, 'onmessage')} Error while handling message data: %j`,
-              messageData
+              `${this.logPrefix(
+                moduleName,
+                'start.socket.onmessage'
+              )} Error while handling message:`,
+              error
             );
           });
       });
       socket.on('error', (error) => {
-        logger.error(`${this.logPrefix(moduleName, 'onerror')} Error on WebSocket: %j`, error);
+        logger.error(
+          `${this.logPrefix(moduleName, 'start.socket.onerror')} Error on WebSocket:`,
+          error
+        );
       });
     });
   }

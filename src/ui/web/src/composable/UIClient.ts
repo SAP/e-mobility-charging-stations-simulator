@@ -66,7 +66,7 @@ export default class UIClient {
     });
   }
 
-  private setHandler(
+  private setResponseHandler(
     id: string,
     resolve: (value: JsonType | PromiseLike<JsonType>) => void,
     reject: (reason?: any) => void,
@@ -75,7 +75,7 @@ export default class UIClient {
     this._responseHandlers.set(id, { resolve, reject, procedureName });
   }
 
-  private getHandler(id: string): ResponseHandler | undefined {
+  private getResponseHandler(id: string): ResponseHandler | undefined {
     return this._responseHandlers.get(id);
   }
 
@@ -93,7 +93,7 @@ export default class UIClient {
           throw new Error(`Send request ${command} message: connection not opened`);
         }
 
-        this.setHandler(uuid, resolve, reject, command);
+        this.setResponseHandler(uuid, resolve, reject, command);
       }),
       60 * 1000,
       Error(`Send request ${command} message timeout`),
@@ -112,13 +112,10 @@ export default class UIClient {
 
     const [uuid, response] = data;
 
-    let responseHandler: ResponseHandler | undefined;
     if (this._responseHandlers.has(uuid) === true) {
-      responseHandler = this.getHandler(uuid);
+      this.getResponseHandler(uuid)?.resolve(response);
     } else {
       throw new Error('Not a response to a request: ' + JSON.stringify(data, null, 2));
     }
-
-    responseHandler?.resolve(response);
   }
 }

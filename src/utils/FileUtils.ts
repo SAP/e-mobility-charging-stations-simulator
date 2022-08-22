@@ -60,7 +60,7 @@ export default class FileUtils {
           error
         );
       } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' not found: %j', error);
+        logger.warn(prefix + fileType + ' file ' + file + ' not found:', error);
       }
     } else if (error.code === 'EEXIST') {
       if (params?.consoleOut) {
@@ -69,7 +69,7 @@ export default class FileUtils {
           error
         );
       } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' already exists: %j', error);
+        logger.warn(prefix + fileType + ' file ' + file + ' already exists:', error);
       }
     } else if (error.code === 'EACCES') {
       if (params?.consoleOut) {
@@ -78,7 +78,7 @@ export default class FileUtils {
           error
         );
       } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' access denied: %j', error);
+        logger.warn(prefix + fileType + ' file ' + file + ' access denied:', error);
       }
     } else {
       if (params?.consoleOut) {
@@ -87,7 +87,7 @@ export default class FileUtils {
           error
         );
       } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' error: %j', error);
+        logger.warn(prefix + fileType + ' file ' + file + ' error:', error);
       }
       if (params?.throwError) {
         throw error;

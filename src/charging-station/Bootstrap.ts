@@ -108,6 +108,7 @@ export default class Bootstrap {
           console.warn(
             chalk.yellow('No charging station template enabled in configuration, exiting')
           );
+          process.exit();
         } else {
           console.info(
             chalk.green(
@@ -180,14 +181,13 @@ export default class Bootstrap {
   private messageHandler(
     msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
   ): void {
-    logger.debug(
-      `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
-        msg,
-        null,
-        2
-      )}`
-    );
-
+    // logger.debug(
+    //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
+    //     msg,
+    //     null,
+    //     2
+    //   )}`
+    // );
     try {
       switch (msg.id) {
         case ChargingStationWorkerMessageEvents.STARTED:
@@ -204,31 +204,31 @@ export default class Bootstrap {
           break;
         default:
           throw new BaseError(
-            `Unknown event type: ${msg.id} for data: ${JSON.stringify(msg.data, null, 2)}`
+            `Unknown event type: '${msg.id}' for data: ${JSON.stringify(msg.data, null, 2)}`
           );
       }
     } catch (error) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling ${
+        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${
           msg.id
-        } event: %j`,
+        }' event:`,
         error
       );
     }
   }
 
   private workerEventStarted(data: ChargingStationData) {
-    this.uiServer.chargingStations.set(data.hashId, data);
+    this.uiServer?.chargingStations.set(data.hashId, data);
     this.started && ++this.numberOfChargingStations;
   }
 
   private workerEventStopped(data: ChargingStationData) {
-    this.uiServer.chargingStations.delete(data.hashId);
+    this.uiServer?.chargingStations.delete(data.hashId);
     this.started && --this.numberOfChargingStations;
   }
 
   private workerEventUpdated(data: ChargingStationData) {
-    this.uiServer.chargingStations.set(data.hashId, data);
+    this.uiServer?.chargingStations.set(data.hashId, data);
   }
 
   private workerEventPerformanceStatistics = (data: Statistics) => {

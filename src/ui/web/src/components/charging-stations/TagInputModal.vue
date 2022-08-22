@@ -1,7 +1,7 @@
 <template>
   <Modal :visibility="visibility">
     <label for="tag">Tags</label>
-    <!-- eslint-disable-next-line -->
+    <!-- eslint-disable-next-line vue/no-mutating-props -->
     <input type="text" name="tag" v-model="props.tag" @keypress.enter="done()" />
     <Button @click="done()">
       <slot></slot>

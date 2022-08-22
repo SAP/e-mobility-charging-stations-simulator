@@ -1,5 +1,11 @@
 import { JsonType } from '../../../types/JsonType';
-import { ProcedureName, ProtocolRequestHandler, ProtocolVersion } from '../../../types/UIProtocol';
+import {
+  ProcedureName,
+  ProtocolRequestHandler,
+  ProtocolVersion,
+  ResponsePayload,
+  ResponseStatus,
+} from '../../../types/UIProtocol';
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 
@@ -16,11 +22,13 @@ export default class UIService001 extends AbstractUIService {
     );
   }
 
-  private handleStartTransaction(payload: JsonType): void {
+  private handleStartTransaction(payload: JsonType): ResponsePayload {
     this.workerBroadcastChannel.postMessage([ProcedureName.START_TRANSACTION, payload]);
+    return { status: ResponseStatus.SUCCESS };
   }
 
-  private handleStopTransaction(payload: JsonType): void {
+  private handleStopTransaction(payload: JsonType): ResponsePayload {
     this.workerBroadcastChannel.postMessage([ProcedureName.STOP_TRANSACTION, payload]);
+    return { status: ResponseStatus.SUCCESS };
   }
 }

@@ -524,7 +524,7 @@ export default class ChargingStation {
             // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
           } catch (error) {
             logger.error(
-              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error: %j`,
+              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
               error
             );
           }
@@ -1459,7 +1459,7 @@ export default class ChargingStation {
     } catch (error) {
       // Log
       logger.error(
-        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error: %j",
+        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error:",
         this.logPrefix(),
         commandName ?? requestCommandName ?? null,
         data.toString(),
@@ -1468,7 +1468,7 @@ export default class ChargingStation {
       );
       if (!(error instanceof OCPPError)) {
         logger.warn(
-          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError: %j",
+          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError:",
           this.logPrefix(),
           commandName ?? requestCommandName ?? null,
           data.toString(),
@@ -1496,7 +1496,7 @@ export default class ChargingStation {
 
   private onError(error: WSError): void {
     this.closeWSConnection();
-    logger.error(this.logPrefix() + ' WebSocket error: %j', error);
+    logger.error(this.logPrefix() + ' WebSocket error:', error);
   }
 
   private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean | undefined {
