@@ -2,13 +2,7 @@
 
 import { Worker } from 'worker_threads';
 
-import {
-  WorkerData,
-  WorkerMessage,
-  WorkerMessageEvents,
-  WorkerOptions,
-  WorkerSetElement,
-} from '../types/Worker';
+import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
 import Utils from '../utils/Utils';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
@@ -60,7 +54,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     this.getLastWorker().postMessage({
       id: WorkerMessageEvents.START_WORKER_ELEMENT,
       data: elementData,
-    } as WorkerMessage<WorkerData>);
+    });
     this.getLastWorkerSetElement().numberOfWorkerElements++;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {
@@ -94,8 +88,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    * @private
    */
   private async startWorker(): Promise<void> {
-    // eslint-disable-next-line  @typescript-eslint/no-unsafe-assignment
-    const worker = new Worker(this.workerScript, { workerData: this.workerOptions.data });
+    const worker = new Worker(this.workerScript);
     worker.on('message', (msg) => {
       (async () => {
         await this.messageHandler(msg);

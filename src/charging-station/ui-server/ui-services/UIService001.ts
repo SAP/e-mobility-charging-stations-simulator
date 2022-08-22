@@ -17,10 +17,10 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStartTransaction(payload: JsonType): void {
-    this.channel.postMessage([ProcedureName.START_TRANSACTION, payload]);
+    this.workerBroadcastChannel.postMessage([ProcedureName.START_TRANSACTION, payload]);
   }
 
   private handleStopTransaction(payload: JsonType): void {
-    this.channel.postMessage([ProcedureName.STOP_TRANSACTION, payload]);
+    this.workerBroadcastChannel.postMessage([ProcedureName.STOP_TRANSACTION, payload]);
   }
 }

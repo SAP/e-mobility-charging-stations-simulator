@@ -1,10 +1,11 @@
 import { ConnectorStatus } from './ConnectorStatus';
+import { WorkerData } from './Worker';
 
-export type SimulatorUI = {
+export interface SimulatorUI extends WorkerData {
   hashId: string;
   stationInfo: ChargingStationInfoUI;
-  connectors: Array<ConnectorStatus>;
-};
+  connectors: ConnectorStatus[];
+}
 
 export type ChargingStationInfoUI = {
   chargePointModel: string;

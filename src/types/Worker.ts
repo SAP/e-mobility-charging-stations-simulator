@@ -17,11 +17,10 @@ export interface WorkerOptions {
   poolMinSize?: number;
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
-  data?: any;
   messageHandler?: (message: unknown) => void | Promise<void>;
 }
 
-export type WorkerData = JsonObject;
+export type WorkerData = Record<string, unknown>;
 
 export interface WorkerSetElement {
   worker: Worker;

@@ -11,8 +11,8 @@ import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
   ChargingStationWorkerData,
+  ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
-  InternalChargingStationWorkerMessage,
 } from '../types/ChargingStationWorker';
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import { SimulatorUI } from '../types/SimulatorUI';
@@ -168,49 +168,49 @@ export default class Bootstrap {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
           messageHandler: this.messageHandler.bind(this) as (
-            msg: InternalChargingStationWorkerMessage
+            msg: ChargingStationWorkerMessage<SimulatorUI | Statistics>
           ) => void,
         }
       ));
   }
 
-  private messageHandler(msg: InternalChargingStationWorkerMessage): void {
-    logger.debug(`${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.payload)}`);
+  private messageHandler(msg: ChargingStationWorkerMessage<SimulatorUI | Statistics>): void {
+    logger.debug(`${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.data)}`);
 
     switch (msg.id) {
       case ChargingStationWorkerMessageEvents.STARTED:
-        this.workerEventStarted(msg.payload as SimulatorUI);
+        this.workerEventStarted(msg.data as SimulatorUI);
         break;
       case ChargingStationWorkerMessageEvents.STOPPED:
-        this.workerEventStopped(msg.payload as SimulatorUI);
+        this.workerEventStopped(msg.data as SimulatorUI);
         break;
-      case ChargingStationWorkerMessageEvents.UPDATE:
-        this.workerEventUpdated(msg.payload as SimulatorUI);
+      case ChargingStationWorkerMessageEvents.UPDATED:
+        this.workerEventUpdated(msg.data as SimulatorUI);
         break;
       case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
-        this.workerEventPerformanceStatistics(msg.payload as Statistics);
+        this.workerEventPerformanceStatistics(msg.data as Statistics);
         break;
       default:
         console.error(msg);
     }
   }
 
-  private workerEventStarted(payload: SimulatorUI) {
-    this.uiServer.chargingStations.set(payload.hashId, payload);
+  private workerEventStarted(data: SimulatorUI) {
+    this.uiServer.chargingStations.set(data.hashId, data);
     ++this.numberOfChargingStations;
   }
 
-  private workerEventStopped(payload: SimulatorUI) {
-    this.uiServer.chargingStations.delete(payload.hashId);
+  private workerEventStopped(data: SimulatorUI) {
+    this.uiServer.chargingStations.delete(data.hashId);
     --this.numberOfChargingStations;
   }
 
-  private workerEventUpdated(payload: SimulatorUI) {
-    this.uiServer.chargingStations.set(payload.hashId, payload);
+  private workerEventUpdated(data: SimulatorUI) {
+    this.uiServer.chargingStations.set(data.hashId, data);
   }
 
-  private workerEventPerformanceStatistics = (payload: Statistics) => {
-    (this.storage.storePerformanceStatistics(payload) as Promise<void>).catch((error) => {
+  private workerEventPerformanceStatistics = (data: Statistics) => {
+    (this.storage.storePerformanceStatistics(data) as Promise<void>).catch((error) => {
       logger.error(`${this.logPrefix()} %j`, error);
     });
   };

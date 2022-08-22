@@ -87,7 +87,7 @@ import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
-import WorkerChannel from './WorkerChannel';
+import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 // TODO: change the type and put it in it's own file in the types folder
 class TEMP {
@@ -125,7 +125,7 @@ export default class ChargingStation {
   private readonly sharedLRUCache: SharedLRUCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
-  private channel: WorkerChannel;
+  private workerBroadcastChannel: WorkerBroadcastChannel;
 
   constructor(index: number, templateFile: string) {
     this.index = index;
@@ -138,9 +138,9 @@ export default class ChargingStation {
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
-    this.channel = new WorkerChannel();
+    this.workerBroadcastChannel = new WorkerBroadcastChannel();
 
-    this.channel.onmessage = this.handleChannelMessage.bind(this) as (
+    this.workerBroadcastChannel.onmessage = this.handleWorkerBroadcastChannelMessage.bind(this) as (
       message: MessageEvent
     ) => void;
 
@@ -701,7 +701,7 @@ export default class ChargingStation {
 
   private buildUpdateMessage() {
     return {
-      id: ChargingStationWorkerMessageEvents.UPDATE,
+      id: ChargingStationWorkerMessageEvents.UPDATED,
       payload: this.buildMessagePayload(),
     };
   }
@@ -2072,7 +2072,7 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
   }
 
-  private handleChannelMessage(message: MessageEvent): void {
+  private handleWorkerBroadcastChannelMessage(message: MessageEvent): void {
     const [command, payload] = message.data as unknown as [ProcedureName, TEMP];
 
     if (payload.hashId !== this.hashId) {

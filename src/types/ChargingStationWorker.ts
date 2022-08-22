@@ -16,7 +16,7 @@ export interface ChargingStationWorkerData extends WorkerData {
 enum ChargingStationMessageEvents {
   STARTED = 'started',
   STOPPED = 'stopped',
-  UPDATE = 'update',
+  UPDATED = 'updated',
   PERFORMANCE_STATISTICS = 'performanceStatistics',
 }
 
@@ -27,12 +27,7 @@ export const ChargingStationWorkerMessageEvents = {
   ...ChargingStationMessageEvents,
 };
 
-export interface ChargingStationWorkerMessage
-  extends Omit<WorkerMessage<ChargingStationWorkerData>, 'id'> {
+export interface ChargingStationWorkerMessage<T extends WorkerData>
+  extends Omit<WorkerMessage<T>, 'id'> {
   id: ChargingStationWorkerMessageEvents;
-}
-
-export interface InternalChargingStationWorkerMessage {
-  id: ChargingStationWorkerMessageEvents;
-  payload: SimulatorUI | Statistics;
 }

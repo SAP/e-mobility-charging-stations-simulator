@@ -9,13 +9,10 @@ import {
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
 import ChargingStation from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
-
-// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
@@ -36,8 +33,7 @@ if (ChargingStationUtils.workerPoolInUse()) {
  * Listen messages send by the main thread
  */
 function addMessageListener(): void {
-  parentPort?.on('message', (message: ChargingStationWorkerMessage) => {
-    logger.debug(`${logPrefix()} ${JSON.stringify(message)}`);
+  parentPort?.on('message', (message: ChargingStationWorkerMessage<ChargingStationWorkerData>) => {
     if (message.id === ChargingStationWorkerMessageEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.data);
     }
@@ -52,11 +48,4 @@ function addMessageListener(): void {
 function startChargingStation(data: ChargingStationWorkerData): void {
   const station = new ChargingStation(data.index, data.templateFile);
   station.start();
-}
-
-/**
- * @returns ChargingStationWorker logger prefix
- */
-function logPrefix(): string {
-  return Utils.logPrefix(' ChargingStationWorker |');
 }
