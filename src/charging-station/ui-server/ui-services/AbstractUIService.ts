@@ -95,9 +95,6 @@ export default abstract class AbstractUIService {
   }
 
   private handleListChargingStations(): JsonType {
-    return Array.from(
-      this.uiServer.chargingStations,
-      ([_key, value]) => value as unknown as JsonType
-    );
+    return Array.from(this.uiServer.chargingStations.values()) as JsonType;
   }
 }

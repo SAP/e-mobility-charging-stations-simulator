@@ -21,6 +21,7 @@ import ChargingStationTemplate, {
   WsOptions,
 } from '../types/ChargingStationTemplate';
 import {
+  ChargingStationData,
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
@@ -62,17 +63,15 @@ import {
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
-  AuthorizeRequest,
-  AuthorizeResponse,
   StartTransactionRequest,
   StartTransactionResponse,
   StopTransactionReason,
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
-import { ChargingStationInfoUI, SimulatorUI } from '../types/SimulatorUI';
 import { ProcedureName } from '../types/UIProtocol';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
+import { WorkerBroadcastChannelData } from '../types/WorkerBroadcastChannel';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
@@ -688,44 +687,44 @@ export default class ChargingStation {
     this.messageBuffer.add(message);
   }
 
-  private buildStartedMessage(): ChargingStationWorkerMessage<SimulatorUI> {
+  private buildStartedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
     return {
       id: ChargingStationWorkerMessageEvents.STARTED,
       data: this.buildDataPayload(),
     };
   }
 
-  private buildStoppedMessage(): ChargingStationWorkerMessage<SimulatorUI> {
+  private buildStoppedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
     return {
       id: ChargingStationWorkerMessageEvents.STOPPED,
       data: this.buildDataPayload(),
     };
   }
 
-  // private buildUpdatedMessage(): ChargingStationWorkerMessage<SimulatorUI> {
+  // private buildUpdatedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
   //   return {
   //     id: ChargingStationWorkerMessageEvents.UPDATED,
   //     data: this.buildDataPayload(),
   //   };
   // }
 
-  private buildDataPayload(): SimulatorUI {
+  private buildDataPayload(): ChargingStationData {
     return {
       hashId: this.hashId,
-      stationInfo: this.buildStationInfoDataPayload(),
+      stationInfo: this.stationInfo,
       connectors: Array.from(this.connectors.values()),
     };
   }
 
-  private buildStationInfoDataPayload(): ChargingStationInfoUI {
-    return {
-      chargingStationId: this.stationInfo.chargingStationId,
-      chargePointModel: this.stationInfo.chargePointModel,
-      chargePointVendor: this.stationInfo.chargePointVendor,
-      firmwareVersion: this.stationInfo.firmwareVersion,
-      numberOfConnectors: this.stationInfo.numberOfConnectors,
-    };
-  }
+  // private buildStationInfoDataPayload(): ChargingStationInfo {
+  //   return {
+  //     chargingStationId: this.stationInfo.chargingStationId,
+  //     chargePointModel: this.stationInfo.chargePointModel,
+  //     chargePointVendor: this.stationInfo.chargePointVendor,
+  //     firmwareVersion: this.stationInfo.firmwareVersion,
+  //     numberOfConnectors: this.stationInfo.numberOfConnectors,
+  //   } as ChargingStationInfo;
+  // }
 
   private flushMessageBuffer() {
     if (this.messageBuffer.size > 0) {
@@ -2068,8 +2067,11 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
   }
 
-  private handleWorkerBroadcastChannelMessage(message: MessageEvent): void {
-    const [command, payload] = message.data as unknown as [ProcedureName, SimulatorUI];
+  private async handleWorkerBroadcastChannelMessage(message: MessageEvent): Promise<void> {
+    const [command, payload] = message.data as unknown as [
+      ProcedureName,
+      WorkerBroadcastChannelData
+    ];
 
     if (payload.hashId !== this.hashId) {
       return;
@@ -2077,52 +2079,25 @@ export default class ChargingStation {
 
     switch (command) {
       case ProcedureName.START_TRANSACTION:
-        void this.startTransaction(payload.connectorId, payload.idTag);
+        await this.ocppRequestService.requestHandler<
+          StartTransactionRequest,
+          StartTransactionResponse
+        >(this, RequestCommand.START_TRANSACTION, {
+          connectorId: payload.connectorId,
+          idTag: payload.idTag,
+        });
         break;
       case ProcedureName.STOP_TRANSACTION:
-        void this.stopTransaction(payload.connectorId);
+        await this.ocppRequestService.requestHandler<
+          StopTransactionRequest,
+          StopTransactionResponse
+        >(this, RequestCommand.STOP_TRANSACTION, {
+          transactionId: payload.transactionId,
+          meterStop: this.getEnergyActiveImportRegisterByTransactionId(payload.transactionId),
+          idTag: this.getTransactionIdTag(payload.transactionId),
+          reason: StopTransactionReason.NONE,
+        });
         break;
-    }
-  }
-
-  private async startTransaction(connectorId: number, idTag: string): Promise<void> {
-    // TODO: change to allow the user to test an unauthorized badge
-    this.getConnectorStatus(connectorId).authorizeIdTag = idTag;
-    try {
-      const authorizeResponse = await this.ocppRequestService.requestHandler<
-        AuthorizeRequest,
-        AuthorizeResponse
-      >(this, RequestCommand.AUTHORIZE, {
-        idTag,
-      });
-
-      const startResponse = await this.ocppRequestService.requestHandler<
-        StartTransactionRequest,
-        StartTransactionResponse
-      >(this, RequestCommand.START_TRANSACTION, {
-        connectorId,
-        idTag,
-      });
-    } catch (error: unknown) {
-      console.error(error);
-    }
-  }
-
-  private async stopTransaction(connectorId: number): Promise<void> {
-    try {
-      const transactionId = this.getConnectorStatus(connectorId).transactionId;
-
-      const stopResponse = await this.ocppRequestService.requestHandler<
-        StopTransactionRequest,
-        StopTransactionResponse
-      >(this, RequestCommand.STOP_TRANSACTION, {
-        transactionId,
-        meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
-        idTag: this.getTransactionIdTag(transactionId),
-        reason: StopTransactionReason.NONE,
-      });
-    } catch (error: unknown) {
-      console.error(error);
     }
   }
 }

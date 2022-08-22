@@ -1,3 +1,5 @@
+import ChargingStationInfo from './ChargingStationInfo';
+import { ConnectorStatus } from './ConnectorStatus';
 import { JsonObject } from './JsonType';
 import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
@@ -9,6 +11,12 @@ export interface ChargingStationWorkerData extends WorkerData {
   index: number;
   templateFile: string;
   chargingStationWorkerOptions?: ChargingStationWorkerOptions;
+}
+
+export interface ChargingStationData extends WorkerData {
+  hashId: string;
+  stationInfo: ChargingStationInfo;
+  connectors: ConnectorStatus[];
 }
 
 enum ChargingStationMessageEvents {

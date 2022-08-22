@@ -2,8 +2,6 @@ import { Worker } from 'worker_threads';
 
 import { PoolOptions } from 'poolifier';
 
-import { JsonObject } from './JsonType';
-
 export enum WorkerProcessType {
   WORKER_SET = 'workerSet',
   DYNAMIC_POOL = 'dynamicPool',

@@ -1,4 +1,4 @@
-# ui
+# Web UI
 
 ## Project setup
 
@@ -7,8 +7,11 @@ npm install
 ```
 
 ### Run
+
 For both solution you can then follow the link displayed in the terminal at the end of compilation
+
 #### Compiles and run without development tools
+
 ```
 npm start
 ```

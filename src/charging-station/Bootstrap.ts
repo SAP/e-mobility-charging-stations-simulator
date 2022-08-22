@@ -11,12 +11,12 @@ import BaseError from '../exception/BaseError';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
+  ChargingStationData,
   ChargingStationWorkerData,
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
 import { StationTemplateUrl } from '../types/ConfigurationData';
-import { SimulatorUI } from '../types/SimulatorUI';
 import Statistics from '../types/Statistics';
 import { ApplicationProtocol } from '../types/UIProtocol';
 import Configuration from '../utils/Configuration';
@@ -171,26 +171,28 @@ export default class Bootstrap {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
           messageHandler: this.messageHandler.bind(this) as (
-            msg: ChargingStationWorkerMessage<SimulatorUI | Statistics>
+            msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
           ) => void,
         }
       ));
   }
 
-  private messageHandler(msg: ChargingStationWorkerMessage<SimulatorUI | Statistics>): void {
+  private messageHandler(
+    msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
+  ): void {
     logger.debug(
       `${this.logPrefix()} ${moduleName}.messageHandler: message = ${JSON.stringify(msg, null, 2)}`
     );
 
     switch (msg.id) {
       case ChargingStationWorkerMessageEvents.STARTED:
-        this.workerEventStarted(msg.data as SimulatorUI);
+        this.workerEventStarted(msg.data as ChargingStationData);
         break;
       case ChargingStationWorkerMessageEvents.STOPPED:
-        this.workerEventStopped(msg.data as SimulatorUI);
+        this.workerEventStopped(msg.data as ChargingStationData);
         break;
       // case ChargingStationWorkerMessageEvents.UPDATED:
-      //   this.workerEventUpdated(msg.data as SimulatorUI);
+      //   this.workerEventUpdated(msg.data as ChargingStationData);
       //   break;
       case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
         this.workerEventPerformanceStatistics(msg.data as Statistics);
@@ -202,17 +204,17 @@ export default class Bootstrap {
     }
   }
 
-  private workerEventStarted(data: SimulatorUI) {
+  private workerEventStarted(data: ChargingStationData) {
     this.uiServer.chargingStations.set(data.hashId, data);
-    ++this.numberOfChargingStations;
+    this.started && ++this.numberOfChargingStations;
   }
 
-  private workerEventStopped(data: SimulatorUI) {
+  private workerEventStopped(data: ChargingStationData) {
     this.uiServer.chargingStations.delete(data.hashId);
-    --this.numberOfChargingStations;
+    this.started && --this.numberOfChargingStations;
   }
 
-  // private workerEventUpdated(data: SimulatorUI) {
+  // private workerEventUpdated(data: ChargingStationData) {
   //   this.uiServer.chargingStations.set(data.hashId, data);
   // }
 

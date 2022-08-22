@@ -55,7 +55,6 @@ function hideTagModal(): void {
 }
 
 function startTransaction(): void {
-  console.log('test');
   UIClient.instance.startTransaction(props.hashId, props.connectorId, props.tag);
 }
 function stopTransaction(): void {

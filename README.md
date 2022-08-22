@@ -383,25 +383,25 @@ All kind of OCPP parameters are supported in a charging station configuration or
 
 ## UI protocol
 
-Protocol to control the simulator via Websocket
+Protocol to control the simulator via a Websocket protocol
 
 ### Version 0.0.1
 
-Set the http header Sec-Websocket-Protocol to `ui0.0.1`
+Set the HTTP header Sec-Websocket-Protocol to `ui0.0.1`
 
 #### Protocol
 
 Request:
 [`uuid`, `ProcedureName`, `PDU`]
 
-`uuid`: String uniquely representing this requests
+`uuid`: String uniquely representing this request
 `ProcedureName`: The procedure to run on the simulator
 `PDU (for Protocol Data Unit)`: The parameters (if any) for said procedure
 
 Response:
 [`uuid`, `PDU`]
 
-`uuid`: String linking the response to the request
+`uuid`: String uniquely linking the response to the request
 `PDU`: Response data to requested procedure
 
 #### Procedures
@@ -413,16 +413,16 @@ Request:
 `PDU`: {}
 
 Response:
-`PDU`: An array of SimulatorUI as described in `SimulatorUI.ts` file
+`PDU`: An array of ChargingStationData as described in `ChargingStationWorker.ts` file
 
 ##### Start Transaction
 
 Request:
 `ProcedureName`: 'startTransaction'
 `PDU`: {
-  `hashId`: the unique identifier of a chargingStation
-  `connectorId`: the id of the connector (start at 1)
-  `idTag`: An allowed badge authetification ID
+`hashId`: the unique identifier of a chargingStation
+`connectorId`: the id of the connector (start at 1)
+`idTag`: An allowed badge authetification ID
 }
 
 Response:
@@ -433,8 +433,8 @@ Response:
 Request:
 `ProcedureName`: 'stopTransaction'
 `PDU`: {
-  `hashId`: the unique identifier of a chargingStation
-  `connectorId`: the id of the connector (start at 1)
+`hashId`: the unique identifier of a chargingStation
+`transactionId`: the id of the transaction
 }
 
 Response:

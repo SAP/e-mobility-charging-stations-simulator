@@ -31,7 +31,7 @@ onMounted(() => {
 
 type State = {
   isLoading: boolean;
-  chargingStations: Array<SimulatorUI>;
+  chargingStations: SimulatorUI[];
   tag: string;
 };
 

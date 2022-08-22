@@ -3,7 +3,7 @@ import { JsonObject } from '@/type/JsonType';
 export type SimulatorUI = {
   hashId: string;
   stationInfo: ChargingStationInfoUI;
-  connectors: Array<ConnectorStatus>;
+  connectors: ConnectorStatus[];
 };
 
 export type ChargingStationInfoUI = {
