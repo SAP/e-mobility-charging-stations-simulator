@@ -1,5 +1,5 @@
 <template>
-  <tr v-for="(connector, index) in getConnectors()" class="cs-table__row">
+  <tr v-for="(connector, index) in getConnector()" class="cs-table__row">
     <CSConnector
       :hash-id="getHashId()"
       :connector="connector"
@@ -18,10 +18,14 @@ import CSConnector from './CSConnector.vue';
 
 import { reactive } from 'vue';
 import Utils from '@/composable/Utils';
-import { SimulatorUI, ChargingStationInfoUI, ConnectorStatus } from '@/type/SimulatorUI';
+import {
+  ChargingStationData,
+  ChargingStationInfo,
+  ConnectorStatus,
+} from '@/type/ChargingStationType';
 
 const props = defineProps<{
-  chargingStation: SimulatorUI;
+  chargingStation: ChargingStationData;
   tag: string;
 }>();
 
@@ -37,10 +41,10 @@ const state: State = reactive({
 function getHashId(): string {
   return props.chargingStation.hashId;
 }
-function getConnectors(): Array<ConnectorStatus> {
+function getConnector(): Array<ConnectorStatus> {
   return props.chargingStation.connectors.slice(1);
 }
-function getInfo(): ChargingStationInfoUI {
+function getInfo(): ChargingStationInfo {
   return props.chargingStation.stationInfo;
 }
 function getID(): string {

@@ -21,14 +21,15 @@ import Button from '../buttons/Button.vue';
 
 import { reactive } from 'vue';
 import UIClient from '@/composable/UIClient';
-import { ConnectorStatus } from '@/type/SimulatorUI';
+import { ConnectorStatus } from '@/type/ChargingStationType';
 import Utils from '@/composable/Utils';
 
 const props = defineProps<{
   hashId: string;
   connector: ConnectorStatus;
-  connectorId: number;
-  tag: string;
+  transactionId?: number;
+  connectorId?: number;
+  tag?: string;
 }>();
 
 type State = {
@@ -58,6 +59,6 @@ function startTransaction(): void {
   UIClient.instance.startTransaction(props.hashId, props.connectorId, props.tag);
 }
 function stopTransaction(): void {
-  UIClient.instance.stopTransaction(props.hashId, props.connectorId);
+  UIClient.instance.stopTransaction(props.hashId, props.transactionId);
 }
 </script>

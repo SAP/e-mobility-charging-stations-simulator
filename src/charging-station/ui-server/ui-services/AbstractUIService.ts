@@ -70,7 +70,10 @@ export default abstract class AbstractUIService {
   // TODO: should probably be moved to the ws verify clients callback
   private dataValidation(rawData: RawData): ProtocolRequest {
     logger.debug(
-      `${this.uiServer.logPrefix(moduleName, 'dataValidation')} Raw data = ${rawData.toString()}`
+      `${this.uiServer.logPrefix(
+        moduleName,
+        'dataValidation'
+      )} Raw data received: ${rawData.toString()}`
     );
     const data = JSON.parse(rawData.toString()) as JsonType[];
 

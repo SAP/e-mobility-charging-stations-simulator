@@ -4,10 +4,7 @@ import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import { URL } from 'url';
 import { parentPort } from 'worker_threads';
 
-import {
-  ChargingStationWorkerMessage,
-  ChargingStationWorkerMessageEvents,
-} from '../types/ChargingStationWorker';
+import { MessageChannelUtils } from '../charging-station/MessageChannelUtils';
 import { MessageType } from '../types/ocpp/MessageType';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import Statistics, { StatisticsData, TimeSeries } from '../types/Statistics';
@@ -286,15 +283,10 @@ export default class PerformanceStatistics {
       )
     );
     if (Configuration.getPerformanceStorage().enabled) {
-      parentPort.postMessage(this.buildPerformanceStatisticsMessage());
+      parentPort.postMessage(
+        MessageChannelUtils.buildPerformanceStatisticsMessage(this.statistics)
+      );
     }
-  }
-
-  private buildPerformanceStatisticsMessage(): ChargingStationWorkerMessage<Statistics> {
-    return {
-      id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS,
-      data: this.statistics,
-    };
   }
 
   private extractTimeSeriesValues(timeSeries: CircularArray<TimeSeries>): number[] {

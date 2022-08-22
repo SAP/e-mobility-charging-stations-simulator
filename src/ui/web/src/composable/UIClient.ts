@@ -1,6 +1,6 @@
 import { JsonType } from '@/type/JsonType';
 import { ProcedureName } from '@/type/UIProtocol';
-import { SimulatorUI } from '@/type/SimulatorUI';
+import { ChargingStationData } from '@/type/ChargingStationType';
 import Utils from './Utils';
 import config from '@/assets/config';
 import { v4 as uuidv4 } from 'uuid';
@@ -45,12 +45,12 @@ export default class UIClient {
     this._ws.addEventListener('open', listener);
   }
 
-  public async listChargingStations(): Promise<SimulatorUI[]> {
+  public async listChargingStations(): Promise<ChargingStationData[]> {
     console.debug('listChargingStations');
 
     const list = await this.send(ProcedureName.LIST_CHARGING_STATIONS, {});
 
-    return list as SimulatorUI[];
+    return list as ChargingStationData[];
   }
 
   public async startTransaction(hashId: string, connectorId: number, idTag: string): Promise<void> {
@@ -63,12 +63,12 @@ export default class UIClient {
     });
   }
 
-  public async stopTransaction(hashId: string, connectorId: number): Promise<void> {
+  public async stopTransaction(hashId: string, transactionId: number): Promise<void> {
     console.debug('stopTransaction');
 
     const _ = await this.send(ProcedureName.STOP_TRANSACTION, {
       hashId,
-      connectorId,
+      transactionId,
     });
   }
 
@@ -108,7 +108,7 @@ export default class UIClient {
     );
   }
 
-  private handleMessage(ev: MessageEvent<any>): void {
+  private handleMessage(ev: MessageEvent<string>): void {
     const data = JSON.parse(ev.data);
 
     if (Utils.isIterable(data) === false) {

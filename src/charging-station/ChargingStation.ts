@@ -20,11 +20,6 @@ import ChargingStationTemplate, {
   PowerUnits,
   WsOptions,
 } from '../types/ChargingStationTemplate';
-import {
-  ChargingStationData,
-  ChargingStationWorkerMessage,
-  ChargingStationWorkerMessageEvents,
-} from '../types/ChargingStationWorker';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
@@ -82,6 +77,7 @@ import AuthorizedTagsCache from './AuthorizedTagsCache';
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import { ChargingStationUtils } from './ChargingStationUtils';
+import { MessageChannelUtils } from './MessageChannelUtils';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
@@ -535,7 +531,7 @@ export default class ChargingStation {
         }
       }
     );
-    parentPort.postMessage(this.buildStartedMessage());
+    parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -562,7 +558,7 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    parentPort.postMessage(this.buildStoppedMessage());
+    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
     this.stopped = true;
   }
 
@@ -685,35 +681,6 @@ export default class ChargingStation {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
-  }
-
-  private buildStartedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
-    return {
-      id: ChargingStationWorkerMessageEvents.STARTED,
-      data: this.buildDataPayload(),
-    };
-  }
-
-  private buildStoppedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
-    return {
-      id: ChargingStationWorkerMessageEvents.STOPPED,
-      data: this.buildDataPayload(),
-    };
-  }
-
-  private buildUpdatedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
-    return {
-      id: ChargingStationWorkerMessageEvents.UPDATED,
-      data: this.buildDataPayload(),
-    };
-  }
-
-  private buildDataPayload(): ChargingStationData {
-    return {
-      hashId: this.hashId,
-      stationInfo: this.stationInfo,
-      connectors: Array.from(this.connectors.values()),
-    };
   }
 
   private flushMessageBuffer() {
@@ -1483,7 +1450,7 @@ export default class ChargingStation {
             logger.error(errMsg);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
-        parentPort.postMessage(this.buildUpdatedMessage());
+        parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
           payload: request,

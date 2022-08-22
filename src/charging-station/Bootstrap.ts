@@ -181,26 +181,39 @@ export default class Bootstrap {
     msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
   ): void {
     logger.debug(
-      `${this.logPrefix()} ${moduleName}.messageHandler: message = ${JSON.stringify(msg, null, 2)}`
+      `${this.logPrefix()} ${moduleName}.messageHandler: channel message received: ${JSON.stringify(
+        msg,
+        null,
+        2
+      )}`
     );
 
-    switch (msg.id) {
-      case ChargingStationWorkerMessageEvents.STARTED:
-        this.workerEventStarted(msg.data as ChargingStationData);
-        break;
-      case ChargingStationWorkerMessageEvents.STOPPED:
-        this.workerEventStopped(msg.data as ChargingStationData);
-        break;
-      case ChargingStationWorkerMessageEvents.UPDATED:
-        this.workerEventUpdated(msg.data as ChargingStationData);
-        break;
-      case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
-        this.workerEventPerformanceStatistics(msg.data as Statistics);
-        break;
-      default:
-        throw new BaseError(
-          `Unknown message id: ${msg.id} for data: ${JSON.stringify(msg.data, null, 2)}`
-        );
+    try {
+      switch (msg.id) {
+        case ChargingStationWorkerMessageEvents.STARTED:
+          this.workerEventStarted(msg.data as ChargingStationData);
+          break;
+        case ChargingStationWorkerMessageEvents.STOPPED:
+          this.workerEventStopped(msg.data as ChargingStationData);
+          break;
+        case ChargingStationWorkerMessageEvents.UPDATED:
+          this.workerEventUpdated(msg.data as ChargingStationData);
+          break;
+        case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
+          this.workerEventPerformanceStatistics(msg.data as Statistics);
+          break;
+        default:
+          throw new BaseError(
+            `Unknown event type: ${msg.id} for data: ${JSON.stringify(msg.data, null, 2)}`
+          );
+      }
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling ${
+          msg.id
+        } event: %j`,
+        error
+      );
     }
   }
 
@@ -219,12 +232,7 @@ export default class Bootstrap {
   }
 
   private workerEventPerformanceStatistics = (data: Statistics) => {
-    (this.storage.storePerformanceStatistics(data) as Promise<void>).catch((error) => {
-      logger.error(
-        `${this.logPrefix()} ${moduleName}.workerEventPerformanceStatistics: error = %j`,
-        error
-      );
-    });
+    this.storage.storePerformanceStatistics(data) as void;
   };
 
   private initialize() {

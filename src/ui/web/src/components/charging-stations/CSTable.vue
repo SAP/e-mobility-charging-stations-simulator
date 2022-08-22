@@ -24,10 +24,10 @@
 
 <script setup lang="ts">
 import CSData from './CSData.vue';
-import { SimulatorUI } from '@/type/SimulatorUI';
+import { ChargingStationData } from '@/type/ChargingStationType';
 
 const props = defineProps<{
-  chargingStations: Array<SimulatorUI>;
+  chargingStations: ChargingStationData[];
   tag: string;
 }>();
 </script>

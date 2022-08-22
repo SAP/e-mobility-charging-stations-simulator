@@ -21,7 +21,7 @@ import CSTable from '@/components/charging-stations/CSTable.vue';
 
 import { onMounted, reactive } from 'vue';
 import UIClient from '@/composable/UIClient';
-import { SimulatorUI } from '@/type/SimulatorUI';
+import { ChargingStationData } from '@/type/ChargingStationType';
 
 const client = UIClient.instance;
 
@@ -31,7 +31,7 @@ onMounted(() => {
 
 type State = {
   isLoading: boolean;
-  chargingStations: SimulatorUI[];
+  chargingStations: ChargingStationData[];
   tag: string;
 };
 
@@ -46,7 +46,6 @@ async function load(): Promise<void> {
   state.isLoading = true;
   const list = await UIClient.instance.listChargingStations();
   state.chargingStations = list;
-  // state.chargingStations = state.chargingStations.concat(state.chargingStations.concat(list));
   state.isLoading = false;
 }
 </script>
