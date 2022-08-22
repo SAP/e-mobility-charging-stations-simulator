@@ -276,6 +276,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         ) as JSONSchemaType<OCPP16TriggerMessageRequest>,
       ],
     ]);
+    this.validatePayload.bind(this);
   }
 
   public async incomingRequestHandler(

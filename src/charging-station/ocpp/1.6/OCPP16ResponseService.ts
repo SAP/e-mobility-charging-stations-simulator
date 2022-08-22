@@ -165,6 +165,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         ) as JSONSchemaType<DiagnosticsStatusNotificationResponse>,
       ],
     ]);
+    this.validatePayload.bind(this);
   }
 
   public async responseHandler(

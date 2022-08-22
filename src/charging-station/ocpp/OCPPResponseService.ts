@@ -18,6 +18,8 @@ export default abstract class OCPPResponseService {
   protected constructor() {
     this.ajv = new Ajv();
     ajvFormats(this.ajv);
+    this.responseHandler.bind(this);
+    this.validateResponsePayload.bind(this);
   }
 
   public static getInstance<T extends OCPPResponseService>(this: new () => T): T {

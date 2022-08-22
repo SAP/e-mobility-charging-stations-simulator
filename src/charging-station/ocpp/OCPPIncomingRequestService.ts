@@ -19,6 +19,8 @@ export default abstract class OCPPIncomingRequestService {
   protected constructor() {
     this.ajv = new Ajv();
     ajvFormats(this.ajv);
+    this.incomingRequestHandler.bind(this);
+    this.validateIncomingRequestPayload.bind(this);
   }
 
   public static getInstance<T extends OCPPIncomingRequestService>(this: new () => T): T {

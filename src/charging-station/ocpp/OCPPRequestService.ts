@@ -34,11 +34,14 @@ export default abstract class OCPPRequestService {
 
   protected constructor(ocppResponseService: OCPPResponseService) {
     this.ocppResponseService = ocppResponseService;
+    this.ajv = new Ajv();
+    ajvFormats(this.ajv);
     this.requestHandler.bind(this);
     this.sendResponse.bind(this);
     this.sendError.bind(this);
-    this.ajv = new Ajv();
-    ajvFormats(this.ajv);
+    this.internalSendMessage.bind(this);
+    this.buildMessageToSend.bind(this);
+    this.validateRequestPayload.bind(this);
   }
 
   public static getInstance<T extends OCPPRequestService>(

@@ -140,6 +140,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
         ) as JSONSchemaType<OCPP16StopTransactionRequest>,
       ],
     ]);
+    this.buildRequestPayload.bind(this);
+    this.validatePayload.bind(this);
   }
 
   public async requestHandler<Request extends JsonType, Response extends JsonType>(
