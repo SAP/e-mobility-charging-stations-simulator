@@ -276,6 +276,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         ) as JSONSchemaType<OCPP16TriggerMessageRequest>,
       ],
     ]);
+    this.validatePayload.bind(this);
   }
 
   public async incomingRequestHandler(
@@ -311,18 +312,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         ChargingStationUtils.isIncomingRequestCommandSupported(commandName, chargingStation)
       ) {
         try {
-          if (this.jsonSchemas.has(commandName)) {
-            this.validateIncomingRequestPayload(
-              chargingStation,
-              commandName,
-              this.jsonSchemas.get(commandName),
-              commandPayload
-            );
-          } else {
-            logger.warn(
-              `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler: No JSON schema found for command ${commandName} PDU validation`
-            );
-          }
+          this.validatePayload(chargingStation, commandName, commandPayload);
           // Call the method to build the response
           response = await this.incomingRequestHandlers.get(commandName)(
             chargingStation,
@@ -365,6 +355,25 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       response,
       commandName
     );
+  }
+
+  private validatePayload(
+    chargingStation: ChargingStation,
+    commandName: OCPP16IncomingRequestCommand,
+    commandPayload: JsonType
+  ): boolean {
+    if (this.jsonSchemas.has(commandName)) {
+      return this.validateIncomingRequestPayload(
+        chargingStation,
+        commandName,
+        this.jsonSchemas.get(commandName),
+        commandPayload
+      );
+    }
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
+    );
+    return false;
   }
 
   // Simulate charging station restart

@@ -22,6 +22,7 @@ import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
 import type OCPPResponseService from './OCPPResponseService';
+import { OCPPServiceUtils } from './OCPPServiceUtils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -33,18 +34,21 @@ export default abstract class OCPPRequestService {
 
   protected constructor(ocppResponseService: OCPPResponseService) {
     this.ocppResponseService = ocppResponseService;
+    this.ajv = new Ajv();
+    ajvFormats(this.ajv);
     this.requestHandler.bind(this);
     this.sendResponse.bind(this);
     this.sendError.bind(this);
-    this.ajv = new Ajv();
-    ajvFormats(this.ajv);
+    this.internalSendMessage.bind(this);
+    this.buildMessageToSend.bind(this);
+    this.validateRequestPayload.bind(this);
   }
 
   public static getInstance<T extends OCPPRequestService>(
     this: new (ocppResponseService: OCPPResponseService) => T,
     ocppResponseService: OCPPResponseService
   ): T {
-    if (!OCPPRequestService.instance) {
+    if (OCPPRequestService.instance === null) {
       OCPPRequestService.instance = new this(ocppResponseService);
     }
     return OCPPRequestService.instance as T;
@@ -132,7 +136,7 @@ export default abstract class OCPPRequestService {
       validate.errors
     );
     throw new OCPPError(
-      ErrorType.FORMATION_VIOLATION,
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)

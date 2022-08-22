@@ -107,7 +107,7 @@ But the modifications to test have to be done to the files in the build target d
 #### Worker process model:
 
 - **workerSet**:
-  Worker set executing each a static number (chargingStationsPerWorker) of simulated charging stations from the total
+  Worker set executing each a static number (elementsPerWorker) of simulated charging stations from the total
 
 - **staticPool**:
   Statically sized worker pool executing a static total number of simulated charging stations
