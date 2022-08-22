@@ -62,7 +62,7 @@ export default class Bootstrap {
   }
 
   public static getInstance(): Bootstrap {
-    if (!Bootstrap.instance) {
+    if (Bootstrap.instance === null) {
       Bootstrap.instance = new Bootstrap();
     }
     return Bootstrap.instance;
