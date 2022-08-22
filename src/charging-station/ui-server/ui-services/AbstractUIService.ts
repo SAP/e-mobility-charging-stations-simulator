@@ -6,6 +6,7 @@ import {
   ProcedureName,
   ProtocolRequest,
   ProtocolRequestHandler,
+  ProtocolResponse,
   ProtocolVersion,
 } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
@@ -47,11 +48,10 @@ export default abstract class AbstractUIService {
       );
     }
 
-    let messageResponse: JsonType;
-
+    let responsePayload: JsonType;
     try {
       // Call the message handler to build the message response
-      messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
+      responsePayload = (await this.messageHandlers.get(command)(payload)) as JsonType;
     } catch (error) {
       // Log
       logger.error(
@@ -62,11 +62,11 @@ export default abstract class AbstractUIService {
     }
 
     // Send the message response
-    this.uiServer.sendResponse(this.buildProtocolResponse(messageId, messageResponse));
+    this.uiServer.sendResponse(this.buildProtocolResponse(messageId, responsePayload));
   }
 
   protected buildProtocolResponse(messageId: string, payload: JsonType): string {
-    return JSON.stringify([messageId, payload]);
+    return JSON.stringify([messageId, payload] as ProtocolResponse);
   }
 
   // Validate the raw data received from the WebSocket

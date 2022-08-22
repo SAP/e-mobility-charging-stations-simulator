@@ -4,7 +4,10 @@ import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import { URL } from 'url';
 import { parentPort } from 'worker_threads';
 
-import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
+import {
+  ChargingStationWorkerMessage,
+  ChargingStationWorkerMessageEvents,
+} from '../types/ChargingStationWorker';
 import { MessageType } from '../types/ocpp/MessageType';
 import { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import Statistics, { StatisticsData, TimeSeries } from '../types/Statistics';
@@ -287,7 +290,7 @@ export default class PerformanceStatistics {
     }
   }
 
-  private buildPerformanceStatisticsMessage(): Record<string, unknown> {
+  private buildPerformanceStatisticsMessage(): ChargingStationWorkerMessage<Statistics> {
     return {
       id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS,
       data: this.statistics,

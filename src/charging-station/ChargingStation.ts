@@ -73,7 +73,6 @@ import {
 import { ChargingStationInfoUI, SimulatorUI } from '../types/SimulatorUI';
 import { ProcedureName } from '../types/UIProtocol';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import { WorkerData } from '../types/Worker';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
@@ -689,21 +688,21 @@ export default class ChargingStation {
     this.messageBuffer.add(message);
   }
 
-  private buildStartedMessage(): ChargingStationWorkerMessage<WorkerData> {
+  private buildStartedMessage(): ChargingStationWorkerMessage<SimulatorUI> {
     return {
       id: ChargingStationWorkerMessageEvents.STARTED,
       data: this.buildDataPayload(),
     };
   }
 
-  private buildStoppedMessage(): ChargingStationWorkerMessage<WorkerData> {
+  private buildStoppedMessage(): ChargingStationWorkerMessage<SimulatorUI> {
     return {
       id: ChargingStationWorkerMessageEvents.STOPPED,
       data: this.buildDataPayload(),
     };
   }
 
-  // private buildUpdatedMessage(): ChargingStationWorkerMessage<WorkerData> {
+  // private buildUpdatedMessage(): ChargingStationWorkerMessage<SimulatorUI> {
   //   return {
   //     id: ChargingStationWorkerMessageEvents.UPDATED,
   //     data: this.buildDataPayload(),
