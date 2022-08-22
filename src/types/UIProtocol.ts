@@ -17,6 +17,8 @@ export enum ProcedureName {
   LIST_CHARGING_STATIONS = 'listChargingStations',
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
+  START_SIMULATOR = 'startSimulator',
+  STOP_SIMULATOR = 'stopSimulator',
 }
 
 export type ProtocolRequest = [string, ProcedureName, JsonType];

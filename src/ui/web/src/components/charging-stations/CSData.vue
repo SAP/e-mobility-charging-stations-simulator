@@ -6,7 +6,7 @@
       :connector-id="index + 1"
       :tag="props.tag"
     />
-    <td class="cs-table__name-col">{{ getID() }}</td>
+    <td class="cs-table__name-col">{{ getChargingStationId() }}</td>
     <td class="cs-table__model-col">{{ getModel() }}</td>
     <td class="cs-table__vendor-col">{{ getVendor() }}</td>
     <td class="cs-table__firmware-col">{{ getFirmwareVersion() }}</td>
@@ -47,7 +47,7 @@ function getConnector(): Array<ConnectorStatus> {
 function getInfo(): ChargingStationInfo {
   return props.chargingStation.stationInfo;
 }
-function getID(): string {
+function getChargingStationId(): string {
   return Utils.ifUndefined<string>(getInfo().chargingStationId, 'Ø');
 }
 function getModel(): string {

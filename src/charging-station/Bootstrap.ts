@@ -109,7 +109,7 @@ export default class Bootstrap {
             chalk.yellow('No charging station template enabled in configuration, exiting')
           );
         } else {
-          console.log(
+          console.info(
             chalk.green(
               `Charging stations simulator ${
                 this.version
@@ -181,7 +181,7 @@ export default class Bootstrap {
     msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
   ): void {
     logger.debug(
-      `${this.logPrefix()} ${moduleName}.messageHandler: channel message received: ${JSON.stringify(
+      `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
         msg,
         null,
         2

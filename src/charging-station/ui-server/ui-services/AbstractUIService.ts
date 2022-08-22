@@ -11,6 +11,7 @@ import {
 } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
+import Bootstrap from '../../Bootstrap';
 import WorkerBroadcastChannel from '../../WorkerBroadcastChannel';
 import { AbstractUIServer } from '../AbstractUIServer';
 
@@ -27,6 +28,8 @@ export default abstract class AbstractUIService {
     this.uiServer = uiServer;
     this.messageHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
+      [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
+      [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
     ]);
     this.workerBroadcastChannel = new WorkerBroadcastChannel();
   }
@@ -85,16 +88,18 @@ export default abstract class AbstractUIService {
       throw new BaseError('UI protocol request is malformed');
     }
 
-    const [, procedureName] = data as ProtocolRequest;
-
-    if (Object.values(ProcedureName).includes(procedureName) === false) {
-      throw new BaseError('UI protocol request with unknown procedure name');
-    }
-
     return data as ProtocolRequest;
   }
 
   private handleListChargingStations(): JsonType {
     return Array.from(this.uiServer.chargingStations.values()) as JsonType;
+  }
+
+  private async handleStartSimulator(): Promise<void> {
+    await Bootstrap.getInstance().start();
+  }
+
+  private async handleStopSimulator(): Promise<void> {
+    await Bootstrap.getInstance().stop();
   }
 }

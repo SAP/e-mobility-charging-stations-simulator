@@ -23,10 +23,10 @@ import { onMounted, reactive } from 'vue';
 import UIClient from '@/composable/UIClient';
 import { ChargingStationData } from '@/type/ChargingStationType';
 
-const client = UIClient.instance;
+const UIClientInstance = UIClient.instance;
 
 onMounted(() => {
-  client.onOpen(load);
+  UIClientInstance.onOpen(load);
 });
 
 type State = {
@@ -44,7 +44,7 @@ const state: State = reactive({
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
-  const list = await UIClient.instance.listChargingStations();
+  const list = await UIClientInstance.listChargingStations();
   state.chargingStations = list;
   state.isLoading = false;
 }

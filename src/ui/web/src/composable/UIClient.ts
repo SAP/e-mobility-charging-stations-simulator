@@ -5,17 +5,17 @@ import Utils from './Utils';
 import config from '@/assets/config';
 import { v4 as uuidv4 } from 'uuid';
 
+type ResponseHandler = {
+  resolve: (value: JsonType | PromiseLike<JsonType>) => void;
+  reject: (reason?: any) => void;
+  procedureName: ProcedureName;
+};
+
 export default class UIClient {
   private static _instance: UIClient | null = null;
 
   private _ws: WebSocket;
-  private _responseHandlers: Map<
-    string,
-    {
-      resolve: (value: JsonType | PromiseLike<JsonType>) => void;
-      reject: (reason?: any) => void;
-    }
-  >;
+  private _responseHandlers: Map<string, ResponseHandler>;
 
   private constructor() {
     this._ws = new WebSocket(
@@ -23,15 +23,9 @@ export default class UIClient {
       config.emobility.protocol
     );
 
-    this._responseHandlers = new Map<
-      string,
-      {
-        resolve: (value: unknown | PromiseLike<unknown>) => void;
-        reject: (reason?: any) => void;
-      }
-    >();
+    this._responseHandlers = new Map<string, ResponseHandler>();
 
-    this._ws.onmessage = this.handleMessage.bind(this);
+    this._ws.onmessage = this.handleResponse.bind(this);
   }
 
   public static get instance() {
@@ -48,7 +42,7 @@ export default class UIClient {
   public async listChargingStations(): Promise<ChargingStationData[]> {
     console.debug('listChargingStations');
 
-    const list = await this.send(ProcedureName.LIST_CHARGING_STATIONS, {});
+    const list = await this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {});
 
     return list as ChargingStationData[];
   }
@@ -56,7 +50,7 @@ export default class UIClient {
   public async startTransaction(hashId: string, connectorId: number, idTag: string): Promise<void> {
     console.debug('startTransaction');
 
-    const _ = await this.send(ProcedureName.START_TRANSACTION, {
+    const _ = await this.sendRequest(ProcedureName.START_TRANSACTION, {
       hashId,
       connectorId,
       idTag,
@@ -66,7 +60,7 @@ export default class UIClient {
   public async stopTransaction(hashId: string, transactionId: number): Promise<void> {
     console.debug('stopTransaction');
 
-    const _ = await this.send(ProcedureName.STOP_TRANSACTION, {
+    const _ = await this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashId,
       transactionId,
     });
@@ -75,16 +69,17 @@ export default class UIClient {
   private setHandler(
     id: string,
     resolve: (value: JsonType | PromiseLike<JsonType>) => void,
-    reject: (reason?: any) => void
-  ) {
-    this._responseHandlers.set(id, { resolve, reject });
+    reject: (reason?: any) => void,
+    procedureName: ProcedureName
+  ): void {
+    this._responseHandlers.set(id, { resolve, reject, procedureName });
   }
 
-  private getHandler(id: string) {
+  private getHandler(id: string): ResponseHandler | undefined {
     return this._responseHandlers.get(id);
   }
 
-  private async send(command: ProcedureName, data: JsonType): Promise<JsonType> {
+  private async sendRequest(command: ProcedureName, data: JsonType): Promise<JsonType> {
     let uuid: string;
     return Utils.promiseWithTimeout(
       new Promise((resolve, reject) => {
@@ -92,38 +87,38 @@ export default class UIClient {
         const msg = JSON.stringify([uuid, command, data]);
 
         if (this._ws.readyState === this._ws.OPEN) {
-          console.debug('Send message:', msg);
+          console.debug(`Send request ${command} message: `, msg);
           this._ws.send(msg);
         } else {
-          throw new Error('Send message: connection not opened');
+          throw new Error(`Send request ${command} message: connection not opened`);
         }
 
-        this.setHandler(uuid, resolve, reject);
+        this.setHandler(uuid, resolve, reject, command);
       }),
       60 * 1000,
-      Error('Send message timeout'),
+      Error(`Send request ${command} message timeout`),
       () => {
         this._responseHandlers.delete(uuid);
       }
     );
   }
 
-  private handleMessage(ev: MessageEvent<string>): void {
+  private handleResponse(ev: MessageEvent<string>): void {
     const data = JSON.parse(ev.data);
 
     if (Utils.isIterable(data) === false) {
-      throw new Error('Message not iterable: ' + JSON.stringify(data, null, 2));
+      throw new Error('Response not iterable: ' + JSON.stringify(data, null, 2));
     }
 
     const [uuid, response] = data;
 
-    let messageHandler;
+    let responseHandler: ResponseHandler | undefined;
     if (this._responseHandlers.has(uuid) === true) {
-      messageHandler = this.getHandler(uuid);
+      responseHandler = this.getHandler(uuid);
     } else {
-      throw new Error('Message not a response: ' + JSON.stringify(data, null, 2));
+      throw new Error('Not a response to a request: ' + JSON.stringify(data, null, 2));
     }
 
-    messageHandler?.resolve(response);
+    responseHandler?.resolve(response);
   }
 }
