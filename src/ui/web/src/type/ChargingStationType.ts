@@ -12,12 +12,12 @@ export type ChargingStationInfo = {
   numberOfConnectors?: number | number[];
   baseName: string;
   infoHash?: string;
+  templateHash?: string;
   chargeBoxSerialNumber?: string;
   chargePointSerialNumber?: string;
   meterSerialNumber?: string;
   maximumPower?: number; // Always in Watt
   maximumAmperage?: number; // Always in Ampere
-  templateHash?: string;
   supervisionUrls?: string | string[];
   supervisionUrlOcppConfiguration?: boolean;
   supervisionUrlOcppKey?: string;
@@ -46,7 +46,7 @@ export type ChargingStationInfo = {
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
-  mayAuthorizeAtRemoteStart: boolean;
+  mayAuthorizeAtRemoteStart?: boolean;
   amperageLimitationOcppKey?: string;
   amperageLimitationUnit?: AmpereUnits;
   beginEndMeterValues?: boolean;
@@ -56,8 +56,51 @@ export type ChargingStationInfo = {
   mainVoltageMeterValues?: boolean;
   phaseLineToLineVoltageMeterValues?: boolean;
   customValueLimitationMeterValues?: boolean;
-  // commandsSupport?: CommandsSupport;
+  commandsSupport?: CommandsSupport;
 };
+
+export enum OCPP16IncomingRequestCommand {
+  RESET = 'Reset',
+  CLEAR_CACHE = 'ClearCache',
+  CHANGE_AVAILABILITY = 'ChangeAvailability',
+  UNLOCK_CONNECTOR = 'UnlockConnector',
+  GET_CONFIGURATION = 'GetConfiguration',
+  CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  SET_CHARGING_PROFILE = 'SetChargingProfile',
+  CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
+  REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
+  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
+  GET_DIAGNOSTICS = 'GetDiagnostics',
+  TRIGGER_MESSAGE = 'TriggerMessage',
+}
+
+export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
+
+export const IncomingRequestCommand = {
+  ...OCPP16IncomingRequestCommand,
+};
+
+export enum OCPP16RequestCommand {
+  BOOT_NOTIFICATION = 'BootNotification',
+  HEARTBEAT = 'Heartbeat',
+  STATUS_NOTIFICATION = 'StatusNotification',
+  AUTHORIZE = 'Authorize',
+  START_TRANSACTION = 'StartTransaction',
+  STOP_TRANSACTION = 'StopTransaction',
+  METER_VALUES = 'MeterValues',
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
+}
+
+export type RequestCommand = OCPP16RequestCommand;
+
+export const RequestCommand = {
+  ...OCPP16RequestCommand,
+};
+
+export interface CommandsSupport {
+  incomingCommands: Record<IncomingRequestCommand, boolean>;
+  outgoingCommands?: Record<RequestCommand, boolean>;
+}
 
 export enum OCPPVersion {
   VERSION_16 = '1.6',

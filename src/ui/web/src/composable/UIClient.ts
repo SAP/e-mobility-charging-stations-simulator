@@ -1,12 +1,16 @@
 import { JsonType } from '@/type/JsonType';
-import { ProcedureName } from '@/type/UIProtocol';
-import { ChargingStationData } from '@/type/ChargingStationType';
+import {
+  ProcedureName,
+  ProtocolResponse,
+  ResponsePayload,
+  ResponseStatus,
+} from '@/type/UIProtocol';
 import Utils from './Utils';
 import config from '@/assets/config';
 import { v4 as uuidv4 } from 'uuid';
 
 type ResponseHandler = {
-  resolve: (value: JsonType | PromiseLike<JsonType>) => void;
+  resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void;
   reject: (reason?: any) => void;
   procedureName: ProcedureName;
 };
@@ -39,28 +43,30 @@ export default class UIClient {
     this._ws.addEventListener('open', listener);
   }
 
-  public async listChargingStations(): Promise<ChargingStationData[]> {
+  public async listChargingStations(): Promise<ResponsePayload> {
     console.debug('listChargingStations');
 
-    const list = await this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {});
-
-    return list as ChargingStationData[];
+    return this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {});
   }
 
-  public async startTransaction(hashId: string, connectorId: number, idTag: string): Promise<void> {
+  public async startTransaction(
+    hashId: string,
+    connectorId: number,
+    idTag: string
+  ): Promise<ResponsePayload> {
     console.debug('startTransaction');
 
-    const _ = await this.sendRequest(ProcedureName.START_TRANSACTION, {
+    return this.sendRequest(ProcedureName.START_TRANSACTION, {
       hashId,
       connectorId,
       idTag,
     });
   }
 
-  public async stopTransaction(hashId: string, transactionId: number): Promise<void> {
+  public async stopTransaction(hashId: string, transactionId: number): Promise<ResponsePayload> {
     console.debug('stopTransaction');
 
-    const _ = await this.sendRequest(ProcedureName.STOP_TRANSACTION, {
+    return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashId,
       transactionId,
     });
@@ -68,7 +74,7 @@ export default class UIClient {
 
   private setResponseHandler(
     id: string,
-    resolve: (value: JsonType | PromiseLike<JsonType>) => void,
+    resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void,
     reject: (reason?: any) => void,
     procedureName: ProcedureName
   ): void {
@@ -79,7 +85,7 @@ export default class UIClient {
     return this._responseHandlers.get(id);
   }
 
-  private async sendRequest(command: ProcedureName, data: JsonType): Promise<JsonType> {
+  private async sendRequest(command: ProcedureName, data: JsonType): Promise<ResponsePayload> {
     let uuid: string;
     return Utils.promiseWithTimeout(
       new Promise((resolve, reject) => {
@@ -103,8 +109,8 @@ export default class UIClient {
     );
   }
 
-  private handleResponse(ev: MessageEvent<string>): void {
-    const data = JSON.parse(ev.data);
+  private handleResponse(messageEvent: MessageEvent<string>): void {
+    const data = JSON.parse(messageEvent.data) as ProtocolResponse;
 
     if (Utils.isIterable(data) === false) {
       throw new Error('Response not iterable: ' + JSON.stringify(data, null, 2));
@@ -113,7 +119,16 @@ export default class UIClient {
     const [uuid, response] = data;
 
     if (this._responseHandlers.has(uuid) === true) {
-      this.getResponseHandler(uuid)?.resolve(response);
+      switch (response.status) {
+        case ResponseStatus.SUCCESS:
+          this.getResponseHandler(uuid)?.resolve(response);
+          break;
+        case ResponseStatus.FAILURE:
+          this.getResponseHandler(uuid)?.reject(response);
+          break;
+        default:
+          throw new Error(`Response status not supported: ${response.status}`);
+      }
     } else {
       throw new Error('Not a response to a request: ' + JSON.stringify(data, null, 2));
     }

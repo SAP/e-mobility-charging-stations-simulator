@@ -413,7 +413,10 @@ Request:
 `PDU`: {}
 
 Response:
-`PDU`: An array of ChargingStationData as described in `ChargingStationWorker.ts` file
+`PDU`: {
+`status`,
+An array of ChargingStationData as described in `ChargingStationWorker.ts` file
+}
 
 ##### Start Transaction
 
@@ -426,7 +429,10 @@ Request:
 }
 
 Response:
-`PDU`: **null**
+`PDU`: {
+`status`,
+**null**
+}
 
 ##### Stop Transaction
 
@@ -438,7 +444,10 @@ Request:
 }
 
 Response:
-`PDU`: **null**
+`PDU`: {
+`status`,
+**null**
+}
 
 ## Support, Feedback, Contributing
 
