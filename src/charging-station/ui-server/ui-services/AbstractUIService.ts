@@ -26,10 +26,7 @@ export default abstract class AbstractUIService {
     this.version = version;
     this.uiServer = uiServer;
     this.messageHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
-      [
-        ProcedureName.LIST_CHARGING_STATIONS,
-        this.handleListChargingStations.bind(this) as ProtocolRequestHandler,
-      ],
+      [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
     ]);
     this.workerBroadcastChannel = new WorkerBroadcastChannel();
   }
