@@ -13,6 +13,8 @@ import Utils from '../../../utils/Utils';
 import WorkerBroadcastChannel from '../../WorkerBroadcastChannel';
 import { AbstractUIServer } from '../AbstractUIServer';
 
+const moduleName = 'AbstractUIService';
+
 export default abstract class AbstractUIService {
   protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
@@ -52,7 +54,10 @@ export default abstract class AbstractUIService {
       messageResponse = (await this.messageHandlers.get(command)(payload)) as JsonType;
     } catch (error) {
       // Log
-      logger.error(this.uiServer.logPrefix() + ' Handle message error: %j', error);
+      logger.error(
+        `${this.uiServer.logPrefix(moduleName, 'messageHandler')} Handle message error: %j`,
+        error
+      );
       throw error;
     }
 
@@ -64,29 +69,26 @@ export default abstract class AbstractUIService {
     return JSON.stringify([messageId, payload]);
   }
 
-  // Validate the RawData received from the websocket
-  private dataValidation(rdata: RawData): ProtocolRequest {
-    let data = JSON.parse(rdata.toString()) as JsonType;
-    logger.debug(`${this.uiServer.logPrefix()} UI message received | ${rdata.toString()}`);
+  // Validate the raw data received from the WebSocket
+  // TODO: should probably be moved to the ws verify clients callback
+  private dataValidation(rawData: RawData): ProtocolRequest {
+    logger.debug(
+      `${this.uiServer.logPrefix(moduleName, 'dataValidation')} Raw data = ${rawData.toString()}`
+    );
+    const data = JSON.parse(rawData.toString()) as JsonType[];
 
     if (Utils.isIterable(data) === false) {
       throw new BaseError('UI protocol request is not iterable');
     }
 
-    data = data as JsonType[];
-
-    // TODO: should probably be moved to the ws verify clients callback
     if (data.length !== 3) {
       throw new BaseError('UI protocol request is malformed');
     }
 
-    switch (data[1]) {
-      case ProcedureName.LIST_CHARGING_STATIONS:
-      case ProcedureName.START_TRANSACTION:
-      case ProcedureName.STOP_TRANSACTION:
-        break;
-      default:
-        throw new BaseError('UI protocol request is malformed');
+    const [, procedureName] = data as ProtocolRequest;
+
+    if (Object.values(ProcedureName).includes(procedureName) === false) {
+      throw new BaseError('UI protocol request with unknown procedure name');
     }
 
     return data as ProtocolRequest;

@@ -19,5 +19,5 @@ export abstract class AbstractUIServer {
   public abstract start(): void;
   public abstract stop(): void;
   public abstract sendResponse(message: string): void;
-  public abstract logPrefix(): string;
+  public abstract logPrefix(modName?: string, methodName?: string): string;
 }

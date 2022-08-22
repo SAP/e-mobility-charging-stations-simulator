@@ -10,6 +10,8 @@ import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
 import UIServiceFactory from './ui-services/UIServiceFactory';
 
+const moduleName = 'UIWebSocketServer';
+
 export default class UIWebSocketServer extends AbstractUIServer {
   public constructor(options?: ServerOptions) {
     super();
@@ -31,11 +33,14 @@ export default class UIWebSocketServer extends AbstractUIServer {
           .get(version)
           .messageHandler(messageData)
           .catch(() => {
-            logger.error(`${this.logPrefix()} Error while handling message data: %j`, messageData);
+            logger.error(
+              `${this.logPrefix(moduleName, 'onmessage')} Error while handling message data: %j`,
+              messageData
+            );
           });
       });
       socket.on('error', (error) => {
-        logger.error(`${this.logPrefix()} Error on WebSocket: %j`, error);
+        logger.error(`${this.logPrefix(moduleName, 'onerror')} Error on WebSocket: %j`, error);
       });
     });
   }
@@ -48,8 +53,12 @@ export default class UIWebSocketServer extends AbstractUIServer {
     this.broadcastToClients(message);
   }
 
-  public logPrefix(): string {
-    return Utils.logPrefix(' UI WebSocket Server:');
+  public logPrefix(modName?: string, methodName?: string): string {
+    const logMsg =
+      modName && methodName
+        ? ` UI WebSocket Server | ${modName}.${methodName}:`
+        : ' UI WebSocket Server |';
+    return Utils.logPrefix(logMsg);
   }
 
   private broadcastToClients(message: string): void {

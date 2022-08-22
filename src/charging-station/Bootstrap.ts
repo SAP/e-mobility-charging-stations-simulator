@@ -7,6 +7,7 @@ import { isMainThread } from 'worker_threads';
 import chalk from 'chalk';
 
 import { version } from '../../package.json';
+import BaseError from '../exception/BaseError';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
@@ -27,6 +28,8 @@ import { ChargingStationUtils } from './ChargingStationUtils';
 import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
 import UIServerFactory from './ui-server/UIServerFactory';
+
+const moduleName = 'Bootstrap';
 
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
@@ -175,7 +178,9 @@ export default class Bootstrap {
   }
 
   private messageHandler(msg: ChargingStationWorkerMessage<SimulatorUI | Statistics>): void {
-    logger.debug(`${this.logPrefix()} messageHandler | ${msg.id}: ${JSON.stringify(msg.data)}`);
+    logger.debug(
+      `${this.logPrefix()} ${moduleName}.messageHandler: message = ${JSON.stringify(msg, null, 2)}`
+    );
 
     switch (msg.id) {
       case ChargingStationWorkerMessageEvents.STARTED:
@@ -191,7 +196,9 @@ export default class Bootstrap {
         this.workerEventPerformanceStatistics(msg.data as Statistics);
         break;
       default:
-        console.error(msg);
+        throw new BaseError(
+          `Unknown message id: ${msg.id} for data: ${JSON.stringify(msg.data, null, 2)}`
+        );
     }
   }
 
@@ -211,7 +218,10 @@ export default class Bootstrap {
 
   private workerEventPerformanceStatistics = (data: Statistics) => {
     (this.storage.storePerformanceStatistics(data) as Promise<void>).catch((error) => {
-      logger.error(`${this.logPrefix()} %j`, error);
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.workerEventPerformanceStatistics: error = %j`,
+        error
+      );
     });
   };
 
