@@ -701,12 +701,12 @@ export default class ChargingStation {
     };
   }
 
-  // private buildUpdatedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
-  //   return {
-  //     id: ChargingStationWorkerMessageEvents.UPDATED,
-  //     data: this.buildDataPayload(),
-  //   };
-  // }
+  private buildUpdatedMessage(): ChargingStationWorkerMessage<ChargingStationData> {
+    return {
+      id: ChargingStationWorkerMessageEvents.UPDATED,
+      data: this.buildDataPayload(),
+    };
+  }
 
   private buildDataPayload(): ChargingStationData {
     return {
@@ -715,16 +715,6 @@ export default class ChargingStation {
       connectors: Array.from(this.connectors.values()),
     };
   }
-
-  // private buildStationInfoDataPayload(): ChargingStationInfo {
-  //   return {
-  //     chargingStationId: this.stationInfo.chargingStationId,
-  //     chargePointModel: this.stationInfo.chargePointModel,
-  //     chargePointVendor: this.stationInfo.chargePointVendor,
-  //     firmwareVersion: this.stationInfo.firmwareVersion,
-  //     numberOfConnectors: this.stationInfo.numberOfConnectors,
-  //   } as ChargingStationInfo;
-  // }
 
   private flushMessageBuffer() {
     if (this.messageBuffer.size > 0) {
@@ -1493,7 +1483,7 @@ export default class ChargingStation {
             logger.error(errMsg);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
-        // parentPort.postMessage(this.buildUpdatedMessage());
+        parentPort.postMessage(this.buildUpdatedMessage());
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
           payload: request,

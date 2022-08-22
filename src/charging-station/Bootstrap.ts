@@ -191,9 +191,9 @@ export default class Bootstrap {
       case ChargingStationWorkerMessageEvents.STOPPED:
         this.workerEventStopped(msg.data as ChargingStationData);
         break;
-      // case ChargingStationWorkerMessageEvents.UPDATED:
-      //   this.workerEventUpdated(msg.data as ChargingStationData);
-      //   break;
+      case ChargingStationWorkerMessageEvents.UPDATED:
+        this.workerEventUpdated(msg.data as ChargingStationData);
+        break;
       case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
         this.workerEventPerformanceStatistics(msg.data as Statistics);
         break;
@@ -214,9 +214,9 @@ export default class Bootstrap {
     this.started && --this.numberOfChargingStations;
   }
 
-  // private workerEventUpdated(data: ChargingStationData) {
-  //   this.uiServer.chargingStations.set(data.hashId, data);
-  // }
+  private workerEventUpdated(data: ChargingStationData) {
+    this.uiServer.chargingStations.set(data.hashId, data);
+  }
 
   private workerEventPerformanceStatistics = (data: Statistics) => {
     (this.storage.storePerformanceStatistics(data) as Promise<void>).catch((error) => {
