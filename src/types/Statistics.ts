@@ -1,4 +1,5 @@
 import { CircularArray } from '../utils/CircularArray';
+import { WorkerData } from './Worker';
 
 export interface TimeSeries {
   timestamp: number;
@@ -21,7 +22,7 @@ export interface StatisticsData {
   stdDevTimeMeasurement: number;
 }
 
-export default interface Statistics {
+export default interface Statistics extends WorkerData {
   id: string;
   name: string;
   uri: string;

@@ -361,7 +361,7 @@ export default abstract class OCPPRequestService {
     error: Error,
     params: HandleErrorParams<EmptyObject> = { throwError: true }
   ): void {
-    logger.error(chargingStation.logPrefix() + ' Request command %s error: %j', commandName, error);
+    logger.error(chargingStation.logPrefix() + ' Request command %s error:', commandName, error);
     if (params?.throwError) {
       throw error;
     }

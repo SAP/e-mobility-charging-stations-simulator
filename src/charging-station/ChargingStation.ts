@@ -6,7 +6,7 @@ import path from 'path';
 import { URL } from 'url';
 import { parentPort } from 'worker_threads';
 
-import WebSocket, { Data, RawData } from 'ws';
+import WebSocket, { Data, MessageEvent, RawData } from 'ws';
 
 import BaseError from '../exception/BaseError';
 import OCPPError from '../exception/OCPPError';
@@ -20,7 +20,6 @@ import ChargingStationTemplate, {
   PowerUnits,
   WsOptions,
 } from '../types/ChargingStationTemplate';
-import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
@@ -59,11 +58,15 @@ import {
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
+  StartTransactionRequest,
+  StartTransactionResponse,
   StopTransactionReason,
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
+import { ProcedureName } from '../types/UIProtocol';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
+import { WorkerBroadcastChannelData } from '../types/WorkerBroadcastChannel';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
@@ -74,6 +77,7 @@ import AuthorizedTagsCache from './AuthorizedTagsCache';
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import { ChargingStationUtils } from './ChargingStationUtils';
+import { MessageChannelUtils } from './MessageChannelUtils';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
@@ -81,6 +85,7 @@ import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
+import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 export default class ChargingStation {
   public hashId!: string;
@@ -111,6 +116,7 @@ export default class ChargingStation {
   private readonly sharedLRUCache: SharedLRUCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
+  private workerBroadcastChannel: WorkerBroadcastChannel;
 
   constructor(index: number, templateFile: string) {
     this.index = index;
@@ -123,6 +129,12 @@ export default class ChargingStation {
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
+    this.workerBroadcastChannel = new WorkerBroadcastChannel();
+
+    this.workerBroadcastChannel.onmessage = this.handleWorkerBroadcastChannelMessage.bind(this) as (
+      message: MessageEvent
+    ) => void;
+
     this.initialize();
   }
 
@@ -512,17 +524,14 @@ export default class ChargingStation {
             // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
           } catch (error) {
             logger.error(
-              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error: %j`,
+              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
               error
             );
           }
         }
       }
     );
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STARTED,
-      data: { id: this.stationInfo.chargingStationId },
-    });
+    parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -549,10 +558,7 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STOPPED,
-      data: { id: this.stationInfo.chargingStationId },
-    });
+    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
     this.stopped = true;
   }
 
@@ -1444,6 +1450,7 @@ export default class ChargingStation {
             logger.error(errMsg);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
+        parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
           payload: request,
@@ -1452,7 +1459,7 @@ export default class ChargingStation {
     } catch (error) {
       // Log
       logger.error(
-        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error: %j",
+        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error:",
         this.logPrefix(),
         commandName ?? requestCommandName ?? null,
         data.toString(),
@@ -1461,7 +1468,7 @@ export default class ChargingStation {
       );
       if (!(error instanceof OCPPError)) {
         logger.warn(
-          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError: %j",
+          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError:",
           this.logPrefix(),
           commandName ?? requestCommandName ?? null,
           data.toString(),
@@ -1489,7 +1496,7 @@ export default class ChargingStation {
 
   private onError(error: WSError): void {
     this.closeWSConnection();
-    logger.error(this.logPrefix() + ' WebSocket error: %j', error);
+    logger.error(this.logPrefix() + ' WebSocket error:', error);
   }
 
   private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean | undefined {
@@ -2015,5 +2022,39 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionStarted = false;
     this.getConnectorStatus(connectorId).energyActiveImportRegisterValue = 0;
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
+  }
+
+  private async handleWorkerBroadcastChannelMessage(message: MessageEvent): Promise<void> {
+    const [command, payload] = message.data as unknown as [
+      ProcedureName,
+      WorkerBroadcastChannelData
+    ];
+
+    if (payload.hashId !== this.hashId) {
+      return;
+    }
+
+    switch (command) {
+      case ProcedureName.START_TRANSACTION:
+        await this.ocppRequestService.requestHandler<
+          StartTransactionRequest,
+          StartTransactionResponse
+        >(this, RequestCommand.START_TRANSACTION, {
+          connectorId: payload.connectorId,
+          idTag: payload.idTag,
+        });
+        break;
+      case ProcedureName.STOP_TRANSACTION:
+        await this.ocppRequestService.requestHandler<
+          StopTransactionRequest,
+          StopTransactionResponse
+        >(this, RequestCommand.STOP_TRANSACTION, {
+          transactionId: payload.transactionId,
+          meterStop: this.getEnergyActiveImportRegisterByTransactionId(payload.transactionId),
+          idTag: this.getTransactionIdTag(payload.transactionId),
+          reason: StopTransactionReason.NONE,
+        });
+        break;
+    }
   }
 }

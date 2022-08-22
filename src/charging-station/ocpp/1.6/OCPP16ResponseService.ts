@@ -183,7 +183,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           this.validatePayload(chargingStation, commandName, payload);
           await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);
         } catch (error) {
-          logger.error(chargingStation.logPrefix() + ' Handle request response error: %j', error);
+          logger.error(chargingStation.logPrefix() + ' Handle request response error:', error);
           throw error;
         }
       } else {

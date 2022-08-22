@@ -32,7 +32,7 @@ export class UIServiceUtils {
     }
     logger.error(
       `${Utils.logPrefix(
-        ' UI WebSocket Server:'
+        ' UI WebSocket Server |'
       )} Unsupported protocol: ${protocol} or protocol version: ${version}`
     );
     return false;

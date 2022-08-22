@@ -30,7 +30,7 @@ export abstract class Storage {
     logger.error(
       `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
         error.message
-      }'${inTableOrCollectionStr}: %j`,
+      }'${inTableOrCollectionStr}:`,
       error
     );
     if (params?.throwError) {
