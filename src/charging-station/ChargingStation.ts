@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { URL } from 'url';
-import { parentPort, threadId } from 'worker_threads';
+import { parentPort } from 'worker_threads';
 
 import WebSocket, { Data, MessageEvent, RawData } from 'ws';
 
@@ -20,7 +20,10 @@ import ChargingStationTemplate, {
   PowerUnits,
   WsOptions,
 } from '../types/ChargingStationTemplate';
-import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
+import {
+  ChargingStationWorkerMessage,
+  ChargingStationWorkerMessageEvents,
+} from '../types/ChargingStationWorker';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
@@ -70,6 +73,7 @@ import {
 import { ChargingStationInfoUI, SimulatorUI } from '../types/SimulatorUI';
 import { ProcedureName } from '../types/UIProtocol';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
+import { WorkerData } from '../types/Worker';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
@@ -88,13 +92,6 @@ import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
-
-// TODO: change the type and put it in it's own file in the types folder
-class TEMP {
-  public hashId: string;
-  public connectorId: number;
-  public idTag: string | null;
-}
 
 export default class ChargingStation {
   public hashId!: string;
@@ -540,7 +537,7 @@ export default class ChargingStation {
         }
       }
     );
-    parentPort.postMessage(this.buildStartMessage());
+    parentPort.postMessage(this.buildStartedMessage());
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -567,7 +564,7 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    parentPort.postMessage(this.buildStopMessage());
+    parentPort.postMessage(this.buildStoppedMessage());
     this.stopped = true;
   }
 
@@ -692,42 +689,42 @@ export default class ChargingStation {
     this.messageBuffer.add(message);
   }
 
-  private buildStartMessage(): Record<string, unknown> {
+  private buildStartedMessage(): ChargingStationWorkerMessage<WorkerData> {
     return {
       id: ChargingStationWorkerMessageEvents.STARTED,
-      payload: this.buildMessagePayload(),
+      data: this.buildDataPayload(),
     };
   }
 
-  private buildUpdateMessage() {
+  private buildStoppedMessage(): ChargingStationWorkerMessage<WorkerData> {
     return {
-      id: ChargingStationWorkerMessageEvents.UPDATED,
-      payload: this.buildMessagePayload(),
+      id: ChargingStationWorkerMessageEvents.STOPPED,
+      data: this.buildDataPayload(),
     };
   }
 
-  private buildMessagePayload(): SimulatorUI {
+  // private buildUpdatedMessage(): ChargingStationWorkerMessage<WorkerData> {
+  //   return {
+  //     id: ChargingStationWorkerMessageEvents.UPDATED,
+  //     data: this.buildDataPayload(),
+  //   };
+  // }
+
+  private buildDataPayload(): SimulatorUI {
     return {
       hashId: this.hashId,
-      stationInfo: this.buildPayloadStationInfo(),
+      stationInfo: this.buildStationInfoDataPayload(),
       connectors: Array.from(this.connectors.values()),
     };
   }
 
-  private buildPayloadStationInfo(): ChargingStationInfoUI {
-    return <ChargingStationInfoUI>{
+  private buildStationInfoDataPayload(): ChargingStationInfoUI {
+    return {
       chargingStationId: this.stationInfo.chargingStationId,
       chargePointModel: this.stationInfo.chargePointModel,
       chargePointVendor: this.stationInfo.chargePointVendor,
       firmwareVersion: this.stationInfo.firmwareVersion,
       numberOfConnectors: this.stationInfo.numberOfConnectors,
-    };
-  }
-
-  private buildStopMessage(): Record<string, unknown> {
-    return {
-      id: ChargingStationWorkerMessageEvents.STOPPED,
-      payload: { hashId: this.hashId },
     };
   }
 
@@ -1498,7 +1495,7 @@ export default class ChargingStation {
             logger.error(errMsg);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
-        parentPort.postMessage(this.buildUpdateMessage());
+        // parentPort.postMessage(this.buildUpdatedMessage());
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
           payload: request,
@@ -2073,7 +2070,7 @@ export default class ChargingStation {
   }
 
   private handleWorkerBroadcastChannelMessage(message: MessageEvent): void {
-    const [command, payload] = message.data as unknown as [ProcedureName, TEMP];
+    const [command, payload] = message.data as unknown as [ProcedureName, SimulatorUI];
 
     if (payload.hashId !== this.hashId) {
       return;
@@ -2090,7 +2087,7 @@ export default class ChargingStation {
   }
 
   private async startTransaction(connectorId: number, idTag: string): Promise<void> {
-    // TODO: change to allow the user to test an unauthorised badge
+    // TODO: change to allow the user to test an unauthorized badge
     this.getConnectorStatus(connectorId).authorizeIdTag = idTag;
     try {
       const authorizeResponse = await this.ocppRequestService.requestHandler<

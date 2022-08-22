@@ -1,6 +1,4 @@
 import { JsonObject } from './JsonType';
-import { SimulatorUI } from './SimulatorUI';
-import Statistics from './Statistics';
 import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
 export interface ChargingStationWorkerOptions extends JsonObject {
@@ -16,7 +14,7 @@ export interface ChargingStationWorkerData extends WorkerData {
 enum ChargingStationMessageEvents {
   STARTED = 'started',
   STOPPED = 'stopped',
-  UPDATED = 'updated',
+  // UPDATED = 'updated',
   PERFORMANCE_STATISTICS = 'performanceStatistics',
 }
 
