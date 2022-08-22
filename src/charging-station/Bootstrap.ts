@@ -247,6 +247,7 @@ export default class Bootstrap {
       ),
     };
     await this.workerImplementation.addElement(workerData);
+    this.numberOfChargingStations++;
   }
 
   private logPrefix(): string {
