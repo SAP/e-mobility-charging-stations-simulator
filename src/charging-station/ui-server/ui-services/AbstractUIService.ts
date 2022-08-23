@@ -56,7 +56,7 @@ export default abstract class AbstractUIService {
       }
 
       // Call the message handler to build the response payload
-      responsePayload = await this.messageHandlers.get(command)(requestPayload);
+      responsePayload = await this.messageHandlers.get(command)(messageId, requestPayload);
     } catch (error) {
       // Log
       logger.error(
@@ -87,12 +87,13 @@ export default abstract class AbstractUIService {
   // Validate the raw data received from the WebSocket
   // TODO: should probably be moved to the ws verify clients callback
   private dataValidation(rawData: RawData): ProtocolRequest {
-    logger.debug(
-      `${this.uiServer.logPrefix(
-        moduleName,
-        'dataValidation'
-      )} Raw data received: ${rawData.toString()}`
-    );
+    // logger.debug(
+    //   `${this.uiServer.logPrefix(
+    //     moduleName,
+    //     'dataValidation'
+    //   )} Raw data received: ${rawData.toString()}`
+    // );
+
     const data = JSON.parse(rawData.toString()) as JsonType[];
 
     if (Utils.isIterable(data) === false) {

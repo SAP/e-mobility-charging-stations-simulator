@@ -13,6 +13,8 @@ import {
 import ChargingStation from './ChargingStation';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
+const moduleName = 'ChargingStationWorkerBroadcastChannel';
+
 type MessageEvent = { data: unknown };
 
 export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {

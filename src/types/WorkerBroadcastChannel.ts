@@ -1,7 +1,12 @@
 import { JsonObject } from './JsonType';
+import { RequestPayload, ResponsePayload } from './UIProtocol';
 
-export type BroadcastChannelRequest = [string, BroadcastChannelProcedureName, RequestPayload];
-export type BroadcastChannelResponse = [string, ResponsePayload];
+export type BroadcastChannelRequest = [
+  string,
+  BroadcastChannelProcedureName,
+  BroadcastChannelRequestPayload
+];
+export type BroadcastChannelResponse = [string, BroadcastChannelResponsePayload];
 
 export enum BroadcastChannelProcedureName {
   START_CHARGING_STATION = 'startChargingStation',
@@ -10,14 +15,16 @@ export enum BroadcastChannelProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
 }
 
-interface BasePayload extends JsonObject {
+interface BroadcastChannelBasePayload extends JsonObject {
   hashId: string;
 }
 
-export interface RequestPayload extends BasePayload {
+export interface BroadcastChannelRequestPayload
+  extends BroadcastChannelBasePayload,
+    Omit<RequestPayload, 'hashId'> {
   connectorId?: number;
   transactionId?: number;
   idTag?: string;
 }
 
-export type ResponsePayload = BasePayload;
+export type BroadcastChannelResponsePayload = ResponsePayload;

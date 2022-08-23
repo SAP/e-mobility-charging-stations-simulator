@@ -6,8 +6,10 @@ import {
   ResponsePayload,
   ResponseStatus,
 } from '../../../types/UIProtocol';
-import { BroadcastChannelProcedureName } from '../../../types/WorkerBroadcastChannel';
-import Utils from '../../../utils/Utils';
+import {
+  BroadcastChannelProcedureName,
+  BroadcastChannelRequestPayload,
+} from '../../../types/WorkerBroadcastChannel';
 import { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 
@@ -32,38 +34,38 @@ export default class UIService001 extends AbstractUIService {
     );
   }
 
-  private handleStartTransaction(payload: RequestPayload): ResponsePayload {
-    this.workerBroadcastChannel.postMessage([
-      Utils.generateUUID(),
+  private handleStartTransaction(uuid: string, payload: RequestPayload): ResponsePayload {
+    this.workerBroadcastChannel.sendRequest([
+      uuid,
       BroadcastChannelProcedureName.START_TRANSACTION,
-      payload,
+      payload as BroadcastChannelRequestPayload,
     ]);
     return { status: ResponseStatus.SUCCESS };
   }
 
-  private handleStopTransaction(payload: RequestPayload): ResponsePayload {
-    this.workerBroadcastChannel.postMessage([
-      Utils.generateUUID(),
+  private handleStopTransaction(uuid: string, payload: RequestPayload): ResponsePayload {
+    this.workerBroadcastChannel.sendRequest([
+      uuid,
       BroadcastChannelProcedureName.STOP_TRANSACTION,
-      payload,
+      payload as BroadcastChannelRequestPayload,
     ]);
     return { status: ResponseStatus.SUCCESS };
   }
 
-  private handleStartChargingStation(payload: RequestPayload): ResponsePayload {
-    this.workerBroadcastChannel.postMessage([
-      Utils.generateUUID(),
+  private handleStartChargingStation(uuid: string, payload: RequestPayload): ResponsePayload {
+    this.workerBroadcastChannel.sendRequest([
+      uuid,
       BroadcastChannelProcedureName.START_CHARGING_STATION,
-      payload,
+      payload as BroadcastChannelRequestPayload,
     ]);
     return { status: ResponseStatus.SUCCESS };
   }
 
-  private handleStopChargingStation(payload: RequestPayload): ResponsePayload {
-    this.workerBroadcastChannel.postMessage([
-      Utils.generateUUID(),
+  private handleStopChargingStation(uuid: string, payload: RequestPayload): ResponsePayload {
+    this.workerBroadcastChannel.sendRequest([
+      uuid,
       BroadcastChannelProcedureName.STOP_CHARGING_STATION,
-      payload,
+      payload as BroadcastChannelRequestPayload,
     ]);
     return { status: ResponseStatus.SUCCESS };
   }
