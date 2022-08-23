@@ -23,13 +23,13 @@ const moduleName = 'AbstractUIService';
 export default abstract class AbstractUIService {
   protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
-  protected readonly messageHandlers: Map<ProcedureName, ProtocolRequestHandler>;
+  protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
   protected workerBroadcastChannel: WorkerBroadcastChannel;
 
   constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.version = version;
     this.uiServer = uiServer;
-    this.messageHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
+    this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
@@ -37,7 +37,7 @@ export default abstract class AbstractUIService {
     this.workerBroadcastChannel = new WorkerBroadcastChannel();
   }
 
-  public async messageHandler(request: RawData): Promise<void> {
+  public async requestHandler(request: RawData): Promise<void> {
     let messageId: string;
     let command: ProcedureName;
     let requestPayload: RequestPayload;
@@ -45,7 +45,7 @@ export default abstract class AbstractUIService {
     try {
       [messageId, command, requestPayload] = this.dataValidation(request);
 
-      if (this.messageHandlers.has(command) === false) {
+      if (this.requestHandlers.has(command) === false) {
         throw new BaseError(
           `${command} is not implemented to handle message payload ${JSON.stringify(
             requestPayload,
@@ -56,7 +56,7 @@ export default abstract class AbstractUIService {
       }
 
       // Call the message handler to build the response payload
-      responsePayload = await this.messageHandlers.get(command)(messageId, requestPayload);
+      responsePayload = await this.requestHandlers.get(command)(messageId, requestPayload);
     } catch (error) {
       // Log
       logger.error(
@@ -78,6 +78,14 @@ export default abstract class AbstractUIService {
 
     // Send the message response success
     this.uiServer.sendResponse(this.buildProtocolResponse(messageId, responsePayload));
+  }
+
+  protected buildProtocolRequest(
+    messageId: string,
+    procedureName: ProcedureName,
+    payload: RequestPayload
+  ): string {
+    return JSON.stringify([messageId, procedureName, payload] as ProtocolRequest);
   }
 
   protected buildProtocolResponse(messageId: string, payload: ResponsePayload): string {

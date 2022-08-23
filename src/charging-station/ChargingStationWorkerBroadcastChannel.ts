@@ -23,10 +23,10 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
   constructor(chargingStation: ChargingStation) {
     super();
     this.chargingStation = chargingStation;
-    this.onmessage = this.handleRequest.bind(this) as (message: MessageEvent) => void;
+    this.onmessage = this.requestHandler.bind(this) as (message: MessageEvent) => void;
   }
 
-  private async handleRequest(messageEvent: MessageEvent): Promise<void> {
+  private async requestHandler(messageEvent: MessageEvent): Promise<void> {
     const [, command, payload] = messageEvent.data as BroadcastChannelRequest;
 
     if (payload.hashId !== this.chargingStation.hashId) {

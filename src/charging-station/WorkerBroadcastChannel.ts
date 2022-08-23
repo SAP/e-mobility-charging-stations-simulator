@@ -1,6 +1,6 @@
 import { BroadcastChannel } from 'worker_threads';
 
-import { BroadcastChannelRequest } from '../types/WorkerBroadcastChannel';
+import { BroadcastChannelRequest, BroadcastChannelResponse } from '../types/WorkerBroadcastChannel';
 
 export default class WorkerBroadcastChannel extends BroadcastChannel {
   constructor() {
@@ -9,5 +9,9 @@ export default class WorkerBroadcastChannel extends BroadcastChannel {
 
   public sendRequest(request: BroadcastChannelRequest): void {
     this.postMessage(request);
+  }
+
+  public sendResponse(response: BroadcastChannelResponse): void {
+    this.postMessage(response);
   }
 }

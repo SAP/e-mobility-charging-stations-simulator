@@ -16,19 +16,19 @@ import AbstractUIService from './AbstractUIService';
 export default class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {
     super(uiServer, ProtocolVersion['0.0.1']);
-    this.messageHandlers.set(
+    this.requestHandlers.set(
       ProcedureName.START_TRANSACTION,
       this.handleStartTransaction.bind(this) as ProtocolRequestHandler
     );
-    this.messageHandlers.set(
+    this.requestHandlers.set(
       ProcedureName.STOP_TRANSACTION,
       this.handleStopTransaction.bind(this) as ProtocolRequestHandler
     );
-    this.messageHandlers.set(
+    this.requestHandlers.set(
       ProcedureName.START_CHARGING_STATION,
       this.handleStartChargingStation.bind(this) as ProtocolRequestHandler
     );
-    this.messageHandlers.set(
+    this.requestHandlers.set(
       ProcedureName.STOP_CHARGING_STATION,
       this.handleStopChargingStation.bind(this) as ProtocolRequestHandler
     );
