@@ -341,17 +341,17 @@ export default class ChargingStation {
       this.getConnectorIdByTransactionId(transactionId)
     );
     if (this.getMeteringPerTransaction()) {
-      return transactionConnectorStatus?.transactionEnergyActiveImportRegisterValue;
+      return transactionConnectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0;
     }
-    return transactionConnectorStatus?.energyActiveImportRegisterValue;
+    return transactionConnectorStatus?.energyActiveImportRegisterValue ?? 0;
   }
 
   public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number | undefined {
     const connectorStatus = this.getConnectorStatus(connectorId);
     if (this.getMeteringPerTransaction()) {
-      return connectorStatus?.transactionEnergyActiveImportRegisterValue;
+      return connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0;
     }
-    return connectorStatus?.energyActiveImportRegisterValue;
+    return connectorStatus?.energyActiveImportRegisterValue ?? 0;
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
