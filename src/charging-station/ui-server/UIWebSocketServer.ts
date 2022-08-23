@@ -31,7 +31,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
       socket.on('message', (messageData) => {
         this.uiServices
           .get(version)
-          .messageHandler(messageData)
+          .requestHandler(messageData)
           .catch((error) => {
             logger.error(
               `${this.logPrefix(
@@ -55,8 +55,12 @@ export default class UIWebSocketServer extends AbstractUIServer {
     this.server.close();
   }
 
-  public sendResponse(message: string): void {
-    this.broadcastToClients(message);
+  public sendRequest(request: string): void {
+    this.broadcastToClients(request);
+  }
+
+  public sendResponse(response: string): void {
+    this.broadcastToClients(response);
   }
 
   public logPrefix(modName?: string, methodName?: string): string {

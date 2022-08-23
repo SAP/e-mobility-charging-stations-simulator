@@ -8,6 +8,7 @@ import {
   ProtocolRequestHandler,
   ProtocolResponse,
   ProtocolVersion,
+  RequestPayload,
   ResponsePayload,
   ResponseStatus,
 } from '../../../types/UIProtocol';
@@ -22,13 +23,13 @@ const moduleName = 'AbstractUIService';
 export default abstract class AbstractUIService {
   protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
-  protected readonly messageHandlers: Map<ProcedureName, ProtocolRequestHandler>;
+  protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
   protected workerBroadcastChannel: WorkerBroadcastChannel;
 
   constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.version = version;
     this.uiServer = uiServer;
-    this.messageHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
+    this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
@@ -36,16 +37,15 @@ export default abstract class AbstractUIService {
     this.workerBroadcastChannel = new WorkerBroadcastChannel();
   }
 
-  public async messageHandler(request: RawData): Promise<void> {
+  public async requestHandler(request: RawData): Promise<void> {
     let messageId: string;
     let command: ProcedureName;
-    let requestPayload: JsonType;
+    let requestPayload: RequestPayload;
     let responsePayload: ResponsePayload;
     try {
-      [messageId, command, requestPayload] = this.dataValidation(request);
+      [messageId, command, requestPayload] = this.requestValidation(request);
 
-      if (this.messageHandlers.has(command) === false) {
-        // Throw exception
+      if (this.requestHandlers.has(command) === false) {
         throw new BaseError(
           `${command} is not implemented to handle message payload ${JSON.stringify(
             requestPayload,
@@ -54,10 +54,9 @@ export default abstract class AbstractUIService {
           )}`
         );
       }
+
       // Call the message handler to build the response payload
-      responsePayload = (await this.messageHandlers.get(command)(
-        requestPayload
-      )) as ResponsePayload;
+      responsePayload = await this.requestHandlers.get(command)(messageId, requestPayload);
     } catch (error) {
       // Log
       logger.error(
@@ -81,19 +80,28 @@ export default abstract class AbstractUIService {
     this.uiServer.sendResponse(this.buildProtocolResponse(messageId, responsePayload));
   }
 
+  protected buildProtocolRequest(
+    messageId: string,
+    procedureName: ProcedureName,
+    payload: RequestPayload
+  ): string {
+    return JSON.stringify([messageId, procedureName, payload] as ProtocolRequest);
+  }
+
   protected buildProtocolResponse(messageId: string, payload: ResponsePayload): string {
     return JSON.stringify([messageId, payload] as ProtocolResponse);
   }
 
   // Validate the raw data received from the WebSocket
   // TODO: should probably be moved to the ws verify clients callback
-  private dataValidation(rawData: RawData): ProtocolRequest {
-    logger.debug(
-      `${this.uiServer.logPrefix(
-        moduleName,
-        'dataValidation'
-      )} Raw data received: ${rawData.toString()}`
-    );
+  private requestValidation(rawData: RawData): ProtocolRequest {
+    // logger.debug(
+    //   `${this.uiServer.logPrefix(
+    //     moduleName,
+    //     'dataValidation'
+    //   )} Raw data received: ${rawData.toString()}`
+    // );
+
     const data = JSON.parse(rawData.toString()) as JsonType[];
 
     if (Utils.isIterable(data) === false) {
@@ -107,11 +115,12 @@ export default abstract class AbstractUIService {
     return data as ProtocolRequest;
   }
 
-  private handleListChargingStations(): JsonType {
+  private handleListChargingStations(): ResponsePayload {
+    // TODO: remove cast to unknown
     return {
       status: ResponseStatus.SUCCESS,
       ...Array.from(this.uiServer.chargingStations.values()),
-    } as JsonType;
+    } as unknown as ResponsePayload;
   }
 
   private async handleStartSimulator(): Promise<ResponsePayload> {

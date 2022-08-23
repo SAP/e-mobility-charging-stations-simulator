@@ -1,4 +1,4 @@
-import { JsonObject, JsonType } from './JsonType';
+import { JsonObject } from './JsonType';
 
 export enum Protocol {
   UI = 'ui',
@@ -13,12 +13,25 @@ export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
 }
 
+export type ProtocolRequest = [string, ProcedureName, RequestPayload];
+export type ProtocolResponse = [string, ResponsePayload];
+
+export type ProtocolRequestHandler = (
+  uuid?: string,
+  payload?: RequestPayload
+) => ResponsePayload | Promise<ResponsePayload>;
+
 export enum ProcedureName {
   LIST_CHARGING_STATIONS = 'listChargingStations',
+  START_CHARGING_STATION = 'startChargingStation',
+  STOP_CHARGING_STATION = 'stopChargingStation',
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
   START_SIMULATOR = 'startSimulator',
   STOP_SIMULATOR = 'stopSimulator',
+}
+export interface RequestPayload extends JsonObject {
+  hashId?: string;
 }
 
 export enum ResponseStatus {
@@ -29,10 +42,3 @@ export enum ResponseStatus {
 export interface ResponsePayload extends JsonObject {
   status: ResponseStatus;
 }
-
-export type ProtocolRequest = [string, ProcedureName, JsonType];
-export type ProtocolResponse = [string, ResponsePayload];
-
-export type ProtocolRequestHandler = (
-  payload: JsonType
-) => void | Promise<void> | ResponsePayload | Promise<ResponsePayload>;

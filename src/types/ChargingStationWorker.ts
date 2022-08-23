@@ -16,6 +16,7 @@ export interface ChargingStationWorkerData extends WorkerData {
 export interface ChargingStationData extends WorkerData {
   hashId: string;
   stationInfo: ChargingStationInfo;
+  stopped: boolean;
   connectors: ConnectorStatus[];
 }
 
