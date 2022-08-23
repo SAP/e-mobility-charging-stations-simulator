@@ -336,7 +336,7 @@ export default class ChargingStation {
     }
   }
 
-  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
+  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number {
     const transactionConnectorStatus = this.getConnectorStatus(
       this.getConnectorIdByTransactionId(transactionId)
     );
@@ -346,7 +346,7 @@ export default class ChargingStation {
     return transactionConnectorStatus?.energyActiveImportRegisterValue ?? 0;
   }
 
-  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number | undefined {
+  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number {
     const connectorStatus = this.getConnectorStatus(connectorId);
     if (this.getMeteringPerTransaction()) {
       return connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0;
