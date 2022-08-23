@@ -92,7 +92,7 @@ export default abstract class AbstractUIService {
   }
 
   public logPrefix(modName: string, methodName: string): string {
-    return `${this.uiServer.logPrefix(modName, methodName)}`;
+    return this.uiServer.logPrefix(modName, methodName);
   }
 
   private buildProtocolRequest(
