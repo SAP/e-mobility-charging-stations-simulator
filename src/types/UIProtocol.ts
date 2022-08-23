@@ -19,7 +19,7 @@ export type ProtocolResponse = [string, ResponsePayload];
 export type ProtocolRequestHandler = (
   uuid?: string,
   payload?: RequestPayload
-) => ResponsePayload | Promise<ResponsePayload>;
+) => undefined | Promise<undefined> | ResponsePayload | Promise<ResponsePayload>;
 
 export enum ProcedureName {
   LIST_CHARGING_STATIONS = 'listChargingStations',

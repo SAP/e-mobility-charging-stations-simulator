@@ -15,7 +15,7 @@ import {
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import Bootstrap from '../../Bootstrap';
-import WorkerBroadcastChannel from '../../WorkerBroadcastChannel';
+import UIServiceWorkerBroadcastChannel from '../../UIServiceWorkerBroadcastChannel';
 import { AbstractUIServer } from '../AbstractUIServer';
 
 const moduleName = 'AbstractUIService';
@@ -24,7 +24,7 @@ export default abstract class AbstractUIService {
   protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
-  protected workerBroadcastChannel: WorkerBroadcastChannel;
+  protected workerBroadcastChannel: UIServiceWorkerBroadcastChannel;
 
   constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.version = version;
@@ -34,13 +34,13 @@ export default abstract class AbstractUIService {
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
     ]);
-    this.workerBroadcastChannel = new WorkerBroadcastChannel();
+    this.workerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this);
   }
 
   public async requestHandler(request: RawData): Promise<void> {
     let messageId: string;
     let command: ProcedureName;
-    let requestPayload: RequestPayload;
+    let requestPayload: RequestPayload | undefined;
     let responsePayload: ResponsePayload;
     try {
       [messageId, command, requestPayload] = this.requestValidation(request);
@@ -55,41 +55,56 @@ export default abstract class AbstractUIService {
         );
       }
 
-      // Call the message handler to build the response payload
+      // Call the request handler to build the response payload
       responsePayload = await this.requestHandlers.get(command)(messageId, requestPayload);
     } catch (error) {
       // Log
       logger.error(
-        `${this.uiServer.logPrefix(moduleName, 'messageHandler')} Handle message error:`,
+        `${this.uiServer.logPrefix(moduleName, 'messageHandler')} Handle request error:`,
         error
       );
-      // Send the message response failure
-      this.uiServer.sendResponse(
-        this.buildProtocolResponse(messageId ?? 'error', {
-          status: ResponseStatus.FAILURE,
-          command,
-          requestPayload,
-          errorMessage: (error as Error).message,
-          errorStack: (error as Error).stack,
-        })
-      );
-      throw error;
+      responsePayload = {
+        status: ResponseStatus.FAILURE,
+        command,
+        requestPayload,
+        responsePayload,
+        errorMessage: (error as Error).message,
+        errorStack: (error as Error).stack,
+      };
     }
 
-    // Send the message response success
+    if (responsePayload !== undefined) {
+      // Send the response
+      this.uiServer.sendResponse(this.buildProtocolResponse(messageId ?? 'error', responsePayload));
+    }
+  }
+
+  public sendRequest(
+    messageId: string,
+    procedureName: ProcedureName,
+    requestPayload: RequestPayload
+  ): void {
+    this.uiServer.sendRequest(this.buildProtocolRequest(messageId, procedureName, requestPayload));
+  }
+
+  public sendResponse(messageId: string, responsePayload: ResponsePayload): void {
     this.uiServer.sendResponse(this.buildProtocolResponse(messageId, responsePayload));
   }
 
-  protected buildProtocolRequest(
-    messageId: string,
-    procedureName: ProcedureName,
-    payload: RequestPayload
-  ): string {
-    return JSON.stringify([messageId, procedureName, payload] as ProtocolRequest);
+  public logPrefix(modName: string, methodName: string): string {
+    return `${this.uiServer.logPrefix(modName, methodName)}`;
   }
 
-  protected buildProtocolResponse(messageId: string, payload: ResponsePayload): string {
-    return JSON.stringify([messageId, payload] as ProtocolResponse);
+  private buildProtocolRequest(
+    messageId: string,
+    procedureName: ProcedureName,
+    requestPayload: RequestPayload
+  ): string {
+    return JSON.stringify([messageId, procedureName, requestPayload] as ProtocolRequest);
+  }
+
+  private buildProtocolResponse(messageId: string, responsePayload: ResponsePayload): string {
+    return JSON.stringify([messageId, responsePayload] as ProtocolResponse);
   }
 
   // Validate the raw data received from the WebSocket

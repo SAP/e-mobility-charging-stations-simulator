@@ -3,8 +3,6 @@ import {
   ProtocolRequestHandler,
   ProtocolVersion,
   RequestPayload,
-  ResponsePayload,
-  ResponseStatus,
 } from '../../../types/UIProtocol';
 import {
   BroadcastChannelProcedureName,
@@ -34,39 +32,35 @@ export default class UIService001 extends AbstractUIService {
     );
   }
 
-  private handleStartTransaction(uuid: string, payload: RequestPayload): ResponsePayload {
+  private handleStartTransaction(uuid: string, payload: RequestPayload): void {
     this.workerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.START_TRANSACTION,
       payload as BroadcastChannelRequestPayload,
     ]);
-    return { status: ResponseStatus.SUCCESS };
   }
 
-  private handleStopTransaction(uuid: string, payload: RequestPayload): ResponsePayload {
+  private handleStopTransaction(uuid: string, payload: RequestPayload): void {
     this.workerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.STOP_TRANSACTION,
       payload as BroadcastChannelRequestPayload,
     ]);
-    return { status: ResponseStatus.SUCCESS };
   }
 
-  private handleStartChargingStation(uuid: string, payload: RequestPayload): ResponsePayload {
+  private handleStartChargingStation(uuid: string, payload: RequestPayload): void {
     this.workerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.START_CHARGING_STATION,
       payload as BroadcastChannelRequestPayload,
     ]);
-    return { status: ResponseStatus.SUCCESS };
   }
 
-  private handleStopChargingStation(uuid: string, payload: RequestPayload): ResponsePayload {
+  private handleStopChargingStation(uuid: string, payload: RequestPayload): void {
     this.workerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.STOP_CHARGING_STATION,
       payload as BroadcastChannelRequestPayload,
     ]);
-    return { status: ResponseStatus.SUCCESS };
   }
 }

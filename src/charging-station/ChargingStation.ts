@@ -856,7 +856,7 @@ export default class ChargingStation {
       this.templateFile
     }`;
     logger.error(errMsg);
-    throw new Error(errMsg);
+    throw new BaseError(errMsg);
   }
 
   private initialize(): void {
