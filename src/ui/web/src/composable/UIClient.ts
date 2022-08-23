@@ -29,7 +29,7 @@ export default class UIClient {
 
     this._responseHandlers = new Map<string, ResponseHandler>();
 
-    this._ws.onmessage = this.handleResponse.bind(this);
+    this._ws.onmessage = this.responseHandler.bind(this);
   }
 
   public static get instance() {
@@ -109,7 +109,7 @@ export default class UIClient {
     );
   }
 
-  private handleResponse(messageEvent: MessageEvent<string>): void {
+  private responseHandler(messageEvent: MessageEvent<string>): void {
     const data = JSON.parse(messageEvent.data) as ProtocolResponse;
 
     if (Utils.isIterable(data) === false) {

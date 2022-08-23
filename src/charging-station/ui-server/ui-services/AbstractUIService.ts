@@ -43,7 +43,7 @@ export default abstract class AbstractUIService {
     let requestPayload: RequestPayload;
     let responsePayload: ResponsePayload;
     try {
-      [messageId, command, requestPayload] = this.dataValidation(request);
+      [messageId, command, requestPayload] = this.requestValidation(request);
 
       if (this.requestHandlers.has(command) === false) {
         throw new BaseError(
@@ -94,7 +94,7 @@ export default abstract class AbstractUIService {
 
   // Validate the raw data received from the WebSocket
   // TODO: should probably be moved to the ws verify clients callback
-  private dataValidation(rawData: RawData): ProtocolRequest {
+  private requestValidation(rawData: RawData): ProtocolRequest {
     // logger.debug(
     //   `${this.uiServer.logPrefix(
     //     moduleName,
