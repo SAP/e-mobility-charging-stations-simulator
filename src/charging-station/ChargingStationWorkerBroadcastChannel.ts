@@ -1,5 +1,3 @@
-import { BroadcastChannel } from 'worker_threads';
-
 import { RequestCommand } from '../types/ocpp/Requests';
 import {
   StartTransactionRequest,
@@ -13,14 +11,15 @@ import {
   BroadcastChannelRequest,
 } from '../types/WorkerBroadcastChannel';
 import ChargingStation from './ChargingStation';
+import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 type MessageEvent = { data: unknown };
 
-export default class ChargingStationWorkerBroadcastChannel extends BroadcastChannel {
+export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly chargingStation: ChargingStation;
 
   constructor(chargingStation: ChargingStation) {
-    super('worker');
+    super();
     this.chargingStation = chargingStation;
     this.onmessage = this.handleRequest.bind(this) as (message: MessageEvent) => void;
   }
