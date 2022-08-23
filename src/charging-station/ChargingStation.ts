@@ -6,7 +6,7 @@ import path from 'path';
 import { URL } from 'url';
 import { parentPort } from 'worker_threads';
 
-import WebSocket, { Data, MessageEvent, RawData } from 'ws';
+import WebSocket, { Data, RawData } from 'ws';
 
 import BaseError from '../exception/BaseError';
 import OCPPError from '../exception/OCPPError';
@@ -58,15 +58,11 @@ import {
   StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
-  StartTransactionRequest,
-  StartTransactionResponse,
   StopTransactionReason,
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
-import { ProcedureName } from '../types/UIProtocol';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import { WorkerBroadcastChannelData } from '../types/WorkerBroadcastChannel';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
@@ -77,6 +73,7 @@ import AuthorizedTagsCache from './AuthorizedTagsCache';
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import { ChargingStationUtils } from './ChargingStationUtils';
+import ChargingStationWorkerBroadcastChannel from './ChargingStationWorkerBroadcastChannel';
 import { MessageChannelUtils } from './MessageChannelUtils';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
@@ -85,13 +82,13 @@ import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
-import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 export default class ChargingStation {
   public hashId!: string;
   public readonly templateFile: string;
   public authorizedTagsCache: AuthorizedTagsCache;
   public stationInfo!: ChargingStationInfo;
+  public stopped: boolean;
   public readonly connectors: Map<number, ConnectorStatus>;
   public ocppConfiguration!: ChargingStationOcppConfiguration;
   public wsConnection!: WebSocket;
@@ -111,12 +108,11 @@ export default class ChargingStation {
   private configuredSupervisionUrl!: URL;
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
-  private stopped: boolean;
   private templateFileWatcher!: fs.FSWatcher;
   private readonly sharedLRUCache: SharedLRUCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
-  private workerBroadcastChannel: WorkerBroadcastChannel;
+  private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
 
   constructor(index: number, templateFile: string) {
     this.index = index;
@@ -129,11 +125,7 @@ export default class ChargingStation {
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
-    this.workerBroadcastChannel = new WorkerBroadcastChannel();
-
-    this.workerBroadcastChannel.onmessage = this.handleWorkerBroadcastChannelMessage.bind(this) as (
-      message: MessageEvent
-    ) => void;
+    this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this);
 
     this.initialize();
   }
@@ -2022,39 +2014,5 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionStarted = false;
     this.getConnectorStatus(connectorId).energyActiveImportRegisterValue = 0;
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
-  }
-
-  private async handleWorkerBroadcastChannelMessage(message: MessageEvent): Promise<void> {
-    const [command, payload] = message.data as unknown as [
-      ProcedureName,
-      WorkerBroadcastChannelData
-    ];
-
-    if (payload.hashId !== this.hashId) {
-      return;
-    }
-
-    switch (command) {
-      case ProcedureName.START_TRANSACTION:
-        await this.ocppRequestService.requestHandler<
-          StartTransactionRequest,
-          StartTransactionResponse
-        >(this, RequestCommand.START_TRANSACTION, {
-          connectorId: payload.connectorId,
-          idTag: payload.idTag,
-        });
-        break;
-      case ProcedureName.STOP_TRANSACTION:
-        await this.ocppRequestService.requestHandler<
-          StopTransactionRequest,
-          StopTransactionResponse
-        >(this, RequestCommand.STOP_TRANSACTION, {
-          transactionId: payload.transactionId,
-          meterStop: this.getEnergyActiveImportRegisterByTransactionId(payload.transactionId),
-          idTag: this.getTransactionIdTag(payload.transactionId),
-          reason: StopTransactionReason.NONE,
-        });
-        break;
-    }
   }
 }

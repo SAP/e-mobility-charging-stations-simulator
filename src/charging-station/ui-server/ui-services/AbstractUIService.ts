@@ -8,6 +8,7 @@ import {
   ProtocolRequestHandler,
   ProtocolResponse,
   ProtocolVersion,
+  RequestPayload,
   ResponsePayload,
   ResponseStatus,
 } from '../../../types/UIProtocol';
@@ -39,13 +40,12 @@ export default abstract class AbstractUIService {
   public async messageHandler(request: RawData): Promise<void> {
     let messageId: string;
     let command: ProcedureName;
-    let requestPayload: JsonType;
+    let requestPayload: RequestPayload;
     let responsePayload: ResponsePayload;
     try {
       [messageId, command, requestPayload] = this.dataValidation(request);
 
       if (this.messageHandlers.has(command) === false) {
-        // Throw exception
         throw new BaseError(
           `${command} is not implemented to handle message payload ${JSON.stringify(
             requestPayload,
@@ -54,10 +54,9 @@ export default abstract class AbstractUIService {
           )}`
         );
       }
+
       // Call the message handler to build the response payload
-      responsePayload = (await this.messageHandlers.get(command)(
-        requestPayload
-      )) as ResponsePayload;
+      responsePayload = await this.messageHandlers.get(command)(requestPayload);
     } catch (error) {
       // Log
       logger.error(
@@ -107,11 +106,12 @@ export default abstract class AbstractUIService {
     return data as ProtocolRequest;
   }
 
-  private handleListChargingStations(): JsonType {
+  private handleListChargingStations(): ResponsePayload {
+    // TODO: remove cast to unknown
     return {
       status: ResponseStatus.SUCCESS,
       ...Array.from(this.uiServer.chargingStations.values()),
-    } as JsonType;
+    } as unknown as ResponsePayload;
   }
 
   private async handleStartSimulator(): Promise<ResponsePayload> {

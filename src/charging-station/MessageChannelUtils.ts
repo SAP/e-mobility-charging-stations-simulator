@@ -53,6 +53,7 @@ export class MessageChannelUtils {
     return {
       hashId: chargingStation.hashId,
       stationInfo: chargingStation.stationInfo,
+      stopped: chargingStation.stopped,
       connectors: Array.from(chargingStation.connectors.values()),
     };
   }

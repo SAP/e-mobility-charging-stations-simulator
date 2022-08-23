@@ -38,6 +38,7 @@ export default class Bootstrap {
   private readonly storage!: Storage;
   private numberOfChargingStationTemplates!: number;
   private numberOfChargingStations!: number;
+  private numberOfStartedChargingStations!: number;
   private readonly version: string = version;
   private started: boolean;
   private readonly workerScript: string;
@@ -219,12 +220,12 @@ export default class Bootstrap {
 
   private workerEventStarted(data: ChargingStationData) {
     this.uiServer?.chargingStations.set(data.hashId, data);
-    this.started && ++this.numberOfChargingStations;
+    ++this.numberOfStartedChargingStations;
   }
 
   private workerEventStopped(data: ChargingStationData) {
-    this.uiServer?.chargingStations.delete(data.hashId);
-    this.started && --this.numberOfChargingStations;
+    this.uiServer?.chargingStations.set(data.hashId, data);
+    --this.numberOfStartedChargingStations;
   }
 
   private workerEventUpdated(data: ChargingStationData) {
@@ -236,8 +237,9 @@ export default class Bootstrap {
   };
 
   private initialize() {
-    this.numberOfChargingStations = 0;
     this.numberOfChargingStationTemplates = 0;
+    this.numberOfChargingStations = 0;
+    this.numberOfStartedChargingStations = 0;
     this.initializeWorkerImplementation();
   }
 
@@ -255,7 +257,7 @@ export default class Bootstrap {
       ),
     };
     await this.workerImplementation.addElement(workerData);
-    this.numberOfChargingStations++;
+    ++this.numberOfChargingStations;
   }
 
   private logPrefix(): string {
