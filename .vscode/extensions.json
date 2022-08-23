@@ -7,6 +7,7 @@
     "eamodio.gitlens",
     "EditorConfig.EditorConfig",
     "ms-azuretools.vscode-docker",
-    "streetsidesoftware.code-spell-checker"
+    "streetsidesoftware.code-spell-checker",
+    "Vue.volar"
   ]
 }

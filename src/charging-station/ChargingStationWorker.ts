@@ -33,7 +33,7 @@ if (ChargingStationUtils.workerPoolInUse()) {
  * Listen messages send by the main thread
  */
 function addMessageListener(): void {
-  parentPort?.on('message', (message: ChargingStationWorkerMessage) => {
+  parentPort?.on('message', (message: ChargingStationWorkerMessage<ChargingStationWorkerData>) => {
     if (message.id === ChargingStationWorkerMessageEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.data);
     }

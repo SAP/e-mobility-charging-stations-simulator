@@ -38,6 +38,41 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  build-dashboard:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: src/ui/web
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        node: ['14.x', '16.x', '18.x']
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+      - name: npm install
+        run: npm ci
+      - name: npm run lint
+        run: npm run lint
+        continue-on-error: true
+      - name: npm run build
+        run: npm run build
+      - name: npm test
+        run: npm test
+      # - name: npm run coverage
+      #   if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
+      #   run: npm run coverage
+      # - name: SonarCloud Scan
+      #   if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
+      #   uses: sonarsource/sonarcloud-github-action@master
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build-docker:
     runs-on: ubuntu-latest
     steps:

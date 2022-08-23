@@ -20,7 +20,6 @@ import ChargingStationTemplate, {
   PowerUnits,
   WsOptions,
 } from '../types/ChargingStationTemplate';
-import { ChargingStationWorkerMessageEvents } from '../types/ChargingStationWorker';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
@@ -74,6 +73,8 @@ import AuthorizedTagsCache from './AuthorizedTagsCache';
 import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import { ChargingStationUtils } from './ChargingStationUtils';
+import ChargingStationWorkerBroadcastChannel from './ChargingStationWorkerBroadcastChannel';
+import { MessageChannelUtils } from './MessageChannelUtils';
 import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
@@ -87,6 +88,7 @@ export default class ChargingStation {
   public readonly templateFile: string;
   public authorizedTagsCache: AuthorizedTagsCache;
   public stationInfo!: ChargingStationInfo;
+  public stopped: boolean;
   public readonly connectors: Map<number, ConnectorStatus>;
   public ocppConfiguration!: ChargingStationOcppConfiguration;
   public wsConnection!: WebSocket;
@@ -106,11 +108,11 @@ export default class ChargingStation {
   private configuredSupervisionUrl!: URL;
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
-  private stopped: boolean;
   private templateFileWatcher!: fs.FSWatcher;
   private readonly sharedLRUCache: SharedLRUCache;
   private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
+  private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
 
   constructor(index: number, templateFile: string) {
     this.index = index;
@@ -123,6 +125,8 @@ export default class ChargingStation {
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
+    this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this);
+
     this.initialize();
   }
 
@@ -332,22 +336,22 @@ export default class ChargingStation {
     }
   }
 
-  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number | undefined {
+  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number {
     const transactionConnectorStatus = this.getConnectorStatus(
       this.getConnectorIdByTransactionId(transactionId)
     );
     if (this.getMeteringPerTransaction()) {
-      return transactionConnectorStatus?.transactionEnergyActiveImportRegisterValue;
+      return transactionConnectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0;
     }
-    return transactionConnectorStatus?.energyActiveImportRegisterValue;
+    return transactionConnectorStatus?.energyActiveImportRegisterValue ?? 0;
   }
 
-  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number | undefined {
+  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number {
     const connectorStatus = this.getConnectorStatus(connectorId);
     if (this.getMeteringPerTransaction()) {
-      return connectorStatus?.transactionEnergyActiveImportRegisterValue;
+      return connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0;
     }
-    return connectorStatus?.energyActiveImportRegisterValue;
+    return connectorStatus?.energyActiveImportRegisterValue ?? 0;
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
@@ -512,17 +516,14 @@ export default class ChargingStation {
             // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
           } catch (error) {
             logger.error(
-              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error: %j`,
+              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
               error
             );
           }
         }
       }
     );
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STARTED,
-      data: { id: this.stationInfo.chargingStationId },
-    });
+    parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
   }
 
   public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
@@ -549,10 +550,7 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    parentPort.postMessage({
-      id: ChargingStationWorkerMessageEvents.STOPPED,
-      data: { id: this.stationInfo.chargingStationId },
-    });
+    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
     this.stopped = true;
   }
 
@@ -1444,6 +1442,7 @@ export default class ChargingStation {
             logger.error(errMsg);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
+        parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
           payload: request,
@@ -1452,7 +1451,7 @@ export default class ChargingStation {
     } catch (error) {
       // Log
       logger.error(
-        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error: %j",
+        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error:",
         this.logPrefix(),
         commandName ?? requestCommandName ?? null,
         data.toString(),
@@ -1461,7 +1460,7 @@ export default class ChargingStation {
       );
       if (!(error instanceof OCPPError)) {
         logger.warn(
-          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError: %j",
+          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError:",
           this.logPrefix(),
           commandName ?? requestCommandName ?? null,
           data.toString(),
@@ -1489,7 +1488,7 @@ export default class ChargingStation {
 
   private onError(error: WSError): void {
     this.closeWSConnection();
-    logger.error(this.logPrefix() + ' WebSocket error: %j', error);
+    logger.error(this.logPrefix() + ' WebSocket error:', error);
   }
 
   private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean | undefined {

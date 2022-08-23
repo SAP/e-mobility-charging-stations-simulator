@@ -49,8 +49,7 @@ Tweak them to your needs by following the section [configuration files syntax](R
 
 To start the program, run: `npm start`.
 
-To start the program with a UI controller, run: `npm run start:server`.
-Then, start/stop the simulator by going to `https://<hostname:port>` in a browser. Localhost port will default to 8080. For Cloud Foundry, the port is assigned based on the `process.env.PORT` environment variable.
+## Start Web UI
 
 ## Configuration files syntax
 
@@ -380,6 +379,74 @@ All kind of OCPP parameters are supported in a charging station configuration or
 #### Remote Trigger Profile
 
 - _none_
+
+## UI protocol
+
+Protocol to control the simulator via a Websocket
+
+### Protocol
+
+PDU stands for Protocol Data Unit
+
+Request:
+[`uuid`, `ProcedureName`, `PDU`]
+
+`uuid`: String uniquely representing this request
+`ProcedureName`: The procedure to run on the simulator
+`PDU`: The parameters (if any) for said procedure
+
+Response:
+[`uuid`, `PDU`]
+
+`uuid`: String uniquely linking the response to the request
+`PDU`: Response data to requested procedure
+
+### Version 0.0.1
+
+Set the HTTP header _Sec-Websocket-Protocol_ to `ui0.0.1`
+
+#### Procedures
+
+##### List Charging stations
+
+Request:
+`ProcedureName`: 'listChargingStations'
+`PDU`: {}
+
+Response:
+`PDU`: {
+`status`,
+`Indexed ChargingStationData as described in ChargingStationWorker.ts file`
+}
+
+##### Start Transaction
+
+Request:
+`ProcedureName`: 'startTransaction'
+`PDU`: {
+`hashId`: the unique identifier of a charging station
+`connectorId`: the id of the connector (start at 1)
+`idTag`: An allowed badge authetification ID
+}
+
+Response:
+`PDU`: {
+`status`
+}
+
+##### Stop Transaction
+
+Request:
+`ProcedureName`: 'stopTransaction'
+`PDU`: {
+`hashId`: the unique identifier of a charging station
+`transactionId`: the id of the transaction
+}
+
+Response:
+`PDU`: {
+`status`
+}
 
 ## Support, Feedback, Contributing
 

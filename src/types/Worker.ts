@@ -2,8 +2,6 @@ import { Worker } from 'worker_threads';
 
 import { PoolOptions } from 'poolifier';
 
-import { JsonObject } from './JsonType';
-
 export enum WorkerProcessType {
   WORKER_SET = 'workerSet',
   DYNAMIC_POOL = 'dynamicPool',
@@ -20,7 +18,7 @@ export interface WorkerOptions {
   messageHandler?: (message: unknown) => void | Promise<void>;
 }
 
-export type WorkerData = JsonObject;
+export type WorkerData = Record<string, unknown>;
 
 export interface WorkerSetElement {
   worker: Worker;

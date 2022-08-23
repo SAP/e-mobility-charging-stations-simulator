@@ -10,6 +10,8 @@ import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
 import UIServiceFactory from './ui-services/UIServiceFactory';
 
+const moduleName = 'UIWebSocketServer';
+
 export default class UIWebSocketServer extends AbstractUIServer {
   public constructor(options?: ServerOptions) {
     super();
@@ -29,13 +31,22 @@ export default class UIWebSocketServer extends AbstractUIServer {
       socket.on('message', (messageData) => {
         this.uiServices
           .get(version)
-          .messageHandler(messageData)
-          .catch(() => {
-            logger.error(`${this.logPrefix()} Error while handling message data: %j`, messageData);
+          .requestHandler(messageData)
+          .catch((error) => {
+            logger.error(
+              `${this.logPrefix(
+                moduleName,
+                'start.socket.onmessage'
+              )} Error while handling message:`,
+              error
+            );
           });
       });
       socket.on('error', (error) => {
-        logger.error(`${this.logPrefix()} Error on WebSocket: %j`, error);
+        logger.error(
+          `${this.logPrefix(moduleName, 'start.socket.onerror')} Error on WebSocket:`,
+          error
+        );
       });
     });
   }
@@ -44,12 +55,20 @@ export default class UIWebSocketServer extends AbstractUIServer {
     this.server.close();
   }
 
-  public sendResponse(message: string): void {
-    this.broadcastToClients(message);
+  public sendRequest(request: string): void {
+    this.broadcastToClients(request);
   }
 
-  public logPrefix(): string {
-    return Utils.logPrefix(' UI WebSocket Server:');
+  public sendResponse(response: string): void {
+    this.broadcastToClients(response);
+  }
+
+  public logPrefix(modName?: string, methodName?: string): string {
+    const logMsg =
+      modName && methodName
+        ? ` UI WebSocket Server | ${modName}.${methodName}:`
+        : ' UI WebSocket Server |';
+    return Utils.logPrefix(logMsg);
   }
 
   private broadcastToClients(message: string): void {

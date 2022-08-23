@@ -7,9 +7,11 @@ import { isMainThread } from 'worker_threads';
 import chalk from 'chalk';
 
 import { version } from '../../package.json';
+import BaseError from '../exception/BaseError';
 import { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
+  ChargingStationData,
   ChargingStationWorkerData,
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
@@ -17,6 +19,7 @@ import {
 import { StationTemplateUrl } from '../types/ConfigurationData';
 import Statistics from '../types/Statistics';
 import Configuration from '../utils/Configuration';
+import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
@@ -25,6 +28,8 @@ import { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
 import UIServerFactory from './ui-server/UIServerFactory';
 
+const moduleName = 'Bootstrap';
+
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
@@ -32,6 +37,7 @@ export default class Bootstrap {
   private readonly storage!: Storage;
   private numberOfChargingStationTemplates!: number;
   private numberOfChargingStations!: number;
+  private numberOfStartedChargingStations!: number;
   private readonly version: string = version;
   private started: boolean;
   private readonly workerScript: string;
@@ -102,8 +108,9 @@ export default class Bootstrap {
           console.warn(
             chalk.yellow('No charging station template enabled in configuration, exiting')
           );
+          process.exit();
         } else {
-          console.log(
+          console.info(
             chalk.green(
               `Charging stations simulator ${
                 this.version
@@ -164,22 +171,74 @@ export default class Bootstrap {
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
-          messageHandler: async (msg: ChargingStationWorkerMessage) => {
-            if (msg.id === ChargingStationWorkerMessageEvents.STARTED) {
-              this.uiServer.chargingStations.add(msg.data.id as string);
-            } else if (msg.id === ChargingStationWorkerMessageEvents.STOPPED) {
-              this.uiServer.chargingStations.delete(msg.data.id as string);
-            } else if (msg.id === ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS) {
-              await this.storage.storePerformanceStatistics(msg.data as unknown as Statistics);
-            }
-          },
+          messageHandler: this.messageHandler.bind(this) as (
+            msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
+          ) => void,
         }
       ));
   }
 
+  private messageHandler(
+    msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
+  ): void {
+    // logger.debug(
+    //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
+    //     msg,
+    //     null,
+    //     2
+    //   )}`
+    // );
+    try {
+      switch (msg.id) {
+        case ChargingStationWorkerMessageEvents.STARTED:
+          this.workerEventStarted(msg.data as ChargingStationData);
+          break;
+        case ChargingStationWorkerMessageEvents.STOPPED:
+          this.workerEventStopped(msg.data as ChargingStationData);
+          break;
+        case ChargingStationWorkerMessageEvents.UPDATED:
+          this.workerEventUpdated(msg.data as ChargingStationData);
+          break;
+        case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
+          this.workerEventPerformanceStatistics(msg.data as Statistics);
+          break;
+        default:
+          throw new BaseError(
+            `Unknown event type: '${msg.id}' for data: ${JSON.stringify(msg.data, null, 2)}`
+          );
+      }
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${
+          msg.id
+        }' event:`,
+        error
+      );
+    }
+  }
+
+  private workerEventStarted(data: ChargingStationData) {
+    this.uiServer?.chargingStations.set(data.hashId, data);
+    ++this.numberOfStartedChargingStations;
+  }
+
+  private workerEventStopped(data: ChargingStationData) {
+    this.uiServer?.chargingStations.set(data.hashId, data);
+    --this.numberOfStartedChargingStations;
+  }
+
+  private workerEventUpdated(data: ChargingStationData) {
+    this.uiServer?.chargingStations.set(data.hashId, data);
+  }
+
+  private workerEventPerformanceStatistics = (data: Statistics) => {
+    this.storage.storePerformanceStatistics(data) as void;
+  };
+
   private initialize() {
-    this.numberOfChargingStations = 0;
     this.numberOfChargingStationTemplates = 0;
+    this.numberOfChargingStations = 0;
+    this.numberOfStartedChargingStations = 0;
     this.initializeWorkerImplementation();
   }
 
@@ -197,7 +256,7 @@ export default class Bootstrap {
       ),
     };
     await this.workerImplementation.addElement(workerData);
-    this.numberOfChargingStations++;
+    ++this.numberOfChargingStations;
   }
 
   private logPrefix(): string {

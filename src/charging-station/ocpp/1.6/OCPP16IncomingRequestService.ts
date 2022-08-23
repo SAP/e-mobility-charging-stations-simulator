@@ -320,7 +320,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           );
         } catch (error) {
           // Log
-          logger.error(chargingStation.logPrefix() + ' Handle request error: %j', error);
+          logger.error(chargingStation.logPrefix() + ' Handle request error:', error);
           throw error;
         }
       } else {
