@@ -33,7 +33,7 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStartTransaction(uuid: string, payload: RequestPayload): void {
-    this.workerBroadcastChannel.sendRequest([
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.START_TRANSACTION,
       payload as BroadcastChannelRequestPayload,
@@ -41,7 +41,7 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStopTransaction(uuid: string, payload: RequestPayload): void {
-    this.workerBroadcastChannel.sendRequest([
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.STOP_TRANSACTION,
       payload as BroadcastChannelRequestPayload,
@@ -49,7 +49,7 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStartChargingStation(uuid: string, payload: RequestPayload): void {
-    this.workerBroadcastChannel.sendRequest([
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.START_CHARGING_STATION,
       payload as BroadcastChannelRequestPayload,
@@ -57,7 +57,7 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStopChargingStation(uuid: string, payload: RequestPayload): void {
-    this.workerBroadcastChannel.sendRequest([
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.STOP_CHARGING_STATION,
       payload as BroadcastChannelRequestPayload,

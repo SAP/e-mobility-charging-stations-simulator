@@ -24,7 +24,7 @@ export default abstract class AbstractUIService {
   protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
-  protected workerBroadcastChannel: UIServiceWorkerBroadcastChannel;
+  protected uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel;
 
   constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.version = version;
@@ -34,7 +34,7 @@ export default abstract class AbstractUIService {
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
     ]);
-    this.workerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this);
+    this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this);
   }
 
   public async requestHandler(request: RawData): Promise<void> {
