@@ -54,6 +54,7 @@ export class MessageChannelUtils {
       hashId: chargingStation.hashId,
       stationInfo: chargingStation.stationInfo,
       stopped: chargingStation.stopped,
+      bootNotificationResponse: chargingStation.bootNotificationResponse,
       connectors: Array.from(chargingStation.connectors.values()),
     };
   }
