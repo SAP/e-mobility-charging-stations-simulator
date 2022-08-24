@@ -416,7 +416,9 @@ Request:
 Response:
 `PDU`: {
 `status`,
-`Indexed ChargingStationData as described in ChargingStationWorker.ts file`
+`index`: ChargingStationData,
+...
+`index`: ChargingStationData
 }
 
 ##### Start Transaction
@@ -441,6 +443,32 @@ Request:
 `PDU`: {
 `hashId`: the unique identifier of a charging station
 `transactionId`: the id of the transaction
+}
+
+Response:
+`PDU`: {
+`status`
+}
+
+##### Start Charging Station
+
+Request:
+`ProcedureName`: 'startChargingStation'
+`PDU`: {
+`hashId`: the unique identifier of a charging station
+}
+
+Response:
+`PDU`: {
+`status`
+}
+
+##### Stop Charging Station
+
+Request:
+`ProcedureName`: 'stopChargingStation'
+`PDU`: {
+`hashId`: the unique identifier of a charging station
 }
 
 Response:
