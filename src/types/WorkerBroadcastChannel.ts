@@ -1,4 +1,3 @@
-import { JsonObject } from './JsonType';
 import { RequestPayload, ResponsePayload } from './UIProtocol';
 
 export type BroadcastChannelRequest = [

@@ -32,6 +32,7 @@ export enum ProcedureName {
   OPEN_CONNECTION = 'openConnection',
   CLOSE_CONNECTION = 'closeConnection',
 }
+
 export interface RequestPayload extends JsonObject {
   hashId?: string;
 }

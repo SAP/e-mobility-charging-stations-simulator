@@ -409,7 +409,29 @@ Set the HTTP header _Sec-Websocket-Protocol_ to `ui0.0.1`
 
 #### Procedures
 
-##### List Charging stations
+##### Start Simulator
+
+Request:  
+`ProcedureName`: 'startSimulator'  
+`PDU`: {}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### Stop Simulator
+
+Request:  
+`ProcedureName`: 'stopSimulator'  
+`PDU`: {}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### List Charging Stations
 
 Request:  
 `ProcedureName`: 'listChargingStations'  
