@@ -395,7 +395,7 @@ Request:
 
 `uuid`: String uniquely representing this request  
 `ProcedureName`: The procedure to run on the simulator  
-`PDU`: The parameters (if any) for said procedure
+`PDU`: The parameters for said procedure
 
 Response:  
 [`uuid`, `PDU`]
@@ -430,7 +430,7 @@ Request:
 `PDU`: {  
 `hashId`: the unique identifier of a charging station  
 `connectorId`: the id of the connector  
-`idTag`: An allowed badge authetification ID  
+`idTag`: the RFID tag  
 }
 
 Response:  
