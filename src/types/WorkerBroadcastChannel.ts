@@ -15,16 +15,13 @@ export enum BroadcastChannelProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
 }
 
-interface BroadcastChannelBasePayload extends JsonObject {
+export interface BroadcastChannelRequestPayload extends Omit<RequestPayload, 'hashId'> {
   hashId: string;
-}
-
-export interface BroadcastChannelRequestPayload
-  extends BroadcastChannelBasePayload,
-    Omit<RequestPayload, 'hashId'> {
   connectorId?: number;
   transactionId?: number;
   idTag?: string;
 }
 
 export type BroadcastChannelResponsePayload = ResponsePayload;
+
+export type MessageEvent = { data: BroadcastChannelRequest | BroadcastChannelResponse };
