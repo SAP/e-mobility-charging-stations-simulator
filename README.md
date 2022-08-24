@@ -390,17 +390,17 @@ Protocol to control the simulator via a Websocket
 
 PDU stands for Protocol Data Unit
 
-Request:
+Request:  
 [`uuid`, `ProcedureName`, `PDU`]
 
-`uuid`: String uniquely representing this request
-`ProcedureName`: The procedure to run on the simulator
+`uuid`: String uniquely representing this request  
+`ProcedureName`: The procedure to run on the simulator  
 `PDU`: The parameters (if any) for said procedure
 
-Response:
+Response:  
 [`uuid`, `PDU`]
 
-`uuid`: String uniquely linking the response to the request
+`uuid`: String uniquely linking the response to the request  
 `PDU`: Response data to requested procedure
 
 ### Version 0.0.1
@@ -411,71 +411,71 @@ Set the HTTP header _Sec-Websocket-Protocol_ to `ui0.0.1`
 
 ##### List Charging stations
 
-Request:
-`ProcedureName`: 'listChargingStations'
+Request:  
+`ProcedureName`: 'listChargingStations'  
 `PDU`: {}
 
-Response:
-`PDU`: {
-`status`,
-`index`: ChargingStationData,
-...
-`index`: ChargingStationData
+Response:  
+`PDU`: {  
+`status`,  
+`index`: ChargingStationData,  
+...  
+`index`: ChargingStationData  
 }
 
 ##### Start Transaction
 
-Request:
-`ProcedureName`: 'startTransaction'
-`PDU`: {
-`hashId`: the unique identifier of a charging station
-`connectorId`: the id of the connector (start at 1)
-`idTag`: An allowed badge authetification ID
+Request:  
+`ProcedureName`: 'startTransaction'  
+`PDU`: {  
+`hashId`: the unique identifier of a charging station  
+`connectorId`: the id of the connector  
+`idTag`: An allowed badge authetification ID  
 }
 
-Response:
-`PDU`: {
-`status`
+Response:  
+`PDU`: {  
+`status`  
 }
 
 ##### Stop Transaction
 
-Request:
-`ProcedureName`: 'stopTransaction'
-`PDU`: {
-`hashId`: the unique identifier of a charging station
-`transactionId`: the id of the transaction
+Request:  
+`ProcedureName`: 'stopTransaction'  
+`PDU`: {  
+`hashId`: the unique identifier of a charging station  
+`transactionId`: the id of the transaction  
 }
 
-Response:
-`PDU`: {
-`status`
+Response:  
+`PDU`: {  
+`status`  
 }
 
 ##### Start Charging Station
 
-Request:
-`ProcedureName`: 'startChargingStation'
-`PDU`: {
-`hashId`: the unique identifier of a charging station
+Request:  
+`ProcedureName`: 'startChargingStation'  
+`PDU`: {  
+`hashId`: the unique identifier of a charging station  
 }
 
-Response:
-`PDU`: {
-`status`
+Response:  
+`PDU`: {  
+`status`  
 }
 
 ##### Stop Charging Station
 
-Request:
-`ProcedureName`: 'stopChargingStation'
-`PDU`: {
-`hashId`: the unique identifier of a charging station
+Request:  
+`ProcedureName`: 'stopChargingStation'  
+`PDU`: {  
+`hashId`: the unique identifier of a charging station  
 }
 
-Response:
-`PDU`: {
-`status`
+Response:  
+`PDU`: {  
+`status`  
 }
 
 ## Support, Feedback, Contributing
