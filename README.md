@@ -51,6 +51,8 @@ To start the program, run: `npm start`.
 
 ## Start Web UI
 
+See Web UI [README.md](src/ui/web/README.md) for more information.
+
 ## Configuration files syntax
 
 All configuration files are in the JSON standard format.
