@@ -13,7 +13,6 @@ import {
   ResponseStatus,
 } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
-import Utils from '../../../utils/Utils';
 import Bootstrap from '../../Bootstrap';
 import UIServiceWorkerBroadcastChannel from '../../UIServiceWorkerBroadcastChannel';
 import type { AbstractUIServer } from '../AbstractUIServer';
@@ -119,8 +118,8 @@ export default abstract class AbstractUIService {
 
     const data = JSON.parse(rawData.toString()) as JsonType[];
 
-    if (Utils.isIterable(data) === false) {
-      throw new BaseError('UI protocol request is not iterable');
+    if (Array.isArray(data) === false) {
+      throw new BaseError('UI protocol request is not an array');
     }
 
     if (data.length !== 3) {

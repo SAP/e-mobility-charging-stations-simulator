@@ -112,8 +112,8 @@ export default class UIClient {
   private responseHandler(messageEvent: MessageEvent<string>): void {
     const data = JSON.parse(messageEvent.data) as ProtocolResponse;
 
-    if (Utils.isIterable(data) === false) {
-      throw new Error('Response not iterable: ' + JSON.stringify(data, null, 2));
+    if (Array.isArray(data) === false) {
+      throw new Error('Response not an array: ' + JSON.stringify(data, null, 2));
     }
 
     const [uuid, response] = data;

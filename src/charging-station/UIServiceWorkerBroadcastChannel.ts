@@ -1,3 +1,4 @@
+import BaseError from '../exception/BaseError';
 import { BroadcastChannelResponse, MessageEvent } from '../types/WorkerBroadcastChannel';
 import logger from '../utils/Logger';
 import type AbstractUIService from './ui-server/ui-services/AbstractUIService';
@@ -18,6 +19,9 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
   private responseHandler(messageEvent: MessageEvent): void {
     if (this.isRequest(messageEvent.data)) {
       return;
+    }
+    if (Array.isArray(messageEvent.data) === false) {
+      throw new BaseError('Worker broadcast channel protocol response is not an array');
     }
     const [uuid, responsePayload] = messageEvent.data as BroadcastChannelResponse;
 

@@ -389,7 +389,7 @@ export default class Configuration {
   }
 
   private static isObject(item): boolean {
-    return item && typeof item === 'object' && !Array.isArray(item);
+    return item && typeof item === 'object' && Array.isArray(item) === false;
   }
 
   private static deepMerge(target: object, ...sources: object[]): object {

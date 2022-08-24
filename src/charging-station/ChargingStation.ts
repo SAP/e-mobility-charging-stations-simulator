@@ -626,7 +626,7 @@ export default class ChargingStation {
       );
       this.getConnectorStatus(connectorId).chargingProfiles = [];
     }
-    if (!Array.isArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
+    if (Array.isArray(this.getConnectorStatus(connectorId).chargingProfiles) === false) {
       logger.error(
         `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
       );
@@ -1419,7 +1419,7 @@ export default class ChargingStation {
     let errMsg: string;
     try {
       const request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
-      if (Utils.isIterable(request)) {
+      if (Array.isArray(request) === true) {
         [messageType, messageId] = request;
         // Check the type of message
         switch (messageType) {
@@ -1456,12 +1456,12 @@ export default class ChargingStation {
             }
             // Respond
             cachedRequest = this.requests.get(messageId);
-            if (Utils.isIterable(cachedRequest)) {
+            if (Array.isArray(cachedRequest) === true) {
               [responseCallback, , requestCommandName, requestPayload] = cachedRequest;
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} response is not iterable`,
+                `Cached request for message id ${messageId} response is not an array`,
                 null,
                 cachedRequest as unknown as JsonType
               );
@@ -1486,12 +1486,12 @@ export default class ChargingStation {
               );
             }
             cachedRequest = this.requests.get(messageId);
-            if (Utils.isIterable(cachedRequest)) {
+            if (Array.isArray(cachedRequest) === true) {
               [, errorCallback, requestCommandName] = cachedRequest;
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} error response is not iterable`,
+                `Cached request for message id ${messageId} error response is not an array`,
                 null,
                 cachedRequest as unknown as JsonType
               );
@@ -1512,7 +1512,7 @@ export default class ChargingStation {
         }
         parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
-        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
+        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not an array', null, {
           payload: request,
         });
       }

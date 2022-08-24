@@ -14,6 +14,7 @@ import {
   ChargingStationData,
   ChargingStationWorkerData,
   ChargingStationWorkerMessage,
+  ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
 import { StationTemplateUrl } from '../types/ConfigurationData';
@@ -173,14 +174,14 @@ export default class Bootstrap {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
           messageHandler: this.messageHandler.bind(this) as (
-            msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
+            msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
           ) => void,
         }
       ));
   }
 
   private messageHandler(
-    msg: ChargingStationWorkerMessage<ChargingStationData | Statistics>
+    msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
   ): void {
     // logger.debug(
     //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
