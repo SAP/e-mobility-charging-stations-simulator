@@ -675,6 +675,74 @@ export default class ChargingStation {
     this.messageBuffer.add(message);
   }
 
+  public openWSConnection(
+    options: WsOptions = this.stationInfo?.wsOptions ?? {},
+    params: { closeOpened?: boolean; terminateOpened?: boolean } = {
+      closeOpened: false,
+      terminateOpened: false,
+    }
+  ): void {
+    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+    params.closeOpened = params?.closeOpened ?? false;
+    params.terminateOpened = params?.terminateOpened ?? false;
+    if (
+      !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
+      !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)
+    ) {
+      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
+    }
+    if (params?.closeOpened) {
+      this.closeWSConnection();
+    }
+    if (params?.terminateOpened) {
+      this.terminateWSConnection();
+    }
+    let protocol: string;
+    switch (this.getOcppVersion()) {
+      case OCPPVersion.VERSION_16:
+        protocol = 'ocpp' + OCPPVersion.VERSION_16;
+        break;
+      default:
+        this.handleUnsupportedVersion(this.getOcppVersion());
+        break;
+    }
+
+    logger.info(
+      this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString()
+    );
+
+    this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
+
+    // Handle WebSocket message
+    this.wsConnection.on(
+      'message',
+      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
+    );
+    // Handle WebSocket error
+    this.wsConnection.on(
+      'error',
+      this.onError.bind(this) as (this: WebSocket, error: Error) => void
+    );
+    // Handle WebSocket close
+    this.wsConnection.on(
+      'close',
+      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
+    );
+    // Handle WebSocket open
+    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
+    // Handle WebSocket ping
+    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
+    // Handle WebSocket pong
+    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
+  }
+
+  public closeWSConnection(): void {
+    if (this.isWebSocketConnectionOpened()) {
+      this.wsConnection.close();
+      this.wsConnection = null;
+    }
+  }
+
   private flushMessageBuffer() {
     if (this.messageBuffer.size > 0) {
       this.messageBuffer.forEach((message) => {
@@ -1865,74 +1933,6 @@ export default class ChargingStation {
   private stopHeartbeat(): void {
     if (this.heartbeatSetInterval) {
       clearInterval(this.heartbeatSetInterval);
-    }
-  }
-
-  private openWSConnection(
-    options: WsOptions = this.stationInfo?.wsOptions ?? {},
-    params: { closeOpened?: boolean; terminateOpened?: boolean } = {
-      closeOpened: false,
-      terminateOpened: false,
-    }
-  ): void {
-    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
-    params.closeOpened = params?.closeOpened ?? false;
-    params.terminateOpened = params?.terminateOpened ?? false;
-    if (
-      !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
-      !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)
-    ) {
-      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
-    }
-    if (params?.closeOpened) {
-      this.closeWSConnection();
-    }
-    if (params?.terminateOpened) {
-      this.terminateWSConnection();
-    }
-    let protocol: string;
-    switch (this.getOcppVersion()) {
-      case OCPPVersion.VERSION_16:
-        protocol = 'ocpp' + OCPPVersion.VERSION_16;
-        break;
-      default:
-        this.handleUnsupportedVersion(this.getOcppVersion());
-        break;
-    }
-
-    logger.info(
-      this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString()
-    );
-
-    this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
-
-    // Handle WebSocket message
-    this.wsConnection.on(
-      'message',
-      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
-    );
-    // Handle WebSocket error
-    this.wsConnection.on(
-      'error',
-      this.onError.bind(this) as (this: WebSocket, error: Error) => void
-    );
-    // Handle WebSocket close
-    this.wsConnection.on(
-      'close',
-      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
-    );
-    // Handle WebSocket open
-    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
-    // Handle WebSocket ping
-    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
-    // Handle WebSocket pong
-    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
-  }
-
-  private closeWSConnection(): void {
-    if (this.isWebSocketConnectionOpened()) {
-      this.wsConnection.close();
-      this.wsConnection = null;
     }
   }
 

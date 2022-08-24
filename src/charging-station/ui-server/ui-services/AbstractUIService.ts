@@ -16,7 +16,7 @@ import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import Bootstrap from '../../Bootstrap';
 import UIServiceWorkerBroadcastChannel from '../../UIServiceWorkerBroadcastChannel';
-import { AbstractUIServer } from '../AbstractUIServer';
+import type { AbstractUIServer } from '../AbstractUIServer';
 
 const moduleName = 'AbstractUIService';
 

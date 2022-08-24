@@ -17,7 +17,7 @@ import {
 } from '../types/WorkerBroadcastChannel';
 import { ResponseStatus } from '../ui/web/src/type/UIProtocol';
 import logger from '../utils/Logger';
-import ChargingStation from './ChargingStation';
+import type ChargingStation from './ChargingStation';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
@@ -108,6 +108,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         break;
       case BroadcastChannelProcedureName.STOP_CHARGING_STATION:
         await this.chargingStation.stop();
+        break;
+      case BroadcastChannelProcedureName.OPEN_CONNECTION:
+        this.chargingStation.openWSConnection();
+        break;
+      case BroadcastChannelProcedureName.CLOSE_CONNECTION:
+        this.chargingStation.closeWSConnection();
         break;
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

@@ -1,6 +1,6 @@
 import { BroadcastChannelResponse, MessageEvent } from '../types/WorkerBroadcastChannel';
 import logger from '../utils/Logger';
-import AbstractUIService from './ui-server/ui-services/AbstractUIService';
+import type AbstractUIService from './ui-server/ui-services/AbstractUIService';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 const moduleName = 'UIServiceWorkerBroadcastChannel';

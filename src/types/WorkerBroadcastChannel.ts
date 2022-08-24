@@ -13,6 +13,8 @@ export enum BroadcastChannelProcedureName {
   STOP_CHARGING_STATION = 'stopChargingStation',
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
+  OPEN_CONNECTION = 'openConnection',
+  CLOSE_CONNECTION = 'closeConnection',
 }
 
 export interface BroadcastChannelRequestPayload extends Omit<RequestPayload, 'hashId'> {

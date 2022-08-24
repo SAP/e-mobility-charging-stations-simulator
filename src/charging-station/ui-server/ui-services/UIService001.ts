@@ -30,6 +30,14 @@ export default class UIService001 extends AbstractUIService {
       ProcedureName.STOP_CHARGING_STATION,
       this.handleStopChargingStation.bind(this) as ProtocolRequestHandler
     );
+    this.requestHandlers.set(
+      ProcedureName.OPEN_CONNECTION,
+      this.handleOpenConnection.bind(this) as ProtocolRequestHandler
+    );
+    this.requestHandlers.set(
+      ProcedureName.CLOSE_CONNECTION,
+      this.handleCloseConnection.bind(this) as ProtocolRequestHandler
+    );
   }
 
   private handleStartTransaction(uuid: string, payload: RequestPayload): void {
@@ -60,6 +68,22 @@ export default class UIService001 extends AbstractUIService {
     this.uiServiceWorkerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+      payload as BroadcastChannelRequestPayload,
+    ]);
+  }
+
+  private handleOpenConnection(uuid: string, payload: RequestPayload): void {
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
+      uuid,
+      BroadcastChannelProcedureName.OPEN_CONNECTION,
+      payload as BroadcastChannelRequestPayload,
+    ]);
+  }
+
+  private handleCloseConnection(uuid: string, payload: RequestPayload): void {
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
+      uuid,
+      BroadcastChannelProcedureName.CLOSE_CONNECTION,
       payload as BroadcastChannelRequestPayload,
     ]);
   }

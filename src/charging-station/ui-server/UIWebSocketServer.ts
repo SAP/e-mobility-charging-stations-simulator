@@ -54,6 +54,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public sendResponse(response: string): void {
+    // TODO: send response only to the client that sent the request
     this.broadcastToClients(response);
   }
 
