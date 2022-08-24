@@ -478,6 +478,32 @@ Response:
 `status`  
 }
 
+##### Open Connection
+
+Request:  
+`ProcedureName`: 'openConnection'  
+`PDU`: {  
+`hashId`: the unique identifier of a charging station  
+}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### Close Connection
+
+Request:  
+`ProcedureName`: 'closeConnection'  
+`PDU`: {  
+`hashId`: the unique identifier of a charging station  
+}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
 ## Support, Feedback, Contributing
 
 This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/SAP/e-mobility-charging-stations-simulator/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md).
