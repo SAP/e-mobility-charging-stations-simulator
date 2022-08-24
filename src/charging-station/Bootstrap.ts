@@ -32,6 +32,9 @@ import UIServerFactory from './ui-server/UIServerFactory';
 
 const moduleName = 'Bootstrap';
 
+const missingChargingStationsConfigurationExitCode = 1;
+const noChargingStationTemplatesExitCode = 2;
+
 export default class Bootstrap {
   private static instance: Bootstrap | null = null;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
@@ -105,12 +108,13 @@ export default class Bootstrap {
           console.warn(
             chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
           );
+          process.exit(missingChargingStationsConfigurationExitCode);
         }
         if (this.numberOfChargingStations === 0) {
           console.warn(
             chalk.yellow('No charging station template enabled in configuration, exiting')
           );
-          process.exit();
+          process.exit(noChargingStationTemplatesExitCode);
         } else {
           console.info(
             chalk.green(
