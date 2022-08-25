@@ -32,7 +32,7 @@ export enum ProcedureName {
   CLOSE_CONNECTION = 'closeConnection',
 }
 export interface RequestPayload extends JsonObject {
-  hashId?: string;
+  hashId?: string | string[];
 }
 
 export enum ResponseStatus {

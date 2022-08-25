@@ -44,7 +44,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
 
     const [uuid, command, requestPayload] = messageEvent.data as BroadcastChannelRequest;
 
-    if (requestPayload?.hashId !== this.chargingStation.hashId) {
+    if (
+      (Array.isArray(requestPayload?.hashId) === true &&
+        requestPayload?.hashId.includes(this.chargingStation.hashId)) ||
+      (Array.isArray(requestPayload?.hashId) === false &&
+        requestPayload?.hashId === this.chargingStation.hashId)
+    ) {
       return;
     }
 
