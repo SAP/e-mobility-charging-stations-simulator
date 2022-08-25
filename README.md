@@ -450,9 +450,9 @@ Response:
 Request:  
 `ProcedureName`: 'startTransaction'  
 `PDU`: {  
-`hashId`: the unique identifier of a charging station  
-`connectorId`: the id of the connector  
-`idTag`: the RFID tag  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+`connectorId`: connector id integer,  
+`idTag`: RFID tag string  
 }
 
 Response:  
@@ -465,8 +465,8 @@ Response:
 Request:  
 `ProcedureName`: 'stopTransaction'  
 `PDU`: {  
-`hashId`: the unique identifier of a charging station  
-`transactionId`: the id of the transaction  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+`transactionId`: transaction id integer  
 }
 
 Response:  
@@ -479,7 +479,7 @@ Response:
 Request:  
 `ProcedureName`: 'startChargingStation'  
 `PDU`: {  
-`hashId`: the unique identifier of a charging station  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array
 }
 
 Response:  
@@ -492,7 +492,7 @@ Response:
 Request:  
 `ProcedureName`: 'stopChargingStation'  
 `PDU`: {  
-`hashId`: the unique identifier of a charging station  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
 }
 
 Response:  
@@ -505,7 +505,7 @@ Response:
 Request:  
 `ProcedureName`: 'openConnection'  
 `PDU`: {  
-`hashId`: the unique identifier of a charging station  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
 }
 
 Response:  
@@ -518,7 +518,7 @@ Response:
 Request:  
 `ProcedureName`: 'closeConnection'  
 `PDU`: {  
-`hashId`: the unique identifier of a charging station  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
 }
 
 Response:  

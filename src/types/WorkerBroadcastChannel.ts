@@ -16,12 +16,23 @@ export enum BroadcastChannelProcedureName {
   CLOSE_CONNECTION = 'closeConnection',
 }
 
-export interface BroadcastChannelRequestPayload extends Omit<RequestPayload, 'hashId'> {
-  hashId: string;
+interface BaseBroadcastChannelRequestPayload extends Omit<RequestPayload, 'hashId' | 'hashIds'> {
   connectorId?: number;
   transactionId?: number;
   idTag?: string;
 }
+
+interface HashIdBroadcastChannelRequestPayload extends BaseBroadcastChannelRequestPayload {
+  hashId: string;
+}
+
+interface HashIdsBroadcastChannelRequestPayload extends BaseBroadcastChannelRequestPayload {
+  hashIds: string[];
+}
+
+export type BroadcastChannelRequestPayload =
+  | HashIdBroadcastChannelRequestPayload
+  | HashIdsBroadcastChannelRequestPayload;
 
 export type BroadcastChannelResponsePayload = ResponsePayload;
 
