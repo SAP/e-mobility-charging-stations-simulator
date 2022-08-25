@@ -10,7 +10,7 @@
     "lint:fix": "vue-cli-service lint --fix"
   },
   "dependencies": {
-    "core-js": "^3.24.1",
+    "core-js": "^3.25.0",
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "uuid": "^8.3.2",
@@ -21,10 +21,10 @@
   "devDependencies": {
     "@types/chai": "^4.3.3",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.11",
+    "@types/node": "^18.7.13",
     "@types/uuid": "^8.3.4",
-    "@typescript-eslint/eslint-plugin": "^5.34.0",
-    "@typescript-eslint/parser": "^5.34.0",
+    "@typescript-eslint/eslint-plugin": "^5.35.1",
+    "@typescript-eslint/parser": "^5.35.1",
     "@vue/cli": "~5.0.8",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-eslint": "~5.0.8",
