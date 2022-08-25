@@ -1,6 +1,7 @@
 import ChargingStationInfo from './ChargingStationInfo';
 import { ConnectorStatus } from './ConnectorStatus';
 import { JsonObject } from './JsonType';
+import { BootNotificationResponse } from './ocpp/Responses';
 import Statistics from './Statistics';
 import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
@@ -18,6 +19,7 @@ export interface ChargingStationData extends WorkerData {
   hashId: string;
   stationInfo: ChargingStationInfo;
   stopped: boolean;
+  bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
 }
 

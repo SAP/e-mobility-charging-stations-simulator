@@ -120,7 +120,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         break;
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new BaseError(`Unknown broadcast channel command: ${command}`);
+        throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
     }
   }
 

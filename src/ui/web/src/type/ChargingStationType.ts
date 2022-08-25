@@ -1,6 +1,10 @@
+import { JsonObject } from './JsonType';
+
 export type ChargingStationData = {
   hashId: string;
   stationInfo: ChargingStationInfo;
+  stopped: boolean;
+  bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
 };
 
@@ -96,6 +100,20 @@ export type RequestCommand = OCPP16RequestCommand;
 export const RequestCommand = {
   ...OCPP16RequestCommand,
 };
+
+export type BootNotificationResponse = OCPP16BootNotificationResponse;
+
+export enum OCPP16RegistrationStatus {
+  ACCEPTED = 'Accepted',
+  PENDING = 'Pending',
+  REJECTED = 'Rejected',
+}
+
+export interface OCPP16BootNotificationResponse extends JsonObject {
+  status: OCPP16RegistrationStatus;
+  currentTime: string;
+  interval: number;
+}
 
 export interface CommandsSupport {
   incomingCommands: Record<IncomingRequestCommand, boolean>;

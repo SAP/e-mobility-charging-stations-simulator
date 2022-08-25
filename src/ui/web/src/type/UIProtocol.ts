@@ -28,6 +28,8 @@ export enum ProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
   START_SIMULATOR = 'startSimulator',
   STOP_SIMULATOR = 'stopSimulator',
+  OPEN_CONNECTION = 'openConnection',
+  CLOSE_CONNECTION = 'closeConnection',
 }
 export interface RequestPayload extends JsonObject {
   hashId?: string;
