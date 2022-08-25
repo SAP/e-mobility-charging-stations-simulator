@@ -450,7 +450,7 @@ Response:
 Request:  
 `ProcedureName`: 'startTransaction'  
 `PDU`: {  
-`hashId`: charging station unique identifier string | `hashIds`: charging station unique identifier strings array,  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
 `connectorId`: connector id integer,  
 `idTag`: RFID tag string  
 }
@@ -465,7 +465,7 @@ Response:
 Request:  
 `ProcedureName`: 'stopTransaction'  
 `PDU`: {  
-`hashId`: charging station unique identifier string | `hashIds`: charging station unique identifier strings array,  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
 `transactionId`: transaction id integer  
 }
 
@@ -479,7 +479,7 @@ Response:
 Request:  
 `ProcedureName`: 'startChargingStation'  
 `PDU`: {  
-`hashId`: charging station unique identifier string | `hashIds`: charging station unique identifier strings array
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array
 }
 
 Response:  
@@ -492,7 +492,7 @@ Response:
 Request:  
 `ProcedureName`: 'stopChargingStation'  
 `PDU`: {  
-`hashId`: charging station unique identifier string | `hashIds`: charging station unique identifier strings array  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
 }
 
 Response:  
@@ -505,7 +505,7 @@ Response:
 Request:  
 `ProcedureName`: 'openConnection'  
 `PDU`: {  
-`hashId`: charging station unique identifier string | `hashIds`: charging station unique identifier strings array  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
 }
 
 Response:  
@@ -518,7 +518,7 @@ Response:
 Request:  
 `ProcedureName`: 'closeConnection'  
 `PDU`: {  
-`hashId`: charging station unique identifier string | `hashIds`: charging station unique identifier strings array  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
 }
 
 Response:  

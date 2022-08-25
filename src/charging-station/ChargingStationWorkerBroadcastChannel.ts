@@ -56,6 +56,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     ) {
       return;
     }
+    if (requestPayload?.hashId !== undefined) {
+      logger.warn(
+        `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' instead`
+      );
+    }
 
     let responsePayload: BroadcastChannelResponsePayload;
     let commandResponse: CommandResponse;
