@@ -41,7 +41,6 @@ export default {
     'basic-ftp',
     'chalk',
     'crypto',
-    'express',
     'fs',
     'mnemonist/lru-map-with-delete',
     'moment',

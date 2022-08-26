@@ -46,8 +46,8 @@ const state: State = reactive({
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
-  const list = await UIClientInstance.listChargingStations();
-  state.chargingStations = list as unknown as Record<string, ChargingStationData>;
+  const chargingStationsList = await UIClientInstance.listChargingStations();
+  state.chargingStations = chargingStationsList as unknown as Record<string, ChargingStationData>;
   state.isLoading = false;
 }
 

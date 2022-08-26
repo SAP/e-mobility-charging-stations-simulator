@@ -10,13 +10,13 @@ npm install
 
 For both solution you can then follow the link displayed in the terminal at the end of compilation
 
-#### Compiles and run without development tools
+#### Compiles and run for production
 
 ```
 npm start
 ```
 
-#### Compiles and hot-reloads for development
+#### Compiles and run for development
 
 ```
 npm run serve
@@ -33,7 +33,3 @@ npm run build
 ```
 npm run lint
 ```
-
-### Customize configuration
-
-See [Configuration Reference](https://cli.vuejs.org/config/).
