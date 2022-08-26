@@ -23,7 +23,7 @@ export class UIServiceUtils {
         protocolIndex + Protocol.UI.length
       ) as Protocol;
       version = fullProtocol.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion;
-      if (UIServiceUtils.isProtocolSupported(protocol, version)) {
+      if (UIServiceUtils.isProtocolSupported(protocol, version) === true) {
         return fullProtocol;
       }
     }

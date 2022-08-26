@@ -106,9 +106,12 @@ export default abstract class AbstractUIService {
   // Validate the raw data received from the WebSocket
   // TODO: should probably be moved to the ws verify clients callback
   private requestValidation(rawData: RawData | JsonType): ProtocolRequest {
-    logger.debug(
-      `${this.logPrefix(moduleName, 'dataValidation')} Data received: ${rawData.toString()}`
-    );
+    // logger.debug(
+    //   `${this.logPrefix(
+    //     moduleName,
+    //     'requestValidation'
+    //   )} Data received in string format: ${rawData.toString()}`
+    // );
 
     const data = JSON.parse(rawData.toString()) as JsonType[];
 
