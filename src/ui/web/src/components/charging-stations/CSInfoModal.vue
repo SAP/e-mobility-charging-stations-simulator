@@ -1,5 +1,5 @@
 <template>
-  <Modal :visibility="isVisible">
+  <Modal :visibility="props.isVisible">
     <div class="card-info">vendor: {{ props.info.chargePointVendor }}</div>
   </Modal>
 </template>

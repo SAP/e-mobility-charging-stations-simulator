@@ -550,8 +550,8 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
     this.stopped = true;
+    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
   }
 
   public async reset(reason?: StopTransactionReason): Promise<void> {

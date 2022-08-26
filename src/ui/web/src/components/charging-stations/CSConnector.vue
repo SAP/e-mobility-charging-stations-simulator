@@ -1,5 +1,9 @@
 <template>
   <td class="cs-table__action-col">
+    <Button @click="startChargingStation()">Start Charging Station</Button>
+    <Button @click="stopChargingStation()">Stop Charging Station</Button>
+    <Button @click="openConnection()">Open Connection</Button>
+    <Button @click="closeConnection()">Close Connection</Button>
     <Button @click="startTransaction()">Start Transaction</Button>
     <!-- <IdTagInputModal
       :visibility="state.isIdTagModalVisible"
@@ -10,12 +14,10 @@
       Start Transaction
     </IdTagInputModal> -->
     <Button @click="stopTransaction()">Stop Transaction</Button>
-    <Button @click="openConnection()">Open Connection</Button>
-    <Button @click="closeConnection()">Close Connection</Button>
   </td>
   <td class="cs-table__connector-col">{{ connectorId }}</td>
   <td class="cs-table__status-col">{{ connector.status }}</td>
-  <td class="cs-table__transaction-col">{{ connector.transactionStarted }}</td>
+  <td class="cs-table__transaction-col">{{ connector.transactionStarted ? 'Yes' : 'No' }}</td>
 </template>
 
 <script setup lang="ts">
@@ -59,16 +61,22 @@ const props = defineProps<{
 //   state.isIdTagModalVisible = false;
 // }
 
-function startTransaction(): void {
-  UIClient.instance.startTransaction(props.hashId, props.connectorId, props.idTag);
+function startChargingStation(): void {
+  UIClient.instance.startChargingStation(props.hashId);
 }
-function stopTransaction(): void {
-  UIClient.instance.stopTransaction(props.hashId, props.transactionId);
+function stopChargingStation(): void {
+  UIClient.instance.stopChargingStation(props.hashId);
 }
 function openConnection(): void {
   UIClient.instance.openConnection(props.hashId);
 }
 function closeConnection(): void {
   UIClient.instance.closeConnection(props.hashId);
+}
+function startTransaction(): void {
+  UIClient.instance.startTransaction(props.hashId, props.connectorId, props.idTag);
+}
+function stopTransaction(): void {
+  UIClient.instance.stopTransaction(props.hashId, props.transactionId);
 }
 </script>

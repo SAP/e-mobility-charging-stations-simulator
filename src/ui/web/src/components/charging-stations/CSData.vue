@@ -8,6 +8,7 @@
       :id-tag="props.idTag"
     />
     <td class="cs-table__name-col">{{ getId() }}</td>
+    <td class="cs-table__stopped-col">{{ getStopped() }}</td>
     <td class="cs-table__vendor-col">{{ getVendor() }}</td>
     <td class="cs-table__model-col">{{ getModel() }}</td>
     <td class="cs-table__firmware-col">{{ getFirmwareVersion() }}</td>
@@ -60,6 +61,9 @@ function getVendor(): string {
 }
 function getFirmwareVersion(): string {
   return Utils.ifUndefined<string>(getInfo().firmwareVersion, 'Ø');
+}
+function getStopped(): string {
+  return props.chargingStation.stopped ? 'Yes' : 'No';
 }
 // function showTagModal(): void {
 //   state.isTagModalVisible = true;

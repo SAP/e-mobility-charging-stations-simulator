@@ -49,6 +49,26 @@ export default class UIClient {
     return this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {});
   }
 
+  public async startChargingStation(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.START_CHARGING_STATION, { hashId });
+  }
+
+  public async stopChargingStation(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.STOP_CHARGING_STATION, { hashId });
+  }
+
+  public async openConnection(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
+      hashId,
+    });
+  }
+
+  public async closeConnection(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
+      hashId,
+    });
+  }
+
   public async startTransaction(
     hashId: string,
     connectorId: number,
@@ -68,18 +88,6 @@ export default class UIClient {
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashId,
       transactionId,
-    });
-  }
-
-  public async openConnection(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
-      hashId,
-    });
-  }
-
-  public async closeConnection(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
-      hashId,
     });
   }
 

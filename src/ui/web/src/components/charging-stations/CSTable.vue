@@ -7,6 +7,7 @@
         <th scope="col" class="cs-table__status-col">Status</th>
         <th scope="col" class="cs-table__transaction-col">Transaction</th>
         <th scope="col" class="cs-table__name-col">Name</th>
+        <th scope="col" class="cs-table__stopped-col">Stopped</th>
         <th scope="col" class="cs-table__vendor-col">Vendor</th>
         <th scope="col" class="cs-table__model-col">Model</th>
         <th scope="col" class="cs-table__firmware-col">Firmware Version</th>
@@ -64,7 +65,6 @@ const props = defineProps<{
 #cs-table__body {
   /* width: 100%; */
   /* direction: rtl; */
-  /* overflow: visible scroll; */
   overflow: visible overlay;
   flex-grow: 1;
 }
@@ -73,8 +73,9 @@ const props = defineProps<{
   width: 100%;
   /* display: inline-block; */
   display: flex;
+  justify-content: center;
+  align-items: center;
   /* align-content: stretch; */
-  /* align-items: baseline; */
 }
 #cs-table__head .cs-table__row {
   background-color: rgb(194, 188, 188);
@@ -88,6 +89,7 @@ const props = defineProps<{
 .cs-table__status-col,
 .cs-table__transaction-col,
 .cs-table__name-col,
+.cs-table__stopped-col,
 .cs-table__model-col,
 .cs-table__vendor-col,
 .cs-table__firmware-col {
@@ -113,6 +115,9 @@ const props = defineProps<{
   /* min-width: 120px; */
 }
 .cs-table__name-col {
+  /* min-width: 120px; */
+}
+.cs-table__stopped-col {
   /* min-width: 120px; */
 }
 .cs-table__model-col {
