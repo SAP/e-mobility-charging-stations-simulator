@@ -36,7 +36,7 @@ export default abstract class AbstractUIService {
     this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this);
   }
 
-  public async requestHandler(request: RawData): Promise<void> {
+  public async requestHandler(request: RawData | JsonType): Promise<void> {
     let messageId: string;
     let command: ProcedureName;
     let requestPayload: RequestPayload | undefined;
@@ -58,10 +58,7 @@ export default abstract class AbstractUIService {
       responsePayload = await this.requestHandlers.get(command)(messageId, requestPayload);
     } catch (error) {
       // Log
-      logger.error(
-        `${this.uiServer.logPrefix(moduleName, 'messageHandler')} Handle request error:`,
-        error
-      );
+      logger.error(`${this.logPrefix(moduleName, 'messageHandler')} Handle request error:`, error);
       responsePayload = {
         status: ResponseStatus.FAILURE,
         command,
@@ -74,7 +71,7 @@ export default abstract class AbstractUIService {
 
     if (responsePayload !== undefined) {
       // Send the response
-      this.uiServer.sendResponse(this.buildProtocolResponse(messageId ?? 'error', responsePayload));
+      this.sendResponse(messageId ?? 'error', responsePayload);
     }
   }
 
@@ -108,13 +105,10 @@ export default abstract class AbstractUIService {
 
   // Validate the raw data received from the WebSocket
   // TODO: should probably be moved to the ws verify clients callback
-  private requestValidation(rawData: RawData): ProtocolRequest {
-    // logger.debug(
-    //   `${this.uiServer.logPrefix(
-    //     moduleName,
-    //     'dataValidation'
-    //   )} Raw data received: ${rawData.toString()}`
-    // );
+  private requestValidation(rawData: RawData | JsonType): ProtocolRequest {
+    logger.debug(
+      `${this.logPrefix(moduleName, 'dataValidation')} Data received: ${rawData.toString()}`
+    );
 
     const data = JSON.parse(rawData.toString()) as JsonType[];
 

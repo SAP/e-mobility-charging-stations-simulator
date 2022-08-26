@@ -1,33 +1,120 @@
-import { IncomingMessage, Server } from 'http';
+import { IncomingMessage, RequestListener, Server, ServerResponse } from 'http';
 
+import StatusCodes from 'http-status-codes';
+
+import BaseError from '../../exception/BaseError';
 import { ServerOptions } from '../../types/ConfigurationData';
-import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
+import {
+  ProcedureName,
+  Protocol,
+  ProtocolResponse,
+  ProtocolVersion,
+  ResponseStatus,
+} from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
 import UIServiceFactory from './ui-services/UIServiceFactory';
+import { UIServiceUtils } from './ui-services/UIServiceUtils';
+
+const moduleName = 'UIHttpServer';
+
+type responseHandler = { procedureName: ProcedureName; res: ServerResponse };
 
 export default class UIHttpServer extends AbstractUIServer {
+  private readonly responseHandlers: Map<string, responseHandler>;
+
   public constructor(private options?: ServerOptions) {
     super();
-    this.server = new Server();
+    this.server = new Server(this.requestListener.bind(this) as RequestListener);
+    this.responseHandlers = new Map<string, responseHandler>();
   }
 
   public start(): void {
     (this.server as Server).listen(this.options ?? Configuration.getUIServer().options);
-    this.server.on('connection', (): void => {});
   }
 
   public stop(): void {
-    this.server.close();
+    this.chargingStations.clear();
   }
 
-  public sendRequest(request: string): void {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public sendRequest(request: string): void {
+    // This is intentionally left blank
+  }
 
-  public sendResponse(response: string): void {}
+  public sendResponse(response: string): void {
+    const [uuid, payload] = JSON.parse(response) as ProtocolResponse;
+    let statusCode: number;
+    switch (payload.status) {
+      case ResponseStatus.SUCCESS:
+        statusCode = StatusCodes.OK;
+        break;
+      case ResponseStatus.FAILURE:
+        statusCode = StatusCodes.BAD_REQUEST;
+        break;
+    }
+    if (this.responseHandlers.has(uuid)) {
+      const { procedureName, res } = this.responseHandlers.get(uuid);
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+      res.write(response);
+      res.end();
+      this.responseHandlers.delete(uuid);
+    } else {
+      logger.error(
+        `${this.logPrefix()} ${moduleName}.sendResponse: Response received for unknown request: ${response}`
+      );
+    }
+  }
 
-  public logPrefix(): string {
-    return Utils.logPrefix(' UI HTTP Server:');
+  public logPrefix(modName?: string, methodName?: string): string {
+    const logMsg =
+      modName && methodName ? ` UI HTTP Server | ${modName}.${methodName}:` : ' UI HTTP Server |';
+    return Utils.logPrefix(logMsg);
+  }
+
+  private requestListener(req: IncomingMessage, res: ServerResponse): void {
+    // Expected request URL pathname: /ui/:version/:procedureName
+    const reqUrl = new URL(req.url);
+    const protocol: Protocol = reqUrl.pathname.split('/')[0] as Protocol;
+    const version: ProtocolVersion = reqUrl.pathname.split('/')[1] as ProtocolVersion;
+    if (UIServiceUtils.isProtocolSupported(protocol, version)) {
+      throw new BaseError(`Unsupported UI protocol version: '${protocol}/${version}'`);
+    }
+    req.on('error', (error) => {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'requestListener.req.onerror'
+        )} Error at incoming request handling:`,
+        error
+      );
+    });
+    if (!this.uiServices.has(version)) {
+      this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
+    }
+    if (req.method === 'POST') {
+      const bodyArr = [];
+      let body: string;
+      req
+        .on('data', (chunk) => {
+          bodyArr.push(chunk);
+        })
+        .on('end', () => {
+          body = Buffer.concat(bodyArr).toString();
+        });
+      const procedureName: ProcedureName = reqUrl.pathname.split('/')[2] as ProcedureName;
+      const uuid = Utils.generateUUID();
+      this.responseHandlers.set(uuid, { procedureName, res });
+      this.uiServices
+        .get(version)
+        .requestHandler([uuid, procedureName, body])
+        .catch(() => {
+          /* Error caught by AbstractUIService */
+        });
+    } else {
+      throw new BaseError(`Unsupported HTTP method: '${req.method}'`);
+    }
   }
 }

@@ -23,10 +23,7 @@ export class UIServiceUtils {
         protocolIndex + Protocol.UI.length
       ) as Protocol;
       version = fullProtocol.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion;
-      if (
-        Object.values(Protocol).includes(protocol) &&
-        Object.values(ProtocolVersion).includes(version)
-      ) {
+      if (UIServiceUtils.isProtocolSupported(protocol, version)) {
         return fullProtocol;
       }
     }
@@ -37,6 +34,9 @@ export class UIServiceUtils {
     );
     return false;
   };
+
+  public static isProtocolSupported = (protocol: Protocol, version: ProtocolVersion): boolean =>
+    Object.values(Protocol).includes(protocol) && Object.values(ProtocolVersion).includes(version);
 
   public static isLoopback(address: string): boolean {
     const isLoopbackRegExp = new RegExp(
