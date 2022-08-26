@@ -1,16 +1,18 @@
 <template>
   <Container id="charging-stations">
-    <Container id="reload-button_tag-field">
+    <Button id="simulator-button" @click="startSimulator()">Start Simulator</Button>
+    <Button id="simulator-button" @click="stopSimulator()">Stop Simulator</Button>
+    <Container id="inputs-container">
       <input
-        id="tag-field"
+        id="idtag-field"
         type="text"
-        name="tag-field"
-        placeholder="Badge Authentication ID"
-        v-model="state.tag"
+        name="idtag-field"
+        placeholder="RFID tag"
+        v-model="state.idTag"
       />
       <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
     </Container>
-    <CSTable :chargingStations="state.chargingStations" :tag="state.tag" />
+    <CSTable :chargingStations="state.chargingStations" :idTag="state.idTag" />
   </Container>
 </template>
 
@@ -26,27 +28,34 @@ import { ChargingStationData } from '@/type/ChargingStationType';
 const UIClientInstance = UIClient.instance;
 
 onMounted(() => {
-  UIClientInstance.onOpen(load);
+  UIClientInstance.registerWSonOpenListener(load);
 });
 
 type State = {
   isLoading: boolean;
-  chargingStations: ChargingStationData[];
-  tag: string;
+  chargingStations: Record<string, ChargingStationData>;
+  idTag: string;
 };
 
 const state: State = reactive({
   isLoading: false,
-  chargingStations: [],
-  tag: '',
+  chargingStations: {},
+  idTag: '',
 });
 
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
-  const list = await UIClientInstance.listChargingStations();
-  state.chargingStations = list;
+  const chargingStationsList = await UIClientInstance.listChargingStations();
+  state.chargingStations = chargingStationsList as unknown as Record<string, ChargingStationData>;
   state.isLoading = false;
+}
+
+function startSimulator(): void {
+  UIClientInstance.startSimulator();
+}
+function stopSimulator(): void {
+  UIClientInstance.stopSimulator();
 }
 </script>
 
@@ -56,13 +65,18 @@ async function load(): Promise<void> {
   width: 100%;
   padding: 30px;
   background-color: rgb(233, 227, 227);
-
+  display: flex;
   flex-direction: column;
-  gap: 1%;
+  gap: 0.5%;
+}
+
+#inputs-container {
+  display: flex;
+  justify-content: space-between;
 }
 
 #reload-button {
-  /* width: 100%; */
+  flex: auto;
   padding: 6px 14px;
   background-color: rgb(25, 118, 210);
   border-radius: 5px;
@@ -80,12 +94,11 @@ async function load(): Promise<void> {
   background-color: rgb(255, 113, 195);
 }
 
-#reload-button_tag-field {
-  display: flex;
-  justify-content: space-between;
+#simulator-button {
+  flex: auto;
 }
 
-#tag-field {
-  flex-grow: 1;
+#idtag-field {
+  flex: auto;
 }
 </style>

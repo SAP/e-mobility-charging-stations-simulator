@@ -9,7 +9,7 @@ import ts from 'rollup-plugin-ts';
 const isDevelopmentBuild = process.env.BUILD === 'development';
 
 export default {
-  input: ['src/start.ts', 'src/ui/httpd/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
+  input: ['src/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
   output: [
     {
       dir: 'dist',
@@ -41,7 +41,6 @@ export default {
     'basic-ftp',
     'chalk',
     'crypto',
-    'express',
     'fs',
     'http',
     'mnemonist/lru-map-with-delete',

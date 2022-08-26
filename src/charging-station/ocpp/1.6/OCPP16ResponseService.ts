@@ -183,14 +183,17 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           this.validatePayload(chargingStation, commandName, payload);
           await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);
         } catch (error) {
-          logger.error(chargingStation.logPrefix() + ' Handle request response error:', error);
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
+            error
+          );
           throw error;
         }
       } else {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request response PDU ${JSON.stringify(
+          `${commandName} is not implemented to handle response PDU ${JSON.stringify(
             payload,
             null,
             2
@@ -202,7 +205,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     } else {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request response PDU ${JSON.stringify(
+        `${commandName} cannot be issued to handle response PDU ${JSON.stringify(
           payload,
           null,
           2

@@ -550,8 +550,8 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
     this.stopped = true;
+    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
   }
 
   public async reset(reason?: StopTransactionReason): Promise<void> {
@@ -626,7 +626,7 @@ export default class ChargingStation {
       );
       this.getConnectorStatus(connectorId).chargingProfiles = [];
     }
-    if (!Array.isArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
+    if (Array.isArray(this.getConnectorStatus(connectorId).chargingProfiles) === false) {
       logger.error(
         `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
       );
@@ -673,6 +673,74 @@ export default class ChargingStation {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
+  }
+
+  public openWSConnection(
+    options: WsOptions = this.stationInfo?.wsOptions ?? {},
+    params: { closeOpened?: boolean; terminateOpened?: boolean } = {
+      closeOpened: false,
+      terminateOpened: false,
+    }
+  ): void {
+    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+    params.closeOpened = params?.closeOpened ?? false;
+    params.terminateOpened = params?.terminateOpened ?? false;
+    if (
+      !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
+      !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)
+    ) {
+      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
+    }
+    if (params?.closeOpened) {
+      this.closeWSConnection();
+    }
+    if (params?.terminateOpened) {
+      this.terminateWSConnection();
+    }
+    let protocol: string;
+    switch (this.getOcppVersion()) {
+      case OCPPVersion.VERSION_16:
+        protocol = 'ocpp' + OCPPVersion.VERSION_16;
+        break;
+      default:
+        this.handleUnsupportedVersion(this.getOcppVersion());
+        break;
+    }
+
+    logger.info(
+      this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString()
+    );
+
+    this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
+
+    // Handle WebSocket message
+    this.wsConnection.on(
+      'message',
+      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
+    );
+    // Handle WebSocket error
+    this.wsConnection.on(
+      'error',
+      this.onError.bind(this) as (this: WebSocket, error: Error) => void
+    );
+    // Handle WebSocket close
+    this.wsConnection.on(
+      'close',
+      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
+    );
+    // Handle WebSocket open
+    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
+    // Handle WebSocket ping
+    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
+    // Handle WebSocket pong
+    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
+  }
+
+  public closeWSConnection(): void {
+    if (this.isWebSocketConnectionOpened()) {
+      this.wsConnection.close();
+      this.wsConnection = null;
+    }
   }
 
   private flushMessageBuffer() {
@@ -856,7 +924,7 @@ export default class ChargingStation {
       this.templateFile
     }`;
     logger.error(errMsg);
-    throw new Error(errMsg);
+    throw new BaseError(errMsg);
   }
 
   private initialize(): void {
@@ -1351,7 +1419,7 @@ export default class ChargingStation {
     let errMsg: string;
     try {
       const request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
-      if (Utils.isIterable(request)) {
+      if (Array.isArray(request) === true) {
         [messageType, messageId] = request;
         // Check the type of message
         switch (messageType) {
@@ -1388,12 +1456,12 @@ export default class ChargingStation {
             }
             // Respond
             cachedRequest = this.requests.get(messageId);
-            if (Utils.isIterable(cachedRequest)) {
+            if (Array.isArray(cachedRequest) === true) {
               [responseCallback, , requestCommandName, requestPayload] = cachedRequest;
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} response is not iterable`,
+                `Cached request for message id ${messageId} response is not an array`,
                 null,
                 cachedRequest as unknown as JsonType
               );
@@ -1418,12 +1486,12 @@ export default class ChargingStation {
               );
             }
             cachedRequest = this.requests.get(messageId);
-            if (Utils.isIterable(cachedRequest)) {
+            if (Array.isArray(cachedRequest) === true) {
               [, errorCallback, requestCommandName] = cachedRequest;
             } else {
               throw new OCPPError(
                 ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} error response is not iterable`,
+                `Cached request for message id ${messageId} error response is not an array`,
                 null,
                 cachedRequest as unknown as JsonType
               );
@@ -1444,7 +1512,7 @@ export default class ChargingStation {
         }
         parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
-        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not iterable', null, {
+        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not an array', null, {
           payload: request,
         });
       }
@@ -1865,74 +1933,6 @@ export default class ChargingStation {
   private stopHeartbeat(): void {
     if (this.heartbeatSetInterval) {
       clearInterval(this.heartbeatSetInterval);
-    }
-  }
-
-  private openWSConnection(
-    options: WsOptions = this.stationInfo?.wsOptions ?? {},
-    params: { closeOpened?: boolean; terminateOpened?: boolean } = {
-      closeOpened: false,
-      terminateOpened: false,
-    }
-  ): void {
-    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
-    params.closeOpened = params?.closeOpened ?? false;
-    params.terminateOpened = params?.terminateOpened ?? false;
-    if (
-      !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
-      !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)
-    ) {
-      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
-    }
-    if (params?.closeOpened) {
-      this.closeWSConnection();
-    }
-    if (params?.terminateOpened) {
-      this.terminateWSConnection();
-    }
-    let protocol: string;
-    switch (this.getOcppVersion()) {
-      case OCPPVersion.VERSION_16:
-        protocol = 'ocpp' + OCPPVersion.VERSION_16;
-        break;
-      default:
-        this.handleUnsupportedVersion(this.getOcppVersion());
-        break;
-    }
-
-    logger.info(
-      this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString()
-    );
-
-    this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
-
-    // Handle WebSocket message
-    this.wsConnection.on(
-      'message',
-      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
-    );
-    // Handle WebSocket error
-    this.wsConnection.on(
-      'error',
-      this.onError.bind(this) as (this: WebSocket, error: Error) => void
-    );
-    // Handle WebSocket close
-    this.wsConnection.on(
-      'close',
-      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
-    );
-    // Handle WebSocket open
-    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
-    // Handle WebSocket ping
-    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void);
-    // Handle WebSocket pong
-    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void);
-  }
-
-  private closeWSConnection(): void {
-    if (this.isWebSocketConnectionOpened()) {
-      this.wsConnection.close();
-      this.wsConnection = null;
     }
   }
 

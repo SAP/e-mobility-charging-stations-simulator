@@ -28,18 +28,12 @@ export default class UIWebSocketServer extends AbstractUIServer {
         this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
       }
       // FIXME: check connection validity
-      socket.on('message', (messageData) => {
+      socket.on('message', (rawData) => {
         this.uiServices
           .get(version)
-          .requestHandler(messageData)
-          .catch((error) => {
-            logger.error(
-              `${this.logPrefix(
-                moduleName,
-                'start.socket.onmessage'
-              )} Error while handling message:`,
-              error
-            );
+          .requestHandler(rawData)
+          .catch(() => {
+            /* Error caught by AbstractUIService */
           });
       });
       socket.on('error', (error) => {
@@ -52,7 +46,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public stop(): void {
-    this.server.close();
+    this.chargingStations.clear();
   }
 
   public sendRequest(request: string): void {
@@ -60,6 +54,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public sendResponse(response: string): void {
+    // TODO: send response only to the client that sent the request
     this.broadcastToClients(response);
   }
 

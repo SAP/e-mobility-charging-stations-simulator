@@ -19,7 +19,7 @@ export type ProtocolResponse = [string, ResponsePayload];
 export type ProtocolRequestHandler = (
   uuid?: string,
   payload?: RequestPayload
-) => ResponsePayload | Promise<ResponsePayload>;
+) => undefined | Promise<undefined> | ResponsePayload | Promise<ResponsePayload>;
 
 export enum ProcedureName {
   LIST_CHARGING_STATIONS = 'listChargingStations',
@@ -29,9 +29,13 @@ export enum ProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
   START_SIMULATOR = 'startSimulator',
   STOP_SIMULATOR = 'stopSimulator',
+  OPEN_CONNECTION = 'openConnection',
+  CLOSE_CONNECTION = 'closeConnection',
 }
+
 export interface RequestPayload extends JsonObject {
   hashId?: string;
+  hashIds?: string[];
 }
 
 export enum ResponseStatus {

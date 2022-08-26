@@ -437,7 +437,7 @@ export class ChargingStationUtils {
         break;
       default:
         logger.error(errMsg);
-        throw new Error(errMsg);
+        throw new BaseError(errMsg);
     }
     return defaultVoltageOut;
   }
@@ -516,7 +516,7 @@ export class ChargingStationUtils {
     if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
       const errorMsg = `${chargingStation.logPrefix()} Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
       logger.error(errorMsg);
-      throw new Error(errorMsg);
+      throw new BaseError(errorMsg);
     }
     logger.debug(
       `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`

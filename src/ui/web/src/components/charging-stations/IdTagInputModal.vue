@@ -1,8 +1,8 @@
 <template>
-  <Modal :visibility="visibility">
-    <label for="tag">Tags</label>
+  <Modal :visibility="props.visibility">
+    <label for="idTag">IdTag</label>
     <!-- eslint-disable-next-line vue/no-mutating-props -->
-    <input type="text" name="tag" v-model="props.tag" @keypress.enter="done()" />
+    <input type="text" name="idTag" v-model="props.idTag" @keypress.enter="done()" />
     <Button @click="done()">
       <slot></slot>
     </Button>
@@ -15,7 +15,7 @@ import Button from '../buttons/Button.vue';
 
 const props = defineProps<{
   visibility: boolean;
-  tag: string;
+  idTag: string;
 }>();
 
 const emit = defineEmits(['done']);

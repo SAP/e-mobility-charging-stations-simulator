@@ -51,6 +51,8 @@ To start the program, run: `npm start`.
 
 ## Start Web UI
 
+See Web UI [README.md](src/ui/web/README.md) for more information.
+
 ## Configuration files syntax
 
 All configuration files are in the JSON standard format.
@@ -388,17 +390,17 @@ Protocol to control the simulator via a Websocket
 
 PDU stands for Protocol Data Unit
 
-Request:
+Request:  
 [`uuid`, `ProcedureName`, `PDU`]
 
-`uuid`: String uniquely representing this request
-`ProcedureName`: The procedure to run on the simulator
-`PDU`: The parameters (if any) for said procedure
+`uuid`: String uniquely representing this request  
+`ProcedureName`: The procedure to run on the simulator  
+`PDU`: The parameters for said procedure
 
-Response:
+Response:  
 [`uuid`, `PDU`]
 
-`uuid`: String uniquely linking the response to the request
+`uuid`: String uniquely linking the response to the request  
 `PDU`: Response data to requested procedure
 
 ### Version 0.0.1
@@ -407,45 +409,121 @@ Set the HTTP header _Sec-Websocket-Protocol_ to `ui0.0.1`
 
 #### Procedures
 
-##### List Charging stations
+##### Start Simulator
 
-Request:
-`ProcedureName`: 'listChargingStations'
+Request:  
+`ProcedureName`: 'startSimulator'  
 `PDU`: {}
 
-Response:
-`PDU`: {
-`status`,
-`Indexed ChargingStationData as described in ChargingStationWorker.ts file`
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### Stop Simulator
+
+Request:  
+`ProcedureName`: 'stopSimulator'  
+`PDU`: {}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### List Charging Stations
+
+Request:  
+`ProcedureName`: 'listChargingStations'  
+`PDU`: {}
+
+Response:  
+`PDU`: {  
+`status`,  
+`index`: ChargingStationData,  
+...  
+`index`: ChargingStationData  
 }
 
 ##### Start Transaction
 
-Request:
-`ProcedureName`: 'startTransaction'
-`PDU`: {
-`hashId`: the unique identifier of a charging station
-`connectorId`: the id of the connector (start at 1)
-`idTag`: An allowed badge authetification ID
+Request:  
+`ProcedureName`: 'startTransaction'  
+`PDU`: {  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+`connectorId`: connector id integer,  
+`idTag`: RFID tag string  
 }
 
-Response:
-`PDU`: {
-`status`
+Response:  
+`PDU`: {  
+`status`  
 }
 
 ##### Stop Transaction
 
-Request:
-`ProcedureName`: 'stopTransaction'
-`PDU`: {
-`hashId`: the unique identifier of a charging station
-`transactionId`: the id of the transaction
+Request:  
+`ProcedureName`: 'stopTransaction'  
+`PDU`: {  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+`transactionId`: transaction id integer  
 }
 
-Response:
-`PDU`: {
-`status`
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### Start Charging Station
+
+Request:  
+`ProcedureName`: 'startChargingStation'  
+`PDU`: {  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array
+}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### Stop Charging Station
+
+Request:  
+`ProcedureName`: 'stopChargingStation'  
+`PDU`: {  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### Open Connection
+
+Request:  
+`ProcedureName`: 'openConnection'  
+`PDU`: {  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+}
+
+Response:  
+`PDU`: {  
+`status`  
+}
+
+##### Close Connection
+
+Request:  
+`ProcedureName`: 'closeConnection'  
+`PDU`: {  
+`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+}
+
+Response:  
+`PDU`: {  
+`status`  
 }
 
 ## Support, Feedback, Contributing

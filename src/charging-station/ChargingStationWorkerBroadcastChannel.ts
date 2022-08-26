@@ -1,5 +1,7 @@
+import BaseError from '../exception/BaseError';
 import { RequestCommand } from '../types/ocpp/Requests';
 import {
+  AuthorizationStatus,
   StartTransactionRequest,
   StartTransactionResponse,
   StopTransactionReason,
@@ -9,13 +11,18 @@ import {
 import {
   BroadcastChannelProcedureName,
   BroadcastChannelRequest,
+  BroadcastChannelRequestPayload,
+  BroadcastChannelResponsePayload,
+  MessageEvent,
 } from '../types/WorkerBroadcastChannel';
-import ChargingStation from './ChargingStation';
+import { ResponseStatus } from '../ui/web/src/type/UIProtocol';
+import logger from '../utils/Logger';
+import type ChargingStation from './ChargingStation';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 
-type MessageEvent = { data: unknown };
+type CommandResponse = StartTransactionResponse | StopTransactionResponse;
 
 export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly chargingStation: ChargingStation;
@@ -24,45 +31,117 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     super();
     this.chargingStation = chargingStation;
     this.onmessage = this.requestHandler.bind(this) as (message: MessageEvent) => void;
+    this.onmessageerror = this.messageErrorHandler.bind(this) as (message: MessageEvent) => void;
   }
 
   private async requestHandler(messageEvent: MessageEvent): Promise<void> {
-    const [, command, payload] = messageEvent.data as BroadcastChannelRequest;
-
-    if (payload.hashId !== this.chargingStation.hashId) {
+    if (this.isResponse(messageEvent.data)) {
       return;
     }
+    if (Array.isArray(messageEvent.data) === false) {
+      throw new BaseError('Worker broadcast channel protocol request is not an array');
+    }
 
-    // TODO: return a response stating the command success or failure
+    const [uuid, command, requestPayload] = messageEvent.data as BroadcastChannelRequest;
+
+    if (
+      requestPayload?.hashId === undefined &&
+      (requestPayload?.hashIds as string[])?.includes(this.chargingStation.hashId) === false
+    ) {
+      return;
+    }
+    if (
+      requestPayload?.hashIds === undefined &&
+      requestPayload?.hashId !== this.chargingStation.hashId
+    ) {
+      return;
+    }
+    if (requestPayload?.hashId !== undefined) {
+      logger.warn(
+        `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' instead`
+      );
+    }
+
+    let responsePayload: BroadcastChannelResponsePayload;
+    let commandResponse: CommandResponse;
+    try {
+      commandResponse = await this.commandHandler(command, requestPayload);
+      if (commandResponse === undefined) {
+        responsePayload = { status: ResponseStatus.SUCCESS };
+      } else {
+        responsePayload = { status: this.commandResponseToResponseStatus(commandResponse) };
+      }
+    } catch (error) {
+      logger.error(
+        `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: Handle request error:`,
+        error
+      );
+      responsePayload = {
+        status: ResponseStatus.FAILURE,
+        command,
+        requestPayload,
+        commandResponse,
+        errorMessage: (error as Error).message,
+        errorStack: (error as Error).stack,
+      };
+    }
+    this.sendResponse([uuid, responsePayload]);
+  }
+
+  private messageErrorHandler(messageEvent: MessageEvent): void {
+    logger.error(
+      `${this.chargingStation.logPrefix()} ${moduleName}.messageErrorHandler: Error at handling message:`,
+      { messageEvent, messageEventData: messageEvent.data }
+    );
+  }
+
+  private async commandHandler(
+    command: BroadcastChannelProcedureName,
+    requestPayload: BroadcastChannelRequestPayload
+  ): Promise<CommandResponse | undefined> {
     switch (command) {
       case BroadcastChannelProcedureName.START_TRANSACTION:
-        await this.chargingStation.ocppRequestService.requestHandler<
+        return this.chargingStation.ocppRequestService.requestHandler<
           StartTransactionRequest,
           StartTransactionResponse
         >(this.chargingStation, RequestCommand.START_TRANSACTION, {
-          connectorId: payload.connectorId,
-          idTag: payload.idTag,
+          connectorId: requestPayload.connectorId,
+          idTag: requestPayload.idTag,
         });
-        break;
       case BroadcastChannelProcedureName.STOP_TRANSACTION:
-        await this.chargingStation.ocppRequestService.requestHandler<
+        return this.chargingStation.ocppRequestService.requestHandler<
           StopTransactionRequest,
           StopTransactionResponse
         >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
-          transactionId: payload.transactionId,
+          transactionId: requestPayload.transactionId,
           meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-            payload.transactionId
+            requestPayload.transactionId
           ),
-          idTag: this.chargingStation.getTransactionIdTag(payload.transactionId),
+          idTag: this.chargingStation.getTransactionIdTag(requestPayload.transactionId),
           reason: StopTransactionReason.NONE,
         });
-        break;
       case BroadcastChannelProcedureName.START_CHARGING_STATION:
         this.chargingStation.start();
         break;
       case BroadcastChannelProcedureName.STOP_CHARGING_STATION:
         await this.chargingStation.stop();
         break;
+      case BroadcastChannelProcedureName.OPEN_CONNECTION:
+        this.chargingStation.openWSConnection();
+        break;
+      case BroadcastChannelProcedureName.CLOSE_CONNECTION:
+        this.chargingStation.closeWSConnection();
+        break;
+      default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
     }
+  }
+
+  private commandResponseToResponseStatus(commandResponse: CommandResponse): ResponseStatus {
+    if (commandResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+      return ResponseStatus.SUCCESS;
+    }
+    return ResponseStatus.FAILURE;
   }
 }
