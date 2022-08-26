@@ -46,7 +46,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public stop(): void {
-    this.server.close();
+    this.chargingStations.clear();
   }
 
   public sendRequest(request: string): void {

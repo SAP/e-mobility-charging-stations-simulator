@@ -1,65 +1,74 @@
 <template>
   <td class="cs-table__action-col">
     <Button @click="startTransaction()">Start Transaction</Button>
-    <!-- <TagInputModal
-      :visibility="state.isTagModalVisible"
-      :tag="state.tag"
-      @close="hideTagModal()"
-      @done="Utils.compose(state.transaction, hideTagModal)()"
+    <!-- <IdTagInputModal
+      :visibility="state.isIdTagModalVisible"
+      :idTag="state.idTag"
+      @close="hideIdTagModal()"
+      @done="Utils.compose(state.transaction, hideIdTagModal)()"
     >
-      Start Charging Session
-    </TagInputModal> -->
-    <!-- TODO: Use transactionId to stop transaction -->
-    <!-- <Button @click="stopTransaction()">Stop Transaction</Button> -->
+      Start Transaction
+    </IdTagInputModal> -->
+    <Button @click="stopTransaction()">Stop Transaction</Button>
+    <Button @click="openConnection()">Open Connection</Button>
+    <Button @click="closeConnection()">Close Connection</Button>
   </td>
   <td class="cs-table__connector-col">{{ connectorId }}</td>
-  <td class="cs-table__status-col">{{ connector.bootStatus }}</td>
+  <td class="cs-table__status-col">{{ connector.status }}</td>
+  <td class="cs-table__transaction-col">{{ connector.transactionStarted }}</td>
 </template>
 
 <script setup lang="ts">
-import TagInputModal from './TagInputModal.vue';
+// import IdTagInputModal from './IdTagInputModal.vue';
 import Button from '../buttons/Button.vue';
 
-import { reactive } from 'vue';
+// import { reactive } from 'vue';
 import UIClient from '@/composable/UIClient';
 import { ConnectorStatus } from '@/type/ChargingStationType';
-import Utils from '@/composable/Utils';
+// import Utils from '@/composable/Utils';
 
 const props = defineProps<{
   hashId: string;
   connector: ConnectorStatus;
   transactionId?: number;
-  connectorId?: number;
-  tag?: string;
+  connectorId: number;
+  idTag?: string;
 }>();
 
-type State = {
-  isTagModalVisible: boolean;
-  tag: string;
-  transaction: () => void;
-};
-const state: State = reactive({
-  isTagModalVisible: false,
-  tag: '',
-  transaction: startTransaction,
-});
+// type State = {
+//   isIdTagModalVisible: boolean;
+//   idTag: string;
+//   transaction: () => void;
+// };
 
-function getTag(transaction: () => void): void {
-  state.transaction = transaction;
-  showTagModal();
-}
+// const state: State = reactive({
+//   isIdTagModalVisible: false,
+//   idTag: '',
+//   transaction: startTransaction,
+// });
 
-function showTagModal(): void {
-  state.isTagModalVisible = true;
-}
-function hideTagModal(): void {
-  state.isTagModalVisible = false;
-}
+// function getIdTag(transaction: () => void): void {
+//   state.transaction = transaction;
+//   showTagModal();
+// }
+
+// function showTagModal(): void {
+//   state.isIdTagModalVisible = true;
+// }
+// function hideIdTagModal(): void {
+//   state.isIdTagModalVisible = false;
+// }
 
 function startTransaction(): void {
-  UIClient.instance.startTransaction(props.hashId, props.connectorId, props.tag);
+  UIClient.instance.startTransaction(props.hashId, props.connectorId, props.idTag);
 }
 function stopTransaction(): void {
   UIClient.instance.stopTransaction(props.hashId, props.transactionId);
+}
+function openConnection(): void {
+  UIClient.instance.openConnection(props.hashId);
+}
+function closeConnection(): void {
+  UIClient.instance.closeConnection(props.hashId);
 }
 </script>

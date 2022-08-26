@@ -1,14 +1,15 @@
 <template>
-  <tr v-for="(connector, index) in getConnector()" class="cs-table__row">
+  <tr v-for="(connector, index) in getConnectors()" class="cs-table__row">
     <CSConnector
       :hash-id="getHashId()"
       :connector="connector"
       :connector-id="index + 1"
-      :tag="props.tag"
+      :transaction-id="connector.transactionId"
+      :id-tag="props.idTag"
     />
     <td class="cs-table__name-col">{{ getId() }}</td>
-    <td class="cs-table__model-col">{{ getModel() }}</td>
     <td class="cs-table__vendor-col">{{ getVendor() }}</td>
+    <td class="cs-table__model-col">{{ getModel() }}</td>
     <td class="cs-table__firmware-col">{{ getFirmwareVersion() }}</td>
   </tr>
 </template>
@@ -16,7 +17,7 @@
 <script setup lang="ts">
 import CSConnector from './CSConnector.vue';
 
-import { reactive } from 'vue';
+// import { reactive } from 'vue';
 import Utils from '@/composable/Utils';
 import {
   ChargingStationData,
@@ -26,22 +27,23 @@ import {
 
 const props = defineProps<{
   chargingStation: ChargingStationData;
-  tag: string;
+  idTag: string;
 }>();
 
-type State = {
-  isTagModalVisible: boolean;
-  // tag: string;
-};
-const state: State = reactive({
-  isTagModalVisible: false,
-  // tag: '',
-});
+// type State = {
+//   isTagModalVisible: boolean;
+//   idTag: string;
+// };
+
+// const state: State = reactive({
+//   isTagModalVisible: false,
+//   idTag: '',
+// });
 
 function getHashId(): string {
   return props.chargingStation.hashId;
 }
-function getConnector(): Array<ConnectorStatus> {
+function getConnectors(): ConnectorStatus[] {
   return props.chargingStation.connectors.slice(1);
 }
 function getInfo(): ChargingStationInfo {

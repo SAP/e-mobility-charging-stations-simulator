@@ -35,7 +35,7 @@ const moduleName = 'Bootstrap';
 const missingChargingStationsConfigurationExitCode = 1;
 const noChargingStationTemplatesExitCode = 2;
 
-export default class Bootstrap {
+export class Bootstrap {
   private static instance: Bootstrap | null = null;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
   private readonly uiServer!: AbstractUIServer;

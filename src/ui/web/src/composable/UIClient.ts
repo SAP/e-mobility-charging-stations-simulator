@@ -18,18 +18,12 @@ type ResponseHandler = {
 export default class UIClient {
   private static _instance: UIClient | null = null;
 
-  private _ws: WebSocket;
+  private _ws!: WebSocket;
   private _responseHandlers: Map<string, ResponseHandler>;
 
   private constructor() {
-    this._ws = new WebSocket(
-      `ws://${config.emobility.host}:${config.emobility.port}`,
-      config.emobility.protocol
-    );
-
+    this.openWS();
     this._responseHandlers = new Map<string, ResponseHandler>();
-
-    this._ws.onmessage = this.responseHandler.bind(this);
   }
 
   public static get instance() {
@@ -43,19 +37,23 @@ export default class UIClient {
     this._ws.addEventListener('open', listener);
   }
 
-  public async listChargingStations(): Promise<ResponsePayload> {
-    console.debug('listChargingStations');
+  public async startSimulator(): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.START_SIMULATOR, {});
+  }
 
+  public async stopSimulator(): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.STOP_SIMULATOR, {});
+  }
+
+  public async listChargingStations(): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {});
   }
 
   public async startTransaction(
     hashId: string,
     connectorId: number,
-    idTag: string
+    idTag: string | undefined
   ): Promise<ResponsePayload> {
-    console.debug('startTransaction');
-
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
       hashId,
       connectorId,
@@ -63,13 +61,34 @@ export default class UIClient {
     });
   }
 
-  public async stopTransaction(hashId: string, transactionId: number): Promise<ResponsePayload> {
-    console.debug('stopTransaction');
-
+  public async stopTransaction(
+    hashId: string,
+    transactionId: number | undefined
+  ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashId,
       transactionId,
     });
+  }
+
+  public async openConnection(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
+      hashId,
+    });
+  }
+
+  public async closeConnection(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
+      hashId,
+    });
+  }
+
+  private openWS(): void {
+    this._ws = new WebSocket(
+      `ws://${config.emobility.host}:${config.emobility.port}`,
+      config.emobility.protocol
+    );
+    this._ws.onmessage = this.responseHandler.bind(this);
   }
 
   private setResponseHandler(
@@ -92,8 +111,10 @@ export default class UIClient {
         uuid = uuidv4();
         const msg = JSON.stringify([uuid, command, data]);
 
-        if (this._ws.readyState === this._ws.OPEN) {
-          console.debug(`Send request ${command} message: `, msg);
+        if (this._ws.readyState !== WebSocket.OPEN) {
+          this.openWS();
+        }
+        if (this._ws.readyState === WebSocket.OPEN) {
           this._ws.send(msg);
         } else {
           throw new Error(`Send request ${command} message: connection not opened`);

@@ -5,9 +5,10 @@
         <th scope="col" class="cs-table__action-col">Action</th>
         <th scope="col" class="cs-table__connector-col">Connector</th>
         <th scope="col" class="cs-table__status-col">Status</th>
+        <th scope="col" class="cs-table__transaction-col">Transaction</th>
         <th scope="col" class="cs-table__name-col">Name</th>
-        <th scope="col" class="cs-table__model-col">Model</th>
         <th scope="col" class="cs-table__vendor-col">Vendor</th>
+        <th scope="col" class="cs-table__model-col">Model</th>
         <th scope="col" class="cs-table__firmware-col">Firmware Version</th>
       </tr>
     </thead>
@@ -16,7 +17,7 @@
         v-for="chargingStation in chargingStations"
         :key="chargingStation.hashId"
         :charging-station="chargingStation"
-        :tag="props.tag"
+        :idTag="props.idTag"
       />
     </tbody>
   </table>
@@ -27,21 +28,20 @@ import CSData from './CSData.vue';
 import { ChargingStationData } from '@/type/ChargingStationType';
 
 const props = defineProps<{
-  chargingStations: ChargingStationData[];
-  tag: string;
+  chargingStations: Record<string, ChargingStationData>;
+  idTag: string;
 }>();
 </script>
 
 <style>
 #cs-table {
-  flex-grow: 1;
-
   background-color: white;
 
   height: 100%;
   width: 100%;
 
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
   overflow: auto hidden;
   border-collapse: collapse;
@@ -70,7 +70,6 @@ const props = defineProps<{
 }
 
 .cs-table__row {
-  /* width: 1647px; */
   width: 100%;
   /* display: inline-block; */
   display: flex;
@@ -87,15 +86,16 @@ const props = defineProps<{
 .cs-table__action-col,
 .cs-table__connector-col,
 .cs-table__status-col,
+.cs-table__transaction-col,
 .cs-table__name-col,
 .cs-table__model-col,
 .cs-table__vendor-col,
 .cs-table__firmware-col {
-  /* height: 2em; */
-  width: 14.3%;
-  padding-top: 0.5em;
+  height: 0.1%;
+  width: 20%;
+  padding-top: 0.2%;
+  padding-bottom: 0.2%;
   /* background-color: red; */
-  /* width: 14.3%; */
   text-align: center;
   /* display: table-cell;
   vertical-align: middle; */
@@ -107,6 +107,9 @@ const props = defineProps<{
   /* min-width: 120px; */
 }
 .cs-table__status-col {
+  /* min-width: 120px; */
+}
+.cs-table__transaction-col {
   /* min-width: 120px; */
 }
 .cs-table__name-col {

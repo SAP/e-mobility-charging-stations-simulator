@@ -1,6 +1,7 @@
 import { RawData } from 'ws';
 
 import BaseError from '../../../exception/BaseError';
+import { Bootstrap } from '../../../internal';
 import { JsonType } from '../../../types/JsonType';
 import {
   ProcedureName,
@@ -13,7 +14,6 @@ import {
   ResponseStatus,
 } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';
-import Bootstrap from '../../Bootstrap';
 import UIServiceWorkerBroadcastChannel from '../../UIServiceWorkerBroadcastChannel';
 import type { AbstractUIServer } from '../AbstractUIServer';
 
