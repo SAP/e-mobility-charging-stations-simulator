@@ -59,7 +59,7 @@ export default class UIHttpServer extends AbstractUIServer {
         break;
     }
     if (this.responseHandlers.has(uuid)) {
-      const { procedureName, res } = this.responseHandlers.get(uuid);
+      const { res } = this.responseHandlers.get(uuid);
       res.writeHead(statusCode, { 'Content-Type': 'application/json' });
       res.write(JSON.stringify(payload));
       res.end();

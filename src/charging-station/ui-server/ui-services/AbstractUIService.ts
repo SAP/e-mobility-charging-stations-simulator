@@ -103,8 +103,7 @@ export default abstract class AbstractUIService {
     return JSON.stringify([messageId, responsePayload] as ProtocolResponse);
   }
 
-  // Validate the raw data received from the WebSocket
-  // TODO: should probably be moved to the ws verify clients callback
+  // Validate the raw data received from the UI server
   private requestValidation(rawData: RawData | JsonType): ProtocolRequest {
     // logger.debug(
     //   `${this.logPrefix(
