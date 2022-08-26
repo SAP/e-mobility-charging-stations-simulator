@@ -47,7 +47,8 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "prestart": "npm run build",
+    "build-requirements": "node build-requirements.js",
+    "prestart": "npm run build-requirements && npm run build",
     "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.cjs",
     "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.cjs",
     "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.cjs",
@@ -88,6 +89,7 @@
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.1",
     "chalk": "^4.1.2",
+    "http-status-codes": "^2.2.0",
     "mnemonist": "^0.39.2",
     "moment": "^2.29.4",
     "mongodb": "^4.9.0",
@@ -145,6 +147,7 @@
     "rollup-plugin-istanbul": "^3.0.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-ts": "^3.0.2",
+    "semver": "^7.3.7",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.2"
   }

@@ -5,6 +5,7 @@ import { ApplicationProtocol } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
 import { AbstractUIServer } from './AbstractUIServer';
 import { UIServiceUtils } from './ui-services/UIServiceUtils';
+import UIHttpServer from './UIHttpServer';
 import UIWebSocketServer from './UIWebSocketServer';
 
 export default class UIServerFactory {
@@ -26,6 +27,8 @@ export default class UIServerFactory {
     switch (applicationProtocol) {
       case ApplicationProtocol.WS:
         return new UIWebSocketServer(options ?? Configuration.getUIServer().options);
+      case ApplicationProtocol.HTTP:
+        return new UIHttpServer(options ?? Configuration.getUIServer().options);
       default:
         return null;
     }

@@ -42,6 +42,7 @@ export default {
     'chalk',
     'crypto',
     'fs',
+    'http',
     'mnemonist/lru-map-with-delete',
     'moment',
     'mongodb',

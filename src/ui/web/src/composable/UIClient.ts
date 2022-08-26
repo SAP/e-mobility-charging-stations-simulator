@@ -10,9 +10,9 @@ import config from '@/assets/config';
 import { v4 as uuidv4 } from 'uuid';
 
 type ResponseHandler = {
+  procedureName: ProcedureName;
   resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void;
   reject: (reason?: any) => void;
-  procedureName: ProcedureName;
 };
 
 export default class UIClient {
@@ -101,15 +101,19 @@ export default class UIClient {
 
   private setResponseHandler(
     id: string,
+    procedureName: ProcedureName,
     resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void,
-    reject: (reason?: any) => void,
-    procedureName: ProcedureName
+    reject: (reason?: any) => void
   ): void {
     this._responseHandlers.set(id, { resolve, reject, procedureName });
   }
 
   private getResponseHandler(id: string): ResponseHandler | undefined {
     return this._responseHandlers.get(id);
+  }
+
+  private deleteResponseHandler(id: string): boolean {
+    return this._responseHandlers.delete(id);
   }
 
   private async sendRequest(command: ProcedureName, data: JsonType): Promise<ResponsePayload> {
@@ -128,7 +132,7 @@ export default class UIClient {
           throw new Error(`Send request ${command} message: connection not opened`);
         }
 
-        this.setResponseHandler(uuid, resolve, reject, command);
+        this.setResponseHandler(uuid, command, resolve, reject);
       }),
       60 * 1000,
       Error(`Send request ${command} message timeout`),
@@ -158,6 +162,7 @@ export default class UIClient {
         default:
           throw new Error(`Response status not supported: ${response.status}`);
       }
+      this.deleteResponseHandler(uuid);
     } else {
       throw new Error('Not a response to a request: ' + JSON.stringify(data, null, 2));
     }

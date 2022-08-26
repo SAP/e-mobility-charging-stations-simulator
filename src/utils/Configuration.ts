@@ -15,6 +15,7 @@ import { EmptyObject } from '../types/EmptyObject';
 import { HandleErrorParams } from '../types/Error';
 import { FileType } from '../types/FileType';
 import { StorageType } from '../types/Storage';
+import { ApplicationProtocol } from '../types/UIProtocol';
 import { WorkerProcessType } from '../types/Worker';
 import WorkerConstants from '../worker/WorkerConstants';
 import Constants from './Constants';
@@ -58,6 +59,7 @@ export default class Configuration {
     }
     let uiServerConfiguration: UIServerConfiguration = {
       enabled: true,
+      type: ApplicationProtocol.WS,
       options: {
         host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
         port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
