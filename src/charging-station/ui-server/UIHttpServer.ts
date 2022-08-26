@@ -1,6 +1,6 @@
 import { IncomingMessage, RequestListener, Server, ServerResponse } from 'http';
 
-import StatusCodes from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 
 import BaseError from '../../exception/BaseError';
 import { ServerOptions } from '../../types/ConfigurationData';
@@ -48,7 +48,7 @@ export default class UIHttpServer extends AbstractUIServer {
 
   public sendResponse(response: string): void {
     const [uuid, payload] = JSON.parse(response) as ProtocolResponse;
-    let statusCode: number;
+    let statusCode: StatusCodes;
     switch (payload.status) {
       case ResponseStatus.SUCCESS:
         statusCode = StatusCodes.OK;
