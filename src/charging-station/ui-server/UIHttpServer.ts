@@ -23,7 +23,9 @@ export default class UIHttpServer extends AbstractUIServer {
     this.server.close();
   }
 
-  public sendResponse(message: string): void {}
+  public sendRequest(request: string): void {}
+
+  public sendResponse(response: string): void {}
 
   public logPrefix(): string {
     return Utils.logPrefix(' UI HTTP Server:');
