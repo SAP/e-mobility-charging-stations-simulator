@@ -33,7 +33,7 @@ export default class UIClient {
     return UIClient._instance;
   }
 
-  public onOpen(listener: (this: WebSocket, ev: Event) => void) {
+  public registerWSonOpenListener(listener: (this: WebSocket, ev: Event) => void) {
     this._ws.addEventListener('open', listener);
   }
 

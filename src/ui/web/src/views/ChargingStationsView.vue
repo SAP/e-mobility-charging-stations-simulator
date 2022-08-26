@@ -28,7 +28,7 @@ import { ChargingStationData } from '@/type/ChargingStationType';
 const UIClientInstance = UIClient.instance;
 
 onMounted(() => {
-  UIClientInstance.onOpen(load);
+  UIClientInstance.registerWSonOpenListener(load);
 });
 
 type State = {
