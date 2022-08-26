@@ -48,16 +48,7 @@ export default class UIHttpServer extends AbstractUIServer {
 
   public sendResponse(response: string): void {
     const [uuid, payload] = JSON.parse(response) as ProtocolResponse;
-    let statusCode: StatusCodes;
-    switch (payload.status) {
-      case ResponseStatus.SUCCESS:
-        statusCode = StatusCodes.OK;
-        break;
-      case ResponseStatus.FAILURE:
-      default:
-        statusCode = StatusCodes.BAD_REQUEST;
-        break;
-    }
+    const statusCode = this.responseStatusToStatusCode(payload.status);
     if (this.responseHandlers.has(uuid)) {
       const { res } = this.responseHandlers.get(uuid);
       res.writeHead(statusCode, { 'Content-Type': 'application/json' });
@@ -136,5 +127,16 @@ export default class UIHttpServer extends AbstractUIServer {
 
   private buildResponse(id: string, responsePayload: ResponsePayload): string {
     return JSON.stringify([id, responsePayload]);
+  }
+
+  private responseStatusToStatusCode(status: ResponseStatus): StatusCodes {
+    switch (status) {
+      case ResponseStatus.SUCCESS:
+        return StatusCodes.OK;
+      case ResponseStatus.FAILURE:
+        return StatusCodes.BAD_REQUEST;
+      default:
+        return StatusCodes.INTERNAL_SERVER_ERROR;
+    }
   }
 }
