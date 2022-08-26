@@ -8,6 +8,7 @@
         <th scope="col" class="cs-table__transaction-col">Transaction</th>
         <th scope="col" class="cs-table__name-col">Name</th>
         <th scope="col" class="cs-table__stopped-col">Stopped</th>
+        <th scope="col" class="cs-table__registration-status-col">Registration Status</th>
         <th scope="col" class="cs-table__vendor-col">Vendor</th>
         <th scope="col" class="cs-table__model-col">Model</th>
         <th scope="col" class="cs-table__firmware-col">Firmware Version</th>
@@ -90,6 +91,7 @@ const props = defineProps<{
 .cs-table__transaction-col,
 .cs-table__name-col,
 .cs-table__stopped-col,
+.cs-table__registration-status-col,
 .cs-table__model-col,
 .cs-table__vendor-col,
 .cs-table__firmware-col {
@@ -118,6 +120,9 @@ const props = defineProps<{
   /* min-width: 120px; */
 }
 .cs-table__stopped-col {
+  /* min-width: 120px; */
+}
+.cs-table__registration-status-col {
   /* min-width: 120px; */
 }
 .cs-table__model-col {

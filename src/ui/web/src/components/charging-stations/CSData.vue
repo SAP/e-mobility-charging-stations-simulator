@@ -9,6 +9,7 @@
     />
     <td class="cs-table__name-col">{{ getId() }}</td>
     <td class="cs-table__stopped-col">{{ getStopped() }}</td>
+    <td class="cs-table__registration-status-col">{{ getRegistrationStatus() }}</td>
     <td class="cs-table__vendor-col">{{ getVendor() }}</td>
     <td class="cs-table__model-col">{{ getModel() }}</td>
     <td class="cs-table__firmware-col">{{ getFirmwareVersion() }}</td>
@@ -63,7 +64,10 @@ function getFirmwareVersion(): string {
   return Utils.ifUndefined<string>(getInfo().firmwareVersion, 'Ø');
 }
 function getStopped(): string {
-  return props.chargingStation.stopped ? 'Yes' : 'No';
+  return props.chargingStation.stopped === true ? 'Yes' : 'No';
+}
+function getRegistrationStatus(): string {
+  return props.chargingStation?.bootNotificationResponse?.status ?? 'Ø';
 }
 // function showTagModal(): void {
 //   state.isTagModalVisible = true;
