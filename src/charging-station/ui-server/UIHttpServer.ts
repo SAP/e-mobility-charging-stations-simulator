@@ -7,11 +7,9 @@ import { ServerOptions } from '../../types/ConfigurationData';
 import {
   ProcedureName,
   Protocol,
-  ProtocolRequest,
   ProtocolResponse,
   ProtocolVersion,
   RequestPayload,
-  ResponsePayload,
   ResponseStatus,
 } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
@@ -101,9 +99,11 @@ export default class UIHttpServer extends AbstractUIServer {
             const body = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload;
             this.uiServices
               .get(version)
-              .requestHandler(this.buildRequest(uuid, procedureName, body ?? {}))
+              .requestHandler(this.buildProtocolRequest(uuid, procedureName, body ?? {}))
               .catch(() => {
-                this.sendResponse(this.buildResponse(uuid, { status: ResponseStatus.FAILURE }));
+                this.sendResponse(
+                  this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE })
+                );
               });
           });
       } else {
@@ -114,20 +114,8 @@ export default class UIHttpServer extends AbstractUIServer {
         `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
         error
       );
-      this.sendResponse(this.buildResponse(uuid, { status: ResponseStatus.FAILURE }));
+      this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }));
     }
-  }
-
-  private buildRequest(
-    id: string,
-    procedureName: ProcedureName,
-    requestPayload: RequestPayload
-  ): string {
-    return JSON.stringify([id, procedureName, requestPayload] as ProtocolRequest);
-  }
-
-  private buildResponse(id: string, responsePayload: ResponsePayload): string {
-    return JSON.stringify([id, responsePayload] as ProtocolResponse);
   }
 
   private responseStatusToStatusCode(status: ResponseStatus): StatusCodes {

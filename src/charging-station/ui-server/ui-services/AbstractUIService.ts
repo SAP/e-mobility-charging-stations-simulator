@@ -7,7 +7,6 @@ import {
   ProcedureName,
   ProtocolRequest,
   ProtocolRequestHandler,
-  ProtocolResponse,
   ProtocolVersion,
   RequestPayload,
   ResponsePayload,
@@ -80,27 +79,17 @@ export default abstract class AbstractUIService {
     procedureName: ProcedureName,
     requestPayload: RequestPayload
   ): void {
-    this.uiServer.sendRequest(this.buildProtocolRequest(messageId, procedureName, requestPayload));
+    this.uiServer.sendRequest(
+      this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
+    );
   }
 
   public sendResponse(messageId: string, responsePayload: ResponsePayload): void {
-    this.uiServer.sendResponse(this.buildProtocolResponse(messageId, responsePayload));
+    this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
   }
 
   public logPrefix(modName: string, methodName: string): string {
     return this.uiServer.logPrefix(modName, methodName);
-  }
-
-  private buildProtocolRequest(
-    messageId: string,
-    procedureName: ProcedureName,
-    requestPayload: RequestPayload
-  ): string {
-    return JSON.stringify([messageId, procedureName, requestPayload] as ProtocolRequest);
-  }
-
-  private buildProtocolResponse(messageId: string, responsePayload: ResponsePayload): string {
-    return JSON.stringify([messageId, responsePayload] as ProtocolResponse);
   }
 
   // Validate the raw data received from the UI server

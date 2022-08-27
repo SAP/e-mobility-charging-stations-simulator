@@ -1,6 +1,11 @@
 import { BroadcastChannel } from 'worker_threads';
 
-import { BroadcastChannelRequest, BroadcastChannelResponse } from '../types/WorkerBroadcastChannel';
+import BaseError from '../exception/BaseError';
+import {
+  BroadcastChannelRequest,
+  BroadcastChannelResponse,
+  MessageEvent,
+} from '../types/WorkerBroadcastChannel';
 
 export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
   protected constructor() {
@@ -21,5 +26,11 @@ export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
 
   protected isResponse(message: any): boolean {
     return Array.isArray(message) && message.length === 2;
+  }
+
+  protected validateMessageEvent(messageEvent: MessageEvent): void {
+    if (Array.isArray(messageEvent.data) === false) {
+      throw new BaseError('Worker broadcast channel protocol message event data is not an array');
+    }
   }
 }

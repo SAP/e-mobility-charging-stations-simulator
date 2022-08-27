@@ -38,9 +38,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     if (this.isResponse(messageEvent.data)) {
       return;
     }
-    if (Array.isArray(messageEvent.data) === false) {
-      throw new BaseError('Worker broadcast channel protocol request is not an array');
-    }
+    this.validateMessageEvent(messageEvent);
 
     const [uuid, command, requestPayload] = messageEvent.data as BroadcastChannelRequest;
 

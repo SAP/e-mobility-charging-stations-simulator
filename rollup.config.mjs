@@ -43,6 +43,7 @@ export default {
     'crypto',
     'fs',
     'http',
+    'http-status-codes',
     'mnemonist/lru-map-with-delete',
     'moment',
     'mongodb',
