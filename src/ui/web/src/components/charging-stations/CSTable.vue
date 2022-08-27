@@ -51,8 +51,8 @@ const props = defineProps<{
 #cs-table__head,
 #cs-table__body {
   width: 100%;
-  display: block;
   min-width: 930px;
+  display: block;
 }
 
 #cs-table__body {

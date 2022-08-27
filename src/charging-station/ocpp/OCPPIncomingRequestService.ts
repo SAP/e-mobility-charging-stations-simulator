@@ -37,8 +37,7 @@ export default abstract class OCPPIncomingRequestService {
     params: HandleErrorParams<T> = { throwError: true }
   ): T {
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command %s error:`,
-      commandName,
+      `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command ${commandName} error:`,
       error
     );
     if (!params?.throwError && params?.errorResponse) {

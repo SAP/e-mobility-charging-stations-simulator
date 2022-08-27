@@ -583,7 +583,7 @@ export default class ChargingStation {
     if (!Utils.isEmptyArray(chargingProfiles)) {
       const result = ChargingStationUtils.getLimitFromChargingProfiles(
         chargingProfiles,
-        Utils.logPrefix()
+        this.logPrefix()
       );
       if (!Utils.isNullOrUndefined(result)) {
         limit = result.limit;
@@ -846,14 +846,14 @@ export default class ChargingStation {
     ChargingStationUtils.checkConfiguredMaxConnectors(
       configuredMaxConnectors,
       this.templateFile,
-      Utils.logPrefix()
+      this.logPrefix()
     );
     const templateMaxConnectors =
       ChargingStationUtils.getTemplateMaxNumberOfConnectors(stationTemplate);
     ChargingStationUtils.checkTemplateMaxConnectors(
       templateMaxConnectors,
       this.templateFile,
-      Utils.logPrefix()
+      this.logPrefix()
     );
     if (
       configuredMaxConnectors >
@@ -920,10 +920,8 @@ export default class ChargingStation {
   }
 
   private handleUnsupportedVersion(version: OCPPVersion) {
-    const errMsg = `${this.logPrefix()} Unsupported protocol version '${version}' configured in template file ${
-      this.templateFile
-    }`;
-    logger.error(errMsg);
+    const errMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`;
+    logger.error(`${this.logPrefix()} ${errMsg}`);
     throw new BaseError(errMsg);
   }
 
@@ -1142,10 +1140,8 @@ export default class ChargingStation {
     templateMaxConnectors: number
   ): void {
     if (!stationInfo?.Connectors && this.connectors.size === 0) {
-      const logMsg = `${this.logPrefix()} No already defined connectors and charging station information from template ${
-        this.templateFile
-      } with no connectors configuration defined`;
-      logger.error(logMsg);
+      const logMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`;
+      logger.error(`${this.logPrefix()} ${logMsg}`);
       throw new BaseError(logMsg);
     }
     if (!stationInfo?.Connectors[0]) {
@@ -1506,8 +1502,8 @@ export default class ChargingStation {
           // Error
           default:
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            errMsg = `${this.logPrefix()} Wrong message type ${messageType}`;
-            logger.error(errMsg);
+            errMsg = `Wrong message type ${messageType}`;
+            logger.error(`${this.logPrefix()} ${errMsg}`);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
         parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
@@ -1519,19 +1515,18 @@ export default class ChargingStation {
     } catch (error) {
       // Log
       logger.error(
-        "%s Incoming OCPP '%s' message '%j' matching cached request '%j' processing error:",
-        this.logPrefix(),
-        commandName ?? requestCommandName ?? null,
-        data.toString(),
-        this.requests.get(messageId),
+        `${this.logPrefix()} Incoming OCPP '${
+          commandName ?? requestCommandName ?? null
+        }' message '${data.toString()}' matching cached request '${JSON.stringify(
+          this.requests.get(messageId)
+        )}' processing error:`,
         error
       );
       if (!(error instanceof OCPPError)) {
         logger.warn(
-          "%s Error thrown at incoming OCPP '%s' message '%j' handling is not an OCPPError:",
-          this.logPrefix(),
-          commandName ?? requestCommandName ?? null,
-          data.toString(),
+          `${this.logPrefix()} Error thrown at incoming OCPP '${
+            commandName ?? requestCommandName ?? null
+          }' message '${data.toString()}' handling is not an OCPPError:`,
           error
         );
       }

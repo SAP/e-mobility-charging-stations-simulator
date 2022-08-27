@@ -426,7 +426,7 @@ export class ChargingStationUtils {
     templateFile: string,
     logPrefix: string
   ): Voltage {
-    const errMsg = `${logPrefix} Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
+    const errMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
     let defaultVoltageOut: number;
     switch (currentType) {
       case CurrentType.AC:
@@ -436,7 +436,7 @@ export class ChargingStationUtils {
         defaultVoltageOut = Voltage.VOLTAGE_400;
         break;
       default:
-        logger.error(errMsg);
+        logger.error(`${logPrefix} ${errMsg}`);
         throw new BaseError(errMsg);
     }
     return defaultVoltageOut;
@@ -514,8 +514,8 @@ export class ChargingStationUtils {
       }
     }
     if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-      const errorMsg = `${chargingStation.logPrefix()} Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
-      logger.error(errorMsg);
+      const errorMsg = `Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
+      logger.error(`${chargingStation.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
     logger.debug(

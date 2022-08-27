@@ -13,4 +13,4 @@ services:
     networks:
       - ev_network
     ports:
-      - "3030:3030"
+      - '3030:3030'

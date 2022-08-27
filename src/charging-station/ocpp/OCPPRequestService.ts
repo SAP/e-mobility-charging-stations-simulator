@@ -268,10 +268,10 @@ export default abstract class OCPPRequestService {
               );
             }
             logger.error(
-              `${chargingStation.logPrefix()} Error %j occurred when calling command %s with message data %j`,
-              error,
-              commandName,
-              messagePayload
+              `${chargingStation.logPrefix()} Error occurred when calling command ${commandName} with message data ${JSON.stringify(
+                messagePayload
+              )}:`,
+              error
             );
             chargingStation.requests.delete(messageId);
             reject(error);
@@ -361,7 +361,7 @@ export default abstract class OCPPRequestService {
     error: Error,
     params: HandleErrorParams<EmptyObject> = { throwError: true }
   ): void {
-    logger.error(chargingStation.logPrefix() + ' Request command %s error:', commandName, error);
+    logger.error(`${chargingStation.logPrefix()} Request command ${commandName} error:`, error);
     if (params?.throwError) {
       throw error;
     }

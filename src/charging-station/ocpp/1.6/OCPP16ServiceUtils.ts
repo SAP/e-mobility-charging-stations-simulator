@@ -224,7 +224,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         chargingStation,
         powerSampledValueTemplate.measurand
       );
-      const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${
+      const errMsg = `MeterValues measurand ${
         powerSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: Unknown ${chargingStation.getCurrentOutType()} currentOutType in template file ${
@@ -334,7 +334,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             : Utils.getRandomFloatRounded(connectorMaximumPower / unitDivider);
           break;
         default:
-          logger.error(errMsg);
+          logger.error(`${chargingStation.logPrefix()} ${errMsg}`);
           throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
       }
       meterValue.sampledValue.push(
@@ -431,7 +431,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         chargingStation,
         currentSampledValueTemplate.measurand
       );
-      const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${
+      const errMsg = `MeterValues measurand ${
         currentSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: Unknown ${chargingStation.getCurrentOutType()} currentOutType in template file ${
@@ -547,7 +547,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             : Utils.getRandomFloatRounded(connectorMaximumAmperage);
           break;
         default:
-          logger.error(errMsg);
+          logger.error(`${chargingStation.logPrefix()} ${errMsg}`);
           throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
       }
       meterValue.sampledValue.push(
@@ -770,16 +770,16 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     measurandType: OCPP16MeterValueMeasurand
   ): void {
     if (Utils.isUndefined(chargingStation.powerDivider)) {
-      const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${
+      const errMsg = `MeterValues measurand ${
         measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: powerDivider is undefined`;
-      logger.error(errMsg);
+      logger.error(`${chargingStation.logPrefix()} ${errMsg}`);
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
     } else if (chargingStation?.powerDivider <= 0) {
-      const errMsg = `${chargingStation.logPrefix()} MeterValues measurand ${
+      const errMsg = `MeterValues measurand ${
         measurandType ?? OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: powerDivider have zero or below value ${chargingStation.powerDivider}`;
-      logger.error(errMsg);
+      logger.error(`${chargingStation.logPrefix()} ${errMsg}`);
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, OCPP16RequestCommand.METER_VALUES);
     }
   }

@@ -5,7 +5,7 @@ const SemVer = require('semver');
 const enginesNodeVersion = require('./package.json').engines.node;
 
 /**
- *
+ * Check if the current node version match the required engines version.
  */
 function checkNodeVersion() {
   if (SemVer.satisfies(process.version, enginesNodeVersion) === false) {

@@ -55,7 +55,9 @@ export class MessageChannelUtils {
       stationInfo: chargingStation.stationInfo,
       stopped: chargingStation.stopped,
       bootNotificationResponse: chargingStation.bootNotificationResponse,
-      connectors: Array.from(chargingStation.connectors.values()),
+      connectors: Array.from(chargingStation.connectors.values()).map(
+        ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
+      ),
     };
   }
 }

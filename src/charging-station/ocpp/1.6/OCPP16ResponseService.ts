@@ -417,14 +417,14 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       );
       return;
     }
-    if (!Number.isInteger(payload.transactionId)) {
-      logger.warn(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with a non integer transaction Id ${
-          payload.transactionId
-        }, converting to integer`
-      );
-      payload.transactionId = Utils.convertToInt(payload.transactionId);
-    }
+    // if (!Number.isInteger(payload.transactionId)) {
+    //   logger.warn(
+    //     `${chargingStation.logPrefix()} Trying to start a transaction on connector ${connectorId.toString()} with a non integer transaction Id ${
+    //       payload.transactionId
+    //     }, converting to integer`
+    //   );
+    //   payload.transactionId = Utils.convertToInt(payload.transactionId);
+    // }
 
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
       chargingStation.getConnectorStatus(connectorId).transactionStarted = true;
@@ -489,8 +489,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           payload.transactionId.toString() +
           " REJECTED with status '" +
           payload?.idTagInfo?.status +
-          "', idTag " +
-          requestPayload.idTag
+          "', idTag '" +
+          requestPayload.idTag +
+          "'"
       );
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId);
     }
