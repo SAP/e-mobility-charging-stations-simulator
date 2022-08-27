@@ -1,3 +1,4 @@
+import type { ResponsePayload } from '../types/UIProtocol';
 import type { BroadcastChannelResponse, MessageEvent } from '../types/WorkerBroadcastChannel';
 import logger from '../utils/Logger';
 import type AbstractUIService from './ui-server/ui-services/AbstractUIService';
@@ -24,7 +25,7 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
     // TODO: handle multiple responses for the same uuid
     delete responsePayload.hashId;
 
-    this.uiService.sendResponse(uuid, responsePayload);
+    this.uiService.sendResponse(uuid, responsePayload as ResponsePayload);
   }
 
   private messageErrorHandler(messageEvent: MessageEvent): void {
