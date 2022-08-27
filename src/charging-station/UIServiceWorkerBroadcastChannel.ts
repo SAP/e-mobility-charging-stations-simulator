@@ -21,6 +21,8 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
     }
     this.validateMessageEvent(messageEvent);
     const [uuid, responsePayload] = messageEvent.data as BroadcastChannelResponse;
+    // TODO: handle multiple responses for the same uuid
+    delete responsePayload.hashId;
 
     this.uiService.sendResponse(uuid, responsePayload);
   }

@@ -65,9 +65,15 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     try {
       commandResponse = await this.commandHandler(command, requestPayload);
       if (commandResponse === undefined) {
-        responsePayload = { status: ResponseStatus.SUCCESS };
+        responsePayload = {
+          hashId: this.chargingStation.hashId,
+          status: ResponseStatus.SUCCESS,
+        };
       } else {
-        responsePayload = { status: this.commandResponseToResponseStatus(commandResponse) };
+        responsePayload = {
+          hashId: this.chargingStation.hashId,
+          status: this.commandResponseToResponseStatus(commandResponse),
+        };
       }
     } catch (error) {
       logger.error(
@@ -75,6 +81,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         error
       );
       responsePayload = {
+        hashId: this.chargingStation.hashId,
         status: ResponseStatus.FAILURE,
         command,
         requestPayload,

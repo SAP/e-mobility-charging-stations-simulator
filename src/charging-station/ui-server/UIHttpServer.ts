@@ -33,11 +33,14 @@ export default class UIHttpServer extends AbstractUIServer {
   }
 
   public start(): void {
-    (this.server as Server).listen(this.options ?? Configuration.getUIServer().options);
+    if ((this.server as Server).listening === false) {
+      (this.server as Server).listen(this.options ?? Configuration.getUIServer().options);
+    }
   }
 
   public stop(): void {
     this.chargingStations.clear();
+    this.responseHandlers.clear();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -48,7 +51,7 @@ export default class UIHttpServer extends AbstractUIServer {
   public sendResponse(response: string): void {
     const [uuid, payload] = JSON.parse(response) as ProtocolResponse;
     const statusCode = this.responseStatusToStatusCode(payload.status);
-    if (this.responseHandlers.has(uuid)) {
+    if (this.responseHandlers.has(uuid) === true) {
       const { res } = this.responseHandlers.get(uuid);
       res.writeHead(statusCode, { 'Content-Type': 'application/json' });
       res.write(JSON.stringify(payload));

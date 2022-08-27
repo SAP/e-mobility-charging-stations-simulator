@@ -137,7 +137,7 @@ export class Bootstrap {
         }
         this.started = true;
       } catch (error) {
-        console.error(chalk.red('Bootstrap start error '), error);
+        console.error(chalk.red('Bootstrap start error: '), error);
       }
     } else {
       console.error(chalk.red('Cannot start an already started charging stations simulator'));
