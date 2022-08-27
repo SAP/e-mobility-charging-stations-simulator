@@ -11,7 +11,6 @@ describe('CSTable.vue', () => {
     const wrapper = shallowMount(CSTable, {
       props: { chargingStations, idTag: '0' },
     });
-    console.log(wrapper.text());
     expect(wrapper.text()).to.include('Action');
     expect(wrapper.text()).to.include('Connector');
     expect(wrapper.text()).to.include('Status');
