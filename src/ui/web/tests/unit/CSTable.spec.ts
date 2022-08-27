@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { shallowMount } from '@vue/test-utils';
 import CSTable from '@/components/charging-stations/CSTable.vue';
-import type { ChargingStationData } from '@/type/ChargingStationType';
+import type { ChargingStationData } from '@/types/ChargingStationType';
 
 describe('CSTable.vue', () => {
   it('renders CS table columns name', () => {

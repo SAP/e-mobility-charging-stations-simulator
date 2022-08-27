@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import Modal from '@/components/Modal.vue';
-import type { ChargingStationInfo } from '@/type/ChargingStationType';
+import type { ChargingStationInfo } from '@/types/ChargingStationType';
 
 const props = defineProps<{
   isVisible: boolean;

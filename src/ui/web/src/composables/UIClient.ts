@@ -1,6 +1,6 @@
-import type { JsonType } from '@/type/JsonType';
-import { ProcedureName, ResponseStatus } from '@/type/UIProtocol';
-import type { ProtocolResponse, ResponsePayload } from '@/type/UIProtocol';
+import type { JsonType } from '@/types/JsonType';
+import { ProcedureName, ResponseStatus } from '@/types/UIProtocol';
+import type { ProtocolResponse, ResponsePayload } from '@/types/UIProtocol';
 
 import Utils from './Utils';
 import config from '@/assets/config';
@@ -23,7 +23,7 @@ export default class UIClient {
     this._responseHandlers = new Map<string, ResponseHandler>();
   }
 
-  public static get instance() {
+  public static getInstance() {
     if (UIClient._instance === null) {
       UIClient._instance = new UIClient();
     }

@@ -25,9 +25,9 @@
 import Button from '../buttons/Button.vue';
 
 // import { reactive } from 'vue';
-import UIClient from '@/composable/UIClient';
-import type { ConnectorStatus } from '@/type/ChargingStationType';
-// import Utils from '@/composable/Utils';
+import UIClient from '@/composables/UIClient';
+import type { ConnectorStatus } from '@/types/ChargingStationType';
+// import Utils from '@/composables/Utils';
 
 const props = defineProps<{
   hashId: string;
@@ -62,21 +62,21 @@ const props = defineProps<{
 // }
 
 function startChargingStation(): void {
-  UIClient.instance.startChargingStation(props.hashId);
+  UIClient.getInstance().startChargingStation(props.hashId);
 }
 function stopChargingStation(): void {
-  UIClient.instance.stopChargingStation(props.hashId);
+  UIClient.getInstance().stopChargingStation(props.hashId);
 }
 function openConnection(): void {
-  UIClient.instance.openConnection(props.hashId);
+  UIClient.getInstance().openConnection(props.hashId);
 }
 function closeConnection(): void {
-  UIClient.instance.closeConnection(props.hashId);
+  UIClient.getInstance().closeConnection(props.hashId);
 }
 function startTransaction(): void {
-  UIClient.instance.startTransaction(props.hashId, props.connectorId, props.idTag);
+  UIClient.getInstance().startTransaction(props.hashId, props.connectorId, props.idTag);
 }
 function stopTransaction(): void {
-  UIClient.instance.stopTransaction(props.hashId, props.transactionId);
+  UIClient.getInstance().stopTransaction(props.hashId, props.transactionId);
 }
 </script>

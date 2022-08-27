@@ -22,10 +22,10 @@ import ReloadButton from '@/components/buttons/ReloadButton.vue';
 import CSTable from '@/components/charging-stations/CSTable.vue';
 
 import { onMounted, reactive } from 'vue';
-import UIClient from '@/composable/UIClient';
-import type { ChargingStationData } from '@/type/ChargingStationType';
+import UIClient from '@/composables/UIClient';
+import type { ChargingStationData } from '@/types/ChargingStationType';
 
-const UIClientInstance = UIClient.instance;
+const UIClientInstance = UIClient.getInstance();
 
 onMounted(() => {
   UIClientInstance.registerWSonOpenListener(load);

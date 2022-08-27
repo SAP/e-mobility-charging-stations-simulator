@@ -15,7 +15,7 @@ import {
   BroadcastChannelResponsePayload,
   MessageEvent,
 } from '../types/WorkerBroadcastChannel';
-import { ResponseStatus } from '../ui/web/src/type/UIProtocol';
+import { ResponseStatus } from '../ui/web/src/types/UIProtocol';
 import logger from '../utils/Logger';
 import type ChargingStation from './ChargingStation';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';

@@ -20,12 +20,12 @@
 import CSConnector from './CSConnector.vue';
 
 // import { reactive } from 'vue';
-import Utils from '@/composable/Utils';
+import Utils from '@/composables/Utils';
 import type {
   ChargingStationData,
   ChargingStationInfo,
   ConnectorStatus,
-} from '@/type/ChargingStationType';
+} from '@/types/ChargingStationType';
 
 const props = defineProps<{
   chargingStation: ChargingStationData;

@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import CSData from './CSData.vue';
-import type { ChargingStationData } from '@/type/ChargingStationType';
+import type { ChargingStationData } from '@/types/ChargingStationType';
 
 const props = defineProps<{
   chargingStations: Record<string, ChargingStationData>;
