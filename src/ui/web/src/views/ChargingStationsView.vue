@@ -23,7 +23,7 @@ import CSTable from '@/components/charging-stations/CSTable.vue';
 
 import { onMounted, reactive } from 'vue';
 import UIClient from '@/composable/UIClient';
-import { ChargingStationData } from '@/type/ChargingStationType';
+import type { ChargingStationData } from '@/type/ChargingStationType';
 
 const UIClientInstance = UIClient.instance;
 

@@ -21,7 +21,7 @@ import CSConnector from './CSConnector.vue';
 
 // import { reactive } from 'vue';
 import Utils from '@/composable/Utils';
-import {
+import type {
   ChargingStationData,
   ChargingStationInfo,
   ConnectorStatus,

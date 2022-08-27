@@ -26,7 +26,7 @@ import Button from '../buttons/Button.vue';
 
 // import { reactive } from 'vue';
 import UIClient from '@/composable/UIClient';
-import { ConnectorStatus } from '@/type/ChargingStationType';
+import type { ConnectorStatus } from '@/type/ChargingStationType';
 // import Utils from '@/composable/Utils';
 
 const props = defineProps<{

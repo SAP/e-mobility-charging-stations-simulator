@@ -2,12 +2,12 @@
   "name": "webui",
   "version": "0.1.0",
   "scripts": {
-    "start": "npm run build && node start.js",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "test": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
-    "lint:fix": "vue-cli-service lint --fix"
+    "lint:fix": "vue-cli-service lint --fix",
+    "start": "npm run build && node start.js",
+    "test": "vue-cli-service test:unit"
   },
   "dependencies": {
     "core-js": "^3.25.0",
@@ -41,7 +41,7 @@
     "eslint-plugin-vue": "^9.4.0",
     "lint-staged": "^13.0.3",
     "prettier": "^2.7.1",
-    "typescript": "^4.8.2"
+    "typescript": "~4.8.2"
   },
   "_id": "webui@0.1.0",
   "gitHooks": {
