@@ -34,7 +34,7 @@ export type BroadcastChannelRequestPayload =
   | HashIdBroadcastChannelRequestPayload
   | HashIdsBroadcastChannelRequestPayload;
 
-export interface BroadcastChannelResponsePayload extends ResponsePayload {
+export interface BroadcastChannelResponsePayload extends Omit<ResponsePayload, 'hashIds'> {
   hashId: string;
 }
 

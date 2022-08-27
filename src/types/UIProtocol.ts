@@ -45,4 +45,5 @@ export enum ResponseStatus {
 
 export interface ResponsePayload extends JsonObject {
   status: ResponseStatus;
+  hashIds?: string[];
 }
