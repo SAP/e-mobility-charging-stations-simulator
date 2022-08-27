@@ -97,6 +97,9 @@ export default class UIClient {
       config.emobility.protocol
     );
     this._ws.onmessage = this.responseHandler.bind(this);
+    this._ws.onerror = (error) => {
+      console.error('WebSocket error: ', error);
+    };
   }
 
   private setResponseHandler(
@@ -160,7 +163,7 @@ export default class UIClient {
           this.getResponseHandler(uuid)?.reject(response);
           break;
         default:
-          throw new Error(`Response status not supported: ${response.status}`);
+          console.error(`Response status not supported: ${response.status}`);
       }
       this.deleteResponseHandler(uuid);
     } else {

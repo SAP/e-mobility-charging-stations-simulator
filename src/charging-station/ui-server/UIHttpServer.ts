@@ -7,6 +7,7 @@ import { ServerOptions } from '../../types/ConfigurationData';
 import {
   ProcedureName,
   Protocol,
+  ProtocolRequest,
   ProtocolResponse,
   ProtocolVersion,
   RequestPayload,
@@ -57,7 +58,7 @@ export default class UIHttpServer extends AbstractUIServer {
       this.responseHandlers.delete(uuid);
     } else {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.sendResponse: Response received for unknown request: ${response}`
+        `${this.logPrefix()} ${moduleName}.sendResponse: Response for unknown request: ${response}`
       );
     }
   }
@@ -83,10 +84,7 @@ export default class UIHttpServer extends AbstractUIServer {
       }
       req.on('error', (error) => {
         logger.error(
-          `${this.logPrefix(
-            moduleName,
-            'requestListener.req.onerror'
-          )} Error at incoming request handling:`,
+          `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
           error
         );
       });
@@ -95,13 +93,12 @@ export default class UIHttpServer extends AbstractUIServer {
       }
       if (req.method === 'POST') {
         const bodyBuffer = [];
-        let body: RequestPayload;
         req
           .on('data', (chunk) => {
             bodyBuffer.push(chunk);
           })
           .on('end', () => {
-            body = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload;
+            const body = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload;
             this.uiServices
               .get(version)
               .requestHandler(this.buildRequest(uuid, procedureName, body ?? {}))
@@ -113,6 +110,10 @@ export default class UIHttpServer extends AbstractUIServer {
         throw new BaseError(`Unsupported HTTP method: '${req.method}'`);
       }
     } catch (error) {
+      logger.error(
+        `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
+        error
+      );
       this.sendResponse(this.buildResponse(uuid, { status: ResponseStatus.FAILURE }));
     }
   }
@@ -122,11 +123,11 @@ export default class UIHttpServer extends AbstractUIServer {
     procedureName: ProcedureName,
     requestPayload: RequestPayload
   ): string {
-    return JSON.stringify([id, procedureName, requestPayload]);
+    return JSON.stringify([id, procedureName, requestPayload] as ProtocolRequest);
   }
 
   private buildResponse(id: string, responsePayload: ResponsePayload): string {
-    return JSON.stringify([id, responsePayload]);
+    return JSON.stringify([id, responsePayload] as ProtocolResponse);
   }
 
   private responseStatusToStatusCode(status: ResponseStatus): StatusCodes {
