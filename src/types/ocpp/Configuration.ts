@@ -1,4 +1,4 @@
-import { JsonObject } from '../JsonType';
+import type { JsonObject } from '../JsonType';
 import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,

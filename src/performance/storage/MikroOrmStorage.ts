@@ -5,7 +5,7 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 import { PerformanceData } from '../../types/orm/entities/PerformanceData';
 import { PerformanceRecord } from '../../types/orm/entities/PerformanceRecord';
-import Statistics from '../../types/Statistics';
+import type Statistics from '../../types/Statistics';
 import { MikroORMDBType, StorageType } from '../../types/Storage';
 import Constants from '../../utils/Constants';
 import { Storage } from './Storage';

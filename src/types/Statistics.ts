@@ -1,5 +1,5 @@
-import { CircularArray } from '../utils/CircularArray';
-import { WorkerData } from './Worker';
+import type { CircularArray } from '../utils/CircularArray';
+import type { WorkerData } from './Worker';
 
 export interface TimeSeries {
   timestamp: number;

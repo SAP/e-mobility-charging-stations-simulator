@@ -1,12 +1,12 @@
-import { JSONSchemaType } from 'ajv';
+import type { JSONSchemaType } from 'ajv';
 import Ajv from 'ajv-draft-04';
 import ajvFormats from 'ajv-formats';
 
 import OCPPError from '../../exception/OCPPError';
 import PerformanceStatistics from '../../performance/PerformanceStatistics';
-import { EmptyObject } from '../../types/EmptyObject';
-import { HandleErrorParams } from '../../types/Error';
-import { JsonObject, JsonType } from '../../types/JsonType';
+import type { EmptyObject } from '../../types/EmptyObject';
+import type { HandleErrorParams } from '../../types/Error';
+import type { JsonObject, JsonType } from '../../types/JsonType';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import {
@@ -16,7 +16,7 @@ import {
   RequestParams,
   ResponseType,
 } from '../../types/ocpp/Requests';
-import { ErrorResponse, Response } from '../../types/ocpp/Responses';
+import type { ErrorResponse, Response } from '../../types/ocpp/Responses';
 import Constants from '../../utils/Constants';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
@@ -368,10 +368,10 @@ export default abstract class OCPPRequestService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public abstract requestHandler<Request extends JsonType, Response extends JsonType>(
+  public abstract requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     commandParams?: JsonType,
     params?: RequestParams
-  ): Promise<Response>;
+  ): Promise<ResponseType>;
 }

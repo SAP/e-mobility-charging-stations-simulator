@@ -1,4 +1,4 @@
-import { OCPPConfigurationKey } from './ocpp/Configuration';
+import type { OCPPConfigurationKey } from './ocpp/Configuration';
 
 export interface ConfigurationKey extends OCPPConfigurationKey {
   visible?: boolean;

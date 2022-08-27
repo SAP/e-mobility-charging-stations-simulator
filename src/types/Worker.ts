@@ -1,6 +1,6 @@
-import { Worker } from 'worker_threads';
+import type { Worker } from 'worker_threads';
 
-import { PoolOptions } from 'poolifier';
+import type { PoolOptions } from 'poolifier';
 
 export enum WorkerProcessType {
   WORKER_SET = 'workerSet',

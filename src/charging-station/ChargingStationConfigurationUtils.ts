@@ -1,5 +1,5 @@
-import { ConfigurationKey } from '../types/ChargingStationOcppConfiguration';
-import { StandardParametersKey } from '../types/ocpp/Configuration';
+import type { ConfigurationKey } from '../types/ChargingStationOcppConfiguration';
+import type { StandardParametersKey } from '../types/ocpp/Configuration';
 import logger from '../utils/Logger';
 import type ChargingStation from './ChargingStation';
 

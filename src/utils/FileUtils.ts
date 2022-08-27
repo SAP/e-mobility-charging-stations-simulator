@@ -2,10 +2,10 @@ import fs from 'fs';
 
 import chalk from 'chalk';
 
-import { EmptyObject } from '../types/EmptyObject';
-import { HandleErrorParams } from '../types/Error';
-import { FileType } from '../types/FileType';
-import { JsonType } from '../types/JsonType';
+import type { EmptyObject } from '../types/EmptyObject';
+import type { HandleErrorParams } from '../types/Error';
+import type { FileType } from '../types/FileType';
+import type { JsonType } from '../types/JsonType';
 import logger from './Logger';
 import Utils from './Utils';
 

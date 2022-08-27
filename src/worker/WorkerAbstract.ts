@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { WorkerData, WorkerOptions } from '../types/Worker';
+import type { WorkerData, WorkerOptions } from '../types/Worker';
 import WorkerConstants from './WorkerConstants';
 
 export default abstract class WorkerAbstract<T extends WorkerData> {

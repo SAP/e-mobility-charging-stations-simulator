@@ -1,10 +1,7 @@
-import { JsonType } from '@/type/JsonType';
-import {
-  ProcedureName,
-  ProtocolResponse,
-  ResponsePayload,
-  ResponseStatus,
-} from '@/type/UIProtocol';
+import type { JsonType } from '@/type/JsonType';
+import { ProcedureName, ResponseStatus } from '@/type/UIProtocol';
+import type { ProtocolResponse, ResponsePayload } from '@/type/UIProtocol';
+
 import Utils from './Utils';
 import config from '@/assets/config';
 import { v4 as uuidv4 } from 'uuid';

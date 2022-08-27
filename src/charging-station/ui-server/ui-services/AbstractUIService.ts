@@ -1,8 +1,8 @@
-import { RawData } from 'ws';
+import type { RawData } from 'ws';
 
 import BaseError from '../../../exception/BaseError';
 import { Bootstrap } from '../../../internal';
-import { JsonType } from '../../../types/JsonType';
+import type { JsonType } from '../../../types/JsonType';
 import {
   ProcedureName,
   ProtocolRequest,

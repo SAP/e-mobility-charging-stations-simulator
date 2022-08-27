@@ -11,19 +11,19 @@ import WebSocket, { Data, RawData } from 'ws';
 import BaseError from '../exception/BaseError';
 import OCPPError from '../exception/OCPPError';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
-import { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
-import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
-import ChargingStationInfo from '../types/ChargingStationInfo';
-import ChargingStationOcppConfiguration from '../types/ChargingStationOcppConfiguration';
+import type { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
+import type ChargingStationConfiguration from '../types/ChargingStationConfiguration';
+import type ChargingStationInfo from '../types/ChargingStationInfo';
+import type ChargingStationOcppConfiguration from '../types/ChargingStationOcppConfiguration';
 import ChargingStationTemplate, {
   CurrentType,
   PowerUnits,
   WsOptions,
 } from '../types/ChargingStationTemplate';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
-import { ConnectorStatus } from '../types/ConnectorStatus';
+import type { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
-import { JsonType } from '../types/JsonType';
+import type { JsonType } from '../types/JsonType';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
 import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
@@ -79,8 +79,8 @@ import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestServic
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
 import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
-import OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
-import OCPPRequestService from './ocpp/OCPPRequestService';
+import type OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
+import type OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
 
 export default class ChargingStation {

@@ -1,9 +1,9 @@
 import chalk from 'chalk';
 
-import { ServerOptions } from '../../types/ConfigurationData';
+import type { ServerOptions } from '../../types/ConfigurationData';
 import { ApplicationProtocol } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
-import { AbstractUIServer } from './AbstractUIServer';
+import type { AbstractUIServer } from './AbstractUIServer';
 import { UIServiceUtils } from './ui-services/UIServiceUtils';
 import UIHttpServer from './UIHttpServer';
 import UIWebSocketServer from './UIWebSocketServer';

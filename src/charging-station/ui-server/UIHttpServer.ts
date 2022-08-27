@@ -3,7 +3,7 @@ import { IncomingMessage, RequestListener, Server, ServerResponse } from 'http';
 import { StatusCodes } from 'http-status-codes';
 
 import BaseError from '../../exception/BaseError';
-import { ServerOptions } from '../../types/ConfigurationData';
+import type { ServerOptions } from '../../types/ConfigurationData';
 import {
   ProcedureName,
   Protocol,

@@ -1,6 +1,6 @@
 import { Worker, isMainThread } from 'worker_threads';
 
-import { PoolOptions } from 'poolifier';
+import type { PoolOptions } from 'poolifier';
 
 import { WorkerData, WorkerOptions, WorkerProcessType } from '../types/Worker';
 import type WorkerAbstract from './WorkerAbstract';

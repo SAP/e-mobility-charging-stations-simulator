@@ -1,4 +1,4 @@
-import { DefinedError, ErrorObject } from 'ajv';
+import type { DefinedError, ErrorObject } from 'ajv';
 
 import { ErrorType } from '../../types/ocpp/ErrorType';
 

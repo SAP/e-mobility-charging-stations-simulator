@@ -1,4 +1,4 @@
-import ChargingStationTemplate from './ChargingStationTemplate';
+import type ChargingStationTemplate from './ChargingStationTemplate';
 
 export default interface ChargingStationInfo
   extends Omit<

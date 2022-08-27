@@ -1,9 +1,9 @@
-import { Server as HttpServer } from 'http';
+import type { Server as HttpServer } from 'http';
 
-import WebSocket from 'ws';
+import type WebSocket from 'ws';
 
-import { ChargingStationData } from '../../types/ChargingStationWorker';
-import {
+import type { ChargingStationData } from '../../types/ChargingStationWorker';
+import type {
   ProcedureName,
   ProtocolRequest,
   ProtocolResponse,

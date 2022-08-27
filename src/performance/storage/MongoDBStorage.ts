@@ -2,7 +2,7 @@
 
 import { MongoClient } from 'mongodb';
 
-import Statistics from '../../types/Statistics';
+import type Statistics from '../../types/Statistics';
 import { StorageType } from '../../types/Storage';
 import Constants from '../../utils/Constants';
 import { Storage } from './Storage';

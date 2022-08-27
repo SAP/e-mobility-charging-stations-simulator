@@ -1,7 +1,7 @@
 import { BroadcastChannel } from 'worker_threads';
 
 import BaseError from '../exception/BaseError';
-import {
+import type {
   BroadcastChannelRequest,
   BroadcastChannelResponse,
   MessageEvent,

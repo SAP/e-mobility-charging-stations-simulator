@@ -5,15 +5,15 @@ import { fileURLToPath } from 'url';
 import moment from 'moment';
 
 import BaseError from '../exception/BaseError';
-import ChargingStationInfo from '../types/ChargingStationInfo';
+import type ChargingStationInfo from '../types/ChargingStationInfo';
 import ChargingStationTemplate, {
   AmpereUnits,
   CurrentType,
   Voltage,
 } from '../types/ChargingStationTemplate';
-import { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
+import type { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
 import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
-import { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
+import type { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import {

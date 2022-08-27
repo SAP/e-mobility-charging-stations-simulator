@@ -1,4 +1,4 @@
-import { JsonObject } from './JsonType';
+import type { JsonObject } from './JsonType';
 
 export type ChargingStationData = {
   hashId: string;

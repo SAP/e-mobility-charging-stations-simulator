@@ -8,7 +8,7 @@ import chalk from 'chalk';
 
 import { version } from '../../package.json';
 import BaseError from '../exception/BaseError';
-import { Storage } from '../performance/storage/Storage';
+import type { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
   ChargingStationData,
@@ -17,15 +17,15 @@ import {
   ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-import { StationTemplateUrl } from '../types/ConfigurationData';
-import Statistics from '../types/Statistics';
+import type { StationTemplateUrl } from '../types/ConfigurationData';
+import type Statistics from '../types/Statistics';
 import Configuration from '../utils/Configuration';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
-import WorkerAbstract from '../worker/WorkerAbstract';
+import type WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import { ChargingStationUtils } from './ChargingStationUtils';
-import { AbstractUIServer } from './ui-server/AbstractUIServer';
+import type { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
 import UIServerFactory from './ui-server/UIServerFactory';
 

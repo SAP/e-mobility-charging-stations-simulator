@@ -1,8 +1,8 @@
-import { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates';
-import { ChargePointStatus } from './ocpp/ChargePointStatus';
-import { ChargingProfile } from './ocpp/ChargingProfile';
-import { MeterValue } from './ocpp/MeterValues';
-import { AvailabilityType } from './ocpp/Requests';
+import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates';
+import type { ChargePointStatus } from './ocpp/ChargePointStatus';
+import type { ChargingProfile } from './ocpp/ChargingProfile';
+import type { MeterValue } from './ocpp/MeterValues';
+import type { AvailabilityType } from './ocpp/Requests';
 
 export interface ConnectorStatus {
   availability: AvailabilityType;

@@ -1,11 +1,11 @@
-import { ListenOptions } from 'net';
+import type { ListenOptions } from 'net';
 
 import type { WorkerChoiceStrategy } from 'poolifier';
-import { ServerOptions as WSServerOptions } from 'ws';
+import type { ServerOptions as WSServerOptions } from 'ws';
 
-import { StorageType } from './Storage';
-import { ApplicationProtocol } from './UIProtocol';
-import { WorkerProcessType } from './Worker';
+import type { StorageType } from './Storage';
+import type { ApplicationProtocol } from './UIProtocol';
+import type { WorkerProcessType } from './Worker';
 
 export type ServerOptions = WSServerOptions & ListenOptions;
 

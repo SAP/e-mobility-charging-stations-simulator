@@ -1,13 +1,13 @@
-import { ClientRequestArgs } from 'http';
+import type { ClientRequestArgs } from 'http';
 
-import { ClientOptions } from 'ws';
+import type { ClientOptions } from 'ws';
 
-import { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
-import ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration';
-import { ConnectorStatus } from './ConnectorStatus';
-import { OCPPProtocol } from './ocpp/OCPPProtocol';
-import { OCPPVersion } from './ocpp/OCPPVersion';
-import { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
+import type { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
+import type ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration';
+import type { ConnectorStatus } from './ConnectorStatus';
+import type { OCPPProtocol } from './ocpp/OCPPProtocol';
+import type { OCPPVersion } from './ocpp/OCPPVersion';
+import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
 
 export enum CurrentType {
   AC = 'AC',

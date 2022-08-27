@@ -4,7 +4,7 @@ import { StorageType } from '../../types/Storage';
 import { JsonFileStorage } from './JsonFileStorage';
 import { MikroOrmStorage } from './MikroOrmStorage';
 import { MongoDBStorage } from './MongoDBStorage';
-import { Storage } from './Storage';
+import type { Storage } from './Storage';
 
 export class StorageFactory {
   private constructor() {

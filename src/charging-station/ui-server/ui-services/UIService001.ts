@@ -8,7 +8,7 @@ import {
   BroadcastChannelProcedureName,
   BroadcastChannelRequestPayload,
 } from '../../../types/WorkerBroadcastChannel';
-import { AbstractUIServer } from '../AbstractUIServer';
+import type { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 
 export default class UIService001 extends AbstractUIService {

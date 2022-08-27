@@ -4,12 +4,12 @@ import fs from 'fs';
 import path from 'path';
 import { URL, fileURLToPath } from 'url';
 
-import { JSONSchemaType } from 'ajv';
+import type { JSONSchemaType } from 'ajv';
 import { Client, FTPResponse } from 'basic-ftp';
 import tar from 'tar';
 
 import OCPPError from '../../../exception/OCPPError';
-import { JsonObject, JsonType } from '../../../types/JsonType';
+import type { JsonObject, JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import {
@@ -21,7 +21,7 @@ import {
   OCPP16SupportedFeatureProfiles,
 } from '../../../types/ocpp/1.6/Configuration';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
-import {
+import type {
   OCPP16MeterValuesRequest,
   OCPP16MeterValuesResponse,
 } from '../../../types/ocpp/1.6/MeterValues';
@@ -47,7 +47,7 @@ import {
   SetChargingProfileRequest,
   UnlockConnectorRequest,
 } from '../../../types/ocpp/1.6/Requests';
-import {
+import type {
   ChangeAvailabilityResponse,
   ChangeConfigurationResponse,
   ClearChargingProfileResponse,
@@ -71,10 +71,10 @@ import {
   OCPP16StopTransactionRequest,
   OCPP16StopTransactionResponse,
 } from '../../../types/ocpp/1.6/Transaction';
-import { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
+import type { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { IncomingRequestHandler } from '../../../types/ocpp/Requests';
-import { DefaultResponse } from '../../../types/ocpp/Responses';
+import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
+import type { DefaultResponse } from '../../../types/ocpp/Responses';
 import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';

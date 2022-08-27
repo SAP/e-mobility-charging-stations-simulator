@@ -1,4 +1,4 @@
-import { Configuration } from '@mikro-orm/core';
+import type { Configuration } from '@mikro-orm/core';
 
 export type MikroORMDBType = keyof typeof Configuration.PLATFORMS;
 

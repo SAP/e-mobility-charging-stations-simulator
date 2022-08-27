@@ -1,6 +1,6 @@
 import { ProtocolVersion } from '../../../types/UIProtocol';
-import { AbstractUIServer } from '../AbstractUIServer';
-import AbstractUIService from './AbstractUIService';
+import type { AbstractUIServer } from '../AbstractUIServer';
+import type AbstractUIService from './AbstractUIService';
 import UIService001 from './UIService001';
 
 export default class UIServiceFactory {

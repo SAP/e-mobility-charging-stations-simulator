@@ -1,8 +1,8 @@
 import type ChargingStation from '../../charging-station/ChargingStation';
-import OCPPError from '../../exception/OCPPError';
-import { JsonType } from '../JsonType';
+import type OCPPError from '../../exception/OCPPError';
+import type { JsonType } from '../JsonType';
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
-import { OCPP16MeterValuesRequest } from './1.6/MeterValues';
+import type { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
@@ -11,7 +11,7 @@ import {
   OCPP16RequestCommand,
   OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
-import { MessageType } from './MessageType';
+import type { MessageType } from './MessageType';
 
 export type RequestCommand = OCPP16RequestCommand;
 

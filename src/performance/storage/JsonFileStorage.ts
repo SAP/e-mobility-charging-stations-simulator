@@ -5,7 +5,7 @@ import fs from 'fs';
 import lockfile from 'proper-lockfile';
 
 import { FileType } from '../../types/FileType';
-import Statistics from '../../types/Statistics';
+import type Statistics from '../../types/Statistics';
 import FileUtils from '../../utils/FileUtils';
 import { Storage } from './Storage';
 

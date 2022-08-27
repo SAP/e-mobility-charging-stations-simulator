@@ -4,11 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { JSONSchemaType } from 'ajv';
+import type { JSONSchemaType } from 'ajv';
 
 import OCPPError from '../../../exception/OCPPError';
-import { JsonObject, JsonType } from '../../../types/JsonType';
-import { OCPP16MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
+import type { JsonObject, JsonType } from '../../../types/JsonType';
+import type { OCPP16MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
 import {
   DiagnosticsStatusNotificationRequest,
   OCPP16BootNotificationRequest,
@@ -16,13 +16,13 @@ import {
   OCPP16RequestCommand,
   OCPP16StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
-import {
+import type {
   OCPP16AuthorizeRequest,
   OCPP16StartTransactionRequest,
   OCPP16StopTransactionRequest,
 } from '../../../types/ocpp/1.6/Transaction';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { RequestParams } from '../../../types/ocpp/Requests';
+import type { RequestParams } from '../../../types/ocpp/Requests';
 import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
@@ -144,14 +144,14 @@ export default class OCPP16RequestService extends OCPPRequestService {
     this.validatePayload.bind(this);
   }
 
-  public async requestHandler<Request extends JsonType, Response extends JsonType>(
+  public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType,
     params?: RequestParams
-  ): Promise<Response> {
+  ): Promise<ResponseType> {
     if (ChargingStationUtils.isRequestCommandSupported(commandName, chargingStation)) {
-      const requestPayload = this.buildRequestPayload<Request>(
+      const requestPayload = this.buildRequestPayload<RequestType>(
         chargingStation,
         commandName,
         commandParams
@@ -163,7 +163,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         requestPayload,
         commandName,
         params
-      )) as unknown as Response;
+      )) as unknown as ResponseType;
     }
     throw new OCPPError(
       ErrorType.NOT_SUPPORTED,

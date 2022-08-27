@@ -1,7 +1,7 @@
 import LRUCache from 'mnemonist/lru-map-with-delete';
 
-import ChargingStationConfiguration from '../types/ChargingStationConfiguration';
-import ChargingStationTemplate from '../types/ChargingStationTemplate';
+import type ChargingStationConfiguration from '../types/ChargingStationConfiguration';
+import type ChargingStationTemplate from '../types/ChargingStationTemplate';
 import Utils from '../utils/Utils';
 
 enum CacheType {

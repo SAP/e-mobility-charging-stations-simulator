@@ -1,4 +1,4 @@
-import { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'http';
 
 import { Protocol, ProtocolVersion } from '../../../types/UIProtocol';
 import logger from '../../../utils/Logger';

@@ -1,4 +1,4 @@
-import { BaseConfig } from '@/type/ConfigurationType';
+import type { BaseConfig } from '@/type/ConfigurationType';
 
 const config: BaseConfig = {
   emobility: {

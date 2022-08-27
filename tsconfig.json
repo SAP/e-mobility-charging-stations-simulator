@@ -33,6 +33,7 @@
     // "strictPropertyInitialization": true,  /* Enable strict checking of property initialization in classes. */
     // "noImplicitThis": true,                /* Raise error on 'this' expressions with an implied 'any' type. */
     // "alwaysStrict": true,                  /* Parse in strict mode and emit "use strict" for each source file. */
+    "importsNotUsedAsValues": "error",        /* Enforce using `import type` instead of `import` for types */
 
     /* Additional Checks */
     // "noUnusedLocals": true,                /* Report errors on unused locals. */

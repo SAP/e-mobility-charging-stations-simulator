@@ -1,11 +1,11 @@
-import { JSONSchemaType } from 'ajv';
+import type { JSONSchemaType } from 'ajv';
 import Ajv from 'ajv-draft-04';
 import ajvFormats from 'ajv-formats';
 
 import OCPPError from '../../exception/OCPPError';
-import { HandleErrorParams } from '../../types/Error';
-import { JsonType } from '../../types/JsonType';
-import { IncomingRequestCommand } from '../../types/ocpp/Requests';
+import type { HandleErrorParams } from '../../types/Error';
+import type { JsonType } from '../../types/JsonType';
+import type { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import logger from '../../utils/Logger';
 import type ChargingStation from '../ChargingStation';
 import { OCPPServiceUtils } from './OCPPServiceUtils';

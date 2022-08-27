@@ -1,6 +1,6 @@
-import { EmptyObject } from '../../EmptyObject';
-import { JsonObject } from '../../JsonType';
-import { OCPPConfigurationKey } from '../Configuration';
+import type { EmptyObject } from '../../EmptyObject';
+import type { JsonObject } from '../../JsonType';
+import type { OCPPConfigurationKey } from '../Configuration';
 
 export interface OCPP16HeartbeatResponse extends JsonObject {
   currentTime: string;

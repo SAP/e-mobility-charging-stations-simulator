@@ -1,12 +1,12 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
 import PerformanceStatistics from '../performance/PerformanceStatistics';
-import {
+import type {
   AutomaticTransactionGeneratorConfiguration,
   Status,
 } from '../types/AutomaticTransactionGenerator';
 import { MeterValuesRequest, RequestCommand } from '../types/ocpp/Requests';
-import { MeterValuesResponse } from '../types/ocpp/Responses';
+import type { MeterValuesResponse } from '../types/ocpp/Responses';
 import {
   AuthorizationStatus,
   AuthorizeRequest,

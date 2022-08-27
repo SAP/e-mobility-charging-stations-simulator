@@ -11,8 +11,8 @@ import ConfigurationData, {
   UIServerConfiguration,
   WorkerConfiguration,
 } from '../types/ConfigurationData';
-import { EmptyObject } from '../types/EmptyObject';
-import { HandleErrorParams } from '../types/Error';
+import type { EmptyObject } from '../types/EmptyObject';
+import type { HandleErrorParams } from '../types/Error';
 import { FileType } from '../types/FileType';
 import { StorageType } from '../types/Storage';
 import { ApplicationProtocol } from '../types/UIProtocol';

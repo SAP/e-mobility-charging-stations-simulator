@@ -32,17 +32,16 @@
     "@vue/cli-plugin-typescript": "~5.0.8",
     "@vue/cli-plugin-unit-mocha": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
+    "@vue/eslint-config-prettier": "^7.0.0",
     "@vue/eslint-config-typescript": "^11.0.0",
     "@vue/test-utils": "^2.0.2",
+    "@vue/tsconfig": "^0.1.3",
     "chai": "^4.3.6",
     "eslint": "^8.22.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-vue": "^9.4.0",
     "lint-staged": "^13.0.3",
     "prettier": "^2.7.1",
-    "typescript": "^4.8.2",
-    "vue-eslint-parser": "^9.0.3"
+    "typescript": "^4.8.2"
   },
   "_id": "webui@0.1.0",
   "gitHooks": {

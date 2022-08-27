@@ -4,14 +4,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { JSONSchemaType } from 'ajv';
+import type { JSONSchemaType } from 'ajv';
 
 import OCPPError from '../../../exception/OCPPError';
-import { JsonObject, JsonType } from '../../../types/JsonType';
+import type { JsonObject, JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
-import {
+import type {
   OCPP16MeterValuesRequest,
   OCPP16MeterValuesResponse,
 } from '../../../types/ocpp/1.6/MeterValues';
@@ -37,7 +37,7 @@ import {
   OCPP16StopTransactionResponse,
 } from '../../../types/ocpp/1.6/Transaction';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { ResponseHandler } from '../../../types/ocpp/Responses';
+import type { ResponseHandler } from '../../../types/ocpp/Responses';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';

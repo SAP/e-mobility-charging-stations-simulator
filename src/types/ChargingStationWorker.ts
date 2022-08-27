@@ -1,8 +1,8 @@
-import ChargingStationInfo from './ChargingStationInfo';
-import { ConnectorStatus } from './ConnectorStatus';
-import { JsonObject } from './JsonType';
-import { BootNotificationResponse } from './ocpp/Responses';
-import Statistics from './Statistics';
+import type ChargingStationInfo from './ChargingStationInfo';
+import type { ConnectorStatus } from './ConnectorStatus';
+import type { JsonObject } from './JsonType';
+import type { BootNotificationResponse } from './ocpp/Responses';
+import type Statistics from './Statistics';
 import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
 export interface ChargingStationWorkerOptions extends JsonObject {

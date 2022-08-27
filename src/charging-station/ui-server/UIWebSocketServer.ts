@@ -1,8 +1,8 @@
-import { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'http';
 
 import WebSocket from 'ws';
 
-import { ServerOptions } from '../../types/ConfigurationData';
+import type { ServerOptions } from '../../types/ConfigurationData';
 import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
 import logger from '../../utils/Logger';
