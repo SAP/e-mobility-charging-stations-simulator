@@ -8,7 +8,6 @@
     "EditorConfig.EditorConfig",
     "ms-azuretools.vscode-docker",
     "streetsidesoftware.code-spell-checker",
-    "Vue.volar",
-    "Vue.vscode-typescript-vue-plugin"
+    "Vue.volar"
   ]
 }
