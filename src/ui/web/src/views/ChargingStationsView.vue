@@ -80,7 +80,6 @@ function stopSimulator(): void {
   padding: 6px 14px;
   background-color: rgb(25, 118, 210);
   border-radius: 5px;
-
   color: white;
   font-size: 35px;
   font-weight: bold;

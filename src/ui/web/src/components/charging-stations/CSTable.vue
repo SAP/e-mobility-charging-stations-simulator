@@ -37,11 +37,9 @@ const props = defineProps<{
 
 <style>
 #cs-table {
-  background-color: white;
-
   height: 100%;
   width: 100%;
-
+  background-color: white;
   display: flex;
   flex-grow: 1;
   flex-direction: column;
@@ -52,35 +50,27 @@ const props = defineProps<{
 
 #cs-table__head,
 #cs-table__body {
-  display: block;
-  /* flex-direction: column;
-  justify-content: space-evenly; */
   width: 100%;
-  min-width: 934px;
-  /* box-sizing: border-box; */
+  display: block;
+  min-width: 930px;
 }
-#cs-table__head {
-  /* width: 100%; */
-  /* display: block; */
-}
+
 #cs-table__body {
-  /* width: 100%; */
-  /* direction: rtl; */
   overflow: visible overlay;
   flex-grow: 1;
 }
 
 .cs-table__row {
   width: 100%;
-  /* display: inline-block; */
   display: flex;
   justify-content: center;
   align-items: center;
-  /* align-content: stretch; */
 }
+
 #cs-table__head .cs-table__row {
   background-color: rgb(194, 188, 188);
 }
+
 .cs-table__row:nth-of-type(even) {
   background-color: rgb(223, 217, 217);
 }
@@ -99,39 +89,6 @@ const props = defineProps<{
   width: 20%;
   padding-top: 0.2%;
   padding-bottom: 0.2%;
-  /* background-color: red; */
   text-align: center;
-  /* display: table-cell;
-  vertical-align: middle; */
-}
-.cs-table__action-col {
-  /* min-width: 200px; */
-}
-.cs-table__connector-col {
-  /* min-width: 120px; */
-}
-.cs-table__status-col {
-  /* min-width: 120px; */
-}
-.cs-table__transaction-col {
-  /* min-width: 120px; */
-}
-.cs-table__name-col {
-  /* min-width: 120px; */
-}
-.cs-table__stopped-col {
-  /* min-width: 120px; */
-}
-.cs-table__registration-status-col {
-  /* min-width: 120px; */
-}
-.cs-table__model-col {
-  /* min-width: 120px; */
-}
-.cs-table__vendor-col {
-  /* min-width: 120px; */
-}
-.cs-table__firmware-col {
-  /* min-width: 120px; */
 }
 </style>
