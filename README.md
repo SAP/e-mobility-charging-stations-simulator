@@ -159,8 +159,8 @@ But the modifications to test have to be done to the files in the build target d
 | amperageLimitationOcppKey          |            | undefined                                                         | string                                                                                                                             | charging stations OCPP parameter key used to set the amperage limit, per phase for each connector on AC and global for DC                                                                             |
 | amperageLimitationUnit             | A/cA/dA/mA | A                                                                 | string                                                                                                                             | charging stations amperage limit unit                                                                                                                                                                 |
 | enableStatistics                   | true/false | true                                                              | boolean                                                                                                                            | enable charging stations statistics                                                                                                                                                                   |
-| mayAuthorizeAtRemoteStart          | true/false | true                                                              | boolean                                                                                                                            | always send authorize at remote start transaction when AuthorizeRemoteTxRequests is enabled                                                                                                           |
-| payloadSchemaValidation            | true/false | true                                                              | boolean                                                                                                                            | validate OCPP commands PDU against OCA JSON schemas                                                                                                                                                   |
+| mustAuthorizeAtRemoteStart         | true/false | true                                                              | boolean                                                                                                                            | always send authorize at remote start transaction when AuthorizeRemoteTxRequests is enabled                                                                                                           |
+| payloadSchemaValidation            | true/false | true                                                              | boolean                                                                                                                            | validate OCPP commands PDU against [OCA](https://www.openchargealliance.org/) JSON schemas                                                                                                            |
 | beginEndMeterValues                | true/false | false                                                             | boolean                                                                                                                            | enable Transaction.{Begin,End} MeterValues                                                                                                                                                            |
 | outOfOrderEndMeterValues           | true/false | false                                                             | boolean                                                                                                                            | send Transaction.End MeterValues out of order. Need to relax OCPP specifications strict compliance ('ocppStrictCompliance' parameter)                                                                 |
 | meteringPerTransaction             | true/false | true                                                              | boolean                                                                                                                            | enable metering history on a per transaction basis                                                                                                                                                    |
@@ -384,147 +384,149 @@ All kind of OCPP parameters are supported in a charging station configuration or
 
 ## UI protocol
 
-Protocol to control the simulator via a Websocket
+Protocol to control the simulator via a Websocket or HTTP server.
 
-### Protocol
+### WebSocket Protocol
 
-PDU stands for Protocol Data Unit
+PDU stands for Protocol Data Unit.
 
-Request:  
-[`uuid`, `ProcedureName`, `PDU`]
+- Request:  
+  [`uuid`, `ProcedureName`, `PDU`]  
+  `uuid`: String uniquely representing this request  
+  `ProcedureName`: The procedure to run on the simulator  
+  `PDU`: The parameters for said procedure
 
-`uuid`: String uniquely representing this request  
-`ProcedureName`: The procedure to run on the simulator  
-`PDU`: The parameters for said procedure
-
-Response:  
-[`uuid`, `PDU`]
-
-`uuid`: String uniquely linking the response to the request  
-`PDU`: Response data to requested procedure
+- Response:  
+  [`uuid`, `PDU`]  
+  `uuid`: String uniquely linking the response to the request  
+  `PDU`: Response data to requested procedure
 
 ### Version 0.0.1
 
-Set the HTTP header _Sec-Websocket-Protocol_ to `ui0.0.1`
+Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 #### Procedures
 
 ##### Start Simulator
 
-Request:  
-`ProcedureName`: 'startSimulator'  
-`PDU`: {}
+- Request:  
+  `ProcedureName`: 'startSimulator'  
+  `PDU`: {}
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
 
 ##### Stop Simulator
 
-Request:  
-`ProcedureName`: 'stopSimulator'  
-`PDU`: {}
+- Request:  
+  `ProcedureName`: 'stopSimulator'  
+  `PDU`: {}
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
 
 ##### List Charging Stations
 
-Request:  
-`ProcedureName`: 'listChargingStations'  
-`PDU`: {}
+- Request:  
+  `ProcedureName`: 'listChargingStations'  
+  `PDU`: {}
 
-Response:  
-`PDU`: {  
-`status`,  
-`index`: ChargingStationData,  
-...  
-`index`: ChargingStationData  
-}
+- Response:  
+  `PDU`: {  
+  `status`,  
+  `index`: ChargingStationData,  
+  ...  
+  `index`: ChargingStationData  
+  }
 
 ##### Start Transaction
 
-Request:  
-`ProcedureName`: 'startTransaction'  
-`PDU`: {  
-`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
-`connectorId`: connector id integer,  
-`idTag`: RFID tag string  
-}
+- Request:  
+  `ProcedureName`: 'startTransaction'  
+  `PDU`: {  
+  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+  `connectorId`: connector id integer,  
+  `idTag`: RFID tag string  
+  }
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
 
 ##### Stop Transaction
 
-Request:  
-`ProcedureName`: 'stopTransaction'  
-`PDU`: {  
-`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
-`transactionId`: transaction id integer  
-}
+- Request:  
+  `ProcedureName`: 'stopTransaction'  
+  `PDU`: {  
+  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+  `transactionId`: transaction id integer  
+  }
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
 
 ##### Start Charging Station
 
-Request:  
-`ProcedureName`: 'startChargingStation'  
-`PDU`: {  
-`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array
-}
+- Request:  
+  `ProcedureName`: 'startChargingStation'  
+  `PDU`: {  
+  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array
+  }
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
 
 ##### Stop Charging Station
 
-Request:  
-`ProcedureName`: 'stopChargingStation'  
-`PDU`: {  
-`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
-}
+- Request:  
+  `ProcedureName`: 'stopChargingStation'  
+  `PDU`: {  
+  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+  }
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
 
 ##### Open Connection
 
-Request:  
-`ProcedureName`: 'openConnection'  
-`PDU`: {  
-`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
-}
+- Request:  
+  `ProcedureName`: 'openConnection'  
+  `PDU`: {  
+  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+  }
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
 
 ##### Close Connection
 
-Request:  
-`ProcedureName`: 'closeConnection'  
-`PDU`: {  
-`hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
-}
+- Request:  
+  `ProcedureName`: 'closeConnection'  
+  `PDU`: {  
+  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+  }
 
-Response:  
-`PDU`: {  
-`status`  
-}
+- Response:  
+  `PDU`: {  
+  `status`  
+  }
+
+### HTTP Protocol
+
+A Postman or Advanced REST client collection to learn how to use the HTTP protocol to pilot the simulator is available.
 
 ## Support, Feedback, Contributing
 

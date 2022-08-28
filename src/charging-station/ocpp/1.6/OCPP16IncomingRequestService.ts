@@ -796,7 +796,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
             connectorStatus.idTagLocalAuthorized = true;
             authorized = true;
-          } else if (chargingStation.getMayAuthorizeAtRemoteStart()) {
+          } else if (chargingStation.getMustAuthorizeAtRemoteStart()) {
             connectorStatus.authorizeIdTag = commandPayload.idTag;
             const authorizeResponse: OCPP16AuthorizeResponse =
               await chargingStation.ocppRequestService.requestHandler<

@@ -349,7 +349,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     if (
       chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted &&
       chargingStation.getAuthorizeRemoteTxRequests() &&
-      chargingStation.getMayAuthorizeAtRemoteStart() &&
+      chargingStation.getMustAuthorizeAtRemoteStart() &&
       !chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized &&
       !chargingStation.getConnectorStatus(connectorId).idTagAuthorized
     ) {

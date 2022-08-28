@@ -178,8 +178,8 @@ export default class ChargingStation {
       : true;
   }
 
-  public getMayAuthorizeAtRemoteStart(): boolean | undefined {
-    return this.stationInfo.mayAuthorizeAtRemoteStart ?? true;
+  public getMustAuthorizeAtRemoteStart(): boolean | undefined {
+    return this.stationInfo.mustAuthorizeAtRemoteStart ?? true;
   }
 
   public getPayloadSchemaValidation(): boolean | undefined {

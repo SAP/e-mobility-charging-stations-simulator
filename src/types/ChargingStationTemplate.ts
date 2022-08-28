@@ -81,7 +81,7 @@ export default interface ChargingStationTemplate {
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
-  mayAuthorizeAtRemoteStart?: boolean;
+  mustAuthorizeAtRemoteStart?: boolean;
   payloadSchemaValidation?: boolean;
   amperageLimitationOcppKey?: string;
   amperageLimitationUnit?: AmpereUnits;
