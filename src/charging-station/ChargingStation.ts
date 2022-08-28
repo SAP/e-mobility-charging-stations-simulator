@@ -1515,7 +1515,7 @@ export default class ChargingStation {
     } catch (error) {
       // Log
       logger.error(
-        `${this.logPrefix()} Incoming OCPP '${
+        `${this.logPrefix()} Incoming OCPP command '${
           commandName ?? requestCommandName ?? null
         }' message '${data.toString()}' matching cached request '${JSON.stringify(
           this.requests.get(messageId)
@@ -1524,7 +1524,7 @@ export default class ChargingStation {
       );
       if (!(error instanceof OCPPError)) {
         logger.warn(
-          `${this.logPrefix()} Error thrown at incoming OCPP '${
+          `${this.logPrefix()} Error thrown at incoming OCPP command '${
             commandName ?? requestCommandName ?? null
           }' message '${data.toString()}' handling is not an OCPPError:`,
           error

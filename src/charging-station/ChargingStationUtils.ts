@@ -30,6 +30,8 @@ import Utils from '../utils/Utils';
 import type ChargingStation from './ChargingStation';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 
+const moduleName = 'ChargingStationUtils';
+
 export class ChargingStationUtils {
   private constructor() {
     // This is intentional
@@ -330,6 +332,7 @@ export class ChargingStationUtils {
     limit: number;
     matchingChargingProfile: ChargingProfile;
   } | null {
+    const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
     for (const chargingProfile of chargingProfiles) {
       // Set helpers
       const currentMoment = moment();
@@ -373,10 +376,7 @@ export class ChargingStationUtils {
               limit: schedulePeriod.limit,
               matchingChargingProfile: chargingProfile,
             };
-            logger.debug(
-              `${logPrefix} Matching charging profile found for power limitation: %j`,
-              result
-            );
+            logger.debug(debugLogMsg, result);
             return result;
           }
           // Find the right schedule period
@@ -390,10 +390,7 @@ export class ChargingStationUtils {
               limit: lastButOneSchedule.limit,
               matchingChargingProfile: chargingProfile,
             };
-            logger.debug(
-              `${logPrefix} Matching charging profile found for power limitation: %j`,
-              result
-            );
+            logger.debug(debugLogMsg, result);
             return result;
           }
           // Keep it
@@ -409,10 +406,7 @@ export class ChargingStationUtils {
               limit: lastButOneSchedule.limit,
               matchingChargingProfile: chargingProfile,
             };
-            logger.debug(
-              `${logPrefix} Matching charging profile found for power limitation: %j`,
-              result
-            );
+            logger.debug(debugLogMsg, result);
             return result;
           }
         }

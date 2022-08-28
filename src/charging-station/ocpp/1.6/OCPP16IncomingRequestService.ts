@@ -762,6 +762,15 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     const transactionConnectorId = commandPayload.connectorId;
     const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId);
     if (transactionConnectorId) {
+      const remoteStartTransactionLogMsg =
+        chargingStation.logPrefix() +
+        ' Transaction remotely STARTED on ' +
+        chargingStation.stationInfo.chargingStationId +
+        '#' +
+        transactionConnectorId.toString() +
+        " for idTag '" +
+        commandPayload.idTag +
+        "'";
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16StatusNotificationRequest,
         OCPP16StatusNotificationResponse
@@ -825,16 +834,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                   })
                 ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
               ) {
-                logger.debug(
-                  chargingStation.logPrefix() +
-                    ' Transaction remotely STARTED on ' +
-                    chargingStation.stationInfo.chargingStationId +
-                    '#' +
-                    transactionConnectorId.toString() +
-                    " for idTag '" +
-                    commandPayload.idTag +
-                    "'"
-                );
+                logger.debug(remoteStartTransactionLogMsg);
                 return Constants.OCPP_RESPONSE_ACCEPTED;
               }
               return this.notifyRemoteStartTransactionRejected(
@@ -875,16 +875,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               })
             ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
           ) {
-            logger.debug(
-              chargingStation.logPrefix() +
-                ' Transaction remotely STARTED on ' +
-                chargingStation.stationInfo.chargingStationId +
-                '#' +
-                transactionConnectorId.toString() +
-                " for idTag '" +
-                commandPayload.idTag +
-                "'"
-            );
+            logger.debug(remoteStartTransactionLogMsg);
             return Constants.OCPP_RESPONSE_ACCEPTED;
           }
           return this.notifyRemoteStartTransactionRejected(
@@ -934,12 +925,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       chargingStation.logPrefix() +
         ' Remote starting transaction REJECTED on connector Id ' +
         connectorId.toString() +
-        ', idTag ' +
+        ", idTag '" +
         idTag +
-        ', availability ' +
+        "', availability '" +
         chargingStation.getConnectorStatus(connectorId).availability +
-        ', status ' +
-        chargingStation.getConnectorStatus(connectorId).status
+        "', status '" +
+        chargingStation.getConnectorStatus(connectorId).status +
+        "'"
     );
     return Constants.OCPP_RESPONSE_REJECTED;
   }
