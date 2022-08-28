@@ -1,8 +1,8 @@
 export interface BaseConfig {
-  emobility: EMobilityConfig;
+  uiServer: UIServerConfig;
 }
 
-export interface EMobilityConfig {
+interface UIServerConfig {
   host: string;
   port: number;
   protocol: string;

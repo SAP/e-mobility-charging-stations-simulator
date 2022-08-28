@@ -90,12 +90,15 @@ export default class UIClient {
 
   private openWS(): void {
     this._ws = new WebSocket(
-      `ws://${config.emobility.host}:${config.emobility.port}`,
-      config.emobility.protocol
+      `ws://${config.uiServer.host}:${config.uiServer.port}`,
+      config.uiServer.protocol
     );
     this._ws.onmessage = this.responseHandler.bind(this);
-    this._ws.onerror = (error) => {
-      console.error('WebSocket error: ', error);
+    this._ws.onerror = (errorEvent) => {
+      console.error('WebSocket error: ', errorEvent);
+    };
+    this._ws.onclose = (closeEvent) => {
+      console.info('WebSocket close: ', closeEvent);
     };
   }
 

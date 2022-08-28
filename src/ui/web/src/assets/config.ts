@@ -1,7 +1,7 @@
 import type { BaseConfig } from '@/types/ConfigurationType';
 
 const config: BaseConfig = {
-  emobility: {
+  uiServer: {
     host: 'localhost',
     port: 8080,
     protocol: 'ui0.0.1',
