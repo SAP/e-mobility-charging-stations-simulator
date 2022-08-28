@@ -526,7 +526,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 ### HTTP Protocol
 
-A Postman or Advanced REST client collection to learn how to use the HTTP protocol to pilot the simulator is available.
+A Postman or [Insomnia](https://insomnia.rest/) collection, to learn how to use the HTTP protocol to pilot the simulator, is available.
 
 ## Support, Feedback, Contributing
 
