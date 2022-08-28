@@ -9,6 +9,7 @@ WORKDIR /usr/builder
 COPY package.json package-lock.json tsconfig.json rollup.config.mjs prepare.js build-requirements.js ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
+COPY docker/authorization-tags.json ./src/assets/authorization-tags.json
 RUN npm set progress=false && npm config set depth 0 && npm cache clean --force && npm install
 RUN npm run build
 
@@ -25,10 +26,9 @@ FROM node:lts-alpine
 ARG STACK_TRACE_LIMIT
 ARG MAX_OLD_SPACE_SIZE
 
-WORKDIR /usr/app
-
 ENV NODE_OPTIONS="--stack-trace-limit=${STACK_TRACE_LIMIT} --max-old-space-size=${MAX_OLD_SPACE_SIZE}"
 
+WORKDIR /usr/app
 COPY --from=builder /usr/builder/webui ./webui
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist

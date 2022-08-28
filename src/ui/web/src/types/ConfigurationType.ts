@@ -5,5 +5,5 @@ export interface BaseConfig {
 export interface EMobilityConfig {
   host: string;
   port: number;
-  protocol: 'ui0.0.1';
+  protocol: string;
 }

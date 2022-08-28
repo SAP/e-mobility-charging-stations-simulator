@@ -56,6 +56,7 @@ export class MessageChannelUtils {
       stopped: chargingStation.stopped,
       bootNotificationResponse: chargingStation.bootNotificationResponse,
       connectors: Array.from(chargingStation.connectors.values()).map(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
       ),
     };

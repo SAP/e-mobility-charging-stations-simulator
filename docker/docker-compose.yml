@@ -12,5 +12,7 @@ services:
         MAX_OLD_SPACE_SIZE: 1024
     networks:
       - ev_network
+    expose:
+      - 8080
     ports:
       - '3030:3030'

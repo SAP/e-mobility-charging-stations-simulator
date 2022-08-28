@@ -7,7 +7,6 @@
     "baseUrl": ".",
     "types": [
       "node",
-      "webpack-env",
       "mocha",
       "chai"
     ],
