@@ -292,15 +292,15 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
       chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = true;
       logger.debug(
-        `${chargingStation.logPrefix()} IdTag ${
+        `${chargingStation.logPrefix()} IdTag '${
           requestPayload.idTag
-        } authorized on connector ${authorizeConnectorId}`
+        }' authorized on connector ${authorizeConnectorId}`
       );
     } else {
       chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = false;
       delete chargingStation.getConnectorStatus(authorizeConnectorId).authorizeIdTag;
       logger.debug(
-        `${chargingStation.logPrefix()} IdTag ${requestPayload.idTag} refused with status '${
+        `${chargingStation.logPrefix()} IdTag '${requestPayload.idTag}' refused with status '${
           payload.idTagInfo.status
         }' on connector ${authorizeConnectorId}`
       );
@@ -465,8 +465,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           chargingStation.stationInfo.chargingStationId +
           '#' +
           connectorId.toString() +
-          ' for idTag ' +
-          requestPayload.idTag
+          " for idTag '" +
+          requestPayload.idTag +
+          "'"
       );
       if (chargingStation.stationInfo.powerSharedByConnectors) {
         chargingStation.powerDivider++;

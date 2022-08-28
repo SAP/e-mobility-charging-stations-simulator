@@ -281,6 +281,9 @@ export default class AutomaticTransactionGenerator {
     let startResponse: StartTransactionResponse;
     if (this.chargingStation.hasAuthorizedTags()) {
       const idTag = this.chargingStation.getRandomIdTag();
+      const startTransactionLogMsg = `${this.logPrefix(
+        connectorId
+      )} start transaction for idTag '${idTag}'`;
       if (this.getRequireAuthorize()) {
         this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
         // Authorize idTag
@@ -294,7 +297,7 @@ export default class AutomaticTransactionGenerator {
         this.connectorsStatus.get(connectorId).authorizeRequests++;
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests++;
-          logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
+          logger.info(startTransactionLogMsg);
           // Start transaction
           startResponse = await this.chargingStation.ocppRequestService.requestHandler<
             StartTransactionRequest,
@@ -310,7 +313,7 @@ export default class AutomaticTransactionGenerator {
         PerformanceStatistics.endMeasure(measureId, beginId);
         return authorizeResponse;
       }
-      logger.info(this.logPrefix(connectorId) + ' start transaction for idTag ' + idTag);
+      logger.info(startTransactionLogMsg);
       // Start transaction
       startResponse = await this.chargingStation.ocppRequestService.requestHandler<
         StartTransactionRequest,
@@ -322,7 +325,7 @@ export default class AutomaticTransactionGenerator {
       PerformanceStatistics.endMeasure(measureId, beginId);
       return startResponse;
     }
-    logger.info(this.logPrefix(connectorId) + ' start transaction without an idTag');
+    logger.info(`${this.logPrefix(connectorId)} start transaction without an idTag`);
     startResponse = await this.chargingStation.ocppRequestService.requestHandler<
       StartTransactionRequest,
       StartTransactionResponse

@@ -831,8 +831,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                     chargingStation.stationInfo.chargingStationId +
                     '#' +
                     transactionConnectorId.toString() +
-                    ' for idTag ' +
-                    commandPayload.idTag
+                    " for idTag '" +
+                    commandPayload.idTag +
+                    "'"
                 );
                 return Constants.OCPP_RESPONSE_ACCEPTED;
               }
@@ -880,8 +881,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 chargingStation.stationInfo.chargingStationId +
                 '#' +
                 transactionConnectorId.toString() +
-                ' for idTag ' +
-                commandPayload.idTag
+                " for idTag '" +
+                commandPayload.idTag +
+                "'"
             );
             return Constants.OCPP_RESPONSE_ACCEPTED;
           }

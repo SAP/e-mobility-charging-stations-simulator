@@ -108,7 +108,7 @@ export default class UIClient {
     resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void,
     reject: (reason?: any) => void
   ): void {
-    this._responseHandlers.set(id, { resolve, reject, procedureName });
+    this._responseHandlers.set(id, { procedureName, resolve, reject });
   }
 
   private getResponseHandler(id: string): ResponseHandler | undefined {
