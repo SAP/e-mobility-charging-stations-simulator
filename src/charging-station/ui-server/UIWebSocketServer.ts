@@ -3,12 +3,12 @@ import type { IncomingMessage } from 'http';
 import WebSocket from 'ws';
 
 import type { ServerOptions } from '../../types/ConfigurationData';
-import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
 import UIServiceFactory from './ui-services/UIServiceFactory';
+import { UIServiceUtils } from './ui-services/UIServiceUtils';
 
 const moduleName = 'UIWebSocketServer';
 
@@ -20,10 +20,16 @@ export default class UIWebSocketServer extends AbstractUIServer {
 
   public start(): void {
     this.server.on('connection', (socket: WebSocket, request: IncomingMessage): void => {
-      const protocolIndex = socket.protocol.indexOf(Protocol.UI);
-      const version = socket.protocol.substring(
-        protocolIndex + Protocol.UI.length
-      ) as ProtocolVersion;
+      const [protocol, version] = UIServiceUtils.getProtocolAndVersion(socket.protocol);
+      if (UIServiceUtils.isProtocolAndVersionSupported(protocol, version) === false) {
+        logger.error(
+          `${this.logPrefix(
+            moduleName,
+            'start.server.onconnection'
+          )} Unsupported UI protocol version: '${protocol}${version}'`
+        );
+        socket.close();
+      }
       if (!this.uiServices.has(version)) {
         this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
       }

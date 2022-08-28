@@ -13,17 +13,14 @@ export class UIServiceUtils {
     protocols: Set<string>,
     request: IncomingMessage
   ): string | false => {
-    let protocolIndex: number;
     let protocol: Protocol;
     let version: ProtocolVersion;
+    if (protocols.size === 0) {
+      return false;
+    }
     for (const fullProtocol of protocols) {
-      protocolIndex = fullProtocol.indexOf(Protocol.UI);
-      protocol = fullProtocol.substring(
-        protocolIndex,
-        protocolIndex + Protocol.UI.length
-      ) as Protocol;
-      version = fullProtocol.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion;
-      if (UIServiceUtils.isProtocolSupported(protocol, version) === true) {
+      [protocol, version] = UIServiceUtils.getProtocolAndVersion(fullProtocol);
+      if (UIServiceUtils.isProtocolAndVersionSupported(protocol, version) === true) {
         return fullProtocol;
       }
     }
@@ -35,8 +32,21 @@ export class UIServiceUtils {
     return false;
   };
 
-  public static isProtocolSupported = (protocol: Protocol, version: ProtocolVersion): boolean =>
+  public static isProtocolAndVersionSupported = (
+    protocol: Protocol,
+    version: ProtocolVersion
+  ): boolean =>
     Object.values(Protocol).includes(protocol) && Object.values(ProtocolVersion).includes(version);
+
+  public static getProtocolAndVersion = (protocolStr: string): [Protocol, ProtocolVersion] => {
+    const protocolIndex = protocolStr.indexOf(Protocol.UI);
+    const protocol = protocolStr.substring(
+      protocolIndex,
+      protocolIndex + Protocol.UI.length
+    ) as Protocol;
+    const version = protocolStr.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion;
+    return [protocol, version];
+  };
 
   public static isLoopback(address: string): boolean {
     const isLoopbackRegExp = new RegExp(

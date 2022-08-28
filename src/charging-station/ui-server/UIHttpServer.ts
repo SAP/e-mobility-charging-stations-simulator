@@ -80,7 +80,7 @@ export default class UIHttpServer extends AbstractUIServer {
     const uuid = Utils.generateUUID();
     this.responseHandlers.set(uuid, { procedureName, res });
     try {
-      if (UIServiceUtils.isProtocolSupported(protocol, version) === false) {
+      if (UIServiceUtils.isProtocolAndVersionSupported(protocol, version) === false) {
         throw new BaseError(`Unsupported UI protocol version: '/${protocol}/${version}'`);
       }
       req.on('error', (error) => {
