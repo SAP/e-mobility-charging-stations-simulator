@@ -50,8 +50,9 @@ const props = defineProps<{
 
 #cs-table__head,
 #cs-table__body {
+  height: fit-content;
   width: 100%;
-  min-width: 930px;
+  min-width: 100%;
   display: block;
 }
 

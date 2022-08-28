@@ -77,7 +77,7 @@ function stopSimulator(): void {
 
 #reload-button {
   flex: auto;
-  padding: 6px 14px;
+  padding: 5px 15px;
   background-color: rgb(25, 118, 210);
   border-radius: 5px;
   color: white;

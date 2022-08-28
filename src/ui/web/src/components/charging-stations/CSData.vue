@@ -46,7 +46,7 @@ function getHashId(): string {
   return props.chargingStation.hashId;
 }
 function getConnectors(): ConnectorStatus[] {
-  return props.chargingStation.connectors.slice(1);
+  return props.chargingStation.connectors?.slice(1);
 }
 function getInfo(): ChargingStationInfo {
   return props.chargingStation.stationInfo;
