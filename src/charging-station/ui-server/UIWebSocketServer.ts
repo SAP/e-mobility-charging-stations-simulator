@@ -3,6 +3,7 @@ import type { IncomingMessage } from 'http';
 import WebSocket from 'ws';
 
 import type { ServerOptions } from '../../types/ConfigurationData';
+import { WebSocketCloseEventStatusCode } from '../../types/WebSocket';
 import Configuration from '../../utils/Configuration';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
@@ -28,7 +29,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
             'start.server.onconnection'
           )} Unsupported UI protocol version: '${protocol}${version}'`
         );
-        socket.close();
+        socket.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
       if (!this.uiServices.has(version)) {
         this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));

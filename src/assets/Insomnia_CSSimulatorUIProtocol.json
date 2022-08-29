@@ -1,83 +1,15 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2022-08-29T11:38:05.322Z",
+  "__export_date": "2022-08-29T16:23:59.386Z",
   "__export_source": "insomnia.desktop.app:v2022.5.1",
   "resources": [
     {
-      "_id": "req_3f2a1a85326b4990b72f5f7f29ae335b",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772510776,
-      "created": 1661726116055,
-      "url": "http://localhost:8080/ui/0.0.1/startSimulator",
-      "name": "startSimulator",
-      "description": "",
-      "method": "POST",
-      "body": { "mimeType": "application/json", "text": "{}" },
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json",
-          "id": "pair_09b7c0032eac4b1e800c6eb253dc1525"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1661726116055,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
-      "_type": "request"
-    },
-    {
-      "_id": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "parentId": null,
-      "modified": 1661725672341,
-      "created": 1661725672341,
-      "name": "CSSimulatorUIProtocol",
-      "description": "",
-      "scope": "collection",
-      "_type": "workspace"
-    },
-    {
-      "_id": "req_ac03e4d4393249979b1a810a2be0b81b",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772511558,
-      "created": 1661726174432,
-      "url": "http://localhost:8080/ui/0.0.1/stopSimulator",
-      "name": "stopSimulator",
-      "description": "",
-      "method": "POST",
-      "body": { "mimeType": "application/json", "text": "{}" },
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json",
-          "id": "pair_7ea195d611f2460a8622e3c7c1784745"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -831363058027.5,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
-      "_type": "request"
-    },
-    {
-      "_id": "req_b45a09ba1d8c43c9aa51c1c3133a9a29",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772945838,
-      "created": 1661725809133,
-      "url": "http://localhost:8080/ui/0.0.1/listChargingStations",
+      "_id": "req_606dcee139984772877def40fcbb5c76",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789710105,
+      "created": 1661789624987,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/listChargingStations",
       "name": "listChargingStations",
       "description": "",
       "method": "POST",
@@ -102,11 +34,79 @@
       "_type": "request"
     },
     {
-      "_id": "req_2632a87238f54082850ba66437411d65",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772908059,
-      "created": 1661772447740,
-      "url": "http://localhost:8080/ui/0.0.1/startChargingStation",
+      "_id": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "parentId": null,
+      "modified": 1661790097981,
+      "created": 1661789624965,
+      "name": "CSSimulatorUIProtocolCollection",
+      "description": "",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "req_7d5f9506e7ac49208a4f960a7740663e",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789749584,
+      "created": 1661789624990,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/startSimulator",
+      "name": "startSimulator",
+      "description": "",
+      "method": "POST",
+      "body": { "mimeType": "application/json", "text": "{}" },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_09b7c0032eac4b1e800c6eb253dc1525"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1661726116055,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_59056be11534481c80a0b0da32e2a06a",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661790205997,
+      "created": 1661789624994,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopSimulator",
+      "name": "stopSimulator",
+      "description": "",
+      "method": "POST",
+      "body": { "mimeType": "application/json", "text": "{}" },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_7ea195d611f2460a8622e3c7c1784745"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -831363058027.5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_aad7fd6db4c64869b60048b915010efc",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789717758,
+      "created": 1661789624998,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/startChargingStation",
       "name": "startChargingStation",
       "description": "",
       "method": "POST",
@@ -134,11 +134,11 @@
       "_type": "request"
     },
     {
-      "_id": "req_dbf3765eeec149d588021fdfa7a13b0c",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772912638,
-      "created": 1661772535852,
-      "url": "http://localhost:8080/ui/0.0.1/stopChargingStation",
+      "_id": "req_d72d91cf3fb044179b8ae9d92a74f99c",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789742593,
+      "created": 1661789625002,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopChargingStation",
       "name": "stopChargingStation",
       "description": "",
       "method": "POST",
@@ -166,11 +166,11 @@
       "_type": "request"
     },
     {
-      "_id": "req_4d93c8b230684f99adba46cedd1ecce4",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772940329,
-      "created": 1661772632011,
-      "url": "http://localhost:8080/ui/0.0.1/openConnection",
+      "_id": "req_747f458d196f4681b5fe15204b0067aa",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789745162,
+      "created": 1661789625005,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/openConnection",
       "name": "openConnection",
       "description": "",
       "method": "POST",
@@ -198,11 +198,11 @@
       "_type": "request"
     },
     {
-      "_id": "req_123fda68c11b498ba22c387e11ed8a39",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772918491,
-      "created": 1661772712054,
-      "url": "http://localhost:8080/ui/0.0.1/closeConnection",
+      "_id": "req_401e6a62a33c4b6c90aaa2e019daab6d",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789746725,
+      "created": 1661789625014,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/closeConnection",
       "name": "closeConnection",
       "description": "",
       "method": "POST",
@@ -230,11 +230,11 @@
       "_type": "request"
     },
     {
-      "_id": "req_3e718ef350ca49978f204550679f07ef",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772962058,
-      "created": 1661772813211,
-      "url": "http://localhost:8080/ui/0.0.1/startTransaction",
+      "_id": "req_2f757efe92fb4936ad4fa4b6763f9293",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789747344,
+      "created": 1661789625017,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/startTransaction",
       "name": "startTransaction",
       "description": "",
       "method": "POST",
@@ -262,11 +262,11 @@
       "_type": "request"
     },
     {
-      "_id": "req_a16c0c88c227488a9032fa2f123bba62",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772964605,
-      "created": 1661772854635,
-      "url": "http://localhost:8080/ui/0.0.1/stopTransaction",
+      "_id": "req_7c285fb6cb6948a08235a6c73cbeb1f9",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789748170,
+      "created": 1661789625020,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopTransaction",
       "name": "stopTransaction",
       "description": "",
       "method": "POST",
@@ -294,10 +294,10 @@
       "_type": "request"
     },
     {
-      "_id": "env_0b8faad348acc4a8b0ce4ca96a37ac0c791a652e",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661772604409,
-      "created": 1661725672347,
+      "_id": "env_74b29d59b9f04298b97fc9750476a4ca",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661790143488,
+      "created": 1661789624970,
       "name": "Base Environment",
       "data": {},
       "dataPropertyOrder": {},
@@ -307,23 +307,36 @@
       "_type": "environment"
     },
     {
-      "_id": "jar_0b8faad348acc4a8b0ce4ca96a37ac0c791a652e",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661725672349,
-      "created": 1661725672349,
+      "_id": "jar_9c96e39753fb4bbd8a58b79d8f7bbc4e",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789624980,
+      "created": 1661789624980,
       "name": "Default Jar",
       "cookies": [],
       "_type": "cookie_jar"
     },
     {
-      "_id": "spc_626c356f2ccd48c7b4b16fb364f93b60",
-      "parentId": "wrk_641ff2a9a8b945c18d8d2741bf8eb38b",
-      "modified": 1661725672342,
-      "created": 1661725672342,
+      "_id": "spc_7d600570d68c46cd8fdac6ad70929fc3",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1661789625032,
+      "created": 1661789624984,
       "fileName": "CSSimulatorUIProtocol",
       "contents": "",
       "contentType": "yaml",
       "_type": "api_spec"
+    },
+    {
+      "_id": "env_2874a21c9c3d4747af649e3b6e237791",
+      "parentId": "env_74b29d59b9f04298b97fc9750476a4ca",
+      "modified": 1661790160526,
+      "created": 1661789624972,
+      "name": "CSSimulatorUIProtocolEnvironment",
+      "data": { "baseUrl": "http://localhost:8080", "protocol": "ui", "version": "0.0.1" },
+      "dataPropertyOrder": { "&": ["baseUrl", "protocol", "version"] },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1661789025528,
+      "_type": "environment"
     }
   ]
 }
