@@ -477,7 +477,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startChargingStation'  
   `PDU`: {  
-  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array
+  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
   }
 
 - Response:  
