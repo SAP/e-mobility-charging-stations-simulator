@@ -7,6 +7,50 @@
   },
   "item": [
     {
+      "name": "startSimulator",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/startSimulator",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{protocol}}", "{{version}}", "startSimulator"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "stopSimulator",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/stopSimulator",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{protocol}}", "{{version}}", "stopSimulator"]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "listChargingStations",
       "request": {
         "method": "POST",
@@ -68,50 +112,6 @@
           "raw": "{{baseUrl}}/{{protocol}}/{{version}}/stopChargingStation",
           "host": ["{{baseUrl}}"],
           "path": ["{{protocol}}", "{{version}}", "stopChargingStation"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "startSimulator",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/startSimulator",
-          "host": ["{{baseUrl}}"],
-          "path": ["{{protocol}}", "{{version}}", "startSimulator"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "stopSimulator",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/stopSimulator",
-          "host": ["{{baseUrl}}"],
-          "path": ["{{protocol}}", "{{version}}", "stopSimulator"]
         }
       },
       "response": []
