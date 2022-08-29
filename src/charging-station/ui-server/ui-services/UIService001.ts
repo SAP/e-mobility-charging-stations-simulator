@@ -15,14 +15,6 @@ export default class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {
     super(uiServer, ProtocolVersion['0.0.1']);
     this.requestHandlers.set(
-      ProcedureName.START_TRANSACTION,
-      this.handleStartTransaction.bind(this) as ProtocolRequestHandler
-    );
-    this.requestHandlers.set(
-      ProcedureName.STOP_TRANSACTION,
-      this.handleStopTransaction.bind(this) as ProtocolRequestHandler
-    );
-    this.requestHandlers.set(
       ProcedureName.START_CHARGING_STATION,
       this.handleStartChargingStation.bind(this) as ProtocolRequestHandler
     );
@@ -38,22 +30,22 @@ export default class UIService001 extends AbstractUIService {
       ProcedureName.CLOSE_CONNECTION,
       this.handleCloseConnection.bind(this) as ProtocolRequestHandler
     );
-  }
-
-  private handleStartTransaction(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
-      uuid,
-      BroadcastChannelProcedureName.START_TRANSACTION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
-  }
-
-  private handleStopTransaction(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
-      uuid,
-      BroadcastChannelProcedureName.STOP_TRANSACTION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+    this.requestHandlers.set(
+      ProcedureName.START_TRANSACTION,
+      this.handleStartTransaction.bind(this) as ProtocolRequestHandler
+    );
+    this.requestHandlers.set(
+      ProcedureName.STOP_TRANSACTION,
+      this.handleStopTransaction.bind(this) as ProtocolRequestHandler
+    );
+    this.requestHandlers.set(
+      ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+      this.handleStartAutomaticTransactionGenerator.bind(this) as ProtocolRequestHandler
+    );
+    this.requestHandlers.set(
+      ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+      this.handleStopAutomaticTransactionGenerator.bind(this) as ProtocolRequestHandler
+    );
   }
 
   private handleStartChargingStation(uuid: string, payload: RequestPayload): void {
@@ -84,6 +76,38 @@ export default class UIService001 extends AbstractUIService {
     this.uiServiceWorkerBroadcastChannel.sendRequest([
       uuid,
       BroadcastChannelProcedureName.CLOSE_CONNECTION,
+      payload as BroadcastChannelRequestPayload,
+    ]);
+  }
+
+  private handleStartTransaction(uuid: string, payload: RequestPayload): void {
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
+      uuid,
+      BroadcastChannelProcedureName.START_TRANSACTION,
+      payload as BroadcastChannelRequestPayload,
+    ]);
+  }
+
+  private handleStopTransaction(uuid: string, payload: RequestPayload): void {
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
+      uuid,
+      BroadcastChannelProcedureName.STOP_TRANSACTION,
+      payload as BroadcastChannelRequestPayload,
+    ]);
+  }
+
+  private handleStartAutomaticTransactionGenerator(uuid: string, payload: RequestPayload): void {
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
+      uuid,
+      BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+      payload as BroadcastChannelRequestPayload,
+    ]);
+  }
+
+  private handleStopAutomaticTransactionGenerator(uuid: string, payload: RequestPayload): void {
+    this.uiServiceWorkerBroadcastChannel.sendRequest([
+      uuid,
+      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
       payload as BroadcastChannelRequestPayload,
     ]);
   }

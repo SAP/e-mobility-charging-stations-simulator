@@ -105,6 +105,18 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     requestPayload: BroadcastChannelRequestPayload
   ): Promise<CommandResponse | undefined> {
     switch (command) {
+      case BroadcastChannelProcedureName.START_CHARGING_STATION:
+        this.chargingStation.start();
+        break;
+      case BroadcastChannelProcedureName.STOP_CHARGING_STATION:
+        await this.chargingStation.stop();
+        break;
+      case BroadcastChannelProcedureName.OPEN_CONNECTION:
+        this.chargingStation.openWSConnection();
+        break;
+      case BroadcastChannelProcedureName.CLOSE_CONNECTION:
+        this.chargingStation.closeWSConnection();
+        break;
       case BroadcastChannelProcedureName.START_TRANSACTION:
         return this.chargingStation.ocppRequestService.requestHandler<
           StartTransactionRequest,
@@ -125,17 +137,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           idTag: this.chargingStation.getTransactionIdTag(requestPayload.transactionId),
           reason: StopTransactionReason.NONE,
         });
-      case BroadcastChannelProcedureName.START_CHARGING_STATION:
-        this.chargingStation.start();
+      case BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR:
+        this.chargingStation.startAutomaticTransactionGenerator();
         break;
-      case BroadcastChannelProcedureName.STOP_CHARGING_STATION:
-        await this.chargingStation.stop();
-        break;
-      case BroadcastChannelProcedureName.OPEN_CONNECTION:
-        this.chargingStation.openWSConnection();
-        break;
-      case BroadcastChannelProcedureName.CLOSE_CONNECTION:
-        this.chargingStation.closeWSConnection();
+      case BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR:
+        this.chargingStation.stopAutomaticTransactionGenerator();
         break;
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

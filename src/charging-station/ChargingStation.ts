@@ -503,7 +503,9 @@ export default class ChargingStation {
             this.initialize();
             // Restart the ATG
             this.stopAutomaticTransactionGenerator();
-            this.startAutomaticTransactionGenerator();
+            if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable) {
+              this.startAutomaticTransactionGenerator();
+            }
             if (this.getEnableStatistics()) {
               this.performanceStatistics.restart();
             } else {
@@ -743,6 +745,25 @@ export default class ChargingStation {
     if (this.isWebSocketConnectionOpened()) {
       this.wsConnection.close();
       this.wsConnection = null;
+    }
+  }
+
+  public startAutomaticTransactionGenerator() {
+    if (!this.automaticTransactionGenerator) {
+      this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
+        this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
+        this
+      );
+    }
+    if (!this.automaticTransactionGenerator.started) {
+      this.automaticTransactionGenerator.start();
+    }
+  }
+
+  public stopAutomaticTransactionGenerator(): void {
+    if (this.automaticTransactionGenerator?.started) {
+      this.automaticTransactionGenerator.stop();
+      this.automaticTransactionGenerator = null;
     }
   }
 
@@ -1745,27 +1766,8 @@ export default class ChargingStation {
       }
     }
     // Start the ATG
-    this.startAutomaticTransactionGenerator();
-  }
-
-  private startAutomaticTransactionGenerator() {
     if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable) {
-      if (!this.automaticTransactionGenerator) {
-        this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
-          this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
-          this
-        );
-      }
-      if (!this.automaticTransactionGenerator.started) {
-        this.automaticTransactionGenerator.start();
-      }
-    }
-  }
-
-  private stopAutomaticTransactionGenerator(): void {
-    if (this.automaticTransactionGenerator?.started) {
-      this.automaticTransactionGenerator.stop();
-      this.automaticTransactionGenerator = null;
+      this.startAutomaticTransactionGenerator();
     }
   }
 
@@ -1777,42 +1779,44 @@ export default class ChargingStation {
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop ongoing transactions
-    if (this.automaticTransactionGenerator?.configuration?.enable) {
-      this.stopAutomaticTransactionGenerator();
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted) {
-          const transactionId = this.getConnectorStatus(connectorId).transactionId;
-          if (
-            this.getBeginEndMeterValues() &&
-            this.getOcppStrictCompliance() &&
-            !this.getOutOfOrderEndMeterValues()
-          ) {
-            // FIXME: Implement OCPP version agnostic helpers
-            const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
-              this,
-              connectorId,
-              this.getEnergyActiveImportRegisterByTransactionId(transactionId)
-            );
-            await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
-              this,
-              RequestCommand.METER_VALUES,
-              {
+    if (this.getNumberOfRunningTransactions() > 0) {
+      if (this.automaticTransactionGenerator?.started) {
+        this.stopAutomaticTransactionGenerator();
+      } else {
+        for (const connectorId of this.connectors.keys()) {
+          if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted) {
+            const transactionId = this.getConnectorStatus(connectorId).transactionId;
+            if (
+              this.getBeginEndMeterValues() &&
+              this.getOcppStrictCompliance() &&
+              !this.getOutOfOrderEndMeterValues()
+            ) {
+              // FIXME: Implement OCPP version agnostic helpers
+              const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                this,
                 connectorId,
-                transactionId,
-                meterValue: [transactionEndMeterValue],
-              }
-            );
+                this.getEnergyActiveImportRegisterByTransactionId(transactionId)
+              );
+              await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+                this,
+                RequestCommand.METER_VALUES,
+                {
+                  connectorId,
+                  transactionId,
+                  meterValue: [transactionEndMeterValue],
+                }
+              );
+            }
+            await this.ocppRequestService.requestHandler<
+              StopTransactionRequest,
+              StopTransactionResponse
+            >(this, RequestCommand.STOP_TRANSACTION, {
+              transactionId,
+              meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+              idTag: this.getTransactionIdTag(transactionId),
+              reason,
+            });
           }
-          await this.ocppRequestService.requestHandler<
-            StopTransactionRequest,
-            StopTransactionResponse
-          >(this, RequestCommand.STOP_TRANSACTION, {
-            transactionId,
-            meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
-            idTag: this.getTransactionIdTag(transactionId),
-            reason,
-          });
         }
       }
     }
