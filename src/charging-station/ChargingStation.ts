@@ -96,12 +96,12 @@ export default class ChargingStation {
   public performanceStatistics!: PerformanceStatistics;
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
+  public bootNotificationRequest!: BootNotificationRequest;
   public bootNotificationResponse!: BootNotificationResponse | null;
   public powerDivider!: number;
   private readonly index: number;
   private configurationFile!: string;
   private configurationFileHash!: string;
-  private bootNotificationRequest!: BootNotificationRequest;
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
@@ -150,10 +150,6 @@ export default class ChargingStation {
         ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())
       } |`
     );
-  }
-
-  public getBootNotificationRequest(): BootNotificationRequest {
-    return this.bootNotificationRequest;
   }
 
   public getRandomIdTag(): string {
@@ -707,8 +703,15 @@ export default class ChargingStation {
         break;
     }
 
+    if (this.isWebSocketConnectionOpened()) {
+      logger.warn(
+        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.toString()} is already opened`
+      );
+      return;
+    }
+
     logger.info(
-      this.logPrefix() + ' Open OCPP connection to URL ' + this.wsConnectionUrl.toString()
+      `${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.toString()}`
     );
 
     this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);

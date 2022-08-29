@@ -1169,17 +1169,17 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 chargingStation,
                 OCPP16RequestCommand.BOOT_NOTIFICATION,
                 {
-                  chargePointModel: chargingStation.getBootNotificationRequest().chargePointModel,
-                  chargePointVendor: chargingStation.getBootNotificationRequest().chargePointVendor,
+                  chargePointModel: chargingStation.bootNotificationRequest.chargePointModel,
+                  chargePointVendor: chargingStation.bootNotificationRequest.chargePointVendor,
                   chargeBoxSerialNumber:
-                    chargingStation.getBootNotificationRequest().chargeBoxSerialNumber,
-                  firmwareVersion: chargingStation.getBootNotificationRequest().firmwareVersion,
+                    chargingStation.bootNotificationRequest.chargeBoxSerialNumber,
+                  firmwareVersion: chargingStation.bootNotificationRequest.firmwareVersion,
                   chargePointSerialNumber:
-                    chargingStation.getBootNotificationRequest().chargePointSerialNumber,
-                  iccid: chargingStation.getBootNotificationRequest().iccid,
-                  imsi: chargingStation.getBootNotificationRequest().imsi,
-                  meterSerialNumber: chargingStation.getBootNotificationRequest().meterSerialNumber,
-                  meterType: chargingStation.getBootNotificationRequest().meterType,
+                    chargingStation.bootNotificationRequest.chargePointSerialNumber,
+                  iccid: chargingStation.bootNotificationRequest.iccid,
+                  imsi: chargingStation.bootNotificationRequest.imsi,
+                  meterSerialNumber: chargingStation.bootNotificationRequest.meterSerialNumber,
+                  meterType: chargingStation.bootNotificationRequest.meterType,
                 },
                 { skipBufferingOnError: true, triggerMessage: true }
               )
