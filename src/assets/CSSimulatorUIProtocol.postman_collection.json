@@ -203,6 +203,50 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "startAutomaticTransactionGenerator",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"hashIds\": [\n        \"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/startAutomaticTransactionGenerator",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{protocol}}", "{{version}}", "startAutomaticTransactionGenerator"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "stopAutomaticTransactionGenerator",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"hashIds\": [\n        \"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/startAutomaticTransactionGenerator",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{protocol}}", "{{version}}", "startAutomaticTransactionGenerator"]
+        }
+      },
+      "response": []
     }
   ],
   "event": [
