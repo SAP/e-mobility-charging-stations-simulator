@@ -118,7 +118,7 @@ export default abstract class AbstractUIService {
     // TODO: remove cast to unknown
     return {
       status: ResponseStatus.SUCCESS,
-      ...Array.from(this.uiServer.chargingStations.values()),
+      ...[...this.uiServer.chargingStations.values()],
     } as unknown as ResponsePayload;
   }
 
