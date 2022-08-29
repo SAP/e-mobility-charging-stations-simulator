@@ -748,7 +748,7 @@ export default class ChargingStation {
     }
   }
 
-  public startAutomaticTransactionGenerator() {
+  public startAutomaticTransactionGenerator(): void {
     if (!this.automaticTransactionGenerator) {
       this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
         this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
@@ -767,7 +767,7 @@ export default class ChargingStation {
     }
   }
 
-  private flushMessageBuffer() {
+  private flushMessageBuffer(): void {
     if (this.messageBuffer.size > 0) {
       this.messageBuffer.forEach((message) => {
         // TODO: evaluate the need to track performance
