@@ -386,6 +386,10 @@ All kind of OCPP parameters are supported in a charging station configuration or
 
 Protocol to control the simulator via a Websocket or HTTP server.
 
+### HTTP Protocol
+
+A Postman or [Insomnia](https://insomnia.rest/) collection, to learn how to use the HTTP protocol to pilot the simulator, is available in [src/assets](./src/assets/) directory.
+
 ### WebSocket Protocol
 
 PDU stands for Protocol Data Unit.
@@ -523,10 +527,6 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `PDU`: {  
   `status`  
   }
-
-### HTTP Protocol
-
-A Postman or [Insomnia](https://insomnia.rest/) collection, to learn how to use the HTTP protocol to pilot the simulator, is available.
 
 ## Support, Feedback, Contributing
 
