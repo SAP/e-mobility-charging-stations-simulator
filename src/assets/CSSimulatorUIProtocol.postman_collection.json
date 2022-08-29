@@ -241,9 +241,9 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/startAutomaticTransactionGenerator",
+          "raw": "{{baseUrl}}/{{protocol}}/{{version}}/stopAutomaticTransactionGenerator",
           "host": ["{{baseUrl}}"],
-          "path": ["{{protocol}}", "{{version}}", "startAutomaticTransactionGenerator"]
+          "path": ["{{protocol}}", "{{version}}", "stopAutomaticTransactionGenerator"]
         }
       },
       "response": []
