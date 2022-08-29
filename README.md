@@ -405,13 +405,13 @@ PDU stands for Protocol Data Unit.
   `uuid`: String uniquely linking the response to the request  
   `PDU`: Response data to requested procedure
 
-### Version 0.0.1
+#### Version 0.0.1
 
 Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
-#### Procedures
+##### Procedures
 
-##### Start Simulator
+###### Start Simulator
 
 - Request:  
   `ProcedureName`: 'startSimulator'  
@@ -422,7 +422,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`  
   }
 
-##### Stop Simulator
+###### Stop Simulator
 
 - Request:  
   `ProcedureName`: 'stopSimulator'  
@@ -433,7 +433,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`  
   }
 
-##### List Charging Stations
+###### List Charging Stations
 
 - Request:  
   `ProcedureName`: 'listChargingStations'  
@@ -447,7 +447,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `index`: ChargingStationData  
   }
 
-##### Start Transaction
+###### Start Transaction
 
 - Request:  
   `ProcedureName`: 'startTransaction'  
@@ -462,7 +462,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`  
   }
 
-##### Stop Transaction
+###### Stop Transaction
 
 - Request:  
   `ProcedureName`: 'stopTransaction'  
@@ -476,7 +476,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`  
   }
 
-##### Start Charging Station
+###### Start Charging Station
 
 - Request:  
   `ProcedureName`: 'startChargingStation'  
@@ -489,7 +489,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`  
   }
 
-##### Stop Charging Station
+###### Stop Charging Station
 
 - Request:  
   `ProcedureName`: 'stopChargingStation'  
@@ -502,7 +502,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`  
   }
 
-##### Open Connection
+###### Open Connection
 
 - Request:  
   `ProcedureName`: 'openConnection'  
@@ -515,7 +515,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`  
   }
 
-##### Close Connection
+###### Close Connection
 
 - Request:  
   `ProcedureName`: 'closeConnection'  
