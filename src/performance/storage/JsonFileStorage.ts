@@ -7,6 +7,7 @@ import lockfile from 'proper-lockfile';
 import { FileType } from '../../types/FileType';
 import type Statistics from '../../types/Statistics';
 import FileUtils from '../../utils/FileUtils';
+import Utils from '../../utils/Utils';
 import { Storage } from './Storage';
 
 export class JsonFileStorage extends Storage {
@@ -30,19 +31,7 @@ export class JsonFileStorage extends Storage {
           performanceRecords.push(performanceStatistics);
           fs.writeFileSync(
             this.dbName,
-            JSON.stringify(
-              performanceRecords,
-              (key, value) => {
-                if (value instanceof Map) {
-                  return {
-                    dataType: 'Map',
-                    value: [...value],
-                  };
-                }
-                return value as Statistics;
-              },
-              2
-            ),
+            Utils.JSONStringifyWithMapSupport(performanceRecords, 2),
             'utf8'
           );
         } catch (error) {

@@ -238,4 +238,23 @@ export default class Utils {
   public static secureRandom(): number {
     return crypto.randomBytes(4).readUInt32LE() / 0x100000000;
   }
+
+  public static JSONStringifyWithMapSupport(
+    obj: Record<string, unknown> | Record<string, unknown>[],
+    space?: number
+  ): string {
+    return JSON.stringify(
+      obj,
+      (key, value: Record<string, unknown>) => {
+        if (value instanceof Map) {
+          return {
+            dataType: 'Map',
+            value: [...value],
+          };
+        }
+        return value;
+      },
+      space
+    );
+  }
 }
