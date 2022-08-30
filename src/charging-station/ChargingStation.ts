@@ -331,22 +331,18 @@ export default class ChargingStation {
     }
   }
 
-  public getEnergyActiveImportRegisterByTransactionId(transactionId: number): number {
-    const transactionConnectorStatus = this.getConnectorStatus(
-      this.getConnectorIdByTransactionId(transactionId)
+  public getEnergyActiveImportRegisterByTransactionId(
+    transactionId: number,
+    meterStop = false
+  ): number {
+    return this.getEnergyActiveImportRegister(
+      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)),
+      meterStop
     );
-    if (this.getMeteringPerTransaction()) {
-      return transactionConnectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0;
-    }
-    return transactionConnectorStatus?.energyActiveImportRegisterValue ?? 0;
   }
 
   public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number {
-    const connectorStatus = this.getConnectorStatus(connectorId);
-    if (this.getMeteringPerTransaction()) {
-      return connectorStatus?.transactionEnergyActiveImportRegisterValue ?? 0;
-    }
-    return connectorStatus?.energyActiveImportRegisterValue ?? 0;
+    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId));
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
@@ -1577,6 +1573,24 @@ export default class ChargingStation {
     logger.error(this.logPrefix() + ' WebSocket error:', error);
   }
 
+  private getEnergyActiveImportRegister(
+    connectorStatus: ConnectorStatus,
+    meterStop = false
+  ): number {
+    if (this.getMeteringPerTransaction()) {
+      return (
+        (meterStop === true
+          ? Math.round(connectorStatus?.transactionEnergyActiveImportRegisterValue)
+          : connectorStatus?.transactionEnergyActiveImportRegisterValue) ?? 0
+      );
+    }
+    return (
+      (meterStop === true
+        ? Math.round(connectorStatus?.energyActiveImportRegisterValue)
+        : connectorStatus?.energyActiveImportRegisterValue) ?? 0
+    );
+  }
+
   private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean | undefined {
     const localStationInfo = stationInfo ?? this.stationInfo;
     return !Utils.isUndefined(localStationInfo.useConnectorId0)
@@ -1811,7 +1825,7 @@ export default class ChargingStation {
               StopTransactionResponse
             >(this, RequestCommand.STOP_TRANSACTION, {
               transactionId,
-              meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+              meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
               idTag: this.getTransactionIdTag(transactionId),
               reason,
             });

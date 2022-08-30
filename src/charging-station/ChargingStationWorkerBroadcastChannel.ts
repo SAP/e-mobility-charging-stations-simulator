@@ -133,7 +133,8 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
           transactionId: requestPayload.transactionId,
           meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-            requestPayload.transactionId
+            requestPayload.transactionId,
+            true
           ),
           idTag: this.chargingStation.getTransactionIdTag(requestPayload.transactionId),
           reason: StopTransactionReason.NONE,

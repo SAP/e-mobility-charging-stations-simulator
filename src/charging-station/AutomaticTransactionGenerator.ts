@@ -369,7 +369,10 @@ export default class AutomaticTransactionGenerator {
         StopTransactionResponse
       >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
         transactionId,
-        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
+          transactionId,
+          true
+        ),
         idTag: this.chargingStation.getTransactionIdTag(transactionId),
         reason,
       });
