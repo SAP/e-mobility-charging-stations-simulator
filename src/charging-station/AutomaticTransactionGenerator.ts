@@ -216,7 +216,7 @@ export default class AutomaticTransactionGenerator {
         )
     );
     logger.debug(
-      `${this.logPrefix(connectorId)} connector status %j`,
+      `${this.logPrefix(connectorId)} connector status: %j`,
       this.connectorsStatus.get(connectorId)
     );
   }
