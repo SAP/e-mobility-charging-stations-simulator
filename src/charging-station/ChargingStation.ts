@@ -84,7 +84,6 @@ import type OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
 
 export default class ChargingStation {
-  public hashId!: string;
   public readonly templateFile: string;
   public authorizedTagsCache: AuthorizedTagsCache;
   public stationInfo!: ChargingStationInfo;
@@ -841,6 +840,7 @@ export default class ChargingStation {
     );
     const stationInfo: ChargingStationInfo =
       ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);
+    stationInfo.hashId = ChargingStationUtils.getHashId(this.index, stationTemplate);
     stationInfo.chargingStationId = ChargingStationUtils.getChargingStationId(
       this.index,
       stationTemplate
@@ -950,20 +950,19 @@ export default class ChargingStation {
   }
 
   private initialize(): void {
-    this.hashId = ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile());
-    logger.info(`${this.logPrefix()} Charging station hashId '${this.hashId}'`);
-    this.configurationFile = path.join(
-      path.dirname(this.templateFile.replace('station-templates', 'configurations')),
-      this.hashId + '.json'
-    );
     this.stationInfo = this.getStationInfo();
     this.saveStationInfo();
+    logger.info(`${this.logPrefix()} Charging station hashId '${this.stationInfo.hashId}'`);
+    this.configurationFile = path.join(
+      path.dirname(this.templateFile.replace('station-templates', 'configurations')),
+      this.stationInfo.hashId + '.json'
+    );
     // Avoid duplication of connectors related information in RAM
     this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
     if (this.getEnableStatistics()) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
-        this.hashId,
+        this.stationInfo.hashId,
         this.stationInfo.chargingStationId,
         this.configuredSupervisionUrl
       );

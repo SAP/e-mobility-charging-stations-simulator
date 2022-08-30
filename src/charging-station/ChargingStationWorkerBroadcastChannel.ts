@@ -44,13 +44,14 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
 
     if (
       requestPayload?.hashId === undefined &&
-      (requestPayload?.hashIds as string[])?.includes(this.chargingStation.hashId) === false
+      (requestPayload?.hashIds as string[])?.includes(this.chargingStation.stationInfo.hashId) ===
+        false
     ) {
       return;
     }
     if (
       requestPayload?.hashIds === undefined &&
-      requestPayload?.hashId !== this.chargingStation.hashId
+      requestPayload?.hashId !== this.chargingStation.stationInfo.hashId
     ) {
       return;
     }
@@ -66,12 +67,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       commandResponse = await this.commandHandler(command, requestPayload);
       if (commandResponse === undefined) {
         responsePayload = {
-          hashId: this.chargingStation.hashId,
+          hashId: this.chargingStation.stationInfo.hashId,
           status: ResponseStatus.SUCCESS,
         };
       } else {
         responsePayload = {
-          hashId: this.chargingStation.hashId,
+          hashId: this.chargingStation.stationInfo.hashId,
           status: this.commandResponseToResponseStatus(commandResponse),
         };
       }
@@ -81,7 +82,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         error
       );
       responsePayload = {
-        hashId: this.chargingStation.hashId,
+        hashId: this.chargingStation.stationInfo.hashId,
         status: ResponseStatus.FAILURE,
         command,
         requestPayload,

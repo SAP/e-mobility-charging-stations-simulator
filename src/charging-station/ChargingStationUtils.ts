@@ -240,7 +240,7 @@ export class ChargingStationUtils {
     delete stationTemplate.chargeBoxSerialNumberPrefix;
     delete stationTemplate.chargePointSerialNumberPrefix;
     delete stationTemplate.meterSerialNumberPrefix;
-    return stationTemplate;
+    return stationTemplate as unknown as ChargingStationInfo;
   }
 
   public static createStationInfoHash(stationInfo: ChargingStationInfo): void {

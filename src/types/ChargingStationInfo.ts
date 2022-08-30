@@ -11,6 +11,7 @@ export default interface ChargingStationInfo
     | 'chargePointSerialNumberPrefix'
     | 'meterSerialNumberPrefix'
   > {
+  hashId: string;
   infoHash?: string;
   chargingStationId?: string;
   chargeBoxSerialNumber?: string;

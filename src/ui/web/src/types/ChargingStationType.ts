@@ -1,7 +1,6 @@
 import type { JsonObject } from './JsonType';
 
 export type ChargingStationData = {
-  hashId: string;
   stationInfo: ChargingStationInfo;
   stopped: boolean;
   bootNotificationResponse: BootNotificationResponse;
@@ -9,6 +8,7 @@ export type ChargingStationData = {
 };
 
 export type ChargingStationInfo = {
+  hashId: string;
   chargingStationId?: string;
   chargePointModel: string;
   chargePointVendor: string;

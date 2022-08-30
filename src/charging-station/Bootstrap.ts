@@ -223,17 +223,17 @@ export class Bootstrap {
   }
 
   private workerEventStarted(data: ChargingStationData) {
-    this.uiServer?.chargingStations.set(data.hashId, data);
+    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     ++this.numberOfStartedChargingStations;
   }
 
   private workerEventStopped(data: ChargingStationData) {
-    this.uiServer?.chargingStations.set(data.hashId, data);
+    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     --this.numberOfStartedChargingStations;
   }
 
   private workerEventUpdated(data: ChargingStationData) {
-    this.uiServer?.chargingStations.set(data.hashId, data);
+    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
   }
 
   private workerEventPerformanceStatistics = (data: Statistics) => {

@@ -51,7 +51,6 @@ export class MessageChannelUtils {
     chargingStation: ChargingStation
   ): ChargingStationData {
     return {
-      hashId: chargingStation.hashId,
       stationInfo: chargingStation.stationInfo,
       stopped: chargingStation.stopped,
       bootNotificationResponse: chargingStation.bootNotificationResponse,

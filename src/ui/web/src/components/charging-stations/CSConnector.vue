@@ -32,8 +32,8 @@ import type { ConnectorStatus } from '@/types/ChargingStationType';
 const props = defineProps<{
   hashId: string;
   connector: ConnectorStatus;
-  transactionId?: number;
   connectorId: number;
+  transactionId?: number;
   idTag?: string;
 }>();
 

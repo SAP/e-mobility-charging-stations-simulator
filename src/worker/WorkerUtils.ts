@@ -1,3 +1,5 @@
+import { threadId } from 'worker_threads';
+
 import chalk from 'chalk';
 
 export class WorkerUtils {
@@ -7,7 +9,7 @@ export class WorkerUtils {
 
   public static defaultExitHandler = (code: number): void => {
     if (code !== 0) {
-      console.error(chalk.red(`Worker stopped with exit code ${code}`));
+      console.error(chalk.red(`Worker ${threadId} stopped with exit code ${code}`));
     }
   };
 }

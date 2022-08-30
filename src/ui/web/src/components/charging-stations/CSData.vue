@@ -42,14 +42,14 @@ const props = defineProps<{
 //   idTag: '',
 // });
 
-function getHashId(): string {
-  return props.chargingStation.hashId;
-}
 function getConnectors(): ConnectorStatus[] {
   return props.chargingStation.connectors?.slice(1);
 }
 function getInfo(): ChargingStationInfo {
   return props.chargingStation.stationInfo;
+}
+function getHashId(): string {
+  return getInfo().hashId;
 }
 function getId(): string {
   return Utils.ifUndefined<string>(getInfo().chargingStationId, 'Ø');

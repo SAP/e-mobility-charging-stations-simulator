@@ -49,16 +49,16 @@ export default class AutomaticTransactionGenerator {
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
     chargingStation: ChargingStation
   ): AutomaticTransactionGenerator {
-    if (!AutomaticTransactionGenerator.instances.has(chargingStation.hashId)) {
+    if (!AutomaticTransactionGenerator.instances.has(chargingStation.stationInfo.hashId)) {
       AutomaticTransactionGenerator.instances.set(
-        chargingStation.hashId,
+        chargingStation.stationInfo.hashId,
         new AutomaticTransactionGenerator(
           automaticTransactionGeneratorConfiguration,
           chargingStation
         )
       );
     }
-    return AutomaticTransactionGenerator.instances.get(chargingStation.hashId);
+    return AutomaticTransactionGenerator.instances.get(chargingStation.stationInfo.hashId);
   }
 
   public start(): void {
