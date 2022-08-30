@@ -1,6 +1,6 @@
 <template>
   <Modal :visibility="props.isVisible">
-    <div class="card-info">vendor: {{ props.info.chargePointVendor }}</div>
+    <div class="card-info">vendor: {{ props.stationInfo.chargePointVendor }}</div>
   </Modal>
 </template>
 
@@ -9,8 +9,8 @@ import Modal from '@/components/Modal.vue';
 import type { ChargingStationInfo } from '@/types/ChargingStationType';
 
 const props = defineProps<{
+  stationInfo: ChargingStationInfo;
   isVisible: boolean;
-  info: ChargingStationInfo;
 }>();
 </script>
 

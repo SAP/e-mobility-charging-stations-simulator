@@ -6,11 +6,7 @@ import type { ChargingStationData } from '@/types/ChargingStationType';
 describe('CSTable.vue', () => {
   it('renders CS table columns name', () => {
     const chargingStations: Record<string, ChargingStationData> = {
-      '0': {
-        stationInfo: {
-          hashId: '0',
-        },
-      } as unknown as ChargingStationData,
+      '0': {} as unknown as ChargingStationData,
     };
     const wrapper = shallowMount(CSTable, {
       props: { chargingStations, idTag: '0' },
