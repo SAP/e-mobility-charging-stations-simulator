@@ -116,15 +116,15 @@ export default class ChargingStation {
   constructor(index: number, templateFile: string) {
     this.index = index;
     this.templateFile = templateFile;
-    this.stopped = false;
-    this.wsConnectionRestarted = false;
-    this.autoReconnectRetryCount = 0;
-    this.sharedLRUCache = SharedLRUCache.getInstance();
-    this.authorizedTagsCache = AuthorizedTagsCache.getInstance();
     this.connectors = new Map<number, ConnectorStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
+    this.sharedLRUCache = SharedLRUCache.getInstance();
+    this.authorizedTagsCache = AuthorizedTagsCache.getInstance();
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this);
+    this.stopped = false;
+    this.wsConnectionRestarted = false;
+    this.autoReconnectRetryCount = 0;
 
     this.initialize();
   }
@@ -950,13 +950,13 @@ export default class ChargingStation {
   }
 
   private initialize(): void {
+    this.configurationFile = path.join(
+      path.dirname(this.templateFile.replace('station-templates', 'configurations')),
+      ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile()) + '.json'
+    );
     this.stationInfo = this.getStationInfo();
     this.saveStationInfo();
     logger.info(`${this.logPrefix()} Charging station hashId '${this.stationInfo.hashId}'`);
-    this.configurationFile = path.join(
-      path.dirname(this.templateFile.replace('station-templates', 'configurations')),
-      this.stationInfo.hashId + '.json'
-    );
     // Avoid duplication of connectors related information in RAM
     this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
