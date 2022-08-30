@@ -85,12 +85,13 @@ import SharedLRUCache from './SharedLRUCache';
 
 export default class ChargingStation {
   public readonly templateFile: string;
-  public authorizedTagsCache: AuthorizedTagsCache;
   public stationInfo!: ChargingStationInfo;
   public stopped: boolean;
-  public readonly connectors: Map<number, ConnectorStatus>;
+  public authorizedTagsCache: AuthorizedTagsCache;
+  public automaticTransactionGenerator!: AutomaticTransactionGenerator;
   public ocppConfiguration!: ChargingStationOcppConfiguration;
   public wsConnection!: WebSocket;
+  public readonly connectors: Map<number, ConnectorStatus>;
   public readonly requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics;
   public heartbeatSetInterval!: NodeJS.Timeout;
@@ -109,7 +110,6 @@ export default class ChargingStation {
   private autoReconnectRetryCount: number;
   private templateFileWatcher!: fs.FSWatcher;
   private readonly sharedLRUCache: SharedLRUCache;
-  private automaticTransactionGenerator!: AutomaticTransactionGenerator;
   private webSocketPingSetInterval!: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
 
@@ -743,21 +743,29 @@ export default class ChargingStation {
     }
   }
 
-  public startAutomaticTransactionGenerator(): void {
+  public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
     if (!this.automaticTransactionGenerator) {
       this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
         this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
         this
       );
     }
-    if (!this.automaticTransactionGenerator.started) {
+    if (!Utils.isEmptyArray(connectorIds)) {
+      for (const connectorId of connectorIds) {
+        this.automaticTransactionGenerator.startConnector(connectorId);
+      }
+    } else {
       this.automaticTransactionGenerator.start();
     }
   }
 
-  public stopAutomaticTransactionGenerator(): void {
-    if (this.automaticTransactionGenerator?.started) {
-      this.automaticTransactionGenerator.stop();
+  public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
+    if (!Utils.isEmptyArray(connectorIds)) {
+      for (const connectorId of connectorIds) {
+        this.automaticTransactionGenerator?.stopConnector(connectorId);
+      }
+    } else {
+      this.automaticTransactionGenerator?.stop();
       this.automaticTransactionGenerator = null;
     }
   }
