@@ -21,19 +21,22 @@ export type ProtocolRequestHandler = (
 ) => ResponsePayload | Promise<ResponsePayload>;
 
 export enum ProcedureName {
+  START_SIMULATOR = 'startSimulator',
+  STOP_SIMULATOR = 'stopSimulator',
   LIST_CHARGING_STATIONS = 'listChargingStations',
   START_CHARGING_STATION = 'startChargingStation',
   STOP_CHARGING_STATION = 'stopChargingStation',
-  START_TRANSACTION = 'startTransaction',
-  STOP_TRANSACTION = 'stopTransaction',
-  START_SIMULATOR = 'startSimulator',
-  STOP_SIMULATOR = 'stopSimulator',
   OPEN_CONNECTION = 'openConnection',
   CLOSE_CONNECTION = 'closeConnection',
+  START_TRANSACTION = 'startTransaction',
+  STOP_TRANSACTION = 'stopTransaction',
+  START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
+  STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
 }
 export interface RequestPayload extends JsonObject {
-  hashId?: string;
   hashIds?: string[];
+  connectorId?: number;
+  connectorIds?: number[];
 }
 
 export enum ResponseStatus {

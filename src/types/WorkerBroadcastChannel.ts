@@ -25,17 +25,11 @@ interface BaseBroadcastChannelRequestPayload extends Omit<RequestPayload, 'hashI
   idTag?: string;
 }
 
-interface HashIdBroadcastChannelRequestPayload extends BaseBroadcastChannelRequestPayload {
-  hashId: string;
-}
-
 interface HashIdsBroadcastChannelRequestPayload extends BaseBroadcastChannelRequestPayload {
   hashIds: string[];
 }
 
-export type BroadcastChannelRequestPayload =
-  | HashIdBroadcastChannelRequestPayload
-  | HashIdsBroadcastChannelRequestPayload;
+export type BroadcastChannelRequestPayload = HashIdsBroadcastChannelRequestPayload;
 
 export interface BroadcastChannelResponsePayload extends ResponsePayload {
   hashId: string;

@@ -36,8 +36,8 @@ export enum ProcedureName {
 }
 
 export interface RequestPayload extends JsonObject {
-  hashId?: string;
   hashIds?: string[];
+  connectorIds?: number[];
 }
 
 export enum ResponseStatus {

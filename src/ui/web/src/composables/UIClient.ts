@@ -1,5 +1,4 @@
-import type { JsonType } from '@/types/JsonType';
-import { ProcedureName, ResponseStatus } from '@/types/UIProtocol';
+import { ProcedureName, ResponseStatus, type RequestPayload } from '@/types/UIProtocol';
 import type { ProtocolResponse, ResponsePayload } from '@/types/UIProtocol';
 
 import Utils from './Utils';
@@ -47,22 +46,22 @@ export default class UIClient {
   }
 
   public async startChargingStation(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.START_CHARGING_STATION, { hashId });
+    return this.sendRequest(ProcedureName.START_CHARGING_STATION, { hashIds: [hashId] });
   }
 
   public async stopChargingStation(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.STOP_CHARGING_STATION, { hashId });
+    return this.sendRequest(ProcedureName.STOP_CHARGING_STATION, { hashIds: [hashId] });
   }
 
   public async openConnection(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
-      hashId,
+      hashIds: [hashId],
     });
   }
 
   public async closeConnection(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
-      hashId,
+      hashIds: [hashId],
     });
   }
 
@@ -72,7 +71,7 @@ export default class UIClient {
     idTag: string | undefined
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
-      hashId,
+      hashIds: [hashId],
       connectorId,
       idTag,
     });
@@ -83,8 +82,28 @@ export default class UIClient {
     transactionId: number | undefined
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
-      hashId,
+      hashIds: [hashId],
       transactionId,
+    });
+  }
+
+  public async startAutomaticTransactionGenerator(
+    hashId: string,
+    connectorId: number
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR, {
+      hashIds: [hashId],
+      connectorIds: [connectorId],
+    });
+  }
+
+  public async stopAutomaticTransactionGenerator(
+    hashId: string,
+    connectorId: number
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR, {
+      hashIds: [hashId],
+      connectorIds: [connectorId],
     });
   }
 
@@ -119,7 +138,10 @@ export default class UIClient {
     return this._responseHandlers.delete(id);
   }
 
-  private async sendRequest(command: ProcedureName, data: JsonType): Promise<ResponsePayload> {
+  private async sendRequest(
+    command: ProcedureName,
+    data: RequestPayload
+  ): Promise<ResponsePayload> {
     let uuid: string;
     return Utils.promiseWithTimeout(
       new Promise((resolve, reject) => {

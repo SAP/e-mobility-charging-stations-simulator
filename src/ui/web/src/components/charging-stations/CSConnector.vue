@@ -14,6 +14,8 @@
       Start Transaction
     </IdTagInputModal> -->
     <Button @click="stopTransaction()">Stop Transaction</Button>
+    <Button @click="startAutomaticTransactionGenerator()">Start ATG</Button>
+    <Button @click="stopAutomaticTransactionGenerator()">Stop ATG</Button>
   </td>
   <td class="cs-table__connector-col">{{ connectorId }}</td>
   <td class="cs-table__status-col">{{ connector.status }}</td>
@@ -78,5 +80,11 @@ function startTransaction(): void {
 }
 function stopTransaction(): void {
   UIClient.getInstance().stopTransaction(props.hashId, props.transactionId);
+}
+function startAutomaticTransactionGenerator(): void {
+  UIClient.getInstance().startAutomaticTransactionGenerator(props.hashId, props.connectorId);
+}
+function stopAutomaticTransactionGenerator(): void {
+  UIClient.getInstance().stopAutomaticTransactionGenerator(props.hashId, props.connectorId);
 }
 </script>

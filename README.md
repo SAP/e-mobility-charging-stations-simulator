@@ -452,7 +452,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startTransaction'  
   `PDU`: {  
-  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+  `hashIds`: charging station unique identifier strings array,  
   `connectorId`: connector id integer,  
   `idTag`: RFID tag string  
   }
@@ -467,7 +467,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'stopTransaction'  
   `PDU`: {  
-  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array,  
+  `hashIds`: charging station unique identifier strings array,  
   `transactionId`: transaction id integer  
   }
 
@@ -481,7 +481,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startChargingStation'  
   `PDU`: {  
-  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+  `hashIds`: charging station unique identifier strings array  
   }
 
 - Response:  
@@ -494,7 +494,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'stopChargingStation'  
   `PDU`: {  
-  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+  `hashIds`: charging station unique identifier strings array  
   }
 
 - Response:  
@@ -507,7 +507,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'openConnection'  
   `PDU`: {  
-  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+  `hashIds`: charging station unique identifier strings array  
   }
 
 - Response:  
@@ -520,7 +520,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'closeConnection'  
   `PDU`: {  
-  `hashId`: charging station unique identifier string (deprecated) | `hashIds`: charging station unique identifier strings array  
+  `hashIds`: charging station unique identifier strings array  
   }
 
 - Response:  

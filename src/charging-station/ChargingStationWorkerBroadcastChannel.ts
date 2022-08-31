@@ -44,8 +44,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
 
     if (
       requestPayload?.hashId === undefined &&
-      (requestPayload?.hashIds as string[])?.includes(this.chargingStation.stationInfo.hashId) ===
-        false
+      requestPayload?.hashIds?.includes(this.chargingStation.stationInfo.hashId) === false
     ) {
       return;
     }
