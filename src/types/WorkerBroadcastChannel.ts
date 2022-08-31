@@ -20,6 +20,7 @@ export enum BroadcastChannelProcedureName {
 
 interface BaseBroadcastChannelRequestPayload extends Omit<RequestPayload, 'hashId' | 'hashIds'> {
   connectorId?: number;
+  connectorIds?: number[];
   transactionId?: number;
   idTag?: string;
 }

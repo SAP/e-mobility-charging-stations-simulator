@@ -440,7 +440,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         OCPP16StopTransactionResponse
       >(chargingStation, OCPP16RequestCommand.STOP_TRANSACTION, {
         transactionId,
-        meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+        meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(
+          transactionId,
+          true
+        ),
         idTag: chargingStation.getTransactionIdTag(transactionId),
         reason: OCPP16StopTransactionReason.UNLOCK_COMMAND,
       });
@@ -1004,7 +1007,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           OCPP16StopTransactionResponse
         >(chargingStation, OCPP16RequestCommand.STOP_TRANSACTION, {
           transactionId,
-          meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+          meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(
+            transactionId,
+            true
+          ),
           idTag: chargingStation.getTransactionIdTag(transactionId),
         });
         return Constants.OCPP_RESPONSE_ACCEPTED;

@@ -133,16 +133,17 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
           transactionId: requestPayload.transactionId,
           meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-            requestPayload.transactionId
+            requestPayload.transactionId,
+            true
           ),
           idTag: this.chargingStation.getTransactionIdTag(requestPayload.transactionId),
           reason: StopTransactionReason.NONE,
         });
       case BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR:
-        this.chargingStation.startAutomaticTransactionGenerator();
+        this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds);
         break;
       case BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR:
-        this.chargingStation.stopAutomaticTransactionGenerator();
+        this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds);
         break;
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

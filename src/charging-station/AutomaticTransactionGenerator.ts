@@ -62,8 +62,8 @@ export default class AutomaticTransactionGenerator {
   }
 
   public start(): void {
-    if (this.started) {
-      logger.error(`${this.logPrefix()} trying to start while already started`);
+    if (this.started === true) {
+      logger.warn(`${this.logPrefix()} trying to start while already started`);
       return;
     }
     this.startConnectors();
@@ -71,12 +71,36 @@ export default class AutomaticTransactionGenerator {
   }
 
   public stop(): void {
-    if (!this.started) {
-      logger.error(`${this.logPrefix()} trying to stop while not started`);
+    if (this.started === false) {
+      logger.warn(`${this.logPrefix()} trying to stop while not started`);
       return;
     }
     this.stopConnectors();
     this.started = false;
+  }
+
+  public startConnector(connectorId: number): void {
+    if (this.chargingStation.connectors.has(connectorId) === false) {
+      logger.warn(`${this.logPrefix(connectorId)} trying to start on non existing connector`);
+      return;
+    }
+    if (this.connectorsStatus.get(connectorId)?.start === false) {
+      // Avoid hogging the event loop with a busy loop
+      setImmediate(() => {
+        this.internalStartConnector(connectorId).catch(() => {
+          /* This is intentional */
+        });
+      });
+    } else if (this.connectorsStatus.get(connectorId)?.start === true) {
+      logger.warn(`${this.logPrefix(connectorId)} already started on connector`);
+    }
+  }
+
+  public stopConnector(connectorId: number): void {
+    this.connectorsStatus.set(connectorId, {
+      ...this.connectorsStatus.get(connectorId),
+      start: false,
+    });
   }
 
   private startConnectors(): void {
@@ -111,7 +135,7 @@ export default class AutomaticTransactionGenerator {
             this.connectorsStatus.get(connectorId).startDate.getTime()
         )
     );
-    while (this.connectorsStatus.get(connectorId).start) {
+    while (this.connectorsStatus.get(connectorId).start === true) {
       if (new Date() > this.connectorsStatus.get(connectorId).stopDate) {
         this.stopConnector(connectorId);
         break;
@@ -216,25 +240,9 @@ export default class AutomaticTransactionGenerator {
         )
     );
     logger.debug(
-      `${this.logPrefix(connectorId)} connector status %j`,
+      `${this.logPrefix(connectorId)} connector status: %j`,
       this.connectorsStatus.get(connectorId)
     );
-  }
-
-  private startConnector(connectorId: number): void {
-    // Avoid hogging the event loop with a busy loop
-    setImmediate(() => {
-      this.internalStartConnector(connectorId).catch(() => {
-        /* This is intentional */
-      });
-    });
-  }
-
-  private stopConnector(connectorId: number): void {
-    this.connectorsStatus.set(connectorId, {
-      ...this.connectorsStatus.get(connectorId),
-      start: false,
-    });
   }
 
   private initializeConnectorStatus(connectorId: number): void {
@@ -369,7 +377,10 @@ export default class AutomaticTransactionGenerator {
         StopTransactionResponse
       >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
         transactionId,
-        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId),
+        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
+          transactionId,
+          true
+        ),
         idTag: this.chargingStation.getTransactionIdTag(transactionId),
         reason,
       });
@@ -392,7 +403,7 @@ export default class AutomaticTransactionGenerator {
   private logPrefix(connectorId?: number): string {
     return Utils.logPrefix(
       ` ${this.chargingStation.stationInfo.chargingStationId} | ATG${
-        connectorId && ` on connector #${connectorId.toString()}`
+        connectorId !== undefined ? ` on connector #${connectorId.toString()}` : ''
       }:`
     );
   }
