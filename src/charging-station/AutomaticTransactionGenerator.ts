@@ -80,7 +80,7 @@ export default class AutomaticTransactionGenerator {
   }
 
   public startConnector(connectorId: number): void {
-    if (this.connectorsStatus.has(connectorId) === false) {
+    if (this.chargingStation.connectors.has(connectorId) === false) {
       logger.warn(`${this.logPrefix(connectorId)} trying to start on non existing connector`);
       return;
     }
@@ -91,7 +91,7 @@ export default class AutomaticTransactionGenerator {
           /* This is intentional */
         });
       });
-    } else {
+    } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(`${this.logPrefix(connectorId)} already started on connector`);
     }
   }
