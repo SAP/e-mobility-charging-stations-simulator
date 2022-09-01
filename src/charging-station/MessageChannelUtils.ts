@@ -52,7 +52,7 @@ export class MessageChannelUtils {
   ): ChargingStationData {
     return {
       stationInfo: chargingStation.stationInfo,
-      stopped: chargingStation.stopped,
+      started: chargingStation.started,
       bootNotificationResponse: chargingStation.bootNotificationResponse,
       connectors: [...chargingStation.connectors.values()].map(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

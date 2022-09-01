@@ -8,7 +8,7 @@
       :id-tag="props.idTag"
     />
     <td class="cs-table__name-col">{{ getId() }}</td>
-    <td class="cs-table__stopped-col">{{ getStopped() }}</td>
+    <td class="cs-table__started-col">{{ getStarted() }}</td>
     <td class="cs-table__registration-status-col">{{ getRegistrationStatus() }}</td>
     <td class="cs-table__vendor-col">{{ getVendor() }}</td>
     <td class="cs-table__model-col">{{ getModel() }}</td>
@@ -63,8 +63,8 @@ function getVendor(): string {
 function getFirmwareVersion(): string {
   return Utils.ifUndefined<string>(getInfo().firmwareVersion, 'Ø');
 }
-function getStopped(): string {
-  return props.chargingStation.stopped === true ? 'Yes' : 'No';
+function getStarted(): string {
+  return props.chargingStation.started === true ? 'Yes' : 'No';
 }
 function getRegistrationStatus(): string {
   return props.chargingStation?.bootNotificationResponse?.status ?? 'Ø';

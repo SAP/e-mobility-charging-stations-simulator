@@ -86,7 +86,7 @@ import SharedLRUCache from './SharedLRUCache';
 export default class ChargingStation {
   public readonly templateFile: string;
   public stationInfo!: ChargingStationInfo;
-  public stopped: boolean;
+  public started: boolean;
   public authorizedTagsCache: AuthorizedTagsCache;
   public automaticTransactionGenerator!: AutomaticTransactionGenerator;
   public ocppConfiguration!: ChargingStationOcppConfiguration;
@@ -122,7 +122,7 @@ export default class ChargingStation {
     this.sharedLRUCache = SharedLRUCache.getInstance();
     this.authorizedTagsCache = AuthorizedTagsCache.getInstance();
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this);
-    this.stopped = false;
+    this.started = false;
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
 
@@ -543,7 +543,7 @@ export default class ChargingStation {
     this.templateFileWatcher.close();
     this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
     this.bootNotificationResponse = null;
-    this.stopped = true;
+    this.started = false;
     parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
   }
 
@@ -1392,7 +1392,7 @@ export default class ChargingStation {
           `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
         );
       }
-      this.stopped && (this.stopped = false);
+      this.started === false && (this.started = true);
       this.autoReconnectRetryCount = 0;
       this.wsConnectionRestarted = false;
     } else {
@@ -1732,7 +1732,7 @@ export default class ChargingStation {
       if (connectorId === 0) {
         continue;
       } else if (
-        !this.stopped &&
+        this.started === true &&
         !this.getConnectorStatus(connectorId)?.status &&
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
@@ -1748,7 +1748,7 @@ export default class ChargingStation {
         this.getConnectorStatus(connectorId).status =
           this.getConnectorStatus(connectorId).bootStatus;
       } else if (
-        this.stopped &&
+        this.started === false &&
         this.getConnectorStatus(connectorId)?.status &&
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
@@ -1763,7 +1763,7 @@ export default class ChargingStation {
         });
         this.getConnectorStatus(connectorId).status =
           this.getConnectorStatus(connectorId).bootStatus;
-      } else if (!this.stopped && this.getConnectorStatus(connectorId)?.status) {
+      } else if (this.started === true && this.getConnectorStatus(connectorId)?.status) {
         // Send previous status at template reload
         await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,

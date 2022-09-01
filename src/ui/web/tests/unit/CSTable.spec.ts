@@ -16,7 +16,7 @@ describe('CSTable.vue', () => {
     expect(wrapper.text()).to.include('Status');
     expect(wrapper.text()).to.include('Transaction');
     expect(wrapper.text()).to.include('Name');
-    expect(wrapper.text()).to.include('Stopped');
+    expect(wrapper.text()).to.include('Started');
     expect(wrapper.text()).to.include('Registration Status');
     expect(wrapper.text()).to.include('Vendor');
     expect(wrapper.text()).to.include('Model');

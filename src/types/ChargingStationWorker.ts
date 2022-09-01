@@ -17,7 +17,7 @@ export interface ChargingStationWorkerData extends WorkerData {
 
 export interface ChargingStationData extends WorkerData {
   stationInfo: ChargingStationInfo;
-  stopped: boolean;
+  started: boolean;
   bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
 }

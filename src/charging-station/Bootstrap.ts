@@ -76,7 +76,7 @@ export class Bootstrap {
   }
 
   public async start(): Promise<void> {
-    if (isMainThread && !this.started) {
+    if (isMainThread && this.started === false) {
       try {
         this.initialize();
         await this.storage?.open();
@@ -145,7 +145,7 @@ export class Bootstrap {
   }
 
   public async stop(): Promise<void> {
-    if (isMainThread && this.started) {
+    if (isMainThread && this.started === true) {
       await this.workerImplementation.stop();
       this.workerImplementation = null;
       this.uiServer?.stop();
