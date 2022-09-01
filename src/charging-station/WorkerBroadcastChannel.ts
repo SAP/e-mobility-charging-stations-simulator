@@ -1,6 +1,7 @@
 import { BroadcastChannel } from 'worker_threads';
 
 import BaseError from '../exception/BaseError';
+import type { JsonType } from '../types/JsonType';
 import type {
   BroadcastChannelRequest,
   BroadcastChannelResponse,
@@ -20,11 +21,11 @@ export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
     this.postMessage(response);
   }
 
-  protected isRequest(message: any): boolean {
+  protected isRequest(message: JsonType[]): boolean {
     return Array.isArray(message) && message.length === 3;
   }
 
-  protected isResponse(message: any): boolean {
+  protected isResponse(message: JsonType[]): boolean {
     return Array.isArray(message) && message.length === 2;
   }
 
