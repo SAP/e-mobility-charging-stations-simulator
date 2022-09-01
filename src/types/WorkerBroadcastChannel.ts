@@ -18,18 +18,11 @@ export enum BroadcastChannelProcedureName {
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
 }
 
-interface BaseBroadcastChannelRequestPayload extends Omit<RequestPayload, 'hashId' | 'hashIds'> {
+export interface BroadcastChannelRequestPayload extends RequestPayload {
   connectorId?: number;
-  connectorIds?: number[];
   transactionId?: number;
   idTag?: string;
 }
-
-interface HashIdsBroadcastChannelRequestPayload extends BaseBroadcastChannelRequestPayload {
-  hashIds: string[];
-}
-
-export type BroadcastChannelRequestPayload = HashIdsBroadcastChannelRequestPayload;
 
 export interface BroadcastChannelResponsePayload extends ResponsePayload {
   hashId: string;
