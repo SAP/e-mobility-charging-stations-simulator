@@ -546,7 +546,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'startAutomaticTransactionGenerator'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorIds`: connector id integer array (optional, default: all connectors),  
+  `connectorIds`: connector id integer array (optional, default: all connectors)  
   }
 
 - Response:  
@@ -562,7 +562,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'stopAutomaticTransactionGenerator'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorIds`: connector id integer array (optional, default: all connectors),  
+  `connectorIds`: connector id integer array (optional, default: all connectors)  
   }
 
 - Response:  
