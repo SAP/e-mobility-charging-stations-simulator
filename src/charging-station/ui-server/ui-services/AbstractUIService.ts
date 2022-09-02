@@ -129,8 +129,8 @@ export default abstract class AbstractUIService {
     const expectedNumberOfResponses = !Utils.isEmptyArray(payload.hashIds)
       ? payload.hashIds.length
       : this.uiServer.chargingStations.size;
-    this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);
+    this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);
   }
 
   // Validate the raw data received from the UI server
