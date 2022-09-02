@@ -24,10 +24,10 @@ import type { AbstractUIServer } from '../AbstractUIServer';
 const moduleName = 'AbstractUIService';
 
 export default abstract class AbstractUIService {
-  protected readonly version: ProtocolVersion;
-  protected readonly uiServer: AbstractUIServer;
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
-  private uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel;
+  private readonly version: ProtocolVersion;
+  private readonly uiServer: AbstractUIServer;
+  private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel;
   private readonly broadcastChannelRequests: Map<string, number>;
 
   constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {

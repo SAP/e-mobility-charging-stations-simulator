@@ -18,7 +18,7 @@ type Responses = {
 
 export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly uiService: AbstractUIService;
-  private responses: Map<string, Responses>;
+  private readonly responses: Map<string, Responses>;
 
   constructor(uiService: AbstractUIService) {
     super();
