@@ -59,14 +59,15 @@ export default class UIHttpServer extends AbstractUIServer {
       this.responseHandlers.delete(uuid);
     } else {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.sendResponse: Response for unknown request: ${response}`
+        `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request: ${response}`
       );
     }
   }
 
-  public logPrefix(modName?: string, methodName?: string): string {
+  public logPrefix(modName?: string, methodName?: string, prefixSuffix?: string): string {
+    const logMsgPrefix = prefixSuffix ? `UI HTTP Server ${prefixSuffix}` : 'UI HTTP Server';
     const logMsg =
-      modName && methodName ? ` UI HTTP Server | ${modName}.${methodName}:` : ' UI HTTP Server |';
+      modName && methodName ? ` ${logMsgPrefix} | ${modName}.${methodName}:` : ` ${logMsgPrefix} |`;
     return Utils.logPrefix(logMsg);
   }
 

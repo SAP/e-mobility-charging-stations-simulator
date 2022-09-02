@@ -4,10 +4,7 @@ import {
   ProtocolVersion,
   RequestPayload,
 } from '../../../types/UIProtocol';
-import {
-  BroadcastChannelProcedureName,
-  BroadcastChannelRequestPayload,
-} from '../../../types/WorkerBroadcastChannel';
+import { BroadcastChannelProcedureName } from '../../../types/WorkerBroadcastChannel';
 import type { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 
@@ -49,66 +46,54 @@ export default class UIService001 extends AbstractUIService {
   }
 
   private handleStartChargingStation(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
+    this.sendBroadcastChannelRequest(
       uuid,
       BroadcastChannelProcedureName.START_CHARGING_STATION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+      payload
+    );
   }
 
   private handleStopChargingStation(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
+    this.sendBroadcastChannelRequest(
       uuid,
       BroadcastChannelProcedureName.STOP_CHARGING_STATION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+      payload
+    );
   }
 
   private handleOpenConnection(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
-      uuid,
-      BroadcastChannelProcedureName.OPEN_CONNECTION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+    this.sendBroadcastChannelRequest(uuid, BroadcastChannelProcedureName.OPEN_CONNECTION, payload);
   }
 
   private handleCloseConnection(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
-      uuid,
-      BroadcastChannelProcedureName.CLOSE_CONNECTION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+    this.sendBroadcastChannelRequest(uuid, BroadcastChannelProcedureName.CLOSE_CONNECTION, payload);
   }
 
   private handleStartTransaction(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
+    this.sendBroadcastChannelRequest(
       uuid,
       BroadcastChannelProcedureName.START_TRANSACTION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+      payload
+    );
   }
 
   private handleStopTransaction(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
-      uuid,
-      BroadcastChannelProcedureName.STOP_TRANSACTION,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+    this.sendBroadcastChannelRequest(uuid, BroadcastChannelProcedureName.STOP_TRANSACTION, payload);
   }
 
   private handleStartAutomaticTransactionGenerator(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
+    this.sendBroadcastChannelRequest(
       uuid,
       BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+      payload
+    );
   }
 
   private handleStopAutomaticTransactionGenerator(uuid: string, payload: RequestPayload): void {
-    this.uiServiceWorkerBroadcastChannel.sendRequest([
+    this.sendBroadcastChannelRequest(
       uuid,
       BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-      payload as BroadcastChannelRequestPayload,
-    ]);
+      payload
+    );
   }
 }

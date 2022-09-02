@@ -12,7 +12,12 @@ import {
   ResponsePayload,
   ResponseStatus,
 } from '../../../types/UIProtocol';
+import type {
+  BroadcastChannelProcedureName,
+  BroadcastChannelRequestPayload,
+} from '../../../types/WorkerBroadcastChannel';
 import logger from '../../../utils/Logger';
+import Utils from '../../../utils/Utils';
 import UIServiceWorkerBroadcastChannel from '../../UIServiceWorkerBroadcastChannel';
 import type { AbstractUIServer } from '../AbstractUIServer';
 
@@ -22,7 +27,8 @@ export default abstract class AbstractUIService {
   protected readonly version: ProtocolVersion;
   protected readonly uiServer: AbstractUIServer;
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
-  protected uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel;
+  private uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel;
+  private readonly broadcastChannelRequests: Map<string, number>;
 
   constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.version = version;
@@ -33,6 +39,7 @@ export default abstract class AbstractUIService {
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
     ]);
     this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this);
+    this.broadcastChannelRequests = new Map<string, number>();
   }
 
   public async requestHandler(request: RawData | JsonType): Promise<void> {
@@ -67,9 +74,8 @@ export default abstract class AbstractUIService {
         errorStack: (error as Error).stack,
       };
     }
-
+    // Send response for payload not forwarded to broadcast channel
     if (responsePayload !== undefined) {
-      // Send the response
       this.sendResponse(messageId ?? 'error', responsePayload);
     }
   }
@@ -89,7 +95,42 @@ export default abstract class AbstractUIService {
   }
 
   public logPrefix(modName: string, methodName: string): string {
-    return this.uiServer.logPrefix(modName, methodName);
+    return this.uiServer.logPrefix(modName, methodName, this.version);
+  }
+
+  public deleteBroadcastChannelRequest(uuid: string): void {
+    this.broadcastChannelRequests.delete(uuid);
+  }
+
+  public getBroadcastChannelExpectedResponses(uuid: string): number {
+    return this.broadcastChannelRequests.get(uuid) ?? 0;
+  }
+
+  protected sendBroadcastChannelRequest(
+    uuid: string,
+    procedureName: BroadcastChannelProcedureName,
+    payload: BroadcastChannelRequestPayload
+  ): void {
+    if (!Utils.isEmptyArray(payload.hashIds)) {
+      payload.hashIds = payload.hashIds
+        .map((hashId) => {
+          if (this.uiServer.chargingStations.has(hashId) === true) {
+            return hashId;
+          }
+          logger.warn(
+            `${this.logPrefix(
+              moduleName,
+              'sendBroadcastChannelRequest'
+            )} Charging station with hashId '${hashId}' not found`
+          );
+        })
+        .filter((hashId) => hashId !== undefined);
+    }
+    const expectedNumberOfResponses = !Utils.isEmptyArray(payload.hashIds)
+      ? payload.hashIds.length
+      : this.uiServer.chargingStations.size;
+    this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);
+    this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);
   }
 
   // Validate the raw data received from the UI server

@@ -1,19 +1,31 @@
-import type { ResponsePayload } from '../types/UIProtocol';
-import type { BroadcastChannelResponse, MessageEvent } from '../types/WorkerBroadcastChannel';
+import { ResponsePayload, ResponseStatus } from '../types/UIProtocol';
+import type {
+  BroadcastChannelResponse,
+  BroadcastChannelResponsePayload,
+  MessageEvent,
+} from '../types/WorkerBroadcastChannel';
 import logger from '../utils/Logger';
 import type AbstractUIService from './ui-server/ui-services/AbstractUIService';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 const moduleName = 'UIServiceWorkerBroadcastChannel';
 
+type Responses = {
+  responsesExpected: number;
+  responsesReceived: number;
+  responses: BroadcastChannelResponsePayload[];
+};
+
 export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
-  private uiService: AbstractUIService;
+  private readonly uiService: AbstractUIService;
+  private responses: Map<string, Responses>;
 
   constructor(uiService: AbstractUIService) {
     super();
     this.uiService = uiService;
     this.onmessage = this.responseHandler.bind(this) as (message: MessageEvent) => void;
     this.onmessageerror = this.messageErrorHandler.bind(this) as (message: MessageEvent) => void;
+    this.responses = new Map<string, Responses>();
   }
 
   private responseHandler(messageEvent: MessageEvent): void {
@@ -22,10 +34,56 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
     }
     this.validateMessageEvent(messageEvent);
     const [uuid, responsePayload] = messageEvent.data as BroadcastChannelResponse;
-    // TODO: handle multiple responses for the same uuid
-    delete responsePayload.hashId;
+    if (this.responses.has(uuid) === false) {
+      this.responses.set(uuid, {
+        responsesExpected: this.uiService.getBroadcastChannelExpectedResponses(uuid),
+        responsesReceived: 1,
+        responses: [responsePayload],
+      });
+    } else if (
+      this.responses.get(uuid)?.responsesReceived + 1 <
+      this.responses.get(uuid)?.responsesExpected
+    ) {
+      this.responses.get(uuid).responsesReceived++;
+      this.responses.get(uuid).responses.push(responsePayload);
+    } else if (
+      this.responses.get(uuid)?.responsesReceived + 1 ===
+      this.responses.get(uuid)?.responsesExpected
+    ) {
+      this.responses.get(uuid).responses.push(responsePayload);
+      this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid));
+      this.responses.delete(uuid);
+      this.uiService.deleteBroadcastChannelRequest(uuid);
+    }
+  }
 
-    this.uiService.sendResponse(uuid, responsePayload as ResponsePayload);
+  private buildResponsePayload(uuid: string): ResponsePayload {
+    const responsesStatus = this.responses
+      .get(uuid)
+      ?.responses.every((response) => response.status === ResponseStatus.SUCCESS)
+      ? ResponseStatus.SUCCESS
+      : ResponseStatus.FAILURE;
+    return {
+      status: responsesStatus,
+      hashIdsSucceeded: this.responses
+        .get(uuid)
+        ?.responses.map(({ status, hashId }) => {
+          if (status === ResponseStatus.SUCCESS) {
+            return hashId;
+          }
+        })
+        .filter((hashId) => hashId !== undefined),
+      ...(responsesStatus === ResponseStatus.FAILURE && {
+        hashIdsFailed: this.responses
+          .get(uuid)
+          ?.responses.map(({ status, hashId }) => {
+            if (status === ResponseStatus.FAILURE) {
+              return hashId;
+            }
+          })
+          .filter((hashId) => hashId !== undefined),
+      }),
+    };
   }
 
   private messageErrorHandler(messageEvent: MessageEvent): void {

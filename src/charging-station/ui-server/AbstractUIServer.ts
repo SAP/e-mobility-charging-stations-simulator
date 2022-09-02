@@ -39,5 +39,5 @@ export abstract class AbstractUIServer {
   public abstract stop(): void;
   public abstract sendRequest(request: string): void;
   public abstract sendResponse(response: string): void;
-  public abstract logPrefix(modName?: string, methodName?: string): string;
+  public abstract logPrefix(modName?: string, methodName?: string, prefixSuffix?: string): string;
 }
