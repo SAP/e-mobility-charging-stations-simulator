@@ -226,7 +226,6 @@ export default class AutomaticTransactionGenerator {
       }
       this.connectorsStatus.get(connectorId).lastRunDate = new Date();
     }
-    // await this.stopTransaction(connectorId);
     this.connectorsStatus.get(connectorId).stoppedDate = new Date();
     logger.info(
       this.logPrefix(connectorId) +

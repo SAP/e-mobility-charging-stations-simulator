@@ -498,7 +498,7 @@ export default class ChargingStation {
             this.initialize();
             // Restart the ATG
             this.stopAutomaticTransactionGenerator();
-            if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable) {
+            if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true) {
               this.startAutomaticTransactionGenerator();
             }
             if (this.getEnableStatistics()) {
@@ -519,7 +519,8 @@ export default class ChargingStation {
     parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
   }
 
-  public async stop(): Promise<void> {
+  public async stop(reason?: StopTransactionReason): Promise<void> {
+    await this.stopMessageSequence(reason);
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0) {
         await this.ocppRequestService.requestHandler<
@@ -545,8 +546,8 @@ export default class ChargingStation {
     parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
   }
 
-  public async reset(): Promise<void> {
-    await this.stop();
+  public async reset(reason?: StopTransactionReason): Promise<void> {
+    await this.stop(reason);
     await Utils.sleep(this.stationInfo.resetTime);
     this.initialize();
     this.start();
@@ -556,57 +557,6 @@ export default class ChargingStation {
     if (this.getOcppPersistentConfiguration()) {
       this.saveConfiguration();
     }
-  }
-
-  public getChargingProfilePowerLimit(connectorId: number): number | undefined {
-    let limit: number, matchingChargingProfile: ChargingProfile;
-    let chargingProfiles: ChargingProfile[] = [];
-    // Get charging profiles for connector and sort by stack level
-    chargingProfiles = this.getConnectorStatus(connectorId).chargingProfiles.sort(
-      (a, b) => b.stackLevel - a.stackLevel
-    );
-    // Get profiles on connector 0
-    if (this.getConnectorStatus(0).chargingProfiles) {
-      chargingProfiles.push(
-        ...this.getConnectorStatus(0).chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel)
-      );
-    }
-    if (!Utils.isEmptyArray(chargingProfiles)) {
-      const result = ChargingStationUtils.getLimitFromChargingProfiles(
-        chargingProfiles,
-        this.logPrefix()
-      );
-      if (!Utils.isNullOrUndefined(result)) {
-        limit = result.limit;
-        matchingChargingProfile = result.matchingChargingProfile;
-        switch (this.getCurrentOutType()) {
-          case CurrentType.AC:
-            limit =
-              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
-              ChargingRateUnitType.WATT
-                ? limit
-                : ACElectricUtils.powerTotal(this.getNumberOfPhases(), this.getVoltageOut(), limit);
-            break;
-          case CurrentType.DC:
-            limit =
-              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
-              ChargingRateUnitType.WATT
-                ? limit
-                : DCElectricUtils.power(this.getVoltageOut(), limit);
-        }
-        const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
-        if (limit > connectorMaximumPower) {
-          logger.error(
-            `${this.logPrefix()} Charging profile id ${
-              matchingChargingProfile.chargingProfileId
-            } limit is greater than connector id ${connectorId} maximum, dump charging profiles' stack: %j`,
-            this.getConnectorStatus(connectorId).chargingProfiles
-          );
-          limit = connectorMaximumPower;
-        }
-      }
-    }
-    return limit;
   }
 
   public setChargingProfile(connectorId: number, cp: ChargingProfile): void {
@@ -765,24 +715,6 @@ export default class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.stop();
       this.automaticTransactionGenerator = null;
-    }
-  }
-
-  public getNumberOfRunningTransactions(): number {
-    let trxCount = 0;
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-        trxCount++;
-      }
-    }
-    return trxCount;
-  }
-
-  public async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-        await this.stopTransactionOnConnector(connectorId, reason);
-      }
     }
   }
 
@@ -1468,7 +1400,6 @@ export default class ChargingStation {
           )}' and reason '${reason}'`
         );
         this.autoReconnectRetryCount = 0;
-        await this.stopMessageSequence(StopTransactionReason.OTHER);
         break;
       // Abnormal close
       default:
@@ -1663,6 +1594,24 @@ export default class ChargingStation {
       : true;
   }
 
+  private getNumberOfRunningTransactions(): number {
+    let trxCount = 0;
+    for (const connectorId of this.connectors.keys()) {
+      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+        trxCount++;
+      }
+    }
+    return trxCount;
+  }
+
+  private async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
+    for (const connectorId of this.connectors.keys()) {
+      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+        await this.stopTransactionOnConnector(connectorId, reason);
+      }
+    }
+  }
+
   // 0 for disabling
   private getConnectionTimeout(): number | undefined {
     if (
@@ -1746,6 +1695,57 @@ export default class ChargingStation {
         ) / ChargingStationUtils.getAmperageLimitationUnitDivider(this.stationInfo)
       );
     }
+  }
+
+  private getChargingProfilePowerLimit(connectorId: number): number | undefined {
+    let limit: number, matchingChargingProfile: ChargingProfile;
+    let chargingProfiles: ChargingProfile[] = [];
+    // Get charging profiles for connector and sort by stack level
+    chargingProfiles = this.getConnectorStatus(connectorId).chargingProfiles.sort(
+      (a, b) => b.stackLevel - a.stackLevel
+    );
+    // Get profiles on connector 0
+    if (this.getConnectorStatus(0).chargingProfiles) {
+      chargingProfiles.push(
+        ...this.getConnectorStatus(0).chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel)
+      );
+    }
+    if (!Utils.isEmptyArray(chargingProfiles)) {
+      const result = ChargingStationUtils.getLimitFromChargingProfiles(
+        chargingProfiles,
+        this.logPrefix()
+      );
+      if (!Utils.isNullOrUndefined(result)) {
+        limit = result.limit;
+        matchingChargingProfile = result.matchingChargingProfile;
+        switch (this.getCurrentOutType()) {
+          case CurrentType.AC:
+            limit =
+              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
+              ChargingRateUnitType.WATT
+                ? limit
+                : ACElectricUtils.powerTotal(this.getNumberOfPhases(), this.getVoltageOut(), limit);
+            break;
+          case CurrentType.DC:
+            limit =
+              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
+              ChargingRateUnitType.WATT
+                ? limit
+                : DCElectricUtils.power(this.getVoltageOut(), limit);
+        }
+        const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
+        if (limit > connectorMaximumPower) {
+          logger.error(
+            `${this.logPrefix()} Charging profile id ${
+              matchingChargingProfile.chargingProfileId
+            } limit is greater than connector id ${connectorId} maximum, dump charging profiles' stack: %j`,
+            this.getConnectorStatus(connectorId).chargingProfiles
+          );
+          limit = connectorMaximumPower;
+        }
+      }
+    }
+    return limit;
   }
 
   private async startMessageSequence(): Promise<void> {
@@ -1834,7 +1834,7 @@ export default class ChargingStation {
       }
     }
     // Start the ATG
-    if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable) {
+    if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true) {
       this.startAutomaticTransactionGenerator();
     }
   }
@@ -1847,12 +1847,10 @@ export default class ChargingStation {
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop ongoing transactions
-    if (this.getNumberOfRunningTransactions() > 0) {
-      if (this.automaticTransactionGenerator?.started) {
-        this.stopAutomaticTransactionGenerator();
-      } else {
-        await this.stopRunningTransactions(reason);
-      }
+    if (this.automaticTransactionGenerator?.started) {
+      this.stopAutomaticTransactionGenerator();
+    } else {
+      await this.stopRunningTransactions(reason);
     }
   }
 
@@ -2031,7 +2029,6 @@ export default class ChargingStation {
       );
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
-      await this.stopMessageSequence(StopTransactionReason.OTHER);
       logger.error(
         `${this.logPrefix()} WebSocket reconnect failure: maximum retries reached (${
           this.autoReconnectRetryCount

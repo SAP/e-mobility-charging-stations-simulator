@@ -41,7 +41,6 @@ export default class UIHttpServer extends AbstractUIServer {
 
   public stop(): void {
     this.chargingStations.clear();
-    this.responseHandlers.clear();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
