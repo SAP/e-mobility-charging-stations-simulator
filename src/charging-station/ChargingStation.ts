@@ -652,6 +652,7 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
     delete this.getConnectorStatus(connectorId).transactionBeginMeterValue;
     this.stopMeterValues(connectorId);
+    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   public hasFeatureProfile(featureProfile: SupportedFeatureProfiles) {

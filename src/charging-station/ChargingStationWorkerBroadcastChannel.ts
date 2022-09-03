@@ -137,7 +137,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             true
           ),
           idTag: this.chargingStation.getTransactionIdTag(requestPayload.transactionId),
-          reason: requestPayload.reason ?? StopTransactionReason.NONE,
+          ...(requestPayload.reason && { reason: requestPayload.reason }),
         });
       case BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR:
         this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds);
