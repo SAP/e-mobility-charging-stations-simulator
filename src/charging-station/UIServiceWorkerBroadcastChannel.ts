@@ -41,16 +41,14 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
         responses: [responsePayload],
       });
     } else if (
-      this.responses.get(uuid)?.responsesReceived + 1 <
-      this.responses.get(uuid)?.responsesExpected
+      this.responses.get(uuid)?.responsesReceived <= this.responses.get(uuid)?.responsesExpected
     ) {
       this.responses.get(uuid).responsesReceived++;
       this.responses.get(uuid).responses.push(responsePayload);
-    } else if (
-      this.responses.get(uuid)?.responsesReceived + 1 ===
-      this.responses.get(uuid)?.responsesExpected
+    }
+    if (
+      this.responses.get(uuid)?.responsesReceived === this.responses.get(uuid)?.responsesExpected
     ) {
-      this.responses.get(uuid).responses.push(responsePayload);
       this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid));
       this.responses.delete(uuid);
       this.uiService.deleteBroadcastChannelRequest(uuid);

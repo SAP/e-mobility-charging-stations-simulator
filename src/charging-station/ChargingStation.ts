@@ -233,7 +233,7 @@ export default class ChargingStation {
     return this.connectors.get(0) ? this.connectors.size - 1 : this.connectors.size;
   }
 
-  public getConnectorStatus(id: number): ConnectorStatus {
+  public getConnectorStatus(id: number): ConnectorStatus | undefined {
     return this.connectors.get(id);
   }
 
@@ -1996,7 +1996,7 @@ export default class ChargingStation {
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop the ATG if needed
-    if (this.automaticTransactionGenerator?.configuration?.stopOnConnectionFailure) {
+    if (this.automaticTransactionGenerator?.configuration?.stopOnConnectionFailure === true) {
       this.stopAutomaticTransactionGenerator();
     }
     if (
@@ -2030,6 +2030,7 @@ export default class ChargingStation {
       );
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
+      await this.stopMessageSequence(StopTransactionReason.OTHER);
       logger.error(
         `${this.logPrefix()} WebSocket reconnect failure: maximum retries reached (${
           this.autoReconnectRetryCount

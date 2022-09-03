@@ -91,7 +91,7 @@ export default class UIHttpServer extends AbstractUIServer {
           error
         );
       });
-      if (!this.uiServices.has(version)) {
+      if (this.uiServices.has(version) === false) {
         this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
       }
       if (req.method === 'POST') {

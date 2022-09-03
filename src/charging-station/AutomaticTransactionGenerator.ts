@@ -226,7 +226,7 @@ export default class AutomaticTransactionGenerator {
       }
       this.connectorsStatus.get(connectorId).lastRunDate = new Date();
     }
-    await this.stopTransaction(connectorId);
+    // await this.stopTransaction(connectorId);
     this.connectorsStatus.get(connectorId).stoppedDate = new Date();
     logger.info(
       this.logPrefix(connectorId) +
@@ -257,6 +257,10 @@ export default class AutomaticTransactionGenerator {
       this?.connectorsStatus.get(connectorId)?.rejectedStartTransactionRequests ?? 0;
     this.connectorsStatus.get(connectorId).stopTransactionRequests =
       this?.connectorsStatus.get(connectorId)?.stopTransactionRequests ?? 0;
+    this.connectorsStatus.get(connectorId).acceptedStopTransactionRequests =
+      this?.connectorsStatus.get(connectorId)?.acceptedStopTransactionRequests ?? 0;
+    this.connectorsStatus.get(connectorId).rejectedStopTransactionRequests =
+      this?.connectorsStatus.get(connectorId)?.rejectedStopTransactionRequests ?? 0;
     this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
     this.connectorsStatus.get(connectorId).skippedTransactions =
       this?.connectorsStatus.get(connectorId)?.skippedTransactions ?? 0;
@@ -346,9 +350,14 @@ export default class AutomaticTransactionGenerator {
     const measureId = 'StopTransaction with ATG';
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let stopResponse: StopTransactionResponse;
-    if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
+    if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
       stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason);
       this.connectorsStatus.get(connectorId).stopTransactionRequests++;
+      if (stopResponse.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+        this.connectorsStatus.get(connectorId).acceptedStopTransactionRequests++;
+      } else {
+        this.connectorsStatus.get(connectorId).rejectedStopTransactionRequests++;
+      }
     } else {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
       logger.warn(

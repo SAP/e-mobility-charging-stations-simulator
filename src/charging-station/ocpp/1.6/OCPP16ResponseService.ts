@@ -581,6 +581,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       if (chargingStation.stationInfo.powerSharedByConnectors) {
         chargingStation.powerDivider--;
       }
+      chargingStation.resetConnectorStatus(transactionConnectorId);
       logger.info(
         chargingStation.logPrefix() +
           ' Transaction ' +
@@ -590,7 +591,6 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           '#' +
           transactionConnectorId.toString()
       );
-      chargingStation.resetConnectorStatus(transactionConnectorId);
     } else {
       logger.warn(
         chargingStation.logPrefix() +

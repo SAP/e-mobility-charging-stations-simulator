@@ -23,6 +23,8 @@ export type Status = {
   acceptedStartTransactionRequests?: number;
   rejectedStartTransactionRequests?: number;
   stopTransactionRequests?: number;
+  acceptedStopTransactionRequests?: number;
+  rejectedStopTransactionRequests?: number;
   skippedConsecutiveTransactions?: number;
   skippedTransactions?: number;
 };

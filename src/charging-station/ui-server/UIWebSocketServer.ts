@@ -33,7 +33,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         );
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
-      if (!this.uiServices.has(version)) {
+      if (this.uiServices.has(version) === false) {
         this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
       }
       ws.on('message', (rawData) => {
