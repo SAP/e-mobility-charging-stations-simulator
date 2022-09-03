@@ -6,6 +6,7 @@ export type ChargingStationData = {
   wsState?: number;
   bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
+  automaticTransactionGeneratorStatuses?: Status[];
 };
 
 export type ChargingStationInfo = {
@@ -187,3 +188,20 @@ export enum OCPP16ChargePointStatus {
   UNAVAILABLE = 'Unavailable',
   FAULTED = 'Faulted',
 }
+
+export type Status = {
+  start?: boolean;
+  startDate?: Date;
+  lastRunDate?: Date;
+  stopDate?: Date;
+  stoppedDate?: Date;
+  authorizeRequests?: number;
+  acceptedAuthorizeRequests?: number;
+  rejectedAuthorizeRequests?: number;
+  startTransactionRequests?: number;
+  acceptedStartTransactionRequests?: number;
+  rejectedStartTransactionRequests?: number;
+  stopTransactionRequests?: number;
+  skippedConsecutiveTransactions?: number;
+  skippedTransactions?: number;
+};

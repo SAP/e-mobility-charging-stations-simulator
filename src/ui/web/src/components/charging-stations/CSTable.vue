@@ -17,7 +17,7 @@
     </thead>
     <tbody id="cs-table__body">
       <CSData
-        v-for="chargingStation in chargingStations"
+        v-for="chargingStation in props.chargingStations"
         :key="chargingStation.stationInfo?.hashId"
         :charging-station="chargingStation"
         :idTag="props.idTag"

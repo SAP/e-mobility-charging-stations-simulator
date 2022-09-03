@@ -390,9 +390,9 @@ Protocol to control the simulator via a Websocket or HTTP server.
 
 A Postman and [Insomnia](https://insomnia.rest/) requests collection, to learn how to use the HTTP protocol to pilot the simulator, is available in [src/assets](./src/assets/) directory.
 
-### WebSocket Protocol
+### Websocket Protocol
 
-PDU stands for Protocol Data Unit.
+SRPC protocol over Websocket. PDU stands for 'Protocol Data Unit'.
 
 - Request:  
   [`uuid`, `ProcedureName`, `PDU`]  
@@ -403,11 +403,11 @@ PDU stands for Protocol Data Unit.
 - Response:  
   [`uuid`, `PDU`]  
   `uuid`: String uniquely linking the response to the request  
-  `PDU`: Response data to requested procedure
+  `PDU`: Response parameters to requested procedure
 
 #### Version 0.0.1
 
-Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
+Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 ##### Procedures
 
@@ -442,9 +442,7 @@ Set the WebSocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Response:  
   `PDU`: {  
   `status`: 'success' | 'failure',  
-  `index`: ChargingStationData,  
-  ...  
-  `index`: ChargingStationData  
+  `chargingStations`: ChargingStationData[]  
   }
 
 ###### Start Transaction

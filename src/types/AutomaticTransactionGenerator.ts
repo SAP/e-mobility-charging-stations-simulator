@@ -1,4 +1,4 @@
-export interface AutomaticTransactionGeneratorConfiguration {
+export type AutomaticTransactionGeneratorConfiguration = {
   enable: boolean;
   minDuration: number;
   maxDuration: number;
@@ -8,9 +8,9 @@ export interface AutomaticTransactionGeneratorConfiguration {
   stopAfterHours: number;
   stopOnConnectionFailure: boolean;
   requireAuthorize?: boolean;
-}
+};
 
-export interface Status {
+export type Status = {
   start?: boolean;
   startDate?: Date;
   lastRunDate?: Date;
@@ -25,4 +25,4 @@ export interface Status {
   stopTransactionRequests?: number;
   skippedConsecutiveTransactions?: number;
   skippedTransactions?: number;
-}
+};
