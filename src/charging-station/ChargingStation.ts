@@ -1847,7 +1847,7 @@ export default class ChargingStation {
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop ongoing transactions
-    if (this.automaticTransactionGenerator?.started) {
+    if (this.automaticTransactionGenerator?.started === true) {
       this.stopAutomaticTransactionGenerator();
     } else {
       await this.stopRunningTransactions(reason);

@@ -4,7 +4,6 @@ import {
   AuthorizationStatus,
   StartTransactionRequest,
   StartTransactionResponse,
-  StopTransactionReason,
   StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
