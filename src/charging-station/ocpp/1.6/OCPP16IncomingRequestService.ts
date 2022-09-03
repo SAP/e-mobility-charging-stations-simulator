@@ -69,7 +69,6 @@ import type { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
 import type { DefaultResponse } from '../../../types/ocpp/Responses';
-import { StopTransactionReason } from '../../../types/ocpp/Transaction';
 import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
@@ -956,7 +955,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.FINISHING;
         const stopResponse = await chargingStation.stopTransactionOnConnector(
           connectorId,
-          StopTransactionReason.REMOTE
+          OCPP16StopTransactionReason.REMOTE
         );
         if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
           return Constants.OCPP_RESPONSE_ACCEPTED;

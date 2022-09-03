@@ -1,4 +1,3 @@
-import type { ChargingStationData } from './ChargingStationType';
 import type { JsonObject } from './JsonType';
 
 export enum Protocol {
@@ -34,6 +33,7 @@ export enum ProcedureName {
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
 }
+
 export interface RequestPayload extends JsonObject {
   hashIds?: string[];
   connectorId?: number;
