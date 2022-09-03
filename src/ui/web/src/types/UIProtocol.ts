@@ -1,3 +1,4 @@
+import type { ChargingStationData } from './ChargingStationType';
 import type { JsonObject } from './JsonType';
 
 export enum Protocol {

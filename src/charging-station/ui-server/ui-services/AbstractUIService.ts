@@ -1,8 +1,5 @@
-import type { RawData } from 'ws';
-
 import BaseError from '../../../exception/BaseError';
 import { Bootstrap } from '../../../internal';
-import type { JsonType } from '../../../types/JsonType';
 import {
   ProcedureName,
   ProtocolRequest,
@@ -42,13 +39,13 @@ export default abstract class AbstractUIService {
     this.broadcastChannelRequests = new Map<string, number>();
   }
 
-  public async requestHandler(request: RawData | JsonType): Promise<void> {
+  public async requestHandler(request: ProtocolRequest): Promise<void> {
     let messageId: string;
     let command: ProcedureName;
     let requestPayload: RequestPayload | undefined;
     let responsePayload: ResponsePayload;
     try {
-      [messageId, command, requestPayload] = this.requestValidation(request);
+      [messageId, command, requestPayload] = request;
 
       if (this.requestHandlers.has(command) === false) {
         throw new BaseError(
@@ -133,34 +130,11 @@ export default abstract class AbstractUIService {
     this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);
   }
 
-  // Validate the raw data received from the UI server
-  private requestValidation(rawData: RawData | JsonType): ProtocolRequest {
-    // logger.debug(
-    //   `${this.logPrefix(
-    //     moduleName,
-    //     'requestValidation'
-    //   )} Data received in string format: ${rawData.toString()}`
-    // );
-
-    const data = JSON.parse(rawData.toString()) as JsonType[];
-
-    if (Array.isArray(data) === false) {
-      throw new BaseError('UI protocol request is not an array');
-    }
-
-    if (data.length !== 3) {
-      throw new BaseError('UI protocol request is malformed');
-    }
-
-    return data as ProtocolRequest;
-  }
-
   private handleListChargingStations(): ResponsePayload {
-    // TODO: remove cast to unknown
     return {
       status: ResponseStatus.SUCCESS,
-      ...[...this.uiServer.chargingStations.values()],
-    } as unknown as ResponsePayload;
+      chargingStations: [...this.uiServer.chargingStations.values()],
+    } as ResponsePayload;
   }
 
   private async handleStartSimulator(): Promise<ResponsePayload> {

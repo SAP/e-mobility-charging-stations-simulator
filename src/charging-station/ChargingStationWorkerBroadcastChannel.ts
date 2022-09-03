@@ -38,9 +38,8 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     if (this.isResponse(messageEvent.data)) {
       return;
     }
-    this.validateMessageEvent(messageEvent);
-
-    const [uuid, command, requestPayload] = messageEvent.data as BroadcastChannelRequest;
+    const [uuid, command, requestPayload] = this.validateMessageEvent(messageEvent)
+      .data as BroadcastChannelRequest;
 
     if (requestPayload?.hashIds !== undefined || requestPayload?.hashId !== undefined) {
       if (
@@ -98,7 +97,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
   private messageErrorHandler(messageEvent: MessageEvent): void {
     logger.error(
       `${this.chargingStation.logPrefix()} ${moduleName}.messageErrorHandler: Error at handling message:`,
-      { messageEvent, messageEventData: messageEvent.data }
+      { messageEvent }
     );
   }
 
@@ -138,7 +137,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             true
           ),
           idTag: this.chargingStation.getTransactionIdTag(requestPayload.transactionId),
-          reason: StopTransactionReason.NONE,
+          reason: requestPayload.reason ?? StopTransactionReason.NONE,
         });
       case BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR:
         this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds);

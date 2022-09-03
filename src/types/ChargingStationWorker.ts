@@ -1,3 +1,4 @@
+import type { Status } from './AutomaticTransactionGenerator';
 import type ChargingStationInfo from './ChargingStationInfo';
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { JsonObject } from './JsonType';
@@ -18,8 +19,10 @@ export interface ChargingStationWorkerData extends WorkerData {
 export interface ChargingStationData extends WorkerData {
   stationInfo: ChargingStationInfo;
   started: boolean;
+  wsState?: number;
   bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
+  automaticTransactionGeneratorStatuses?: Status[];
 }
 
 enum ChargingStationMessageEvents {

@@ -330,11 +330,11 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
     if (
-      chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted &&
+      chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted === true &&
       chargingStation.getAuthorizeRemoteTxRequests() &&
       chargingStation.getLocalAuthListEnabled() &&
       chargingStation.hasAuthorizedTags() &&
-      !chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized
+      chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized === false
     ) {
       logger.error(
         chargingStation.logPrefix() +
@@ -347,11 +347,11 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
     if (
-      chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted &&
+      chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted === true &&
       chargingStation.getAuthorizeRemoteTxRequests() &&
       chargingStation.getMustAuthorizeAtRemoteStart() &&
-      !chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized &&
-      !chargingStation.getConnectorStatus(connectorId).idTagAuthorized
+      chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized === false &&
+      chargingStation.getConnectorStatus(connectorId).idTagAuthorized === false
     ) {
       logger.error(
         chargingStation.logPrefix() +
@@ -395,7 +395,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId);
       return;
     }
-    if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
+    if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
       logger.debug(
         chargingStation.logPrefix() +
           ' Trying to start a transaction on an already used connector ' +

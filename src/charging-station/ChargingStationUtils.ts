@@ -21,7 +21,6 @@ import {
   IncomingRequestCommand,
   RequestCommand,
 } from '../types/ocpp/Requests';
-import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 import { WorkerProcessType } from '../types/Worker';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
@@ -174,32 +173,6 @@ export class ChargingStationUtils {
 
   public static workerDynamicPoolInUse(): boolean {
     return Configuration.getWorker().processType === WorkerProcessType.DYNAMIC_POOL;
-  }
-
-  /**
-   * Convert websocket error code to human readable string message
-   *
-   * @param code websocket error code
-   * @returns human readable string message
-   */
-  public static getWebSocketCloseEventStatusString(code: number): string {
-    if (code >= 0 && code <= 999) {
-      return '(Unused)';
-    } else if (code >= 1016) {
-      if (code <= 1999) {
-        return '(For WebSocket standard)';
-      } else if (code <= 2999) {
-        return '(For WebSocket extensions)';
-      } else if (code <= 3999) {
-        return '(For libraries and frameworks)';
-      } else if (code <= 4999) {
-        return '(For applications)';
-      }
-    }
-    if (!Utils.isUndefined(WebSocketCloseEventStatusString[code])) {
-      return WebSocketCloseEventStatusString[code] as string;
-    }
-    return '(Unknown)';
   }
 
   public static warnDeprecatedTemplateKey(

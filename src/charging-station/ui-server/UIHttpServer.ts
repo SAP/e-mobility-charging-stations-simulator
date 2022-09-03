@@ -7,6 +7,7 @@ import type { ServerOptions } from '../../types/ConfigurationData';
 import {
   ProcedureName,
   Protocol,
+  ProtocolRequest,
   ProtocolResponse,
   ProtocolVersion,
   RequestPayload,
@@ -44,12 +45,12 @@ export default class UIHttpServer extends AbstractUIServer {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public sendRequest(request: string): void {
+  public sendRequest(request: ProtocolRequest): void {
     // This is intentionally left blank
   }
 
-  public sendResponse(response: string): void {
-    const [uuid, payload] = JSON.parse(response) as ProtocolResponse;
+  public sendResponse(response: ProtocolResponse): void {
+    const [uuid, payload] = response;
     const statusCode = this.responseStatusToStatusCode(payload.status);
     if (this.responseHandlers.has(uuid) === true) {
       const { res } = this.responseHandlers.get(uuid);
@@ -59,7 +60,7 @@ export default class UIHttpServer extends AbstractUIServer {
       this.responseHandlers.delete(uuid);
     } else {
       logger.error(
-        `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request: ${response}`
+        `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
       );
     }
   }

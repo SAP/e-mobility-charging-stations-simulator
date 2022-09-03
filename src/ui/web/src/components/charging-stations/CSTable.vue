@@ -8,6 +8,7 @@
         <th scope="col" class="cs-table__transaction-col">Transaction</th>
         <th scope="col" class="cs-table__name-col">Name</th>
         <th scope="col" class="cs-table__started-col">Started</th>
+        <th scope="col" class="cs-table__wsState-col">WebSocket State</th>
         <th scope="col" class="cs-table__registration-status-col">Registration Status</th>
         <th scope="col" class="cs-table__vendor-col">Vendor</th>
         <th scope="col" class="cs-table__model-col">Model</th>
@@ -30,7 +31,7 @@ import CSData from './CSData.vue';
 import type { ChargingStationData } from '@/types/ChargingStationType';
 
 const props = defineProps<{
-  chargingStations: Record<string, ChargingStationData>;
+  chargingStations: ChargingStationData[];
   idTag: string;
 }>();
 </script>
@@ -82,6 +83,7 @@ const props = defineProps<{
 .cs-table__transaction-col,
 .cs-table__name-col,
 .cs-table__started-col,
+.cs-table__wsState-col,
 .cs-table__registration-status-col,
 .cs-table__model-col,
 .cs-table__vendor-col,

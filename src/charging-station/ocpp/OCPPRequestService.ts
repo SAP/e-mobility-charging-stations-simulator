@@ -1,3 +1,5 @@
+import { parentPort } from 'worker_threads';
+
 import type { JSONSchemaType } from 'ajv';
 import Ajv from 'ajv-draft-04';
 import ajvFormats from 'ajv-formats';
@@ -21,6 +23,7 @@ import Constants from '../../utils/Constants';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
+import { MessageChannelUtils } from '../MessageChannelUtils';
 import type OCPPResponseService from './OCPPResponseService';
 import { OCPPServiceUtils } from './OCPPServiceUtils';
 
@@ -251,6 +254,7 @@ export default abstract class OCPPRequestService {
               reject(error);
             } finally {
               chargingStation.requests.delete(messageId);
+              // parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(chargingStation));
             }
           }
 
@@ -274,6 +278,7 @@ export default abstract class OCPPRequestService {
               error
             );
             chargingStation.requests.delete(messageId);
+            // parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(chargingStation));
             reject(error);
           }
         }),

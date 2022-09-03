@@ -33,21 +33,22 @@ onMounted(() => {
 
 type State = {
   isLoading: boolean;
-  chargingStations: Record<string, ChargingStationData>;
+  chargingStations: ChargingStationData[];
   idTag: string;
 };
 
 const state: State = reactive({
   isLoading: false,
-  chargingStations: {},
+  chargingStations: [],
   idTag: '',
 });
 
 async function load(): Promise<void> {
   if (state.isLoading === true) return;
   state.isLoading = true;
-  const chargingStationsList = await UIClientInstance.listChargingStations();
-  state.chargingStations = chargingStationsList as unknown as Record<string, ChargingStationData>;
+  const listChargingStationsPayload = await UIClientInstance.listChargingStations();
+  state.chargingStations =
+    listChargingStationsPayload.chargingStations as unknown as ChargingStationData[];
   state.isLoading = false;
 }
 

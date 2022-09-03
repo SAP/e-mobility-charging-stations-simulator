@@ -117,7 +117,7 @@ export default class UIClient {
       console.error('WebSocket error: ', errorEvent);
     };
     this._ws.onclose = (closeEvent) => {
-      console.info('WebSocket close: ', closeEvent);
+      console.info('WebSocket closed: ', closeEvent);
     };
   }
 
@@ -154,13 +154,13 @@ export default class UIClient {
         if (this._ws.readyState === WebSocket.OPEN) {
           this._ws.send(msg);
         } else {
-          throw new Error(`Send request ${command} message: connection not opened`);
+          throw new Error(`Send request '${command}' message: connection not opened`);
         }
 
         this.setResponseHandler(uuid, command, resolve, reject);
       }),
-      60 * 1000,
-      Error(`Send request ${command} message timeout`),
+      120 * 1000,
+      Error(`Send request '${command}' message timeout`),
       () => {
         this._responseHandlers.delete(uuid);
       }
@@ -168,28 +168,28 @@ export default class UIClient {
   }
 
   private responseHandler(messageEvent: MessageEvent<string>): void {
-    const data = JSON.parse(messageEvent.data) as ProtocolResponse;
+    const response = JSON.parse(messageEvent.data) as ProtocolResponse;
 
-    if (Array.isArray(data) === false) {
-      throw new Error('Response not an array: ' + JSON.stringify(data, null, 2));
+    if (Array.isArray(response) === false) {
+      throw new Error('Response not an array: ' + JSON.stringify(response, null, 2));
     }
 
-    const [uuid, response] = data;
+    const [uuid, responsePayload] = response;
 
     if (this._responseHandlers.has(uuid) === true) {
-      switch (response.status) {
+      switch (responsePayload.status) {
         case ResponseStatus.SUCCESS:
-          this.getResponseHandler(uuid)?.resolve(response);
+          this.getResponseHandler(uuid)?.resolve(responsePayload);
           break;
         case ResponseStatus.FAILURE:
-          this.getResponseHandler(uuid)?.reject(response);
+          this.getResponseHandler(uuid)?.reject(responsePayload);
           break;
         default:
-          console.error(`Response status not supported: ${response.status}`);
+          console.error(`Response status not supported: ${responsePayload.status}`);
       }
       this.deleteResponseHandler(uuid);
     } else {
-      throw new Error('Not a response to a request: ' + JSON.stringify(data, null, 2));
+      throw new Error('Not a response to a request: ' + JSON.stringify(response, null, 2));
     }
   }
 }

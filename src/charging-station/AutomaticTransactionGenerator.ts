@@ -5,8 +5,7 @@ import type {
   AutomaticTransactionGeneratorConfiguration,
   Status,
 } from '../types/AutomaticTransactionGenerator';
-import { MeterValuesRequest, RequestCommand } from '../types/ocpp/Requests';
-import type { MeterValuesResponse } from '../types/ocpp/Responses';
+import { RequestCommand } from '../types/ocpp/Requests';
 import {
   AuthorizationStatus,
   AuthorizeRequest,
@@ -14,14 +13,12 @@ import {
   StartTransactionRequest,
   StartTransactionResponse,
   StopTransactionReason,
-  StopTransactionRequest,
   StopTransactionResponse,
 } from '../types/ocpp/Transaction';
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import type ChargingStation from './ChargingStation';
-import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 
 export default class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
@@ -29,10 +26,10 @@ export default class AutomaticTransactionGenerator {
     AutomaticTransactionGenerator
   >();
 
+  public readonly connectorsStatus: Map<number, Status>;
   public readonly configuration: AutomaticTransactionGeneratorConfiguration;
   public started: boolean;
   private readonly chargingStation: ChargingStation;
-  private readonly connectorsStatus: Map<number, Status>;
 
   private constructor(
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
@@ -344,48 +341,16 @@ export default class AutomaticTransactionGenerator {
 
   private async stopTransaction(
     connectorId: number,
-    reason: StopTransactionReason = StopTransactionReason.NONE
+    reason: StopTransactionReason = StopTransactionReason.LOCAL
   ): Promise<StopTransactionResponse> {
     const measureId = 'StopTransaction with ATG';
     const beginId = PerformanceStatistics.beginMeasure(measureId);
-    let transactionId = 0;
     let stopResponse: StopTransactionResponse;
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
-      transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
-      if (
-        this.chargingStation.getBeginEndMeterValues() &&
-        this.chargingStation.getOcppStrictCompliance() &&
-        !this.chargingStation.getOutOfOrderEndMeterValues()
-      ) {
-        // FIXME: Implement OCPP version agnostic helpers
-        const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
-          this.chargingStation,
-          connectorId,
-          this.chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
-        );
-        await this.chargingStation.ocppRequestService.requestHandler<
-          MeterValuesRequest,
-          MeterValuesResponse
-        >(this.chargingStation, RequestCommand.METER_VALUES, {
-          connectorId,
-          transactionId,
-          meterValue: [transactionEndMeterValue],
-        });
-      }
-      stopResponse = await this.chargingStation.ocppRequestService.requestHandler<
-        StopTransactionRequest,
-        StopTransactionResponse
-      >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
-        transactionId,
-        meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          transactionId,
-          true
-        ),
-        idTag: this.chargingStation.getTransactionIdTag(transactionId),
-        reason,
-      });
+      stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason);
       this.connectorsStatus.get(connectorId).stopTransactionRequests++;
     } else {
+      const transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
       logger.warn(
         `${this.logPrefix(connectorId)} trying to stop a not started transaction${
           transactionId ? ' ' + transactionId.toString() : ''

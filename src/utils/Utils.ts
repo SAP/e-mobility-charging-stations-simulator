@@ -2,6 +2,8 @@ import crypto from 'crypto';
 
 import { v4 as uuid } from 'uuid';
 
+import { WebSocketCloseEventStatusString } from '../types/WebSocket';
+
 export default class Utils {
   private constructor() {
     // This is intentional
@@ -256,5 +258,31 @@ export default class Utils {
       },
       space
     );
+  }
+
+  /**
+   * Convert websocket error code to human readable string message
+   *
+   * @param code websocket error code
+   * @returns human readable string message
+   */
+  public static getWebSocketCloseEventStatusString(code: number): string {
+    if (code >= 0 && code <= 999) {
+      return '(Unused)';
+    } else if (code >= 1016) {
+      if (code <= 1999) {
+        return '(For WebSocket standard)';
+      } else if (code <= 2999) {
+        return '(For WebSocket extensions)';
+      } else if (code <= 3999) {
+        return '(For libraries and frameworks)';
+      } else if (code <= 4999) {
+        return '(For applications)';
+      }
+    }
+    if (!Utils.isUndefined(WebSocketCloseEventStatusString[code])) {
+      return WebSocketCloseEventStatusString[code] as string;
+    }
+    return '(Unknown)';
   }
 }

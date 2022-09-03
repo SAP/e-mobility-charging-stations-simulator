@@ -425,13 +425,13 @@ export default class ChargingStation {
       );
       return;
     }
-    if (!this.getConnectorStatus(connectorId)?.transactionStarted) {
+    if (this.getConnectorStatus(connectorId)?.transactionStarted === false) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction started`
       );
       return;
     } else if (
-      this.getConnectorStatus(connectorId)?.transactionStarted &&
+      this.getConnectorStatus(connectorId)?.transactionStarted === true &&
       !this.getConnectorStatus(connectorId)?.transactionId
     ) {
       logger.error(
@@ -519,9 +519,7 @@ export default class ChargingStation {
     parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
   }
 
-  public async stop(reason: StopTransactionReason = StopTransactionReason.NONE): Promise<void> {
-    // Stop message sequence
-    await this.stopMessageSequence(reason);
+  public async stop(): Promise<void> {
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0) {
         await this.ocppRequestService.requestHandler<
@@ -547,8 +545,8 @@ export default class ChargingStation {
     parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
   }
 
-  public async reset(reason?: StopTransactionReason): Promise<void> {
-    await this.stop(reason);
+  public async reset(): Promise<void> {
+    await this.stop();
     await Utils.sleep(this.stationInfo.resetTime);
     this.initialize();
     this.start();
@@ -596,7 +594,6 @@ export default class ChargingStation {
                 ? limit
                 : DCElectricUtils.power(this.getVoltageOut(), limit);
         }
-
         const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
         if (limit > connectorMaximumPower) {
           logger.error(
@@ -768,6 +765,62 @@ export default class ChargingStation {
       this.automaticTransactionGenerator?.stop();
       this.automaticTransactionGenerator = null;
     }
+  }
+
+  public getNumberOfRunningTransactions(): number {
+    let trxCount = 0;
+    for (const connectorId of this.connectors.keys()) {
+      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+        trxCount++;
+      }
+    }
+    return trxCount;
+  }
+
+  public async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
+    for (const connectorId of this.connectors.keys()) {
+      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+        await this.stopTransactionOnConnector(connectorId, reason);
+      }
+    }
+  }
+
+  public async stopTransactionOnConnector(
+    connectorId: number,
+    reason = StopTransactionReason.NONE
+  ): Promise<StopTransactionResponse> {
+    const transactionId = this.getConnectorStatus(connectorId).transactionId;
+    if (
+      this.getBeginEndMeterValues() &&
+      this.getOcppStrictCompliance() &&
+      !this.getOutOfOrderEndMeterValues()
+    ) {
+      // FIXME: Implement OCPP version agnostic helpers
+      const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+        this,
+        connectorId,
+        this.getEnergyActiveImportRegisterByTransactionId(transactionId)
+      );
+      await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+        this,
+        RequestCommand.METER_VALUES,
+        {
+          connectorId,
+          transactionId,
+          meterValue: [transactionEndMeterValue],
+        }
+      );
+    }
+    return this.ocppRequestService.requestHandler<StopTransactionRequest, StopTransactionResponse>(
+      this,
+      RequestCommand.STOP_TRANSACTION,
+      {
+        transactionId,
+        meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
+        idTag: this.getTransactionIdTag(transactionId),
+        reason,
+      }
+    );
   }
 
   private flushMessageBuffer(): void {
@@ -1233,7 +1286,7 @@ export default class ChargingStation {
     }
     // Initialize transaction attributes on connectors
     for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && !this.getConnectorStatus(connectorId)?.transactionStarted) {
+      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === false) {
         this.initializeConnectorStatus(connectorId);
       }
     }
@@ -1395,6 +1448,7 @@ export default class ChargingStation {
       this.started === false && (this.started = true);
       this.autoReconnectRetryCount = 0;
       this.wsConnectionRestarted = false;
+      parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
     } else {
       logger.warn(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
@@ -1408,22 +1462,24 @@ export default class ChargingStation {
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
         logger.info(
-          `${this.logPrefix()} WebSocket normally closed with status '${ChargingStationUtils.getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} WebSocket normally closed with status '${Utils.getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason}'`
         );
         this.autoReconnectRetryCount = 0;
+        await this.stopMessageSequence(StopTransactionReason.OTHER);
         break;
       // Abnormal close
       default:
         logger.error(
-          `${this.logPrefix()} WebSocket abnormally closed with status '${ChargingStationUtils.getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} WebSocket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason}'`
         );
         await this.reconnect(code);
         break;
     }
+    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   private async onMessage(data: Data): Promise<void> {
@@ -1604,16 +1660,6 @@ export default class ChargingStation {
     return !Utils.isUndefined(localStationInfo.useConnectorId0)
       ? localStationInfo.useConnectorId0
       : true;
-  }
-
-  private getNumberOfRunningTransactions(): number {
-    let trxCount = 0;
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted) {
-        trxCount++;
-      }
-    }
-    return trxCount;
   }
 
   // 0 for disabling
@@ -1804,41 +1850,7 @@ export default class ChargingStation {
       if (this.automaticTransactionGenerator?.started) {
         this.stopAutomaticTransactionGenerator();
       } else {
-        for (const connectorId of this.connectors.keys()) {
-          if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted) {
-            const transactionId = this.getConnectorStatus(connectorId).transactionId;
-            if (
-              this.getBeginEndMeterValues() &&
-              this.getOcppStrictCompliance() &&
-              !this.getOutOfOrderEndMeterValues()
-            ) {
-              // FIXME: Implement OCPP version agnostic helpers
-              const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
-                this,
-                connectorId,
-                this.getEnergyActiveImportRegisterByTransactionId(transactionId)
-              );
-              await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
-                this,
-                RequestCommand.METER_VALUES,
-                {
-                  connectorId,
-                  transactionId,
-                  meterValue: [transactionEndMeterValue],
-                }
-              );
-            }
-            await this.ocppRequestService.requestHandler<
-              StopTransactionRequest,
-              StopTransactionResponse
-            >(this, RequestCommand.STOP_TRANSACTION, {
-              transactionId,
-              meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
-              idTag: this.getTransactionIdTag(transactionId),
-              reason,
-            });
-          }
-        }
+        await this.stopRunningTransactions(reason);
       }
     }
   }

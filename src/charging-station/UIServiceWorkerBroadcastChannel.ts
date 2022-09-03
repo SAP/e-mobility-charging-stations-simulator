@@ -32,8 +32,8 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
     if (this.isRequest(messageEvent.data)) {
       return;
     }
-    this.validateMessageEvent(messageEvent);
-    const [uuid, responsePayload] = messageEvent.data as BroadcastChannelResponse;
+    const [uuid, responsePayload] = this.validateMessageEvent(messageEvent)
+      .data as BroadcastChannelResponse;
     if (this.responses.has(uuid) === false) {
       this.responses.set(uuid, {
         responsesExpected: this.uiService.getBroadcastChannelExpectedResponses(uuid),
@@ -89,7 +89,7 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
   private messageErrorHandler(messageEvent: MessageEvent): void {
     logger.error(
       `${this.uiService.logPrefix(moduleName, 'messageErrorHandler')} Error at handling message:`,
-      { messageEvent, messageEventData: messageEvent.data }
+      { messageEvent }
     );
   }
 }

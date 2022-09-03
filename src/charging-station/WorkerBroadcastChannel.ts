@@ -29,9 +29,10 @@ export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
     return Array.isArray(message) && message.length === 2;
   }
 
-  protected validateMessageEvent(messageEvent: MessageEvent): void {
+  protected validateMessageEvent(messageEvent: MessageEvent): MessageEvent {
     if (Array.isArray(messageEvent.data) === false) {
       throw new BaseError('Worker broadcast channel protocol message event data is not an array');
     }
+    return messageEvent;
   }
 }

@@ -21,10 +21,6 @@ import {
   OCPP16SupportedFeatureProfiles,
 } from '../../../types/ocpp/1.6/Configuration';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
-import type {
-  OCPP16MeterValuesRequest,
-  OCPP16MeterValuesResponse,
-} from '../../../types/ocpp/1.6/MeterValues';
 import {
   ChangeAvailabilityRequest,
   ChangeConfigurationRequest,
@@ -68,13 +64,12 @@ import {
   OCPP16StartTransactionRequest,
   OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,
-  OCPP16StopTransactionRequest,
-  OCPP16StopTransactionResponse,
 } from '../../../types/ocpp/1.6/Transaction';
 import type { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
 import type { DefaultResponse } from '../../../types/ocpp/Responses';
+import { StopTransactionReason } from '../../../types/ocpp/Transaction';
 import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
@@ -386,7 +381,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   ): DefaultResponse {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     setImmediate(async (): Promise<void> => {
-      await chargingStation.reset((commandPayload.type + 'Reset') as OCPP16StopTransactionReason);
+      if (chargingStation.getNumberOfRunningTransactions() > 0) {
+        await chargingStation.stopRunningTransactions(
+          (commandPayload.type + 'Reset') as OCPP16StopTransactionReason
+        );
+      }
+      await chargingStation.reset();
     });
     logger.info(
       `${chargingStation.logPrefix()} ${
@@ -413,40 +413,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       );
       return Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
-    if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
-      const transactionId = chargingStation.getConnectorStatus(connectorId).transactionId;
-      if (
-        chargingStation.getBeginEndMeterValues() &&
-        chargingStation.getOcppStrictCompliance() &&
-        !chargingStation.getOutOfOrderEndMeterValues()
-      ) {
-        // FIXME: Implement OCPP version agnostic helpers
-        const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
-          chargingStation,
-          connectorId,
-          chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
-        );
-        await chargingStation.ocppRequestService.requestHandler<
-          OCPP16MeterValuesRequest,
-          OCPP16MeterValuesResponse
-        >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
-          connectorId,
-          transactionId,
-          meterValue: [transactionEndMeterValue],
-        });
-      }
-      const stopResponse = await chargingStation.ocppRequestService.requestHandler<
-        OCPP16StopTransactionRequest,
-        OCPP16StopTransactionResponse
-      >(chargingStation, OCPP16RequestCommand.STOP_TRANSACTION, {
-        transactionId,
-        meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          transactionId,
-          true
-        ),
-        idTag: chargingStation.getTransactionIdTag(transactionId),
-        reason: OCPP16StopTransactionReason.UNLOCK_COMMAND,
-      });
+    if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
+      const stopResponse = await chargingStation.stopTransactionOnConnector(
+        connectorId,
+        OCPP16StopTransactionReason.UNLOCK_COMMAND
+      );
       if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
         return Constants.OCPP_RESPONSE_UNLOCKED;
       }
@@ -599,7 +570,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       commandPayload.csChargingProfiles.chargingProfilePurpose ===
         ChargingProfilePurposeType.TX_PROFILE &&
       (commandPayload.connectorId === 0 ||
-        !chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted)
+        chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted ===
+          false)
     ) {
       return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
@@ -715,7 +687,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (connectorId === 0) {
       let response: ChangeAvailabilityResponse = Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
       for (const id of chargingStation.connectors.keys()) {
-        if (chargingStation.getConnectorStatus(id)?.transactionStarted) {
+        if (chargingStation.getConnectorStatus(id)?.transactionStarted === true) {
           response = Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
         }
         chargingStation.getConnectorStatus(id).availability = commandPayload.type;
@@ -739,7 +711,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           OCPP16AvailabilityType.INOPERATIVE &&
           commandPayload.type === OCPP16AvailabilityType.INOPERATIVE))
     ) {
-      if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted) {
+      if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
         chargingStation.getConnectorStatus(connectorId).availability = commandPayload.type;
         return Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
       }
@@ -982,38 +954,14 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
         });
         chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.FINISHING;
-        if (
-          chargingStation.getBeginEndMeterValues() &&
-          chargingStation.getOcppStrictCompliance() &&
-          !chargingStation.getOutOfOrderEndMeterValues()
-        ) {
-          // FIXME: Implement OCPP version agnostic helpers
-          const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
-            chargingStation,
-            connectorId,
-            chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId)
-          );
-          await chargingStation.ocppRequestService.requestHandler<
-            OCPP16MeterValuesRequest,
-            OCPP16MeterValuesResponse
-          >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
-            connectorId,
-            transactionId,
-            meterValue: [transactionEndMeterValue],
-          });
+        const stopResponse = await chargingStation.stopTransactionOnConnector(
+          connectorId,
+          StopTransactionReason.REMOTE
+        );
+        if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+          return Constants.OCPP_RESPONSE_ACCEPTED;
         }
-        await chargingStation.ocppRequestService.requestHandler<
-          OCPP16StopTransactionRequest,
-          OCPP16StopTransactionResponse
-        >(chargingStation, OCPP16RequestCommand.STOP_TRANSACTION, {
-          transactionId,
-          meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(
-            transactionId,
-            true
-          ),
-          idTag: chargingStation.getTransactionIdTag(transactionId),
-        });
-        return Constants.OCPP_RESPONSE_ACCEPTED;
+        return Constants.OCPP_RESPONSE_REJECTED;
       }
     }
     logger.warn(

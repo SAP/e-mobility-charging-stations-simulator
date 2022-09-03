@@ -15,8 +15,8 @@ import type AbstractUIService from './ui-services/AbstractUIService';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;
-  protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
   protected server: WebSocket.Server | HttpServer;
+  protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
 
   public constructor() {
     this.chargingStations = new Map<string, ChargingStationData>();
@@ -27,17 +27,21 @@ export abstract class AbstractUIServer {
     id: string,
     procedureName: ProcedureName,
     requestPayload: RequestPayload
-  ): string {
-    return JSON.stringify([id, procedureName, requestPayload] as ProtocolRequest);
+  ): ProtocolRequest {
+    return [id, procedureName, requestPayload];
   }
 
-  public buildProtocolResponse(id: string, responsePayload: ResponsePayload): string {
-    return JSON.stringify([id, responsePayload] as ProtocolResponse);
+  public buildProtocolResponse(id: string, responsePayload: ResponsePayload): ProtocolResponse {
+    return [id, responsePayload];
   }
 
   public abstract start(): void;
   public abstract stop(): void;
-  public abstract sendRequest(request: string): void;
-  public abstract sendResponse(response: string): void;
-  public abstract logPrefix(modName?: string, methodName?: string, prefixSuffix?: string): string;
+  public abstract sendRequest(request: ProtocolRequest): void;
+  public abstract sendResponse(response: ProtocolResponse): void;
+  public abstract logPrefix(
+    moduleName?: string,
+    methodName?: string,
+    prefixSuffix?: string
+  ): string;
 }

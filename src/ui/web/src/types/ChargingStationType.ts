@@ -3,6 +3,7 @@ import type { JsonObject } from './JsonType';
 export type ChargingStationData = {
   stationInfo: ChargingStationInfo;
   started: boolean;
+  wsState?: number;
   bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
 };
