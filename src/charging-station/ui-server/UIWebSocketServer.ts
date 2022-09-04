@@ -72,7 +72,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         this.authenticate(req, (err) => {
           if (err) {
             socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`);
-            socket.destroy(err);
+            socket.destroy();
             return;
           }
           this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
