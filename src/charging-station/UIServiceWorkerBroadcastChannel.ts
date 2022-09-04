@@ -29,7 +29,7 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
   }
 
   private responseHandler(messageEvent: MessageEvent): void {
-    if (this.isRequest(messageEvent.data)) {
+    if (this.isRequest(messageEvent.data) === true) {
       return;
     }
     const [uuid, responsePayload] = this.validateMessageEvent(messageEvent)

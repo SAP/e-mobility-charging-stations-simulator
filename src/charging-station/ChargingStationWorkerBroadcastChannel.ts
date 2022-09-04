@@ -34,7 +34,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
   }
 
   private async requestHandler(messageEvent: MessageEvent): Promise<void> {
-    if (this.isResponse(messageEvent.data)) {
+    if (this.isResponse(messageEvent.data) === true) {
       return;
     }
     const [uuid, command, requestPayload] = this.validateMessageEvent(messageEvent)
