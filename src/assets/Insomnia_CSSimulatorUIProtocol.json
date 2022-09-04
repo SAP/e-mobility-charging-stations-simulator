@@ -1,13 +1,13 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2022-08-30T23:51:59.143Z",
+  "__export_date": "2022-09-04T13:06:25.404Z",
   "__export_source": "insomnia.desktop.app:v2022.5.1",
   "resources": [
     {
       "_id": "req_606dcee139984772877def40fcbb5c76",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661902790226,
+      "modified": 1662296757479,
       "created": 1661789624987,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/listChargingStations",
       "name": "listChargingStations",
@@ -46,7 +46,7 @@
     {
       "_id": "req_7d5f9506e7ac49208a4f960a7740663e",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661899373583,
+      "modified": 1662296607175,
       "created": 1661789624990,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startSimulator",
       "name": "startSimulator",
@@ -75,7 +75,7 @@
     {
       "_id": "req_59056be11534481c80a0b0da32e2a06a",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661868197495,
+      "modified": 1662296758496,
       "created": 1661789624994,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopSimulator",
       "name": "stopSimulator",
@@ -104,7 +104,7 @@
     {
       "_id": "req_aad7fd6db4c64869b60048b915010efc",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661902835643,
+      "modified": 1662296608188,
       "created": 1661789624998,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startChargingStation",
       "name": "startChargingStation",
@@ -136,7 +136,7 @@
     {
       "_id": "req_d72d91cf3fb044179b8ae9d92a74f99c",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661901541707,
+      "modified": 1662296608966,
       "created": 1661789625002,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopChargingStation",
       "name": "stopChargingStation",
@@ -168,7 +168,7 @@
     {
       "_id": "req_747f458d196f4681b5fe15204b0067aa",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661901542755,
+      "modified": 1662296610236,
       "created": 1661789625005,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/openConnection",
       "name": "openConnection",
@@ -200,7 +200,7 @@
     {
       "_id": "req_401e6a62a33c4b6c90aaa2e019daab6d",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661901532668,
+      "modified": 1662242691412,
       "created": 1661789625014,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/closeConnection",
       "name": "closeConnection",
@@ -232,7 +232,7 @@
     {
       "_id": "req_2f757efe92fb4936ad4fa4b6763f9293",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661901511510,
+      "modified": 1662242693138,
       "created": 1661789625017,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startTransaction",
       "name": "startTransaction",
@@ -264,7 +264,7 @@
     {
       "_id": "req_7c285fb6cb6948a08235a6c73cbeb1f9",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661903221120,
+      "modified": 1662242716229,
       "created": 1661789625020,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopTransaction",
       "name": "stopTransaction",
@@ -272,7 +272,7 @@
       "method": "POST",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t],\n\t\"transactionId\": 671898962\n}"
+        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t],\n\t\"transactionId\": 1470213722\n}"
       },
       "parameters": [],
       "headers": [
@@ -296,7 +296,7 @@
     {
       "_id": "req_b33c704fe3464dc5a5d3694abd9320d0",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661903422637,
+      "modified": 1662242720762,
       "created": 1661803778569,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startAutomaticTransactionGenerator",
       "name": "startAutomaticTransactionGenerator",
@@ -304,7 +304,7 @@
       "method": "POST",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\",\n\t\t\"331d024fea36e3e2483a0e5dc9376234241c8c099ad201a441437b23622c308555183f37cbc84a1818c1c45aaae50896\"\n\t],\n\t\"connectorIds\": [\n\t\t2\n\t]\n}"
+        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\",\n\t\t\"331d024fea36e3e2483a0e5dc9376234241c8c099ad201a441437b23622c308555183f37cbc84a1818c1c45aaae50896\"\n\t],\n\t\"connectorIds\": [\n\t\t1,\n\t\t2\n\t]\n}"
       },
       "parameters": [],
       "headers": [
@@ -328,7 +328,7 @@
     {
       "_id": "req_24c1c55fe3ba4ddb94702408f21a64df",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661903489161,
+      "modified": 1662242719603,
       "created": 1661803846882,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopAutomaticTransactionGenerator",
       "name": "stopAutomaticTransactionGenerator",
@@ -336,7 +336,7 @@
       "method": "POST",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\",\n\t\t\"331d024fea36e3e2483a0e5dc9376234241c8c099ad201a441437b23622c308555183f37cbc84a1818c1c45aaae50896\"\n\t],\n\t\"connectorIds\": [\n\t\t2\n\t]\n}"
+        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\",\n\t\t\"331d024fea36e3e2483a0e5dc9376234241c8c099ad201a441437b23622c308555183f37cbc84a1818c1c45aaae50896\"\n\t],\n\t\"connectorIds\": [\n\t\t1,\n\t\t2\n\t]\n}"
       },
       "parameters": [],
       "headers": [
@@ -360,7 +360,7 @@
     {
       "_id": "env_74b29d59b9f04298b97fc9750476a4ca",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661790143488,
+      "modified": 1661982974925,
       "created": 1661789624970,
       "name": "Base Environment",
       "data": {},
@@ -392,11 +392,17 @@
     {
       "_id": "env_2874a21c9c3d4747af649e3b6e237791",
       "parentId": "env_74b29d59b9f04298b97fc9750476a4ca",
-      "modified": 1661790160526,
+      "modified": 1662296398304,
       "created": 1661789624972,
       "name": "CSSimulatorUIProtocolEnvironment",
-      "data": { "baseUrl": "http://localhost:8080", "protocol": "ui", "version": "0.0.1" },
-      "dataPropertyOrder": { "&": ["baseUrl", "protocol", "version"] },
+      "data": {
+        "baseUrl": "http://localhost:8080",
+        "protocol": "ui",
+        "version": "0.0.1",
+        "username": "admin",
+        "password": "admin"
+      },
+      "dataPropertyOrder": { "&": ["baseUrl", "protocol", "version", "username", "password"] },
       "color": null,
       "isPrivate": false,
       "metaSortKey": 1661789025528,
