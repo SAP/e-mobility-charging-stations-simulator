@@ -53,12 +53,11 @@ export class Bootstrap {
       'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
     this.initialize();
-    if (Configuration.getUIServer().enabled === true) {
-      this.uiServer = UIServerFactory.getUIServerImplementation(
+    Configuration.getUIServer().enabled === true &&
+      (this.uiServer = UIServerFactory.getUIServerImplementation(
         Configuration.getUIServer().type,
         Configuration.getUIServer()
-      );
-    }
+      ));
     Configuration.getPerformanceStorage().enabled === true &&
       (this.storage = StorageFactory.getStorage(
         Configuration.getPerformanceStorage().type,
