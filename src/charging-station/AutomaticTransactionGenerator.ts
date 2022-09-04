@@ -186,11 +186,7 @@ export default class AutomaticTransactionGenerator {
         this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
         // Start transaction
         const startResponse = await this.startTransaction(connectorId);
-        this.connectorsStatus.get(connectorId).startTransactionRequests++;
-        if (startResponse?.idTagInfo?.status !== AuthorizationStatus.ACCEPTED) {
-          logger.warn(this.logPrefix(connectorId) + ' start transaction rejected');
-          this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
-        } else {
+        if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           // Wait until end of transaction
           const waitTrxEnd =
             Utils.getRandomInteger(this.configuration.maxDuration, this.configuration.minDuration) *
@@ -202,7 +198,6 @@ export default class AutomaticTransactionGenerator {
               ' started and will stop in ' +
               Utils.formatDurationMilliSeconds(waitTrxEnd)
           );
-          this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
           logger.info(
@@ -283,7 +278,7 @@ export default class AutomaticTransactionGenerator {
 
   private async startTransaction(
     connectorId: number
-  ): Promise<StartTransactionResponse | AuthorizeResponse> {
+  ): Promise<StartTransactionResponse | undefined> {
     const measureId = 'StartTransaction with ATG';
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let startResponse: StartTransactionResponse;
@@ -314,12 +309,19 @@ export default class AutomaticTransactionGenerator {
             connectorId,
             idTag,
           });
+          this.connectorsStatus.get(connectorId).startTransactionRequests++;
+          if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+            this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
+          } else {
+            logger.warn(this.logPrefix(connectorId) + ' start transaction rejected');
+            this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
+          }
           PerformanceStatistics.endMeasure(measureId, beginId);
           return startResponse;
         }
         this.connectorsStatus.get(connectorId).rejectedAuthorizeRequests++;
         PerformanceStatistics.endMeasure(measureId, beginId);
-        return authorizeResponse;
+        return startResponse;
       }
       logger.info(startTransactionLogMsg);
       // Start transaction
@@ -352,7 +354,7 @@ export default class AutomaticTransactionGenerator {
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
       stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason);
       this.connectorsStatus.get(connectorId).stopTransactionRequests++;
-      if (stopResponse.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+      if (stopResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
         this.connectorsStatus.get(connectorId).acceptedStopTransactionRequests++;
       } else {
         this.connectorsStatus.get(connectorId).rejectedStopTransactionRequests++;

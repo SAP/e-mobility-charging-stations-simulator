@@ -261,7 +261,7 @@ export default abstract class OCPPRequestService {
            * @param requestStatistic
            */
           function errorCallback(error: OCPPError, requestStatistic = true): void {
-            if (requestStatistic && chargingStation.getEnableStatistics()) {
+            if (requestStatistic === true && chargingStation.getEnableStatistics() === true) {
               chargingStation.performanceStatistics.addRequestStatistic(
                 commandName,
                 MessageType.CALL_ERROR_MESSAGE
