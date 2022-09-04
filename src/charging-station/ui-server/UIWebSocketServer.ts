@@ -116,15 +116,15 @@ export default class UIWebSocketServer extends AbstractUIServer {
     }
   }
 
-  private authenticate(req: IncomingMessage, next: (err: Error) => void): void {
+  private authenticate(req: IncomingMessage, next: (err?: Error) => void): void {
     if (this.isBasicAuthEnabled() === true) {
       if (this.isValidBasicAuth(req) === false) {
         next(new Error('Unauthorized'));
       } else {
-        next(undefined);
+        next();
       }
     } else {
-      next(undefined);
+      next();
     }
   }
 

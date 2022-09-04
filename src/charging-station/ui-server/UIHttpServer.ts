@@ -71,7 +71,7 @@ export default class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener(req: IncomingMessage, res: ServerResponse): void {
-    if (this.isBasicAuthEnabled() === true && this.isValidBasicAuth(req) === false) {
+    if (this.authenticate(req) === false) {
       res.setHeader('Content-Type', 'text/plain');
       res.setHeader('WWW-Authenticate', 'Basic realm=users');
       res.writeHead(StatusCodes.UNAUTHORIZED);
@@ -126,6 +126,16 @@ export default class UIHttpServer extends AbstractUIServer {
       );
       this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }));
     }
+  }
+
+  private authenticate(req: IncomingMessage): boolean {
+    if (this.isBasicAuthEnabled() === true) {
+      if (this.isValidBasicAuth(req) === true) {
+        return true;
+      }
+      return false;
+    }
+    return true;
   }
 
   private responseStatusToStatusCode(status: ResponseStatus): StatusCodes {
