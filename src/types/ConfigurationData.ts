@@ -1,13 +1,12 @@
 import type { ListenOptions } from 'net';
 
 import type { WorkerChoiceStrategy } from 'poolifier';
-import type { ServerOptions as WSServerOptions } from 'ws';
 
 import type { StorageType } from './Storage';
-import type { ApplicationProtocol } from './UIProtocol';
+import type { ApplicationProtocol, AuthenticationType } from './UIProtocol';
 import type { WorkerProcessType } from './Worker';
 
-export type ServerOptions = WSServerOptions & ListenOptions;
+export type ServerOptions = ListenOptions;
 
 export enum SupervisionUrlDistribution {
   ROUND_ROBIN = 'round-robin',
@@ -24,6 +23,12 @@ export interface UIServerConfiguration {
   enabled?: boolean;
   type?: ApplicationProtocol;
   options?: ServerOptions;
+  authentication?: {
+    enabled: boolean;
+    type: AuthenticationType;
+    username?: string;
+    password?: string;
+  };
 }
 
 export interface StorageConfiguration {

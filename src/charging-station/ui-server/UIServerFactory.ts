@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import type { ServerOptions } from '../../types/ConfigurationData';
+import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import { ApplicationProtocol } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
 import type { AbstractUIServer } from './AbstractUIServer';
@@ -15,9 +15,9 @@ export default class UIServerFactory {
 
   public static getUIServerImplementation(
     applicationProtocol: ApplicationProtocol,
-    options?: ServerOptions
+    uiServerConfiguration?: UIServerConfiguration
   ): AbstractUIServer | null {
-    if (!UIServiceUtils.isLoopback(options?.host)) {
+    if (UIServiceUtils.isLoopback(uiServerConfiguration.options?.host) === false) {
       console.warn(
         chalk.magenta(
           'Loopback address not detected in UI server configuration. This is not recommended.'
@@ -26,9 +26,9 @@ export default class UIServerFactory {
     }
     switch (applicationProtocol) {
       case ApplicationProtocol.WS:
-        return new UIWebSocketServer(options ?? Configuration.getUIServer().options);
+        return new UIWebSocketServer(uiServerConfiguration ?? Configuration.getUIServer());
       case ApplicationProtocol.HTTP:
-        return new UIHttpServer(options ?? Configuration.getUIServer().options);
+        return new UIHttpServer(uiServerConfiguration ?? Configuration.getUIServer());
       default:
         return null;
     }

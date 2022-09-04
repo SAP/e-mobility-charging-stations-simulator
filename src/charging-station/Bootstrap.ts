@@ -26,7 +26,6 @@ import type WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
-import { UIServiceUtils } from './ui-server/ui-services/UIServiceUtils';
 import UIServerFactory from './ui-server/UIServerFactory';
 
 const moduleName = 'Bootstrap';
@@ -54,12 +53,13 @@ export class Bootstrap {
       'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
     );
     this.initialize();
-    Configuration.getUIServer().enabled &&
-      (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer().type, {
-        ...Configuration.getUIServer().options,
-        handleProtocols: UIServiceUtils.handleProtocols,
-      }));
-    Configuration.getPerformanceStorage().enabled &&
+    if (Configuration.getUIServer().enabled === true) {
+      this.uiServer = UIServerFactory.getUIServerImplementation(
+        Configuration.getUIServer().type,
+        Configuration.getUIServer()
+      );
+    }
+    Configuration.getPerformanceStorage().enabled === true &&
       (this.storage = StorageFactory.getStorage(
         Configuration.getPerformanceStorage().type,
         Configuration.getPerformanceStorage().uri,

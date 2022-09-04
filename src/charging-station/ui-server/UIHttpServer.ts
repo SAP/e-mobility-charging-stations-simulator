@@ -3,7 +3,7 @@ import { IncomingMessage, RequestListener, Server, ServerResponse } from 'http';
 import { StatusCodes } from 'http-status-codes';
 
 import BaseError from '../../exception/BaseError';
-import type { ServerOptions } from '../../types/ConfigurationData';
+import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import {
   ProcedureName,
   Protocol,
@@ -13,7 +13,6 @@ import {
   RequestPayload,
   ResponseStatus,
 } from '../../types/UIProtocol';
-import Configuration from '../../utils/Configuration';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
@@ -27,15 +26,15 @@ type responseHandler = { procedureName: ProcedureName; res: ServerResponse };
 export default class UIHttpServer extends AbstractUIServer {
   private readonly responseHandlers: Map<string, responseHandler>;
 
-  public constructor(private options?: ServerOptions) {
-    super();
-    this.server = new Server(this.requestListener.bind(this) as RequestListener);
+  public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
+    super(uiServerConfiguration);
+    this.httpServer = new Server(this.requestListener.bind(this) as RequestListener);
     this.responseHandlers = new Map<string, responseHandler>();
   }
 
   public start(): void {
-    if ((this.server as Server).listening === false) {
-      (this.server as Server).listen(this.options ?? Configuration.getUIServer().options);
+    if (this.httpServer.listening === false) {
+      this.httpServer.listen(this.uiServerConfiguration.options);
     }
   }
 
@@ -72,6 +71,13 @@ export default class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener(req: IncomingMessage, res: ServerResponse): void {
+    if (this.isBasicAuthEnabled() === true && this.isValidBasicAuth(req) === false) {
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('WWW-Authenticate', 'Basic realm=users');
+      res.writeHead(StatusCodes.UNAUTHORIZED);
+      res.end(`${StatusCodes.UNAUTHORIZED} Unauthorized`);
+      return;
+    }
     // Expected request URL pathname: /ui/:version/:procedureName
     const [protocol, version, procedureName] = req.url?.split('/').slice(1) as [
       Protocol,

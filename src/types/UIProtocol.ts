@@ -9,6 +9,10 @@ export enum ApplicationProtocol {
   WS = 'ws',
 }
 
+export enum AuthenticationType {
+  BASIC_AUTH = 'basic-auth',
+}
+
 export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
 }
