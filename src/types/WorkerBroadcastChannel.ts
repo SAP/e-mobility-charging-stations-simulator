@@ -16,6 +16,7 @@ export enum BroadcastChannelProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  STATUS_NOTIFICATION = 'statusNotification',
 }
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {
@@ -24,7 +25,8 @@ export interface BroadcastChannelRequestPayload extends RequestPayload {
   idTag?: string;
 }
 
-export interface BroadcastChannelResponsePayload extends ResponsePayload {
+export interface BroadcastChannelResponsePayload
+  extends Omit<ResponsePayload, 'hashIdsSucceeded' | 'hashIdsFailed' | 'responsesFailed'> {
   hashId: string;
 }
 

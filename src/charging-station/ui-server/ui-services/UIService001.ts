@@ -43,6 +43,10 @@ export default class UIService001 extends AbstractUIService {
       ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
       this.handleStopAutomaticTransactionGenerator.bind(this) as ProtocolRequestHandler
     );
+    this.requestHandlers.set(
+      ProcedureName.STATUS_NOTIFICATION,
+      this.handleStatusNotification.bind(this) as ProtocolRequestHandler
+    );
   }
 
   private handleStartChargingStation(uuid: string, payload: RequestPayload): void {
@@ -93,6 +97,14 @@ export default class UIService001 extends AbstractUIService {
     this.sendBroadcastChannelRequest(
       uuid,
       BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+      payload
+    );
+  }
+
+  private handleStatusNotification(uuid: string, payload: RequestPayload): void {
+    this.sendBroadcastChannelRequest(
+      uuid,
+      BroadcastChannelProcedureName.STATUS_NOTIFICATION,
       payload
     );
   }

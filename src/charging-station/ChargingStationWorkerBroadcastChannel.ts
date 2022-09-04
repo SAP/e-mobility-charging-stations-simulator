@@ -1,5 +1,7 @@
 import BaseError from '../exception/BaseError';
-import { RequestCommand } from '../types/ocpp/Requests';
+import type OCPPError from '../exception/OCPPError';
+import { RequestCommand, type StatusNotificationRequest } from '../types/ocpp/Requests';
+import type { StatusNotificationResponse } from '../types/ocpp/Responses';
 import {
   AuthorizationStatus,
   StartTransactionRequest,
@@ -16,12 +18,16 @@ import {
 } from '../types/WorkerBroadcastChannel';
 import { ResponseStatus } from '../ui/web/src/types/UIProtocol';
 import logger from '../utils/Logger';
+import Utils from '../utils/Utils';
 import type ChargingStation from './ChargingStation';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 
-type CommandResponse = StartTransactionResponse | StopTransactionResponse;
+type CommandResponse =
+  | StartTransactionResponse
+  | StopTransactionResponse
+  | StatusNotificationResponse;
 
 export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly chargingStation: ChargingStation;
@@ -88,6 +94,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         commandResponse,
         errorMessage: (error as Error).message,
         errorStack: (error as Error).stack,
+        errorDetails: (error as OCPPError).details,
       };
     }
     this.sendResponse([uuid, responsePayload]);
@@ -144,6 +151,21 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       case BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR:
         this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds);
         break;
+      case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
+        return this.chargingStation.ocppRequestService.requestHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, {
+          connectorId: requestPayload.connectorId,
+          errorCode: requestPayload.errorCode,
+          status: requestPayload.status,
+          ...(requestPayload.info && { info: requestPayload.info }),
+          ...(requestPayload.timestamp && { timestamp: requestPayload.timestamp }),
+          ...(requestPayload.vendorId && { vendorId: requestPayload.vendorId }),
+          ...(requestPayload.vendorErrorCode && {
+            vendorErrorCode: requestPayload.vendorErrorCode,
+          }),
+        });
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
@@ -151,7 +173,10 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
   }
 
   private commandResponseToResponseStatus(commandResponse: CommandResponse): ResponseStatus {
-    if (commandResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+    if (
+      Utils.isEmptyObject(commandResponse) ||
+      commandResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
+    ) {
       return ResponseStatus.SUCCESS;
     }
     return ResponseStatus.FAILURE;

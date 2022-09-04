@@ -34,8 +34,8 @@ export interface OCPP16BootNotificationRequest extends JsonObject {
 export interface OCPP16StatusNotificationRequest extends JsonObject {
   connectorId: number;
   errorCode: OCPP16ChargePointErrorCode;
-  info?: string;
   status: OCPP16ChargePointStatus;
+  info?: string;
   timestamp?: string;
   vendorId?: string;
   vendorErrorCode?: string;

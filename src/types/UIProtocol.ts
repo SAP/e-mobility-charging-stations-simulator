@@ -38,6 +38,7 @@ export enum ProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  STATUS_NOTIFICATION = 'statusNotification',
 }
 
 export interface RequestPayload extends JsonObject {

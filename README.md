@@ -459,7 +459,8 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `PDU`: {  
   `status`: 'success' | 'failure',  
   `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional)  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Stop Transaction
@@ -568,6 +569,23 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`: 'success' | 'failure',  
   `hashIdsSucceeded`: charging station unique identifier strings array,  
   `hashIdsFailed`: charging station unique identifier strings array (optional)  
+  }
+
+###### Stop Automatic Transaction Generator
+
+- Request:  
+  `ProcedureName`: 'StatusNotification'  
+  `PDU`: {  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+  `connectorId`: connector id integer  
+  }
+
+- Response:  
+  `PDU`: {  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional)  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ## Support, Feedback, Contributing
