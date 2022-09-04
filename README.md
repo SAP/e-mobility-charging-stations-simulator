@@ -388,7 +388,7 @@ Protocol to control the simulator via a Websocket or HTTP server.
 
 ### HTTP Protocol
 
-A Postman and [Insomnia](https://insomnia.rest/) requests collection, to learn how to use the HTTP protocol to pilot the simulator, is available in [src/assets](./src/assets/) directory.
+To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) requests collection is available in [src/assets](./src/assets/) directory.
 
 ### Websocket Protocol
 
