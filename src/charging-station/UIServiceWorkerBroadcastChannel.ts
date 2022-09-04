@@ -81,6 +81,16 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
           })
           .filter((hashId) => hashId !== undefined),
       }),
+      ...(responsesStatus === ResponseStatus.FAILURE && {
+        responsesFailed: this.responses
+          .get(uuid)
+          ?.responses.map((response) => {
+            if (response.status === ResponseStatus.FAILURE) {
+              return response;
+            }
+          })
+          .filter((response) => response !== undefined),
+      }),
     };
   }
 

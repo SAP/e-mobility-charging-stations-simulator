@@ -1,4 +1,5 @@
 import type { JsonObject } from './JsonType';
+import type { BroadcastChannelResponsePayload } from './WorkerBroadcastChannel';
 
 export enum Protocol {
   UI = 'ui',
@@ -53,4 +54,5 @@ export interface ResponsePayload extends JsonObject {
   status: ResponseStatus;
   hashIdsSucceeded?: string[];
   hashIdsFailed?: string[];
+  responsesFailed?: BroadcastChannelResponsePayload[];
 }
