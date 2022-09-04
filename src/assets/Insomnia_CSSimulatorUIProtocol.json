@@ -1,13 +1,13 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2022-09-04T13:06:25.404Z",
+  "__export_date": "2022-09-04T13:15:36.340Z",
   "__export_source": "insomnia.desktop.app:v2022.5.1",
   "resources": [
     {
       "_id": "req_606dcee139984772877def40fcbb5c76",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662296757479,
+      "modified": 1662297305028,
       "created": 1661789624987,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/listChargingStations",
       "name": "listChargingStations",
@@ -22,7 +22,13 @@
           "id": "pair_af9f914ca52f407488bc6df6c7db3a08"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -1000000000,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -46,7 +52,7 @@
     {
       "_id": "req_7d5f9506e7ac49208a4f960a7740663e",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662296607175,
+      "modified": 1662297302660,
       "created": 1661789624990,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startSimulator",
       "name": "startSimulator",
@@ -61,7 +67,13 @@
           "id": "pair_09b7c0032eac4b1e800c6eb253dc1525"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -1661726116055,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -75,7 +87,7 @@
     {
       "_id": "req_59056be11534481c80a0b0da32e2a06a",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662296758496,
+      "modified": 1662297303900,
       "created": 1661789624994,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopSimulator",
       "name": "stopSimulator",
@@ -90,7 +102,13 @@
           "id": "pair_7ea195d611f2460a8622e3c7c1784745"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -831363058027.5,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -104,7 +122,7 @@
     {
       "_id": "req_aad7fd6db4c64869b60048b915010efc",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662296608188,
+      "modified": 1662297306466,
       "created": 1661789624998,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startChargingStation",
       "name": "startChargingStation",
@@ -122,7 +140,13 @@
           "id": "pair_b663f1f9109940b5ad9b5678e4cff165"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999950,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -136,7 +160,7 @@
     {
       "_id": "req_d72d91cf3fb044179b8ae9d92a74f99c",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662296608966,
+      "modified": 1662297307625,
       "created": 1661789625002,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopChargingStation",
       "name": "stopChargingStation",
@@ -154,7 +178,13 @@
           "id": "pair_b4f4749529f748ee848c51e8aefd367f"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999900,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -168,7 +198,7 @@
     {
       "_id": "req_747f458d196f4681b5fe15204b0067aa",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662296610236,
+      "modified": 1662297308440,
       "created": 1661789625005,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/openConnection",
       "name": "openConnection",
@@ -186,7 +216,13 @@
           "id": "pair_b313e717dc014e938a0847bc37d0968c"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999850,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -200,7 +236,7 @@
     {
       "_id": "req_401e6a62a33c4b6c90aaa2e019daab6d",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662242691412,
+      "modified": 1662297309118,
       "created": 1661789625014,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/closeConnection",
       "name": "closeConnection",
@@ -218,7 +254,13 @@
           "id": "pair_150c47e3e4a54c2eaaf003df82b528d1"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999800,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -232,7 +274,7 @@
     {
       "_id": "req_2f757efe92fb4936ad4fa4b6763f9293",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662242693138,
+      "modified": 1662297309796,
       "created": 1661789625017,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startTransaction",
       "name": "startTransaction",
@@ -250,7 +292,13 @@
           "id": "pair_2cdc0ded6a4441dfa56cf10efb57cb86"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999750,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -264,7 +312,7 @@
     {
       "_id": "req_7c285fb6cb6948a08235a6c73cbeb1f9",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662242716229,
+      "modified": 1662297310553,
       "created": 1661789625020,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopTransaction",
       "name": "stopTransaction",
@@ -282,7 +330,13 @@
           "id": "pair_68d0e27cbf0b473096ba444aff9b1087"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999700,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -296,7 +350,7 @@
     {
       "_id": "req_b33c704fe3464dc5a5d3694abd9320d0",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662242720762,
+      "modified": 1662297311267,
       "created": 1661803778569,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startAutomaticTransactionGenerator",
       "name": "startAutomaticTransactionGenerator",
@@ -314,7 +368,13 @@
           "id": "pair_6186d06e91364153b6bc0461db66b2c1"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999650,
       "isPrivate": false,
       "settingStoreCookies": true,
@@ -328,7 +388,7 @@
     {
       "_id": "req_24c1c55fe3ba4ddb94702408f21a64df",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662242719603,
+      "modified": 1662297312284,
       "created": 1661803846882,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopAutomaticTransactionGenerator",
       "name": "stopAutomaticTransactionGenerator",
@@ -346,7 +406,13 @@
           "id": "pair_3224616dd6604605a1e48b71f6e9f795"
         }
       ],
-      "authentication": {},
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": true,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
       "metaSortKey": -999999600,
       "isPrivate": false,
       "settingStoreCookies": true,
