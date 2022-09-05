@@ -1,13 +1,13 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2022-09-04T13:15:36.340Z",
+  "__export_date": "2022-09-05T08:32:56.599Z",
   "__export_source": "insomnia.desktop.app:v2022.5.1",
   "resources": [
     {
       "_id": "req_606dcee139984772877def40fcbb5c76",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297305028,
+      "modified": 1662340741508,
       "created": 1661789624987,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/listChargingStations",
       "name": "listChargingStations",
@@ -25,7 +25,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -52,7 +52,7 @@
     {
       "_id": "req_7d5f9506e7ac49208a4f960a7740663e",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297302660,
+      "modified": 1662312719968,
       "created": 1661789624990,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startSimulator",
       "name": "startSimulator",
@@ -70,7 +70,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -87,7 +87,7 @@
     {
       "_id": "req_59056be11534481c80a0b0da32e2a06a",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297303900,
+      "modified": 1662302216944,
       "created": 1661789624994,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopSimulator",
       "name": "stopSimulator",
@@ -105,7 +105,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -122,7 +122,7 @@
     {
       "_id": "req_aad7fd6db4c64869b60048b915010efc",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297306466,
+      "modified": 1662340686080,
       "created": 1661789624998,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startChargingStation",
       "name": "startChargingStation",
@@ -143,7 +143,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -160,7 +160,7 @@
     {
       "_id": "req_d72d91cf3fb044179b8ae9d92a74f99c",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297307625,
+      "modified": 1662308938677,
       "created": 1661789625002,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopChargingStation",
       "name": "stopChargingStation",
@@ -181,7 +181,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -198,7 +198,7 @@
     {
       "_id": "req_747f458d196f4681b5fe15204b0067aa",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297308440,
+      "modified": 1662340696576,
       "created": 1661789625005,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/openConnection",
       "name": "openConnection",
@@ -219,7 +219,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -236,7 +236,7 @@
     {
       "_id": "req_401e6a62a33c4b6c90aaa2e019daab6d",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297309118,
+      "modified": 1662340695169,
       "created": 1661789625014,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/closeConnection",
       "name": "closeConnection",
@@ -257,7 +257,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -274,7 +274,7 @@
     {
       "_id": "req_2f757efe92fb4936ad4fa4b6763f9293",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297309796,
+      "modified": 1662340693347,
       "created": 1661789625017,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startTransaction",
       "name": "startTransaction",
@@ -295,7 +295,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -312,7 +312,7 @@
     {
       "_id": "req_7c285fb6cb6948a08235a6c73cbeb1f9",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297310553,
+      "modified": 1662340705489,
       "created": 1661789625020,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopTransaction",
       "name": "stopTransaction",
@@ -320,7 +320,7 @@
       "method": "POST",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t],\n\t\"transactionId\": 1470213722\n}"
+        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t],\n\t\"transactionId\": 926436595\n}"
       },
       "parameters": [],
       "headers": [
@@ -333,7 +333,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -350,7 +350,7 @@
     {
       "_id": "req_b33c704fe3464dc5a5d3694abd9320d0",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297311267,
+      "modified": 1662366450174,
       "created": 1661803778569,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/startAutomaticTransactionGenerator",
       "name": "startAutomaticTransactionGenerator",
@@ -371,7 +371,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -388,7 +388,7 @@
     {
       "_id": "req_24c1c55fe3ba4ddb94702408f21a64df",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1662297312284,
+      "modified": 1662366450665,
       "created": 1661803846882,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/stopAutomaticTransactionGenerator",
       "name": "stopAutomaticTransactionGenerator",
@@ -409,7 +409,7 @@
       "authentication": {
         "type": "basic",
         "useISO88591": false,
-        "disabled": true,
+        "disabled": false,
         "username": "{{username}}",
         "password": "{{password}}"
       },
@@ -424,9 +424,47 @@
       "_type": "request"
     },
     {
+      "_id": "req_6a78267706094fb59d85ed1531e07a55",
+      "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
+      "modified": 1662366453452,
+      "created": 1662330215407,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/statusNotification",
+      "name": "statusNotification",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\",\n\t\t\"331d024fea36e3e2483a0e5dc9376234241c8c099ad201a441437b23622c308555183f37cbc84a1818c1c45aaae50896\"\n\t],\n\t\"connectorId\": 1,\n\t\"errorCode\": \"NoError\",\n\t\"status\": \"Preparing\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_3224616dd6604605a1e48b71f6e9f795"
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
+      "metaSortKey": -999999550,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
       "_id": "env_74b29d59b9f04298b97fc9750476a4ca",
       "parentId": "wrk_d64b10b1e0c14563a80484ee684b5205",
-      "modified": 1661982974925,
+      "modified": 1662304741206,
       "created": 1661789624970,
       "name": "Base Environment",
       "data": {},
@@ -458,7 +496,7 @@
     {
       "_id": "env_2874a21c9c3d4747af649e3b6e237791",
       "parentId": "env_74b29d59b9f04298b97fc9750476a4ca",
-      "modified": 1662296398304,
+      "modified": 1662327004363,
       "created": 1661789624972,
       "name": "CSSimulatorUIProtocolEnvironment",
       "data": {
