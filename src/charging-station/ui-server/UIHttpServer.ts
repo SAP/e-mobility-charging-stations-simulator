@@ -49,10 +49,11 @@ export default class UIHttpServer extends AbstractUIServer {
 
   public sendResponse(response: ProtocolResponse): void {
     const [uuid, payload] = response;
-    const statusCode = this.responseStatusToStatusCode(payload.status);
     if (this.responseHandlers.has(uuid) === true) {
       const { res } = this.responseHandlers.get(uuid);
-      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+      res.writeHead(this.responseStatusToStatusCode(payload.status), {
+        'Content-Type': 'application/json',
+      });
       res.write(JSON.stringify(payload));
       res.end();
       this.responseHandlers.delete(uuid);
