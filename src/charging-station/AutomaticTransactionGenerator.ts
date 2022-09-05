@@ -335,6 +335,7 @@ export default class AutomaticTransactionGenerator {
       StartTransactionRequest,
       StartTransactionResponse
     >(this.chargingStation, RequestCommand.START_TRANSACTION, { connectorId });
+    this.handleStartTransactionResponse(connectorId, startResponse);
     PerformanceStatistics.endMeasure(measureId, beginId);
     return startResponse;
   }
