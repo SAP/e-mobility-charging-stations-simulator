@@ -51,24 +51,17 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     const [uuid, command, requestPayload] = this.validateMessageEvent(messageEvent)
       .data as BroadcastChannelRequest;
 
-    if (requestPayload?.hashIds !== undefined || requestPayload?.hashId !== undefined) {
-      if (
-        requestPayload?.hashId === undefined &&
-        requestPayload?.hashIds?.includes(this.chargingStation.stationInfo.hashId) === false
-      ) {
-        return;
-      }
-      if (
-        requestPayload?.hashIds === undefined &&
-        requestPayload?.hashId !== this.chargingStation.stationInfo.hashId
-      ) {
-        return;
-      }
-      if (requestPayload?.hashId !== undefined) {
-        logger.warn(
-          `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' instead`
-        );
-      }
+    if (
+      requestPayload?.hashIds !== undefined &&
+      requestPayload?.hashIds?.includes(this.chargingStation.stationInfo.hashId) === false
+    ) {
+      return;
+    }
+    if (requestPayload?.hashId !== undefined) {
+      logger.error(
+        `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' instead`
+      );
+      return;
     }
 
     let responsePayload: BroadcastChannelResponsePayload;
