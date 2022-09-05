@@ -750,7 +750,6 @@ export default class ChargingStation {
       {
         transactionId,
         meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
-        idTag: this.getTransactionIdTag(transactionId),
         reason,
       }
     );

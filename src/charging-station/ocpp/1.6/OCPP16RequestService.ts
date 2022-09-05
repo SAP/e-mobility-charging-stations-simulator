@@ -179,6 +179,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     commandParams?: JsonType
   ): Request {
     let connectorId: number;
+    let energyActiveImportRegister: number;
     commandParams = commandParams as JsonObject;
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
@@ -242,19 +243,25 @@ export default class OCPP16RequestService extends OCPPRequestService {
         connectorId = chargingStation.getConnectorIdByTransactionId(
           commandParams?.transactionId as number
         );
+        energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
+          commandParams?.transactionId as number,
+          true
+        );
         return {
           transactionId: commandParams?.transactionId,
-          ...(!Utils.isUndefined(commandParams?.idTag) && { idTag: commandParams.idTag }),
-          meterStop: commandParams?.meterStop,
+          idTag:
+            commandParams?.idTag ??
+            chargingStation.getTransactionIdTag(commandParams?.transactionId as number),
+          meterStop: commandParams?.meterStop ?? energyActiveImportRegister,
           timestamp: new Date().toISOString(),
-          ...(commandParams?.reason && { reason: commandParams.reason }),
+          reason: commandParams?.reason,
           ...(chargingStation.getTransactionDataMeterValues() && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
                 connectorId,
-                commandParams?.meterStop as number
+                (commandParams?.meterStop as number) ?? energyActiveImportRegister
               )
             ),
           }),
