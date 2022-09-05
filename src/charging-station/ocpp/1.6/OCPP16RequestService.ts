@@ -243,10 +243,12 @@ export default class OCPP16RequestService extends OCPPRequestService {
         connectorId = chargingStation.getConnectorIdByTransactionId(
           commandParams?.transactionId as number
         );
-        energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          commandParams?.transactionId as number,
-          true
-        );
+        commandParams?.meterStop &&
+          (energyActiveImportRegister =
+            chargingStation.getEnergyActiveImportRegisterByTransactionId(
+              commandParams?.transactionId as number,
+              true
+            ));
         return {
           transactionId: commandParams?.transactionId,
           idTag:
