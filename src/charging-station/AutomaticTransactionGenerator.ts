@@ -309,13 +309,7 @@ export default class AutomaticTransactionGenerator {
             connectorId,
             idTag,
           });
-          this.connectorsStatus.get(connectorId).startTransactionRequests++;
-          if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-            this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
-          } else {
-            logger.warn(this.logPrefix(connectorId) + ' start transaction rejected');
-            this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
-          }
+          this.handleStartTransactionResponse(connectorId, startResponse);
           PerformanceStatistics.endMeasure(measureId, beginId);
           return startResponse;
         }
@@ -332,6 +326,7 @@ export default class AutomaticTransactionGenerator {
         connectorId,
         idTag,
       });
+      this.handleStartTransactionResponse(connectorId, startResponse);
       PerformanceStatistics.endMeasure(measureId, beginId);
       return startResponse;
     }
@@ -381,5 +376,18 @@ export default class AutomaticTransactionGenerator {
         connectorId !== undefined ? ` on connector #${connectorId.toString()}` : ''
       }:`
     );
+  }
+
+  private handleStartTransactionResponse(
+    connectorId: number,
+    startResponse: StartTransactionResponse
+  ): void {
+    this.connectorsStatus.get(connectorId).startTransactionRequests++;
+    if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+      this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
+    } else {
+      logger.warn(this.logPrefix(connectorId) + ' start transaction rejected');
+      this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
+    }
   }
 }
