@@ -584,7 +584,25 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'StatusNotification'  
   `PDU`: {  
   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorId`: connector id integer  
+  `connectorId`: connector id integer,  
+  `errorCode`: connector error code,  
+  `status`: connector status  
+  }
+
+- Response:  
+  `PDU`: {  
+  `status`: 'success' | 'failure',  
+  `hashIdsSucceeded`: charging station unique identifier strings array,  
+  `hashIdsFailed`: charging station unique identifier strings array (optional),  
+  `responsesFailed`: failed responses payload array (optional)  
+  }
+
+###### Heartbeat
+
+- Request:  
+  `ProcedureName`: 'Heartbeat'  
+  `PDU`: {  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
   }
 
 - Response:  

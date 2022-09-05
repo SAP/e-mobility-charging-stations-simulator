@@ -47,6 +47,10 @@ export default class UIService001 extends AbstractUIService {
       ProcedureName.STATUS_NOTIFICATION,
       this.handleStatusNotification.bind(this) as ProtocolRequestHandler
     );
+    this.requestHandlers.set(
+      ProcedureName.HEARTBEAT,
+      this.handleHeartbeat.bind(this) as ProtocolRequestHandler
+    );
   }
 
   private handleStartChargingStation(uuid: string, payload: RequestPayload): void {
@@ -107,5 +111,9 @@ export default class UIService001 extends AbstractUIService {
       BroadcastChannelProcedureName.STATUS_NOTIFICATION,
       payload
     );
+  }
+
+  private handleHeartbeat(uuid: string, payload: RequestPayload): void {
+    this.sendBroadcastChannelRequest(uuid, BroadcastChannelProcedureName.HEARTBEAT, payload);
   }
 }

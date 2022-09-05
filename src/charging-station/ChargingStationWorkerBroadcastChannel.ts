@@ -1,7 +1,11 @@
 import BaseError from '../exception/BaseError';
 import type OCPPError from '../exception/OCPPError';
-import { RequestCommand, type StatusNotificationRequest } from '../types/ocpp/Requests';
-import type { StatusNotificationResponse } from '../types/ocpp/Responses';
+import {
+  HeartbeatRequest,
+  RequestCommand,
+  type StatusNotificationRequest,
+} from '../types/ocpp/Requests';
+import type { HeartbeatResponse, StatusNotificationResponse } from '../types/ocpp/Responses';
 import {
   AuthorizationStatus,
   StartTransactionRequest,
@@ -27,7 +31,8 @@ const moduleName = 'ChargingStationWorkerBroadcastChannel';
 type CommandResponse =
   | StartTransactionResponse
   | StopTransactionResponse
-  | StatusNotificationResponse;
+  | StatusNotificationResponse
+  | HeartbeatResponse;
 
 export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly chargingStation: ChargingStation;
@@ -78,7 +83,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       } else {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
-          status: this.commandResponseToResponseStatus(commandResponse),
+          status: this.commandResponseToResponseStatus(command, commandResponse),
         };
       }
     } catch (error) {
@@ -166,19 +171,46 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             vendorErrorCode: requestPayload.vendorErrorCode,
           }),
         });
+      case BroadcastChannelProcedureName.HEARTBEAT:
+        delete requestPayload.hashId;
+        delete requestPayload.hashIds;
+        delete requestPayload.connectorIds;
+        return this.chargingStation.ocppRequestService.requestHandler<
+          HeartbeatRequest,
+          HeartbeatResponse
+        >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload);
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
     }
   }
 
-  private commandResponseToResponseStatus(commandResponse: CommandResponse): ResponseStatus {
-    if (
-      Utils.isEmptyObject(commandResponse) ||
-      commandResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
-    ) {
-      return ResponseStatus.SUCCESS;
+  private commandResponseToResponseStatus(
+    command: BroadcastChannelProcedureName,
+    commandResponse: CommandResponse
+  ): ResponseStatus {
+    switch (command) {
+      case BroadcastChannelProcedureName.START_TRANSACTION:
+      case BroadcastChannelProcedureName.STOP_TRANSACTION:
+        if (
+          (commandResponse as StartTransactionResponse | StopTransactionResponse)?.idTagInfo
+            ?.status === AuthorizationStatus.ACCEPTED
+        ) {
+          return ResponseStatus.SUCCESS;
+        }
+        return ResponseStatus.FAILURE;
+      case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
+        if (Utils.isEmptyObject(commandResponse) === true) {
+          return ResponseStatus.SUCCESS;
+        }
+        return ResponseStatus.FAILURE;
+      case BroadcastChannelProcedureName.HEARTBEAT:
+        if ('currentTime' in commandResponse) {
+          return ResponseStatus.SUCCESS;
+        }
+        return ResponseStatus.FAILURE;
+      default:
+        return ResponseStatus.FAILURE;
     }
-    return ResponseStatus.FAILURE;
   }
 }
