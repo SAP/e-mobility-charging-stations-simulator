@@ -3,6 +3,10 @@ import type { StandardParametersKey } from '../types/ocpp/Configuration';
 import logger from '../utils/Logger';
 import type ChargingStation from './ChargingStation';
 
+type ConfigurationKeyOptions = { readonly?: boolean; visible?: boolean; reboot?: boolean };
+type DeleteConfigurationKeyParams = { save?: boolean; caseInsensitive?: boolean };
+type AddConfigurationKeyParams = { overwrite?: boolean; save?: boolean };
+
 export class ChargingStationConfigurationUtils {
   private constructor() {
     // This is intentional
@@ -25,14 +29,14 @@ export class ChargingStationConfigurationUtils {
     chargingStation: ChargingStation,
     key: string | StandardParametersKey,
     value: string,
-    options: { readonly?: boolean; visible?: boolean; reboot?: boolean } = {
+    options: ConfigurationKeyOptions = {
       readonly: false,
       visible: true,
       reboot: false,
     },
-    params: { overwrite?: boolean; save?: boolean } = { overwrite: false, save: false }
+    params: AddConfigurationKeyParams = { overwrite: false, save: false }
   ): void {
-    options = options ?? ({} as { readonly?: boolean; visible?: boolean; reboot?: boolean });
+    options = options ?? ({} as ConfigurationKeyOptions);
     options.readonly = options?.readonly ?? false;
     options.visible = options?.visible ?? true;
     options.reboot = options?.reboot ?? false;
@@ -87,7 +91,7 @@ export class ChargingStationConfigurationUtils {
   public static deleteConfigurationKey(
     chargingStation: ChargingStation,
     key: string | StandardParametersKey,
-    params: { save?: boolean; caseInsensitive?: boolean } = { save: true, caseInsensitive: false }
+    params: DeleteConfigurationKeyParams = { save: true, caseInsensitive: false }
   ): ConfigurationKey[] {
     const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
