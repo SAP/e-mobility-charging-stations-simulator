@@ -1,12 +1,17 @@
 import { BroadcastChannel } from 'worker_threads';
 
-import BaseError from '../exception/BaseError';
+import * as uuid from 'uuid';
+
 import type { JsonType } from '../types/JsonType';
 import type {
   BroadcastChannelRequest,
   BroadcastChannelResponse,
   MessageEvent,
 } from '../types/WorkerBroadcastChannel';
+import logger from '../utils/Logger';
+import Utils from '../utils/Utils';
+
+const moduleName = 'WorkerBroadcastChannel';
 
 export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
   protected constructor() {
@@ -29,10 +34,25 @@ export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
     return Array.isArray(message) && message.length === 2;
   }
 
-  protected validateMessageEvent(messageEvent: MessageEvent): MessageEvent {
+  protected validateMessageEvent(messageEvent: MessageEvent): MessageEvent | false {
     if (Array.isArray(messageEvent.data) === false) {
-      throw new BaseError('Worker broadcast channel protocol message event data is not an array');
+      logger.error(
+        this.logPrefix(moduleName, 'validateMessageEvent') +
+          ' Worker broadcast channel protocol message event data is not an array'
+      );
+      return false;
+    }
+    if (uuid.validate(messageEvent.data[0]) === false) {
+      logger.error(
+        this.logPrefix(moduleName, 'validateMessageEvent') +
+          ' Worker broadcast channel protocol message event data UUID field is invalid'
+      );
+      return false;
     }
     return messageEvent;
+  }
+
+  private logPrefix(modName: string, methodName: string): string {
+    return Utils.logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`);
   }
 }

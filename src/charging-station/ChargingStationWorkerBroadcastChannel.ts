@@ -45,11 +45,14 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
   }
 
   private async requestHandler(messageEvent: MessageEvent): Promise<void> {
-    if (this.isResponse(messageEvent.data) === true) {
+    const validatedMessageEvent = this.validateMessageEvent(messageEvent);
+    if (validatedMessageEvent === false) {
       return;
     }
-    const [uuid, command, requestPayload] = this.validateMessageEvent(messageEvent)
-      .data as BroadcastChannelRequest;
+    if (this.isResponse(validatedMessageEvent.data) === true) {
+      return;
+    }
+    const [uuid, command, requestPayload] = validatedMessageEvent.data as BroadcastChannelRequest;
 
     if (
       requestPayload?.hashIds !== undefined &&

@@ -2,9 +2,9 @@ import { IncomingMessage, createServer } from 'http';
 import type internal from 'stream';
 
 import { StatusCodes } from 'http-status-codes';
+import * as uuid from 'uuid';
 import WebSocket, { RawData, WebSocketServer } from 'ws';
 
-import BaseError from '../../exception/BaseError';
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import type { ProtocolRequest, ProtocolResponse } from '../../types/UIProtocol';
 import { WebSocketCloseEventStatusCode } from '../../types/WebSocket';
@@ -44,7 +44,12 @@ export default class UIWebSocketServer extends AbstractUIServer {
         this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
       }
       ws.on('message', (rawData) => {
-        const [messageId, procedureName, payload] = this.validateRawDataRequest(rawData);
+        const request = this.validateRawDataRequest(rawData);
+        if (request === false) {
+          ws.close(WebSocketCloseEventStatusCode.CLOSE_INVALID_PAYLOAD);
+          return;
+        }
+        const [messageId, procedureName, payload] = request as ProtocolRequest;
         this.uiServices
           .get(version)
           .requestHandler(this.buildProtocolRequest(messageId, procedureName, payload))
@@ -128,7 +133,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
     }
   }
 
-  private validateRawDataRequest(rawData: RawData): ProtocolRequest {
+  private validateRawDataRequest(rawData: RawData): ProtocolRequest | false {
     // logger.debug(
     //   `${this.logPrefix(
     //     moduleName,
@@ -139,11 +144,33 @@ export default class UIWebSocketServer extends AbstractUIServer {
     const request = JSON.parse(rawData.toString()) as ProtocolRequest;
 
     if (Array.isArray(request) === false) {
-      throw new BaseError('UI protocol request is not an array');
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request is not an array:`,
+        request
+      );
+      return false;
     }
 
     if (request.length !== 3) {
-      throw new BaseError('UI protocol request is malformed');
+      logger.error(
+        `${this.logPrefix(moduleName, 'validateRawDataRequest')} UI protocol request is malformed:`,
+        request
+      );
+      return false;
+    }
+
+    if (uuid.validate(request[0]) === false) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request UUID field is invalid:`,
+        request
+      );
+      return false;
     }
 
     return request;

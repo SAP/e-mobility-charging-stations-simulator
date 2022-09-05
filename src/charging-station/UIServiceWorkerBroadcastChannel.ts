@@ -29,11 +29,14 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
   }
 
   private responseHandler(messageEvent: MessageEvent): void {
-    if (this.isRequest(messageEvent.data) === true) {
+    const validatedMessageEvent = this.validateMessageEvent(messageEvent);
+    if (validatedMessageEvent === false) {
       return;
     }
-    const [uuid, responsePayload] = this.validateMessageEvent(messageEvent)
-      .data as BroadcastChannelResponse;
+    if (this.isRequest(validatedMessageEvent.data) === true) {
+      return;
+    }
+    const [uuid, responsePayload] = validatedMessageEvent.data as BroadcastChannelResponse;
     if (this.responses.has(uuid) === false) {
       this.responses.set(uuid, {
         responsesExpected: this.uiService.getBroadcastChannelExpectedResponses(uuid),
