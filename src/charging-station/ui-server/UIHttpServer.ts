@@ -16,7 +16,6 @@ import {
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
-import UIServiceFactory from './ui-services/UIServiceFactory';
 import { UIServiceUtils } from './ui-services/UIServiceUtils';
 
 const moduleName = 'UIHttpServer';
@@ -97,9 +96,7 @@ export default class UIHttpServer extends AbstractUIServer {
           error
         );
       });
-      if (this.uiServices.has(version) === false) {
-        this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
-      }
+      this.registerProtocolVersionUIService(version);
       if (req.method === 'POST') {
         const bodyBuffer = [];
         req

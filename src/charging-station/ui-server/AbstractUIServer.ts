@@ -12,6 +12,7 @@ import {
   ResponsePayload,
 } from '../../types/UIProtocol';
 import type AbstractUIService from './ui-services/AbstractUIService';
+import UIServiceFactory from './ui-services/UIServiceFactory';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;
@@ -33,6 +34,12 @@ export abstract class AbstractUIServer {
 
   public buildProtocolResponse(id: string, responsePayload: ResponsePayload): ProtocolResponse {
     return [id, responsePayload];
+  }
+
+  protected registerProtocolVersionUIService(version: ProtocolVersion): void {
+    if (this.uiServices.has(version) === false) {
+      this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
+    }
   }
 
   protected isBasicAuthEnabled(): boolean {

@@ -11,7 +11,6 @@ import { WebSocketCloseEventStatusCode } from '../../types/WebSocket';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
-import UIServiceFactory from './ui-services/UIServiceFactory';
 import { UIServiceUtils } from './ui-services/UIServiceUtils';
 
 const moduleName = 'UIWebSocketServer';
@@ -40,9 +39,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         );
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
-      if (this.uiServices.has(version) === false) {
-        this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
-      }
+      this.registerProtocolVersionUIService(version);
       ws.on('message', (rawData) => {
         const request = this.validateRawDataRequest(rawData);
         if (request === false) {
