@@ -440,7 +440,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         if (Utils.isUndefined(configuration.visible) === true) {
           configuration.visible = true;
         }
-        if (!configuration.visible) {
+        if (configuration.visible === false) {
           continue;
         }
         configurationKey.push({
