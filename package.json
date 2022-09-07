@@ -48,7 +48,7 @@
   "scripts": {
     "prepare": "node prepare.js",
     "build-requirements": "node build-requirements.js",
-    "prestart": "npm run build-requirements && npm run build",
+    "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.cjs",
     "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.cjs",
     "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.cjs",
@@ -59,7 +59,7 @@
     "start:flameprof": "cross-env NODE_ENV=production clinic flame -- node -r source-map-support/register dist/start.cjs",
     "start:bubbleprof": "cross-env NODE_ENV=production clinic bubbleprof -- node -r source-map-support/register dist/start.cjs",
     "start:heapprofiler": "cross-env NODE_ENV=production clinic heapprofiler -- node -r source-map-support/register dist/start.cjs",
-    "rollup": "rollup --config",
+    "rollup": "npm run build-requirements && rollup --config",
     "build": "npm run rollup",
     "build:dev": "npm run rollup -- --environment BUILD:development",
     "build:dev:watch": "npm run rollup -- --environment BUILD:development --watch",
