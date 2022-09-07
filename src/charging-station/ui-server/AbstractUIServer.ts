@@ -1,5 +1,4 @@
-import { type IncomingMessage, Server } from 'http';
-import type { Socket } from 'net';
+import { type IncomingMessage, Server, type ServerResponse } from 'http';
 
 import type { WebSocket } from 'ws';
 
@@ -20,13 +19,13 @@ import UIServiceFactory from './ui-services/UIServiceFactory';
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;
   protected httpServer: Server;
-  protected sockets: Set<Socket | WebSocket>;
+  protected responseHandlers: Map<string, ServerResponse | WebSocket>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
 
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>();
     this.httpServer = new Server();
-    this.sockets = new Set<Socket>();
+    this.responseHandlers = new Map<string, ServerResponse | WebSocket>();
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>();
   }
 

@@ -20,23 +20,12 @@ import { UIServiceUtils } from './ui-services/UIServiceUtils';
 
 const moduleName = 'UIHttpServer';
 
-type responseHandler = { procedureName: ProcedureName; res: ServerResponse };
-
 export default class UIHttpServer extends AbstractUIServer {
-  private readonly responseHandlers: Map<string, responseHandler>;
-
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration);
-    this.responseHandlers = new Map<string, responseHandler>();
   }
 
   public start(): void {
-    this.httpServer.on('connection', (socket) => {
-      this.sockets.add(socket);
-      socket.on('close', () => {
-        this.sockets.delete(socket);
-      });
-    });
     this.httpServer.on('request', this.requestListener.bind(this) as RequestListener);
     if (this.httpServer.listening === false) {
       this.httpServer.listen(this.uiServerConfiguration.options);
@@ -51,7 +40,7 @@ export default class UIHttpServer extends AbstractUIServer {
   public sendResponse(response: ProtocolResponse): void {
     const [uuid, payload] = response;
     if (this.responseHandlers.has(uuid) === true) {
-      const { res } = this.responseHandlers.get(uuid);
+      const res = this.responseHandlers.get(uuid) as ServerResponse;
       res.writeHead(this.responseStatusToStatusCode(payload.status), {
         'Content-Type': 'application/json',
       });
@@ -86,7 +75,7 @@ export default class UIHttpServer extends AbstractUIServer {
       ProcedureName
     ];
     const uuid = Utils.generateUUID();
-    this.responseHandlers.set(uuid, { procedureName, res });
+    this.responseHandlers.set(uuid, res);
     try {
       if (UIServiceUtils.isProtocolAndVersionSupported(protocol, version) === false) {
         throw new BaseError(`Unsupported UI protocol version: '/${protocol}/${version}'`);

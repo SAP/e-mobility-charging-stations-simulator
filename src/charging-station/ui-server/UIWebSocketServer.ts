@@ -38,7 +38,6 @@ export default class UIWebSocketServer extends AbstractUIServer {
         );
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
-      this.sockets.add(ws);
       this.registerProtocolVersionUIService(version);
       ws.on('message', (rawData) => {
         const request = this.validateRawDataRequest(rawData);
@@ -46,10 +45,11 @@ export default class UIWebSocketServer extends AbstractUIServer {
           ws.close(WebSocketCloseEventStatusCode.CLOSE_INVALID_PAYLOAD);
           return;
         }
-        const [messageId, procedureName, payload] = request as ProtocolRequest;
+        const [requestId] = request as ProtocolRequest;
+        this.responseHandlers.set(requestId, ws);
         this.uiServices
           .get(version)
-          .requestHandler(this.buildProtocolRequest(messageId, procedureName, payload))
+          .requestHandler(request)
           .catch(() => {
             /* Error caught by AbstractUIService */
           });
@@ -58,7 +58,6 @@ export default class UIWebSocketServer extends AbstractUIServer {
         logger.error(`${this.logPrefix(moduleName, 'start.ws.onerror')} WebSocket error:`, error);
       });
       ws.on('close', (code, reason) => {
-        this.sockets.delete(ws);
         logger.debug(
           `${this.logPrefix(
             moduleName,
@@ -94,8 +93,21 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public sendResponse(response: ProtocolResponse): void {
-    // TODO: send response only to the client that sent the request
-    this.broadcastToClients(JSON.stringify(response));
+    const responseId = response[0];
+    if (this.responseHandlers.has(responseId)) {
+      const ws = this.responseHandlers.get(responseId) as WebSocket;
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(response));
+      }
+      this.responseHandlers.delete(responseId);
+    } else {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'sendResponse'
+        )} Response for unknown request id: ${responseId}`
+      );
+    }
   }
 
   public logPrefix(modName?: string, methodName?: string, prefixSuffix?: string): string {
