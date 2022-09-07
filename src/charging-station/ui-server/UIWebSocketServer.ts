@@ -1,4 +1,4 @@
-import { IncomingMessage, createServer } from 'http';
+import type { IncomingMessage } from 'http';
 import type internal from 'stream';
 
 import { StatusCodes } from 'http-status-codes';
@@ -20,7 +20,6 @@ export default class UIWebSocketServer extends AbstractUIServer {
 
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration);
-    this.httpServer = createServer();
     this.webSocketServer = new WebSocketServer({
       handleProtocols: UIServiceUtils.handleProtocols,
       noServer: true,
@@ -39,6 +38,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         );
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
+      this.sockets.add(ws);
       this.registerProtocolVersionUIService(version);
       ws.on('message', (rawData) => {
         const request = this.validateRawDataRequest(rawData);
@@ -58,6 +58,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         logger.error(`${this.logPrefix(moduleName, 'start.ws.onerror')} WebSocket error:`, error);
       });
       ws.on('close', (code, reason) => {
+        this.sockets.delete(ws);
         logger.debug(
           `${this.logPrefix(
             moduleName,
@@ -86,10 +87,6 @@ export default class UIWebSocketServer extends AbstractUIServer {
     if (this.httpServer.listening === false) {
       this.httpServer.listen(this.uiServerConfiguration.options);
     }
-  }
-
-  public stop(): void {
-    this.chargingStations.clear();
   }
 
   public sendRequest(request: ProtocolRequest): void {

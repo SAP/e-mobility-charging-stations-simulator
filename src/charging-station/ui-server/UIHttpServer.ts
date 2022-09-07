@@ -1,4 +1,4 @@
-import { IncomingMessage, RequestListener, Server, ServerResponse } from 'http';
+import type { IncomingMessage, RequestListener, ServerResponse } from 'http';
 
 import { StatusCodes } from 'http-status-codes';
 
@@ -27,18 +27,20 @@ export default class UIHttpServer extends AbstractUIServer {
 
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration);
-    this.httpServer = new Server(this.requestListener.bind(this) as RequestListener);
     this.responseHandlers = new Map<string, responseHandler>();
   }
 
   public start(): void {
+    this.httpServer.on('connection', (socket) => {
+      this.sockets.add(socket);
+      socket.on('close', () => {
+        this.sockets.delete(socket);
+      });
+    });
+    this.httpServer.on('request', this.requestListener.bind(this) as RequestListener);
     if (this.httpServer.listening === false) {
       this.httpServer.listen(this.uiServerConfiguration.options);
     }
-  }
-
-  public stop(): void {
-    this.chargingStations.clear();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -53,8 +55,7 @@ export default class UIHttpServer extends AbstractUIServer {
       res.writeHead(this.responseStatusToStatusCode(payload.status), {
         'Content-Type': 'application/json',
       });
-      res.write(JSON.stringify(payload));
-      res.end();
+      res.end(JSON.stringify(payload));
       this.responseHandlers.delete(uuid);
     } else {
       logger.error(
@@ -90,13 +91,13 @@ export default class UIHttpServer extends AbstractUIServer {
       if (UIServiceUtils.isProtocolAndVersionSupported(protocol, version) === false) {
         throw new BaseError(`Unsupported UI protocol version: '/${protocol}/${version}'`);
       }
+      this.registerProtocolVersionUIService(version);
       req.on('error', (error) => {
         logger.error(
           `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
           error
         );
       });
-      this.registerProtocolVersionUIService(version);
       if (req.method === 'POST') {
         const bodyBuffer = [];
         req

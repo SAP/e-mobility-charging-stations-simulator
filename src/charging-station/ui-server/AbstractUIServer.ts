@@ -1,4 +1,7 @@
-import type { IncomingMessage, Server } from 'http';
+import { type IncomingMessage, Server } from 'http';
+import type { Socket } from 'net';
+
+import type { WebSocket } from 'ws';
 
 import type { ChargingStationData } from '../../types/ChargingStationWorker';
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
@@ -17,10 +20,13 @@ import UIServiceFactory from './ui-services/UIServiceFactory';
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;
   protected httpServer: Server;
+  protected sockets: Set<Socket | WebSocket>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
 
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>();
+    this.httpServer = new Server();
+    this.sockets = new Set<Socket>();
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>();
   }
 
@@ -34,6 +40,10 @@ export abstract class AbstractUIServer {
 
   public buildProtocolResponse(id: string, responsePayload: ResponsePayload): ProtocolResponse {
     return [id, responsePayload];
+  }
+
+  public stop(): void {
+    this.chargingStations.clear();
   }
 
   protected registerProtocolVersionUIService(version: ProtocolVersion): void {
@@ -63,7 +73,6 @@ export abstract class AbstractUIServer {
   }
 
   public abstract start(): void;
-  public abstract stop(): void;
   public abstract sendRequest(request: ProtocolRequest): void;
   public abstract sendResponse(response: ProtocolResponse): void;
   public abstract logPrefix(
