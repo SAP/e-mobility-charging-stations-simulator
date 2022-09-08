@@ -1,4 +1,5 @@
 import BaseError from '../../../exception/BaseError';
+import type OCPPError from '../../../exception/OCPPError';
 import { Bootstrap } from '../../../internal';
 import {
   ProcedureName,
@@ -63,12 +64,14 @@ export default abstract class AbstractUIService {
       // Log
       logger.error(`${this.logPrefix(moduleName, 'messageHandler')} Handle request error:`, error);
       responsePayload = {
+        hashIds: requestPayload.hashIds,
         status: ResponseStatus.FAILURE,
         command,
         requestPayload,
         responsePayload,
         errorMessage: (error as Error).message,
         errorStack: (error as Error).stack,
+        errorDetails: (error as OCPPError).details,
       };
     }
     // Send response for payload not forwarded to broadcast channel

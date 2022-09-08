@@ -35,10 +35,97 @@ type CommandResponse =
   | HeartbeatResponse;
 
 export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
+  private readonly commandHandlers: Map<
+    BroadcastChannelProcedureName,
+    (requestPayload?: BroadcastChannelRequestPayload) => Promise<CommandResponse> | void
+  >;
+
   private readonly chargingStation: ChargingStation;
 
   constructor(chargingStation: ChargingStation) {
     super();
+    this.commandHandlers = new Map([
+      [BroadcastChannelProcedureName.START_CHARGING_STATION, () => this.chargingStation.start()],
+      [
+        BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+        async () => await this.chargingStation.stop(),
+      ],
+      [
+        BroadcastChannelProcedureName.OPEN_CONNECTION,
+        () => this.chargingStation.openWSConnection(),
+      ],
+      [
+        BroadcastChannelProcedureName.CLOSE_CONNECTION,
+        () => this.chargingStation.closeWSConnection(),
+      ],
+      [
+        BroadcastChannelProcedureName.START_TRANSACTION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
+            StartTransactionRequest,
+            StartTransactionResponse
+          >(this.chargingStation, RequestCommand.START_TRANSACTION, {
+            connectorId: requestPayload.connectorId,
+            idTag: requestPayload.idTag,
+          }),
+      ],
+      [
+        BroadcastChannelProcedureName.STOP_TRANSACTION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
+            StopTransactionRequest,
+            StartTransactionResponse
+          >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
+            transactionId: requestPayload.transactionId,
+            meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
+              requestPayload.transactionId,
+              true
+            ),
+            idTag: requestPayload.idTag,
+            reason: requestPayload.reason,
+          }),
+      ],
+      [
+        BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+        (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds),
+      ],
+      [
+        BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+        (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds),
+      ],
+      [
+        BroadcastChannelProcedureName.STATUS_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
+            StatusNotificationRequest,
+            StatusNotificationResponse
+          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, {
+            connectorId: requestPayload.connectorId,
+            errorCode: requestPayload.errorCode,
+            status: requestPayload.status,
+            ...(requestPayload.info && { info: requestPayload.info }),
+            ...(requestPayload.timestamp && { timestamp: requestPayload.timestamp }),
+            ...(requestPayload.vendorId && { vendorId: requestPayload.vendorId }),
+            ...(requestPayload.vendorErrorCode && {
+              vendorErrorCode: requestPayload.vendorErrorCode,
+            }),
+          }),
+      ],
+      [
+        BroadcastChannelProcedureName.HEARTBEAT,
+        async (requestPayload?: BroadcastChannelRequestPayload) => {
+          delete requestPayload.hashId;
+          delete requestPayload.hashIds;
+          delete requestPayload.connectorIds;
+          return this.chargingStation.ocppRequestService.requestHandler<
+            HeartbeatRequest,
+            HeartbeatResponse
+          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload);
+        },
+      ],
+    ]);
     this.chargingStation = chargingStation;
     this.onmessage = this.requestHandler.bind(this) as (message: MessageEvent) => void;
     this.onmessageerror = this.messageErrorHandler.bind(this) as (message: MessageEvent) => void;
@@ -68,10 +155,10 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     }
 
     let responsePayload: BroadcastChannelResponsePayload;
-    let commandResponse: CommandResponse;
+    let commandResponse: CommandResponse | void;
     try {
       commandResponse = await this.commandHandler(command, requestPayload);
-      if (commandResponse === undefined) {
+      if (commandResponse === undefined || commandResponse === null) {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
           status: ResponseStatus.SUCCESS,
@@ -79,7 +166,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       } else {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
-          status: this.commandResponseToResponseStatus(command, commandResponse),
+          status: this.commandResponseToResponseStatus(command, commandResponse as CommandResponse),
         };
       }
     } catch (error) {
@@ -92,7 +179,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         status: ResponseStatus.FAILURE,
         command,
         requestPayload,
-        commandResponse,
+        commandResponse: commandResponse as CommandResponse,
         errorMessage: (error as Error).message,
         errorStack: (error as Error).stack,
         errorDetails: (error as OCPPError).details,
@@ -111,74 +198,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
   private async commandHandler(
     command: BroadcastChannelProcedureName,
     requestPayload: BroadcastChannelRequestPayload
-  ): Promise<CommandResponse | undefined> {
-    switch (command) {
-      case BroadcastChannelProcedureName.START_CHARGING_STATION:
-        this.chargingStation.start();
-        break;
-      case BroadcastChannelProcedureName.STOP_CHARGING_STATION:
-        await this.chargingStation.stop();
-        break;
-      case BroadcastChannelProcedureName.OPEN_CONNECTION:
-        this.chargingStation.openWSConnection();
-        break;
-      case BroadcastChannelProcedureName.CLOSE_CONNECTION:
-        this.chargingStation.closeWSConnection();
-        break;
-      case BroadcastChannelProcedureName.START_TRANSACTION:
-        return this.chargingStation.ocppRequestService.requestHandler<
-          StartTransactionRequest,
-          StartTransactionResponse
-        >(this.chargingStation, RequestCommand.START_TRANSACTION, {
-          connectorId: requestPayload.connectorId,
-          idTag: requestPayload.idTag,
-        });
-      case BroadcastChannelProcedureName.STOP_TRANSACTION:
-        return this.chargingStation.ocppRequestService.requestHandler<
-          StopTransactionRequest,
-          StopTransactionResponse
-        >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
-          transactionId: requestPayload.transactionId,
-          meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-            requestPayload.transactionId,
-            true
-          ),
-          idTag: requestPayload.idTag,
-          reason: requestPayload.reason,
-        });
-      case BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR:
-        this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds);
-        break;
-      case BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR:
-        this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds);
-        break;
-      case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
-        return this.chargingStation.ocppRequestService.requestHandler<
-          StatusNotificationRequest,
-          StatusNotificationResponse
-        >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, {
-          connectorId: requestPayload.connectorId,
-          errorCode: requestPayload.errorCode,
-          status: requestPayload.status,
-          ...(requestPayload.info && { info: requestPayload.info }),
-          ...(requestPayload.timestamp && { timestamp: requestPayload.timestamp }),
-          ...(requestPayload.vendorId && { vendorId: requestPayload.vendorId }),
-          ...(requestPayload.vendorErrorCode && {
-            vendorErrorCode: requestPayload.vendorErrorCode,
-          }),
-        });
-      case BroadcastChannelProcedureName.HEARTBEAT:
-        delete requestPayload.hashId;
-        delete requestPayload.hashIds;
-        delete requestPayload.connectorIds;
-        return this.chargingStation.ocppRequestService.requestHandler<
-          HeartbeatRequest,
-          HeartbeatResponse
-        >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload);
-      default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
+  ): Promise<CommandResponse | void> {
+    if (this.commandHandlers.has(command) === true) {
+      return this.commandHandlers.get(command)(requestPayload);
     }
+    throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
   }
 
   private commandResponseToResponseStatus(
