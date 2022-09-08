@@ -34,21 +34,22 @@ type CommandResponse =
   | StatusNotificationResponse
   | HeartbeatResponse;
 
+type CommandHandler = (
+  requestPayload?: BroadcastChannelRequestPayload
+) => Promise<CommandResponse | void> | void;
+
 export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
-  private readonly commandHandlers: Map<
-    BroadcastChannelProcedureName,
-    (requestPayload?: BroadcastChannelRequestPayload) => Promise<CommandResponse> | void
-  >;
+  private readonly commandHandlers: Map<BroadcastChannelProcedureName, CommandHandler>;
 
   private readonly chargingStation: ChargingStation;
 
   constructor(chargingStation: ChargingStation) {
     super();
-    this.commandHandlers = new Map([
+    this.commandHandlers = new Map<BroadcastChannelProcedureName, CommandHandler>([
       [BroadcastChannelProcedureName.START_CHARGING_STATION, () => this.chargingStation.start()],
       [
         BroadcastChannelProcedureName.STOP_CHARGING_STATION,
-        async () => await this.chargingStation.stop(),
+        async () => this.chargingStation.stop(),
       ],
       [
         BroadcastChannelProcedureName.OPEN_CONNECTION,
