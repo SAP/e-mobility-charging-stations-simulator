@@ -255,26 +255,23 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     requestPayload: BroadcastChannelRequestPayload,
     commandResponse: CommandResponse
   ): BroadcastChannelResponsePayload {
-    const commandResponseStatus = this.commandResponseStatusToResponseStatus(
-      command,
-      commandResponse
-    );
-    if (commandResponseStatus === ResponseStatus.SUCCESS) {
+    const responseStatus = this.commandResponseToResponseStatus(command, commandResponse);
+    if (responseStatus === ResponseStatus.SUCCESS) {
       return {
         hashId: this.chargingStation.stationInfo.hashId,
-        status: commandResponseStatus,
+        status: responseStatus,
       };
     }
     return {
       hashId: this.chargingStation.stationInfo.hashId,
-      status: commandResponseStatus,
+      status: responseStatus,
       command,
       requestPayload,
       commandResponse,
     };
   }
 
-  private commandResponseStatusToResponseStatus(
+  private commandResponseToResponseStatus(
     command: BroadcastChannelProcedureName,
     commandResponse: CommandResponse
   ): ResponseStatus {
