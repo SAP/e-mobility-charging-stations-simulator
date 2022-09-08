@@ -146,7 +146,6 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       );
       return;
     }
-
     let responsePayload: BroadcastChannelResponsePayload;
     let commandResponse: CommandResponse | void;
     try {
@@ -157,19 +156,19 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           status: ResponseStatus.SUCCESS,
         };
       } else {
-        const responseStatus = this.commandResponseToResponseStatus(
+        const commandResponseStatus = this.commandResponseToResponseStatus(
           command,
           commandResponse as CommandResponse
         );
-        if (responseStatus === ResponseStatus.SUCCESS) {
+        if (commandResponseStatus === ResponseStatus.SUCCESS) {
           responsePayload = {
             hashId: this.chargingStation.stationInfo.hashId,
-            status: responseStatus,
+            status: commandResponseStatus,
           };
         } else {
           responsePayload = {
             hashId: this.chargingStation.stationInfo.hashId,
-            status: responseStatus,
+            status: commandResponseStatus,
             command,
             requestPayload,
             commandResponse: commandResponse as CommandResponse,

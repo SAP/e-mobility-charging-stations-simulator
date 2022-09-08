@@ -59,7 +59,7 @@ export default abstract class AbstractUIService {
       }
 
       // Call the request handler to build the response payload
-      responsePayload = await this.requestHandlers.get(command)(messageId, requestPayload);
+      responsePayload = await this.requestHandlers.get(command)(messageId, command, requestPayload);
     } catch (error) {
       // Log
       logger.error(`${this.logPrefix(moduleName, 'messageHandler')} Handle request error:`, error);

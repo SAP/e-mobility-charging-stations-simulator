@@ -23,21 +23,22 @@ export type ProtocolResponse = [string, ResponsePayload];
 
 export type ProtocolRequestHandler = (
   uuid?: string,
+  procedureName?: ProcedureName,
   payload?: RequestPayload
 ) => undefined | Promise<undefined> | ResponsePayload | Promise<ResponsePayload>;
 
 export enum ProcedureName {
+  START_SIMULATOR = 'startSimulator',
+  STOP_SIMULATOR = 'stopSimulator',
   LIST_CHARGING_STATIONS = 'listChargingStations',
   START_CHARGING_STATION = 'startChargingStation',
   STOP_CHARGING_STATION = 'stopChargingStation',
-  START_SIMULATOR = 'startSimulator',
-  STOP_SIMULATOR = 'stopSimulator',
   OPEN_CONNECTION = 'openConnection',
   CLOSE_CONNECTION = 'closeConnection',
-  START_TRANSACTION = 'startTransaction',
-  STOP_TRANSACTION = 'stopTransaction',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  START_TRANSACTION = 'startTransaction',
+  STOP_TRANSACTION = 'stopTransaction',
   AUTHORIZE = 'authorize',
   STATUS_NOTIFICATION = 'statusNotification',
   HEARTBEAT = 'heartbeat',

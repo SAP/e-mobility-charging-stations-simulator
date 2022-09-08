@@ -28,10 +28,10 @@ export enum ProcedureName {
   STOP_CHARGING_STATION = 'stopChargingStation',
   OPEN_CONNECTION = 'openConnection',
   CLOSE_CONNECTION = 'closeConnection',
-  START_TRANSACTION = 'startTransaction',
-  STOP_TRANSACTION = 'stopTransaction',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  START_TRANSACTION = 'startTransaction',
+  STOP_TRANSACTION = 'stopTransaction',
 }
 
 export interface RequestPayload extends JsonObject {
