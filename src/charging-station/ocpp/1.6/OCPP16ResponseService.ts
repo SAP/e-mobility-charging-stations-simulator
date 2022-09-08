@@ -289,20 +289,24 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         break;
       }
     }
+    const isAuthorizeConnectorIdDefined = authorizeConnectorId !== undefined;
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = true;
+      isAuthorizeConnectorIdDefined &&
+        (chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = true);
       logger.debug(
-        `${chargingStation.logPrefix()} IdTag '${
-          requestPayload.idTag
-        }' authorized on connector ${authorizeConnectorId}`
+        `${chargingStation.logPrefix()} IdTag '${requestPayload.idTag}' accepted${
+          isAuthorizeConnectorIdDefined ? ` on connector ${authorizeConnectorId}` : ''
+        }`
       );
     } else {
-      chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = false;
-      delete chargingStation.getConnectorStatus(authorizeConnectorId).authorizeIdTag;
+      if (isAuthorizeConnectorIdDefined) {
+        chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = false;
+        delete chargingStation.getConnectorStatus(authorizeConnectorId).authorizeIdTag;
+      }
       logger.debug(
-        `${chargingStation.logPrefix()} IdTag '${requestPayload.idTag}' refused with status '${
+        `${chargingStation.logPrefix()} IdTag '${requestPayload.idTag}' rejected with status '${
           payload.idTagInfo.status
-        }' on connector ${authorizeConnectorId}`
+        }'${isAuthorizeConnectorIdDefined ? ` on connector ${authorizeConnectorId}` : ''}`
       );
     }
   }

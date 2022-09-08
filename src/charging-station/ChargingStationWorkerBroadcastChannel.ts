@@ -8,6 +8,8 @@ import {
 import type { HeartbeatResponse, StatusNotificationResponse } from '../types/ocpp/Responses';
 import {
   AuthorizationStatus,
+  AuthorizeRequest,
+  AuthorizeResponse,
   StartTransactionRequest,
   StartTransactionResponse,
   StopTransactionRequest,
@@ -31,6 +33,7 @@ const moduleName = 'ChargingStationWorkerBroadcastChannel';
 type CommandResponse =
   | StartTransactionResponse
   | StopTransactionResponse
+  | AuthorizeResponse
   | StatusNotificationResponse
   | HeartbeatResponse;
 
@@ -65,10 +68,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             StartTransactionRequest,
             StartTransactionResponse
-          >(this.chargingStation, RequestCommand.START_TRANSACTION, {
-            connectorId: requestPayload.connectorId,
-            idTag: requestPayload.idTag,
-          }),
+          >(this.chargingStation, RequestCommand.START_TRANSACTION, requestPayload),
       ],
       [
         BroadcastChannelProcedureName.STOP_TRANSACTION,
@@ -77,13 +77,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             StopTransactionRequest,
             StartTransactionResponse
           >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
-            transactionId: requestPayload.transactionId,
+            ...requestPayload,
             meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
               requestPayload.transactionId,
               true
             ),
-            idTag: requestPayload.idTag,
-            reason: requestPayload.reason,
           }),
       ],
       [
@@ -97,34 +95,28 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds),
       ],
       [
+        BroadcastChannelProcedureName.AUTHORIZE,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
+            AuthorizeRequest,
+            AuthorizeResponse
+          >(this.chargingStation, RequestCommand.AUTHORIZE, requestPayload),
+      ],
+      [
         BroadcastChannelProcedureName.STATUS_NOTIFICATION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           this.chargingStation.ocppRequestService.requestHandler<
             StatusNotificationRequest,
             StatusNotificationResponse
-          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, {
-            connectorId: requestPayload.connectorId,
-            errorCode: requestPayload.errorCode,
-            status: requestPayload.status,
-            ...(requestPayload.info && { info: requestPayload.info }),
-            ...(requestPayload.timestamp && { timestamp: requestPayload.timestamp }),
-            ...(requestPayload.vendorId && { vendorId: requestPayload.vendorId }),
-            ...(requestPayload.vendorErrorCode && {
-              vendorErrorCode: requestPayload.vendorErrorCode,
-            }),
-          }),
+          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, requestPayload),
       ],
       [
         BroadcastChannelProcedureName.HEARTBEAT,
-        async (requestPayload?: BroadcastChannelRequestPayload) => {
-          delete requestPayload.hashId;
-          delete requestPayload.hashIds;
-          delete requestPayload.connectorIds;
-          return this.chargingStation.ocppRequestService.requestHandler<
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
             HeartbeatRequest,
             HeartbeatResponse
-          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload);
-        },
+          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload),
       ],
     ]);
     this.chargingStation = chargingStation;
@@ -165,10 +157,24 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           status: ResponseStatus.SUCCESS,
         };
       } else {
-        responsePayload = {
-          hashId: this.chargingStation.stationInfo.hashId,
-          status: this.commandResponseToResponseStatus(command, commandResponse as CommandResponse),
-        };
+        const responseStatus = this.commandResponseToResponseStatus(
+          command,
+          commandResponse as CommandResponse
+        );
+        if (responseStatus === ResponseStatus.SUCCESS) {
+          responsePayload = {
+            hashId: this.chargingStation.stationInfo.hashId,
+            status: responseStatus,
+          };
+        } else {
+          responsePayload = {
+            hashId: this.chargingStation.stationInfo.hashId,
+            status: responseStatus,
+            command,
+            requestPayload,
+            commandResponse: commandResponse as CommandResponse,
+          };
+        }
       }
     } catch (error) {
       logger.error(
@@ -201,9 +207,22 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     requestPayload: BroadcastChannelRequestPayload
   ): Promise<CommandResponse | void> {
     if (this.commandHandlers.has(command) === true) {
+      this.cleanRequestPayload(command, requestPayload);
       return this.commandHandlers.get(command)(requestPayload);
     }
     throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
+  }
+
+  private cleanRequestPayload(
+    command: BroadcastChannelProcedureName,
+    requestPayload: BroadcastChannelRequestPayload
+  ): void {
+    delete requestPayload.hashId;
+    delete requestPayload.hashIds;
+    [
+      BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+    ].includes(command) === false && delete requestPayload.connectorIds;
   }
 
   private commandResponseToResponseStatus(
@@ -213,9 +232,14 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     switch (command) {
       case BroadcastChannelProcedureName.START_TRANSACTION:
       case BroadcastChannelProcedureName.STOP_TRANSACTION:
+      case BroadcastChannelProcedureName.AUTHORIZE:
         if (
-          (commandResponse as StartTransactionResponse | StopTransactionResponse)?.idTagInfo
-            ?.status === AuthorizationStatus.ACCEPTED
+          (
+            commandResponse as
+              | StartTransactionResponse
+              | StopTransactionResponse
+              | AuthorizeResponse
+          )?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
         ) {
           return ResponseStatus.SUCCESS;
         }

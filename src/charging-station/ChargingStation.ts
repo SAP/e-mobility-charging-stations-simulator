@@ -1218,7 +1218,11 @@ export default class ChargingStation {
     }
     // Initialize transaction attributes on connectors
     for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === false) {
+      if (
+        connectorId > 0 &&
+        (this.getConnectorStatus(connectorId).transactionStarted === undefined ||
+          this.getConnectorStatus(connectorId).transactionStarted === false)
+      ) {
         this.initializeConnectorStatus(connectorId);
       }
     }

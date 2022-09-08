@@ -44,6 +44,10 @@ export default class UIService001 extends AbstractUIService {
       this.handleStopAutomaticTransactionGenerator.bind(this) as ProtocolRequestHandler
     );
     this.requestHandlers.set(
+      ProcedureName.AUTHORIZE,
+      this.handleAuthorize.bind(this) as ProtocolRequestHandler
+    );
+    this.requestHandlers.set(
       ProcedureName.STATUS_NOTIFICATION,
       this.handleStatusNotification.bind(this) as ProtocolRequestHandler
     );
@@ -103,6 +107,10 @@ export default class UIService001 extends AbstractUIService {
       BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
       payload
     );
+  }
+
+  private handleAuthorize(uuid: string, payload: RequestPayload): void {
+    this.sendBroadcastChannelRequest(uuid, BroadcastChannelProcedureName.AUTHORIZE, payload);
   }
 
   private handleStatusNotification(uuid: string, payload: RequestPayload): void {
