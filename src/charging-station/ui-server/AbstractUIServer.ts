@@ -71,6 +71,16 @@ export abstract class AbstractUIServer {
     );
   }
 
+  protected authenticate(req: IncomingMessage, next: (err?: Error) => void): void {
+    if (this.isBasicAuthEnabled() === true) {
+      if (this.isValidBasicAuth(req) === false) {
+        next(new Error('Unauthorized'));
+      }
+      next();
+    }
+    next();
+  }
+
   public abstract start(): void;
   public abstract sendRequest(request: ProtocolRequest): void;
   public abstract sendResponse(response: ProtocolResponse): void;

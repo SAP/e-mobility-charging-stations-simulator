@@ -127,18 +127,6 @@ export default class UIWebSocketServer extends AbstractUIServer {
     }
   }
 
-  private authenticate(req: IncomingMessage, next: (err?: Error) => void): void {
-    if (this.isBasicAuthEnabled() === true) {
-      if (this.isValidBasicAuth(req) === false) {
-        next(new Error('Unauthorized'));
-      } else {
-        next();
-      }
-    } else {
-      next();
-    }
-  }
-
   private validateRawDataRequest(rawData: RawData): ProtocolRequest | false {
     // logger.debug(
     //   `${this.logPrefix(

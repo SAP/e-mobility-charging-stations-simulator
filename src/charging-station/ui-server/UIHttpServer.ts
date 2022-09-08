@@ -61,13 +61,16 @@ export default class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener(req: IncomingMessage, res: ServerResponse): void {
-    if (this.authenticate(req) === false) {
-      res.setHeader('Content-Type', 'text/plain');
-      res.setHeader('WWW-Authenticate', 'Basic realm=users');
-      res.writeHead(StatusCodes.UNAUTHORIZED);
-      res.end(`${StatusCodes.UNAUTHORIZED} Unauthorized`);
-      return;
-    }
+    this.authenticate(req, (err) => {
+      if (err) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('WWW-Authenticate', 'Basic realm=users');
+        res.writeHead(StatusCodes.UNAUTHORIZED);
+        res.end(`${StatusCodes.UNAUTHORIZED} Unauthorized`);
+        req.destroy();
+        res.destroy();
+      }
+    });
     // Expected request URL pathname: /ui/:version/:procedureName
     const [protocol, version, procedureName] = req.url?.split('/').slice(1) as [
       Protocol,
@@ -114,16 +117,6 @@ export default class UIHttpServer extends AbstractUIServer {
       );
       this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }));
     }
-  }
-
-  private authenticate(req: IncomingMessage): boolean {
-    if (this.isBasicAuthEnabled() === true) {
-      if (this.isValidBasicAuth(req) === true) {
-        return true;
-      }
-      return false;
-    }
-    return true;
   }
 
   private responseStatusToStatusCode(status: ResponseStatus): StatusCodes {

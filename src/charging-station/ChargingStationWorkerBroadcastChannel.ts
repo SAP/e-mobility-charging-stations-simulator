@@ -63,6 +63,16 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         () => this.chargingStation.closeWSConnection(),
       ],
       [
+        BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+        (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds),
+      ],
+      [
+        BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+        (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds),
+      ],
+      [
         BroadcastChannelProcedureName.START_TRANSACTION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           this.chargingStation.ocppRequestService.requestHandler<
@@ -83,16 +93,6 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
               true
             ),
           }),
-      ],
-      [
-        BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
-        (requestPayload?: BroadcastChannelRequestPayload) =>
-          this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds),
-      ],
-      [
-        BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-        (requestPayload?: BroadcastChannelRequestPayload) =>
-          this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds),
       ],
       [
         BroadcastChannelProcedureName.AUTHORIZE,
@@ -190,8 +190,9 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         errorStack: (error as Error).stack,
         errorDetails: (error as OCPPError).details,
       };
+    } finally {
+      this.sendResponse([uuid, responsePayload]);
     }
-    this.sendResponse([uuid, responsePayload]);
   }
 
   private messageErrorHandler(messageEvent: MessageEvent): void {

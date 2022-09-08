@@ -73,10 +73,11 @@ export default abstract class AbstractUIService {
         errorStack: (error as Error).stack,
         errorDetails: (error as OCPPError).details,
       };
-    }
-    // Send response for payload not forwarded to broadcast channel
-    if (responsePayload !== undefined) {
-      this.sendResponse(messageId ?? 'error', responsePayload);
+    } finally {
+      // Send response for payload not forwarded to broadcast channel
+      if (responsePayload !== undefined) {
+        this.sendResponse(messageId ?? 'error', responsePayload);
+      }
     }
   }
 
