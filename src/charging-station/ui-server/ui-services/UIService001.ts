@@ -8,26 +8,27 @@ import { BroadcastChannelProcedureName } from '../../../types/WorkerBroadcastCha
 import type { AbstractUIServer } from '../AbstractUIServer';
 import AbstractUIService from './AbstractUIService';
 
-const ProcedureNameToBroadCastChannelProcedureNameMap: Omit<
-  Record<ProcedureName, BroadcastChannelProcedureName>,
-  'startSimulator' | 'stopSimulator' | 'listChargingStations'
-> = {
-  [ProcedureName.START_CHARGING_STATION]: BroadcastChannelProcedureName.START_CHARGING_STATION,
-  [ProcedureName.STOP_CHARGING_STATION]: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
-  [ProcedureName.CLOSE_CONNECTION]: BroadcastChannelProcedureName.CLOSE_CONNECTION,
-  [ProcedureName.OPEN_CONNECTION]: BroadcastChannelProcedureName.OPEN_CONNECTION,
-  [ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR]:
-    BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
-  [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]:
-    BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-  [ProcedureName.START_TRANSACTION]: BroadcastChannelProcedureName.START_TRANSACTION,
-  [ProcedureName.STOP_TRANSACTION]: BroadcastChannelProcedureName.STOP_TRANSACTION,
-  [ProcedureName.AUTHORIZE]: BroadcastChannelProcedureName.AUTHORIZE,
-  [ProcedureName.STATUS_NOTIFICATION]: BroadcastChannelProcedureName.STATUS_NOTIFICATION,
-  [ProcedureName.HEARTBEAT]: BroadcastChannelProcedureName.HEARTBEAT,
-};
-
 export default class UIService001 extends AbstractUIService {
+  private static readonly ProcedureNameToBroadCastChannelProcedureNameMap: Omit<
+    Record<ProcedureName, BroadcastChannelProcedureName>,
+    'startSimulator' | 'stopSimulator' | 'listChargingStations'
+  > = {
+    [ProcedureName.START_CHARGING_STATION]: BroadcastChannelProcedureName.START_CHARGING_STATION,
+    [ProcedureName.STOP_CHARGING_STATION]: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
+    [ProcedureName.CLOSE_CONNECTION]: BroadcastChannelProcedureName.CLOSE_CONNECTION,
+    [ProcedureName.OPEN_CONNECTION]: BroadcastChannelProcedureName.OPEN_CONNECTION,
+    [ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR]:
+      BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+    [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]:
+      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+    [ProcedureName.START_TRANSACTION]: BroadcastChannelProcedureName.START_TRANSACTION,
+    [ProcedureName.STOP_TRANSACTION]: BroadcastChannelProcedureName.STOP_TRANSACTION,
+    [ProcedureName.AUTHORIZE]: BroadcastChannelProcedureName.AUTHORIZE,
+    [ProcedureName.STATUS_NOTIFICATION]: BroadcastChannelProcedureName.STATUS_NOTIFICATION,
+    [ProcedureName.HEARTBEAT]: BroadcastChannelProcedureName.HEARTBEAT,
+    [ProcedureName.METER_VALUES]: BroadcastChannelProcedureName.METER_VALUES,
+  };
+
   constructor(uiServer: AbstractUIServer) {
     super(uiServer, ProtocolVersion['0.0.1']);
     this.requestHandlers.set(
@@ -74,6 +75,10 @@ export default class UIService001 extends AbstractUIService {
       ProcedureName.HEARTBEAT,
       this.handleProtocolRequest.bind(this) as ProtocolRequestHandler
     );
+    this.requestHandlers.set(
+      ProcedureName.METER_VALUES,
+      this.handleProtocolRequest.bind(this) as ProtocolRequestHandler
+    );
   }
 
   private handleProtocolRequest(
@@ -83,7 +88,7 @@ export default class UIService001 extends AbstractUIService {
   ): void {
     this.sendBroadcastChannelRequest(
       uuid,
-      ProcedureNameToBroadCastChannelProcedureNameMap[
+      UIService001.ProcedureNameToBroadCastChannelProcedureNameMap[
         procedureName
       ] as BroadcastChannelProcedureName,
       payload

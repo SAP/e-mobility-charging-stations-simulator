@@ -1,11 +1,17 @@
 import BaseError from '../exception/BaseError';
 import type OCPPError from '../exception/OCPPError';
+import { StandardParametersKey } from '../types/ocpp/Configuration';
 import {
   HeartbeatRequest,
+  MeterValuesRequest,
   RequestCommand,
   type StatusNotificationRequest,
 } from '../types/ocpp/Requests';
-import type { HeartbeatResponse, StatusNotificationResponse } from '../types/ocpp/Responses';
+import type {
+  HeartbeatResponse,
+  MeterValuesResponse,
+  StatusNotificationResponse,
+} from '../types/ocpp/Responses';
 import {
   AuthorizationStatus,
   AuthorizeRequest,
@@ -23,9 +29,12 @@ import {
   MessageEvent,
 } from '../types/WorkerBroadcastChannel';
 import { ResponseStatus } from '../ui/web/src/types/UIProtocol';
+import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import type ChargingStation from './ChargingStation';
+import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
+import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
 import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
@@ -35,7 +44,8 @@ type CommandResponse =
   | StopTransactionResponse
   | AuthorizeResponse
   | StatusNotificationResponse
-  | HeartbeatResponse;
+  | HeartbeatResponse
+  | MeterValuesResponse;
 
 type CommandHandler = (
   requestPayload?: BroadcastChannelRequestPayload
@@ -88,10 +98,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             StartTransactionResponse
           >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
             ...requestPayload,
-            meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-              requestPayload.transactionId,
-              true
-            ),
+            meterStop:
+              requestPayload.meterStop ??
+              this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
+                requestPayload.transactionId,
+                true
+              ),
           }),
       ],
       [
@@ -117,6 +129,32 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             HeartbeatRequest,
             HeartbeatResponse
           >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload),
+      ],
+      [
+        BroadcastChannelProcedureName.METER_VALUES,
+        async (requestPayload?: BroadcastChannelRequestPayload) => {
+          const configuredMeterValueSampleInterval =
+            ChargingStationConfigurationUtils.getConfigurationKey(
+              chargingStation,
+              StandardParametersKey.MeterValueSampleInterval
+            );
+          return this.chargingStation.ocppRequestService.requestHandler<
+            MeterValuesRequest,
+            MeterValuesResponse
+          >(this.chargingStation, RequestCommand.METER_VALUES, {
+            ...requestPayload,
+            meterValue: requestPayload.meterValue ?? [
+              OCPP16ServiceUtils.buildMeterValue(
+                this.chargingStation,
+                requestPayload.connectorId,
+                this.chargingStation.getConnectorStatus(requestPayload.connectorId)?.transactionId,
+                configuredMeterValueSampleInterval
+                  ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000
+                  : Constants.DEFAULT_METER_VALUES_INTERVAL
+              ),
+            ],
+          });
+        },
       ],
     ]);
     this.chargingStation = chargingStation;
@@ -156,24 +194,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           status: ResponseStatus.SUCCESS,
         };
       } else {
-        const commandResponseStatus = this.commandResponseToResponseStatus(
+        responsePayload = this.commandResponseToResponsePayload(
           command,
+          requestPayload,
           commandResponse as CommandResponse
         );
-        if (commandResponseStatus === ResponseStatus.SUCCESS) {
-          responsePayload = {
-            hashId: this.chargingStation.stationInfo.hashId,
-            status: commandResponseStatus,
-          };
-        } else {
-          responsePayload = {
-            hashId: this.chargingStation.stationInfo.hashId,
-            status: commandResponseStatus,
-            command,
-            requestPayload,
-            commandResponse: commandResponse as CommandResponse,
-          };
-        }
       }
     } catch (error) {
       logger.error(
@@ -225,7 +250,31 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     ].includes(command) === false && delete requestPayload.connectorIds;
   }
 
-  private commandResponseToResponseStatus(
+  private commandResponseToResponsePayload(
+    command: BroadcastChannelProcedureName,
+    requestPayload: BroadcastChannelRequestPayload,
+    commandResponse: CommandResponse
+  ): BroadcastChannelResponsePayload {
+    const commandResponseStatus = this.commandResponseStatusToResponseStatus(
+      command,
+      commandResponse
+    );
+    if (commandResponseStatus === ResponseStatus.SUCCESS) {
+      return {
+        hashId: this.chargingStation.stationInfo.hashId,
+        status: commandResponseStatus,
+      };
+    }
+    return {
+      hashId: this.chargingStation.stationInfo.hashId,
+      status: commandResponseStatus,
+      command,
+      requestPayload,
+      commandResponse,
+    };
+  }
+
+  private commandResponseStatusToResponseStatus(
     command: BroadcastChannelProcedureName,
     commandResponse: CommandResponse
   ): ResponseStatus {
@@ -245,6 +294,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         }
         return ResponseStatus.FAILURE;
       case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
+      case BroadcastChannelProcedureName.METER_VALUES:
         if (Utils.isEmptyObject(commandResponse) === true) {
           return ResponseStatus.SUCCESS;
         }

@@ -42,6 +42,7 @@ export enum ProcedureName {
   AUTHORIZE = 'authorize',
   STATUS_NOTIFICATION = 'statusNotification',
   HEARTBEAT = 'heartbeat',
+  METER_VALUES = 'meterValues',
 }
 
 export interface RequestPayload extends JsonObject {

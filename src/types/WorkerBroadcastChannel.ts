@@ -19,6 +19,7 @@ export enum BroadcastChannelProcedureName {
   AUTHORIZE = 'authorize',
   STATUS_NOTIFICATION = 'statusNotification',
   HEARTBEAT = 'heartbeat',
+  METER_VALUES = 'meterValues',
 }
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {

@@ -38,6 +38,7 @@ import {
 } from '../../../types/ocpp/1.6/Transaction';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import type { ResponseHandler } from '../../../types/ocpp/Responses';
+import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
@@ -485,7 +486,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         connectorId,
         configuredMeterValueSampleInterval
           ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000
-          : 60000
+          : Constants.DEFAULT_METER_VALUES_INTERVAL
       );
     } else {
       logger.warn(

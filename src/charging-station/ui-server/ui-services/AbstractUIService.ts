@@ -76,7 +76,7 @@ export default abstract class AbstractUIService {
     } finally {
       // Send response for payload not forwarded to broadcast channel
       if (responsePayload !== undefined) {
-        this.sendResponse(messageId ?? 'error', responsePayload);
+        this.sendResponse(messageId, responsePayload);
       }
     }
   }
