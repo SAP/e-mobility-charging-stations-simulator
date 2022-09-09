@@ -42,10 +42,11 @@ export default class UIHttpServer extends AbstractUIServer {
     try {
       if (this.responseHandlers.has(uuid) === true) {
         const res = this.responseHandlers.get(uuid) as ServerResponse;
-        res.writeHead(this.responseStatusToStatusCode(payload.status), {
-          'Content-Type': 'application/json',
-        });
-        res.end(JSON.stringify(payload));
+        res
+          .writeHead(this.responseStatusToStatusCode(payload.status), {
+            'Content-Type': 'application/json',
+          })
+          .end(JSON.stringify(payload));
         this.responseHandlers.delete(uuid);
       } else {
         logger.error(
@@ -70,12 +71,14 @@ export default class UIHttpServer extends AbstractUIServer {
   private requestListener(req: IncomingMessage, res: ServerResponse): void {
     this.authenticate(req, (err) => {
       if (err) {
-        res.setHeader('Content-Type', 'text/plain');
-        res.setHeader('WWW-Authenticate', 'Basic realm=users');
-        res.writeHead(StatusCodes.UNAUTHORIZED);
-        res.end(`${StatusCodes.UNAUTHORIZED} Unauthorized`);
+        res
+          .writeHead(StatusCodes.UNAUTHORIZED, {
+            'Content-Type': 'text/plain',
+            'WWW-Authenticate': 'Basic realm=users',
+          })
+          .end(`${StatusCodes.UNAUTHORIZED} Unauthorized`)
+          .destroy();
         req.destroy();
-        res.destroy();
       }
     });
     // Expected request URL pathname: /ui/:version/:procedureName
