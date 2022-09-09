@@ -100,12 +100,10 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             StopTransactionRequest,
             StartTransactionResponse
           >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
-            meterStop:
-              requestPayload.meterStop ??
-              this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-                requestPayload.transactionId,
-                true
-              ),
+            meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
+              requestPayload.transactionId,
+              true
+            ),
             ...requestPayload,
           }),
       ],
