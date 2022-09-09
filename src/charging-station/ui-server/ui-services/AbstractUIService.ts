@@ -127,7 +127,21 @@ export default abstract class AbstractUIService {
     return this.broadcastChannelRequests.get(uuid) ?? 0;
   }
 
-  protected sendBroadcastChannelRequest(
+  protected handleProtocolRequest(
+    uuid: string,
+    procedureName: ProcedureName,
+    payload: RequestPayload
+  ): void {
+    this.sendBroadcastChannelRequest(
+      uuid,
+      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMap[
+        procedureName
+      ] as BroadcastChannelProcedureName,
+      payload
+    );
+  }
+
+  private sendBroadcastChannelRequest(
     uuid: string,
     procedureName: BroadcastChannelProcedureName,
     payload: BroadcastChannelRequestPayload
@@ -152,20 +166,6 @@ export default abstract class AbstractUIService {
       : this.uiServer.chargingStations.size;
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);
     this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);
-  }
-
-  protected handleProtocolRequest(
-    uuid: string,
-    procedureName: ProcedureName,
-    payload: RequestPayload
-  ): void {
-    this.sendBroadcastChannelRequest(
-      uuid,
-      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMap[
-        procedureName
-      ] as BroadcastChannelProcedureName,
-      payload
-    );
   }
 
   private handleListChargingStations(): ResponsePayload {
