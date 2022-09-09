@@ -159,7 +159,7 @@ export class Bootstrap {
   }
 
   private initializeWorkerImplementation(): void {
-    !this.workerImplementation &&
+    this.workerImplementation === null &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
         this.workerScript,
         Configuration.getWorker().processType,
@@ -218,19 +218,19 @@ export class Bootstrap {
     }
   }
 
-  private workerEventStarted(data: ChargingStationData) {
+  private workerEventStarted = (data: ChargingStationData) => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     ++this.numberOfStartedChargingStations;
-  }
+  };
 
-  private workerEventStopped(data: ChargingStationData) {
+  private workerEventStopped = (data: ChargingStationData) => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     --this.numberOfStartedChargingStations;
-  }
+  };
 
-  private workerEventUpdated(data: ChargingStationData) {
+  private workerEventUpdated = (data: ChargingStationData) => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
-  }
+  };
 
   private workerEventPerformanceStatistics = (data: Statistics) => {
     this.storage.storePerformanceStatistics(data) as void;

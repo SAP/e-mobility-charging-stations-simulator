@@ -99,8 +99,16 @@ export default class UIWebSocketServer extends AbstractUIServer {
         const ws = this.responseHandlers.get(responseId) as WebSocket;
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify(response));
+        } else {
+          logger.error(
+            `${this.logPrefix(
+              moduleName,
+              'sendResponse'
+            )} Error at sending response id '${responseId}', WebSocket is not open: ${
+              ws?.readyState
+            }`
+          );
         }
-        this.responseHandlers.delete(responseId);
       } else {
         logger.error(
           `${this.logPrefix(
@@ -117,6 +125,8 @@ export default class UIWebSocketServer extends AbstractUIServer {
         )} Error at sending response id '${responseId}':`,
         error
       );
+    } finally {
+      this.responseHandlers.delete(responseId);
     }
   }
 

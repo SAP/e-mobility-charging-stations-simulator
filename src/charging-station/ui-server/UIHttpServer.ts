@@ -47,7 +47,6 @@ export default class UIHttpServer extends AbstractUIServer {
             'Content-Type': 'application/json',
           })
           .end(JSON.stringify(payload));
-        this.responseHandlers.delete(uuid);
       } else {
         logger.error(
           `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
@@ -58,6 +57,8 @@ export default class UIHttpServer extends AbstractUIServer {
         `${this.logPrefix(moduleName, 'sendResponse')} Error at sending response id '${uuid}':`,
         error
       );
+    } finally {
+      this.responseHandlers.delete(uuid);
     }
   }
 
