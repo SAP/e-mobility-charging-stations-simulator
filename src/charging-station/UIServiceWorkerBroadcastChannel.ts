@@ -100,7 +100,7 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
   private messageErrorHandler(messageEvent: MessageEvent): void {
     logger.error(
       `${this.uiService.logPrefix(moduleName, 'messageErrorHandler')} Error at handling message:`,
-      { messageEvent }
+      messageEvent
     );
   }
 }

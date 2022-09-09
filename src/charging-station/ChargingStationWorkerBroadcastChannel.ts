@@ -53,7 +53,6 @@ type CommandHandler = (
 
 export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly commandHandlers: Map<BroadcastChannelProcedureName, CommandHandler>;
-
   private readonly chargingStation: ChargingStation;
 
   constructor(chargingStation: ChargingStation) {
@@ -171,7 +170,6 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       return;
     }
     const [uuid, command, requestPayload] = validatedMessageEvent.data as BroadcastChannelRequest;
-
     if (
       requestPayload?.hashIds !== undefined &&
       requestPayload?.hashIds?.includes(this.chargingStation.stationInfo.hashId) === false
@@ -223,7 +221,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
   private messageErrorHandler(messageEvent: MessageEvent): void {
     logger.error(
       `${this.chargingStation.logPrefix()} ${moduleName}.messageErrorHandler: Error at handling message:`,
-      { messageEvent }
+      messageEvent
     );
   }
 
