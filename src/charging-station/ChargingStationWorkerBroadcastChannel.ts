@@ -2,31 +2,34 @@ import BaseError from '../exception/BaseError';
 import type OCPPError from '../exception/OCPPError';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import {
-  HeartbeatRequest,
-  MeterValuesRequest,
+  type BootNotificationRequest,
+  type HeartbeatRequest,
+  type MeterValuesRequest,
   RequestCommand,
   type StatusNotificationRequest,
 } from '../types/ocpp/Requests';
-import type {
-  HeartbeatResponse,
-  MeterValuesResponse,
-  StatusNotificationResponse,
+import {
+  type BootNotificationResponse,
+  type HeartbeatResponse,
+  type MeterValuesResponse,
+  RegistrationStatus,
+  type StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
   AuthorizationStatus,
-  AuthorizeRequest,
-  AuthorizeResponse,
-  StartTransactionRequest,
-  StartTransactionResponse,
-  StopTransactionRequest,
-  StopTransactionResponse,
+  type AuthorizeRequest,
+  type AuthorizeResponse,
+  type StartTransactionRequest,
+  type StartTransactionResponse,
+  type StopTransactionRequest,
+  type StopTransactionResponse,
 } from '../types/ocpp/Transaction';
 import {
   BroadcastChannelProcedureName,
-  BroadcastChannelRequest,
-  BroadcastChannelRequestPayload,
-  BroadcastChannelResponsePayload,
-  MessageEvent,
+  type BroadcastChannelRequest,
+  type BroadcastChannelRequestPayload,
+  type BroadcastChannelResponsePayload,
+  type MessageEvent,
 } from '../types/WorkerBroadcastChannel';
 import { ResponseStatus } from '../ui/web/src/types/UIProtocol';
 import Constants from '../utils/Constants';
@@ -43,6 +46,7 @@ type CommandResponse =
   | StartTransactionResponse
   | StopTransactionResponse
   | AuthorizeResponse
+  | BootNotificationResponse
   | StatusNotificationResponse
   | HeartbeatResponse
   | MeterValuesResponse;
@@ -96,13 +100,13 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             StopTransactionRequest,
             StartTransactionResponse
           >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
-            ...requestPayload,
             meterStop:
               requestPayload.meterStop ??
               this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
                 requestPayload.transactionId,
                 true
               ),
+            ...requestPayload,
           }),
       ],
       [
@@ -112,6 +116,27 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             AuthorizeRequest,
             AuthorizeResponse
           >(this.chargingStation, RequestCommand.AUTHORIZE, requestPayload),
+      ],
+      [
+        BroadcastChannelProcedureName.BOOT_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) => {
+          this.chargingStation.bootNotificationResponse =
+            await this.chargingStation.ocppRequestService.requestHandler<
+              BootNotificationRequest,
+              BootNotificationResponse
+            >(
+              this.chargingStation,
+              RequestCommand.BOOT_NOTIFICATION,
+              {
+                ...this.chargingStation.bootNotificationRequest,
+                ...requestPayload,
+              },
+              {
+                skipBufferingOnError: true,
+              }
+            );
+          return this.chargingStation.bootNotificationResponse;
+        },
       ],
       [
         BroadcastChannelProcedureName.STATUS_NOTIFICATION,
@@ -141,8 +166,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             MeterValuesRequest,
             MeterValuesResponse
           >(this.chargingStation, RequestCommand.METER_VALUES, {
-            ...requestPayload,
-            meterValue: requestPayload.meterValue ?? [
+            meterValue: [
               OCPP16ServiceUtils.buildMeterValue(
                 this.chargingStation,
                 requestPayload.connectorId,
@@ -152,6 +176,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
                   : Constants.DEFAULT_METER_VALUES_INTERVAL
               ),
             ],
+            ...requestPayload,
           });
         },
       ],
@@ -285,6 +310,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
               | AuthorizeResponse
           )?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
         ) {
+          return ResponseStatus.SUCCESS;
+        }
+        return ResponseStatus.FAILURE;
+      case BroadcastChannelProcedureName.BOOT_NOTIFICATION:
+        if (commandResponse?.status === RegistrationStatus.ACCEPTED) {
           return ResponseStatus.SUCCESS;
         }
         return ResponseStatus.FAILURE;

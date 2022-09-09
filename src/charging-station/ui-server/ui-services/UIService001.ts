@@ -46,6 +46,10 @@ export default class UIService001 extends AbstractUIService {
       this.handleProtocolRequest.bind(this) as ProtocolRequestHandler
     );
     this.requestHandlers.set(
+      ProcedureName.BOOT_NOTIFICATION,
+      this.handleProtocolRequest.bind(this) as ProtocolRequestHandler
+    );
+    this.requestHandlers.set(
       ProcedureName.STATUS_NOTIFICATION,
       this.handleProtocolRequest.bind(this) as ProtocolRequestHandler
     );

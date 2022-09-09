@@ -37,6 +37,7 @@ export default abstract class AbstractUIService {
     [ProcedureName.START_TRANSACTION]: BroadcastChannelProcedureName.START_TRANSACTION,
     [ProcedureName.STOP_TRANSACTION]: BroadcastChannelProcedureName.STOP_TRANSACTION,
     [ProcedureName.AUTHORIZE]: BroadcastChannelProcedureName.AUTHORIZE,
+    [ProcedureName.BOOT_NOTIFICATION]: BroadcastChannelProcedureName.BOOT_NOTIFICATION,
     [ProcedureName.STATUS_NOTIFICATION]: BroadcastChannelProcedureName.STATUS_NOTIFICATION,
     [ProcedureName.HEARTBEAT]: BroadcastChannelProcedureName.HEARTBEAT,
     [ProcedureName.METER_VALUES]: BroadcastChannelProcedureName.METER_VALUES,

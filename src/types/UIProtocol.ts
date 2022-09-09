@@ -40,6 +40,7 @@ export enum ProcedureName {
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
   AUTHORIZE = 'authorize',
+  BOOT_NOTIFICATION = 'bootNotification',
   STATUS_NOTIFICATION = 'statusNotification',
   HEARTBEAT = 'heartbeat',
   METER_VALUES = 'meterValues',

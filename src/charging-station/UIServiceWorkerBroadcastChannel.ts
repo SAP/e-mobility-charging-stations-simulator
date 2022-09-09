@@ -1,4 +1,4 @@
-import { ResponsePayload, ResponseStatus } from '../types/UIProtocol';
+import { type ResponsePayload, ResponseStatus } from '../types/UIProtocol';
 import type {
   BroadcastChannelResponse,
   BroadcastChannelResponsePayload,

@@ -1341,22 +1341,9 @@ export default class ChargingStation {
           this.bootNotificationResponse = await this.ocppRequestService.requestHandler<
             BootNotificationRequest,
             BootNotificationResponse
-          >(
-            this,
-            RequestCommand.BOOT_NOTIFICATION,
-            {
-              chargePointModel: this.bootNotificationRequest.chargePointModel,
-              chargePointVendor: this.bootNotificationRequest.chargePointVendor,
-              chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
-              firmwareVersion: this.bootNotificationRequest.firmwareVersion,
-              chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
-              iccid: this.bootNotificationRequest.iccid,
-              imsi: this.bootNotificationRequest.imsi,
-              meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
-              meterType: this.bootNotificationRequest.meterType,
-            },
-            { skipBufferingOnError: true }
-          );
+          >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
+            skipBufferingOnError: true,
+          });
           if (!this.isRegistered()) {
             this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
             await Utils.sleep(
@@ -1756,22 +1743,9 @@ export default class ChargingStation {
       await this.ocppRequestService.requestHandler<
         BootNotificationRequest,
         BootNotificationResponse
-      >(
-        this,
-        RequestCommand.BOOT_NOTIFICATION,
-        {
-          chargePointModel: this.bootNotificationRequest.chargePointModel,
-          chargePointVendor: this.bootNotificationRequest.chargePointVendor,
-          chargeBoxSerialNumber: this.bootNotificationRequest.chargeBoxSerialNumber,
-          firmwareVersion: this.bootNotificationRequest.firmwareVersion,
-          chargePointSerialNumber: this.bootNotificationRequest.chargePointSerialNumber,
-          iccid: this.bootNotificationRequest.iccid,
-          imsi: this.bootNotificationRequest.imsi,
-          meterSerialNumber: this.bootNotificationRequest.meterSerialNumber,
-          meterType: this.bootNotificationRequest.meterType,
-        },
-        { skipBufferingOnError: true }
-      );
+      >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
+        skipBufferingOnError: true,
+      });
     }
     // Start WebSocket ping
     this.startWebSocketPing();

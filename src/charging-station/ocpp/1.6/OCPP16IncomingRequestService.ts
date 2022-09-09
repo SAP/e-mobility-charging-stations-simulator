@@ -1116,23 +1116,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               .requestHandler<OCPP16BootNotificationRequest, OCPP16BootNotificationResponse>(
                 chargingStation,
                 OCPP16RequestCommand.BOOT_NOTIFICATION,
-                {
-                  chargePointModel: chargingStation.bootNotificationRequest.chargePointModel,
-                  chargePointVendor: chargingStation.bootNotificationRequest.chargePointVendor,
-                  chargeBoxSerialNumber:
-                    chargingStation.bootNotificationRequest.chargeBoxSerialNumber,
-                  firmwareVersion: chargingStation.bootNotificationRequest.firmwareVersion,
-                  chargePointSerialNumber:
-                    chargingStation.bootNotificationRequest.chargePointSerialNumber,
-                  iccid: chargingStation.bootNotificationRequest.iccid,
-                  imsi: chargingStation.bootNotificationRequest.imsi,
-                  meterSerialNumber: chargingStation.bootNotificationRequest.meterSerialNumber,
-                  meterType: chargingStation.bootNotificationRequest.meterType,
-                },
+                chargingStation.bootNotificationRequest,
                 { skipBufferingOnError: true, triggerMessage: true }
               )
-              .then((value) => {
-                chargingStation.bootNotificationResponse = value;
+              .then((response) => {
+                chargingStation.bootNotificationResponse = response;
               })
               .catch(() => {
                 /* This is intentional */
