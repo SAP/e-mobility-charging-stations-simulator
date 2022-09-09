@@ -39,16 +39,23 @@ export default class UIHttpServer extends AbstractUIServer {
 
   public sendResponse(response: ProtocolResponse): void {
     const [uuid, payload] = response;
-    if (this.responseHandlers.has(uuid) === true) {
-      const res = this.responseHandlers.get(uuid) as ServerResponse;
-      res.writeHead(this.responseStatusToStatusCode(payload.status), {
-        'Content-Type': 'application/json',
-      });
-      res.end(JSON.stringify(payload));
-      this.responseHandlers.delete(uuid);
-    } else {
+    try {
+      if (this.responseHandlers.has(uuid) === true) {
+        const res = this.responseHandlers.get(uuid) as ServerResponse;
+        res.writeHead(this.responseStatusToStatusCode(payload.status), {
+          'Content-Type': 'application/json',
+        });
+        res.end(JSON.stringify(payload));
+        this.responseHandlers.delete(uuid);
+      } else {
+        logger.error(
+          `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
+        );
+      }
+    } catch (error) {
       logger.error(
-        `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
+        `${this.logPrefix(moduleName, 'sendResponse')} Error at sending response id '${uuid}':`,
+        error
       );
     }
   }
@@ -102,9 +109,7 @@ export default class UIHttpServer extends AbstractUIServer {
               .get(version)
               .requestHandler(this.buildProtocolRequest(uuid, procedureName, body ?? {}))
               .catch(() => {
-                this.sendResponse(
-                  this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE })
-                );
+                /* Error caught by AbstractUIService */
               });
           });
       } else {

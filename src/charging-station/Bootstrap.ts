@@ -54,10 +54,7 @@ export class Bootstrap {
     );
     this.initialize();
     Configuration.getUIServer().enabled === true &&
-      (this.uiServer = UIServerFactory.getUIServerImplementation(
-        Configuration.getUIServer().type,
-        Configuration.getUIServer()
-      ));
+      (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer()));
     Configuration.getPerformanceStorage().enabled === true &&
       (this.storage = StorageFactory.getStorage(
         Configuration.getPerformanceStorage().type,

@@ -3,7 +3,7 @@ import type internal from 'stream';
 
 import { StatusCodes } from 'http-status-codes';
 import * as uuid from 'uuid';
-import WebSocket, { RawData, WebSocketServer } from 'ws';
+import WebSocket, { type RawData, WebSocketServer } from 'ws';
 
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import type { ProtocolRequest, ProtocolResponse } from '../../types/UIProtocol';
@@ -94,18 +94,28 @@ export default class UIWebSocketServer extends AbstractUIServer {
 
   public sendResponse(response: ProtocolResponse): void {
     const responseId = response[0];
-    if (this.responseHandlers.has(responseId)) {
-      const ws = this.responseHandlers.get(responseId) as WebSocket;
-      if (ws?.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(response));
+    try {
+      if (this.responseHandlers.has(responseId)) {
+        const ws = this.responseHandlers.get(responseId) as WebSocket;
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(response));
+        }
+        this.responseHandlers.delete(responseId);
+      } else {
+        logger.error(
+          `${this.logPrefix(
+            moduleName,
+            'sendResponse'
+          )} Response for unknown request id: ${responseId}`
+        );
       }
-      this.responseHandlers.delete(responseId);
-    } else {
+    } catch (error) {
       logger.error(
         `${this.logPrefix(
           moduleName,
           'sendResponse'
-        )} Response for unknown request id: ${responseId}`
+        )} Error at sending response id '${responseId}':`,
+        error
       );
     }
   }

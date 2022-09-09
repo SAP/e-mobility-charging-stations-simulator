@@ -8,12 +8,12 @@ import type {
 import { RequestCommand } from '../types/ocpp/Requests';
 import {
   AuthorizationStatus,
-  AuthorizeRequest,
-  AuthorizeResponse,
-  StartTransactionRequest,
-  StartTransactionResponse,
+  type AuthorizeRequest,
+  type AuthorizeResponse,
+  type StartTransactionRequest,
+  type StartTransactionResponse,
   StopTransactionReason,
-  StopTransactionResponse,
+  type StopTransactionResponse,
 } from '../types/ocpp/Transaction';
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';

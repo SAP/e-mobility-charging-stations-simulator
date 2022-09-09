@@ -14,7 +14,6 @@ export default class UIServerFactory {
   }
 
   public static getUIServerImplementation(
-    applicationProtocol: ApplicationProtocol,
     uiServerConfiguration?: UIServerConfiguration
   ): AbstractUIServer | null {
     if (UIServiceUtils.isLoopback(uiServerConfiguration.options?.host) === false) {
@@ -24,7 +23,7 @@ export default class UIServerFactory {
         )
       );
     }
-    switch (applicationProtocol) {
+    switch (uiServerConfiguration?.type ?? Configuration.getUIServer().type) {
       case ApplicationProtocol.WS:
         return new UIWebSocketServer(uiServerConfiguration ?? Configuration.getUIServer());
       case ApplicationProtocol.HTTP:

@@ -18,8 +18,8 @@ import UIServiceFactory from './ui-services/UIServiceFactory';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;
-  protected httpServer: Server;
-  protected responseHandlers: Map<string, ServerResponse | WebSocket>;
+  protected readonly httpServer: Server;
+  protected readonly responseHandlers: Map<string, ServerResponse | WebSocket>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
 
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
@@ -51,14 +51,24 @@ export abstract class AbstractUIServer {
     }
   }
 
-  protected isBasicAuthEnabled(): boolean {
+  protected authenticate(req: IncomingMessage, next: (err?: Error) => void): void {
+    if (this.isBasicAuthEnabled() === true) {
+      if (this.isValidBasicAuth(req) === false) {
+        next(new Error('Unauthorized'));
+      }
+      next();
+    }
+    next();
+  }
+
+  private isBasicAuthEnabled(): boolean {
     return (
       this.uiServerConfiguration.authentication?.enabled === true &&
       this.uiServerConfiguration.authentication?.type === AuthenticationType.BASIC_AUTH
     );
   }
 
-  protected isValidBasicAuth(req: IncomingMessage): boolean {
+  private isValidBasicAuth(req: IncomingMessage): boolean {
     const authorizationHeader = req.headers.authorization ?? '';
     const authorizationToken = authorizationHeader.split(/\s+/).pop() ?? '';
     const authentication = Buffer.from(authorizationToken, 'base64').toString();
@@ -69,16 +79,6 @@ export abstract class AbstractUIServer {
       this.uiServerConfiguration.authentication?.username === username &&
       this.uiServerConfiguration.authentication?.password === password
     );
-  }
-
-  protected authenticate(req: IncomingMessage, next: (err?: Error) => void): void {
-    if (this.isBasicAuthEnabled() === true) {
-      if (this.isValidBasicAuth(req) === false) {
-        next(new Error('Unauthorized'));
-      }
-      next();
-    }
-    next();
   }
 
   public abstract start(): void;

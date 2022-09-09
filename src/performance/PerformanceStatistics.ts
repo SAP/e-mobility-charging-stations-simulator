@@ -222,12 +222,7 @@ export default class PerformanceStatistics {
   }
 
   private addPerformanceEntryToStatistics(entry: PerformanceEntry): void {
-    let entryName = entry.name;
-    // Rename entry name
-    const MAP_NAME: Record<string, string> = {};
-    if (MAP_NAME[entryName]) {
-      entryName = MAP_NAME[entryName];
-    }
+    const entryName = entry.name;
     // Initialize command statistics
     if (!this.statistics.statisticsData.has(entryName)) {
       this.statistics.statisticsData.set(entryName, {});
