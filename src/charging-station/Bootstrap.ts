@@ -35,7 +35,7 @@ const noChargingStationTemplatesExitCode = 2;
 
 export class Bootstrap {
   private static instance: Bootstrap | null = null;
-  private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null = null;
+  private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null;
   private readonly uiServer!: AbstractUIServer;
   private readonly storage!: Storage;
   private numberOfChargingStationTemplates!: number;
@@ -47,6 +47,7 @@ export class Bootstrap {
 
   private constructor() {
     this.started = false;
+    this.workerImplementation = null;
     this.workerScript = path.join(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',

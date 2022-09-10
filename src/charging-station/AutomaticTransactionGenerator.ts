@@ -35,11 +35,11 @@ export default class AutomaticTransactionGenerator {
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
     chargingStation: ChargingStation
   ) {
+    this.started = false;
     this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
     this.connectorsStatus = new Map<number, Status>();
     this.stopConnectors();
-    this.started = false;
   }
 
   public static getInstance(

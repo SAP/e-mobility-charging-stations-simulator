@@ -114,6 +114,9 @@ export default class ChargingStation {
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
 
   constructor(index: number, templateFile: string) {
+    this.started = false;
+    this.wsConnectionRestarted = false;
+    this.autoReconnectRetryCount = 0;
     this.index = index;
     this.templateFile = templateFile;
     this.connectors = new Map<number, ConnectorStatus>();
@@ -122,9 +125,6 @@ export default class ChargingStation {
     this.sharedLRUCache = SharedLRUCache.getInstance();
     this.authorizedTagsCache = AuthorizedTagsCache.getInstance();
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this);
-    this.started = false;
-    this.wsConnectionRestarted = false;
-    this.autoReconnectRetryCount = 0;
 
     this.initialize();
   }
@@ -1361,16 +1361,15 @@ export default class ChargingStation {
       if (this.isRegistered()) {
         if (this.isInAcceptedState()) {
           await this.startMessageSequence();
-          this.wsConnectionRestarted && this.flushMessageBuffer();
         }
       } else {
         logger.error(
           `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
         );
       }
-      this.started === false && (this.started = true);
-      this.autoReconnectRetryCount = 0;
       this.wsConnectionRestarted = false;
+      this.autoReconnectRetryCount = 0;
+      this.started = true;
       parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
     } else {
       logger.warn(
@@ -1398,7 +1397,7 @@ export default class ChargingStation {
             code
           )}' and reason '${reason}'`
         );
-        await this.reconnect(code);
+        await this.reconnect();
         break;
     }
     parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
@@ -1814,6 +1813,7 @@ export default class ChargingStation {
     if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true) {
       this.startAutomaticTransactionGenerator();
     }
+    this.wsConnectionRestarted === true && this.flushMessageBuffer();
   }
 
   private async stopMessageSequence(
@@ -1966,7 +1966,7 @@ export default class ChargingStation {
       : false;
   }
 
-  private async reconnect(code: number): Promise<void> {
+  private async reconnect(): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
     // Stop heartbeat
