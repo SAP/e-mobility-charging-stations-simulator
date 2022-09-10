@@ -99,6 +99,8 @@ export default class ChargingStation {
   public bootNotificationRequest!: BootNotificationRequest;
   public bootNotificationResponse!: BootNotificationResponse | null;
   public powerDivider!: number;
+  private starting: boolean;
+  private stopping: boolean;
   private readonly index: number;
   private configurationFile!: string;
   private configurationFileHash!: string;
@@ -115,6 +117,8 @@ export default class ChargingStation {
 
   constructor(index: number, templateFile: string) {
     this.started = false;
+    this.starting = false;
+    this.stopping = false;
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
     this.index = index;
@@ -475,75 +479,89 @@ export default class ChargingStation {
   }
 
   public start(): void {
-    if (this.getEnableStatistics()) {
-      this.performanceStatistics.start();
-    }
-    this.openWSConnection();
-    // Monitor charging station template file
-    this.templateFileWatcher = FileUtils.watchJsonFile(
-      this.logPrefix(),
-      FileType.ChargingStationTemplate,
-      this.templateFile,
-      null,
-      (event, filename): void => {
-        if (filename && event === 'change') {
-          try {
-            logger.debug(
-              `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
-                this.templateFile
-              } file have changed, reload`
-            );
-            this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
-            // Initialize
-            this.initialize();
-            // Restart the ATG
-            this.stopAutomaticTransactionGenerator();
-            if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true) {
-              this.startAutomaticTransactionGenerator();
+    if (this.starting === false) {
+      this.starting = true;
+      if (this.getEnableStatistics()) {
+        this.performanceStatistics.start();
+      }
+      this.openWSConnection();
+      // Monitor charging station template file
+      this.templateFileWatcher = FileUtils.watchJsonFile(
+        this.logPrefix(),
+        FileType.ChargingStationTemplate,
+        this.templateFile,
+        null,
+        (event, filename): void => {
+          if (filename && event === 'change') {
+            try {
+              logger.debug(
+                `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
+                  this.templateFile
+                } file have changed, reload`
+              );
+              this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
+              // Initialize
+              this.initialize();
+              // Restart the ATG
+              this.stopAutomaticTransactionGenerator();
+              if (
+                this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true
+              ) {
+                this.startAutomaticTransactionGenerator();
+              }
+              if (this.getEnableStatistics()) {
+                this.performanceStatistics.restart();
+              } else {
+                this.performanceStatistics.stop();
+              }
+              // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
+            } catch (error) {
+              logger.error(
+                `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
+                error
+              );
             }
-            if (this.getEnableStatistics()) {
-              this.performanceStatistics.restart();
-            } else {
-              this.performanceStatistics.stop();
-            }
-            // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
-          } catch (error) {
-            logger.error(
-              `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
-              error
-            );
           }
         }
-      }
-    );
-    parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
+      );
+      parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
+      this.starting = false;
+    } else {
+      logger.warn(`${this.logPrefix()} Charging station is already starting...`);
+    }
   }
 
   public async stop(reason?: StopTransactionReason): Promise<void> {
-    await this.stopMessageSequence(reason);
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0) {
-        await this.ocppRequestService.requestHandler<
-          StatusNotificationRequest,
-          StatusNotificationResponse
-        >(this, RequestCommand.STATUS_NOTIFICATION, {
-          connectorId,
-          status: ChargePointStatus.UNAVAILABLE,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        });
-        this.getConnectorStatus(connectorId).status = ChargePointStatus.UNAVAILABLE;
+    if (this.stopping === false) {
+      this.stopping = true;
+      await this.stopMessageSequence(reason);
+      for (const connectorId of this.connectors.keys()) {
+        if (connectorId > 0) {
+          await this.ocppRequestService.requestHandler<
+            StatusNotificationRequest,
+            StatusNotificationResponse
+          >(this, RequestCommand.STATUS_NOTIFICATION, {
+            connectorId,
+            status: ChargePointStatus.UNAVAILABLE,
+            errorCode: ChargePointErrorCode.NO_ERROR,
+          });
+          this.getConnectorStatus(connectorId).status = ChargePointStatus.UNAVAILABLE;
+        }
       }
+      this.closeWSConnection();
+      if (this.getEnableStatistics()) {
+        this.performanceStatistics.stop();
+      }
+      this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
+      this.templateFileWatcher.close();
+      this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
+      this.bootNotificationResponse = null;
+      this.started = false;
+      parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
+      this.stopping = false;
+    } else {
+      logger.warn(`${this.logPrefix()} Charging station is already stopping...`);
     }
-    this.closeWSConnection();
-    if (this.getEnableStatistics()) {
-      this.performanceStatistics.stop();
-    }
-    this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
-    this.templateFileWatcher.close();
-    this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
-    this.bootNotificationResponse = null;
-    this.started = false;
-    parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
   }
 
   public async reset(reason?: StopTransactionReason): Promise<void> {
