@@ -1569,7 +1569,8 @@ export default class ChargingStation {
           commandName ?? requestCommandName ?? null
         );
       } else if (
-        [MessageType.CALL_RESULT_MESSAGE, MessageType.CALL_ERROR_MESSAGE].includes(messageType)
+        [MessageType.CALL_RESULT_MESSAGE, MessageType.CALL_ERROR_MESSAGE].includes(messageType) ===
+        true
       ) {
         // Remove the request from the cache
         this.requests.delete(messageId);
@@ -1594,7 +1595,7 @@ export default class ChargingStation {
     connectorStatus: ConnectorStatus,
     meterStop = false
   ): number {
-    if (this.getMeteringPerTransaction()) {
+    if (this.getMeteringPerTransaction() === true) {
       return (
         (meterStop === true
           ? Math.round(connectorStatus?.transactionEnergyActiveImportRegisterValue)
