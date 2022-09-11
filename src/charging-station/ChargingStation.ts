@@ -1452,7 +1452,7 @@ export default class ChargingStation {
           // Incoming Message
           case MessageType.CALL_MESSAGE:
             [, , commandName, commandPayload] = request as IncomingRequest;
-            if (this.getEnableStatistics()) {
+            if (this.getEnableStatistics() === true) {
               this.performanceStatistics.addRequestStatistic(commandName, messageType);
             }
             logger.debug(

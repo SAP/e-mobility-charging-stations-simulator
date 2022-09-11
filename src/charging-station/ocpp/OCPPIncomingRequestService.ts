@@ -57,7 +57,7 @@ export default abstract class OCPPIncomingRequestService {
     schema: JSONSchemaType<T>,
     payload: T
   ): boolean {
-    if (!chargingStation.getPayloadSchemaValidation()) {
+    if (chargingStation.getPayloadSchemaValidation() === false) {
       return true;
     }
     const validate = this.ajv.compile(schema);

@@ -124,7 +124,7 @@ export default abstract class OCPPRequestService {
     schema: JSONSchemaType<T>,
     payload: T
   ): boolean {
-    if (!chargingStation.getPayloadSchemaValidation()) {
+    if (chargingStation.getPayloadSchemaValidation() === false) {
       return true;
     }
     const validate = this.ajv.compile(schema);
@@ -175,11 +175,11 @@ export default abstract class OCPPRequestService {
             responseCallback,
             errorCallback
           );
-          if (chargingStation.getEnableStatistics()) {
+          if (chargingStation.getEnableStatistics() === true) {
             chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
           }
           // Check if wsConnection opened
-          if (chargingStation.isWebSocketConnectionOpened()) {
+          if (chargingStation.isWebSocketConnectionOpened() === true) {
             // Yes: Send Message
             const beginId = PerformanceStatistics.beginMeasure(commandName);
             // FIXME: Handle sending error
@@ -190,7 +190,7 @@ export default abstract class OCPPRequestService {
                 messageType
               )} payload: ${messageToSend}`
             );
-          } else if (!params.skipBufferingOnError) {
+          } else if (params.skipBufferingOnError === false) {
             // Buffer it
             chargingStation.bufferMessage(messageToSend);
             const ocppError = new OCPPError(
@@ -232,7 +232,7 @@ export default abstract class OCPPRequestService {
             payload: JsonType,
             requestPayload: JsonType
           ): Promise<void> {
-            if (chargingStation.getEnableStatistics()) {
+            if (chargingStation.getEnableStatistics() === true) {
               chargingStation.performanceStatistics.addRequestStatistic(
                 commandName,
                 MessageType.CALL_RESULT_MESSAGE

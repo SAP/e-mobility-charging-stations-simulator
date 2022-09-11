@@ -23,10 +23,10 @@ export default class AuthorizedTagsCache {
   }
 
   public getAuthorizedTags(file: string): string[] {
-    if (!this.hasTags(file)) {
+    if (this.hasTags(file) === false) {
       this.setTags(file, this.getAuthorizedTagsFromFile(file));
       // Monitor authorization file
-      !this.FSWatchers.has(file) &&
+      this.FSWatchers.has(file) === false &&
         this.FSWatchers.set(
           file,
           FileUtils.watchJsonFile(
