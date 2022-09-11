@@ -1205,7 +1205,7 @@ export default class ChargingStation {
           const lastConnectorId = Utils.convertToInt(lastConnector);
           if (
             lastConnectorId === 0 &&
-            this.getUseConnectorId0(stationInfo) &&
+            this.getUseConnectorId0(stationInfo) === true &&
             stationInfo?.Connectors[lastConnector]
           ) {
             this.connectors.set(
@@ -1609,7 +1609,7 @@ export default class ChargingStation {
     );
   }
 
-  private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean | undefined {
+  private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean {
     const localStationInfo = stationInfo ?? this.stationInfo;
     return !Utils.isUndefined(localStationInfo.useConnectorId0)
       ? localStationInfo.useConnectorId0
