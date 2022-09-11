@@ -60,7 +60,7 @@ export default class AutomaticTransactionGenerator {
 
   public start(): void {
     if (this.started === true) {
-      logger.warn(`${this.logPrefix()} trying to start while already started`);
+      logger.warn(`${this.logPrefix()} is already started`);
       return;
     }
     this.startConnectors();
@@ -69,7 +69,7 @@ export default class AutomaticTransactionGenerator {
 
   public stop(): void {
     if (this.started === false) {
-      logger.warn(`${this.logPrefix()} trying to stop while not started`);
+      logger.warn(`${this.logPrefix()} is already stopped`);
       return;
     }
     this.stopConnectors();
@@ -78,7 +78,7 @@ export default class AutomaticTransactionGenerator {
 
   public startConnector(connectorId: number): void {
     if (this.chargingStation.connectors.has(connectorId) === false) {
-      logger.warn(`${this.logPrefix(connectorId)} trying to start on non existing connector`);
+      logger.warn(`${this.logPrefix(connectorId)} starting on non existing connector`);
       return;
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
@@ -89,15 +89,23 @@ export default class AutomaticTransactionGenerator {
         });
       });
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
-      logger.warn(`${this.logPrefix(connectorId)} already started on connector`);
+      logger.warn(`${this.logPrefix(connectorId)} is already started on connector`);
     }
   }
 
   public stopConnector(connectorId: number): void {
-    this.connectorsStatus.set(connectorId, {
-      ...this.connectorsStatus.get(connectorId),
-      start: false,
-    });
+    if (this.chargingStation.connectors.has(connectorId) === false) {
+      logger.warn(`${this.logPrefix(connectorId)} stopping on non existing connector`);
+      return;
+    }
+    if (this.connectorsStatus.get(connectorId)?.start === true) {
+      this.connectorsStatus.set(connectorId, {
+        ...this.connectorsStatus.get(connectorId),
+        start: false,
+      });
+    } else if (this.connectorsStatus.get(connectorId)?.start === false) {
+      logger.warn(`${this.logPrefix(connectorId)} is already stopped on connector`);
+    }
   }
 
   private startConnectors(): void {
@@ -286,7 +294,7 @@ export default class AutomaticTransactionGenerator {
       const idTag = this.chargingStation.getRandomIdTag();
       const startTransactionLogMsg = `${this.logPrefix(
         connectorId
-      )} start transaction for idTag '${idTag}'`;
+      )} start transaction with an idTag '${idTag}'`;
       if (this.getRequireAuthorize()) {
         this.chargingStation.getConnectorStatus(connectorId).authorizeIdTag = idTag;
         // Authorize idTag
@@ -358,7 +366,7 @@ export default class AutomaticTransactionGenerator {
     } else {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
       logger.warn(
-        `${this.logPrefix(connectorId)} trying to stop a not started transaction${
+        `${this.logPrefix(connectorId)} stopping a not started transaction${
           transactionId ? ' ' + transactionId.toString() : ''
         }`
       );

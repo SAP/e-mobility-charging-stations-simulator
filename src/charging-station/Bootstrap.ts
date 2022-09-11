@@ -147,10 +147,10 @@ export class Bootstrap {
       this.workerImplementation = null;
       this.uiServer?.stop();
       await this.storage?.close();
+      this.started = false;
     } else {
-      console.error(chalk.red('Trying to stop the charging stations simulator while not started'));
+      console.error(chalk.red('Cannot stop a not started charging stations simulator'));
     }
-    this.started = false;
   }
 
   public async restart(): Promise<void> {

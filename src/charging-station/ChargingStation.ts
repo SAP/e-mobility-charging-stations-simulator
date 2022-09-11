@@ -1471,7 +1471,7 @@ export default class ChargingStation {
           // Outcome Message
           case MessageType.CALL_RESULT_MESSAGE:
             [, , commandPayload] = request as Response;
-            if (!this.requests.has(messageId)) {
+            if (this.requests.has(messageId) === false) {
               // Error
               throw new OCPPError(
                 ErrorType.INTERNAL_ERROR,
@@ -1502,7 +1502,7 @@ export default class ChargingStation {
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
             [, , errorType, errorMessage, errorDetails] = request as ErrorResponse;
-            if (!this.requests.has(messageId)) {
+            if (this.requests.has(messageId) === false) {
               // Error
               throw new OCPPError(
                 ErrorType.INTERNAL_ERROR,
@@ -1539,7 +1539,7 @@ export default class ChargingStation {
         parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not an array', null, {
-          payload: request,
+          request,
         });
       }
     } catch (error) {
@@ -1552,7 +1552,7 @@ export default class ChargingStation {
         )}' processing error:`,
         error
       );
-      if (!(error instanceof OCPPError)) {
+      if (error instanceof OCPPError === false) {
         logger.warn(
           `${this.logPrefix()} Error thrown at incoming OCPP command '${
             commandName ?? requestCommandName ?? null
@@ -1560,14 +1560,15 @@ export default class ChargingStation {
           error
         );
       }
-      // Send error
-      messageType === MessageType.CALL_MESSAGE &&
-        (await this.ocppRequestService.sendError(
+      if (messageType === MessageType.CALL_MESSAGE) {
+        // Send error
+        await this.ocppRequestService.sendError(
           this,
           messageId,
           error as OCPPError,
           commandName ?? requestCommandName ?? null
-        ));
+        );
+      }
     }
   }
 
