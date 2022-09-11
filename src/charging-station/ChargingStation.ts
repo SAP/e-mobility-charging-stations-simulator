@@ -1547,9 +1547,11 @@ export default class ChargingStation {
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
           commandName ?? requestCommandName ?? null
-        }' message '${data.toString()}' matching cached request '${JSON.stringify(
-          this.requests.get(messageId)
-        )}' processing error:`,
+        }' message '${data.toString()}'${
+          messageType !== MessageType.CALL_MESSAGE
+            ? ` matching cached request '${JSON.stringify(this.requests.get(messageId))}'`
+            : ''
+        } processing error:`,
         error
       );
       if (error instanceof OCPPError === false) {
