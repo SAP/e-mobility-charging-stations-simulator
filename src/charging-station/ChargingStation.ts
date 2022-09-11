@@ -1568,6 +1568,11 @@ export default class ChargingStation {
           error as OCPPError,
           commandName ?? requestCommandName ?? null
         );
+      } else if (
+        [MessageType.CALL_RESULT_MESSAGE, MessageType.CALL_ERROR_MESSAGE].includes(messageType)
+      ) {
+        // Remove the request from the cache
+        this.requests.delete(messageId);
       }
     }
   }
