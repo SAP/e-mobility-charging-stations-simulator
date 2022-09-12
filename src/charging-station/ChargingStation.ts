@@ -731,6 +731,7 @@ export default class ChargingStation {
     } else {
       this.automaticTransactionGenerator.start();
     }
+    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
@@ -743,6 +744,7 @@ export default class ChargingStation {
       this.automaticTransactionGenerator?.stop();
       this.automaticTransactionGenerator = null;
     }
+    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   public async stopTransactionOnConnector(
