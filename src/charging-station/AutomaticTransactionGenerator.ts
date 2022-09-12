@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import BaseError from '../exception/BaseError';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import type {
   AutomaticTransactionGeneratorConfiguration,
@@ -38,7 +39,8 @@ export default class AutomaticTransactionGenerator {
     this.started = false;
     this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
-    this.connectorsStatus = new Map<number, Status>(this.buildInitialConnectorsStatus());
+    this.connectorsStatus = new Map<number, Status>();
+    this.initializeConnectorsStatus();
   }
 
   public static getInstance(
@@ -76,9 +78,9 @@ export default class AutomaticTransactionGenerator {
   }
 
   public startConnector(connectorId: number): void {
-    if (this.chargingStation.connectors.has(connectorId) === false) {
+    if (this.connectorsStatus.has(connectorId) === false) {
       logger.warn(`${this.logPrefix(connectorId)} starting on non existing connector`);
-      return;
+      throw new BaseError(`Connector ${connectorId} does not exist`);
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
       // Avoid hogging the event loop with a busy loop
@@ -93,15 +95,12 @@ export default class AutomaticTransactionGenerator {
   }
 
   public stopConnector(connectorId: number): void {
-    if (this.chargingStation.connectors.has(connectorId) === false) {
+    if (this.connectorsStatus.has(connectorId) === false) {
       logger.warn(`${this.logPrefix(connectorId)} stopping on non existing connector`);
-      return;
+      throw new BaseError(`Connector ${connectorId} does not exist`);
     }
     if (this.connectorsStatus.get(connectorId)?.start === true) {
-      this.connectorsStatus.set(connectorId, {
-        ...this.connectorsStatus.get(connectorId),
-        start: false,
-      });
+      this.connectorsStatus.get(connectorId).start = false;
     } else if (this.connectorsStatus.get(connectorId)?.start === false) {
       logger.warn(`${this.logPrefix(connectorId)} is already stopped on connector`);
     }
@@ -113,6 +112,7 @@ export default class AutomaticTransactionGenerator {
       this.connectorsStatus.size !== this.chargingStation.getNumberOfConnectors()
     ) {
       this.connectorsStatus.clear();
+      this.initializeConnectorsStatus();
     }
     for (const connectorId of this.chargingStation.connectors.keys()) {
       if (connectorId > 0) {
@@ -285,30 +285,25 @@ export default class AutomaticTransactionGenerator {
       this?.connectorsStatus.get(connectorId)?.start ?? false;
   }
 
-  private buildInitialConnectorsStatus(): [number, Status][] {
-    const connectorsStatus: [number, Status][] = [];
+  private initializeConnectorsStatus(): void {
     for (const connectorId of this.chargingStation.connectors.keys()) {
       if (connectorId > 0) {
-        connectorsStatus.push([
-          connectorId,
-          {
-            start: false,
-            authorizeRequests: 0,
-            acceptedAuthorizeRequests: 0,
-            rejectedAuthorizeRequests: 0,
-            startTransactionRequests: 0,
-            acceptedStartTransactionRequests: 0,
-            rejectedStartTransactionRequests: 0,
-            stopTransactionRequests: 0,
-            acceptedStopTransactionRequests: 0,
-            rejectedStopTransactionRequests: 0,
-            skippedConsecutiveTransactions: 0,
-            skippedTransactions: 0,
-          },
-        ]);
+        this.connectorsStatus.set(connectorId, {
+          start: false,
+          authorizeRequests: 0,
+          acceptedAuthorizeRequests: 0,
+          rejectedAuthorizeRequests: 0,
+          startTransactionRequests: 0,
+          acceptedStartTransactionRequests: 0,
+          rejectedStartTransactionRequests: 0,
+          stopTransactionRequests: 0,
+          acceptedStopTransactionRequests: 0,
+          rejectedStopTransactionRequests: 0,
+          skippedConsecutiveTransactions: 0,
+          skippedTransactions: 0,
+        });
       }
     }
-    return connectorsStatus;
   }
 
   private async startTransaction(
