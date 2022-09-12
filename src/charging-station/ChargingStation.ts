@@ -737,6 +737,7 @@ export default class ChargingStation {
     if (!Utils.isEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.stopConnector(connectorId);
+        // FIXME: check if the number of connectors match the CS number of connectors
       }
     } else {
       this.automaticTransactionGenerator?.stop();

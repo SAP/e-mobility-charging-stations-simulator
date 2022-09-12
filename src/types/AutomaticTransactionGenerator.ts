@@ -11,7 +11,7 @@ export type AutomaticTransactionGeneratorConfiguration = {
 };
 
 export type Status = {
-  start?: boolean;
+  start: boolean;
   startDate?: Date;
   lastRunDate?: Date;
   stopDate?: Date;

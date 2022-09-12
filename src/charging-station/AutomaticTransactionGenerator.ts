@@ -38,15 +38,14 @@ export default class AutomaticTransactionGenerator {
     this.started = false;
     this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
-    this.connectorsStatus = new Map<number, Status>();
-    this.stopConnectors();
+    this.connectorsStatus = new Map<number, Status>(this.buildInitialConnectorsStatus());
   }
 
   public static getInstance(
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
     chargingStation: ChargingStation
   ): AutomaticTransactionGenerator {
-    if (!AutomaticTransactionGenerator.instances.has(chargingStation.stationInfo.hashId)) {
+    if (AutomaticTransactionGenerator.instances.has(chargingStation.stationInfo.hashId) === false) {
       AutomaticTransactionGenerator.instances.set(
         chargingStation.stationInfo.hashId,
         new AutomaticTransactionGenerator(
@@ -132,6 +131,7 @@ export default class AutomaticTransactionGenerator {
 
   private async internalStartConnector(connectorId: number): Promise<void> {
     this.initializeConnectorStatus(connectorId);
+    this.connectorsStatus.get(connectorId).start = true;
     logger.info(
       this.logPrefix(connectorId) +
         ' started on connector and will run for ' +
@@ -281,7 +281,34 @@ export default class AutomaticTransactionGenerator {
           1000 -
         previousRunDuration
     );
-    this.connectorsStatus.get(connectorId).start = true;
+    this.connectorsStatus.get(connectorId).start =
+      this?.connectorsStatus.get(connectorId)?.start ?? false;
+  }
+
+  private buildInitialConnectorsStatus(): [number, Status][] {
+    const connectorsStatus: [number, Status][] = [];
+    for (const connectorId of this.chargingStation.connectors.keys()) {
+      if (connectorId > 0) {
+        connectorsStatus.push([
+          connectorId,
+          {
+            start: false,
+            authorizeRequests: 0,
+            acceptedAuthorizeRequests: 0,
+            rejectedAuthorizeRequests: 0,
+            startTransactionRequests: 0,
+            acceptedStartTransactionRequests: 0,
+            rejectedStartTransactionRequests: 0,
+            stopTransactionRequests: 0,
+            acceptedStopTransactionRequests: 0,
+            rejectedStopTransactionRequests: 0,
+            skippedConsecutiveTransactions: 0,
+            skippedTransactions: 0,
+          },
+        ]);
+      }
+    }
+    return connectorsStatus;
   }
 
   private async startTransaction(
