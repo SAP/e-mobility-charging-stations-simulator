@@ -165,6 +165,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         params
       )) as unknown as ResponseType;
     }
+    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
       ErrorType.NOT_SUPPORTED,
       `Unsupported OCPP command '${commandName}'`,
@@ -269,6 +270,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           }),
         } as unknown as Request;
       default:
+        // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         throw new OCPPError(
           ErrorType.NOT_SUPPORTED,
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

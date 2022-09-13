@@ -135,6 +135,7 @@ export default abstract class OCPPRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: Request PDU is invalid: %j`,
       validate.errors
     );
+    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
