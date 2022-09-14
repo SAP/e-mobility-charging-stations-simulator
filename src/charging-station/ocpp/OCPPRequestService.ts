@@ -70,7 +70,9 @@ export default abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      this.handleRequestError(chargingStation, commandName, error as Error);
+      this.handleSendMessageError(chargingStation, commandName, error as Error, {
+        throwError: false,
+      });
     }
   }
 
@@ -90,7 +92,7 @@ export default abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      this.handleRequestError(chargingStation, commandName, error as Error);
+      this.handleSendMessageError(chargingStation, commandName, error as Error);
     }
   }
 
@@ -114,7 +116,9 @@ export default abstract class OCPPRequestService {
         params
       );
     } catch (error) {
-      this.handleRequestError(chargingStation, commandName, error as Error, { throwError: false });
+      this.handleSendMessageError(chargingStation, commandName, error as Error, {
+        throwError: false,
+      });
     }
   }
 
@@ -356,7 +360,7 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  private handleRequestError(
+  private handleSendMessageError(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     error: Error,
