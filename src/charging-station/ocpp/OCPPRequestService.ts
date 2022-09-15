@@ -71,7 +71,7 @@ export default abstract class OCPPRequestService {
       );
     } catch (error) {
       this.handleSendMessageError(chargingStation, commandName, error as Error, {
-        throwError: false,
+        throwError: true,
       });
     }
   }
@@ -116,9 +116,7 @@ export default abstract class OCPPRequestService {
         params
       );
     } catch (error) {
-      this.handleSendMessageError(chargingStation, commandName, error as Error, {
-        throwError: false,
-      });
+      this.handleSendMessageError(chargingStation, commandName, error as Error);
     }
   }
 
@@ -364,10 +362,10 @@ export default abstract class OCPPRequestService {
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     error: Error,
-    params: HandleErrorParams<EmptyObject> = { throwError: true }
+    params: HandleErrorParams<EmptyObject> = { throwError: false }
   ): void {
     logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error);
-    if (params?.throwError) {
+    if (params?.throwError === true) {
       throw error;
     }
   }
