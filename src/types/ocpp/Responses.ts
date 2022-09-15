@@ -39,9 +39,9 @@ export enum DefaultStatus {
   REJECTED = 'Rejected',
 }
 
-export interface DefaultResponse {
+export type DefaultResponse = {
   status: DefaultStatus;
-}
+};
 
 export type RegistrationStatus = OCPP16RegistrationStatus;
 

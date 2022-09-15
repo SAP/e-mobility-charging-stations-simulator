@@ -4,7 +4,7 @@ import type { ChargingProfile } from './ocpp/ChargingProfile';
 import type { MeterValue } from './ocpp/MeterValues';
 import type { AvailabilityType } from './ocpp/Requests';
 
-export interface ConnectorStatus {
+export type ConnectorStatus = {
   availability: AvailabilityType;
   bootStatus?: ChargePointStatus;
   status?: ChargePointStatus;
@@ -22,4 +22,4 @@ export interface ConnectorStatus {
   transactionEnergyActiveImportRegisterValue?: number; // In Wh
   transactionBeginMeterValue?: MeterValue;
   chargingProfiles?: ChargingProfile[];
-}
+};

@@ -3,7 +3,7 @@ import type { ClientRequestArgs } from 'http';
 import type { ClientOptions } from 'ws';
 
 import type { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
-import type ChargingStationOcppConfiguration from './ChargingStationOcppConfiguration';
+import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { OCPPProtocol } from './ocpp/OCPPProtocol';
 import type { OCPPVersion } from './ocpp/OCPPVersion';
@@ -35,10 +35,10 @@ export enum Voltage {
 
 export type WsOptions = ClientOptions & ClientRequestArgs;
 
-interface CommandsSupport {
+type CommandsSupport = {
   incomingCommands: Record<IncomingRequestCommand, boolean>;
   outgoingCommands?: Record<RequestCommand, boolean>;
-}
+};
 
 export default interface ChargingStationTemplate {
   templateHash?: string;

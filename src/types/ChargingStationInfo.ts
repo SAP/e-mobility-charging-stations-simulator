@@ -21,6 +21,6 @@ export default interface ChargingStationInfo
   maximumAmperage?: number; // Always in Ampere
 }
 
-export interface ChargingStationInfoConfiguration {
+export type ChargingStationInfoConfiguration = {
   stationInfo?: ChargingStationInfo;
-}
+};

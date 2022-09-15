@@ -21,10 +21,10 @@ export const RequestCommand = {
 
 export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType];
 
-export interface RequestParams {
+export type RequestParams = {
   skipBufferingOnError?: boolean;
   triggerMessage?: boolean;
-}
+};
 
 export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
 

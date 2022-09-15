@@ -8,7 +8,7 @@ export enum WorkerProcessType {
   STATIC_POOL = 'staticPool',
 }
 
-export interface WorkerOptions {
+export type WorkerOptions = {
   workerStartDelay?: number;
   elementStartDelay?: number;
   poolMaxSize?: number;
@@ -16,19 +16,19 @@ export interface WorkerOptions {
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
   messageHandler?: (message: unknown) => void | Promise<void>;
-}
+};
 
 export type WorkerData = Record<string, unknown>;
 
-export interface WorkerSetElement {
+export type WorkerSetElement = {
   worker: Worker;
   numberOfWorkerElements: number;
-}
+};
 
-export interface WorkerMessage<T extends WorkerData> {
+export type WorkerMessage<T extends WorkerData> = {
   id: WorkerMessageEvents;
   data: T;
-}
+};
 
 export enum WorkerMessageEvents {
   START_WORKER_ELEMENT = 'startWorkerElement',

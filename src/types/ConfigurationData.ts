@@ -14,12 +14,12 @@ export enum SupervisionUrlDistribution {
   SEQUENTIAL = 'sequential',
 }
 
-export interface StationTemplateUrl {
+export type StationTemplateUrl = {
   file: string;
   numberOfStations: number;
-}
+};
 
-export interface UIServerConfiguration {
+export type UIServerConfiguration = {
   enabled?: boolean;
   type?: ApplicationProtocol;
   options?: ServerOptions;
@@ -29,15 +29,15 @@ export interface UIServerConfiguration {
     username?: string;
     password?: string;
   };
-}
+};
 
-export interface StorageConfiguration {
+export type StorageConfiguration = {
   enabled?: boolean;
   type?: StorageType;
   uri?: string;
-}
+};
 
-export interface WorkerConfiguration {
+export type WorkerConfiguration = {
   processType?: WorkerProcessType;
   startDelay?: number;
   elementsPerWorker?: number;
@@ -45,9 +45,9 @@ export interface WorkerConfiguration {
   poolMinSize?: number;
   poolMaxSize?: number;
   poolStrategy?: WorkerChoiceStrategy;
-}
+};
 
-export default interface ConfigurationData {
+export type ConfigurationData = {
   supervisionUrls?: string | string[];
   supervisionUrlDistribution?: SupervisionUrlDistribution;
   stationTemplateUrls: StationTemplateUrl[];
@@ -77,4 +77,4 @@ export default interface ConfigurationData {
   logFile?: string;
   logErrorFile?: string;
   logConsole?: boolean;
-}
+};

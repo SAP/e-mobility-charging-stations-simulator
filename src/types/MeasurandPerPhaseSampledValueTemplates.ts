@@ -4,8 +4,8 @@ export interface SampledValueTemplate extends SampledValue {
   fluctuationPercent?: number;
 }
 
-export default interface MeasurandPerPhaseSampledValueTemplates {
+export type MeasurandPerPhaseSampledValueTemplates = {
   L1?: SampledValueTemplate;
   L2?: SampledValueTemplate;
   L3?: SampledValueTemplate;
-}
+};

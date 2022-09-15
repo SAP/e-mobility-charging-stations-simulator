@@ -1,11 +1,11 @@
-export interface BaseConfig {
+export type BaseConfig = {
   uiServer: UIServerConfig;
-}
+};
 
-interface UIServerConfig {
+type UIServerConfig = {
   host: string;
   port: number;
   protocol: string;
   username?: string;
   password?: string;
-}
+};

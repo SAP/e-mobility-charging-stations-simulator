@@ -5,6 +5,6 @@ export interface ConfigurationKey extends OCPPConfigurationKey {
   reboot?: boolean;
 }
 
-export default interface ChargingStationOcppConfiguration {
+export type ChargingStationOcppConfiguration = {
   configurationKey?: ConfigurationKey[];
-}
+};

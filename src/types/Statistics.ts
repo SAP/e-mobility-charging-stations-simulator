@@ -1,12 +1,12 @@
 import type { CircularArray } from '../utils/CircularArray';
 import type { WorkerData } from './Worker';
 
-export interface TimeSeries {
+export type TimeSeries = {
   timestamp: number;
   value: number;
-}
+};
 
-export interface StatisticsData {
+export type StatisticsData = {
   countRequest: number;
   countResponse: number;
   countError: number;
@@ -20,7 +20,7 @@ export interface StatisticsData {
   medTimeMeasurement: number;
   ninetyFiveThPercentileTimeMeasurement: number;
   stdDevTimeMeasurement: number;
-}
+};
 
 export default interface Statistics extends WorkerData {
   id: string;

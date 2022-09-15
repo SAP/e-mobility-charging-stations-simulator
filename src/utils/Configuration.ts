@@ -4,12 +4,13 @@ import { fileURLToPath } from 'url';
 
 import chalk from 'chalk';
 
-import ConfigurationData, {
-  StationTemplateUrl,
-  StorageConfiguration,
+import {
+  type ConfigurationData,
+  type StationTemplateUrl,
+  type StorageConfiguration,
   SupervisionUrlDistribution,
-  UIServerConfiguration,
-  WorkerConfiguration,
+  type UIServerConfiguration,
+  type WorkerConfiguration,
 } from '../types/ConfigurationData';
 import type { EmptyObject } from '../types/EmptyObject';
 import type { HandleErrorParams } from '../types/Error';

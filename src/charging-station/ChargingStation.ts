@@ -14,7 +14,7 @@ import PerformanceStatistics from '../performance/PerformanceStatistics';
 import type { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
 import type ChargingStationConfiguration from '../types/ChargingStationConfiguration';
 import type ChargingStationInfo from '../types/ChargingStationInfo';
-import type ChargingStationOcppConfiguration from '../types/ChargingStationOcppConfiguration';
+import type { ChargingStationOcppConfiguration } from '../types/ChargingStationOcppConfiguration';
 import ChargingStationTemplate, {
   CurrentType,
   PowerUnits,

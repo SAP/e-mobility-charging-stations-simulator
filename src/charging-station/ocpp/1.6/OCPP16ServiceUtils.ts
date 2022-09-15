@@ -2,10 +2,11 @@
 
 import OCPPError from '../../../exception/OCPPError';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
-import type MeasurandPerPhaseSampledValueTemplates from '../../../types/MeasurandPerPhaseSampledValueTemplates';
-// eslint-disable-next-line no-duplicate-imports
-import type { SampledValueTemplate } from '../../../types/MeasurandPerPhaseSampledValueTemplates';
-import type MeasurandValues from '../../../types/MeasurandValues';
+import type {
+  MeasurandPerPhaseSampledValueTemplates,
+  SampledValueTemplate,
+} from '../../../types/MeasurandPerPhaseSampledValueTemplates';
+import type { MeasurandValues } from '../../../types/MeasurandValues';
 import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
