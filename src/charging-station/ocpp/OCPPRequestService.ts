@@ -37,6 +37,7 @@ export default abstract class OCPPRequestService {
     this.ajv = new Ajv();
     ajvFormats(this.ajv);
     this.requestHandler.bind(this);
+    this.sendMessage.bind(this);
     this.sendResponse.bind(this);
     this.sendError.bind(this);
     this.internalSendMessage.bind(this);
