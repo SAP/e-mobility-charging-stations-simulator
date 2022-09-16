@@ -18,7 +18,7 @@ import {
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
 import type { StationTemplateUrl } from '../types/ConfigurationData';
-import type Statistics from '../types/Statistics';
+import type { Statistics } from '../types/Statistics';
 import Configuration from '../utils/Configuration';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';

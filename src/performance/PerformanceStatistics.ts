@@ -7,9 +7,7 @@ import { parentPort } from 'worker_threads';
 import { MessageChannelUtils } from '../charging-station/MessageChannelUtils';
 import { MessageType } from '../types/ocpp/MessageType';
 import type { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
-import type Statistics from '../types/Statistics';
-// eslint-disable-next-line no-duplicate-imports
-import type { StatisticsData, TimeSeries } from '../types/Statistics';
+import type { Statistics, StatisticsData, TimeSeries } from '../types/Statistics';
 import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
 import Configuration from '../utils/Configuration';
 import logger from '../utils/Logger';

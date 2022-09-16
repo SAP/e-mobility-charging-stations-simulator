@@ -3,7 +3,7 @@ import type ChargingStationInfo from './ChargingStationInfo';
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { JsonObject } from './JsonType';
 import type { BootNotificationResponse } from './ocpp/Responses';
-import type Statistics from './Statistics';
+import type { Statistics } from './Statistics';
 import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
 
 export interface ChargingStationWorkerOptions extends JsonObject {

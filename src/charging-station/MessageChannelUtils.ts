@@ -3,7 +3,7 @@ import {
   ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
-import type Statistics from '../types/Statistics';
+import type { Statistics } from '../types/Statistics';
 import type ChargingStation from './ChargingStation';
 
 export class MessageChannelUtils {

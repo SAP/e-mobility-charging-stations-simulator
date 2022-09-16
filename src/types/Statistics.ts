@@ -22,11 +22,11 @@ export type StatisticsData = {
   stdDevTimeMeasurement: number;
 };
 
-export default interface Statistics extends WorkerData {
+export type Statistics = WorkerData & {
   id: string;
   name: string;
   uri: string;
   createdAt: Date;
   updatedAt?: Date;
   statisticsData: Map<string, Partial<StatisticsData>>;
-}
+};

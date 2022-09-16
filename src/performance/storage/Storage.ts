@@ -4,7 +4,7 @@ import { URL } from 'url';
 
 import type { EmptyObject } from '../../types/EmptyObject';
 import type { HandleErrorParams } from '../../types/Error';
-import type Statistics from '../../types/Statistics';
+import type { Statistics } from '../../types/Statistics';
 import { DBName, StorageType } from '../../types/Storage';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
