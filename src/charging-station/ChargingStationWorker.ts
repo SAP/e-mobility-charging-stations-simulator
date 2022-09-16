@@ -49,3 +49,11 @@ function startChargingStation(data: ChargingStationWorkerData): void {
   const station = new ChargingStation(data.index, data.templateFile);
   station.start();
 }
+
+process.on('uncaughtException', (err) => {
+  throw err;
+});
+
+process.on('unhandledRejection', (reason) => {
+  throw reason;
+});
