@@ -96,8 +96,8 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
         /* This is intentional */
       });
     });
-    worker.on('error', () => {
-      /* This is intentional */
+    worker.on('error', (error) => {
+      WorkerUtils.defaultErrorHandler(error);
     });
     worker.on('exit', (code) => {
       WorkerUtils.defaultExitHandler(code);

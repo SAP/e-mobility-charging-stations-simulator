@@ -10,4 +10,8 @@ export class WorkerUtils {
       console.error(chalk.red(`Worker stopped with exit code ${code}`));
     }
   };
+
+  public static defaultErrorHandler = (error: Error): void => {
+    console.error(chalk.red('Worker errored: ', error));
+  };
 }

@@ -16,6 +16,8 @@ export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
+    this.workerOptions.poolOptions.errorHandler =
+      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler;
     this.workerOptions.poolOptions.exitHandler =
       this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler;
     this.pool = new DynamicThreadPool<WorkerData>(
