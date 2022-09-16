@@ -75,6 +75,9 @@ export class Bootstrap {
   public async start(): Promise<void> {
     if (isMainThread && this.started === false) {
       try {
+        // Enable unconditionally for now
+        this.logUnhandledRejection();
+        this.logUncaughtException();
         this.initialize();
         await this.storage?.open();
         await this.workerImplementation.start();
@@ -242,6 +245,18 @@ export class Bootstrap {
     this.numberOfChargingStations = 0;
     this.numberOfStartedChargingStations = 0;
     this.initializeWorkerImplementation();
+  }
+
+  private logUncaughtException(): void {
+    process.on('uncaughtException', (error: Error) => {
+      console.error(chalk.red('Uncaught exception: '), error);
+    });
+  }
+
+  private logUnhandledRejection(): void {
+    process.on('unhandledRejection', (reason: unknown) => {
+      console.error(chalk.red('Unhandled rejection: '), reason);
+    });
   }
 
   private async startChargingStation(

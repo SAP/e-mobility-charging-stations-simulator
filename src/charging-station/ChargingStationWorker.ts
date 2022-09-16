@@ -24,7 +24,7 @@ if (ChargingStationUtils.workerPoolInUse()) {
 } else {
   // Add message listener to start charging station from main thread
   addMessageListener();
-  if (!Utils.isUndefined(workerData)) {
+  if (Utils.isUndefined(workerData) === false) {
     startChargingStation(workerData as ChargingStationWorkerData);
   }
 }
