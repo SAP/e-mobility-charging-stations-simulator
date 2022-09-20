@@ -1563,25 +1563,25 @@ export default class ChargingStation {
           error
         );
       }
-      if (messageType === MessageType.CALL_MESSAGE) {
-        // Send error
-        await this.ocppRequestService.sendError(
-          this,
-          messageId,
-          error as OCPPError,
-          commandName ?? requestCommandName ?? null
-        );
-      } else if (
-        [MessageType.CALL_RESULT_MESSAGE, MessageType.CALL_ERROR_MESSAGE].includes(messageType) ===
-        true
-      ) {
-        if (errorCallback) {
-          // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
-          errorCallback(error as OCPPError, false);
-        } else {
-          // Remove the request from the cache in case of error at response handling
-          this.requests.delete(messageId);
-        }
+      switch (messageType) {
+        case MessageType.CALL_MESSAGE:
+          // Send error
+          await this.ocppRequestService.sendError(
+            this,
+            messageId,
+            error as OCPPError,
+            commandName ?? requestCommandName ?? null
+          );
+          break;
+        case MessageType.CALL_RESULT_MESSAGE:
+        case MessageType.CALL_ERROR_MESSAGE:
+          if (errorCallback) {
+            // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
+            errorCallback(error as OCPPError, false);
+          } else {
+            // Remove the request from the cache in case of error at response handling
+            this.requests.delete(messageId);
+          }
       }
     }
   }
