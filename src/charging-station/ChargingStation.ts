@@ -1582,6 +1582,7 @@ export default class ChargingStation {
             // Remove the request from the cache in case of error at response handling
             this.requests.delete(messageId);
           }
+          break;
       }
     }
   }
