@@ -1575,11 +1575,12 @@ export default class ChargingStation {
         [MessageType.CALL_RESULT_MESSAGE, MessageType.CALL_ERROR_MESSAGE].includes(messageType) ===
         true
       ) {
-        // Always remove the request from the cache in case of error at response handling
-        this.requests.delete(messageId);
-        // Always reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
         if (errorCallback) {
+          // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
           errorCallback(error as OCPPError, false);
+        } else {
+          // Remove the request from the cache in case of error at response handling
+          this.requests.delete(messageId);
         }
       }
     }
