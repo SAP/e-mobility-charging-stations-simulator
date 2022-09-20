@@ -12,13 +12,14 @@ import BaseError from '../exception/BaseError';
 import OCPPError from '../exception/OCPPError';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import type { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
-import type ChargingStationConfiguration from '../types/ChargingStationConfiguration';
-import type ChargingStationInfo from '../types/ChargingStationInfo';
+import type { ChargingStationConfiguration } from '../types/ChargingStationConfiguration';
+import type { ChargingStationInfo } from '../types/ChargingStationInfo';
 import type { ChargingStationOcppConfiguration } from '../types/ChargingStationOcppConfiguration';
-import ChargingStationTemplate, {
+import {
+  type ChargingStationTemplate,
   CurrentType,
   PowerUnits,
-  WsOptions,
+  type WsOptions,
 } from '../types/ChargingStationTemplate';
 import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import type { ConnectorStatus } from '../types/ConnectorStatus';

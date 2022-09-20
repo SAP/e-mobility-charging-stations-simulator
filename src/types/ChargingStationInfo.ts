@@ -1,6 +1,6 @@
-import type ChargingStationTemplate from './ChargingStationTemplate';
+import type { ChargingStationTemplate } from './ChargingStationTemplate';
 
-export default interface ChargingStationInfo
+export interface ChargingStationInfo
   extends Omit<
     ChargingStationTemplate,
     | 'AutomaticTransactionGenerator'

@@ -5,9 +5,10 @@ import { fileURLToPath } from 'url';
 import moment from 'moment';
 
 import BaseError from '../exception/BaseError';
-import type ChargingStationInfo from '../types/ChargingStationInfo';
-import ChargingStationTemplate, {
+import type { ChargingStationInfo } from '../types/ChargingStationInfo';
+import {
   AmpereUnits,
+  type ChargingStationTemplate,
   CurrentType,
   Voltage,
 } from '../types/ChargingStationTemplate';
@@ -17,7 +18,7 @@ import type { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/Char
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
 import {
-  BootNotificationRequest,
+  type BootNotificationRequest,
   IncomingRequestCommand,
   RequestCommand,
 } from '../types/ocpp/Requests';

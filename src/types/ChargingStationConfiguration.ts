@@ -1,8 +1,9 @@
+import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
 import type { ChargingStationInfoConfiguration } from './ChargingStationInfo';
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
 
-export default interface ChargingStationConfiguration
-  extends ChargingStationInfoConfiguration,
-    ChargingStationOcppConfiguration {
-  configurationHash?: string;
-}
+export type ChargingStationConfiguration = ChargingStationInfoConfiguration &
+  ChargingStationOcppConfiguration &
+  ChargingStationAutomaticTransactionGeneratorConfiguration & {
+    configurationHash?: string;
+  };

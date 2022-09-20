@@ -28,3 +28,8 @@ export type Status = {
   skippedConsecutiveTransactions?: number;
   skippedTransactions?: number;
 };
+
+export type ChargingStationAutomaticTransactionGeneratorConfiguration = {
+  automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
+  automaticTransactionGeneratorStatus?: Status;
+};

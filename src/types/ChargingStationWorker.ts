@@ -1,5 +1,5 @@
 import type { Status } from './AutomaticTransactionGenerator';
-import type ChargingStationInfo from './ChargingStationInfo';
+import type { ChargingStationInfo } from './ChargingStationInfo';
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { JsonObject } from './JsonType';
 import type { BootNotificationResponse } from './ocpp/Responses';

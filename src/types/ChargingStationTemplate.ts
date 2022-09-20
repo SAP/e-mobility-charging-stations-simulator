@@ -40,7 +40,7 @@ type CommandsSupport = {
   outgoingCommands?: Record<RequestCommand, boolean>;
 };
 
-export default interface ChargingStationTemplate {
+export type ChargingStationTemplate = {
   templateHash?: string;
   supervisionUrls?: string | string[];
   supervisionUrlOcppConfiguration?: boolean;
@@ -96,4 +96,4 @@ export default interface ChargingStationTemplate {
   Configuration?: ChargingStationOcppConfiguration;
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   Connectors: Record<string, ConnectorStatus>;
-}
+};
