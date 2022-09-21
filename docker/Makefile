@@ -27,7 +27,7 @@ $(NAME)-force: $(submodules-init)
 all: $(NAME)
 
 clean-images:
-	-docker rmi $(PROJECT_NAME)_$(NAME)
+	-docker rmi $(PROJECT_NAME)-$(NAME)
 
 clean-containers:
 	-docker-compose -p $(PROJECT_NAME) down
