@@ -35,7 +35,7 @@ clean-containers:
 clean: clean-containers clean-images
 
 docker-tag-ecr:
-	docker tag $(PROJECT_NAME)_$(NAME) $(DOCKER_ECR_ACCOUNT_ID).dkr.ecr.$(DOCKER_ECR_REGION).amazonaws.com/$(DOCKER_ECR_REGISTRY_NAME):$(DOCKER_ECR_TAG)
+	docker tag $(PROJECT_NAME)-$(NAME) $(DOCKER_ECR_ACCOUNT_ID).dkr.ecr.$(DOCKER_ECR_REGION).amazonaws.com/$(DOCKER_ECR_REGISTRY_NAME):$(DOCKER_ECR_TAG)
 
 docker-push-ecr: $(NAME)-force docker-tag-ecr
 	aws ecr get-login-password --region $(DOCKER_ECR_REGION) | docker login --username AWS --password-stdin $(DOCKER_ECR_ACCOUNT_ID).dkr.ecr.$(DOCKER_ECR_REGION).amazonaws.com/$(DOCKER_ECR_REGISTRY_NAME)
