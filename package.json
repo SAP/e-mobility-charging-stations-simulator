@@ -101,7 +101,7 @@
     "uuid": "^9.0.0",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1",
-    "ws": "^8.8.1"
+    "ws": "^8.9.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.6",
