@@ -3,7 +3,11 @@ import type { JsonObject } from './JsonType';
 export type ChargingStationData = {
   stationInfo: ChargingStationInfo;
   started: boolean;
-  wsState?: number;
+  wsState?:
+    | typeof WebSocket.CONNECTING
+    | typeof WebSocket.OPEN
+    | typeof WebSocket.CLOSING
+    | typeof WebSocket.CLOSED;
   bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
   automaticTransactionGeneratorStatuses?: Status[];
