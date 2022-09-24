@@ -121,10 +121,10 @@ export interface OCPP16BootNotificationResponse extends JsonObject {
   interval: number;
 }
 
-export interface CommandsSupport {
+type CommandsSupport = {
   incomingCommands: Record<IncomingRequestCommand, boolean>;
   outgoingCommands?: Record<RequestCommand, boolean>;
-}
+};
 
 export enum OCPPVersion {
   VERSION_16 = '1.6',
