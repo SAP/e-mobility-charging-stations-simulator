@@ -1,8 +1,8 @@
 import type { SampledValue } from './ocpp/MeterValues';
 
-export interface SampledValueTemplate extends SampledValue {
+export type SampledValueTemplate = SampledValue & {
   fluctuationPercent?: number;
-}
+};
 
 export type MeasurandPerPhaseSampledValueTemplates = {
   L1?: SampledValueTemplate;

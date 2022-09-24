@@ -24,7 +24,9 @@ const moduleName = 'AbstractUIService';
 export default abstract class AbstractUIService {
   private static readonly ProcedureNameToBroadCastChannelProcedureNameMap: Omit<
     Record<ProcedureName, BroadcastChannelProcedureName>,
-    'startSimulator' | 'stopSimulator' | 'listChargingStations'
+    | ProcedureName.START_SIMULATOR
+    | ProcedureName.STOP_SIMULATOR
+    | ProcedureName.LIST_CHARGING_STATIONS
   > = {
     [ProcedureName.START_CHARGING_STATION]: BroadcastChannelProcedureName.START_CHARGING_STATION,
     [ProcedureName.STOP_CHARGING_STATION]: BroadcastChannelProcedureName.STOP_CHARGING_STATION,

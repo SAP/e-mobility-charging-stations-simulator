@@ -50,6 +50,10 @@ export class ACElectricUtils {
  * Targeted to DC related values calculation.
  */
 export class DCElectricUtils {
+  private constructor() {
+    // This is intentional
+  }
+
   static power(V: number, I: number): number {
     return V * I;
   }

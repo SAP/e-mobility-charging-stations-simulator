@@ -1,16 +1,15 @@
 import type { ChargingStationTemplate } from './ChargingStationTemplate';
 
-export interface ChargingStationInfo
-  extends Omit<
-    ChargingStationTemplate,
-    | 'AutomaticTransactionGenerator'
-    | 'Configuration'
-    | 'power'
-    | 'powerUnit'
-    | 'chargeBoxSerialNumberPrefix'
-    | 'chargePointSerialNumberPrefix'
-    | 'meterSerialNumberPrefix'
-  > {
+export type ChargingStationInfo = Omit<
+  ChargingStationTemplate,
+  | 'AutomaticTransactionGenerator'
+  | 'Configuration'
+  | 'power'
+  | 'powerUnit'
+  | 'chargeBoxSerialNumberPrefix'
+  | 'chargePointSerialNumberPrefix'
+  | 'meterSerialNumberPrefix'
+> & {
   hashId: string;
   infoHash?: string;
   chargingStationId?: string;
@@ -19,7 +18,7 @@ export interface ChargingStationInfo
   meterSerialNumber?: string;
   maximumPower?: number; // Always in Watt
   maximumAmperage?: number; // Always in Ampere
-}
+};
 
 export type ChargingStationInfoConfiguration = {
   stationInfo?: ChargingStationInfo;

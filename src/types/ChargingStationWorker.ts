@@ -1,3 +1,5 @@
+import type { WebSocket } from 'ws';
+
 import type { Status } from './AutomaticTransactionGenerator';
 import type { ChargingStationInfo } from './ChargingStationInfo';
 import type { ConnectorStatus } from './ConnectorStatus';
@@ -19,7 +21,11 @@ export interface ChargingStationWorkerData extends WorkerData {
 export interface ChargingStationData extends WorkerData {
   stationInfo: ChargingStationInfo;
   started: boolean;
-  wsState?: number;
+  wsState?:
+    | typeof WebSocket.CONNECTING
+    | typeof WebSocket.OPEN
+    | typeof WebSocket.CLOSING
+    | typeof WebSocket.CLOSED;
   bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
   automaticTransactionGeneratorStatuses?: Status[];
@@ -41,7 +47,6 @@ export const ChargingStationWorkerMessageEvents = {
 
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics;
 
-export interface ChargingStationWorkerMessage<T extends WorkerData>
-  extends Omit<WorkerMessage<T>, 'id'> {
+export type ChargingStationWorkerMessage<T extends WorkerData> = Omit<WorkerMessage<T>, 'id'> & {
   id: ChargingStationWorkerMessageEvents;
-}
+};

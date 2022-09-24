@@ -38,7 +38,7 @@ if (Configuration.getLogRotate()) {
 const logger: Logger = createLogger({
   level: Configuration.getLogLevel(),
   format: format.combine(format.splat(), (format[Configuration.getLogFormat()] as () => Format)()),
-  transports: transports,
+  transports,
 });
 
 //
