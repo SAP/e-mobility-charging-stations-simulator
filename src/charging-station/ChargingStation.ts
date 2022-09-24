@@ -632,7 +632,7 @@ export default class ChargingStation {
     parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
-  public hasFeatureProfile(featureProfile: SupportedFeatureProfiles) {
+  public hasFeatureProfile(featureProfile: SupportedFeatureProfiles): boolean {
     return ChargingStationConfigurationUtils.getConfigurationKey(
       this,
       StandardParametersKey.SupportedFeatureProfiles

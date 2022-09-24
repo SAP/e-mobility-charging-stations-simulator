@@ -36,7 +36,8 @@ export class UIServiceUtils {
     protocol: Protocol,
     version: ProtocolVersion
   ): boolean =>
-    Object.values(Protocol).includes(protocol) && Object.values(ProtocolVersion).includes(version);
+    Object.values(Protocol).includes(protocol) === true &&
+    Object.values(ProtocolVersion).includes(version) === true;
 
   public static getProtocolAndVersion = (protocolStr: string): [Protocol, ProtocolVersion] => {
     const protocolIndex = protocolStr.indexOf(Protocol.UI);

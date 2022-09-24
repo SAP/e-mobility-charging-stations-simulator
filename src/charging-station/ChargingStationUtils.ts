@@ -417,7 +417,7 @@ export class ChargingStationUtils {
     phase?: MeterValuePhase
   ): SampledValueTemplate | undefined {
     const onPhaseStr = phase ? `on phase ${phase} ` : '';
-    if (!Constants.SUPPORTED_MEASURANDS.includes(measurand)) {
+    if (Constants.SUPPORTED_MEASURANDS.includes(measurand) === false) {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
       );
@@ -445,10 +445,10 @@ export class ChargingStationUtils {
       index++
     ) {
       if (
-        !Constants.SUPPORTED_MEASURANDS.includes(
+        Constants.SUPPORTED_MEASURANDS.includes(
           sampledValueTemplates[index]?.measurand ??
             MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-        )
+        ) === false
       ) {
         logger.warn(
           `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
@@ -460,7 +460,7 @@ export class ChargingStationUtils {
         ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
           StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand)
+        )?.value.includes(measurand) === true
       ) {
         return sampledValueTemplates[index];
       } else if (
@@ -470,7 +470,7 @@ export class ChargingStationUtils {
         ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
           StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand)
+        )?.value.includes(measurand) === true
       ) {
         return sampledValueTemplates[index];
       } else if (
@@ -507,9 +507,15 @@ export class ChargingStationUtils {
     chargingStation: ChargingStation
   ): boolean {
     const isRequestCommand = Object.values(RequestCommand).includes(command);
-    if (isRequestCommand && !chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
+    if (
+      isRequestCommand === true &&
+      !chargingStation.stationInfo?.commandsSupport?.outgoingCommands
+    ) {
       return true;
-    } else if (isRequestCommand && chargingStation.stationInfo?.commandsSupport?.outgoingCommands) {
+    } else if (
+      isRequestCommand === true &&
+      chargingStation.stationInfo?.commandsSupport?.outgoingCommands
+    ) {
       return chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] ?? false;
     }
     logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`);
@@ -522,12 +528,12 @@ export class ChargingStationUtils {
   ): boolean {
     const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(command);
     if (
-      isIncomingRequestCommand &&
+      isIncomingRequestCommand === true &&
       !chargingStation.stationInfo?.commandsSupport?.incomingCommands
     ) {
       return true;
     } else if (
-      isIncomingRequestCommand &&
+      isIncomingRequestCommand === true &&
       chargingStation.stationInfo?.commandsSupport?.incomingCommands
     ) {
       return chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] ?? false;
