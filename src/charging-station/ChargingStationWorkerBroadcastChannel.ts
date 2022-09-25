@@ -268,7 +268,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     [
       BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
       BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-    ].includes(command) === true && delete requestPayload.connectorIds;
+    ].includes(command) === false && delete requestPayload.connectorIds;
   }
 
   private commandResponseToResponsePayload(

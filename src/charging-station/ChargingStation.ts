@@ -711,13 +711,15 @@ export default class ChargingStation {
     }
   }
 
-  public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
-    if (!this.automaticTransactionGenerator) {
-      this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
+  public startAutomaticTransactionGenerator(
+    connectorIds?: number[],
+    automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
+  ): void {
+    this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
+      automaticTransactionGeneratorConfiguration ??
         this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
-        this
-      );
-    }
+      this
+    );
     if (!Utils.isEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator.startConnector(connectorId);
