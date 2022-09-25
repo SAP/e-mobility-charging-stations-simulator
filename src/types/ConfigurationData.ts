@@ -11,7 +11,7 @@ export type ServerOptions = ListenOptions;
 export enum SupervisionUrlDistribution {
   ROUND_ROBIN = 'round-robin',
   RANDOM = 'random',
-  SEQUENTIAL = 'sequential',
+  CHARGING_STATION_AFFINITY = 'charging-station-affinity',
 }
 
 export type StationTemplateUrl = {

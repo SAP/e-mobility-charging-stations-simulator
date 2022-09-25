@@ -85,6 +85,7 @@ import type OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
 
 export default class ChargingStation {
+  public readonly index: number;
   public readonly templateFile: string;
   public stationInfo!: ChargingStationInfo;
   public started: boolean;
@@ -102,13 +103,13 @@ export default class ChargingStation {
   public powerDivider!: number;
   private starting: boolean;
   private stopping: boolean;
-  private readonly index: number;
   private configurationFile!: string;
   private configurationFileHash!: string;
   private connectorsConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
   private configuredSupervisionUrl!: URL;
+  private configuredSupervisionUrlIndex!: number;
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
   private templateFileWatcher!: fs.FSWatcher;
@@ -154,14 +155,6 @@ export default class ChargingStation {
         ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())
       } |`
     );
-  }
-
-  public getRandomIdTag(): string {
-    const authorizationFile = ChargingStationUtils.getAuthorizationFile(this.stationInfo);
-    const index = Math.floor(
-      Utils.secureRandom() * this.authorizedTagsCache.getAuthorizedTags(authorizationFile).length
-    );
-    return this.authorizedTagsCache.getAuthorizedTags(authorizationFile)[index];
   }
 
   public hasAuthorizedTags(): boolean {
@@ -880,10 +873,8 @@ export default class ChargingStation {
     stationInfo.resetTime = stationTemplate.resetTime
       ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
-    const configuredMaxConnectors = ChargingStationUtils.getConfiguredNumberOfConnectors(
-      this.index,
-      stationTemplate
-    );
+    const configuredMaxConnectors =
+      ChargingStationUtils.getConfiguredNumberOfConnectors(stationTemplate);
     ChargingStationUtils.checkConfiguredMaxConnectors(
       configuredMaxConnectors,
       this.templateFile,
@@ -1645,7 +1636,7 @@ export default class ChargingStation {
   }
 
   // 0 for disabling
-  private getConnectionTimeout(): number | undefined {
+  private getConnectionTimeout(): number {
     if (
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
@@ -1665,7 +1656,7 @@ export default class ChargingStation {
   }
 
   // -1 for unlimited, 0 for disabling
-  private getAutoReconnectMaxRetries(): number | undefined {
+  private getAutoReconnectMaxRetries(): number {
     if (!Utils.isUndefined(this.stationInfo.autoReconnectMaxRetries)) {
       return this.stationInfo.autoReconnectMaxRetries;
     }
@@ -1676,7 +1667,7 @@ export default class ChargingStation {
   }
 
   // 0 for disabling
-  private getRegistrationMaxRetries(): number | undefined {
+  private getRegistrationMaxRetries(): number {
     if (!Utils.isUndefined(this.stationInfo.registrationMaxRetries)) {
       return this.stationInfo.registrationMaxRetries;
     }
@@ -1928,39 +1919,34 @@ export default class ChargingStation {
       this.stationInfo.supervisionUrls ?? Configuration.getSupervisionUrls()
     );
     if (!Utils.isEmptyArray(supervisionUrls)) {
-      let urlIndex = 0;
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.ROUND_ROBIN:
-          urlIndex = (this.index - 1) % supervisionUrls.length;
+          // FIXME
+          this.configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
           break;
         case SupervisionUrlDistribution.RANDOM:
-          // Get a random url
-          urlIndex = Math.floor(Utils.secureRandom() * supervisionUrls.length);
+          this.configuredSupervisionUrlIndex = Math.floor(
+            Utils.secureRandom() * supervisionUrls.length
+          );
           break;
-        case SupervisionUrlDistribution.SEQUENTIAL:
-          if (this.index <= supervisionUrls.length) {
-            urlIndex = this.index - 1;
-          } else {
-            logger.warn(
-              `${this.logPrefix()} No more configured supervision urls available, using the first one`
-            );
-          }
+        case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
+          this.configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
           break;
         default:
           logger.error(
             `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${
-              SupervisionUrlDistribution.ROUND_ROBIN
+              SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
             }`
           );
-          urlIndex = (this.index - 1) % supervisionUrls.length;
+          this.configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
           break;
       }
-      return new URL(supervisionUrls[urlIndex]);
+      return new URL(supervisionUrls[this.configuredSupervisionUrlIndex]);
     }
     return new URL(supervisionUrls as string);
   }
 
-  private getHeartbeatInterval(): number | undefined {
+  private getHeartbeatInterval(): number {
     const HeartbeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
       this,
       StandardParametersKey.HeartbeatInterval
@@ -2003,7 +1989,7 @@ export default class ChargingStation {
     }
   }
 
-  private getReconnectExponentialDelay(): boolean | undefined {
+  private getReconnectExponentialDelay(): boolean {
     return !Utils.isUndefined(this.stationInfo.reconnectExponentialDelay)
       ? this.stationInfo.reconnectExponentialDelay
       : false;

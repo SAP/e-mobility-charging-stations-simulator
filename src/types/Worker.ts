@@ -15,7 +15,7 @@ export type WorkerOptions = {
   poolMinSize?: number;
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
-  messageHandler?: (message: unknown) => void | Promise<void>;
+  messageHandler?: (this: Worker, message: unknown) => void | Promise<void>;
 };
 
 export type WorkerData = Record<string, unknown>;

@@ -109,16 +109,13 @@ export class ChargingStationUtils {
     }
   }
 
-  public static getConfiguredNumberOfConnectors(
-    index: number,
-    stationTemplate: ChargingStationTemplate
-  ): number {
+  public static getConfiguredNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
     let configuredMaxConnectors: number;
-    if (!Utils.isEmptyArray(stationTemplate.numberOfConnectors)) {
+    if (Utils.isEmptyArray(stationTemplate.numberOfConnectors) === false) {
       const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
-      // Distribute evenly the number of connectors
-      configuredMaxConnectors = numberOfConnectors[(index - 1) % numberOfConnectors.length];
-    } else if (!Utils.isUndefined(stationTemplate.numberOfConnectors)) {
+      configuredMaxConnectors =
+        numberOfConnectors[Math.floor(Utils.secureRandom() * numberOfConnectors.length)];
+    } else if (Utils.isUndefined(stationTemplate.numberOfConnectors) === false) {
       configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
     } else {
       configuredMaxConnectors = stationTemplate?.Connectors[0]

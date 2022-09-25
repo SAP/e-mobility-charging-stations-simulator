@@ -1,3 +1,9 @@
+export enum IdTagDistribution {
+  RANDOM = 'random',
+  ROUND_ROBIN = 'round-robin',
+  CONNECTOR_AFFINITY = 'connector-affinity',
+}
+
 export type AutomaticTransactionGeneratorConfiguration = {
   enable: boolean;
   minDuration: number;
@@ -8,6 +14,7 @@ export type AutomaticTransactionGeneratorConfiguration = {
   stopAfterHours: number;
   stopOnConnectionFailure: boolean;
   requireAuthorize?: boolean;
+  idTagDistribution?: IdTagDistribution;
 };
 
 export type Status = {
@@ -31,5 +38,5 @@ export type Status = {
 
 export type ChargingStationAutomaticTransactionGeneratorConfiguration = {
   automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
-  automaticTransactionGeneratorStatus?: Status;
+  automaticTransactionGeneratorStatuses?: Status[];
 };

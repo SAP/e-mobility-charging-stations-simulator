@@ -2,7 +2,7 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { isMainThread } from 'worker_threads';
+import { type Worker, isMainThread } from 'worker_threads';
 
 import chalk from 'chalk';
 
@@ -177,6 +177,7 @@ export class Bootstrap {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
           messageHandler: this.messageHandler.bind(this) as (
+            this: Worker,
             msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
           ) => void,
         }

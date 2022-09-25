@@ -60,9 +60,13 @@ export class MessageChannelUtils {
         ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
       ),
       ...(chargingStation.automaticTransactionGenerator && {
-        automaticTransactionGeneratorStatuses: [
-          ...chargingStation.automaticTransactionGenerator.connectorsStatus.values(),
-        ],
+        automaticTransactionGenerator: {
+          automaticTransactionGenerator:
+            chargingStation.automaticTransactionGenerator.configuration,
+          automaticTransactionGeneratorStatuses: [
+            ...chargingStation.automaticTransactionGenerator.connectorsStatus.values(),
+          ],
+        },
       }),
     };
   }

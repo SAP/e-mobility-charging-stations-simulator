@@ -4,11 +4,8 @@ import { parentPort, workerData } from 'worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 
-import {
-  ChargingStationWorkerData,
-  ChargingStationWorkerMessage,
-  ChargingStationWorkerMessageEvents,
-} from '../types/ChargingStationWorker';
+import type { ChargingStationWorkerData } from '../types/ChargingStationWorker';
+import { WorkerMessage, WorkerMessageEvents } from '../types/Worker';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
 import ChargingStation from './ChargingStation';
@@ -33,8 +30,8 @@ if (ChargingStationUtils.workerPoolInUse()) {
  * Listen messages send by the main thread
  */
 function addMessageListener(): void {
-  parentPort?.on('message', (message: ChargingStationWorkerMessage<ChargingStationWorkerData>) => {
-    if (message.id === ChargingStationWorkerMessageEvents.START_WORKER_ELEMENT) {
+  parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
+    if (message.id === WorkerMessageEvents.START_WORKER_ELEMENT) {
       startChargingStation(message.data);
     }
   });

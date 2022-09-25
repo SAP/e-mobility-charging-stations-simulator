@@ -2,9 +2,10 @@
 
 import BaseError from '../exception/BaseError';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
-import type {
-  AutomaticTransactionGeneratorConfiguration,
-  Status,
+import {
+  type AutomaticTransactionGeneratorConfiguration,
+  IdTagDistribution,
+  type Status,
 } from '../types/AutomaticTransactionGenerator';
 import { RequestCommand } from '../types/ocpp/Requests';
 import {
@@ -20,6 +21,7 @@ import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import type ChargingStation from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
 
 export default class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
@@ -31,6 +33,7 @@ export default class AutomaticTransactionGenerator {
   public readonly configuration: AutomaticTransactionGeneratorConfiguration;
   public started: boolean;
   private readonly chargingStation: ChargingStation;
+  private idTagIndex: number;
 
   private constructor(
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
@@ -39,6 +42,7 @@ export default class AutomaticTransactionGenerator {
     this.started = false;
     this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
+    this.idTagIndex = 0;
     this.connectorsStatus = new Map<number, Status>();
     this.initializeConnectorsStatus();
   }
@@ -313,7 +317,7 @@ export default class AutomaticTransactionGenerator {
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let startResponse: StartTransactionResponse;
     if (this.chargingStation.hasAuthorizedTags()) {
-      const idTag = this.chargingStation.getRandomIdTag();
+      const idTag = this.getIdTag(connectorId);
       const startTransactionLogMsg = `${this.logPrefix(
         connectorId
       )} start transaction with an idTag '${idTag}'`;
@@ -399,6 +403,41 @@ export default class AutomaticTransactionGenerator {
 
   private getRequireAuthorize(): boolean {
     return this.configuration?.requireAuthorize ?? true;
+  }
+
+  private getRandomIdTag(authorizationFile: string): string {
+    const tags = this.chargingStation.authorizedTagsCache.getAuthorizedTags(authorizationFile);
+    this.idTagIndex = Math.floor(Utils.secureRandom() * tags.length);
+    return tags[this.idTagIndex];
+  }
+
+  private getRoundRobinIdTag(authorizationFile: string): string {
+    const tags = this.chargingStation.authorizedTagsCache.getAuthorizedTags(authorizationFile);
+    const idTag = tags[this.idTagIndex];
+    this.idTagIndex = this.idTagIndex === tags.length - 1 ? 0 : this.idTagIndex + 1;
+    return idTag;
+  }
+
+  private getConnectorAffinityIdTag(authorizationFile: string, connectorId: number): string {
+    const tags = this.chargingStation.authorizedTagsCache.getAuthorizedTags(authorizationFile);
+    this.idTagIndex = (this.chargingStation.index - 1 + (connectorId - 1)) % tags.length;
+    return tags[this.idTagIndex];
+  }
+
+  private getIdTag(connectorId: number): string {
+    const authorizationFile = ChargingStationUtils.getAuthorizationFile(
+      this.chargingStation.stationInfo
+    );
+    switch (this.configuration?.idTagDistribution) {
+      case IdTagDistribution.RANDOM:
+        return this.getRandomIdTag(authorizationFile);
+      case IdTagDistribution.ROUND_ROBIN:
+        return this.getRoundRobinIdTag(authorizationFile);
+      case IdTagDistribution.CONNECTOR_AFFINITY:
+        return this.getConnectorAffinityIdTag(authorizationFile, connectorId);
+      default:
+        return this.getRoundRobinIdTag(authorizationFile);
+    }
   }
 
   private logPrefix(connectorId?: number): string {

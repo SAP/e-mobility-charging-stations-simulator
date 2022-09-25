@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws';
 
-import type { Status } from './AutomaticTransactionGenerator';
+import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
 import type { ChargingStationInfo } from './ChargingStationInfo';
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { JsonObject } from './JsonType';
@@ -28,7 +28,7 @@ export interface ChargingStationData extends WorkerData {
     | typeof WebSocket.CLOSED;
   bootNotificationResponse: BootNotificationResponse;
   connectors: ConnectorStatus[];
-  automaticTransactionGeneratorStatuses?: Status[];
+  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration;
 }
 
 enum ChargingStationMessageEvents {
@@ -47,6 +47,9 @@ export const ChargingStationWorkerMessageEvents = {
 
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics;
 
-export type ChargingStationWorkerMessage<T extends WorkerData> = Omit<WorkerMessage<T>, 'id'> & {
+export type ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> = Omit<
+  WorkerMessage<T>,
+  'id'
+> & {
   id: ChargingStationWorkerMessageEvents;
 };
