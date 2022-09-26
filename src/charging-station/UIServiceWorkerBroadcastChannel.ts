@@ -59,11 +59,12 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
   }
 
   private buildResponsePayload(uuid: string): ResponsePayload {
-    const responsesStatus = this.responses
-      .get(uuid)
-      ?.responses.every(({ status }) => status === ResponseStatus.SUCCESS)
-      ? ResponseStatus.SUCCESS
-      : ResponseStatus.FAILURE;
+    const responsesStatus =
+      this.responses
+        .get(uuid)
+        ?.responses.every(({ status }) => status === ResponseStatus.SUCCESS) === true
+        ? ResponseStatus.SUCCESS
+        : ResponseStatus.FAILURE;
     return {
       status: responsesStatus,
       hashIdsSucceeded: this.responses
