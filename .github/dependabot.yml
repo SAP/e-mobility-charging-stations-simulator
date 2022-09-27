@@ -10,7 +10,6 @@ updates:
     reviewers:
       - 'jerome-benoit'
       - 'olivierbagot'
-    versioning-strategy: increase
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
