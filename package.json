@@ -113,7 +113,7 @@
     "@rollup/plugin-json": "^4.1.0",
     "@types/mocha": "^9.1.1",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^18.7.20",
+    "@types/node": "^18.7.23",
     "@types/proper-lockfile": "^4.1.2",
     "@types/tar": "^6.1.2",
     "@types/uuid": "^8.3.4",
