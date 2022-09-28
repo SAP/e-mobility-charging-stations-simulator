@@ -18,13 +18,13 @@
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "uuid": "^9.0.0",
-    "vue": "^3.2.39",
+    "vue": "^3.2.40",
     "vue-class-component": "^8.0.0-rc.1",
     "vue-router": "^4.1.5"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
-    "@types/mocha": "^9.1.1",
+    "@types/mocha": "^10.0.0",
     "@types/node": "^18.7.23",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
