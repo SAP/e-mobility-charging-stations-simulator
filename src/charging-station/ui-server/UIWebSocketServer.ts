@@ -83,9 +83,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         });
       }
     );
-    if (this.httpServer.listening === false) {
-      this.httpServer.listen(this.uiServerConfiguration.options);
-    }
+    this.startHttpServer();
   }
 
   public sendRequest(request: ProtocolRequest): void {

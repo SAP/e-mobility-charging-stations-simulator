@@ -27,9 +27,7 @@ export default class UIHttpServer extends AbstractUIServer {
 
   public start(): void {
     this.httpServer.on('request', this.requestListener.bind(this) as RequestListener);
-    if (this.httpServer.listening === false) {
-      this.httpServer.listen(this.uiServerConfiguration.options);
-    }
+    this.startHttpServer();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

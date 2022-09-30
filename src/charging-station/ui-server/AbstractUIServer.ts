@@ -45,6 +45,12 @@ export abstract class AbstractUIServer {
     this.chargingStations.clear();
   }
 
+  protected startHttpServer(): void {
+    if (this.httpServer.listening === false) {
+      this.httpServer.listen(this.uiServerConfiguration.options);
+    }
+  }
+
   protected registerProtocolVersionUIService(version: ProtocolVersion): void {
     if (this.uiServices.has(version) === false) {
       this.uiServices.set(version, UIServiceFactory.getUIServiceImplementation(version, this));
