@@ -1489,7 +1489,7 @@ export default class ChargingStation {
             }
             logger.debug(
               `${this.logPrefix()} << Command '${
-                requestCommandName ?? 'unknown'
+                requestCommandName ?? Constants.UNKNOWN_COMMAND
               }' received response payload: ${JSON.stringify(request)}`
             );
             responseCallback(commandPayload, requestPayload);
@@ -1519,7 +1519,7 @@ export default class ChargingStation {
             }
             logger.debug(
               `${this.logPrefix()} << Command '${
-                requestCommandName ?? 'unknown'
+                requestCommandName ?? Constants.UNKNOWN_COMMAND
               }' received error payload: ${JSON.stringify(request)}`
             );
             errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails));
@@ -1541,7 +1541,7 @@ export default class ChargingStation {
       // Log
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
-          commandName ?? requestCommandName ?? null
+          commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
         }' message '${data.toString()}'${
           messageType !== MessageType.CALL_MESSAGE
             ? ` matching cached request '${JSON.stringify(this.requests.get(messageId))}'`
@@ -1552,7 +1552,7 @@ export default class ChargingStation {
       if (error instanceof OCPPError === false) {
         logger.warn(
           `${this.logPrefix()} Error thrown at incoming OCPP command '${
-            commandName ?? requestCommandName ?? null
+            commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
           }' message '${data.toString()}' handling is not an OCPPError:`,
           error
         );
