@@ -138,8 +138,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private async internalStartConnector(connectorId: number): Promise<void> {
-    this.setConnectorStatus(connectorId);
-    this.connectorsStatus.get(connectorId).start = true;
+    this.setStartConnectorStatus(connectorId);
     logger.info(
       this.logPrefix(connectorId) +
         ' started on connector and will run for ' +
@@ -252,28 +251,8 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
     );
   }
 
-  private setConnectorStatus(connectorId: number): void {
-    this.connectorsStatus.get(connectorId).authorizeRequests =
-      this?.connectorsStatus.get(connectorId)?.authorizeRequests ?? 0;
-    this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests =
-      this?.connectorsStatus.get(connectorId)?.acceptedAuthorizeRequests ?? 0;
-    this.connectorsStatus.get(connectorId).rejectedAuthorizeRequests =
-      this?.connectorsStatus.get(connectorId)?.rejectedAuthorizeRequests ?? 0;
-    this.connectorsStatus.get(connectorId).startTransactionRequests =
-      this?.connectorsStatus.get(connectorId)?.startTransactionRequests ?? 0;
-    this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests =
-      this?.connectorsStatus.get(connectorId)?.acceptedStartTransactionRequests ?? 0;
-    this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests =
-      this?.connectorsStatus.get(connectorId)?.rejectedStartTransactionRequests ?? 0;
-    this.connectorsStatus.get(connectorId).stopTransactionRequests =
-      this?.connectorsStatus.get(connectorId)?.stopTransactionRequests ?? 0;
-    this.connectorsStatus.get(connectorId).acceptedStopTransactionRequests =
-      this?.connectorsStatus.get(connectorId)?.acceptedStopTransactionRequests ?? 0;
-    this.connectorsStatus.get(connectorId).rejectedStopTransactionRequests =
-      this?.connectorsStatus.get(connectorId)?.rejectedStopTransactionRequests ?? 0;
+  private setStartConnectorStatus(connectorId: number): void {
     this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
-    this.connectorsStatus.get(connectorId).skippedTransactions =
-      this?.connectorsStatus.get(connectorId)?.skippedTransactions ?? 0;
     const previousRunDuration =
       this?.connectorsStatus.get(connectorId)?.startDate &&
       this?.connectorsStatus.get(connectorId)?.lastRunDate
@@ -289,8 +268,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
           1000 -
         previousRunDuration
     );
-    this.connectorsStatus.get(connectorId).start =
-      this?.connectorsStatus.get(connectorId)?.start ?? false;
+    this.connectorsStatus.get(connectorId).start = true;
   }
 
   private initializeConnectorsStatus(): void {
