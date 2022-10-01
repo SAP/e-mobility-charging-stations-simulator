@@ -138,7 +138,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private async internalStartConnector(connectorId: number): Promise<void> {
-    this.initializeConnectorStatus(connectorId);
+    this.setConnectorStatus(connectorId);
     this.connectorsStatus.get(connectorId).start = true;
     logger.info(
       this.logPrefix(connectorId) +
@@ -252,7 +252,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
     );
   }
 
-  private initializeConnectorStatus(connectorId: number): void {
+  private setConnectorStatus(connectorId: number): void {
     this.connectorsStatus.get(connectorId).authorizeRequests =
       this?.connectorsStatus.get(connectorId)?.authorizeRequests ?? 0;
     this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests =
