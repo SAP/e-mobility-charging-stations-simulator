@@ -579,37 +579,6 @@ export default class ChargingStation {
     }
   }
 
-  public setChargingProfile(connectorId: number, cp: ChargingProfile): void {
-    if (Utils.isNullOrUndefined(this.getConnectorStatus(connectorId).chargingProfiles)) {
-      logger.error(
-        `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
-      );
-      this.getConnectorStatus(connectorId).chargingProfiles = [];
-    }
-    if (Array.isArray(this.getConnectorStatus(connectorId).chargingProfiles) === false) {
-      logger.error(
-        `${this.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
-      );
-      this.getConnectorStatus(connectorId).chargingProfiles = [];
-    }
-    let cpReplaced = false;
-    if (!Utils.isEmptyArray(this.getConnectorStatus(connectorId).chargingProfiles)) {
-      this.getConnectorStatus(connectorId).chargingProfiles?.forEach(
-        (chargingProfile: ChargingProfile, index: number) => {
-          if (
-            chargingProfile.chargingProfileId === cp.chargingProfileId ||
-            (chargingProfile.stackLevel === cp.stackLevel &&
-              chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)
-          ) {
-            this.getConnectorStatus(connectorId).chargingProfiles[index] = cp;
-            cpReplaced = true;
-          }
-        }
-      );
-    }
-    !cpReplaced && this.getConnectorStatus(connectorId).chargingProfiles?.push(cp);
-  }
-
   public resetConnectorStatus(connectorId: number): void {
     this.getConnectorStatus(connectorId).idTagLocalAuthorized = false;
     this.getConnectorStatus(connectorId).idTagAuthorized = false;

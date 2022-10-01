@@ -289,6 +289,41 @@ export class ChargingStationUtils {
     return unitDivider;
   }
 
+  public static setChargingProfile(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    cp: ChargingProfile
+  ): void {
+    if (Utils.isNullOrUndefined(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
+      );
+      chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
+    }
+    if (Array.isArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles) === false) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
+      );
+      chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
+    }
+    let cpReplaced = false;
+    if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
+      chargingStation
+        .getConnectorStatus(connectorId)
+        .chargingProfiles?.forEach((chargingProfile: ChargingProfile, index: number) => {
+          if (
+            chargingProfile.chargingProfileId === cp.chargingProfileId ||
+            (chargingProfile.stackLevel === cp.stackLevel &&
+              chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)
+          ) {
+            chargingStation.getConnectorStatus(connectorId).chargingProfiles[index] = cp;
+            cpReplaced = true;
+          }
+        });
+    }
+    !cpReplaced && chargingStation.getConnectorStatus(connectorId).chargingProfiles?.push(cp);
+  }
+
   /**
    * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
    *

@@ -28,16 +28,16 @@ export default class UIWebSocketServer extends AbstractUIServer {
 
   public start(): void {
     this.webSocketServer.on('connection', (ws: WebSocket, req: IncomingMessage): void => {
-      const [protocol, version] = UIServiceUtils.getProtocolAndVersion(ws.protocol);
-      if (UIServiceUtils.isProtocolAndVersionSupported(protocol, version) === false) {
+      if (UIServiceUtils.isProtocolAndVersionSupported(ws.protocol) === false) {
         logger.error(
           `${this.logPrefix(
             moduleName,
             'start.server.onconnection'
-          )} Unsupported UI protocol version: '${protocol}${version}'`
+          )} Unsupported UI protocol version: '${ws.protocol}'`
         );
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
+      const [, version] = UIServiceUtils.getProtocolAndVersion(ws.protocol);
       this.registerProtocolVersionUIService(version);
       ws.on('message', (rawData) => {
         const request = this.validateRawDataRequest(rawData);

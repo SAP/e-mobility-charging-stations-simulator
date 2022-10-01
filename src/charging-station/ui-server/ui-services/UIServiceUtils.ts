@@ -11,6 +11,7 @@ export class UIServiceUtils {
 
   public static handleProtocols = (
     protocols: Set<string>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     request: IncomingMessage
   ): string | false => {
     let protocol: Protocol;
@@ -19,8 +20,7 @@ export class UIServiceUtils {
       return false;
     }
     for (const fullProtocol of protocols) {
-      [protocol, version] = UIServiceUtils.getProtocolAndVersion(fullProtocol);
-      if (UIServiceUtils.isProtocolAndVersionSupported(protocol, version) === true) {
+      if (UIServiceUtils.isProtocolAndVersionSupported(fullProtocol) === true) {
         return fullProtocol;
       }
     }
@@ -32,12 +32,13 @@ export class UIServiceUtils {
     return false;
   };
 
-  public static isProtocolAndVersionSupported = (
-    protocol: Protocol,
-    version: ProtocolVersion
-  ): boolean =>
-    Object.values(Protocol).includes(protocol) === true &&
-    Object.values(ProtocolVersion).includes(version) === true;
+  public static isProtocolAndVersionSupported = (protocolStr: string): boolean => {
+    const [protocol, version] = UIServiceUtils.getProtocolAndVersion(protocolStr);
+    return (
+      Object.values(Protocol).includes(protocol) === true &&
+      Object.values(ProtocolVersion).includes(version) === true
+    );
+  };
 
   public static getProtocolAndVersion = (protocolStr: string): [Protocol, ProtocolVersion] => {
     const protocolIndex = protocolStr.indexOf(Protocol.UI);
