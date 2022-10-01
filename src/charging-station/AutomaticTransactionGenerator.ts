@@ -1,5 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import { AsyncResource } from 'async_hooks';
+
 import BaseError from '../exception/BaseError';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import {
@@ -23,7 +25,9 @@ import Utils from '../utils/Utils';
 import type ChargingStation from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
 
-export default class AutomaticTransactionGenerator {
+const moduleName = 'AutomaticTransactionGenerator';
+
+export default class AutomaticTransactionGenerator extends AsyncResource {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
     string,
     AutomaticTransactionGenerator
@@ -39,6 +43,7 @@ export default class AutomaticTransactionGenerator {
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
     chargingStation: ChargingStation
   ) {
+    super(moduleName);
     this.started = false;
     this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
@@ -87,12 +92,11 @@ export default class AutomaticTransactionGenerator {
       throw new BaseError(`Connector ${connectorId} does not exist`);
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
-      // Avoid hogging the event loop with a busy loop
-      setImmediate(() => {
-        this.internalStartConnector(connectorId).catch(() => {
-          /* This is intentional */
-        });
-      });
+      this.runInAsyncScope(
+        this.internalStartConnector.bind(this) as (this: this, ...args: any[]) => unknown,
+        this,
+        connectorId
+      );
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(`${this.logPrefix(connectorId)} is already started on connector`);
     }
