@@ -1,6 +1,9 @@
 import type { DefinedError, ErrorObject } from 'ajv';
 
 import { ErrorType } from '../../types/ocpp/ErrorType';
+import { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
+import logger from '../../utils/Logger';
+import type ChargingStation from '../ChargingStation';
 
 export class OCPPServiceUtils {
   protected constructor() {
@@ -21,6 +24,46 @@ export class OCPPServiceUtils {
       }
     }
     return ErrorType.FORMAT_VIOLATION;
+  }
+
+  public static isRequestCommandSupported(
+    command: RequestCommand,
+    chargingStation: ChargingStation
+  ): boolean {
+    const isRequestCommand = Object.values(RequestCommand).includes(command);
+    if (
+      isRequestCommand === true &&
+      !chargingStation.stationInfo?.commandsSupport?.outgoingCommands
+    ) {
+      return true;
+    } else if (
+      isRequestCommand === true &&
+      chargingStation.stationInfo?.commandsSupport?.outgoingCommands
+    ) {
+      return chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] ?? false;
+    }
+    logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`);
+    return false;
+  }
+
+  public static isIncomingRequestCommandSupported(
+    command: IncomingRequestCommand,
+    chargingStation: ChargingStation
+  ): boolean {
+    const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(command);
+    if (
+      isIncomingRequestCommand === true &&
+      !chargingStation.stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return true;
+    } else if (
+      isIncomingRequestCommand === true &&
+      chargingStation.stationInfo?.commandsSupport?.incomingCommands
+    ) {
+      return chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] ?? false;
+    }
+    logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`);
+    return false;
   }
 
   protected static getLimitFromSampledValueTemplateCustomValue(

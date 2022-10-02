@@ -303,7 +303,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       if (
         this.incomingRequestHandlers.has(commandName) &&
-        ChargingStationUtils.isIncomingRequestCommandSupported(commandName, chargingStation)
+        OCPP16ServiceUtils.isIncomingRequestCommandSupported(commandName, chargingStation)
       ) {
         try {
           this.validatePayload(chargingStation, commandName, commandPayload);
@@ -569,7 +569,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
-    ChargingStationUtils.setChargingProfile(
+    OCPP16ServiceUtils.setChargingProfile(
       chargingStation,
       commandPayload.connectorId,
       commandPayload.csChargingProfiles
@@ -912,7 +912,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     cp: OCPP16ChargingProfile
   ): boolean {
     if (cp && cp.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
-      ChargingStationUtils.setChargingProfile(chargingStation, connectorId, cp);
+      OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, cp);
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) set at remote start transaction on connector id ${connectorId}, dump their stack: %j`,
         chargingStation.getConnectorStatus(connectorId).chargingProfiles

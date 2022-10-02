@@ -16,7 +16,7 @@ import {
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
-import { UIServiceUtils } from './ui-services/UIServiceUtils';
+import { UIServerUtils } from './UIServerUtils';
 
 const moduleName = 'UIHttpServer';
 
@@ -90,7 +90,7 @@ export default class UIHttpServer extends AbstractUIServer {
     this.responseHandlers.set(uuid, res);
     try {
       const fullProtocol = `${protocol}${version}`;
-      if (UIServiceUtils.isProtocolAndVersionSupported(fullProtocol) === false) {
+      if (UIServerUtils.isProtocolAndVersionSupported(fullProtocol) === false) {
         throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`);
       }
       this.registerProtocolVersionUIService(version);

@@ -178,7 +178,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     if (chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
       if (
         this.responseHandlers.has(commandName) &&
-        ChargingStationUtils.isRequestCommandSupported(commandName, chargingStation)
+        OCPP16ServiceUtils.isRequestCommandSupported(commandName, chargingStation)
       ) {
         try {
           this.validatePayload(chargingStation, commandName, payload);

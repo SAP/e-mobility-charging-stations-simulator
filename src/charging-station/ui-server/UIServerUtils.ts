@@ -1,10 +1,10 @@
 import type { IncomingMessage } from 'http';
 
-import { Protocol, ProtocolVersion } from '../../../types/UIProtocol';
-import logger from '../../../utils/Logger';
-import Utils from '../../../utils/Utils';
+import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
+import logger from '../../utils/Logger';
+import Utils from '../../utils/Utils';
 
-export class UIServiceUtils {
+export class UIServerUtils {
   private constructor() {
     // This is intentional
   }
@@ -20,7 +20,7 @@ export class UIServiceUtils {
       return false;
     }
     for (const fullProtocol of protocols) {
-      if (UIServiceUtils.isProtocolAndVersionSupported(fullProtocol) === true) {
+      if (UIServerUtils.isProtocolAndVersionSupported(fullProtocol) === true) {
         return fullProtocol;
       }
     }
@@ -33,7 +33,7 @@ export class UIServiceUtils {
   };
 
   public static isProtocolAndVersionSupported = (protocolStr: string): boolean => {
-    const [protocol, version] = UIServiceUtils.getProtocolAndVersion(protocolStr);
+    const [protocol, version] = UIServerUtils.getProtocolAndVersion(protocolStr);
     return (
       Object.values(Protocol).includes(protocol) === true &&
       Object.values(ProtocolVersion).includes(version) === true

@@ -11,7 +11,7 @@ import { WebSocketCloseEventStatusCode } from '../../types/WebSocket';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import { AbstractUIServer } from './AbstractUIServer';
-import { UIServiceUtils } from './ui-services/UIServiceUtils';
+import { UIServerUtils } from './UIServerUtils';
 
 const moduleName = 'UIWebSocketServer';
 
@@ -21,14 +21,14 @@ export default class UIWebSocketServer extends AbstractUIServer {
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration);
     this.webSocketServer = new WebSocketServer({
-      handleProtocols: UIServiceUtils.handleProtocols,
+      handleProtocols: UIServerUtils.handleProtocols,
       noServer: true,
     });
   }
 
   public start(): void {
     this.webSocketServer.on('connection', (ws: WebSocket, req: IncomingMessage): void => {
-      if (UIServiceUtils.isProtocolAndVersionSupported(ws.protocol) === false) {
+      if (UIServerUtils.isProtocolAndVersionSupported(ws.protocol) === false) {
         logger.error(
           `${this.logPrefix(
             moduleName,
@@ -37,7 +37,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         );
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
-      const [, version] = UIServiceUtils.getProtocolAndVersion(ws.protocol);
+      const [, version] = UIServerUtils.getProtocolAndVersion(ws.protocol);
       this.registerProtocolVersionUIService(version);
       ws.on('message', (rawData) => {
         const request = this.validateRawDataRequest(rawData);

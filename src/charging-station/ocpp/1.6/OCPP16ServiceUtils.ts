@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
+import BaseError from '../../../exception/BaseError';
 import OCPPError from '../../../exception/OCPPError';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
 import type {
@@ -24,13 +25,16 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
 } from '../../../types/ocpp/1.6/Requests';
+import type { ChargingProfile } from '../../../types/ocpp/ChargingProfile';
+import { StandardParametersKey } from '../../../types/ocpp/Configuration';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { MeterValueMeasurand, type MeterValuePhase } from '../../../types/ocpp/MeterValues';
 import Constants from '../../../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
-import { ChargingStationUtils } from '../../ChargingStationUtils';
+import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
 import { OCPPServiceUtils } from '../OCPPServiceUtils';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
@@ -63,7 +67,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     };
     const connector = chargingStation.getConnectorStatus(connectorId);
     // SoC measurand
-    const socSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+    const socSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.STATE_OF_CHARGE
@@ -91,7 +95,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Voltage measurand
-    const voltageSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+    const voltageSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.VOLTAGE
@@ -121,7 +125,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       ) {
         const phaseLineToNeutralValue = `L${phase}-N`;
         const voltagePhaseLineToNeutralSampledValueTemplate =
-          ChargingStationUtils.getSampledValueTemplate(
+          OCPP16ServiceUtils.getSampledValueTemplate(
             chargingStation,
             connectorId,
             OCPP16MeterValueMeasurand.VOLTAGE,
@@ -156,7 +160,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               : chargingStation.getNumberOfPhases()
           }`;
           const voltagePhaseLineToLineSampledValueTemplate =
-            ChargingStationUtils.getSampledValueTemplate(
+            OCPP16ServiceUtils.getSampledValueTemplate(
               chargingStation,
               connectorId,
               OCPP16MeterValueMeasurand.VOLTAGE,
@@ -192,7 +196,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Power.Active.Import measurand
-    const powerSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+    const powerSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT
@@ -200,19 +204,19 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     let powerPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
     if (chargingStation.getNumberOfPhases() === 3) {
       powerPerPhaseSampledValueTemplates = {
-        L1: ChargingStationUtils.getSampledValueTemplate(
+        L1: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
           OCPP16MeterValuePhase.L1_N
         ),
-        L2: ChargingStationUtils.getSampledValueTemplate(
+        L2: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
           OCPP16MeterValuePhase.L2_N
         ),
-        L3: ChargingStationUtils.getSampledValueTemplate(
+        L3: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
@@ -399,7 +403,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Current.Import measurand
-    const currentSampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+    const currentSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
       OCPP16MeterValueMeasurand.CURRENT_IMPORT
@@ -407,19 +411,19 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     let currentPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
     if (chargingStation.getNumberOfPhases() === 3) {
       currentPerPhaseSampledValueTemplates = {
-        L1: ChargingStationUtils.getSampledValueTemplate(
+        L1: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
           OCPP16MeterValuePhase.L1
         ),
-        L2: ChargingStationUtils.getSampledValueTemplate(
+        L2: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
           OCPP16MeterValuePhase.L2
         ),
-        L3: ChargingStationUtils.getSampledValueTemplate(
+        L3: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
@@ -607,7 +611,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     // Energy.Active.Import.Register measurand (default)
-    const energySampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+    const energySampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId
     );
@@ -690,7 +694,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       sampledValue: [],
     };
     // Energy.Active.Import.Register measurand (default)
-    const sampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+    const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId
     );
@@ -715,7 +719,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       sampledValue: [],
     };
     // Energy.Active.Import.Register measurand (default)
-    const sampledValueTemplate = ChargingStationUtils.getSampledValueTemplate(
+    const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId
     );
@@ -738,6 +742,122 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     meterValues.push(transactionBeginMeterValue);
     meterValues.push(transactionEndMeterValue);
     return meterValues;
+  }
+
+  public static setChargingProfile(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    cp: ChargingProfile
+  ): void {
+    if (Utils.isNullOrUndefined(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
+      );
+      chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
+    }
+    if (Array.isArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles) === false) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
+      );
+      chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
+    }
+    let cpReplaced = false;
+    if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
+      chargingStation
+        .getConnectorStatus(connectorId)
+        .chargingProfiles?.forEach((chargingProfile: ChargingProfile, index: number) => {
+          if (
+            chargingProfile.chargingProfileId === cp.chargingProfileId ||
+            (chargingProfile.stackLevel === cp.stackLevel &&
+              chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)
+          ) {
+            chargingStation.getConnectorStatus(connectorId).chargingProfiles[index] = cp;
+            cpReplaced = true;
+          }
+        });
+    }
+    !cpReplaced && chargingStation.getConnectorStatus(connectorId).chargingProfiles?.push(cp);
+  }
+
+  private static getSampledValueTemplate(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+    phase?: MeterValuePhase
+  ): SampledValueTemplate | undefined {
+    const onPhaseStr = phase ? `on phase ${phase} ` : '';
+    if (Constants.SUPPORTED_MEASURANDS.includes(measurand) === false) {
+      logger.warn(
+        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+      );
+      return;
+    }
+    if (
+      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        chargingStation,
+        StandardParametersKey.MeterValuesSampledData
+      )?.value.includes(measurand)
+    ) {
+      logger.debug(
+        `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
+          StandardParametersKey.MeterValuesSampledData
+        }' OCPP parameter`
+      );
+      return;
+    }
+    const sampledValueTemplates: SampledValueTemplate[] =
+      chargingStation.getConnectorStatus(connectorId).MeterValues;
+    for (
+      let index = 0;
+      !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length;
+      index++
+    ) {
+      if (
+        Constants.SUPPORTED_MEASURANDS.includes(
+          sampledValueTemplates[index]?.measurand ??
+            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        ) === false
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+        );
+      } else if (
+        phase &&
+        sampledValueTemplates[index]?.phase === phase &&
+        sampledValueTemplates[index]?.measurand === measurand &&
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand) === true
+      ) {
+        return sampledValueTemplates[index];
+      } else if (
+        !phase &&
+        !sampledValueTemplates[index].phase &&
+        sampledValueTemplates[index]?.measurand === measurand &&
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand) === true
+      ) {
+        return sampledValueTemplates[index];
+      } else if (
+        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
+        (!sampledValueTemplates[index].measurand ||
+          sampledValueTemplates[index].measurand === measurand)
+      ) {
+        return sampledValueTemplates[index];
+      }
+    }
+    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+      const errorMsg = `Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
+      logger.error(`${chargingStation.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    }
+    logger.debug(
+      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+    );
   }
 
   private static buildSampledValue(

@@ -4,8 +4,8 @@ import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import { ApplicationProtocol } from '../../types/UIProtocol';
 import Configuration from '../../utils/Configuration';
 import type { AbstractUIServer } from './AbstractUIServer';
-import { UIServiceUtils } from './ui-services/UIServiceUtils';
 import UIHttpServer from './UIHttpServer';
+import { UIServerUtils } from './UIServerUtils';
 import UIWebSocketServer from './UIWebSocketServer';
 
 export default class UIServerFactory {
@@ -16,7 +16,7 @@ export default class UIServerFactory {
   public static getUIServerImplementation(
     uiServerConfiguration?: UIServerConfiguration
   ): AbstractUIServer | null {
-    if (UIServiceUtils.isLoopback(uiServerConfiguration.options?.host) === false) {
+    if (UIServerUtils.isLoopback(uiServerConfiguration.options?.host) === false) {
       console.warn(
         chalk.yellow(
           'Loopback address not detected in UI server configuration. This is not recommended.'

@@ -12,23 +12,14 @@ import {
   CurrentType,
   Voltage,
 } from '../types/ChargingStationTemplate';
-import type { SampledValueTemplate } from '../types/MeasurandPerPhaseSampledValueTemplates';
 import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
 import type { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
-import { StandardParametersKey } from '../types/ocpp/Configuration';
-import { MeterValueMeasurand, MeterValuePhase } from '../types/ocpp/MeterValues';
-import {
-  type BootNotificationRequest,
-  IncomingRequestCommand,
-  RequestCommand,
-} from '../types/ocpp/Requests';
+import type { BootNotificationRequest } from '../types/ocpp/Requests';
 import { WorkerProcessType } from '../types/Worker';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
-import type ChargingStation from './ChargingStation';
-import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 
 const moduleName = 'ChargingStationUtils';
 
@@ -289,41 +280,6 @@ export class ChargingStationUtils {
     return unitDivider;
   }
 
-  public static setChargingProfile(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    cp: ChargingProfile
-  ): void {
-    if (Utils.isNullOrUndefined(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
-      logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
-      );
-      chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
-    }
-    if (Array.isArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles) === false) {
-      logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
-      );
-      chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
-    }
-    let cpReplaced = false;
-    if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
-      chargingStation
-        .getConnectorStatus(connectorId)
-        .chargingProfiles?.forEach((chargingProfile: ChargingProfile, index: number) => {
-          if (
-            chargingProfile.chargingProfileId === cp.chargingProfileId ||
-            (chargingProfile.stackLevel === cp.stackLevel &&
-              chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)
-          ) {
-            chargingStation.getConnectorStatus(connectorId).chargingProfiles[index] = cp;
-            cpReplaced = true;
-          }
-        });
-    }
-    !cpReplaced && chargingStation.getConnectorStatus(connectorId).chargingProfiles?.push(cp);
-  }
-
   /**
    * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
    *
@@ -442,87 +398,6 @@ export class ChargingStationUtils {
     return defaultVoltageOut;
   }
 
-  public static getSampledValueTemplate(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-    phase?: MeterValuePhase
-  ): SampledValueTemplate | undefined {
-    const onPhaseStr = phase ? `on phase ${phase} ` : '';
-    if (Constants.SUPPORTED_MEASURANDS.includes(measurand) === false) {
-      logger.warn(
-        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
-      );
-      return;
-    }
-    if (
-      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        chargingStation,
-        StandardParametersKey.MeterValuesSampledData
-      )?.value.includes(measurand)
-    ) {
-      logger.debug(
-        `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
-          StandardParametersKey.MeterValuesSampledData
-        }' OCPP parameter`
-      );
-      return;
-    }
-    const sampledValueTemplates: SampledValueTemplate[] =
-      chargingStation.getConnectorStatus(connectorId).MeterValues;
-    for (
-      let index = 0;
-      !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length;
-      index++
-    ) {
-      if (
-        Constants.SUPPORTED_MEASURANDS.includes(
-          sampledValueTemplates[index]?.measurand ??
-            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-        ) === false
-      ) {
-        logger.warn(
-          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
-        );
-      } else if (
-        phase &&
-        sampledValueTemplates[index]?.phase === phase &&
-        sampledValueTemplates[index]?.measurand === measurand &&
-        ChargingStationConfigurationUtils.getConfigurationKey(
-          chargingStation,
-          StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand) === true
-      ) {
-        return sampledValueTemplates[index];
-      } else if (
-        !phase &&
-        !sampledValueTemplates[index].phase &&
-        sampledValueTemplates[index]?.measurand === measurand &&
-        ChargingStationConfigurationUtils.getConfigurationKey(
-          chargingStation,
-          StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand) === true
-      ) {
-        return sampledValueTemplates[index];
-      } else if (
-        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-        (!sampledValueTemplates[index].measurand ||
-          sampledValueTemplates[index].measurand === measurand)
-      ) {
-        return sampledValueTemplates[index];
-      }
-    }
-    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-      const errorMsg = `Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
-      logger.error(`${chargingStation.logPrefix()} ${errorMsg}`);
-      throw new BaseError(errorMsg);
-    }
-    logger.debug(
-      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
-    );
-  }
-
   public static getAuthorizationFile(stationInfo: ChargingStationInfo): string | undefined {
     return (
       stationInfo.authorizationFile &&
@@ -532,46 +407,6 @@ export class ChargingStationUtils {
         path.basename(stationInfo.authorizationFile)
       )
     );
-  }
-
-  public static isRequestCommandSupported(
-    command: RequestCommand,
-    chargingStation: ChargingStation
-  ): boolean {
-    const isRequestCommand = Object.values(RequestCommand).includes(command);
-    if (
-      isRequestCommand === true &&
-      !chargingStation.stationInfo?.commandsSupport?.outgoingCommands
-    ) {
-      return true;
-    } else if (
-      isRequestCommand === true &&
-      chargingStation.stationInfo?.commandsSupport?.outgoingCommands
-    ) {
-      return chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] ?? false;
-    }
-    logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`);
-    return false;
-  }
-
-  public static isIncomingRequestCommandSupported(
-    command: IncomingRequestCommand,
-    chargingStation: ChargingStation
-  ): boolean {
-    const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(command);
-    if (
-      isIncomingRequestCommand === true &&
-      !chargingStation.stationInfo?.commandsSupport?.incomingCommands
-    ) {
-      return true;
-    } else if (
-      isIncomingRequestCommand === true &&
-      chargingStation.stationInfo?.commandsSupport?.incomingCommands
-    ) {
-      return chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] ?? false;
-    }
-    logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`);
-    return false;
   }
 
   private static getRandomSerialNumberSuffix(params?: {
