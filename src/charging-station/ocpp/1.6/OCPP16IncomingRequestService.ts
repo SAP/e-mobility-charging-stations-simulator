@@ -303,7 +303,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       if (
         this.incomingRequestHandlers.has(commandName) &&
-        OCPP16ServiceUtils.isIncomingRequestCommandSupported(commandName, chargingStation)
+        OCPP16ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName)
       ) {
         try {
           this.validatePayload(chargingStation, commandName, commandPayload);

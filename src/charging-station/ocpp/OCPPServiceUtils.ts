@@ -34,8 +34,8 @@ export class OCPPServiceUtils {
   }
 
   public static isRequestCommandSupported(
-    command: RequestCommand,
-    chargingStation: ChargingStation
+    chargingStation: ChargingStation,
+    command: RequestCommand
   ): boolean {
     const isRequestCommand = Object.values(RequestCommand).includes(command);
     if (
@@ -54,8 +54,8 @@ export class OCPPServiceUtils {
   }
 
   public static isIncomingRequestCommandSupported(
-    command: IncomingRequestCommand,
-    chargingStation: ChargingStation
+    chargingStation: ChargingStation,
+    command: IncomingRequestCommand
   ): boolean {
     const isIncomingRequestCommand = Object.values(IncomingRequestCommand).includes(command);
     if (

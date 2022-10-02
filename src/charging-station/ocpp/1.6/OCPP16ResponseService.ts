@@ -43,7 +43,6 @@ import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
-import { ChargingStationUtils } from '../../ChargingStationUtils';
 import OCPPResponseService from '../OCPPResponseService';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 
@@ -178,7 +177,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     if (chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
       if (
         this.responseHandlers.has(commandName) &&
-        OCPP16ServiceUtils.isRequestCommandSupported(commandName, chargingStation)
+        OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)
       ) {
         try {
           this.validatePayload(chargingStation, commandName, payload);

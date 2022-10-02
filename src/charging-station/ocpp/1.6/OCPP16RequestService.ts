@@ -27,7 +27,6 @@ import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
-import { ChargingStationUtils } from '../../ChargingStationUtils';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
@@ -150,7 +149,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<ResponseType> {
-    if (OCPP16ServiceUtils.isRequestCommandSupported(commandName, chargingStation)) {
+    if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
       const requestPayload = this.buildRequestPayload<RequestType>(
         chargingStation,
         commandName,

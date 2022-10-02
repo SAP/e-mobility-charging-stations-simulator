@@ -27,6 +27,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
   }
 
   public start(): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     this.webSocketServer.on('connection', (ws: WebSocket, req: IncomingMessage): void => {
       if (UIServerUtils.isProtocolAndVersionSupported(ws.protocol) === false) {
         logger.error(
