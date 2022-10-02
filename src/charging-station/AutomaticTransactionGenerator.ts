@@ -152,7 +152,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
         this.stopConnector(connectorId);
         break;
       }
-      if (!this.chargingStation.isInAcceptedState()) {
+      if (this.chargingStation.isInAcceptedState() === false) {
         logger.error(
           this.logPrefix(connectorId) +
             ' entered in transaction loop while the charging station is not in accepted state'
@@ -160,7 +160,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
         this.stopConnector(connectorId);
         break;
       }
-      if (!this.chargingStation.isChargingStationAvailable()) {
+      if (this.chargingStation.isChargingStationAvailable() === false) {
         logger.info(
           this.logPrefix(connectorId) +
             ' entered in transaction loop while the charging station is unavailable'
@@ -168,7 +168,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
         this.stopConnector(connectorId);
         break;
       }
-      if (!this.chargingStation.isConnectorAvailable(connectorId)) {
+      if (this.chargingStation.isConnectorAvailable(connectorId) === false) {
         logger.info(
           `${this.logPrefix(
             connectorId

@@ -557,8 +557,8 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           ],
         }));
       if (
-        !chargingStation.isChargingStationAvailable() ||
-        !chargingStation.isConnectorAvailable(transactionConnectorId)
+        chargingStation.isChargingStationAvailable() === false ||
+        chargingStation.isConnectorAvailable(transactionConnectorId) === false
       ) {
         await chargingStation.ocppRequestService.requestHandler<
           OCPP16StatusNotificationRequest,

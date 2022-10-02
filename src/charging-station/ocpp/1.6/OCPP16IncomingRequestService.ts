@@ -537,15 +537,15 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: SetChargingProfileRequest
   ): SetChargingProfileResponse {
     if (
-      !OCPP16ServiceUtils.checkFeatureProfile(
+      OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
         OCPP16SupportedFeatureProfiles.SmartCharging,
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE
-      )
+      ) === false
     ) {
       return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_NOT_SUPPORTED;
     }
-    if (!chargingStation.getConnectorStatus(commandPayload.connectorId)) {
+    if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set charging profile(s) to a non existing connector Id ${
           commandPayload.connectorId
@@ -596,8 +596,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
-    const connectorStatus = chargingStation.getConnectorStatus(commandPayload.connectorId);
-    if (!connectorStatus) {
+    if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector Id ${
           commandPayload.connectorId
@@ -605,6 +604,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       );
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
+    const connectorStatus = chargingStation.getConnectorStatus(commandPayload.connectorId);
     if (commandPayload.connectorId && !Utils.isEmptyArray(connectorStatus.chargingProfiles)) {
       connectorStatus.chargingProfiles = [];
       logger.debug(
@@ -729,8 +729,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: RemoteStartTransactionRequest
   ): Promise<DefaultResponse> {
     const transactionConnectorId = commandPayload.connectorId;
-    const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId);
-    if (transactionConnectorId) {
+    if (chargingStation.connectors.has(transactionConnectorId) === true) {
       const remoteStartTransactionLogMsg =
         chargingStation.logPrefix() +
         ' Transaction remotely STARTED on ' +
@@ -748,24 +747,25 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         status: OCPP16ChargePointStatus.PREPARING,
         errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
       });
+      const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId);
       connectorStatus.status = OCPP16ChargePointStatus.PREPARING;
-      if (chargingStation.isChargingStationAvailable() && connectorStatus) {
+      if (chargingStation.isChargingStationAvailable() === true) {
         // Check if authorized
-        if (chargingStation.getAuthorizeRemoteTxRequests()) {
+        if (chargingStation.getAuthorizeRemoteTxRequests() === true) {
           let authorized = false;
           if (
-            chargingStation.getLocalAuthListEnabled() &&
-            chargingStation.hasAuthorizedTags() &&
+            chargingStation.getLocalAuthListEnabled() === true &&
+            chargingStation.hasAuthorizedTags() === true &&
             chargingStation.authorizedTagsCache
               .getAuthorizedTags(
                 ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
               )
-              .find((value) => value === commandPayload.idTag)
+              .find((idTag) => idTag === commandPayload.idTag)
           ) {
             connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
             connectorStatus.idTagLocalAuthorized = true;
             authorized = true;
-          } else if (chargingStation.getMustAuthorizeAtRemoteStart()) {
+          } else if (chargingStation.getMustAuthorizeAtRemoteStart() === true) {
             connectorStatus.authorizeIdTag = commandPayload.idTag;
             const authorizeResponse: OCPP16AuthorizeResponse =
               await chargingStation.ocppRequestService.requestHandler<
@@ -782,14 +782,14 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               `${chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction but local authorization or authorize isn't enabled`
             );
           }
-          if (authorized) {
+          if (authorized === true) {
             // Authorization successful, start transaction
             if (
               this.setRemoteStartTransactionChargingProfile(
                 chargingStation,
                 transactionConnectorId,
                 commandPayload.chargingProfile
-              )
+              ) === true
             ) {
               connectorStatus.transactionRemoteStarted = true;
               if (
@@ -830,7 +830,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             chargingStation,
             transactionConnectorId,
             commandPayload.chargingProfile
-          )
+          ) === true
         ) {
           connectorStatus.transactionRemoteStarted = true;
           if (
@@ -971,11 +971,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: GetDiagnosticsRequest
   ): Promise<GetDiagnosticsResponse> {
     if (
-      !OCPP16ServiceUtils.checkFeatureProfile(
+      OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
         OCPP16SupportedFeatureProfiles.FirmwareManagement,
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
-      )
+      ) === false
     ) {
       return Constants.OCPP_RESPONSE_EMPTY;
     }

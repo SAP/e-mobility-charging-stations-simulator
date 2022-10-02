@@ -1764,8 +1764,7 @@ export default class ChargingStation {
       } else if (
         !this.getConnectorStatus(connectorId)?.status &&
         (this.isChargingStationAvailable() === false ||
-          (this.isChargingStationAvailable() === true &&
-            this.isConnectorAvailable(connectorId) === false))
+          this.isConnectorAvailable(connectorId) === false)
       ) {
         chargePointStatus = ChargePointStatus.UNAVAILABLE;
       } else if (
