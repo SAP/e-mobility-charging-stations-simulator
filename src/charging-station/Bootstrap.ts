@@ -228,11 +228,25 @@ export class Bootstrap {
   private workerEventStarted = (data: ChargingStationData) => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     ++this.numberOfStartedChargingStations;
+    logger.info(
+      `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station '${
+        data.stationInfo.chargingStationId
+      } (hashId: ${data.stationInfo.hashId})' started (${
+        this.numberOfStartedChargingStations
+      } started from ${this.numberOfChargingStations})`
+    );
   };
 
   private workerEventStopped = (data: ChargingStationData) => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     --this.numberOfStartedChargingStations;
+    logger.info(
+      `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station '${
+        data.stationInfo.chargingStationId
+      } (hashId: ${data.stationInfo.hashId})' stopped (${
+        this.numberOfStartedChargingStations
+      } started from ${this.numberOfChargingStations})`
+    );
   };
 
   private workerEventUpdated = (data: ChargingStationData) => {

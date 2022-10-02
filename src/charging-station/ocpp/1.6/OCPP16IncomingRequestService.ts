@@ -701,9 +701,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       return response;
     } else if (
       connectorId > 0 &&
-      (chargingStation.getConnectorStatus(0).availability === OCPP16AvailabilityType.OPERATIVE ||
-        (chargingStation.getConnectorStatus(0).availability ===
-          OCPP16AvailabilityType.INOPERATIVE &&
+      (chargingStation.isChargingStationAvailable() === true ||
+        (chargingStation.isChargingStationAvailable() === false &&
           commandPayload.type === OCPP16AvailabilityType.INOPERATIVE))
     ) {
       if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
