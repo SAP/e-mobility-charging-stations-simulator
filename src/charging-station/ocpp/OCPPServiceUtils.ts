@@ -1,9 +1,16 @@
 import type { DefinedError, ErrorObject } from 'ajv';
 
+import BaseError from '../../exception/BaseError';
+import type { SampledValueTemplate } from '../../types/MeasurandPerPhaseSampledValueTemplates';
+import { StandardParametersKey } from '../../types/ocpp/Configuration';
 import { ErrorType } from '../../types/ocpp/ErrorType';
+import { MeterValueMeasurand, type MeterValuePhase } from '../../types/ocpp/MeterValues';
 import { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
+import Constants from '../../utils/Constants';
 import logger from '../../utils/Logger';
+import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
+import { ChargingStationConfigurationUtils } from '../ChargingStationConfigurationUtils';
 
 export class OCPPServiceUtils {
   protected constructor() {
@@ -64,6 +71,87 @@ export class OCPPServiceUtils {
     }
     logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`);
     return false;
+  }
+
+  protected static getSampledValueTemplate(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+    phase?: MeterValuePhase
+  ): SampledValueTemplate | undefined {
+    const onPhaseStr = phase ? `on phase ${phase} ` : '';
+    if (Constants.SUPPORTED_MEASURANDS.includes(measurand) === false) {
+      logger.warn(
+        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+      );
+      return;
+    }
+    if (
+      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
+      !ChargingStationConfigurationUtils.getConfigurationKey(
+        chargingStation,
+        StandardParametersKey.MeterValuesSampledData
+      )?.value.includes(measurand)
+    ) {
+      logger.debug(
+        `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
+          StandardParametersKey.MeterValuesSampledData
+        }' OCPP parameter`
+      );
+      return;
+    }
+    const sampledValueTemplates: SampledValueTemplate[] =
+      chargingStation.getConnectorStatus(connectorId).MeterValues;
+    for (
+      let index = 0;
+      !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length;
+      index++
+    ) {
+      if (
+        Constants.SUPPORTED_MEASURANDS.includes(
+          sampledValueTemplates[index]?.measurand ??
+            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        ) === false
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+        );
+      } else if (
+        phase &&
+        sampledValueTemplates[index]?.phase === phase &&
+        sampledValueTemplates[index]?.measurand === measurand &&
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand) === true
+      ) {
+        return sampledValueTemplates[index];
+      } else if (
+        !phase &&
+        !sampledValueTemplates[index].phase &&
+        sampledValueTemplates[index]?.measurand === measurand &&
+        ChargingStationConfigurationUtils.getConfigurationKey(
+          chargingStation,
+          StandardParametersKey.MeterValuesSampledData
+        )?.value.includes(measurand) === true
+      ) {
+        return sampledValueTemplates[index];
+      } else if (
+        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
+        (!sampledValueTemplates[index].measurand ||
+          sampledValueTemplates[index].measurand === measurand)
+      ) {
+        return sampledValueTemplates[index];
+      }
+    }
+    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
+      const errorMsg = `Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
+      logger.error(`${chargingStation.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    }
+    logger.debug(
+      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+    );
   }
 
   protected static getLimitFromSampledValueTemplateCustomValue(

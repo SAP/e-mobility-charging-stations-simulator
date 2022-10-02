@@ -1,6 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
 
-import BaseError from '../../../exception/BaseError';
 import OCPPError from '../../../exception/OCPPError';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
 import type {
@@ -8,6 +7,7 @@ import type {
   SampledValueTemplate,
 } from '../../../types/MeasurandPerPhaseSampledValueTemplates';
 import type { MeasurandValues } from '../../../types/MeasurandValues';
+import type { OCPP16ChargingProfile } from '../../../types/ocpp/1.6/ChargingProfile';
 import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
@@ -25,16 +25,12 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
 } from '../../../types/ocpp/1.6/Requests';
-import type { ChargingProfile } from '../../../types/ocpp/ChargingProfile';
-import { StandardParametersKey } from '../../../types/ocpp/Configuration';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { MeterValueMeasurand, type MeterValuePhase } from '../../../types/ocpp/MeterValues';
 import Constants from '../../../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
-import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
 import { OCPPServiceUtils } from '../OCPPServiceUtils';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
@@ -747,7 +743,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static setChargingProfile(
     chargingStation: ChargingStation,
     connectorId: number,
-    cp: ChargingProfile
+    cp: OCPP16ChargingProfile
   ): void {
     if (Utils.isNullOrUndefined(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
       logger.error(
@@ -765,7 +761,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
       chargingStation
         .getConnectorStatus(connectorId)
-        .chargingProfiles?.forEach((chargingProfile: ChargingProfile, index: number) => {
+        .chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
           if (
             chargingProfile.chargingProfileId === cp.chargingProfileId ||
             (chargingProfile.stackLevel === cp.stackLevel &&
@@ -777,87 +773,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         });
     }
     !cpReplaced && chargingStation.getConnectorStatus(connectorId).chargingProfiles?.push(cp);
-  }
-
-  private static getSampledValueTemplate(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-    phase?: MeterValuePhase
-  ): SampledValueTemplate | undefined {
-    const onPhaseStr = phase ? `on phase ${phase} ` : '';
-    if (Constants.SUPPORTED_MEASURANDS.includes(measurand) === false) {
-      logger.warn(
-        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
-      );
-      return;
-    }
-    if (
-      measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        chargingStation,
-        StandardParametersKey.MeterValuesSampledData
-      )?.value.includes(measurand)
-    ) {
-      logger.debug(
-        `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
-          StandardParametersKey.MeterValuesSampledData
-        }' OCPP parameter`
-      );
-      return;
-    }
-    const sampledValueTemplates: SampledValueTemplate[] =
-      chargingStation.getConnectorStatus(connectorId).MeterValues;
-    for (
-      let index = 0;
-      !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length;
-      index++
-    ) {
-      if (
-        Constants.SUPPORTED_MEASURANDS.includes(
-          sampledValueTemplates[index]?.measurand ??
-            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-        ) === false
-      ) {
-        logger.warn(
-          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
-        );
-      } else if (
-        phase &&
-        sampledValueTemplates[index]?.phase === phase &&
-        sampledValueTemplates[index]?.measurand === measurand &&
-        ChargingStationConfigurationUtils.getConfigurationKey(
-          chargingStation,
-          StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand) === true
-      ) {
-        return sampledValueTemplates[index];
-      } else if (
-        !phase &&
-        !sampledValueTemplates[index].phase &&
-        sampledValueTemplates[index]?.measurand === measurand &&
-        ChargingStationConfigurationUtils.getConfigurationKey(
-          chargingStation,
-          StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand) === true
-      ) {
-        return sampledValueTemplates[index];
-      } else if (
-        measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-        (!sampledValueTemplates[index].measurand ||
-          sampledValueTemplates[index].measurand === measurand)
-      ) {
-        return sampledValueTemplates[index];
-      }
-    }
-    if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-      const errorMsg = `Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
-      logger.error(`${chargingStation.logPrefix()} ${errorMsg}`);
-      throw new BaseError(errorMsg);
-    }
-    logger.debug(
-      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
-    );
   }
 
   private static buildSampledValue(
