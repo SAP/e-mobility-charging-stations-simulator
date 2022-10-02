@@ -535,19 +535,6 @@ export default class ChargingStation {
       if (this.stopping === false) {
         this.stopping = true;
         await this.stopMessageSequence(reason);
-        for (const connectorId of this.connectors.keys()) {
-          if (connectorId > 0) {
-            await this.ocppRequestService.requestHandler<
-              StatusNotificationRequest,
-              StatusNotificationResponse
-            >(this, RequestCommand.STATUS_NOTIFICATION, {
-              connectorId,
-              status: ChargePointStatus.UNAVAILABLE,
-              errorCode: ChargePointErrorCode.NO_ERROR,
-            });
-            this.getConnectorStatus(connectorId).status = null;
-          }
-        }
         this.closeWSConnection();
         this.wsConnectionRestarted = false;
         if (this.getEnableStatistics()) {
@@ -1777,17 +1764,17 @@ export default class ChargingStation {
         continue;
       } else if (
         !this.getConnectorStatus(connectorId)?.status &&
-        this.getConnectorStatus(connectorId)?.bootStatus
-      ) {
-        // Set boot status in template at startup
-        chargePointStatus = this.getConnectorStatus(connectorId).bootStatus;
-      } else if (
-        !this.getConnectorStatus(connectorId)?.status &&
         (this.isChargingStationAvailable() === false ||
           (this.isChargingStationAvailable() === true &&
             this.isConnectorAvailable(connectorId) === false))
       ) {
         chargePointStatus = ChargePointStatus.UNAVAILABLE;
+      } else if (
+        !this.getConnectorStatus(connectorId)?.status &&
+        this.getConnectorStatus(connectorId)?.bootStatus
+      ) {
+        // Set boot status in template at startup
+        chargePointStatus = this.getConnectorStatus(connectorId).bootStatus;
       } else if (this.getConnectorStatus(connectorId)?.status) {
         // Set previous status at startup
         chargePointStatus = this.getConnectorStatus(connectorId).status;
@@ -1824,6 +1811,19 @@ export default class ChargingStation {
       this.stopAutomaticTransactionGenerator();
     } else {
       await this.stopRunningTransactions(reason);
+    }
+    for (const connectorId of this.connectors.keys()) {
+      if (connectorId > 0) {
+        await this.ocppRequestService.requestHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(this, RequestCommand.STATUS_NOTIFICATION, {
+          connectorId,
+          status: ChargePointStatus.UNAVAILABLE,
+          errorCode: ChargePointErrorCode.NO_ERROR,
+        });
+        this.getConnectorStatus(connectorId).status = null;
+      }
     }
   }
 
