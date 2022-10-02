@@ -953,7 +953,7 @@ export default class ChargingStation {
         this.handleUnsupportedVersion(this.getOcppVersion());
         break;
     }
-    if (this.stationInfo?.autoRegister) {
+    if (this.stationInfo?.autoRegister === true) {
       this.bootNotificationResponse = {
         currentTime: new Date().toISOString(),
         interval: this.getHeartbeatInterval() / 1000,
@@ -1745,7 +1745,7 @@ export default class ChargingStation {
   }
 
   private async startMessageSequence(): Promise<void> {
-    if (this.stationInfo?.autoRegister) {
+    if (this.stationInfo?.autoRegister === true) {
       await this.ocppRequestService.requestHandler<
         BootNotificationRequest,
         BootNotificationResponse
@@ -1923,7 +1923,7 @@ export default class ChargingStation {
     if (HeartBeatInterval) {
       return Utils.convertToInt(HeartBeatInterval.value) * 1000;
     }
-    !this.stationInfo?.autoRegister &&
+    this.stationInfo?.autoRegister === false &&
       logger.warn(
         `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${
           Constants.DEFAULT_HEARTBEAT_INTERVAL
