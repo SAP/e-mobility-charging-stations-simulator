@@ -536,7 +536,6 @@ export default class ChargingStation {
         this.stopping = true;
         await this.stopMessageSequence(reason);
         this.closeWSConnection();
-        this.wsConnectionRestarted = false;
         if (this.getEnableStatistics()) {
           this.performanceStatistics.stop();
         }
@@ -1855,9 +1854,8 @@ export default class ChargingStation {
     } else if (this.webSocketPingSetInterval) {
       logger.info(
         this.logPrefix() +
-          ' WebSocket ping every ' +
-          Utils.formatDurationSeconds(webSocketPingInterval) +
-          ' already started'
+          ' WebSocket ping already started every ' +
+          Utils.formatDurationSeconds(webSocketPingInterval)
       );
     } else {
       logger.error(
@@ -1980,16 +1978,14 @@ export default class ChargingStation {
           ? reconnectDelay - reconnectDelayWithdraw
           : 0;
       logger.error(
-        `${this.logPrefix()} WebSocket: connection retry in ${Utils.roundTo(
+        `${this.logPrefix()} WebSocket connection retry in ${Utils.roundTo(
           reconnectDelay,
           2
         )}ms, timeout ${reconnectTimeout}ms`
       );
       await Utils.sleep(reconnectDelay);
       logger.error(
-        this.logPrefix() +
-          ' WebSocket: reconnecting try #' +
-          this.autoReconnectRetryCount.toString()
+        this.logPrefix() + ' WebSocket connection retry #' + this.autoReconnectRetryCount.toString()
       );
       this.openWSConnection(
         { ...(this.stationInfo?.wsOptions ?? {}), handshakeTimeout: reconnectTimeout },
@@ -1998,9 +1994,9 @@ export default class ChargingStation {
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
       logger.error(
-        `${this.logPrefix()} WebSocket reconnect failure: maximum retries reached (${
+        `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${
           this.autoReconnectRetryCount
-        }) or retry disabled (${this.getAutoReconnectMaxRetries()})`
+        }) or retries disabled (${this.getAutoReconnectMaxRetries()})`
       );
     }
   }

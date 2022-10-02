@@ -22,7 +22,7 @@ import type { AbstractUIServer } from '../AbstractUIServer';
 const moduleName = 'AbstractUIService';
 
 export default abstract class AbstractUIService {
-  private static readonly ProcedureNameToBroadCastChannelProcedureNameMap: Omit<
+  protected static readonly ProcedureNameToBroadCastChannelProcedureNameMap: Omit<
     Record<ProcedureName, BroadcastChannelProcedureName>,
     | ProcedureName.START_SIMULATOR
     | ProcedureName.STOP_SIMULATOR
