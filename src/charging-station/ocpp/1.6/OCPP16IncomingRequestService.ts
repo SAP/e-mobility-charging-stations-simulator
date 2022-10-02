@@ -392,7 +392,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  private handleRequestClearCache(): DefaultResponse {
+  private handleRequestClearCache(chargingStation: ChargingStation): DefaultResponse {
+    chargingStation.authorizedTagsCache.deleteAuthorizedTags(
+      ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
+    );
     return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 
@@ -588,11 +591,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: ClearChargingProfileRequest
   ): ClearChargingProfileResponse {
     if (
-      !OCPP16ServiceUtils.checkFeatureProfile(
+      OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
         OCPP16SupportedFeatureProfiles.SmartCharging,
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE
-      )
+      ) === false
     ) {
       return Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }

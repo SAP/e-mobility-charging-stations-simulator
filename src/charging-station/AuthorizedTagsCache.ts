@@ -64,6 +64,10 @@ export default class AuthorizedTagsCache {
     return this.getTags(file);
   }
 
+  public deleteAuthorizedTags(file: string): boolean {
+    return this.deleteTags(file);
+  }
+
   private hasTags(file: string): boolean {
     return this.tagsCaches.has(file);
   }
