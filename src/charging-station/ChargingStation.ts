@@ -1199,10 +1199,17 @@ export default class ChargingStation {
     }
     // Initialize transaction attributes on connectors
     for (const connectorId of this.connectors.keys()) {
+      if (connectorId > 0 && this.getConnectorStatus(connectorId).transactionStarted === true) {
+        logger.warn(
+          `${this.logPrefix()} Connector ${connectorId} at initialization has a transaction started: ${
+            this.getConnectorStatus(connectorId).transactionId
+          }`
+        );
+      }
       if (
         connectorId > 0 &&
         (this.getConnectorStatus(connectorId).transactionStarted === undefined ||
-          this.getConnectorStatus(connectorId).transactionStarted === false)
+          this.getConnectorStatus(connectorId).transactionStarted === null)
       ) {
         this.initializeConnectorStatus(connectorId);
       }
