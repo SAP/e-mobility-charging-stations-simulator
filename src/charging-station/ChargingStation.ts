@@ -707,9 +707,9 @@ export default class ChargingStation {
   ): Promise<StopTransactionResponse> {
     const transactionId = this.getConnectorStatus(connectorId).transactionId;
     if (
-      this.getBeginEndMeterValues() &&
-      this.getOcppStrictCompliance() &&
-      !this.getOutOfOrderEndMeterValues()
+      this.getBeginEndMeterValues() === true &&
+      this.getOcppStrictCompliance() === true &&
+      this.getOutOfOrderEndMeterValues() === false
     ) {
       // FIXME: Implement OCPP version agnostic helpers
       const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
