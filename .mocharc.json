@@ -10,6 +10,7 @@
   "timeout": 2000,
   "ui": "bdd",
   "full-trace": true,
+  "enable-source-maps": true,
   "exit": true,
   "require": ["ts-node/register", "mochawesome/register"]
 }
