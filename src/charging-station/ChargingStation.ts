@@ -1843,9 +1843,7 @@ export default class ChargingStation {
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
       this.webSocketPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened() === true) {
-          this.wsConnection.ping((): void => {
-            /* This is intentional */
-          });
+          this.wsConnection.ping();
         }
       }, webSocketPingInterval * 1000);
       logger.info(

@@ -575,6 +575,11 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted ===
           false)
     ) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s) on connector ${
+          commandPayload.connectorId
+        } without a started transaction`
+      );
       return Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
     OCPP16ServiceUtils.setChargingProfile(
