@@ -216,7 +216,10 @@ export default class ChargingStation {
   }
 
   public isRegistered(): boolean {
-    return !this.isInUnknownState() && (this.isInAcceptedState() || this.isInPendingState());
+    return (
+      this.isInUnknownState() === false &&
+      (this.isInAcceptedState() === true || this.isInPendingState() === true)
+    );
   }
 
   public isChargingStationAvailable(): boolean {
@@ -1326,7 +1329,7 @@ export default class ChargingStation {
       logger.info(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`
       );
-      if (!this.isRegistered()) {
+      if (this.isRegistered() === false) {
         // Send BootNotification
         let registrationRetryCount = 0;
         do {
@@ -1336,7 +1339,7 @@ export default class ChargingStation {
           >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
             skipBufferingOnError: true,
           });
-          if (!this.isRegistered()) {
+          if (this.isRegistered() === false) {
             this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
             await Utils.sleep(
               this.bootNotificationResponse?.interval
@@ -1345,12 +1348,12 @@ export default class ChargingStation {
             );
           }
         } while (
-          !this.isRegistered() &&
+          this.isRegistered() === false &&
           (registrationRetryCount <= this.getRegistrationMaxRetries() ||
             this.getRegistrationMaxRetries() === -1)
         );
       }
-      if (this.isRegistered()) {
+      if (this.isRegistered() === true) {
         if (this.isInAcceptedState()) {
           await this.startMessageSequence();
         }

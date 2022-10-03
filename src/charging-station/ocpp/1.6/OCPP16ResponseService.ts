@@ -174,10 +174,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     payload: JsonType,
     requestPayload: JsonType
   ): Promise<void> {
-    if (chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
+    if (
+      chargingStation.isRegistered() === true ||
+      commandName === OCPP16RequestCommand.BOOT_NOTIFICATION
+    ) {
       if (
-        this.responseHandlers.has(commandName) &&
-        OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)
+        this.responseHandlers.has(commandName) === true &&
+        OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName) === true
       ) {
         try {
           this.validatePayload(chargingStation, commandName, payload);

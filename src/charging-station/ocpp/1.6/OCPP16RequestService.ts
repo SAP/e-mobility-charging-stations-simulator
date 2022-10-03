@@ -149,7 +149,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<ResponseType> {
-    if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
+    if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName) === true) {
       const requestPayload = this.buildRequestPayload<RequestType>(
         chargingStation,
         commandName,

@@ -298,12 +298,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       );
     }
     if (
-      chargingStation.isRegistered() ||
-      (!chargingStation.getOcppStrictCompliance() && chargingStation.isInUnknownState())
+      chargingStation.isRegistered() === true ||
+      (chargingStation.getOcppStrictCompliance() === false &&
+        chargingStation.isInUnknownState() === true)
     ) {
       if (
-        this.incomingRequestHandlers.has(commandName) &&
-        OCPP16ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName)
+        this.incomingRequestHandlers.has(commandName) === true &&
+        OCPP16ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName) === true
       ) {
         try {
           this.validatePayload(chargingStation, commandName, commandPayload);
