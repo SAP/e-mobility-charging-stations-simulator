@@ -1,3 +1,5 @@
+import { AsyncResource } from 'async_hooks';
+
 import type { JSONSchemaType } from 'ajv';
 import Ajv from 'ajv-draft-04';
 import ajvFormats from 'ajv-formats';
@@ -14,9 +16,11 @@ const moduleName = 'OCPPIncomingRequestService';
 
 export default abstract class OCPPIncomingRequestService {
   private static instance: OCPPIncomingRequestService | null = null;
+  protected asyncResource: AsyncResource;
   private ajv: Ajv;
 
   protected constructor() {
+    this.asyncResource = new AsyncResource(moduleName);
     this.ajv = new Ajv();
     ajvFormats(this.ajv);
     this.incomingRequestHandler.bind(this);

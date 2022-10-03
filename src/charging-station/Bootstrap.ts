@@ -229,9 +229,9 @@ export class Bootstrap {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     ++this.numberOfStartedChargingStations;
     logger.info(
-      `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station '${
+      `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station ${
         data.stationInfo.chargingStationId
-      } (hashId: ${data.stationInfo.hashId})' started (${
+      } (hashId: ${data.stationInfo.hashId}) started (${
         this.numberOfStartedChargingStations
       } started from ${this.numberOfChargingStations})`
     );
@@ -241,9 +241,9 @@ export class Bootstrap {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data);
     --this.numberOfStartedChargingStations;
     logger.info(
-      `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station '${
+      `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station ${
         data.stationInfo.chargingStationId
-      } (hashId: ${data.stationInfo.hashId})' stopped (${
+      } (hashId: ${data.stationInfo.hashId}) stopped (${
         this.numberOfStartedChargingStations
       } started from ${this.numberOfChargingStations})`
     );

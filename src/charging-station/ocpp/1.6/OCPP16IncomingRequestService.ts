@@ -378,10 +378,14 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): DefaultResponse {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    setImmediate(async (): Promise<void> => {
-      await chargingStation.reset((commandPayload.type + 'Reset') as OCPP16StopTransactionReason);
-    });
+    this.asyncResource.runInAsyncScope(
+      chargingStation.reset.bind(chargingStation) as (
+        this: ChargingStation,
+        ...args: any[]
+      ) => void,
+      chargingStation,
+      (commandPayload.type + 'Reset') as OCPP16StopTransactionReason
+    );
     logger.info(
       `${chargingStation.logPrefix()} ${
         commandPayload.type

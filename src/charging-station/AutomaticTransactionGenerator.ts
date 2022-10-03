@@ -93,7 +93,10 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
       this.runInAsyncScope(
-        this.internalStartConnector.bind(this) as (this: this, ...args: any[]) => unknown,
+        this.internalStartConnector.bind(this) as (
+          this: AutomaticTransactionGenerator,
+          ...args: any[]
+        ) => void,
         this,
         connectorId
       );

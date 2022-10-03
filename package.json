@@ -9,7 +9,7 @@
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
   },
-  "description": "Electric Vehicle charging stations simulator",
+  "description": "Electric vehicle charging stations simulator",
   "author": "SAP E-Mobility <e-mobility@sap.com>",
   "contributors": [
     {
