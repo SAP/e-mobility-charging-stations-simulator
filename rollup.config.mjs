@@ -38,6 +38,7 @@ export default {
     'ajv',
     'ajv-draft-04',
     'ajv-formats',
+    'async_hooks',
     'basic-ftp',
     'chalk',
     'crypto',
