@@ -1,5 +1,6 @@
 {
   "git": {
+    "changelog": "npx auto-changelog --stdout --commit-limit false --unreleased --template https://raw.githubusercontent.com/release-it/release-it/master/templates/changelog-compact.hbs",
     "commitMessage": "Version ${version}",
     "tagAnnotation": "Version ${version}",
     "pushRepo": "origin"
@@ -12,13 +13,6 @@
     "releaseName": "Version ${version}"
   },
   "hooks": {
-    "after:bump": "npm run sonar:properties"
-  },
-  "plugins": {
-    "@release-it/keep-a-changelog": {
-      "filename": "CHANGELOG.md",
-      "strictLatest": false,
-      "addVersionUrl": true
-    }
+    "after:bump": "npx auto-changelog --commit-limit false --package --template https://raw.githubusercontent.com/release-it/release-it/master/templates/keepachangelog.hbs && npm run sonar:properties"
   }
 }
