@@ -16,6 +16,7 @@
 .tscache
 .nycrc.json
 .nyc_output
+.reuse
 .mocharc.json
 .release-it.json
 .xmake.cfg
@@ -31,6 +32,14 @@
 *~
 *.bak
 *.orig
+*.BACKUP.*
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+*_BACKUP_*.txt
+*_BASE_*.txt
+*_LOCAL_*.txt
+*_REMOTE_*.txt
 *.md
 *.db
 *tags-template.*
