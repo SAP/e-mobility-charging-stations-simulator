@@ -1,6 +1,10 @@
 # Changelog
 
-## [v1.1.76](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.75...v1.1.76)
+## [v1.1.77](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.76...v1.1.77)
+
+- Add CHANGELOG.md [`cc83559`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/cc83559c04f5dde09d39c15b0d373c9a9b340ff7)
+
+## [v1.1.76](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.75...v1.1.76) (2022-10-05)
 
 - Combined PR [`#212`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/212)
 - Combined PR [`#209`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/209)
@@ -14,6 +18,7 @@
 - Refine .cfignore [`2df4462`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2df4462f0c30b1aa1842a38e2663ba9a311b316b)
 - Initialize connectors status only if not defined [`f5b5107`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f5b510718648489542bbbd21c3581c45db8b669b)
 - Log error at faulty profile sent [`db0af08`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/db0af0865c97a453e2fd51a2820427d5435c82d3)
+- Version 1.1.76 [`8b5ff27`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8b5ff2731c5c0bda5ce54bd76d3e133eac1cb5da)
 - UI Server: rename defaults constants [`adbddcb`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/adbddcb44d65e7268f661deacc4291d6cf6f6663)
 - Fix cloud foundry deployment [`c91bd15`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c91bd15884a3cdab2ebba9a296d70441742e8f5c)
 - Cleanup .release-it.json [`93fedce`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/93fedce9739eb3b41f3471b0903b5a4634103e52)
