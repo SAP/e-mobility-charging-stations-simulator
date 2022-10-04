@@ -117,8 +117,8 @@ export default class Constants {
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator';
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records';
 
-  static readonly DEFAULT_UI_WEBSOCKET_SERVER_HOST = 'localhost';
-  static readonly DEFAULT_UI_WEBSOCKET_SERVER_PORT = 8080;
+  static readonly DEFAULT_UI_SERVER_HOST = 'localhost';
+  static readonly DEFAULT_UI_SERVER_PORT = 8080;
 
   static readonly UNKNOWN_COMMAND = 'unknown command';
 

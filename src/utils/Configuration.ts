@@ -62,8 +62,8 @@ export default class Configuration {
       enabled: false,
       type: ApplicationProtocol.WS,
       options: {
-        host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
-        port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
+        host: Constants.DEFAULT_UI_SERVER_HOST,
+        port: Constants.DEFAULT_UI_SERVER_PORT,
       },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
