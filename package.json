@@ -90,7 +90,7 @@
     "basic-ftp": "^5.0.2",
     "chalk": "^4.1.2",
     "http-status-codes": "^2.2.0",
-    "mnemonist": "^0.39.2",
+    "mnemonist": "^0.39.3",
     "moment": "^2.29.4",
     "mongodb": "^4.10.0",
     "poolifier": "^2.2.0",
