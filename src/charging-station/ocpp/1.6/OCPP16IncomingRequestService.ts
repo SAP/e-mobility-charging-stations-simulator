@@ -379,14 +379,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): DefaultResponse {
-    this.asyncResource.runInAsyncScope(
-      chargingStation.reset.bind(chargingStation) as (
-        this: ChargingStation,
-        ...args: any[]
-      ) => void,
-      chargingStation,
-      (commandPayload.type + 'Reset') as OCPP16StopTransactionReason
-    );
+    this.asyncResource
+      .runInAsyncScope(
+        chargingStation.reset.bind(chargingStation) as (
+          this: ChargingStation,
+          ...args: any[]
+        ) => Promise<void>,
+        chargingStation,
+        (commandPayload.type + 'Reset') as OCPP16StopTransactionReason
+      )
+      .catch(() => {
+        /* This is intentional */
+      });
     logger.info(
       `${chargingStation.logPrefix()} ${
         commandPayload.type
