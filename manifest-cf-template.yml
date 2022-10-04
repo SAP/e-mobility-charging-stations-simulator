@@ -5,7 +5,9 @@ applications:
     instances: 1
     buildpacks:
       - https://github.com/cloudfoundry/nodejs-buildpack
-    no-route: true
+    # no-route: true
+    routes:
+      - route: e-mobility-charging-stations-simulator.cfapps.sap.hana.ondemand.com
     health-check-type: process
     health-check-invocation-timeout: 10
     command: node -r source-map-support/register dist/start.cjs
