@@ -24,6 +24,7 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../types/ocpp/Transaction';
+import { ResponseStatus } from '../types/UIProtocol';
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequest,
@@ -31,7 +32,6 @@ import {
   type BroadcastChannelResponsePayload,
   type MessageEvent,
 } from '../types/WorkerBroadcastChannel';
-import { ResponseStatus } from '../ui/web/src/types/UIProtocol';
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
