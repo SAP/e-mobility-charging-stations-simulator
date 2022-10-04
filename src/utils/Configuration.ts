@@ -59,11 +59,11 @@ export default class Configuration {
       );
     }
     let uiServerConfiguration: UIServerConfiguration = {
-      enabled: true,
+      enabled: false,
       type: ApplicationProtocol.WS,
       options: {
-        host: Constants.DEFAULT_UI_WEBSOCKET_SERVER_HOST,
-        port: Constants.DEFAULT_UI_WEBSOCKET_SERVER_PORT,
+        host: Constants.DEFAULT_UI_SERVER_HOST,
+        port: Constants.DEFAULT_UI_SERVER_PORT,
       },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
@@ -71,6 +71,10 @@ export default class Configuration {
         uiServerConfiguration,
         Configuration.getConfig().uiServer
       );
+    }
+    if (Configuration.isCFEnvironment() === true) {
+      delete uiServerConfiguration.options.host;
+      uiServerConfiguration.options.port = parseInt(process.env.PORT);
     }
     return uiServerConfiguration;
   }
@@ -373,6 +377,10 @@ export default class Configuration {
     }
   }
 
+  private static isCFEnvironment(): boolean {
+    return process.env.VCAP_APPLICATION !== undefined;
+  }
+
   private static getDefaultPerformanceStorageUri(storageType: StorageType) {
     const SQLiteFileName = `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
     switch (storageType) {
@@ -393,6 +401,14 @@ export default class Configuration {
 
   private static isObject(item): boolean {
     return item && typeof item === 'object' && Array.isArray(item) === false;
+  }
+
+  private static objectHasOwnProperty(object: unknown, property: string): boolean {
+    return Object.prototype.hasOwnProperty.call(object, property) as boolean;
+  }
+
+  private static isUndefined(obj: unknown): boolean {
+    return typeof obj === 'undefined';
   }
 
   private static deepMerge(target: object, ...sources: object[]): object {
@@ -416,14 +432,6 @@ export default class Configuration {
       }
     }
     return Configuration.deepMerge(target, ...sources);
-  }
-
-  private static objectHasOwnProperty(object: unknown, property: string): boolean {
-    return Object.prototype.hasOwnProperty.call(object, property) as boolean;
-  }
-
-  private static isUndefined(obj: unknown): boolean {
-    return typeof obj === 'undefined';
   }
 
   private static handleFileException(

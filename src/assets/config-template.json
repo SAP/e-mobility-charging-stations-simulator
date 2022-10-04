@@ -11,6 +11,16 @@
     "enabled": true,
     "type": "jsonfile"
   },
+  "uiServer": {
+    "enabled": false,
+    "type": "ws",
+    "authentication": {
+      "enabled": true,
+      "type": "basic-auth",
+      "username": "admin",
+      "password": "admin"
+    }
+  },
   "stationTemplateUrls": [
     {
       "file": "siemens.station-template.json",
