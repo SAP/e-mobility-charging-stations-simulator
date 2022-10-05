@@ -3,7 +3,8 @@ const path = require('path'),
   http = require('http'),
   serveStatic = require('serve-static');
 
-const PORT = process.env.PORT || 3030,
+const isCFEnvironment = process.env.VCAP_APPLICATION !== undefined,
+  PORT = isCFEnvironment ? parseInt(process.env.PORT) : 3030,
   uiPath = path.join(__dirname, './dist');
 
 const serve = serveStatic(uiPath);
