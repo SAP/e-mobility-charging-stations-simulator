@@ -27,6 +27,7 @@
     }
   },
   "rules": {
+    "semi": ["error", "always"],
     "space-before-blocks": ["error", "always"],
     "curly": ["error", "all"],
     "brace-style": "error",
@@ -85,6 +86,7 @@
     "no-lonely-if": "error",
     "no-trailing-spaces": "error",
     "no-whitespace-before-property": "error",
+    "no-shadow": "error",
     "space-in-parens": ["error", "never"],
     "space-infix-ops": "error",
     "space-unary-ops": "error",
@@ -169,7 +171,7 @@
         "@typescript-eslint/no-floating-promises": "error",
         "@typescript-eslint/promise-function-async": "error",
         "@typescript-eslint/no-misused-promises": "error",
-        "no-shadow": "off", // This one is generating false positive no-shadow errors on exported/const enums
+        "no-shadow": "off",
         "@typescript-eslint/no-shadow": "error"
       }
     },
