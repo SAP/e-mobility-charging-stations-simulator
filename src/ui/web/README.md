@@ -2,7 +2,7 @@
 
 ## Project setup
 
-```
+```shell
 npm install
 ```
 
@@ -12,24 +12,24 @@ For both solution you can then follow the link displayed in the terminal at the 
 
 #### Compiles and run for production
 
-```
+```shell
 npm start
 ```
 
 #### Compiles and run for development
 
-```
+```shell
 npm run serve
 ```
 
 ### Compiles and minifies for production
 
-```
+```shell
 npm run build
 ```
 
 ### Lints files
 
-```
+```shell
 npm run lint
 ```
