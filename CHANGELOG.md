@@ -1,6 +1,8 @@
 # Changelog
 
-## [v1.1.78](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.78...v1.1.78)
+## [v1.1.79](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.78...v1.1.79)
+
+- Fix CHANGELOG.md generation [`c019748`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c019748baa6f395f75cb073c316c1d0efee2e354)
 
 ## [v1.1.78](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.77...v1.1.78) (2022-10-05)
 
