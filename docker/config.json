@@ -7,6 +7,9 @@
     "poolMinSize": 4,
     "poolMaxSize": 16
   },
+  "uiServer": {
+    "enabled": true
+  },
   "stationTemplateUrls": [
     {
       "file": "siemens.station-template.json",
