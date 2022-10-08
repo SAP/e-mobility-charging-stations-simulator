@@ -88,7 +88,7 @@
     "ajv-draft-04": "^1.0.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.2",
-    "chalk": "^4.1.2",
+    "chalk": "^5.1.0",
     "http-status-codes": "^2.2.0",
     "mnemonist": "^0.39.3",
     "moment": "^2.29.4",
