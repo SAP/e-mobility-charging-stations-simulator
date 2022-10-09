@@ -2,9 +2,6 @@
   "name": "webui",
   "version": "0.1.1",
   "readme": "README.md",
-  "gitHooks": {
-    "pre-commit": "lint-staged"
-  },
   "scripts": {
     "start": "npm run build && node start.js",
     "serve": "vue-cli-service serve",
