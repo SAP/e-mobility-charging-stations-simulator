@@ -25,7 +25,7 @@
     "@types/node": "^18.8.3",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.39.0",
-    "@typescript-eslint/parser": "^5.39.0",
+    "@typescript-eslint/parser": "^5.40.0",
     "@vue/cli": "~5.0.8",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-eslint": "~5.0.8",
