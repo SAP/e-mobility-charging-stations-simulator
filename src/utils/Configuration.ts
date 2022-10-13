@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import chalk from 'chalk';
+import { WorkerChoiceStrategies } from 'poolifier';
 
 import {
   type ConfigurationData,
@@ -217,7 +218,8 @@ export default class Configuration {
       )
         ? Configuration.getConfig().workerPoolMaxSize
         : WorkerConstants.DEFAULT_POOL_MAX_SIZE,
-      poolStrategy: Configuration.getConfig().workerPoolStrategy,
+      poolStrategy:
+        Configuration.getConfig().workerPoolStrategy ?? WorkerChoiceStrategies.FAIR_SHARE,
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'worker')) {
       workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig().worker };
