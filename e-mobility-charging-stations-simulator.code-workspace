@@ -6,5 +6,16 @@
     {
       "path": "src/ui/web"
     }
-  ]
+  ],
+  "extensions": {
+    "recommendations": [
+      "sonarsource.sonarlint-vscode"
+    ]
+  },
+  "settings": {
+    "sonarlint.connectedMode.project": {
+      "connectionId": "sonar-tools-sap",
+      "projectKey": "e-mobility-cpo"
+    }
+  }
 }
