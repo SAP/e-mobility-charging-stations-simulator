@@ -13,7 +13,7 @@ const moduleName = 'OCPPResponseService';
 
 export default abstract class OCPPResponseService {
   private static instance: OCPPResponseService | null = null;
-  private ajv: Ajv;
+  private readonly ajv: Ajv;
 
   protected constructor() {
     this.ajv = new Ajv();

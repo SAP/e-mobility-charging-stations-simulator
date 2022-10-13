@@ -14,8 +14,8 @@
   },
   "settings": {
     "sonarlint.connectedMode.project": {
-      "connectionId": "sonar-tools-sap",
-      "projectKey": "e-mobility-cpo"
+      "connectionId": "sap-1",
+      "projectKey": "SAP_e-mobility-charging-stations-simulator"
     }
   }
 }

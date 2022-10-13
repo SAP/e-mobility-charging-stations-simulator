@@ -17,7 +17,7 @@ const moduleName = 'OCPPIncomingRequestService';
 export default abstract class OCPPIncomingRequestService {
   private static instance: OCPPIncomingRequestService | null = null;
   protected asyncResource: AsyncResource;
-  private ajv: Ajv;
+  private readonly ajv: Ajv;
 
   protected constructor() {
     this.asyncResource = new AsyncResource(moduleName);

@@ -28,7 +28,7 @@ const moduleName = 'OCPPRequestService';
 
 export default abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
-  private ajv: Ajv;
+  private readonly ajv: Ajv;
 
   private readonly ocppResponseService: OCPPResponseService;
 
