@@ -103,7 +103,7 @@ export default class Utils {
     return result;
   }
 
-  public static getRandomFloat(max: number, min = 0, negative = false): number {
+  public static getRandomFloat(max = Number.MAX_VALUE, min = 0, negative = false): number {
     if (max < min || min < 0 || max < 0) {
       throw new RangeError('Invalid interval');
     }
@@ -112,7 +112,7 @@ export default class Utils {
     return sign * (randomPositiveFloat * (max - min) + min);
   }
 
-  public static getRandomInteger(max: number, min = 0): number {
+  public static getRandomInteger(max = Number.MAX_SAFE_INTEGER, min = 0): number {
     if (max < 0) {
       throw new RangeError('Invalid interval');
     }
@@ -137,7 +137,7 @@ export default class Utils {
     return Math.trunc(numberValue * truncPower) / truncPower;
   }
 
-  public static getRandomFloatRounded(max: number, min = 0, scale = 2): number {
+  public static getRandomFloatRounded(max = Number.MAX_VALUE, min = 0, scale = 2): number {
     if (min) {
       return Utils.roundTo(Utils.getRandomFloat(max, min), scale);
     }
