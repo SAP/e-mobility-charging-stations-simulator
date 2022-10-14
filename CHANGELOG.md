@@ -1,8 +1,33 @@
 # Changelog
 
-## [v1.1.81](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.80...v1.1.81)
+## [v1.1.82](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.81...v1.1.82)
+
+- Bump @types/node from 18.8.4 to 18.8.5 in /src/ui/web [`#224`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/224)
+- Bump @types/node from 18.8.2 to 18.8.3 in /src/ui/web [`#215`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/215)
+- Bump @types/node from 18.8.2 to 18.8.3 [`#214`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/214)
+- Apply dependencies update [`523d01e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/523d01e8a7de6aa88e26b703a98ca4614b1858df)
+- Apply dependencies update [`c1957a1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c1957a1dcf298a238ca95ceb90c3d4a986e7e920)
+- Apply dependencies update [`6d93455`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6d93455a43e8628c857b1d393d92e937b357af01)
+- Apply dependencies update [`75b4765`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/75b4765719cddf8bcb1b15c25ffc27359d908126)
+- Update to poolifier 2.3.1 [`156cab2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/156cab2c873524cf2d45013d98679b32910b40b0)
+- Refine lint-staged configuration [`ef0f7ca`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ef0f7ca4cefddfb54e5e33ea8f4c53fbbb9d844e)
+- Apply dependencies update [`51581a2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/51581a20372bcec3032755365137bd80b4b6c7fa)
+- Move lint-staged configuration from package.json to .lintstagedrc.json [`b325f29`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b325f29851008a092a18f5543a45713360255bb6)
+- Add sonarlint configuration in the vscode workspace file [`d7b8ea8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d7b8ea8982feff943a0deceb888cdfc10fc48587)
+- Strict boolean checks [`5f7e72c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/5f7e72c1538ebf67dc5de3c29840f7b4da6704f8)
+- Fix workspace sonarlint configuration [`012ae1a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/012ae1a9ba663125ec972fa560bb9ee3691aa57a)
+- Default maximum random number generation to safe values [`b5e5892`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b5e5892dcdc7cc3c68431fb15384dfea0979dec6)
+- Run npm run format on the simulator code base [`6907fb0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6907fb00a6b8ddb0ece13f25703e2b27c32af9dd)
+- Refine lint-staged related configurations [`18ce7cd`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/18ce7cd05bb691ebfe7b51a90a4822ca56f96eb9)
+- Refine .cfignore [`a06b7d1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a06b7d131965a7ed100e0c496b699bc285b448a0)
+- Refine eslint configuration [`d7ed7be`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d7ed7beeb3d9e27c04a3006ec0ead9b92e26e33d)
+- Refine .lintstagedrc.json configuration [`b7a11e0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b7a11e0f48e66b7514414f35471a9d64d8196b78)
+- Refine eslint configuration [`8cf5a57`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8cf5a57e68c077898a67c9163d3a6f967de4fd3e)
+
+## [v1.1.81](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.80...v1.1.81) (2022-10-05)
 
 - Readd a properly generated CHANGELOG.md file [`eea5c86`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/eea5c860e9768e1c6918d53838c13491ca44340f)
+- Version 1.1.81 [`e0fc741`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e0fc741ae877a7653e2505f92c583eeaf1e8cd48)
 
 ## [v1.1.80](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.79...v1.1.80) (2022-10-05)
 
