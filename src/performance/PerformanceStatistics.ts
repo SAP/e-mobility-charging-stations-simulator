@@ -172,7 +172,7 @@ export default class PerformanceStatistics {
   }
 
   private median(dataSet: number[]): number {
-    if (Array.isArray(dataSet) && dataSet.length === 1) {
+    if (Array.isArray(dataSet) === true && dataSet.length === 1) {
       return dataSet[0];
     }
     const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
@@ -251,7 +251,7 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData.get(entryName).avgTimeMeasurement =
       this.statistics.statisticsData.get(entryName).totalTimeMeasurement /
       this.statistics.statisticsData.get(entryName).countTimeMeasurement;
-    Array.isArray(this.statistics.statisticsData.get(entryName).timeMeasurementSeries)
+    Array.isArray(this.statistics.statisticsData.get(entryName).timeMeasurementSeries) === true
       ? this.statistics.statisticsData
           .get(entryName)
           .timeMeasurementSeries.push({ timestamp: entry.startTime, value: entry.duration })

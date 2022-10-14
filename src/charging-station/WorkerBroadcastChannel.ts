@@ -27,11 +27,11 @@ export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
   }
 
   protected isRequest(message: JsonType[]): boolean {
-    return Array.isArray(message) && message.length === 3;
+    return Array.isArray(message) === true && message.length === 3;
   }
 
   protected isResponse(message: JsonType[]): boolean {
-    return Array.isArray(message) && message.length === 2;
+    return Array.isArray(message) === true && message.length === 2;
   }
 
   protected validateMessageEvent(messageEvent: MessageEvent): MessageEvent | false {

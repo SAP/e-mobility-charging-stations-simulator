@@ -189,7 +189,7 @@ export default class Utils {
     if (!object) {
       return true;
     }
-    if (Array.isArray(object) && object.length > 0) {
+    if (Array.isArray(object) === true && (object as unknown[]).length > 0) {
       return false;
     }
     return true;
