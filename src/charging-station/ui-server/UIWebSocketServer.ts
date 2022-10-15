@@ -2,7 +2,6 @@ import type { IncomingMessage } from 'http';
 import type internal from 'stream';
 
 import { StatusCodes } from 'http-status-codes';
-import * as uuid from 'uuid';
 import WebSocket, { type RawData, WebSocketServer } from 'ws';
 
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
@@ -175,7 +174,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
       return false;
     }
 
-    if (uuid.validate(request[0]) === false) {
+    if (Utils.validateUUID(request[0]) === false) {
       logger.error(
         `${this.logPrefix(
           moduleName,

@@ -3,7 +3,6 @@ import type { ProtocolResponse, ResponsePayload } from '@/types/UIProtocol';
 
 import Utils from './Utils';
 import config from '@/assets/config';
-import { v4 as uuidv4 } from 'uuid';
 
 type ResponseHandler = {
   procedureName: ProcedureName;
@@ -145,7 +144,7 @@ export default class UIClient {
     let uuid: string;
     return Utils.promiseWithTimeout(
       new Promise((resolve, reject) => {
-        uuid = uuidv4();
+        uuid = crypto.randomUUID();
         const msg = JSON.stringify([uuid, command, data]);
 
         if (this._ws.readyState !== WebSocket.OPEN) {

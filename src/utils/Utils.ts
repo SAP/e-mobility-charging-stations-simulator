@@ -1,7 +1,5 @@
 import crypto from 'crypto';
 
-import { v4 as uuid } from 'uuid';
-
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 
 export default class Utils {
@@ -14,7 +12,11 @@ export default class Utils {
   }
 
   public static generateUUID(): string {
-    return uuid();
+    return crypto.randomUUID();
+  }
+
+  public static validateUUID(uuid: string): boolean {
+    return /\/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$\/i/.test(uuid);
   }
 
   public static async sleep(milliSeconds: number): Promise<NodeJS.Timeout> {

@@ -1,7 +1,5 @@
 import { BroadcastChannel } from 'worker_threads';
 
-import * as uuid from 'uuid';
-
 import type { JsonType } from '../types/JsonType';
 import type {
   BroadcastChannelRequest,
@@ -42,7 +40,7 @@ export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
       );
       return false;
     }
-    if (uuid.validate(messageEvent.data[0]) === false) {
+    if (Utils.validateUUID(messageEvent.data[0]) === false) {
       logger.error(
         this.logPrefix(moduleName, 'validateMessageEvent') +
           ' Worker broadcast channel protocol message event data UUID field is invalid'
