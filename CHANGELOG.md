@@ -1,6 +1,14 @@
 # Changelog
 
-## [v1.1.82](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.81...v1.1.82)
+## [v1.1.83](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.82...v1.1.83)
+
+- Apply dependencies update [`f50109d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f50109db1905dde83e5a2c8da7157fd9d18993d1)
+- Update poolifier to 2.3.3 [`65b31f8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/65b31f8db46b0066a5cc06ead28520d71e66fef5)
+- Revert docker build to one OS only [`4bfd22d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4bfd22def612cf8ad6e4a31c5d5df3ffcca45e70)
+- Run docker image build in CI [`f672adb`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f672adbfee38df6d56de237a23d6f2862f4441f7)
+- Remove macosx from docker image build tests [`4e91f9a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4e91f9a6ebb585fda83b5ddf67300b719b34ce37)
+
+## [v1.1.82](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.81...v1.1.82) (2022-10-14)
 
 - Bump @types/node from 18.8.4 to 18.8.5 in /src/ui/web [`#224`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/224)
 - Bump @types/node from 18.8.2 to 18.8.3 in /src/ui/web [`#215`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/215)
@@ -10,6 +18,7 @@
 - Apply dependencies update [`6d93455`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6d93455a43e8628c857b1d393d92e937b357af01)
 - Apply dependencies update [`75b4765`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/75b4765719cddf8bcb1b15c25ffc27359d908126)
 - Update to poolifier 2.3.1 [`156cab2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/156cab2c873524cf2d45013d98679b32910b40b0)
+- Version 1.1.82 [`ebe3b52`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ebe3b529e03f68f0bf0aa1da298dfc3f38a13b45)
 - Refine lint-staged configuration [`ef0f7ca`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ef0f7ca4cefddfb54e5e33ea8f4c53fbbb9d844e)
 - Apply dependencies update [`51581a2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/51581a20372bcec3032755365137bd80b4b6c7fa)
 - Move lint-staged configuration from package.json to .lintstagedrc.json [`b325f29`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b325f29851008a092a18f5543a45713360255bb6)
