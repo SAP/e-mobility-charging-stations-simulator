@@ -26,10 +26,10 @@ jobs:
         run: npm run lint
         continue-on-error: true
       - name: npm run build
-        if: "matrix.os != 'windows-latest' || matrix.node != '16.x'"
+        if: "matrix.os != 'windows-latest' || matrix.node != '16.x' || matrix.node != '18.x"
         run: npm run build
       - name: npm test
-        if: "matrix.os != 'windows-latest' || matrix.node != '16.x'"
+        if: "matrix.os != 'windows-latest' || matrix.node != '16.x' || matrix.node != '18.x"
         run: npm test
       - name: npm run coverage
         if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
