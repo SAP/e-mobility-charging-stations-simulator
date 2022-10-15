@@ -27,7 +27,7 @@ jobs:
         continue-on-error: true
       - name: npm run build
         if: "matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'"
-        run: npm run build
+        run: npm run build --if-present
       - name: npm test
         if: "matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'"
         run: npm test
@@ -63,7 +63,7 @@ jobs:
         run: npm run lint
         continue-on-error: true
       - name: npm run build
-        run: npm run build
+        run: npm run build --if-present
       - name: npm test
         run: npm test
       # - name: npm run coverage
