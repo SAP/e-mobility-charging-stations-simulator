@@ -6,7 +6,7 @@ RUN apk add --no-cache --virtual .gyp \
 
 # Build simulator
 WORKDIR /usr/builder
-COPY package.json package-lock.json tsconfig.json rollup.config.mjs prepare.js build-requirements.js ./
+COPY .npmrc package.json package-lock.json tsconfig.json rollup.config.mjs prepare.js build-requirements.js ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 COPY docker/authorization-tags.json ./src/assets/authorization-tags.json
