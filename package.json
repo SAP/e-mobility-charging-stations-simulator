@@ -64,7 +64,6 @@
     "coverage": "nyc report --reporter=lcov",
     "coverage:html": "nyc report --reporter=html",
     "clinic:clean": "clinic clean",
-    "npm-check": "npx npm-check",
     "robohydra": "robohydra test/robohydra/config.json",
     "git:sinit": "git submodule update --init --recursive --force",
     "git:sdiff": "git diff && git submodule foreach 'git diff'",
