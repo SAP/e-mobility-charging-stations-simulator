@@ -219,7 +219,7 @@ export default class Configuration {
         ? Configuration.getConfig().workerPoolMaxSize
         : WorkerConstants.DEFAULT_POOL_MAX_SIZE,
       poolStrategy:
-        Configuration.getConfig().workerPoolStrategy ?? WorkerChoiceStrategies.FAIR_SHARE,
+        Configuration.getConfig().workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'worker')) {
       workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig().worker };
