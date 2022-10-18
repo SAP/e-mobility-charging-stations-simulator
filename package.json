@@ -121,7 +121,7 @@
     "eslint-plugin-jsdoc": "^39.3.6",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "expect": "^29.2.0",
+    "expect": "^29.2.1",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3",
     "mocha": "^10.1.0",
