@@ -1315,7 +1315,7 @@ export default class ChargingStation {
 
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | null {
     let configuration: ChargingStationConfiguration = null;
-    if (this.getOcppPersistentConfiguration()) {
+    if (this.getOcppPersistentConfiguration() === true) {
       const configurationFromFile = this.getConfigurationFromFile();
       configuration = configurationFromFile?.configurationKey && configurationFromFile;
     }
@@ -1361,7 +1361,7 @@ export default class ChargingStation {
         );
       }
       if (this.isRegistered() === true) {
-        if (this.isInAcceptedState()) {
+        if (this.isInAcceptedState() === true) {
           await this.startMessageSequence();
         }
       } else {

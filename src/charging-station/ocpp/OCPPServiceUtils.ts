@@ -88,10 +88,10 @@ export class OCPPServiceUtils {
     }
     if (
       measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      !ChargingStationConfigurationUtils.getConfigurationKey(
+      ChargingStationConfigurationUtils.getConfigurationKey(
         chargingStation,
         StandardParametersKey.MeterValuesSampledData
-      )?.value.includes(measurand)
+      )?.value.includes(measurand) === false
     ) {
       logger.debug(
         `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
@@ -104,7 +104,7 @@ export class OCPPServiceUtils {
       chargingStation.getConnectorStatus(connectorId).MeterValues;
     for (
       let index = 0;
-      !Utils.isEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length;
+      Utils.isEmptyArray(sampledValueTemplates) === false && index < sampledValueTemplates.length;
       index++
     ) {
       if (
