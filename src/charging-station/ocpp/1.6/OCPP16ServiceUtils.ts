@@ -641,9 +641,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       // Persist previous value on connector
       if (
         connector &&
-        !Utils.isNullOrUndefined(connector.energyActiveImportRegisterValue) &&
+        Utils.isNullOrUndefined(connector.energyActiveImportRegisterValue) === false &&
         connector.energyActiveImportRegisterValue >= 0 &&
-        !Utils.isNullOrUndefined(connector.transactionEnergyActiveImportRegisterValue) &&
+        Utils.isNullOrUndefined(connector.transactionEnergyActiveImportRegisterValue) === false &&
         connector.transactionEnergyActiveImportRegisterValue >= 0
       ) {
         connector.energyActiveImportRegisterValue += energyValueRounded;

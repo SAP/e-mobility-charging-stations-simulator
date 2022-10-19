@@ -338,8 +338,8 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
     if (
       chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted === true &&
-      chargingStation.getAuthorizeRemoteTxRequests() &&
-      chargingStation.getLocalAuthListEnabled() &&
+      chargingStation.getAuthorizeRemoteTxRequests() === true &&
+      chargingStation.getLocalAuthListEnabled() === true &&
       chargingStation.hasAuthorizedTags() &&
       chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized === false
     ) {
@@ -355,8 +355,8 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     }
     if (
       chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted === true &&
-      chargingStation.getAuthorizeRemoteTxRequests() &&
-      chargingStation.getMustAuthorizeAtRemoteStart() &&
+      chargingStation.getAuthorizeRemoteTxRequests() === true &&
+      chargingStation.getMustAuthorizeAtRemoteStart() === true &&
       chargingStation.getConnectorStatus(connectorId).idTagLocalAuthorized === false &&
       chargingStation.getConnectorStatus(connectorId).idTagAuthorized === false
     ) {
@@ -542,9 +542,9 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       return;
     }
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      chargingStation.getBeginEndMeterValues() &&
-        !chargingStation.getOcppStrictCompliance() &&
-        chargingStation.getOutOfOrderEndMeterValues() &&
+      chargingStation.getBeginEndMeterValues() === true &&
+        chargingStation.getOcppStrictCompliance() === false &&
+        chargingStation.getOutOfOrderEndMeterValues() === true &&
         (await chargingStation.ocppRequestService.requestHandler<
           OCPP16MeterValuesRequest,
           OCPP16MeterValuesResponse

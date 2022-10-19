@@ -281,8 +281,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   ): Promise<void> {
     let response: JsonType;
     if (
-      chargingStation.getOcppStrictCompliance() &&
-      chargingStation.isInPendingState() &&
+      chargingStation.getOcppStrictCompliance() === true &&
+      chargingStation.isInPendingState() === true &&
       (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION ||
         commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)
     ) {

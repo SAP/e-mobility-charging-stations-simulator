@@ -159,11 +159,13 @@ export default abstract class OCPPRequestService {
     }
   ): Promise<ResponseType> {
     if (
-      (chargingStation.isInUnknownState() && commandName === RequestCommand.BOOT_NOTIFICATION) ||
-      (!chargingStation.getOcppStrictCompliance() && chargingStation.isInUnknownState()) ||
-      chargingStation.isInAcceptedState() ||
-      (chargingStation.isInPendingState() &&
-        (params.triggerMessage || messageType === MessageType.CALL_RESULT_MESSAGE))
+      (chargingStation.isInUnknownState() === true &&
+        commandName === RequestCommand.BOOT_NOTIFICATION) ||
+      (chargingStation.getOcppStrictCompliance() === false &&
+        chargingStation.isInUnknownState() === true) ||
+      chargingStation.isInAcceptedState() === true ||
+      (chargingStation.isInPendingState() === true &&
+        (params.triggerMessage === true || messageType === MessageType.CALL_RESULT_MESSAGE))
     ) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
