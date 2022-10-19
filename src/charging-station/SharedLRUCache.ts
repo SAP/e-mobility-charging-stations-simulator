@@ -106,12 +106,12 @@ export default class SharedLRUCache {
     chargingStationConfiguration: ChargingStationConfiguration
   ): boolean {
     return (
-      !Utils.isNullOrUndefined(chargingStationConfiguration?.configurationKey) &&
-      !Utils.isNullOrUndefined(chargingStationConfiguration?.stationInfo) &&
-      !Utils.isNullOrUndefined(chargingStationConfiguration?.configurationHash) &&
-      !Utils.isEmptyArray(chargingStationConfiguration?.configurationKey) &&
-      !Utils.isEmptyObject(chargingStationConfiguration?.stationInfo) &&
-      !Utils.isEmptyString(chargingStationConfiguration?.configurationHash)
+      Utils.isNullOrUndefined(chargingStationConfiguration?.configurationKey) === false &&
+      Utils.isNullOrUndefined(chargingStationConfiguration?.stationInfo) === false &&
+      Utils.isNullOrUndefined(chargingStationConfiguration?.configurationHash) === false &&
+      Utils.isEmptyArray(chargingStationConfiguration?.configurationKey) === false &&
+      Utils.isEmptyObject(chargingStationConfiguration?.stationInfo) === false &&
+      Utils.isEmptyString(chargingStationConfiguration?.configurationHash) === false
     );
   }
 }
