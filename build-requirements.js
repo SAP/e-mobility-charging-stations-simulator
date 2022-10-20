@@ -1,5 +1,5 @@
 const chalk = require('chalk');
-// eslint-disable-next-line node/no-unpublished-require
+// eslint-disable-next-line n/no-unpublished-require
 const SemVer = require('semver');
 
 const enginesNodeVersion = require('./package.json').engines.node;
@@ -14,7 +14,7 @@ function checkNodeVersion() {
         `Required node version ${enginesNodeVersion} not satisfied with current version ${process.version}.`
       )
     );
-    // eslint-disable-next-line no-process-exit
+    // eslint-disable-next-line n/no-process-exit
     process.exit(1);
   }
 }

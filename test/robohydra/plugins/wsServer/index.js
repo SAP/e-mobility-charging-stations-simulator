@@ -1,4 +1,4 @@
-// eslint-disable-next-line node/no-unpublished-require
+// eslint-disable-next-line n/no-unpublished-require
 const RoboHydra = require('robohydra');
 const RoboHydraHead = RoboHydra.heads.RoboHydraHead;
 const RoboHydraWebSocketHead = RoboHydra.heads.RoboHydraWebSocketHead;

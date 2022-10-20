@@ -176,9 +176,9 @@
     },
     {
       "files": ["**/*.js"],
-      "extends": "plugin:node/recommended",
+      "extends": "plugin:n/recommended",
       "rules": {
-        "node/shebang": "off"
+        "n/shebang": "off"
       }
     }
   ]
