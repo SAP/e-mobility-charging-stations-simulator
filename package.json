@@ -86,7 +86,7 @@
     "mnemonist": "^0.39.4",
     "moment": "^2.29.4",
     "mongodb": "^4.11.0",
-    "poolifier": "^2.3.4",
+    "poolifier": "^2.3.5",
     "proper-lockfile": "^4.1.2",
     "source-map-support": "^0.5.21",
     "tar": "^6.1.11",
