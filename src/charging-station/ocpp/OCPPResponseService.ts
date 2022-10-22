@@ -54,8 +54,9 @@ export default abstract class OCPPResponseService {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  protected emptyResponseHandler() {}
+  protected emptyResponseHandler() {
+    /* This is intentional  */
+  }
 
   public abstract responseHandler(
     chargingStation: ChargingStation,
