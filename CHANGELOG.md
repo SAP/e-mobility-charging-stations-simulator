@@ -1,10 +1,26 @@
 # Changelog
 
-## [v1.1.84](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.83...v1.1.84)
+## [v1.1.85](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.84...v1.1.85)
+
+- Apply dependencies update [`ef85c95`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ef85c95abf79b049e1cae653372bdf46b233dfac)
+- Switch from nyc to c8 [`12240a2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/12240a2ea6b5c924befefa8846732249ad357730)
+- Apply dependencies update [`24559de`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/24559de55842ec10ea45ccb3d9b8935c18ac6d5b)
+- Apply dependencies update [`192927e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/192927e0a96e35e9d302b3ce845a2db99f19e9df)
+- Strict boolean checks [`3a13fc9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3a13fc92f2bc5236dcde66fe5e79e0cea89f1c3d)
+- Downgrade rollup to 2.x to fix windows build [`875e954`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/875e9541d6c760511b03a401d2cf18997d2855ce)
+- Apply dependencies security update [`f452b35`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f452b3569a95d9ac740447e951ac3ef0e82deef5)
+- Move ts-node configurations to tsconfig.json [`a56d48e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a56d48e76a52c589c7ac4433c15fa028b39345ea)
+- Strict boolean checks [`2329015`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2329015067d5715c3eb0b56984a66cdc1fe31452)
+- Cleanup GitHub actions [`d5d2241`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d5d2241eaa804299589416c871d277e5b9311f29)
+- GH action cleanup [`a1deee0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a1deee04b887e89dcb63f2811f80c42bfff0d8cd)
+- Properly separate eslint run between UI and main code [`d557022`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d557022543fd191373c3d0eafee5bcdbe0b70fd3)
+
+## [v1.1.84](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.83...v1.1.84) (2022-10-17)
 
 - Apply dependencies update [`15e8421`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/15e8421581ce8c028eb758e6b6928f378f29c928)
 - Use node crypto built-in uuid v4 generator [`03eacbe`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/03eacbe58030b56149284730a0af0367a01383cd)
 - Apply dependencies update [`4883f1c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4883f1c4b5839b6599815c839869f514d8b87cef)
+- Version 1.1.84 [`293c552`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/293c552db1b65507cd2b96e0b7ae41fa59f8fc1e)
 - README.md: update default poolifier tasks scheduling [`19dbb57`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/19dbb57060f93eaa33284a3b439a0adc10af63e3)
 - Apply dependencies update [`2a06a8c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2a06a8c08973aa64459ed93232f3e34de8ec8853)
 - Spell fixes to CHANGELOG.md [`521c07f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/521c07fc0b510269917608fdb1d943d1866c81f2)
