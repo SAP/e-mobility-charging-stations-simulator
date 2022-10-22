@@ -55,7 +55,7 @@ export default abstract class OCPPResponseService {
   }
 
   protected emptyResponseHandler() {
-    /* This is intentional  */
+    /* This is intentional */
   }
 
   public abstract responseHandler(
