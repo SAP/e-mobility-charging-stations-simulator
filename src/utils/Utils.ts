@@ -119,7 +119,7 @@ export default class Utils {
       throw new RangeError('Invalid interval');
     }
     max = Math.floor(max);
-    if (min) {
+    if (!Utils.isNullOrUndefined(min) && min !== 0) {
       if (max < min || min < 0) {
         throw new RangeError('Invalid interval');
       }
