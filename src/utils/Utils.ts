@@ -106,7 +106,7 @@ export default class Utils {
   }
 
   public static getRandomFloat(max = Number.MAX_VALUE, min = 0, negative = false): number {
-    if (max < min || min < 0 || max < 0) {
+    if (max < min || max < 0 || min < 0) {
       throw new RangeError('Invalid interval');
     }
     const randomPositiveFloat = crypto.randomBytes(4).readUInt32LE() / 0xffffffff;
@@ -115,14 +115,11 @@ export default class Utils {
   }
 
   public static getRandomInteger(max = Number.MAX_SAFE_INTEGER, min = 0): number {
-    if (max < 0) {
+    if (max < min || max < 0 || min < 0) {
       throw new RangeError('Invalid interval');
     }
     max = Math.floor(max);
     if (!Utils.isNullOrUndefined(min) && min !== 0) {
-      if (max < min || min < 0) {
-        throw new RangeError('Invalid interval');
-      }
       min = Math.ceil(min);
       return Math.floor(Utils.secureRandom() * (max - min + 1)) + min;
     }
