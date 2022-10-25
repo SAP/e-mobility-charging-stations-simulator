@@ -16,7 +16,9 @@ export default class Utils {
   }
 
   public static validateUUID(uuid: string): boolean {
-    return /\/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$\/i/.test(uuid);
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+      uuid
+    );
   }
 
   public static async sleep(milliSeconds: number): Promise<NodeJS.Timeout> {

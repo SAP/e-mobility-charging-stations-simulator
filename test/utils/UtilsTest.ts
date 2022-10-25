@@ -3,6 +3,12 @@ import expect from 'expect';
 import Utils from '../../src/utils/Utils';
 
 describe('Utils test suite', () => {
+  it('Verify generateUUID()/validateUUID()', () => {
+    const uuid = Utils.generateUUID();
+    expect(uuid.length).toEqual(36);
+    expect(Utils.validateUUID(uuid)).toBe(true);
+  });
+
   it('Verify secureRandom()', () => {
     const random = Utils.secureRandom();
     expect(typeof random === 'number').toBe(true);
