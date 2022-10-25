@@ -185,17 +185,17 @@ export default class Utils {
   }
 
   public static isEmptyArray(object: unknown): boolean {
-    if (!object) {
-      return true;
+    if (!Array.isArray(object)) {
+      return false;
     }
-    if (Array.isArray(object) === true && (object as unknown[]).length > 0) {
+    if ((object as unknown[]).length > 0) {
       return false;
     }
     return true;
   }
 
   public static isEmptyObject(obj: object): boolean {
-    if (obj.constructor !== Object) {
+    if (obj?.constructor !== Object) {
       return false;
     }
     // Iterates over the keys of an object, if
