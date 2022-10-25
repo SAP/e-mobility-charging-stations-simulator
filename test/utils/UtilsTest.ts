@@ -42,6 +42,8 @@ describe('Utils test suite', () => {
     expect(Utils.isIterable([])).toBe(true);
     expect(Utils.isIterable(new Map())).toBe(true);
     expect(Utils.isIterable(new Set())).toBe(true);
+    expect(Utils.isIterable(new WeakMap())).toBe(false);
+    expect(Utils.isIterable(new WeakSet())).toBe(false);
   });
 
   it('Verify isEmptyString()', () => {

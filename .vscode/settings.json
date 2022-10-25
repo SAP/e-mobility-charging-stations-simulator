@@ -1,5 +1,7 @@
 {
   "editor.codeActionsOnSave": {
     "source.fixAll": true
-  }
+  },
+  "testExplorer.useNativeTesting": true,
+  "mochaExplorer.files": ["test/**/*Test.ts"]
 }
