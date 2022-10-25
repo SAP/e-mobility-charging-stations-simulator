@@ -7,6 +7,9 @@ describe('Utils test suite', () => {
     const uuid = Utils.generateUUID();
     expect(uuid.length).toEqual(36);
     expect(Utils.validateUUID(uuid)).toBe(true);
+    expect(Utils.validateUUID('abcdef00-0000-4000-0000-000000000000')).toBe(true);
+    expect(Utils.validateUUID('')).toBe(false);
+    expect(Utils.validateUUID('987FBC9-4BED-3078-CF07A-9141BA07C9F3')).toBe(false);
   });
 
   it('Verify secureRandom()', () => {
