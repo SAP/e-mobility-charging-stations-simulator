@@ -21,7 +21,7 @@ updates:
       - 'olivierbagot'
     versioning-strategy: increase
   - package-ecosystem: 'npm'
-    directory: '/src/ui/web'
+    directory: '/ui/web'
     schedule:
       interval: 'daily'
     labels:

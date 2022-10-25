@@ -4,7 +4,7 @@
       "path": "."
     },
     {
-      "path": "src/ui/web"
+      "path": "ui/web"
     }
   ],
   "extensions": {

@@ -53,7 +53,7 @@ To start the program, run: `npm start`.
 
 ## Start Web UI
 
-See Web UI [README.md](src/ui/web/README.md) for more information.
+See Web UI [README.md](ui/web/README.md) for more information.
 
 ## Configuration files syntax
 

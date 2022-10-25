@@ -15,7 +15,7 @@ RUN npm run build
 
 # Build simulator dashboard
 WORKDIR /usr/builder/webui
-COPY src/ui/web ./
+COPY ui/web ./
 RUN npm set progress=false && npm config set depth 0 && npm cache clean --force && npm install
 RUN npm run build
 

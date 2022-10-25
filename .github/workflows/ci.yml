@@ -40,7 +40,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: src/ui/web
+        working-directory: ui/web
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
