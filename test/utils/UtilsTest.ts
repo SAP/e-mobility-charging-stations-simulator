@@ -5,6 +5,7 @@ import Utils from '../../src/utils/Utils';
 describe('Utils test suite', () => {
   it('Verify generateUUID()/validateUUID()', () => {
     const uuid = Utils.generateUUID();
+    expect(uuid).toBeDefined();
     expect(uuid.length).toEqual(36);
     expect(Utils.validateUUID(uuid)).toBe(true);
     expect(Utils.validateUUID('abcdef00-0000-4000-0000-000000000000')).toBe(true);
