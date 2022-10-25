@@ -87,10 +87,10 @@ describe('Utils test suite', () => {
 
   it('Verify isEmptyObject()', () => {
     expect(Utils.isEmptyObject({})).toBe(true);
+    expect(Utils.isEmptyObject({ 1: 1, 2: 2 })).toBe(false);
     expect(Utils.isEmptyObject(null)).toBe(false);
     expect(Utils.isEmptyObject(undefined)).toBe(false);
     expect(Utils.isEmptyObject(new Map())).toBe(false);
     expect(Utils.isEmptyObject(new Set())).toBe(false);
-    expect(Utils.isEmptyObject({ 1: 1, 2: 2 })).toBe(false);
   });
 });
