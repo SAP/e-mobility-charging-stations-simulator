@@ -172,7 +172,7 @@ export default class Utils {
   }
 
   public static isEmptyString(value: unknown): boolean {
-    return Utils.isString(value) && (value as string).length === 0;
+    return Utils.isString(value) && (value as string).trim().length === 0;
   }
 
   public static isUndefined(value: unknown): boolean {
@@ -195,7 +195,15 @@ export default class Utils {
   }
 
   public static isEmptyObject(obj: object): boolean {
-    return !Object.keys(obj).length;
+    if (obj.constructor !== Object) {
+      return false;
+    }
+    // Iterates over the keys of an object, if
+    // any exist, return false.
+    for (const _ in obj) {
+      return false;
+    }
+    return true;
   }
 
   public static insertAt = (str: string, subStr: string, pos: number): string =>
