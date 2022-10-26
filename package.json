@@ -69,7 +69,6 @@
     "git:sdiff": "git diff && git submodule foreach 'git diff'",
     "git:supdate": "git submodule update --remote --recursive --merge",
     "git:spush": "git push --recurse-submodules=on-demand",
-    "sonar:properties": "./src/scripts/updateSonarProps.sh",
     "release": "release-it"
   },
   "dependencies": {
@@ -102,6 +101,7 @@
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@mikro-orm/cli": "^5.4.2",
+    "@release-it/bumper": "^4.0.0",
     "@rollup/plugin-json": "^5.0.1",
     "@types/mocha": "^10.0.0",
     "@types/mochawesome": "^6.2.1",
