@@ -99,14 +99,16 @@ describe('Utils test suite', () => {
   it('Verify isEmptyArray()', () => {
     expect(Utils.isEmptyArray([])).toBe(true);
     expect(Utils.isEmptyArray([1, 2])).toBe(false);
-    expect(Utils.isEmptyArray(null)).toBe(false);
-    expect(Utils.isEmptyArray(undefined)).toBe(false);
-    expect(Utils.isEmptyArray('')).toBe(false);
-    expect(Utils.isEmptyArray('test')).toBe(false);
-    expect(Utils.isEmptyArray(0)).toBe(false);
-    expect(Utils.isEmptyArray({})).toBe(false);
-    expect(Utils.isEmptyArray(new Map())).toBe(false);
-    expect(Utils.isEmptyArray(new Set())).toBe(false);
+    expect(Utils.isEmptyArray(null)).toBe(true);
+    expect(Utils.isEmptyArray(undefined)).toBe(true);
+    expect(Utils.isEmptyArray('')).toBe(true);
+    expect(Utils.isEmptyArray('test')).toBe(true);
+    expect(Utils.isEmptyArray(0)).toBe(true);
+    expect(Utils.isEmptyArray({})).toBe(true);
+    expect(Utils.isEmptyArray(new Map())).toBe(true);
+    expect(Utils.isEmptyArray(new Set())).toBe(true);
+    expect(Utils.isEmptyArray(new WeakMap())).toBe(true);
+    expect(Utils.isEmptyArray(new WeakSet())).toBe(true);
   });
 
   it('Verify isEmptyObject()', () => {
