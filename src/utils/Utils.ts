@@ -186,11 +186,11 @@ export default class Utils {
     return value == null ? true : false;
   }
 
-  public static isEmptyArray(object: unknown): boolean {
+  public static isEmptyArray(object: unknown | unknown[]): boolean {
     if (!Array.isArray(object)) {
       return false;
     }
-    if ((object as unknown[]).length > 0) {
+    if (object.length > 0) {
       return false;
     }
     return true;

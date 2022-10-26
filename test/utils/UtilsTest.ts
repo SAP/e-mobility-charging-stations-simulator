@@ -10,7 +10,16 @@ describe('Utils test suite', () => {
     expect(Utils.validateUUID(uuid)).toBe(true);
     expect(Utils.validateUUID('abcdef00-0000-4000-0000-000000000000')).toBe(true);
     expect(Utils.validateUUID('')).toBe(false);
+    // Shall invalidate Nil UUID
+    expect(Utils.validateUUID('00000000-0000-0000-0000-000000000000')).toBe(false);
     expect(Utils.validateUUID('987FBC9-4BED-3078-CF07A-9141BA07C9F3')).toBe(false);
+  });
+
+  it('Verify sleep()', async () => {
+    const start = Date.now();
+    await Utils.sleep(1000);
+    const end = Date.now();
+    expect(end - start).toBeGreaterThanOrEqual(1000);
   });
 
   it('Verify secureRandom()', () => {
@@ -70,6 +79,8 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyString([])).toBe(false);
     expect(Utils.isEmptyString(new Map())).toBe(false);
     expect(Utils.isEmptyString(new Set())).toBe(false);
+    expect(Utils.isEmptyString(new WeakMap())).toBe(false);
+    expect(Utils.isEmptyString(new WeakSet())).toBe(false);
   });
 
   it('Verify isNullOrUndefined()', () => {
@@ -81,6 +92,8 @@ describe('Utils test suite', () => {
     expect(Utils.isNullOrUndefined([])).toBe(false);
     expect(Utils.isNullOrUndefined(new Map())).toBe(false);
     expect(Utils.isNullOrUndefined(new Set())).toBe(false);
+    expect(Utils.isNullOrUndefined(new WeakMap())).toBe(false);
+    expect(Utils.isNullOrUndefined(new WeakSet())).toBe(false);
   });
 
   it('Verify isEmptyArray()', () => {
@@ -89,6 +102,7 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyArray(null)).toBe(false);
     expect(Utils.isEmptyArray(undefined)).toBe(false);
     expect(Utils.isEmptyArray('')).toBe(false);
+    expect(Utils.isEmptyArray('test')).toBe(false);
     expect(Utils.isEmptyArray(0)).toBe(false);
     expect(Utils.isEmptyArray({})).toBe(false);
     expect(Utils.isEmptyArray(new Map())).toBe(false);
@@ -102,5 +116,7 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyObject(undefined)).toBe(false);
     expect(Utils.isEmptyObject(new Map())).toBe(false);
     expect(Utils.isEmptyObject(new Set())).toBe(false);
+    expect(Utils.isEmptyObject(new WeakMap())).toBe(false);
+    expect(Utils.isEmptyObject(new WeakSet())).toBe(false);
   });
 });
