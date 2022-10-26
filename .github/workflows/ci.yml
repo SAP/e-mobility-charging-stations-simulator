@@ -67,6 +67,8 @@ jobs:
       - name: SonarCloud Scan
         if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '16.x'"
         uses: sonarsource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: ui/web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
