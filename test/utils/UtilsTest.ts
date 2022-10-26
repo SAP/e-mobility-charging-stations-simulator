@@ -30,23 +30,29 @@ describe('Utils test suite', () => {
   });
 
   it('Verify getRandomInteger()', () => {
-    const randomInteger = Utils.getRandomInteger();
+    let randomInteger = Utils.getRandomInteger();
     expect(Number.isSafeInteger(randomInteger)).toBe(true);
     expect(randomInteger).toBeGreaterThanOrEqual(0);
     expect(randomInteger).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
     expect(() => Utils.getRandomInteger(0, 1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomInteger(-1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomInteger(0, -1)).toThrowError(new RangeError('Invalid interval'));
+    randomInteger = Utils.getRandomInteger(2, 1);
+    expect(randomInteger).toBeGreaterThanOrEqual(1);
+    expect(randomInteger).toBeLessThanOrEqual(2);
   });
 
   it('Verify getRandomFloat()', () => {
-    const randomFloat = Utils.getRandomFloat();
+    let randomFloat = Utils.getRandomFloat();
     expect(typeof randomFloat === 'number').toBe(true);
     expect(randomFloat).toBeGreaterThanOrEqual(0);
     expect(randomFloat).toBeLessThanOrEqual(Number.MAX_VALUE);
     expect(() => Utils.getRandomFloat(0, 1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomFloat(-1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomFloat(0, -1)).toThrowError(new RangeError('Invalid interval'));
+    randomFloat = Utils.getRandomFloat(Number.MAX_VALUE, 0, true);
+    expect(randomFloat).toBeGreaterThanOrEqual(-Number.MAX_VALUE);
+    expect(randomFloat).toBeLessThanOrEqual(Number.MAX_VALUE);
   });
 
   it('Verify isIterable()', () => {
