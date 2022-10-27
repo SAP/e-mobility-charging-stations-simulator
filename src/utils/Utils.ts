@@ -197,7 +197,7 @@ export default class Utils {
   }
 
   public static isEmptyObject(obj: object): boolean {
-    if (Utils.isNullOrUndefined(obj)) {
+    if (obj?.constructor !== Object) {
       return false;
     }
     // Iterates over the keys of an object, if
