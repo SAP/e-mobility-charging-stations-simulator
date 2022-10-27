@@ -6,7 +6,8 @@ src/assets/*tags*.json
 !src/assets/authorization-tags-template.json
 mikro-orm.config*.ts
 !mikro-orm.config-template.ts
-manifest.yml
+manifest*.yml
+!manifest-cf-template.yml
 
 ### Git ###
 # Created by git for backups. To disable backups in Git:
