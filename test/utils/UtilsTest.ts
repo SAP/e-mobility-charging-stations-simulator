@@ -89,6 +89,19 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyString(new WeakSet())).toBe(false);
   });
 
+  it('Verify isUndefined()', () => {
+    expect(Utils.isUndefined(undefined)).toBe(true);
+    expect(Utils.isUndefined(null)).toBe(false);
+    expect(Utils.isUndefined('')).toBe(false);
+    expect(Utils.isUndefined(0)).toBe(false);
+    expect(Utils.isUndefined({})).toBe(false);
+    expect(Utils.isUndefined([])).toBe(false);
+    expect(Utils.isUndefined(new Map())).toBe(false);
+    expect(Utils.isUndefined(new Set())).toBe(false);
+    expect(Utils.isUndefined(new WeakMap())).toBe(false);
+    expect(Utils.isUndefined(new WeakSet())).toBe(false);
+  });
+
   it('Verify isNullOrUndefined()', () => {
     expect(Utils.isNullOrUndefined(null)).toBe(true);
     expect(Utils.isNullOrUndefined(undefined)).toBe(true);
