@@ -197,9 +197,6 @@ export default class Utils {
   }
 
   public static isEmptyObject(obj: object): boolean {
-    if (obj?.constructor !== Object) {
-      return false;
-    }
     // Iterates over the keys of an object, if
     // any exist, return false.
     for (const _ in obj) {
