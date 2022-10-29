@@ -41,10 +41,9 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "prestart": "npm run build",
     "build-requirements": "node build-requirements.js",
-    "start": "cross-env NODE_ENV=production node -r source-map-support/register dist/start.cjs",
-    "start:debug": "cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.cjs",
+    "start": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/start.cjs",
+    "start:debug": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register --inspect dist/start.cjs",
     "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.cjs",
     "start:dev:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.cjs",
     "start:dev:esm": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.mjs",
