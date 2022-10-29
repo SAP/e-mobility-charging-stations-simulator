@@ -61,6 +61,7 @@
     "lint:fix": "cross-env TIMING=1 eslint --cache --fix --ext .js,.ts src",
     "format": "prettier --write .",
     "test": "c8 mocha test/**/*Test.ts",
+    "test:debug": "mocha --no-parallel --inspect test/**/*Test.ts",
     "coverage": "c8 report --reporter=lcov",
     "coverage:html": "c8 report --reporter=html",
     "clinic:clean": "clinic clean",

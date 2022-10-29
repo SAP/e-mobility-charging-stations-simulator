@@ -3,5 +3,6 @@
     "source.fixAll": true
   },
   "testExplorer.useNativeTesting": true,
-  "mochaExplorer.files": ["test/**/*Test.ts"]
+  "mochaExplorer.files": ["test/**/*Test.ts"],
+  "mochaExplorer.debuggerConfig": "Debug Simulator Unit Tests"
 }

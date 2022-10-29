@@ -24,6 +24,20 @@
       "runtimeArgs": ["run-script", "start:dev:debug"],
       "skipFiles": ["<node_internals>/**"],
       "stopOnEntry": true
+    },
+    {
+      "name": "Debug Simulator Unit Tests",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "continueOnAttach": true,
+      "autoAttachChildProcesses": false,
+      "timeout": 30000,
+      "resolveSourceMapLocations": [
+        "!**/node_modules/**",
+        "!**/.vscode/extensions/hbenl.vscode-mocha-test-adapter-*/**"
+      ],
+      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }
