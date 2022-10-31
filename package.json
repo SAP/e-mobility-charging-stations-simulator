@@ -120,7 +120,7 @@
     "eslint-import-resolver-typescript": "^3.5.2",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsdoc": "^39.3.25",
-    "eslint-plugin-n": "^15.3.0",
+    "eslint-plugin-n": "^15.4.0",
     "eslint-plugin-prettier": "^4.2.1",
     "expect": "^29.2.2",
     "husky": "^8.0.1",
