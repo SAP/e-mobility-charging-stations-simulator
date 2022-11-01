@@ -23,6 +23,9 @@ describe('Utils test suite', () => {
   });
 
   it('Verify convertToDate()', () => {
+    expect(Utils.convertToDate(undefined)).toBe(undefined);
+    expect(Utils.convertToDate(null)).toBe(null);
+    expect(Utils.convertToDate(0)).toBe(0);
     const dateStr = '2020-01-01T00:00:00.000Z';
     let date = Utils.convertToDate(dateStr);
     expect(date).toBeInstanceOf(Date);
@@ -45,8 +48,11 @@ describe('Utils test suite', () => {
   });
 
   it('Verify convertToInt()', () => {
-    const random = Utils.getRandomInteger();
-    expect(Utils.convertToInt(random)).toEqual(random);
+    expect(Utils.convertToInt(undefined)).toBe(0);
+    expect(Utils.convertToInt(null)).toBe(0);
+    expect(Utils.convertToInt(0)).toBe(0);
+    const randomInteger = Utils.getRandomInteger();
+    expect(Utils.convertToInt(randomInteger)).toEqual(randomInteger);
     expect(Utils.convertToInt('1')).toBe(1);
     expect(Utils.convertToInt('1.1')).toBe(1);
     expect(Utils.convertToInt('1.9')).toBe(1);
@@ -58,8 +64,11 @@ describe('Utils test suite', () => {
   });
 
   it('Verify convertToFloat()', () => {
-    const random = Utils.getRandomFloat();
-    expect(Utils.convertToFloat(random)).toEqual(random);
+    expect(Utils.convertToFloat(undefined)).toBe(0);
+    expect(Utils.convertToFloat(null)).toBe(0);
+    expect(Utils.convertToFloat(0)).toBe(0);
+    const randomFloat = Utils.getRandomFloat();
+    expect(Utils.convertToFloat(randomFloat)).toEqual(randomFloat);
     expect(Utils.convertToFloat('1')).toBe(1);
     expect(Utils.convertToFloat('1.1')).toBe(1.1);
     expect(Utils.convertToFloat('1.9')).toBe(1.9);
@@ -71,6 +80,8 @@ describe('Utils test suite', () => {
   });
 
   it('Verify convertToBoolean()', () => {
+    expect(Utils.convertToBoolean(undefined)).toBe(false);
+    expect(Utils.convertToBoolean(null)).toBe(false);
     expect(Utils.convertToBoolean('true')).toBe(true);
     expect(Utils.convertToBoolean('false')).toBe(false);
     expect(Utils.convertToBoolean('TRUE')).toBe(true);
