@@ -75,6 +75,9 @@ export default class Utils {
       // Create Object
       changedValue = parseInt(value as string);
     }
+    if (typeof value === 'number') {
+      changedValue = Math.trunc(value);
+    }
     return changedValue;
   }
 
@@ -93,15 +96,17 @@ export default class Utils {
 
   public static convertToBoolean(value: unknown): boolean {
     let result = false;
-    // Check boolean
     if (value) {
       // Check the type
       if (typeof value === 'boolean') {
-        // Already a boolean
         result = value;
-      } else {
-        // Convert
-        result = value === 'true';
+      } else if (
+        Utils.isString(value) &&
+        ((value as string).toLowerCase() === 'true' || value === '1')
+      ) {
+        result = true;
+      } else if (typeof value === 'number' && value === 1) {
+        result = true;
       }
     }
     return result;

@@ -22,6 +22,67 @@ describe('Utils test suite', () => {
     expect(end - start).toBeGreaterThanOrEqual(1000);
   });
 
+  it('Verify convertToDate()', () => {
+    const dateStr = '2020-01-01T00:00:00.000Z';
+    let date = Utils.convertToDate(dateStr);
+    expect(date).toBeInstanceOf(Date);
+    expect(date.getUTCFullYear()).toBe(2020);
+    expect(date.getUTCMonth()).toBe(0);
+    expect(date.getUTCDate()).toBe(1);
+    expect(date.getUTCHours()).toBe(0);
+    expect(date.getUTCMinutes()).toBe(0);
+    expect(date.getUTCSeconds()).toBe(0);
+    expect(date.getUTCMilliseconds()).toBe(0);
+    date = Utils.convertToDate(new Date(dateStr));
+    expect(date).toBeInstanceOf(Date);
+    expect(date.getUTCFullYear()).toBe(2020);
+    expect(date.getUTCMonth()).toBe(0);
+    expect(date.getUTCDate()).toBe(1);
+    expect(date.getUTCHours()).toBe(0);
+    expect(date.getUTCMinutes()).toBe(0);
+    expect(date.getUTCSeconds()).toBe(0);
+    expect(date.getUTCMilliseconds()).toBe(0);
+  });
+
+  it('Verify convertToInt()', () => {
+    const random = Utils.getRandomInteger();
+    expect(Utils.convertToInt(random)).toEqual(random);
+    expect(Utils.convertToInt('1')).toBe(1);
+    expect(Utils.convertToInt('1.1')).toBe(1);
+    expect(Utils.convertToInt('1.9')).toBe(1);
+    expect(Utils.convertToInt('1.999')).toBe(1);
+    expect(Utils.convertToInt(1)).toBe(1);
+    expect(Utils.convertToInt(1.1)).toBe(1);
+    expect(Utils.convertToInt(1.9)).toBe(1);
+    expect(Utils.convertToInt(1.999)).toBe(1);
+  });
+
+  it('Verify convertToFloat()', () => {
+    const random = Utils.getRandomFloat();
+    expect(Utils.convertToFloat(random)).toEqual(random);
+    expect(Utils.convertToFloat('1')).toBe(1);
+    expect(Utils.convertToFloat('1.1')).toBe(1.1);
+    expect(Utils.convertToFloat('1.9')).toBe(1.9);
+    expect(Utils.convertToFloat('1.999')).toBe(1.999);
+    expect(Utils.convertToFloat(1)).toBe(1);
+    expect(Utils.convertToFloat(1.1)).toBe(1.1);
+    expect(Utils.convertToFloat(1.9)).toBe(1.9);
+    expect(Utils.convertToFloat(1.999)).toBe(1.999);
+  });
+
+  it('Verify convertToBoolean()', () => {
+    expect(Utils.convertToBoolean('true')).toBe(true);
+    expect(Utils.convertToBoolean('false')).toBe(false);
+    expect(Utils.convertToBoolean('TRUE')).toBe(true);
+    expect(Utils.convertToBoolean('FALSE')).toBe(false);
+    expect(Utils.convertToBoolean('1')).toBe(true);
+    expect(Utils.convertToBoolean('0')).toBe(false);
+    expect(Utils.convertToBoolean(1)).toBe(true);
+    expect(Utils.convertToBoolean(0)).toBe(false);
+    expect(Utils.convertToBoolean(true)).toBe(true);
+    expect(Utils.convertToBoolean(false)).toBe(false);
+  });
+
   it('Verify secureRandom()', () => {
     const random = Utils.secureRandom();
     expect(typeof random === 'number').toBe(true);
