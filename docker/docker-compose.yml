@@ -9,7 +9,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         STACK_TRACE_LIMIT: 1024
-        MAX_OLD_SPACE_SIZE: 1024
+        MAX_OLD_SPACE_SIZE: 768
     networks:
       - ev_network
     expose:
