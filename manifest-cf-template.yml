@@ -1,7 +1,7 @@
 applications:
   - name: e-mobility-charging-stations-simulator
     memory: 1G
-    disk_quota: 6G
+    disk_quota: 4G
     instances: 1
     buildpacks:
       - https://github.com/cloudfoundry/nodejs-buildpack
