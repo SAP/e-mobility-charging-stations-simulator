@@ -1127,7 +1127,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED;
     }
     if (
-      OCPP16ServiceUtils.isConnectorIdValid(
+      !OCPP16ServiceUtils.isConnectorIdValid(
         chargingStation,
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
         commandPayload.connectorId
