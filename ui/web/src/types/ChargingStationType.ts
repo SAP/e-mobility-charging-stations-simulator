@@ -67,6 +67,7 @@ export type ChargingStationInfo = {
   phaseLineToLineVoltageMeterValues?: boolean;
   customValueLimitationMeterValues?: boolean;
   commandsSupport?: CommandsSupport;
+  messageTriggerSupport?: Record<MessageTrigger, boolean>;
 };
 
 export enum OCPP16IncomingRequestCommand {
@@ -120,6 +121,21 @@ export interface OCPP16BootNotificationResponse extends JsonObject {
   currentTime: string;
   interval: number;
 }
+
+export enum OCPP16MessageTrigger {
+  BootNotification = 'BootNotification',
+  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
+  FirmwareStatusNotification = 'FirmwareStatusNotification',
+  Heartbeat = 'Heartbeat',
+  MeterValues = 'MeterValues',
+  StatusNotification = 'StatusNotification',
+}
+
+export type MessageTrigger = OCPP16MessageTrigger;
+
+export const MessageTrigger = {
+  ...OCPP16MessageTrigger,
+};
 
 type CommandsSupport = {
   incomingCommands: Record<IncomingRequestCommand, boolean>;

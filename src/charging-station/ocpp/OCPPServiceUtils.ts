@@ -5,7 +5,7 @@ import type { SampledValueTemplate } from '../../types/MeasurandPerPhaseSampledV
 import { StandardParametersKey } from '../../types/ocpp/Configuration';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { MeterValueMeasurand, type MeterValuePhase } from '../../types/ocpp/MeterValues';
-import { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
+import { IncomingRequestCommand, MessageTrigger, RequestCommand } from '../../types/ocpp/Requests';
 import Constants from '../../utils/Constants';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
@@ -71,6 +71,36 @@ export class OCPPServiceUtils {
     }
     logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`);
     return false;
+  }
+
+  public static isMessageTriggerSupported(
+    chargingStation: ChargingStation,
+    messageTrigger: MessageTrigger
+  ): boolean {
+    const isMessageTrigger = Object.values(MessageTrigger).includes(messageTrigger);
+    if (isMessageTrigger === true && !chargingStation.stationInfo?.messageTriggerSupport) {
+      return true;
+    } else if (isMessageTrigger === true && chargingStation.stationInfo?.messageTriggerSupport) {
+      return chargingStation.stationInfo?.messageTriggerSupport[messageTrigger] ?? false;
+    }
+    logger.error(
+      `${chargingStation.logPrefix()} Unknown incoming OCPP message trigger '${messageTrigger}'`
+    );
+    return false;
+  }
+
+  public static isConnectorIdValid(
+    chargingStation: ChargingStation,
+    ocppCommand: IncomingRequestCommand,
+    connectorId: number
+  ): boolean {
+    if (connectorId < 0) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${ocppCommand} incoming request received with invalid connectorId ${connectorId}`
+      );
+      return false;
+    }
+    return true;
   }
 
   protected static getSampledValueTemplate(

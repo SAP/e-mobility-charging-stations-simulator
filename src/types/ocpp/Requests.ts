@@ -8,6 +8,7 @@ import {
   OCPP16BootNotificationRequest,
   OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
+  OCPP16MessageTrigger,
   OCPP16RequestCommand,
   OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
@@ -40,6 +41,12 @@ export type CachedRequest = [
   RequestCommand | IncomingRequestCommand,
   JsonType
 ];
+
+export type MessageTrigger = OCPP16MessageTrigger;
+
+export const MessageTrigger = {
+  ...OCPP16MessageTrigger,
+};
 
 export type BootNotificationRequest = OCPP16BootNotificationRequest;
 

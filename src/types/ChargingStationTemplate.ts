@@ -7,7 +7,7 @@ import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConf
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { OCPPProtocol } from './ocpp/OCPPProtocol';
 import type { OCPPVersion } from './ocpp/OCPPVersion';
-import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
+import type { IncomingRequestCommand, MessageTrigger, RequestCommand } from './ocpp/Requests';
 
 export enum CurrentType {
   AC = 'AC',
@@ -93,6 +93,7 @@ export type ChargingStationTemplate = {
   phaseLineToLineVoltageMeterValues?: boolean;
   customValueLimitationMeterValues?: boolean;
   commandsSupport?: CommandsSupport;
+  messageTriggerSupport?: Record<MessageTrigger, boolean>;
   Configuration?: ChargingStationOcppConfiguration;
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   Connectors: Record<string, ConnectorStatus>;

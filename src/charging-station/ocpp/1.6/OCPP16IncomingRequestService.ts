@@ -28,12 +28,12 @@ import {
   DiagnosticsStatusNotificationRequest,
   GetConfigurationRequest,
   GetDiagnosticsRequest,
-  MessageTrigger,
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
   OCPP16ClearCacheRequest,
   OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
+  OCPP16MessageTrigger,
   OCPP16RequestCommand,
   OCPP16StatusNotificationRequest,
   OCPP16TriggerMessageRequest,
@@ -413,9 +413,15 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: UnlockConnectorRequest
   ): Promise<UnlockConnectorResponse> {
     const connectorId = commandPayload.connectorId;
+    if (chargingStation.connectors.has(connectorId) === false) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to unlock a non existing connector Id ${connectorId.toString()}`
+      );
+      return Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
+    }
     if (connectorId === 0) {
       logger.error(
-        chargingStation.logPrefix() + ' Trying to unlock connector ' + connectorId.toString()
+        chargingStation.logPrefix() + ' Trying to unlock connector Id ' + connectorId.toString()
       );
       return Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
@@ -686,7 +692,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandPayload: ChangeAvailabilityRequest
   ): Promise<ChangeAvailabilityResponse> {
     const connectorId: number = commandPayload.connectorId;
-    if (!chargingStation.getConnectorStatus(connectorId)) {
+    if (chargingStation.connectors.has(connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to change the availability of a non existing connector Id ${connectorId.toString()}`
       );
@@ -1112,22 +1118,26 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         chargingStation,
         OCPP16SupportedFeatureProfiles.RemoteTrigger,
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE
+      ) ||
+      !OCPP16ServiceUtils.isMessageTriggerSupported(
+        chargingStation,
+        commandPayload.requestedMessage
       )
     ) {
       return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED;
     }
-    // TODO: factor out the check on connector id
-    if (commandPayload?.connectorId < 0) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${
-          OCPP16IncomingRequestCommand.TRIGGER_MESSAGE
-        } incoming request received with invalid connectorId ${commandPayload.connectorId}`
-      );
+    if (
+      OCPP16ServiceUtils.isConnectorIdValid(
+        chargingStation,
+        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+        commandPayload.connectorId
+      )
+    ) {
       return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED;
     }
     try {
       switch (commandPayload.requestedMessage) {
-        case MessageTrigger.BootNotification:
+        case OCPP16MessageTrigger.BootNotification:
           setTimeout(() => {
             chargingStation.ocppRequestService
               .requestHandler<OCPP16BootNotificationRequest, OCPP16BootNotificationResponse>(
@@ -1144,7 +1154,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               });
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
-        case MessageTrigger.Heartbeat:
+        case OCPP16MessageTrigger.Heartbeat:
           setTimeout(() => {
             chargingStation.ocppRequestService
               .requestHandler<OCPP16HeartbeatRequest, OCPP16HeartbeatResponse>(
@@ -1160,7 +1170,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               });
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
-        case MessageTrigger.StatusNotification:
+        case OCPP16MessageTrigger.StatusNotification:
           setTimeout(() => {
             if (commandPayload?.connectorId) {
               chargingStation.ocppRequestService

@@ -124,7 +124,7 @@ export interface DiagnosticsStatusNotificationRequest extends JsonObject {
   status: OCPP16DiagnosticsStatus;
 }
 
-export enum MessageTrigger {
+export enum OCPP16MessageTrigger {
   BootNotification = 'BootNotification',
   DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
   FirmwareStatusNotification = 'FirmwareStatusNotification',
@@ -134,6 +134,6 @@ export enum MessageTrigger {
 }
 
 export interface OCPP16TriggerMessageRequest extends JsonObject {
-  requestedMessage: MessageTrigger;
+  requestedMessage: OCPP16MessageTrigger;
   connectorId?: number;
 }

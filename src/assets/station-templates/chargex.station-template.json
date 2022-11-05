@@ -26,6 +26,11 @@
       "TriggerMessage": false
     }
   },
+  "messageTriggerSupport": {
+    "BootNotification": true,
+    "Heartbeat": true,
+    "StatusNotification": false
+  },
   "Configuration": {
     "configurationKey": [
       {
