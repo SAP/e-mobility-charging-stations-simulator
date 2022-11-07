@@ -70,13 +70,11 @@ export default class Utils {
     if (Number.isSafeInteger(value)) {
       return value as number;
     }
-    // Check
-    if (Utils.isString(value)) {
-      // Create Object
-      changedValue = parseInt(value as string);
-    }
     if (typeof value === 'number') {
       changedValue = Math.trunc(value);
+    }
+    if (Utils.isString(value)) {
+      changedValue = parseInt(value as string);
     }
     return changedValue;
   }
@@ -86,9 +84,7 @@ export default class Utils {
     if (!value) {
       return 0;
     }
-    // Check
     if (Utils.isString(value)) {
-      // Create Object
       changedValue = parseFloat(value as string);
     }
     return changedValue;
