@@ -53,10 +53,12 @@ describe('Utils test suite', () => {
     expect(Utils.convertToInt(0)).toBe(0);
     const randomInteger = Utils.getRandomInteger();
     expect(Utils.convertToInt(randomInteger)).toEqual(randomInteger);
+    expect(Utils.convertToInt('-1')).toBe(-1);
     expect(Utils.convertToInt('1')).toBe(1);
     expect(Utils.convertToInt('1.1')).toBe(1);
     expect(Utils.convertToInt('1.9')).toBe(1);
     expect(Utils.convertToInt('1.999')).toBe(1);
+    expect(Utils.convertToInt(-1)).toBe(-1);
     expect(Utils.convertToInt(1)).toBe(1);
     expect(Utils.convertToInt(1.1)).toBe(1);
     expect(Utils.convertToInt(1.9)).toBe(1);
@@ -69,10 +71,12 @@ describe('Utils test suite', () => {
     expect(Utils.convertToFloat(0)).toBe(0);
     const randomFloat = Utils.getRandomFloat();
     expect(Utils.convertToFloat(randomFloat)).toEqual(randomFloat);
+    expect(Utils.convertToFloat('-1')).toBe(-1);
     expect(Utils.convertToFloat('1')).toBe(1);
     expect(Utils.convertToFloat('1.1')).toBe(1.1);
     expect(Utils.convertToFloat('1.9')).toBe(1.9);
     expect(Utils.convertToFloat('1.999')).toBe(1.999);
+    expect(Utils.convertToFloat(-1)).toBe(-1);
     expect(Utils.convertToFloat(1)).toBe(1);
     expect(Utils.convertToFloat(1.1)).toBe(1.1);
     expect(Utils.convertToFloat(1.9)).toBe(1.9);
@@ -92,6 +96,8 @@ describe('Utils test suite', () => {
     expect(Utils.convertToBoolean(0)).toBe(false);
     expect(Utils.convertToBoolean(true)).toBe(true);
     expect(Utils.convertToBoolean(false)).toBe(false);
+    expect(Utils.convertToBoolean('')).toBe(false);
+    expect(Utils.convertToBoolean('NoNBoolean')).toBe(false);
   });
 
   it('Verify secureRandom()', () => {
@@ -112,6 +118,11 @@ describe('Utils test suite', () => {
     randomInteger = Utils.getRandomInteger(2, 1);
     expect(randomInteger).toBeGreaterThanOrEqual(1);
     expect(randomInteger).toBeLessThanOrEqual(2);
+    const max = 2.2,
+      min = 1.1;
+    randomInteger = Utils.getRandomInteger(max, min);
+    expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(min));
+    expect(randomInteger).toBeLessThanOrEqual(Math.floor(max));
   });
 
   it('Verify getRandomFloat()', () => {
