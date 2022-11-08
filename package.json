@@ -92,7 +92,7 @@
     "tslib": "^2.4.1",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1",
-    "ws": "^8.10.0"
+    "ws": "^8.11.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.7",
