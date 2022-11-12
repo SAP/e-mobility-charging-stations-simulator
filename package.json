@@ -72,10 +72,10 @@
     "release": "release-it"
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.5.2",
-    "@mikro-orm/mariadb": "^5.5.2",
-    "@mikro-orm/reflection": "^5.5.2",
-    "@mikro-orm/sqlite": "^5.5.2",
+    "@mikro-orm/core": "^5.5.3",
+    "@mikro-orm/mariadb": "^5.5.3",
+    "@mikro-orm/reflection": "^5.5.3",
+    "@mikro-orm/sqlite": "^5.5.3",
     "ajv": "^8.11.0",
     "ajv-draft-04": "^1.0.0",
     "ajv-formats": "^2.1.1",
@@ -100,7 +100,7 @@
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@mikro-orm/cli": "^5.5.2",
+    "@mikro-orm/cli": "^5.5.3",
     "@release-it/bumper": "^4.0.0",
     "@rollup/plugin-json": "^5.0.1",
     "@types/mocha": "^10.0.0",
@@ -130,7 +130,7 @@
     "prettier": "^2.7.1",
     "release-it": "^15.5.0",
     "robohydra": "^0.6.9",
-    "rollup": "^3.2.5",
+    "rollup": "^3.3.0",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
