@@ -31,6 +31,8 @@ import {
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
   OCPP16ClearCacheRequest,
+  OCPP16DataTransferRequest,
+  OCPP16DataTransferVendorId,
   OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
@@ -43,7 +45,7 @@ import {
   SetChargingProfileRequest,
   UnlockConnectorRequest,
 } from '../../../types/ocpp/1.6/Requests';
-import type {
+import {
   ChangeAvailabilityResponse,
   ChangeConfigurationResponse,
   ClearChargingProfileResponse,
@@ -51,6 +53,8 @@ import type {
   GetConfigurationResponse,
   GetDiagnosticsResponse,
   OCPP16BootNotificationResponse,
+  OCPP16DataTransferResponse,
+  OCPP16DataTransferStatus,
   OCPP16HeartbeatResponse,
   OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageResponse,
@@ -123,6 +127,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       ],
       [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
       [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
+      [OCPP16IncomingRequestCommand.DATA_TRANSFER, this.handleRequestDataTransfer.bind(this)],
     ]);
     this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([
       [
@@ -268,6 +273,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
             'utf8'
           )
         ) as JSONSchemaType<OCPP16TriggerMessageRequest>,
+      ],
+      [
+        OCPP16IncomingRequestCommand.DATA_TRANSFER,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16DataTransferRequest>,
       ],
     ]);
     this.validatePayload.bind(this);
@@ -1223,6 +1240,29 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
         error as Error,
         { errorResponse: Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED }
+      );
+    }
+  }
+
+  private handleRequestDataTransfer(
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16DataTransferRequest
+  ): OCPP16DataTransferResponse {
+    try {
+      if (Object.values(OCPP16DataTransferVendorId).includes(commandPayload.vendorId)) {
+        return {
+          status: OCPP16DataTransferStatus.ACCEPTED,
+        };
+      }
+      return {
+        status: OCPP16DataTransferStatus.UNKNOWN_VENDOR_ID,
+      };
+    } catch (error) {
+      return this.handleIncomingRequestError(
+        chargingStation,
+        OCPP16IncomingRequestCommand.DATA_TRANSFER,
+        error as Error,
+        { errorResponse: Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
       );
     }
   }

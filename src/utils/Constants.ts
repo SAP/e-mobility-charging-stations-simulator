@@ -4,6 +4,7 @@ import {
   ChargingProfileStatus,
   ClearChargingProfileStatus,
   ConfigurationStatus,
+  DataTransferStatus,
   DefaultStatus,
   TriggerMessageStatus,
   UnlockStatus,
@@ -80,6 +81,10 @@ export default class Constants {
 
   static readonly OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED = Object.freeze({
     status: TriggerMessageStatus.NOT_IMPLEMENTED,
+  });
+
+  static readonly OCPP_DATA_TRANSFER_RESPONSE_REJECTED = Object.freeze({
+    status: DataTransferStatus.REJECTED,
   });
 
   static readonly OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms

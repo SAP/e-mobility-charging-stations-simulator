@@ -55,6 +55,7 @@ export enum OCPP16IncomingRequestCommand {
   REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
   GET_DIAGNOSTICS = 'GetDiagnostics',
   TRIGGER_MESSAGE = 'TriggerMessage',
+  DATA_TRANSFER = 'DataTransfer',
 }
 
 export type OCPP16ClearCacheRequest = EmptyObject;
@@ -138,6 +139,8 @@ export interface OCPP16TriggerMessageRequest extends JsonObject {
   requestedMessage: OCPP16MessageTrigger;
   connectorId?: number;
 }
+
+export enum OCPP16DataTransferVendorId {}
 
 export interface OCPP16DataTransferRequest extends JsonObject {
   vendorId: string;
