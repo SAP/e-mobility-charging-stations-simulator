@@ -12,6 +12,7 @@ import type { OCPP16MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValu
 import {
   DiagnosticsStatusNotificationRequest,
   OCPP16BootNotificationRequest,
+  OCPP16DataTransferRequest,
   OCPP16HeartbeatRequest,
   OCPP16RequestCommand,
   OCPP16StatusNotificationRequest,
@@ -137,6 +138,18 @@ export default class OCPP16RequestService extends OCPPRequestService {
             'utf8'
           )
         ) as JSONSchemaType<OCPP16StopTransactionRequest>,
+      ],
+      [
+        OCPP16RequestCommand.DATA_TRANSFER,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16DataTransferRequest>,
       ],
     ]);
     this.buildRequestPayload.bind(this);
@@ -268,6 +281,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
             ),
           }),
         } as unknown as Request;
+      case OCPP16RequestCommand.DATA_TRANSFER:
+        return commandParams as unknown as Request;
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         throw new OCPPError(

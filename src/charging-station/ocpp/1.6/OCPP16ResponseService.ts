@@ -23,6 +23,7 @@ import {
 import {
   DiagnosticsStatusNotificationResponse,
   OCPP16BootNotificationResponse,
+  OCPP16DataTransferResponse,
   OCPP16HeartbeatResponse,
   OCPP16RegistrationStatus,
   OCPP16StatusNotificationResponse,
@@ -66,6 +67,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       [OCPP16RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
       [OCPP16RequestCommand.METER_VALUES, this.emptyResponseHandler.bind(this)],
       [OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
+      [OCPP16RequestCommand.DATA_TRANSFER, this.emptyResponseHandler.bind(this)],
     ]);
     this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
       [
@@ -163,6 +165,18 @@ export default class OCPP16ResponseService extends OCPPResponseService {
             'utf8'
           )
         ) as JSONSchemaType<DiagnosticsStatusNotificationResponse>,
+      ],
+      [
+        OCPP16RequestCommand.DATA_TRANSFER,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16DataTransferResponse>,
       ],
     ]);
     this.validatePayload.bind(this);

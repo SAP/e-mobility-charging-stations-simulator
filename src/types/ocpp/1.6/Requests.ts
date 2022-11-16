@@ -15,6 +15,7 @@ export enum OCPP16RequestCommand {
   STOP_TRANSACTION = 'StopTransaction',
   METER_VALUES = 'MeterValues',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
+  DATA_TRANSFER = 'DataTransfer',
 }
 
 export type OCPP16HeartbeatRequest = EmptyObject;
@@ -136,4 +137,10 @@ export enum OCPP16MessageTrigger {
 export interface OCPP16TriggerMessageRequest extends JsonObject {
   requestedMessage: OCPP16MessageTrigger;
   connectorId?: number;
+}
+
+export interface OCPP16DataTransferRequest extends JsonObject {
+  vendorId: string;
+  messageId?: string;
+  data?: string;
 }

@@ -90,3 +90,15 @@ export enum OCPP16TriggerMessageStatus {
 export interface OCPP16TriggerMessageResponse extends JsonObject {
   status: OCPP16TriggerMessageStatus;
 }
+
+export enum OCPP16DataTransferStatus {
+  ACCEPTED = 'Accepted',
+  REJECTED = 'Rejected',
+  UNKNOWN_MESSAGE_ID = 'UnknownMessageId',
+  UNKNOWN_VENDOR_ID = 'UnknownVendorId',
+}
+
+export interface OCPP16DataTransferResponse extends JsonObject {
+  status: OCPP16DataTransferStatus;
+  data?: string;
+}

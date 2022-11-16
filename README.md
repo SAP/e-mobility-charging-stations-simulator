@@ -310,7 +310,7 @@ make SUBMODULES_INIT=true
 - :white_check_mark: ChangeAvailability
 - :white_check_mark: ChangeConfiguration
 - :white_check_mark: ClearCache
-- :x: DataTransfer
+- :white_check_mark: DataTransfer
 - :white_check_mark: GetConfiguration
 - :white_check_mark: Heartbeat
 - :white_check_mark: MeterValues
@@ -468,41 +468,6 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `chargingStations`: ChargingStationData[]  
   }
 
-###### Start Transaction
-
-- Request:  
-  `ProcedureName`: 'startTransaction'  
-  `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorId`: connector id integer,  
-  `idTag`: RFID tag string  
-  }
-
-- Response:  
-  `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
-  }
-
-###### Stop Transaction
-
-- Request:  
-  `ProcedureName`: 'stopTransaction'  
-  `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `transactionId`: transaction id integer  
-  }
-
-- Response:  
-  `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
-  }
-
 ###### Start Charging Station
 
 - Request:  
@@ -601,40 +566,86 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `responsesFailed`: failed responses payload array (optional)  
   }
 
-###### Status Notification
+###### OCPP commands trigger
 
-- Request:  
-  `ProcedureName`: 'StatusNotification'  
-  `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorId`: connector id integer,  
-  `errorCode`: connector error code,  
-  `status`: connector status  
-  }
+The request PDU is the same as the OCPP command payload with some optional fields added to target the simulated charging stations:
 
-- Response:  
-  `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
-  }
+`PDU`: {  
+ `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+ ...`payload`  
+ }
 
-###### Heartbeat
+Examples:
 
-- Request:  
-  `ProcedureName`: 'Heartbeat'  
-  `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  }
+- **Start Transaction**
 
-- Response:  
-  `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
-  }
+  - Request:  
+    `ProcedureName`: 'startTransaction'  
+    `PDU`: {  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `connectorId`: connector id integer,  
+    `idTag`: RFID tag string  
+    }
+
+  - Response:  
+    `PDU`: {  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
+    }
+
+- **Stop Transaction**
+
+  - Request:  
+    `ProcedureName`: 'stopTransaction'  
+    `PDU`: {  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `transactionId`: transaction id integer  
+    }
+
+  - Response:  
+    `PDU`: {  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
+    }
+
+- **Status Notification**
+
+  - Request:  
+    `ProcedureName`: 'StatusNotification'  
+    `PDU`: {  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    `connectorId`: connector id integer,  
+    `errorCode`: connector error code,  
+    `status`: connector status  
+    }
+
+  - Response:  
+    `PDU`: {  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
+    }
+
+- **Heartbeat**
+
+  - Request:  
+    `ProcedureName`: 'Heartbeat'  
+    `PDU`: {  
+    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+    }
+
+  - Response:  
+    `PDU`: {  
+    `status`: 'success' | 'failure',  
+    `hashIdsSucceeded`: charging station unique identifier strings array,  
+    `hashIdsFailed`: charging station unique identifier strings array (optional),  
+    `responsesFailed`: failed responses payload array (optional)  
+    }
 
 ## Support, Feedback, Contributing
 

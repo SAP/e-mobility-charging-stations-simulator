@@ -3,6 +3,7 @@ import type OCPPError from '../exception/OCPPError';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
 import {
   type BootNotificationRequest,
+  type DataTransferRequest,
   type HeartbeatRequest,
   type MeterValuesRequest,
   RequestCommand,
@@ -10,6 +11,8 @@ import {
 } from '../types/ocpp/Requests';
 import {
   type BootNotificationResponse,
+  type DataTransferResponse,
+  DataTransferStatus,
   type HeartbeatResponse,
   type MeterValuesResponse,
   RegistrationStatus,
@@ -49,7 +52,8 @@ type CommandResponse =
   | BootNotificationResponse
   | StatusNotificationResponse
   | HeartbeatResponse
-  | MeterValuesResponse;
+  | MeterValuesResponse
+  | DataTransferResponse;
 
 type CommandHandler = (
   requestPayload?: BroadcastChannelRequestPayload
@@ -177,6 +181,14 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             ...requestPayload,
           });
         },
+      ],
+      [
+        BroadcastChannelProcedureName.DATA_TRANSFER,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
+            DataTransferRequest,
+            DataTransferResponse
+          >(this.chargingStation, RequestCommand.DATA_TRANSFER, requestPayload),
       ],
     ]);
     this.chargingStation = chargingStation;
@@ -313,6 +325,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         return ResponseStatus.FAILURE;
       case BroadcastChannelProcedureName.BOOT_NOTIFICATION:
         if (commandResponse?.status === RegistrationStatus.ACCEPTED) {
+          return ResponseStatus.SUCCESS;
+        }
+        return ResponseStatus.FAILURE;
+      case BroadcastChannelProcedureName.DATA_TRANSFER:
+        if (commandResponse?.status === DataTransferStatus.ACCEPTED) {
           return ResponseStatus.SUCCESS;
         }
         return ResponseStatus.FAILURE;

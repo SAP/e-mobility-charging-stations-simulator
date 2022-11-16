@@ -7,6 +7,8 @@ import {
   OCPP16ChargingProfileStatus,
   OCPP16ClearChargingProfileStatus,
   OCPP16ConfigurationStatus,
+  OCPP16DataTransferResponse,
+  OCPP16DataTransferStatus,
   OCPP16HeartbeatResponse,
   OCPP16RegistrationStatus,
   OCPP16StatusNotificationResponse,
@@ -33,6 +35,8 @@ export type HeartbeatResponse = OCPP16HeartbeatResponse;
 export type StatusNotificationResponse = OCPP16StatusNotificationResponse;
 
 export type MeterValuesResponse = OCPP16MeterValuesResponse;
+
+export type DataTransferResponse = OCPP16DataTransferResponse;
 
 export enum DefaultStatus {
   ACCEPTED = 'Accepted',
@@ -83,4 +87,10 @@ export type TriggerMessageStatus = OCPP16TriggerMessageStatus;
 
 export const TriggerMessageStatus = {
   ...OCPP16TriggerMessageStatus,
+};
+
+export type DataTransferStatus = OCPP16DataTransferStatus;
+
+export const DataTransferStatus = {
+  ...OCPP16DataTransferStatus,
 };

@@ -6,6 +6,7 @@ import type { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityType,
   OCPP16BootNotificationRequest,
+  OCPP16DataTransferRequest,
   OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
@@ -55,6 +56,8 @@ export type HeartbeatRequest = OCPP16HeartbeatRequest;
 export type StatusNotificationRequest = OCPP16StatusNotificationRequest;
 
 export type MeterValuesRequest = OCPP16MeterValuesRequest;
+
+export type DataTransferRequest = OCPP16DataTransferRequest;
 
 export type IncomingRequestHandler = (
   chargingStation: ChargingStation,
