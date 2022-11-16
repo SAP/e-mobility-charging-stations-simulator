@@ -568,12 +568,20 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 ###### OCPP commands trigger
 
-The request PDU is the same as the OCPP command payload with some optional fields added to target the simulated charging stations:
+- Request:  
+  `ProcedureName`: 'commandName' (the OCPP command name in camel case)  
+  `PDU`: {  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   ...`commandPayload`  
+   } (the OCPP command payload with some optional fields added to target the simulated charging stations)
 
-`PDU`: {  
- `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
- ...`payload`  
- }
+- Response:  
+   `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
+   }
 
 Examples:
 
@@ -615,7 +623,7 @@ Examples:
 - **Status Notification**
 
   - Request:  
-    `ProcedureName`: 'StatusNotification'  
+    `ProcedureName`: 'statusNotification'  
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
     `connectorId`: connector id integer,  
@@ -634,7 +642,7 @@ Examples:
 - **Heartbeat**
 
   - Request:  
-    `ProcedureName`: 'Heartbeat'  
+    `ProcedureName`: 'heartbeat'  
     `PDU`: {  
     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
     }
