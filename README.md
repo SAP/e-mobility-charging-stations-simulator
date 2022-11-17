@@ -473,8 +473,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startChargingStation'  
   `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `responsesFailed`: failed responses payload array (optional)  
+  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
@@ -482,6 +481,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `status`: 'success' | 'failure',  
   `hashIdsSucceeded`: charging station unique identifier strings array,  
   `hashIdsFailed`: charging station unique identifier strings array (optional)  
+  `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Stop Charging Station
