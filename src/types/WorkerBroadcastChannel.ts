@@ -27,7 +27,6 @@ export enum BroadcastChannelProcedureName {
 export interface BroadcastChannelRequestPayload extends RequestPayload {
   connectorId?: number;
   transactionId?: number;
-  idTag?: string;
 }
 
 export interface BroadcastChannelResponsePayload
