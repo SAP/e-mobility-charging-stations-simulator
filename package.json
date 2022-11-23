@@ -127,7 +127,7 @@
     "lint-staged": "^13.0.3",
     "mocha": "^10.1.0",
     "mochawesome": "^7.1.3",
-    "prettier": "^2.7.1",
+    "prettier": "^2.8.0",
     "release-it": "^15.5.0",
     "robohydra": "^0.6.9",
     "rollup": "^3.4.0",
