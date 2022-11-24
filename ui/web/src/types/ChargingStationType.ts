@@ -148,7 +148,6 @@ export enum OCPPVersion {
 }
 
 export enum OCPPProtocol {
-  SOAP = 'soap',
   JSON = 'json',
 }
 
