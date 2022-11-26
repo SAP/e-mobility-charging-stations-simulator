@@ -42,11 +42,13 @@ import {
   AvailabilityType,
   BootNotificationRequest,
   CachedRequest,
+  ErrorCallback,
   HeartbeatRequest,
   IncomingRequest,
   IncomingRequestCommand,
   MeterValuesRequest,
   RequestCommand,
+  ResponseCallback,
   StatusNotificationRequest,
 } from '../types/ocpp/Requests';
 import {
@@ -1412,8 +1414,8 @@ export default class ChargingStation {
     let errorType: ErrorType;
     let errorMessage: string;
     let errorDetails: JsonType;
-    let responseCallback: (payload: JsonType, requestPayload: JsonType) => void;
-    let errorCallback: (error: OCPPError, requestStatistic?: boolean) => void;
+    let responseCallback: ResponseCallback;
+    let errorCallback: ErrorCallback;
     let requestCommandName: RequestCommand | IncomingRequestCommand;
     let requestPayload: JsonType;
     let cachedRequest: CachedRequest;

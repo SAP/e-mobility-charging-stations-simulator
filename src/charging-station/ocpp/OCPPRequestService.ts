@@ -10,10 +10,12 @@ import type { JsonObject, JsonType } from '../../types/JsonType';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import {
+  ErrorCallback,
   IncomingRequestCommand,
   OutgoingRequest,
   RequestCommand,
   RequestParams,
+  ResponseCallback,
   ResponseType,
 } from '../../types/ocpp/Requests';
 import type { ErrorResponse, Response } from '../../types/ocpp/Responses';
@@ -308,8 +310,8 @@ export default abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName?: RequestCommand | IncomingRequestCommand,
-    responseCallback?: (payload: JsonType, requestPayload: JsonType) => void,
-    errorCallback?: (error: OCPPError, requestStatistic?: boolean) => void
+    responseCallback?: ResponseCallback,
+    errorCallback?: ErrorCallback
   ): string {
     let messageToSend: string;
     // Type of message

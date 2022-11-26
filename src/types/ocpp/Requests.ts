@@ -36,9 +36,13 @@ export const IncomingRequestCommand = {
 
 export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequestCommand, JsonType];
 
+export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => void;
+
+export type ErrorCallback = (error: OCPPError, requestStatistic?: boolean) => void;
+
 export type CachedRequest = [
-  (payload: JsonType, requestPayload: JsonType) => void,
-  (error: OCPPError, requestStatistic?: boolean) => void,
+  ResponseCallback,
+  ErrorCallback,
   RequestCommand | IncomingRequestCommand,
   JsonType
 ];
