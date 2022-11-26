@@ -234,10 +234,7 @@ export default abstract class OCPPRequestService {
            * @param payload
            * @param requestPayload
            */
-          async function responseCallback(
-            payload: JsonType,
-            requestPayload: JsonType
-          ): Promise<void> {
+          function responseCallback(payload: JsonType, requestPayload: JsonType): void {
             if (chargingStation.getEnableStatistics() === true) {
               chargingStation.performanceStatistics.addRequestStatistic(
                 commandName,
@@ -245,19 +242,22 @@ export default abstract class OCPPRequestService {
               );
             }
             // Handle the request's response
-            try {
-              await self.ocppResponseService.responseHandler(
+            self.ocppResponseService
+              .responseHandler(
                 chargingStation,
                 commandName as RequestCommand,
                 payload,
                 requestPayload
-              );
-              resolve(payload);
-            } catch (error) {
-              reject(error);
-            } finally {
-              chargingStation.requests.delete(messageId);
-            }
+              )
+              .then(() => {
+                resolve(payload);
+              })
+              .catch((error) => {
+                reject(error);
+              })
+              .finally(() => {
+                chargingStation.requests.delete(messageId);
+              });
           }
 
           /**
@@ -308,7 +308,7 @@ export default abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName?: RequestCommand | IncomingRequestCommand,
-    responseCallback?: (payload: JsonType, requestPayload: JsonType) => Promise<void>,
+    responseCallback?: (payload: JsonType, requestPayload: JsonType) => void,
     errorCallback?: (error: OCPPError, requestStatistic?: boolean) => void
   ): string {
     let messageToSend: string;
