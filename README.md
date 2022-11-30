@@ -2,7 +2,7 @@
 
 # [e-mobility charging stations simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
 
-[![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator) 
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator)
 
 ## Summary
 
