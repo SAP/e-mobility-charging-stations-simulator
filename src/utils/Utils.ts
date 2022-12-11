@@ -50,16 +50,17 @@ export default class Utils {
     return Utils.formatDurationMilliSeconds(duration * 1000);
   }
 
-  public static convertToDate(value: unknown): Date {
-    // Check
-    if (!value) {
-      return value as Date;
+  public static convertToDate(value: unknown): Date | null | undefined {
+    if (Utils.isNullOrUndefined(value)) {
+      return value as null | undefined;
     }
-    // Check Type
-    if (!(value instanceof Date)) {
-      return new Date(value as string);
+    if (value instanceof Date) {
+      return value;
     }
-    return value;
+    if (Utils.isString(value) || typeof value === 'number') {
+      return new Date(value as string | number);
+    }
+    return null;
   }
 
   public static convertToInt(value: unknown): number {

@@ -25,26 +25,22 @@ describe('Utils test suite', () => {
   it('Verify convertToDate()', () => {
     expect(Utils.convertToDate(undefined)).toBe(undefined);
     expect(Utils.convertToDate(null)).toBe(null);
-    expect(Utils.convertToDate(0)).toBe(0);
+    const invalidDate = Utils.convertToDate('');
+    expect(invalidDate instanceof Date && !isNaN(invalidDate.getTime())).toBe(false);
+    expect(Utils.convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'));
+    expect(Utils.convertToDate([])).toBe(null);
+    expect(Utils.convertToDate({})).toBe(null);
+    expect(Utils.convertToDate(new Map())).toBe(null);
+    expect(Utils.convertToDate(new Set())).toBe(null);
+    expect(Utils.convertToDate(new WeakMap())).toBe(null);
+    expect(Utils.convertToDate(new WeakSet())).toBe(null);
     const dateStr = '2020-01-01T00:00:00.000Z';
     let date = Utils.convertToDate(dateStr);
     expect(date).toBeInstanceOf(Date);
-    expect(date.getUTCFullYear()).toBe(2020);
-    expect(date.getUTCMonth()).toBe(0);
-    expect(date.getUTCDate()).toBe(1);
-    expect(date.getUTCHours()).toBe(0);
-    expect(date.getUTCMinutes()).toBe(0);
-    expect(date.getUTCSeconds()).toBe(0);
-    expect(date.getUTCMilliseconds()).toBe(0);
+    expect(date).toStrictEqual(new Date(dateStr));
     date = Utils.convertToDate(new Date(dateStr));
     expect(date).toBeInstanceOf(Date);
-    expect(date.getUTCFullYear()).toBe(2020);
-    expect(date.getUTCMonth()).toBe(0);
-    expect(date.getUTCDate()).toBe(1);
-    expect(date.getUTCHours()).toBe(0);
-    expect(date.getUTCMinutes()).toBe(0);
-    expect(date.getUTCSeconds()).toBe(0);
-    expect(date.getUTCMilliseconds()).toBe(0);
+    expect(date).toStrictEqual(new Date(dateStr));
   });
 
   it('Verify convertToInt()', () => {
