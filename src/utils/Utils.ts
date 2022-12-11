@@ -64,10 +64,10 @@ export default class Utils {
   }
 
   public static convertToInt(value: unknown): number {
-    let changedValue: number = value as number;
     if (!value) {
       return 0;
     }
+    let changedValue: number = value as number;
     if (Number.isSafeInteger(value)) {
       return value as number;
     }
@@ -81,10 +81,10 @@ export default class Utils {
   }
 
   public static convertToFloat(value: unknown): number {
-    let changedValue: number = value as number;
     if (!value) {
       return 0;
     }
+    let changedValue: number = value as number;
     if (Utils.isString(value)) {
       changedValue = parseFloat(value as string);
     }
