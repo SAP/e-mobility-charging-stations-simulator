@@ -401,7 +401,7 @@ export default class Configuration {
     }
   }
 
-  private static isObject(item): boolean {
+  private static isObject(item: unknown): boolean {
     return item && typeof item === 'object' && Array.isArray(item) === false;
   }
 
