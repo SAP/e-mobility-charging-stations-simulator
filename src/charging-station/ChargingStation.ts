@@ -608,6 +608,12 @@ export default class ChargingStation {
     options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     params.closeOpened = params?.closeOpened ?? false;
     params.terminateOpened = params?.terminateOpened ?? false;
+    if (this.started === false) {
+      logger.warn(
+        `${this.logPrefix()} Cannot open OCPP connection to URL ${this.wsConnectionUrl.toString()} on stopped charging station`
+      );
+      return;
+    }
     if (
       !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
       !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)

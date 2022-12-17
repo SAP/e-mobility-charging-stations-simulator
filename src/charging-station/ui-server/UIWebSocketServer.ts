@@ -72,14 +72,29 @@ export default class UIWebSocketServer extends AbstractUIServer {
       'upgrade',
       (req: IncomingMessage, socket: internal.Duplex, head: Buffer): void => {
         this.authenticate(req, (err) => {
-          if (err) {
-            socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`);
+          if (req.headers?.connection === 'Upgrade' && req.headers?.upgrade === 'websocket') {
+            if (err) {
+              socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`);
+              socket.destroy();
+              return;
+            }
+            try {
+              this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
+                this.webSocketServer.emit('connection', ws, req);
+              });
+            } catch (error) {
+              logger.error(
+                `${this.logPrefix(
+                  moduleName,
+                  'start.httpServer.on.upgrade'
+                )} Error at handling connection upgrade:`,
+                error
+              );
+            }
+          } else {
+            socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST} Bad Request\r\n\r\n`);
             socket.destroy();
-            return;
           }
-          this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
-            this.webSocketServer.emit('connection', ws, req);
-          });
         });
       }
     );

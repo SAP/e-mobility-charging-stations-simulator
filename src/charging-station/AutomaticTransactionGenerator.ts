@@ -69,6 +69,9 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   public start(): void {
+    if (this.checkChargingStation() === false) {
+      return;
+    }
     if (this.started === true) {
       logger.warn(`${this.logPrefix()} is already started`);
       return;
@@ -87,6 +90,9 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   public startConnector(connectorId: number): void {
+    if (this.checkChargingStation(connectorId) === false) {
+      return;
+    }
     if (this.connectorsStatus.has(connectorId) === false) {
       logger.error(`${this.logPrefix(connectorId)} starting on non existing connector`);
       throw new BaseError(`Connector ${connectorId} does not exist`);
@@ -446,5 +452,12 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
       logger.warn(this.logPrefix(connectorId) + ' start transaction rejected');
       this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
     }
+  }
+
+  private checkChargingStation(connectorId?: number): boolean {
+    if (this.chargingStation.started === false) {
+      logger.warn(`${this.logPrefix(connectorId)} charging station is stopped, cannot proceed`);
+    }
+    return this.chargingStation.started;
   }
 }
