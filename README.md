@@ -411,7 +411,7 @@ Protocol to control the simulator via a Websocket or HTTP server.
 
 ### HTTP Protocol
 
-To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
+To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
 
 ### Websocket Protocol
 
@@ -427,6 +427,8 @@ SRPC protocol over Websocket. PDU stands for 'Protocol Data Unit'.
   [`uuid`, `PDU`]  
   `uuid`: String uniquely linking the response to the request  
   `PDU`: Response parameters to requested procedure
+
+An [Insomnia](https://insomnia.rest/) WebSocket requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
 
 #### Version 0.0.1
 
