@@ -455,9 +455,10 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private checkChargingStation(connectorId?: number): boolean {
-    if (this.chargingStation.started === false) {
+    if (this.chargingStation.started === false && this.chargingStation.starting === false) {
       logger.warn(`${this.logPrefix(connectorId)} charging station is stopped, cannot proceed`);
+      return false;
     }
-    return this.chargingStation.started;
+    return true;
   }
 }

@@ -91,6 +91,7 @@ export default class ChargingStation {
   public readonly templateFile: string;
   public stationInfo!: ChargingStationInfo;
   public started: boolean;
+  public starting: boolean;
   public authorizedTagsCache: AuthorizedTagsCache;
   public automaticTransactionGenerator!: AutomaticTransactionGenerator;
   public ocppConfiguration!: ChargingStationOcppConfiguration;
@@ -103,7 +104,6 @@ export default class ChargingStation {
   public bootNotificationRequest!: BootNotificationRequest;
   public bootNotificationResponse!: BootNotificationResponse | null;
   public powerDivider!: number;
-  private starting: boolean;
   private stopping: boolean;
   private configurationFile!: string;
   private configurationFileHash!: string;
@@ -608,7 +608,7 @@ export default class ChargingStation {
     options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
     params.closeOpened = params?.closeOpened ?? false;
     params.terminateOpened = params?.terminateOpened ?? false;
-    if (this.started === false) {
+    if (this.started === false && this.starting === false) {
       logger.warn(
         `${this.logPrefix()} Cannot open OCPP connection to URL ${this.wsConnectionUrl.toString()} on stopped charging station`
       );
