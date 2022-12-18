@@ -1,13 +1,13 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2022-12-17T19:40:32.970Z",
+  "__export_date": "2022-12-18T12:12:07.146Z",
   "__export_source": "insomnia.desktop.app:v2022.7.0",
   "resources": [
     {
       "_id": "ws-req_3168fa005f2f43efa8ab26d402d545e8",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671297218663,
+      "modified": 1671365413550,
       "created": 1671297215175,
       "name": "startSimulator",
       "url": "{{ _.baseUrl }}",
@@ -16,7 +16,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -48,7 +48,7 @@
     {
       "_id": "ws-req_5fa1bd2aa33741bd88bbed71574795cf",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671297200663,
+      "modified": 1671365428461,
       "created": 1671191988912,
       "name": "stopSimulator",
       "url": "{{ _.baseUrl }}",
@@ -57,7 +57,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -79,7 +79,7 @@
     {
       "_id": "ws-req_11d4fc7b15a7467585e9325ee1a9edfd",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671297360420,
+      "modified": 1671365432495,
       "created": 1671297360420,
       "name": "openConnection",
       "url": "{{ _.baseUrl }}",
@@ -88,7 +88,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -110,7 +110,7 @@
     {
       "_id": "ws-req_5fa3addc8717485f8eb60b03c3f9eb4a",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671297412490,
+      "modified": 1671365435787,
       "created": 1671297412490,
       "name": "closeConnection",
       "url": "{{ _.baseUrl }}",
@@ -119,7 +119,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -141,7 +141,7 @@
     {
       "_id": "ws-req_783183d5e32d434f877355aec7bf4f22",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671305185120,
+      "modified": 1671365444149,
       "created": 1671297544189,
       "name": "listChargingStations",
       "url": "{{ _.baseUrl }}",
@@ -150,7 +150,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -172,7 +172,7 @@
     {
       "_id": "ws-req_2d3c10b504454826ab4c257093272596",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671297701514,
+      "modified": 1671365448555,
       "created": 1671297697168,
       "name": "startChargingStation",
       "url": "{{ _.baseUrl }}",
@@ -181,7 +181,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -203,7 +203,7 @@
     {
       "_id": "ws-req_7cd5c1734a454970af5ac18e89a59b5e",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671297731069,
+      "modified": 1671365453243,
       "created": 1671297731069,
       "name": "stopChargingStation",
       "url": "{{ _.baseUrl }}",
@@ -212,7 +212,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -234,7 +234,7 @@
     {
       "_id": "ws-req_b15fd2f214da40f7a1a77204cf7863b7",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671298432032,
+      "modified": 1671365457797,
       "created": 1671298432032,
       "name": "startAutomaticTransactionGenerator",
       "url": "{{ _.baseUrl }}",
@@ -243,7 +243,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -265,7 +265,7 @@
     {
       "_id": "ws-req_71c26454a7cc4217b24dbf999334ad33",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
-      "modified": 1671298534995,
+      "modified": 1671365460922,
       "created": 1671298534995,
       "name": "stopAutomaticTransactionGenerator",
       "url": "{{ _.baseUrl }}",
@@ -274,7 +274,7 @@
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
           "name": "Sec-WebSocket-Protocol",
-          "value": "{{ _.protocol }}",
+          "value": "{{ _.protocol }}{{ _.version }}",
           "description": ""
         }
       ],
@@ -328,16 +328,17 @@
     {
       "_id": "env_bcef03da4e0542c3833bbd57f1254609",
       "parentId": "env_5e2b694e69a20eac33f0e6e21a40d99b05b8cfce",
-      "modified": 1671305620263,
+      "modified": 1671365398038,
       "created": 1671183662528,
       "name": "CSSimulatorUIWSProtocolEnvironment",
       "data": {
         "baseUrl": "wss://e-mobility-charging-stations-simulator-plugncharge.cfapps.eu12.hana.ondemand.com",
         "username": "admin",
         "password": "admin",
-        "protocol": "ui0.0.1"
+        "protocol": "ui",
+        "version": "0.0.1"
       },
-      "dataPropertyOrder": { "&": ["baseUrl", "username", "password", "protocol"] },
+      "dataPropertyOrder": { "&": ["baseUrl", "username", "password", "protocol", "version"] },
       "color": null,
       "isPrivate": false,
       "metaSortKey": 1671183662529,
@@ -346,7 +347,7 @@
     {
       "_id": "ws-payload_d5cd140e264a4f548c19fcc346e04e03",
       "parentId": "ws-req_5fa1bd2aa33741bd88bbed71574795cf",
-      "modified": 1671305985686,
+      "modified": 1671365050709,
       "created": 1671192074985,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopSimulator\",\n\t{}\n]",
@@ -356,7 +357,7 @@
     {
       "_id": "ws-payload_1c4a192739f2449998bb4782956483a3",
       "parentId": "ws-req_3168fa005f2f43efa8ab26d402d545e8",
-      "modified": 1671305983836,
+      "modified": 1671365507418,
       "created": 1671297215182,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startSimulator\",\n\t{}\n]",
@@ -366,7 +367,7 @@
     {
       "_id": "ws-payload_55e195cc589a454f9153a6cfd4280d79",
       "parentId": "ws-req_11d4fc7b15a7467585e9325ee1a9edfd",
-      "modified": 1671305986415,
+      "modified": 1671306748198,
       "created": 1671297360441,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"openConnection\",\n\t{}\n]",
@@ -376,7 +377,7 @@
     {
       "_id": "ws-payload_6a96def2049544a99fe0e805552a705a",
       "parentId": "ws-req_5fa3addc8717485f8eb60b03c3f9eb4a",
-      "modified": 1671305199511,
+      "modified": 1671365052350,
       "created": 1671297412505,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"closeConnection\",\n\t{}\n]",
@@ -386,7 +387,7 @@
     {
       "_id": "ws-payload_e90d242789294f2eb30439cd2cd2b4fd",
       "parentId": "ws-req_783183d5e32d434f877355aec7bf4f22",
-      "modified": 1671305988118,
+      "modified": 1671365474795,
       "created": 1671297544207,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"listChargingStations\",\n\t{}\n]",
@@ -396,7 +397,7 @@
     {
       "_id": "ws-payload_c0b6ca95bed746679365c97c3bcbaaff",
       "parentId": "ws-req_2d3c10b504454826ab4c257093272596",
-      "modified": 1671305988817,
+      "modified": 1671365055230,
       "created": 1671297697172,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startChargingStation\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t\t]\n\t}\n]",
@@ -406,7 +407,7 @@
     {
       "_id": "ws-payload_5c1978f5d1f64a8aa6aa54362a2187ee",
       "parentId": "ws-req_7cd5c1734a454970af5ac18e89a59b5e",
-      "modified": 1671305989533,
+      "modified": 1671365505328,
       "created": 1671297731073,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopChargingStation\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t\t]\n\t}\n]",
@@ -416,7 +417,7 @@
     {
       "_id": "ws-payload_def4ac84561f4a8da20591dadd25a3d4",
       "parentId": "ws-req_b15fd2f214da40f7a1a77204cf7863b7",
-      "modified": 1671305990216,
+      "modified": 1671365505873,
       "created": 1671298432039,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startAutomaticTransactionGenerator\",\n\t{}\n]",
@@ -426,7 +427,7 @@
     {
       "_id": "ws-payload_27584690150941ec90f83625fb666595",
       "parentId": "ws-req_71c26454a7cc4217b24dbf999334ad33",
-      "modified": 1671305990864,
+      "modified": 1671365506418,
       "created": 1671298535001,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopAutomaticTransactionGenerator\",\n\t{}\n]",
