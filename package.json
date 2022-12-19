@@ -84,7 +84,7 @@
     "http-status-codes": "^2.2.0",
     "mnemonist": "^0.39.5",
     "moment": "^2.29.4",
-    "mongodb": "^4.12.1",
+    "mongodb": "^4.13.0",
     "poolifier": "^2.3.7",
     "proper-lockfile": "^4.1.2",
     "source-map-support": "^0.5.21",
