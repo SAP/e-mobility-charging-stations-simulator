@@ -108,6 +108,7 @@ describe('Utils test suite', () => {
     expect(Number.isSafeInteger(randomInteger)).toBe(true);
     expect(randomInteger).toBeGreaterThanOrEqual(0);
     expect(randomInteger).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+    expect(randomInteger).not.toEqual(Utils.getRandomInteger());
     expect(() => Utils.getRandomInteger(0, 1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomInteger(-1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomInteger(0, -1)).toThrowError(new RangeError('Invalid interval'));
@@ -126,6 +127,7 @@ describe('Utils test suite', () => {
     expect(typeof randomFloat === 'number').toBe(true);
     expect(randomFloat).toBeGreaterThanOrEqual(0);
     expect(randomFloat).toBeLessThanOrEqual(Number.MAX_VALUE);
+    expect(randomFloat).not.toEqual(Utils.getRandomFloat());
     expect(() => Utils.getRandomFloat(0, 1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomFloat(-1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => Utils.getRandomFloat(0, -1)).toThrowError(new RangeError('Invalid interval'));
