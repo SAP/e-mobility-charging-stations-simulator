@@ -95,6 +95,10 @@ export default class Constants {
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
   static readonly CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS = 0.25; // Hours
 
+  // See https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+  static readonly SEMVER_REGEXP =
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = Number.MAX_SAFE_INTEGER;
 
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384';

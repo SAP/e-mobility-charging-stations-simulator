@@ -18,6 +18,7 @@ export type ChargingStationInfo = {
   chargingStationId?: string;
   chargePointModel: string;
   chargePointVendor: string;
+  firmwareVersionPattern?: string;
   firmwareVersion?: string;
   numberOfConnectors?: number | number[];
   baseName: string;

@@ -35,6 +35,16 @@ export enum Voltage {
 
 export type WsOptions = ClientOptions & ClientRequestArgs;
 
+type FirmwareUpgrade = {
+  versionUpgrade: {
+    patternGroup?: number | number[];
+    to?: string;
+  };
+  reset?: boolean;
+  resetDelay?: number;
+  checkIntegrity?: boolean;
+};
+
 type CommandsSupport = {
   incomingCommands: Record<IncomingRequestCommand, boolean>;
   outgoingCommands?: Record<RequestCommand, boolean>;
@@ -61,7 +71,9 @@ export type ChargingStationTemplate = {
   chargePointVendor: string;
   chargePointSerialNumberPrefix?: string;
   chargeBoxSerialNumberPrefix?: string;
+  firmwareVersionPattern?: string;
   firmwareVersion?: string;
+  firmwareUpgrade?: FirmwareUpgrade;
   iccid?: string;
   imsi?: string;
   meterSerialNumberPrefix?: string;

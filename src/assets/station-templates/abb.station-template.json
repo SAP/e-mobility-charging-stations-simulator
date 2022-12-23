@@ -3,6 +3,7 @@
   "baseName": "CS-ABB",
   "chargePointModel": "MD_TERRA_53",
   "chargePointVendor": "ABB",
+  "firmwareVersionPattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
   "firmwareVersion": "4.0.4.22",
   "power": 50000,
   "powerSharedByConnectors": true,

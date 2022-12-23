@@ -818,6 +818,19 @@ export default class ChargingStation {
       'supervisionUrl',
       'supervisionUrls'
     );
+    const firmwareVersionRegExp = stationTemplate.firmwareVersionPattern
+      ? new RegExp(stationTemplate.firmwareVersionPattern)
+      : Constants.SEMVER_REGEXP;
+    if (
+      stationTemplate.firmwareVersion &&
+      firmwareVersionRegExp.test(stationTemplate.firmwareVersion) === false
+    ) {
+      logger.warn(
+        `${this.logPrefix()} Firmware version '${
+          stationTemplate.firmwareVersion
+        }' does not match regular expression '${firmwareVersionRegExp.toString()}'`
+      );
+    }
     const stationInfo: ChargingStationInfo =
       ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);
     stationInfo.hashId = ChargingStationUtils.getHashId(this.index, stationTemplate);
