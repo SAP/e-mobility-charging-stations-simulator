@@ -9,6 +9,7 @@ import Utils from './Utils';
 let transports: transport[];
 if (Configuration.getLogRotate()) {
   const logMaxFiles = Configuration.getLogMaxFiles();
+  const logMaxSize = Configuration.getLogMaxSize();
   transports = [
     new DailyRotateFile({
       filename: Utils.insertAt(
@@ -17,7 +18,8 @@ if (Configuration.getLogRotate()) {
         Configuration.getLogErrorFile().indexOf('.log')
       ),
       level: 'error',
-      maxFiles: logMaxFiles,
+      ...(logMaxFiles && { maxFiles: logMaxFiles }),
+      ...(logMaxSize && { maxSize: logMaxSize }),
     }),
     new DailyRotateFile({
       filename: Utils.insertAt(
@@ -25,7 +27,8 @@ if (Configuration.getLogRotate()) {
         '-%DATE%',
         Configuration.getLogFile().indexOf('.log')
       ),
-      maxFiles: logMaxFiles,
+      ...(logMaxFiles && { maxFiles: logMaxFiles }),
+      ...(logMaxSize && { maxSize: logMaxSize }),
     }),
   ];
 } else {

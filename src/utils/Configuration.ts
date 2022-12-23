@@ -246,10 +246,18 @@ export default class Configuration {
       : true;
   }
 
-  static getLogMaxFiles(): number {
-    return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles')
-      ? Configuration.getConfig().logMaxFiles
-      : 7;
+  static getLogMaxFiles(): number | string | undefined {
+    return (
+      Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') &&
+      Configuration.getConfig().logMaxFiles
+    );
+  }
+
+  static getLogMaxSize(): number | string | undefined {
+    return (
+      Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') &&
+      Configuration.getConfig().logMaxSize
+    );
   }
 
   static getLogLevel(): string {

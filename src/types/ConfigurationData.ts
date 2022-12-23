@@ -73,7 +73,8 @@ export type ConfigurationData = {
   logFormat?: string;
   logLevel?: string;
   logRotate?: boolean;
-  logMaxFiles?: number;
+  logMaxFiles?: number | string;
+  logMaxSize?: number | string;
   logFile?: string;
   logErrorFile?: string;
   logConsole?: boolean;
