@@ -796,7 +796,7 @@ export default class ChargingStation {
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate = this.getTemplateFromFile();
     if (Utils.isNullOrUndefined(stationTemplate)) {
-      const errorMsg = 'Failed to read charging station template file';
+      const errorMsg = `Failed to read charging station template file ${this.templateFile}`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
@@ -828,7 +828,9 @@ export default class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Firmware version '${
           stationTemplate.firmwareVersion
-        }' does not match regular expression '${firmwareVersionRegExp.toString()}'`
+        }' in template file ${
+          this.templateFile
+        } does not match regular expression '${firmwareVersionRegExp.toString()}'`
       );
     }
     const stationInfo: ChargingStationInfo =
