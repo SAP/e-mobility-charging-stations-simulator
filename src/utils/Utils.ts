@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 
+import clone from 'just-clone';
+
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 
 export default class Utils {
@@ -163,8 +165,8 @@ export default class Utils {
     );
   }
 
-  public static cloneObject<T>(object: T): T {
-    return JSON.parse(JSON.stringify(object)) as T;
+  public static cloneObject<T extends object>(object: T): T {
+    return clone<T>(object);
   }
 
   public static isIterable<T>(obj: T): boolean {

@@ -44,6 +44,8 @@ export default {
     'fs',
     'http',
     'http-status-codes',
+    'just-clone',
+    'just-merge',
     'mnemonist/lru-map-with-delete',
     'moment',
     'mongodb',

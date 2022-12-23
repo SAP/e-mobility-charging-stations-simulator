@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import chalk from 'chalk';
+import merge from 'just-merge';
 import { WorkerChoiceStrategies } from 'poolifier';
 
 import {
@@ -68,7 +69,7 @@ export default class Configuration {
       },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
-      uiServerConfiguration = Configuration.deepMerge(
+      uiServerConfiguration = Configuration.merge(
         uiServerConfiguration,
         Configuration.getConfig().uiServer
       );
@@ -409,9 +410,9 @@ export default class Configuration {
     }
   }
 
-  private static isObject(item: unknown): boolean {
-    return item && typeof item === 'object' && Array.isArray(item) === false;
-  }
+  // private static isObject(item: unknown): boolean {
+  //   return item && typeof item === 'object' && Array.isArray(item) === false;
+  // }
 
   private static objectHasOwnProperty(object: unknown, property: string): boolean {
     return Object.prototype.hasOwnProperty.call(object, property) as boolean;
@@ -421,27 +422,8 @@ export default class Configuration {
     return typeof obj === 'undefined';
   }
 
-  private static deepMerge(target: object, ...sources: object[]): object {
-    if (!sources.length) {
-      return target;
-    }
-    const source = sources.shift();
-
-    if (Configuration.isObject(target) && Configuration.isObject(source)) {
-      for (const key in source) {
-        if (Configuration.isObject(source[key])) {
-          if (!target[key]) {
-            Object.assign(target, { [key]: {} });
-          }
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          Configuration.deepMerge(target[key], source[key]);
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          Object.assign(target, { [key]: source[key] });
-        }
-      }
-    }
-    return Configuration.deepMerge(target, ...sources);
+  private static merge(target: object, ...sources: object[]): object {
+    return merge(target, ...sources);
   }
 
   private static handleFileException(
