@@ -7,7 +7,7 @@ import Configuration from './Configuration';
 import Utils from './Utils';
 
 let transports: transport[];
-if (Configuration.getLogRotate()) {
+if (Configuration.getLogRotate() === true) {
   const logMaxFiles = Configuration.getLogMaxFiles();
   const logMaxSize = Configuration.getLogMaxSize();
   transports = [

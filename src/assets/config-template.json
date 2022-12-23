@@ -44,6 +44,7 @@
     }
   ],
   "logStatisticsInterval": 0,
+  "logMaxFiles": 7,
   "logFile": "combined.log",
   "logErrorFile": "error.log"
 }
