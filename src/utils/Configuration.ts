@@ -69,10 +69,7 @@ export default class Configuration {
       },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
-      uiServerConfiguration = Configuration.merge(
-        uiServerConfiguration,
-        Configuration.getConfig().uiServer
-      );
+      uiServerConfiguration = merge(uiServerConfiguration, Configuration.getConfig().uiServer);
     }
     if (Configuration.isCFEnvironment() === true) {
       delete uiServerConfiguration.options.host;
@@ -410,20 +407,12 @@ export default class Configuration {
     }
   }
 
-  // private static isObject(item: unknown): boolean {
-  //   return item && typeof item === 'object' && Array.isArray(item) === false;
-  // }
-
   private static objectHasOwnProperty(object: unknown, property: string): boolean {
     return Object.prototype.hasOwnProperty.call(object, property) as boolean;
   }
 
   private static isUndefined(obj: unknown): boolean {
     return typeof obj === 'undefined';
-  }
-
-  private static merge(target: object, ...sources: object[]): object {
-    return merge(target, ...sources);
   }
 
   private static handleFileException(
