@@ -55,6 +55,7 @@ export class ChargingStationUtils {
       ...(!Utils.isUndefined(stationTemplate.chargePointSerialNumberPrefix) && {
         chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix,
       }),
+      // FIXME?: Should a firmware version change always reference a new configuration file?
       ...(!Utils.isUndefined(stationTemplate.firmwareVersion) && {
         firmwareVersion: stationTemplate.firmwareVersion,
       }),
