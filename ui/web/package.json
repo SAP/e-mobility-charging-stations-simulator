@@ -11,7 +11,7 @@
     "test": "vue-cli-service test:unit"
   },
   "dependencies": {
-    "core-js": "^3.26.1",
+    "core-js": "^3.27.0",
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "vue": "^3.2.45",
