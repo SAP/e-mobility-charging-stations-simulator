@@ -1905,9 +1905,7 @@ export default class ChargingStation {
   }
 
   private getConfiguredSupervisionUrl(): URL {
-    const supervisionUrls = (
-      this.stationInfo.supervisionUrls ?? Configuration.getSupervisionUrls()
-    ).slice();
+    const supervisionUrls = this.stationInfo.supervisionUrls ?? Configuration.getSupervisionUrls();
     if (!Utils.isEmptyArray(supervisionUrls)) {
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.ROUND_ROBIN:
