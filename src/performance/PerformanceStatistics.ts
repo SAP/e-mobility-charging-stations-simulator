@@ -58,6 +58,7 @@ export default class PerformanceStatistics {
   public static endMeasure(name: string, markId: string): void {
     performance.measure(name, markId);
     performance.clearMarks(markId);
+    performance.clearMeasures(name);
   }
 
   public addRequestStatistic(
@@ -127,6 +128,7 @@ export default class PerformanceStatistics {
       clearInterval(this.displayInterval);
     }
     performance.clearMarks();
+    performance.clearMeasures();
     this.performanceObserver?.disconnect();
   }
 
@@ -136,8 +138,8 @@ export default class PerformanceStatistics {
   }
 
   private initializePerformanceObserver(): void {
-    this.performanceObserver = new PerformanceObserver((list) => {
-      const lastPerformanceEntry = list.getEntries()[0];
+    this.performanceObserver = new PerformanceObserver((performanceObserverList) => {
+      const lastPerformanceEntry = performanceObserverList.getEntries()[0];
       this.addPerformanceEntryToStatistics(lastPerformanceEntry);
       logger.debug(
         `${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`,
@@ -148,7 +150,10 @@ export default class PerformanceStatistics {
   }
 
   private logStatistics(): void {
-    logger.info(this.logPrefix() + ' %j', this.statistics);
+    logger.info(`${this.logPrefix()}`, {
+      ...this.statistics,
+      statisticsData: Utils.JSONStringifyWithMapSupport(this.statistics.statisticsData),
+    });
   }
 
   private startLogStatisticsInterval(): void {
