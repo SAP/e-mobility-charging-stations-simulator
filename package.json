@@ -102,7 +102,7 @@
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@mikro-orm/cli": "^5.6.1",
+    "@mikro-orm/cli": "^5.6.3",
     "@release-it/bumper": "^4.0.0",
     "@rollup/plugin-json": "^6.0.0",
     "@types/mocha": "^10.0.1",
