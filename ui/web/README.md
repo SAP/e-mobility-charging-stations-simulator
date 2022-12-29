@@ -21,7 +21,7 @@ The simulator UI server must be enabled, use WebSocket and disable authenticatio
   },
 ```
 
-See [here](../README.md#charging-stations-simulator-configuration) for more details.
+See [here](../../README.md#charging-stations-simulator-configuration) for more details.
 
 ### Run
 
