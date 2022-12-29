@@ -28,12 +28,6 @@ describe('Utils test suite', () => {
     const invalidDate = Utils.convertToDate('');
     expect(invalidDate instanceof Date && !isNaN(invalidDate.getTime())).toBe(false);
     expect(Utils.convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'));
-    expect(Utils.convertToDate([])).toBe(null);
-    expect(Utils.convertToDate({})).toBe(null);
-    expect(Utils.convertToDate(new Map())).toBe(null);
-    expect(Utils.convertToDate(new Set())).toBe(null);
-    expect(Utils.convertToDate(new WeakMap())).toBe(null);
-    expect(Utils.convertToDate(new WeakSet())).toBe(null);
     const dateStr = '2020-01-01T00:00:00.000Z';
     let date = Utils.convertToDate(dateStr);
     expect(date).toBeInstanceOf(Date);
@@ -59,6 +53,9 @@ describe('Utils test suite', () => {
     expect(Utils.convertToInt(1.1)).toBe(1);
     expect(Utils.convertToInt(1.9)).toBe(1);
     expect(Utils.convertToInt(1.999)).toBe(1);
+    expect(() => {
+      Utils.convertToInt('NaN');
+    }).toThrow('Cannot convert to integer: NaN');
   });
 
   it('Verify convertToFloat()', () => {
@@ -77,6 +74,9 @@ describe('Utils test suite', () => {
     expect(Utils.convertToFloat(1.1)).toBe(1.1);
     expect(Utils.convertToFloat(1.9)).toBe(1.9);
     expect(Utils.convertToFloat(1.999)).toBe(1.999);
+    expect(() => {
+      Utils.convertToFloat('NaN');
+    }).toThrow('Cannot convert to float: NaN');
   });
 
   it('Verify convertToBoolean()', () => {

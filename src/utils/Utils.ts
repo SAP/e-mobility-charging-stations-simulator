@@ -52,7 +52,9 @@ export default class Utils {
     return Utils.formatDurationMilliSeconds(duration * 1000);
   }
 
-  public static convertToDate(value: unknown): Date | null | undefined {
+  public static convertToDate(
+    value: Date | string | number | null | undefined
+  ): Date | null | undefined {
     if (Utils.isNullOrUndefined(value)) {
       return value as null | undefined;
     }
@@ -60,7 +62,7 @@ export default class Utils {
       return value;
     }
     if (Utils.isString(value) || typeof value === 'number') {
-      return new Date(value as string | number);
+      return new Date(value);
     }
     return null;
   }
@@ -74,10 +76,13 @@ export default class Utils {
       return value as number;
     }
     if (typeof value === 'number') {
-      changedValue = Math.trunc(value);
+      return Math.trunc(value);
     }
     if (Utils.isString(value)) {
       changedValue = parseInt(value as string);
+    }
+    if (isNaN(changedValue)) {
+      throw new Error(`Cannot convert to integer: ${value.toString()}`);
     }
     return changedValue;
   }
@@ -90,6 +95,9 @@ export default class Utils {
     if (Utils.isString(value)) {
       changedValue = parseFloat(value as string);
     }
+    if (isNaN(changedValue)) {
+      throw new Error(`Cannot convert to float: ${value.toString()}`);
+    }
     return changedValue;
   }
 
@@ -98,7 +106,7 @@ export default class Utils {
     if (value) {
       // Check the type
       if (typeof value === 'boolean') {
-        result = value;
+        return value;
       } else if (
         Utils.isString(value) &&
         ((value as string).toLowerCase() === 'true' || value === '1')
