@@ -56,6 +56,7 @@ export enum OCPP16IncomingRequestCommand {
   GET_DIAGNOSTICS = 'GetDiagnostics',
   TRIGGER_MESSAGE = 'TriggerMessage',
   DATA_TRANSFER = 'DataTransfer',
+  UPDATE_FIRMWARE = 'UpdateFirmware',
 }
 
 export type OCPP16ClearCacheRequest = EmptyObject;
@@ -112,6 +113,13 @@ export interface ClearChargingProfileRequest extends JsonObject {
   connectorId?: number;
   chargingProfilePurpose?: ChargingProfilePurposeType;
   stackLevel?: number;
+}
+
+export interface OCPP16UpdateFirmwareRequest extends JsonObject {
+  location: string;
+  retrieveDate: Date;
+  retries?: number;
+  retryInterval?: number;
 }
 
 export interface GetDiagnosticsRequest extends JsonObject {

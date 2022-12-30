@@ -75,6 +75,8 @@ export interface ClearChargingProfileResponse extends JsonObject {
   status: OCPP16ClearChargingProfileStatus;
 }
 
+export type OCPP16UpdateFirmwareResponse = EmptyObject;
+
 export interface GetDiagnosticsResponse extends JsonObject {
   fileName?: string;
 }

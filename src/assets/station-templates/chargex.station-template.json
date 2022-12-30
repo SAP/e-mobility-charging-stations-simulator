@@ -3,6 +3,7 @@
   "baseName": "CS-CHARGEX",
   "chargePointModel": "Aqueduct 1.0",
   "chargePointVendor": "ChargeX GmbH",
+  "firmwareVersionPattern": "^MCC (0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*); SCC \\[(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*), (0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\]$",
   "firmwareVersion": "MCC 1.2.0; SCC [0.12.0, 0.13.0]",
   "power": 22080,
   "powerUnit": "W",

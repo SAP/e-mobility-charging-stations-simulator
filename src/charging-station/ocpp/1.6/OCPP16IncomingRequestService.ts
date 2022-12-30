@@ -39,6 +39,7 @@ import {
   OCPP16RequestCommand,
   OCPP16StatusNotificationRequest,
   OCPP16TriggerMessageRequest,
+  OCPP16UpdateFirmwareRequest,
   RemoteStartTransactionRequest,
   RemoteStopTransactionRequest,
   ResetRequest,
@@ -58,6 +59,7 @@ import {
   OCPP16HeartbeatResponse,
   OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageResponse,
+  OCPP16UpdateFirmwareResponse,
   SetChargingProfileResponse,
   UnlockConnectorResponse,
 } from '../../../types/ocpp/1.6/Responses';
@@ -128,6 +130,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
       [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
       [OCPP16IncomingRequestCommand.DATA_TRANSFER, this.handleRequestDataTransfer.bind(this)],
+      // [OCPP16IncomingRequestCommand.UPDATE_FIRMWARE, this.handleRequestUpdateFirmware.bind(this)],
     ]);
     this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([
       [
@@ -1004,6 +1007,28 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         transactionId.toString()
     );
     return Constants.OCPP_RESPONSE_REJECTED;
+  }
+
+  private handleRequestUpdateFirmware(
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16UpdateFirmwareRequest
+  ): OCPP16UpdateFirmwareResponse {
+    if (
+      OCPP16ServiceUtils.checkFeatureProfile(
+        chargingStation,
+        OCPP16SupportedFeatureProfiles.FirmwareManagement,
+        OCPP16IncomingRequestCommand.UPDATE_FIRMWARE
+      ) === false
+    ) {
+      return Constants.OCPP_RESPONSE_EMPTY;
+    }
+    logger.debug(
+      chargingStation.logPrefix() +
+        ' ' +
+        OCPP16IncomingRequestCommand.UPDATE_FIRMWARE +
+        ' request received: %j',
+      commandPayload
+    );
   }
 
   private async handleRequestGetDiagnostics(
