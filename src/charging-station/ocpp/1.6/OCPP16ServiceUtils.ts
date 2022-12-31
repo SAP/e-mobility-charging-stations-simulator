@@ -698,7 +698,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     meterValue.sampledValue.push(
       OCPP16ServiceUtils.buildSampledValue(
         sampledValueTemplate,
-        Utils.roundTo(meterStart / unitDivider, 4),
+        Utils.roundTo((meterStart ?? 0) / unitDivider, 4),
         MeterValueContext.TRANSACTION_BEGIN
       )
     );
@@ -723,7 +723,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     meterValue.sampledValue.push(
       OCPP16ServiceUtils.buildSampledValue(
         sampledValueTemplate,
-        Utils.roundTo(meterStop / unitDivider, 4),
+        Utils.roundTo((meterStop ?? 0) / unitDivider, 4),
         MeterValueContext.TRANSACTION_END
       )
     );
