@@ -6,7 +6,7 @@ import path from 'path';
 import { URL } from 'url';
 import { parentPort } from 'worker_threads';
 
-import WebSocket, { Data, RawData } from 'ws';
+import WebSocket, { type RawData } from 'ws';
 
 import BaseError from '../exception/BaseError';
 import OCPPError from '../exception/OCPPError';
@@ -1402,7 +1402,7 @@ export default class ChargingStation {
     }
   }
 
-  private async onClose(code: number, reason: string): Promise<void> {
+  private async onClose(code: number, reason: Buffer): Promise<void> {
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
@@ -1410,7 +1410,7 @@ export default class ChargingStation {
         logger.info(
           `${this.logPrefix()} WebSocket normally closed with status '${Utils.getWebSocketCloseEventStatusString(
             code
-          )}' and reason '${reason}'`
+          )}' and reason '${reason.toString()}'`
         );
         this.autoReconnectRetryCount = 0;
         break;
@@ -1419,7 +1419,7 @@ export default class ChargingStation {
         logger.error(
           `${this.logPrefix()} WebSocket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(
             code
-          )}' and reason '${reason}'`
+          )}' and reason '${reason.toString()}'`
         );
         this.started === true && (await this.reconnect());
         break;
@@ -1427,7 +1427,7 @@ export default class ChargingStation {
     parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
-  private async onMessage(data: Data): Promise<void> {
+  private async onMessage(data: RawData): Promise<void> {
     let messageType: number;
     let messageId: string;
     let commandName: IncomingRequestCommand;
