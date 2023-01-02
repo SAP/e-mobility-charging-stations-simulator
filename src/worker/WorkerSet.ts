@@ -9,7 +9,7 @@ import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerSet extends WorkerAbstract<WorkerData> {
   private readonly workerSet: Set<WorkerSetElement>;
-  private readonly messageHandler: (message: unknown) => void | Promise<void>;
+  private readonly messageHandler: (message: unknown) => void;
 
   /**
    * Create a new `WorkerSet`.
@@ -89,13 +89,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   private async startWorker(): Promise<void> {
     const worker = new Worker(this.workerScript);
-    worker.on('message', (msg) => {
-      (async () => {
-        await this.messageHandler(msg);
-      })().catch(() => {
-        /* This is intentional */
-      });
-    });
+    worker.on('message', this.messageHandler);
     worker.on('error', WorkerUtils.defaultErrorHandler);
     worker.on('exit', (code) => {
       WorkerUtils.defaultExitHandler(code);

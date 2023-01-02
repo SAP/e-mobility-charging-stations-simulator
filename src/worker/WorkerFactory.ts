@@ -29,7 +29,6 @@ export default class WorkerFactory {
       workerOptions?.elementStartDelay ?? WorkerConstants.DEFAULT_ELEMENT_START_DELAY;
     workerOptions.poolOptions = workerOptions?.poolOptions ?? ({} as PoolOptions<Worker>);
     workerOptions?.messageHandler &&
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
     let workerImplementation: WorkerAbstract<T> = null;
     switch (workerProcessType) {
