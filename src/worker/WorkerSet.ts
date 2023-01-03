@@ -2,29 +2,29 @@
 
 import { Worker } from 'worker_threads';
 
-import { WorkerData, WorkerMessageEvents, WorkerOptions, WorkerSetElement } from '../types/Worker';
+import {
+  type MessageHandler,
+  type WorkerData,
+  WorkerMessageEvents,
+  type WorkerOptions,
+  type WorkerSetElement,
+} from '../types/Worker';
 import Utils from '../utils/Utils';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerSet extends WorkerAbstract<WorkerData> {
   private readonly workerSet: Set<WorkerSetElement>;
-  private readonly messageHandler: (message: unknown) => void;
 
   /**
    * Create a new `WorkerSet`.
    *
-   * @param workerScript
-   * @param workerOptions
+   * @param workerScript -
+   * @param workerOptions -
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
     this.workerSet = new Set<WorkerSetElement>();
-    this.messageHandler =
-      workerOptions?.messageHandler ??
-      (() => {
-        /* This is intentional */
-      });
   }
 
   get size(): number {
@@ -37,7 +37,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
 
   /**
    *
-   * @param elementData
+   * @param elementData -
    * @returns
    * @public
    */
@@ -89,8 +89,16 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   private async startWorker(): Promise<void> {
     const worker = new Worker(this.workerScript);
-    worker.on('message', this.messageHandler);
-    worker.on('error', WorkerUtils.defaultErrorHandler);
+    worker.on(
+      'message',
+      (
+        this.workerOptions?.messageHandler ??
+        (() => {
+          /* This is intentional */
+        })
+      ).bind(this) as MessageHandler<Worker>
+    );
+    worker.on('error', WorkerUtils.defaultErrorHandler.bind(this) as (err: Error) => void);
     worker.on('exit', (code) => {
       WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));

@@ -233,8 +233,8 @@ export default abstract class OCPPRequestService {
           /**
            * Function that will receive the request's response
            *
-           * @param payload
-           * @param requestPayload
+           * @param payload -
+           * @param requestPayload -
            */
           function responseCallback(payload: JsonType, requestPayload: JsonType): void {
             if (chargingStation.getEnableStatistics() === true) {
@@ -265,8 +265,8 @@ export default abstract class OCPPRequestService {
           /**
            * Function that will receive the request's error response
            *
-           * @param error
-           * @param requestStatistic
+           * @param error -
+           * @param requestStatistic -
            */
           function errorCallback(error: OCPPError, requestStatistic = true): void {
             if (requestStatistic === true && chargingStation.getEnableStatistics() === true) {

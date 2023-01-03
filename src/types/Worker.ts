@@ -8,6 +8,8 @@ export enum WorkerProcessType {
   STATIC_POOL = 'staticPool',
 }
 
+export type MessageHandler<T> = (this: T, message: unknown) => void;
+
 export type WorkerOptions = {
   workerStartDelay?: number;
   elementStartDelay?: number;
@@ -15,7 +17,7 @@ export type WorkerOptions = {
   poolMinSize?: number;
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
-  messageHandler?: (this: Worker, message: unknown) => void;
+  messageHandler?: MessageHandler<Worker>;
 };
 
 export type WorkerData = Record<string, unknown>;

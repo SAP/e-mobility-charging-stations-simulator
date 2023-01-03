@@ -1,4 +1,6 @@
-import { DynamicThreadPool } from 'poolifier';
+import type { Worker } from 'worker_threads';
+
+import { DynamicThreadPool, type ErrorHandler, type ExitHandler } from 'poolifier';
 
 import type { WorkerData, WorkerOptions } from '../types/Worker';
 import Utils from '../utils/Utils';
@@ -11,15 +13,18 @@ export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   /**
    * Create a new `WorkerDynamicPool`.
    *
-   * @param workerScript
-   * @param workerOptions
+   * @param workerScript -
+   * @param workerOptions -
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
-    this.workerOptions.poolOptions.errorHandler =
-      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler;
-    this.workerOptions.poolOptions.exitHandler =
-      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler;
+    this.workerOptions.poolOptions.errorHandler = (
+      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler
+    ).bind(this) as ErrorHandler<Worker>;
+    this.workerOptions.poolOptions.exitHandler = (
+      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler
+    ).bind(this) as ExitHandler<Worker>;
+    this.workerOptions.poolOptions.messageHandler.bind(this);
     this.pool = new DynamicThreadPool<WorkerData>(
       this.workerOptions.poolMinSize,
       this.workerOptions.poolMaxSize,
@@ -56,7 +61,7 @@ export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
 
   /**
    *
-   * @param elementData
+   * @param elementData -
    * @returns
    * @public
    */

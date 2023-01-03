@@ -284,9 +284,9 @@ export class ChargingStationUtils {
   /**
    * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
    *
-   * @param {ChargingProfile[]} chargingProfiles
-   * @param {string} logPrefix
-   * @returns {{ limit, matchingChargingProfile }}
+   * @param chargingProfiles -
+   * @param logPrefix -
+   * @returns
    */
   public static getLimitFromChargingProfiles(
     chargingProfiles: ChargingProfile[],

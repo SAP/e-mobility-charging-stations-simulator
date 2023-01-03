@@ -9,17 +9,9 @@
     "ecmaVersion": 2020,
     "sourceType": "module"
   },
-  "extends": [
-    "eslint:recommended",
-    "plugin:import/recommended",
-    "plugin:jsdoc/recommended",
-    "plugin:prettier/recommended"
-  ],
-  "plugins": ["import", "jsdoc"],
+  "plugins": ["import"],
+  "extends": ["eslint:recommended", "plugin:import/recommended", "plugin:prettier/recommended"],
   "settings": {
-    "jsdoc": {
-      "mode": "typescript"
-    },
     "import/resolver": {
       "typescript": {
         "project": "./tsconfig.json"
@@ -153,14 +145,15 @@
       "parserOptions": {
         "project": "./tsconfig.json"
       },
+      "plugins": ["@typescript-eslint", "eslint-plugin-tsdoc"],
       "extends": [
         "plugin:@typescript-eslint/eslint-recommended",
         "plugin:@typescript-eslint/recommended",
         "plugin:@typescript-eslint/recommended-requiring-type-checking",
         "plugin:import/typescript"
       ],
-      "plugins": ["@typescript-eslint"],
       "rules": {
+        "tsdoc/syntax": "warn",
         "@typescript-eslint/array-type": "off",
         "semi": "off",
         "@typescript-eslint/semi": ["error", "always"],
@@ -176,7 +169,8 @@
     },
     {
       "files": ["**/*.js"],
-      "extends": "plugin:n/recommended",
+      "plugins": ["jsdoc"],
+      "extends": ["plugin:jsdoc/recommended", "plugin:n/recommended"],
       "rules": {
         "n/shebang": "off"
       }

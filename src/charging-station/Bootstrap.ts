@@ -19,6 +19,7 @@ import {
 } from '../types/ChargingStationWorker';
 import type { StationTemplateUrl } from '../types/ConfigurationData';
 import type { Statistics } from '../types/Statistics';
+import type { MessageHandler } from '../types/Worker';
 import Configuration from '../utils/Configuration';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
@@ -178,10 +179,7 @@ export class Bootstrap {
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
           },
-          messageHandler: this.messageHandler.bind(this) as (
-            this: Worker,
-            msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
-          ) => void,
+          messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
         }
       ));
   }

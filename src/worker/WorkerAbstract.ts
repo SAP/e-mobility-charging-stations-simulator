@@ -12,8 +12,8 @@ export default abstract class WorkerAbstract<T extends WorkerData> {
   /**
    * `WorkerAbstract` constructor.
    *
-   * @param workerScript
-   * @param workerOptions
+   * @param workerScript -
+   * @param workerOptions -
    */
   constructor(
     workerScript: string,

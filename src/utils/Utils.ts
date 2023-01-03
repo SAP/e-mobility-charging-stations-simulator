@@ -228,7 +228,7 @@ export default class Utils {
     `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
 
   /**
-   * @param [retryNumber=0]
+   * @param retryNumber - the number of retries that have already been attempted
    * @returns delay in milliseconds
    */
   public static exponentialDelay(retryNumber = 0): number {
@@ -288,7 +288,7 @@ export default class Utils {
   /**
    * Convert websocket error code to human readable string message
    *
-   * @param code websocket error code
+   * @param code - websocket error code
    * @returns human readable string message
    */
   public static getWebSocketCloseEventStatusString(code: number): string {

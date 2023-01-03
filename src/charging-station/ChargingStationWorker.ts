@@ -40,7 +40,7 @@ function addMessageListener(): void {
 /**
  * Create and start a charging station instance
  *
- * @param data workerData
+ * @param data - workerData
  */
 function startChargingStation(data: ChargingStationWorkerData): void {
   const station = new ChargingStation(data.index, data.templateFile);

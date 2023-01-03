@@ -1,4 +1,6 @@
-import { FixedThreadPool } from 'poolifier';
+import type { Worker } from 'worker_threads';
+
+import { type ErrorHandler, type ExitHandler, FixedThreadPool } from 'poolifier';
 
 import type { WorkerData, WorkerOptions } from '../types/Worker';
 import Utils from '../utils/Utils';
@@ -11,15 +13,18 @@ export default class WorkerStaticPool extends WorkerAbstract<WorkerData> {
   /**
    * Create a new `WorkerStaticPool`.
    *
-   * @param workerScript
-   * @param workerOptions
+   * @param workerScript -
+   * @param workerOptions -
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
-    this.workerOptions.poolOptions.errorHandler =
-      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler;
-    this.workerOptions.poolOptions.exitHandler =
-      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler;
+    this.workerOptions.poolOptions.errorHandler = (
+      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler
+    ).bind(this) as ErrorHandler<Worker>;
+    this.workerOptions.poolOptions.exitHandler = (
+      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler
+    ).bind(this) as ExitHandler<Worker>;
+    this.workerOptions.poolOptions.messageHandler.bind(this);
     this.pool = new FixedThreadPool(
       this.workerOptions.poolMaxSize,
       this.workerScript,
@@ -55,7 +60,7 @@ export default class WorkerStaticPool extends WorkerAbstract<WorkerData> {
 
   /**
    *
-   * @param elementData
+   * @param elementData -
    * @returns
    * @public
    */
