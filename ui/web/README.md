@@ -36,6 +36,7 @@ npm start
 ```shell
 npm run serve
 ```
+
 #### Try it out
 
 For both options above you can then follow the link displayed in the terminal at the end of compilation. The Web UI looks like the following

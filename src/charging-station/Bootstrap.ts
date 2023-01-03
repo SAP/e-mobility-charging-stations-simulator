@@ -11,10 +11,10 @@ import BaseError from '../exception/BaseError';
 import type { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
-  ChargingStationData,
-  ChargingStationWorkerData,
-  ChargingStationWorkerMessage,
-  ChargingStationWorkerMessageData,
+  type ChargingStationData,
+  type ChargingStationWorkerData,
+  type ChargingStationWorkerMessage,
+  type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
 import type { StationTemplateUrl } from '../types/ConfigurationData';
