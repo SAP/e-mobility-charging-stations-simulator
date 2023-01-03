@@ -84,8 +84,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
   }
 
   /**
-   *
-   * @private
+   * Start a new `Worker`.
    */
   private async startWorker(): Promise<void> {
     const worker = new Worker(this.workerScript);
