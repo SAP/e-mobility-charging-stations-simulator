@@ -7,7 +7,7 @@ import { parentPort } from 'worker_threads';
 import { MessageChannelUtils } from '../charging-station/MessageChannelUtils';
 import { MessageType } from '../types/ocpp/MessageType';
 import type { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
-import type { Statistics, StatisticsData, TimeSeries } from '../types/Statistics';
+import type { Statistics, TimeSeries } from '../types/Statistics';
 import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
 import Configuration from '../utils/Configuration';
 import logger from '../utils/Logger';
@@ -34,7 +34,7 @@ export default class PerformanceStatistics {
       name: this.objName ?? 'Object name not specified',
       uri: uri.toString(),
       createdAt: new Date(),
-      statisticsData: new Map<string, Partial<StatisticsData>>(),
+      statisticsData: new Map(),
     };
   }
 
