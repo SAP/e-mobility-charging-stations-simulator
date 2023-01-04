@@ -16,10 +16,10 @@ import {
   MeterValueContext,
   MeterValueLocation,
   MeterValueUnit,
-  OCPP16MeterValue,
+  type OCPP16MeterValue,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValuePhase,
-  OCPP16SampledValue,
+  type OCPP16SampledValue,
 } from '../../../types/ocpp/1.6/MeterValues';
 import {
   OCPP16IncomingRequestCommand,

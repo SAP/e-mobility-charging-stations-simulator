@@ -5,7 +5,7 @@ import path from 'path';
 import { URL, fileURLToPath } from 'url';
 
 import type { JSONSchemaType } from 'ajv';
-import { Client, FTPResponse } from 'basic-ftp';
+import { Client, type FTPResponse } from 'basic-ftp';
 import tar from 'tar';
 
 import OCPPError from '../../../exception/OCPPError';
@@ -14,7 +14,7 @@ import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointE
 import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
 import {
   ChargingProfilePurposeType,
-  OCPP16ChargingProfile,
+  type OCPP16ChargingProfile,
 } from '../../../types/ocpp/1.6/ChargingProfile';
 import {
   OCPP16StandardParametersKey,
@@ -22,53 +22,53 @@ import {
 } from '../../../types/ocpp/1.6/Configuration';
 import { OCPP16DiagnosticsStatus } from '../../../types/ocpp/1.6/DiagnosticsStatus';
 import {
-  ChangeAvailabilityRequest,
-  ChangeConfigurationRequest,
-  ClearChargingProfileRequest,
-  DiagnosticsStatusNotificationRequest,
-  GetConfigurationRequest,
-  GetDiagnosticsRequest,
+  type ChangeAvailabilityRequest,
+  type ChangeConfigurationRequest,
+  type ClearChargingProfileRequest,
+  type DiagnosticsStatusNotificationRequest,
+  type GetConfigurationRequest,
+  type GetDiagnosticsRequest,
   OCPP16AvailabilityType,
-  OCPP16BootNotificationRequest,
-  OCPP16ClearCacheRequest,
-  OCPP16DataTransferRequest,
+  type OCPP16BootNotificationRequest,
+  type OCPP16ClearCacheRequest,
+  type OCPP16DataTransferRequest,
   OCPP16DataTransferVendorId,
-  OCPP16HeartbeatRequest,
+  type OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
   OCPP16RequestCommand,
-  OCPP16StatusNotificationRequest,
-  OCPP16TriggerMessageRequest,
-  OCPP16UpdateFirmwareRequest,
-  RemoteStartTransactionRequest,
-  RemoteStopTransactionRequest,
-  ResetRequest,
-  SetChargingProfileRequest,
-  UnlockConnectorRequest,
+  type OCPP16StatusNotificationRequest,
+  type OCPP16TriggerMessageRequest,
+  type OCPP16UpdateFirmwareRequest,
+  type RemoteStartTransactionRequest,
+  type RemoteStopTransactionRequest,
+  type ResetRequest,
+  type SetChargingProfileRequest,
+  type UnlockConnectorRequest,
 } from '../../../types/ocpp/1.6/Requests';
 import {
-  ChangeAvailabilityResponse,
-  ChangeConfigurationResponse,
-  ClearChargingProfileResponse,
-  DiagnosticsStatusNotificationResponse,
-  GetConfigurationResponse,
-  GetDiagnosticsResponse,
-  OCPP16BootNotificationResponse,
-  OCPP16DataTransferResponse,
+  type ChangeAvailabilityResponse,
+  type ChangeConfigurationResponse,
+  type ClearChargingProfileResponse,
+  type DiagnosticsStatusNotificationResponse,
+  type GetConfigurationResponse,
+  type GetDiagnosticsResponse,
+  type OCPP16BootNotificationResponse,
+  type OCPP16DataTransferResponse,
   OCPP16DataTransferStatus,
-  OCPP16HeartbeatResponse,
-  OCPP16StatusNotificationResponse,
-  OCPP16TriggerMessageResponse,
-  OCPP16UpdateFirmwareResponse,
-  SetChargingProfileResponse,
-  UnlockConnectorResponse,
+  type OCPP16HeartbeatResponse,
+  type OCPP16StatusNotificationResponse,
+  type OCPP16TriggerMessageResponse,
+  type OCPP16UpdateFirmwareResponse,
+  type SetChargingProfileResponse,
+  type UnlockConnectorResponse,
 } from '../../../types/ocpp/1.6/Responses';
 import {
   OCPP16AuthorizationStatus,
-  OCPP16AuthorizeRequest,
-  OCPP16AuthorizeResponse,
-  OCPP16StartTransactionRequest,
-  OCPP16StartTransactionResponse,
+  type OCPP16AuthorizeRequest,
+  type OCPP16AuthorizeResponse,
+  type OCPP16StartTransactionRequest,
+  type OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,
 } from '../../../types/ocpp/1.6/Transaction';
 import type { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';

@@ -10,12 +10,12 @@ import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import type { OCPP16MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
 import {
-  DiagnosticsStatusNotificationRequest,
-  OCPP16BootNotificationRequest,
-  OCPP16DataTransferRequest,
-  OCPP16HeartbeatRequest,
+  type DiagnosticsStatusNotificationRequest,
+  type OCPP16BootNotificationRequest,
+  type OCPP16DataTransferRequest,
+  type OCPP16HeartbeatRequest,
   OCPP16RequestCommand,
-  OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
 import type {
   OCPP16AuthorizeRequest,

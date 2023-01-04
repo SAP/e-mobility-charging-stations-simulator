@@ -10,12 +10,12 @@ import type { JsonObject, JsonType } from '../../types/JsonType';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { MessageType } from '../../types/ocpp/MessageType';
 import {
-  ErrorCallback,
-  IncomingRequestCommand,
-  OutgoingRequest,
+  type ErrorCallback,
+  type IncomingRequestCommand,
+  type OutgoingRequest,
   RequestCommand,
-  RequestParams,
-  ResponseCallback,
+  type RequestParams,
+  type ResponseCallback,
   ResponseType,
 } from '../../types/ocpp/Requests';
 import type { ErrorResponse, Response } from '../../types/ocpp/Responses';

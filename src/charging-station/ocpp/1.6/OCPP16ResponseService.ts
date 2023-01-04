@@ -16,26 +16,26 @@ import type {
   OCPP16MeterValuesResponse,
 } from '../../../types/ocpp/1.6/MeterValues';
 import {
-  OCPP16BootNotificationRequest,
+  type OCPP16BootNotificationRequest,
   OCPP16RequestCommand,
-  OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
 import {
-  DiagnosticsStatusNotificationResponse,
-  OCPP16BootNotificationResponse,
-  OCPP16DataTransferResponse,
-  OCPP16HeartbeatResponse,
+  type DiagnosticsStatusNotificationResponse,
+  type OCPP16BootNotificationResponse,
+  type OCPP16DataTransferResponse,
+  type OCPP16HeartbeatResponse,
   OCPP16RegistrationStatus,
-  OCPP16StatusNotificationResponse,
+  type OCPP16StatusNotificationResponse,
 } from '../../../types/ocpp/1.6/Responses';
 import {
   OCPP16AuthorizationStatus,
-  OCPP16AuthorizeRequest,
-  OCPP16AuthorizeResponse,
-  OCPP16StartTransactionRequest,
-  OCPP16StartTransactionResponse,
-  OCPP16StopTransactionRequest,
-  OCPP16StopTransactionResponse,
+  type OCPP16AuthorizeRequest,
+  type OCPP16AuthorizeResponse,
+  type OCPP16StartTransactionRequest,
+  type OCPP16StartTransactionResponse,
+  type OCPP16StopTransactionRequest,
+  type OCPP16StopTransactionResponse,
 } from '../../../types/ocpp/1.6/Transaction';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import type { ResponseHandler } from '../../../types/ocpp/Responses';
