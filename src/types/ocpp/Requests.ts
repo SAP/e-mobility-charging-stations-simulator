@@ -5,20 +5,22 @@ import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
 import type { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityType,
-  OCPP16BootNotificationRequest,
-  OCPP16DataTransferRequest,
-  OCPP16HeartbeatRequest,
+  type OCPP16BootNotificationRequest,
+  type OCPP16DataTransferRequest,
+  type OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
   OCPP16RequestCommand,
-  OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
+import { OCPP20IncomingRequestCommand, OCPP20RequestCommand } from './2.0/Requests';
 import type { MessageType } from './MessageType';
 
 export type RequestCommand = OCPP16RequestCommand;
 
 export const RequestCommand = {
   ...OCPP16RequestCommand,
+  ...OCPP20RequestCommand,
 };
 
 export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType];
@@ -32,6 +34,7 @@ export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
 
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,
+  ...OCPP20IncomingRequestCommand,
 };
 
 export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequestCommand, JsonType];

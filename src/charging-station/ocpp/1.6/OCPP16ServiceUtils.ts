@@ -22,7 +22,7 @@ import {
   type OCPP16SampledValue,
 } from '../../../types/ocpp/1.6/MeterValues';
 import {
-  OCPP16IncomingRequestCommand,
+  type OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
 } from '../../../types/ocpp/1.6/Requests';
 import { ErrorType } from '../../../types/ocpp/ErrorType';

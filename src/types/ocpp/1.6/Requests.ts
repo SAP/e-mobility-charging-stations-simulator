@@ -18,6 +18,23 @@ export enum OCPP16RequestCommand {
   DATA_TRANSFER = 'DataTransfer',
 }
 
+export enum OCPP16IncomingRequestCommand {
+  RESET = 'Reset',
+  CLEAR_CACHE = 'ClearCache',
+  CHANGE_AVAILABILITY = 'ChangeAvailability',
+  UNLOCK_CONNECTOR = 'UnlockConnector',
+  GET_CONFIGURATION = 'GetConfiguration',
+  CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  SET_CHARGING_PROFILE = 'SetChargingProfile',
+  CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
+  REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
+  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
+  GET_DIAGNOSTICS = 'GetDiagnostics',
+  TRIGGER_MESSAGE = 'TriggerMessage',
+  DATA_TRANSFER = 'DataTransfer',
+  UPDATE_FIRMWARE = 'UpdateFirmware',
+}
+
 export type OCPP16HeartbeatRequest = EmptyObject;
 
 export interface OCPP16BootNotificationRequest extends JsonObject {
@@ -40,23 +57,6 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
   timestamp?: string;
   vendorId?: string;
   vendorErrorCode?: string;
-}
-
-export enum OCPP16IncomingRequestCommand {
-  RESET = 'Reset',
-  CLEAR_CACHE = 'ClearCache',
-  CHANGE_AVAILABILITY = 'ChangeAvailability',
-  UNLOCK_CONNECTOR = 'UnlockConnector',
-  GET_CONFIGURATION = 'GetConfiguration',
-  CHANGE_CONFIGURATION = 'ChangeConfiguration',
-  SET_CHARGING_PROFILE = 'SetChargingProfile',
-  CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
-  REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
-  REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
-  GET_DIAGNOSTICS = 'GetDiagnostics',
-  TRIGGER_MESSAGE = 'TriggerMessage',
-  DATA_TRANSFER = 'DataTransfer',
-  UPDATE_FIRMWARE = 'UpdateFirmware',
 }
 
 export type OCPP16ClearCacheRequest = EmptyObject;

@@ -1,4 +1,5 @@
 import type { CircularArray } from '../utils/CircularArray';
+import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
 import type { WorkerData } from './Worker';
 
 export type TimeSeries = {
