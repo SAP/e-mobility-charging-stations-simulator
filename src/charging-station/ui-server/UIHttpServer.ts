@@ -5,12 +5,12 @@ import { StatusCodes } from 'http-status-codes';
 import BaseError from '../../exception/BaseError';
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import {
-  ProcedureName,
-  Protocol,
-  ProtocolRequest,
-  ProtocolResponse,
-  ProtocolVersion,
-  RequestPayload,
+  type ProcedureName,
+  type Protocol,
+  type ProtocolRequest,
+  type ProtocolResponse,
+  type ProtocolVersion,
+  type RequestPayload,
   ResponseStatus,
 } from '../../types/UIProtocol';
 import logger from '../../utils/Logger';

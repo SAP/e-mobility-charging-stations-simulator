@@ -16,7 +16,7 @@ import {
   RequestCommand,
   type RequestParams,
   type ResponseCallback,
-  ResponseType,
+  type ResponseType,
 } from '../../types/ocpp/Requests';
 import type { ErrorResponse, Response } from '../../types/ocpp/Responses';
 import Constants from '../../utils/Constants';
@@ -376,10 +376,10 @@ export default abstract class OCPPRequestService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public abstract requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
+  public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     commandParams?: JsonType,
     params?: RequestParams
-  ): Promise<ResponseType>;
+  ): Promise<ResType>;
 }

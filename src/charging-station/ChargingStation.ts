@@ -40,30 +40,30 @@ import { MeterValue, MeterValueMeasurand } from '../types/ocpp/MeterValues';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import {
   AvailabilityType,
-  BootNotificationRequest,
-  CachedRequest,
-  ErrorCallback,
-  HeartbeatRequest,
-  IncomingRequest,
+  type BootNotificationRequest,
+  type CachedRequest,
+  type ErrorCallback,
+  type HeartbeatRequest,
+  type IncomingRequest,
   IncomingRequestCommand,
-  MeterValuesRequest,
+  type MeterValuesRequest,
   RequestCommand,
-  ResponseCallback,
-  StatusNotificationRequest,
+  type ResponseCallback,
+  type StatusNotificationRequest,
 } from '../types/ocpp/Requests';
 import {
-  BootNotificationResponse,
-  ErrorResponse,
-  HeartbeatResponse,
-  MeterValuesResponse,
+  type BootNotificationResponse,
+  type ErrorResponse,
+  type HeartbeatResponse,
+  type MeterValuesResponse,
   RegistrationStatus,
-  Response,
-  StatusNotificationResponse,
+  type Response,
+  type StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
   StopTransactionReason,
-  StopTransactionRequest,
-  StopTransactionResponse,
+  type StopTransactionRequest,
+  type StopTransactionResponse,
 } from '../types/ocpp/Transaction';
 import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
 import Configuration from '../utils/Configuration';

@@ -6,12 +6,12 @@ import type { ChargingStationData } from '../../types/ChargingStationWorker';
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import {
   AuthenticationType,
-  ProcedureName,
-  ProtocolRequest,
-  ProtocolResponse,
-  ProtocolVersion,
-  RequestPayload,
-  ResponsePayload,
+  type ProcedureName,
+  type ProtocolRequest,
+  type ProtocolResponse,
+  type ProtocolVersion,
+  type RequestPayload,
+  type ResponsePayload,
 } from '../../types/UIProtocol';
 import type AbstractUIService from './ui-services/AbstractUIService';
 import UIServiceFactory from './ui-services/UIServiceFactory';

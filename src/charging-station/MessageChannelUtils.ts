@@ -1,6 +1,6 @@
 import {
-  ChargingStationData,
-  ChargingStationWorkerMessage,
+  type ChargingStationData,
+  type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
 import type { Statistics } from '../types/Statistics';

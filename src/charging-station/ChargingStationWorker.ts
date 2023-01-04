@@ -5,7 +5,7 @@ import { parentPort, workerData } from 'worker_threads';
 import { ThreadWorker } from 'poolifier';
 
 import type { ChargingStationWorkerData } from '../types/ChargingStationWorker';
-import { WorkerMessage, WorkerMessageEvents } from '../types/Worker';
+import { type WorkerMessage, WorkerMessageEvents } from '../types/Worker';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
 import ChargingStation from './ChargingStation';
