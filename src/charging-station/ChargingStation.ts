@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import crypto from 'crypto';
 import fs from 'fs';
@@ -82,6 +82,9 @@ import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestServic
 import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
 import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
 import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
+import OCPP20IncomingRequestService from './ocpp/2.0/OCPP20IncomingRequestService';
+import OCPP20RequestService from './ocpp/2.0/OCPP20RequestService';
+import OCPP20ResponseService from './ocpp/2.0/OCPP20ResponseService';
 import type OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import type OCPPRequestService from './ocpp/OCPPRequestService';
 import SharedLRUCache from './SharedLRUCache';
@@ -626,13 +629,16 @@ export default class ChargingStation {
     if (params?.terminateOpened) {
       this.terminateWSConnection();
     }
+    const ocppVersion = this.getOcppVersion();
     let protocol: string;
-    switch (this.getOcppVersion()) {
+    switch (ocppVersion) {
       case OCPPVersion.VERSION_16:
-        protocol = 'ocpp' + OCPPVersion.VERSION_16;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        protocol = 'ocpp' + ocppVersion;
         break;
       default:
-        this.handleUnsupportedVersion(this.getOcppVersion());
+        this.handleUnsupportedVersion(ocppVersion);
         break;
     }
 
@@ -972,6 +978,14 @@ export default class ChargingStation {
           OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>();
         this.ocppRequestService = OCPP16RequestService.getInstance<OCPP16RequestService>(
           OCPP16ResponseService.getInstance<OCPP16ResponseService>()
+        );
+        break;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        this.ocppIncomingRequestService =
+          OCPP20IncomingRequestService.getInstance<OCPP20IncomingRequestService>();
+        this.ocppRequestService = OCPP20RequestService.getInstance<OCPP20RequestService>(
+          OCPP20ResponseService.getInstance<OCPP20ResponseService>()
         );
         break;
       default:

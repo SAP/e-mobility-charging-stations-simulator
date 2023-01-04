@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import type { URL } from 'url';

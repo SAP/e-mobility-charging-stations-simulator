@@ -38,12 +38,11 @@ enum ChargingStationMessageEvents {
   PERFORMANCE_STATISTICS = 'performanceStatistics',
 }
 
-export type ChargingStationWorkerMessageEvents = WorkerMessageEvents | ChargingStationMessageEvents;
-
 export const ChargingStationWorkerMessageEvents = {
   ...WorkerMessageEvents,
   ...ChargingStationMessageEvents,
-};
+} as const;
+export type ChargingStationWorkerMessageEvents = WorkerMessageEvents | ChargingStationMessageEvents;
 
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics;
 

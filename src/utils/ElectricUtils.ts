@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 /**
  * Rationale: https://wiki.piment-noir.org/doku.php/en:cs:modelling_multi-phased_electrical_system_interconnexion

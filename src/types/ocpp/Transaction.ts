@@ -1,29 +1,27 @@
 import {
   OCPP16AuthorizationStatus,
-  OCPP16AuthorizeRequest,
-  OCPP16AuthorizeResponse,
-  OCPP16StartTransactionRequest,
-  OCPP16StartTransactionResponse,
+  type OCPP16AuthorizeRequest,
+  type OCPP16AuthorizeResponse,
+  type OCPP16StartTransactionRequest,
+  type OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,
-  OCPP16StopTransactionRequest,
-  OCPP16StopTransactionResponse,
+  type OCPP16StopTransactionRequest,
+  type OCPP16StopTransactionResponse,
 } from './1.6/Transaction';
-
-export type AuthorizationStatus = OCPP16AuthorizationStatus;
 
 export const AuthorizationStatus = {
   ...OCPP16AuthorizationStatus,
-};
+} as const;
+export type AuthorizationStatus = OCPP16AuthorizationStatus;
 
 export type AuthorizeRequest = OCPP16AuthorizeRequest;
 
 export type AuthorizeResponse = OCPP16AuthorizeResponse;
 
-export type StopTransactionReason = OCPP16StopTransactionReason;
-
 export const StopTransactionReason = {
   ...OCPP16StopTransactionReason,
-};
+} as const;
+export type StopTransactionReason = OCPP16StopTransactionReason;
 
 export type StartTransactionRequest = OCPP16StartTransactionRequest;
 

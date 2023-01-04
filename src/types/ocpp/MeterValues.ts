@@ -1,21 +1,19 @@
 import {
-  OCPP16MeterValue,
+  type OCPP16MeterValue,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValuePhase,
-  OCPP16SampledValue,
+  type OCPP16SampledValue,
 } from './1.6/MeterValues';
-
-export type MeterValueMeasurand = OCPP16MeterValueMeasurand;
 
 export const MeterValueMeasurand = {
   ...OCPP16MeterValueMeasurand,
-};
-
-export type MeterValuePhase = OCPP16MeterValuePhase;
+} as const;
+export type MeterValueMeasurand = OCPP16MeterValueMeasurand;
 
 export const MeterValuePhase = {
   ...OCPP16MeterValuePhase,
-};
+} as const;
+export type MeterValuePhase = OCPP16MeterValuePhase;
 
 export type SampledValue = OCPP16SampledValue;
 

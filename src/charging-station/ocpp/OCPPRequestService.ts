@@ -189,10 +189,10 @@ export default abstract class OCPPRequestService {
           // Check if wsConnection opened
           if (chargingStation.isWebSocketConnectionOpened() === true) {
             // Yes: Send Message
-            const beginId = PerformanceStatistics.beginMeasure(commandName);
+            const beginId = PerformanceStatistics.beginMeasure(commandName as string);
             // FIXME: Handle sending error
             chargingStation.wsConnection.send(messageToSend);
-            PerformanceStatistics.endMeasure(commandName, beginId);
+            PerformanceStatistics.endMeasure(commandName as string, beginId);
             logger.debug(
               `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
                 messageType

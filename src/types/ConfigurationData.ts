@@ -55,19 +55,19 @@ export type ConfigurationData = {
   performanceStorage?: StorageConfiguration;
   worker?: WorkerConfiguration;
   autoReconnectMaxRetries?: number;
-  // deprecated
+  /** @deprecated Moved to worker configuration section. */
   workerProcess?: WorkerProcessType;
-  // deprecated
+  /** @deprecated Moved to worker configuration section. */
   workerStartDelay?: number;
-  // deprecated
+  /** @deprecated Moved to worker configuration section. */
   elementStartDelay?: number;
-  // deprecated
+  /** @deprecated Moved to worker configuration section. */
   workerPoolMinSize?: number;
-  // deprecated
+  /** @deprecated Moved to worker configuration section. */
   workerPoolMaxSize?: number;
-  // deprecated
+  /** @deprecated Moved to worker configuration section. */
   workerPoolStrategy?: WorkerChoiceStrategy;
-  // deprecated
+  /** @deprecated Moved to worker configuration section. */
   chargingStationsPerWorker?: number;
   logStatisticsInterval?: number;
   logFormat?: string;

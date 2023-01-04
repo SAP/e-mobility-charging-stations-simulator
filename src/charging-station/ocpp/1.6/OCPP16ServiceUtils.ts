@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import OCPPError from '../../../exception/OCPPError';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';

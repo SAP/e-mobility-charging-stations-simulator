@@ -267,7 +267,7 @@ export default class Utils {
   }
 
   public static JSONStringifyWithMapSupport(
-    obj: Record<string, unknown> | Record<string, unknown>[] | Map<string, unknown>,
+    obj: Record<string, unknown> | Record<string, unknown>[] | Map<unknown, unknown>,
     space?: number
   ): string {
     return JSON.stringify(

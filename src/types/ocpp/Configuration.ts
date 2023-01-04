@@ -5,23 +5,20 @@ import {
   OCPP16VendorDefaultParametersKey,
 } from './1.6/Configuration';
 
-export type StandardParametersKey = OCPP16StandardParametersKey;
-
 export const StandardParametersKey = {
   ...OCPP16StandardParametersKey,
-};
-
-export type VendorDefaultParametersKey = OCPP16VendorDefaultParametersKey;
+} as const;
+export type StandardParametersKey = OCPP16StandardParametersKey;
 
 export const VendorDefaultParametersKey = {
   ...OCPP16VendorDefaultParametersKey,
-};
-
-export type SupportedFeatureProfiles = OCPP16SupportedFeatureProfiles;
+} as const;
+export type VendorDefaultParametersKey = OCPP16VendorDefaultParametersKey;
 
 export const SupportedFeatureProfiles = {
   ...OCPP16SupportedFeatureProfiles,
-};
+} as const;
+export type SupportedFeatureProfiles = OCPP16SupportedFeatureProfiles;
 
 export enum ConnectorPhaseRotation {
   NotApplicable = 'NotApplicable',

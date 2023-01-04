@@ -16,12 +16,11 @@ import {
 import { OCPP20IncomingRequestCommand, OCPP20RequestCommand } from './2.0/Requests';
 import type { MessageType } from './MessageType';
 
-export type RequestCommand = OCPP16RequestCommand;
-
 export const RequestCommand = {
   ...OCPP16RequestCommand,
   ...OCPP20RequestCommand,
-};
+} as const;
+export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand;
 
 export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand, JsonType];
 
@@ -30,12 +29,11 @@ export type RequestParams = {
   triggerMessage?: boolean;
 };
 
-export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
-
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,
   ...OCPP20IncomingRequestCommand,
-};
+} as const;
+export type IncomingRequestCommand = OCPP16IncomingRequestCommand | OCPP20IncomingRequestCommand;
 
 export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequestCommand, JsonType];
 
@@ -50,11 +48,10 @@ export type CachedRequest = [
   JsonType
 ];
 
-export type MessageTrigger = OCPP16MessageTrigger;
-
 export const MessageTrigger = {
   ...OCPP16MessageTrigger,
-};
+} as const;
+export type MessageTrigger = OCPP16MessageTrigger;
 
 export type BootNotificationRequest = OCPP16BootNotificationRequest;
 
@@ -71,16 +68,14 @@ export type IncomingRequestHandler = (
   commandPayload: JsonType
 ) => JsonType | Promise<JsonType>;
 
-export type AvailabilityType = OCPP16AvailabilityType;
-
 export const AvailabilityType = {
   ...OCPP16AvailabilityType,
-};
-
-export type DiagnosticsStatus = OCPP16DiagnosticsStatus;
+} as const;
+export type AvailabilityType = OCPP16AvailabilityType;
 
 export const DiagnosticsStatus = {
   ...OCPP16DiagnosticsStatus,
-};
+} as const;
+export type DiagnosticsStatus = OCPP16DiagnosticsStatus;
 
 export type ResponseType = JsonType | OCPPError;

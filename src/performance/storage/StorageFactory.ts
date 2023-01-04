@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import { StorageType } from '../../types/Storage';
 import { JsonFileStorage } from './JsonFileStorage';

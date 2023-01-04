@@ -29,5 +29,5 @@ export type Statistics = WorkerData & {
   uri: string;
   createdAt: Date;
   updatedAt?: Date;
-  statisticsData: Map<string, Partial<StatisticsData>>;
+  statisticsData: Map<string | RequestCommand | IncomingRequestCommand, Partial<StatisticsData>>;
 };

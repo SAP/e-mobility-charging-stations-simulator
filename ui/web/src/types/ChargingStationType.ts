@@ -86,11 +86,10 @@ export enum OCPP16IncomingRequestCommand {
   TRIGGER_MESSAGE = 'TriggerMessage',
 }
 
-export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
-
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,
-};
+} as const;
+export type IncomingRequestCommand = OCPP16IncomingRequestCommand;
 
 export enum OCPP16RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
@@ -103,11 +102,10 @@ export enum OCPP16RequestCommand {
   DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
 }
 
-export type RequestCommand = OCPP16RequestCommand;
-
 export const RequestCommand = {
   ...OCPP16RequestCommand,
-};
+} as const;
+export type RequestCommand = OCPP16RequestCommand;
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse;
 
@@ -132,11 +130,10 @@ export enum OCPP16MessageTrigger {
   StatusNotification = 'StatusNotification',
 }
 
-export type MessageTrigger = OCPP16MessageTrigger;
-
 export const MessageTrigger = {
   ...OCPP16MessageTrigger,
-};
+} as const;
+export type MessageTrigger = OCPP16MessageTrigger;
 
 type CommandsSupport = {
   incomingCommands: Record<IncomingRequestCommand, boolean>;
