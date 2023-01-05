@@ -1,7 +1,7 @@
 import type { Format } from 'logform';
 import { Logger, createLogger, format, transport } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
-import TransportType from 'winston/lib/winston/transports/index.js';
+import TransportType from 'winston/lib/winston/transports';
 
 import Configuration from './Configuration';
 import Utils from './Utils';
