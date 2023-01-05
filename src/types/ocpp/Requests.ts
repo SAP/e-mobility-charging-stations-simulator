@@ -7,6 +7,7 @@ import {
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
   type OCPP16DataTransferRequest,
+  OCPP16FirmwareStatus,
   type OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
@@ -81,5 +82,10 @@ export const DiagnosticsStatus = {
   ...OCPP16DiagnosticsStatus,
 } as const;
 export type DiagnosticsStatus = OCPP16DiagnosticsStatus;
+
+export const FirmwareStatus = {
+  ...OCPP16FirmwareStatus,
+} as const;
+export type FirmwareStatus = OCPP16FirmwareStatus;
 
 export type ResponseType = JsonType | OCPPError;

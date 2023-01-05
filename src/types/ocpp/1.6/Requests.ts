@@ -15,6 +15,7 @@ export enum OCPP16RequestCommand {
   STOP_TRANSACTION = 'StopTransaction',
   METER_VALUES = 'MeterValues',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'FirmwareStatusNotification',
   DATA_TRANSFER = 'DataTransfer',
 }
 
@@ -121,6 +122,20 @@ export interface OCPP16UpdateFirmwareRequest extends JsonObject {
   retries?: number;
   retryInterval?: number;
 }
+
+export enum OCPP16FirmwareStatus {
+  Downloaded = 'Downloaded',
+  DownloadFailed = 'DownloadFailed',
+  Downloading = 'Downloading',
+  Idle = 'Idle',
+  InstallationFailed = 'InstallationFailed',
+  Installing = 'Installing',
+  Installed = 'Installed',
+}
+
+export type OCPP16FirmwareStatusNotificationRequest = {
+  status: OCPP16FirmwareStatus;
+};
 
 export interface GetDiagnosticsRequest extends JsonObject {
   location: string;

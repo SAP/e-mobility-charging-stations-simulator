@@ -7,7 +7,12 @@ import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConf
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { OCPPProtocol } from './ocpp/OCPPProtocol';
 import type { OCPPVersion } from './ocpp/OCPPVersion';
-import type { IncomingRequestCommand, MessageTrigger, RequestCommand } from './ocpp/Requests';
+import type {
+  FirmwareStatus,
+  IncomingRequestCommand,
+  MessageTrigger,
+  RequestCommand,
+} from './ocpp/Requests';
 
 export enum CurrentType {
   AC = 'AC',
@@ -38,11 +43,11 @@ export type WsOptions = ClientOptions & ClientRequestArgs;
 type FirmwareUpgrade = {
   versionUpgrade: {
     patternGroup?: number | number[];
-    to?: string;
+    step?: number;
   };
   reset?: boolean;
   resetDelay?: number;
-  checkIntegrity?: boolean;
+  failureMessage?: FirmwareStatus;
 };
 
 type CommandsSupport = {
