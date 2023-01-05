@@ -1,13 +1,12 @@
 import { AsyncResource } from 'async_hooks';
 
 import Ajv, { type JSONSchemaType } from 'ajv';
-import AjvDraft04 from 'ajv-draft-04';
 import ajvFormats from 'ajv-formats';
 
 import OCPPError from '../../exception/OCPPError';
 import type { HandleErrorParams } from '../../types/Error';
 import type { JsonType } from '../../types/JsonType';
-import { OCPPVersion } from '../../types/ocpp/OCPPVersion';
+import type { OCPPVersion } from '../../types/ocpp/OCPPVersion';
 import type { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import logger from '../../utils/Logger';
 import type ChargingStation from '../ChargingStation';
@@ -23,15 +22,7 @@ export default abstract class OCPPIncomingRequestService {
 
   protected constructor(version: OCPPVersion) {
     this.version = version;
-    switch (this.version) {
-      case OCPPVersion.VERSION_16:
-        this.ajv = new AjvDraft04();
-        break;
-      case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201:
-        this.ajv = new Ajv();
-        break;
-    }
+    this.ajv = new Ajv();
     ajvFormats(this.ajv);
     this.asyncResource = new AsyncResource(moduleName);
     this.incomingRequestHandler.bind(this);
