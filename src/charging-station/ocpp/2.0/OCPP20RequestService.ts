@@ -9,8 +9,7 @@ import type { JSONSchemaType } from 'ajv';
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import {
-  BootReasonEnumType,
-  OCPP20BootNotificationRequest,
+  type OCPP20BootNotificationRequest,
   OCPP20RequestCommand,
 } from '../../../types/ocpp/2.0/Requests';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
