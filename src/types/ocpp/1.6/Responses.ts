@@ -1,9 +1,10 @@
 import type { EmptyObject } from '../../EmptyObject';
 import type { JsonObject } from '../../JsonType';
 import type { OCPPConfigurationKey } from '../Configuration';
+import type { RegistrationStatusEnumType } from '../Responses';
 
 export interface OCPP16HeartbeatResponse extends JsonObject {
-  currentTime: string;
+  currentTime: Date;
 }
 
 export enum OCPP16UnlockStatus {
@@ -27,15 +28,9 @@ export interface ChangeConfigurationResponse extends JsonObject {
   status: OCPP16ConfigurationStatus;
 }
 
-export enum OCPP16RegistrationStatus {
-  ACCEPTED = 'Accepted',
-  PENDING = 'Pending',
-  REJECTED = 'Rejected',
-}
-
 export interface OCPP16BootNotificationResponse extends JsonObject {
-  status: OCPP16RegistrationStatus;
-  currentTime: string;
+  status: RegistrationStatusEnumType;
+  currentTime: Date;
   interval: number;
 }
 

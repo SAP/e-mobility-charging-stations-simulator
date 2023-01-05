@@ -10,11 +10,11 @@ import {
   type OCPP16DataTransferResponse,
   OCPP16DataTransferStatus,
   type OCPP16HeartbeatResponse,
-  OCPP16RegistrationStatus,
   type OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
 } from './1.6/Responses';
+import type { OCPP20BootNotificationResponse } from './2.0/Responses';
 import type { ErrorType } from './ErrorType';
 import type { MessageType } from './MessageType';
 
@@ -28,7 +28,9 @@ export type ResponseHandler = (
   requestPayload?: JsonType
 ) => void | Promise<void>;
 
-export type BootNotificationResponse = OCPP16BootNotificationResponse;
+export type BootNotificationResponse =
+  | OCPP16BootNotificationResponse
+  | OCPP20BootNotificationResponse;
 
 export type HeartbeatResponse = OCPP16HeartbeatResponse;
 
@@ -47,10 +49,11 @@ export type DefaultResponse = {
   status: DefaultStatus;
 };
 
-export const RegistrationStatus = {
-  ...OCPP16RegistrationStatus,
-} as const;
-export type RegistrationStatus = OCPP16RegistrationStatus;
+export enum RegistrationStatusEnumType {
+  ACCEPTED = 'Accepted',
+  PENDING = 'Pending',
+  REJECTED = 'Rejected',
+}
 
 export const AvailabilityStatus = {
   ...OCPP16AvailabilityStatus,

@@ -20,13 +20,12 @@ import {
   OCPP16RequestCommand,
   type OCPP16StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
-import {
-  type DiagnosticsStatusNotificationResponse,
-  type OCPP16BootNotificationResponse,
-  type OCPP16DataTransferResponse,
-  type OCPP16HeartbeatResponse,
-  OCPP16RegistrationStatus,
-  type OCPP16StatusNotificationResponse,
+import type {
+  DiagnosticsStatusNotificationResponse,
+  OCPP16BootNotificationResponse,
+  OCPP16DataTransferResponse,
+  OCPP16HeartbeatResponse,
+  OCPP16StatusNotificationResponse,
 } from '../../../types/ocpp/1.6/Responses';
 import {
   OCPP16AuthorizationStatus,
@@ -38,7 +37,8 @@ import {
   type OCPP16StopTransactionResponse,
 } from '../../../types/ocpp/1.6/Transaction';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
-import type { ResponseHandler } from '../../../types/ocpp/Responses';
+import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
+import { RegistrationStatusEnumType, type ResponseHandler } from '../../../types/ocpp/Responses';
 import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
@@ -57,7 +57,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
-    super();
+    super(OCPPVersion.VERSION_16);
     this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
       [OCPP16RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],
       [OCPP16RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this)],
@@ -256,7 +256,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     payload: OCPP16BootNotificationResponse
   ): void {
-    if (payload.status === OCPP16RegistrationStatus.ACCEPTED) {
+    if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         chargingStation,
         OCPP16StandardParametersKey.HeartbeatInterval,
@@ -275,11 +275,11 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         ? chargingStation.restartHeartbeat()
         : chargingStation.startHeartbeat();
     }
-    if (Object.values(OCPP16RegistrationStatus).includes(payload.status)) {
+    if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
       const logMsg = `${chargingStation.logPrefix()} Charging station in '${
         payload.status
       }' state on the central server`;
-      payload.status === OCPP16RegistrationStatus.REJECTED
+      payload.status === RegistrationStatusEnumType.REJECTED
         ? logger.warn(logMsg)
         : logger.info(logMsg);
     } else {

@@ -23,6 +23,7 @@ import type {
   OCPP16StopTransactionRequest,
 } from '../../../types/ocpp/1.6/Transaction';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { RequestParams } from '../../../types/ocpp/Requests';
 import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
@@ -41,7 +42,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
     if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
-    super(ocppResponseService);
+    super(OCPPVersion.VERSION_16, ocppResponseService);
     this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP16RequestCommand.AUTHORIZE,

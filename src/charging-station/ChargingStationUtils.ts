@@ -13,7 +13,10 @@ import {
   Voltage,
 } from '../types/ChargingStationTemplate';
 import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
+import type { OCPP16BootNotificationRequest } from '../types/ocpp/1.6/Requests';
+import { BootReasonEnumType, OCPP20BootNotificationRequest } from '../types/ocpp/2.0/Requests';
 import type { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
+import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import type { BootNotificationRequest } from '../types/ocpp/Requests';
 import { WorkerProcessType } from '../types/Worker';
 import Configuration from '../utils/Configuration';
@@ -132,27 +135,50 @@ export class ChargingStationUtils {
   public static createBootNotificationRequest(
     stationInfo: ChargingStationInfo
   ): BootNotificationRequest {
-    return {
-      chargePointModel: stationInfo.chargePointModel,
-      chargePointVendor: stationInfo.chargePointVendor,
-      ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
-        chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
-      }),
-      ...(!Utils.isUndefined(stationInfo.chargePointSerialNumber) && {
-        chargePointSerialNumber: stationInfo.chargePointSerialNumber,
-      }),
-      ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
-        firmwareVersion: stationInfo.firmwareVersion,
-      }),
-      ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-      ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-      ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
-        meterSerialNumber: stationInfo.meterSerialNumber,
-      }),
-      ...(!Utils.isUndefined(stationInfo.meterType) && {
-        meterType: stationInfo.meterType,
-      }),
-    };
+    const ocppVersion = stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
+    switch (ocppVersion) {
+      case OCPPVersion.VERSION_16:
+        return {
+          chargePointModel: stationInfo.chargePointModel,
+          chargePointVendor: stationInfo.chargePointVendor,
+          ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
+            chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
+          }),
+          ...(!Utils.isUndefined(stationInfo.chargePointSerialNumber) && {
+            chargePointSerialNumber: stationInfo.chargePointSerialNumber,
+          }),
+          ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
+            firmwareVersion: stationInfo.firmwareVersion,
+          }),
+          ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
+          ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
+          ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
+            meterSerialNumber: stationInfo.meterSerialNumber,
+          }),
+          ...(!Utils.isUndefined(stationInfo.meterType) && {
+            meterType: stationInfo.meterType,
+          }),
+        } as OCPP16BootNotificationRequest;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        return {
+          reason: BootReasonEnumType.PowerUp,
+          chargingStation: {
+            model: stationInfo.chargePointModel,
+            vendorName: stationInfo.chargePointVendor,
+            ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
+              firmwareVersion: stationInfo.firmwareVersion,
+            }),
+            ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
+              serialNumber: stationInfo.chargeBoxSerialNumber,
+            }),
+            modem: {
+              ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
+              ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
+            },
+          },
+        } as OCPP20BootNotificationRequest;
+    }
   }
 
   public static workerPoolInUse(): boolean {

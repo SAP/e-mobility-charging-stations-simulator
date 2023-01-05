@@ -56,7 +56,7 @@ import {
   type ErrorResponse,
   type HeartbeatResponse,
   type MeterValuesResponse,
-  RegistrationStatus,
+  RegistrationStatusEnumType,
   type Response,
   type StatusNotificationResponse,
 } from '../types/ocpp/Responses';
@@ -200,7 +200,7 @@ export default class ChargingStation {
     return this?.wsConnection?.readyState === WebSocket.OPEN;
   }
 
-  public getRegistrationStatus(): RegistrationStatus {
+  public getRegistrationStatus(): RegistrationStatusEnumType {
     return this?.bootNotificationResponse?.status;
   }
 
@@ -209,15 +209,15 @@ export default class ChargingStation {
   }
 
   public isInPendingState(): boolean {
-    return this?.bootNotificationResponse?.status === RegistrationStatus.PENDING;
+    return this?.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING;
   }
 
   public isInAcceptedState(): boolean {
-    return this?.bootNotificationResponse?.status === RegistrationStatus.ACCEPTED;
+    return this?.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED;
   }
 
   public isInRejectedState(): boolean {
-    return this?.bootNotificationResponse?.status === RegistrationStatus.REJECTED;
+    return this?.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED;
   }
 
   public isRegistered(): boolean {
@@ -994,9 +994,9 @@ export default class ChargingStation {
     }
     if (this.stationInfo?.autoRegister === true) {
       this.bootNotificationResponse = {
-        currentTime: new Date().toISOString(),
+        currentTime: new Date(),
         interval: this.getHeartbeatInterval() / 1000,
-        status: RegistrationStatus.ACCEPTED,
+        status: RegistrationStatusEnumType.ACCEPTED,
       };
     }
   }

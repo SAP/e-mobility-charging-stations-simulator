@@ -117,7 +117,7 @@ export enum OCPP16RegistrationStatus {
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
   status: OCPP16RegistrationStatus;
-  currentTime: string;
+  currentTime: Date;
   interval: number;
 }
 

@@ -1,14 +1,25 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import type { JSONSchemaType } from 'ajv';
 
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
-import type { OCPP20IncomingRequestCommand } from '../../../types/ocpp/2.0/Requests';
+import {
+  OCPP20ClearCacheRequest,
+  OCPP20IncomingRequestCommand,
+} from '../../../types/ocpp/2.0/Requests';
+import type { OCPP20ClearCacheResponse } from '../../../types/ocpp/2.0/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
+import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import type ChargingStation from '../../ChargingStation';
+import { ChargingStationUtils } from '../../ChargingStationUtils';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 
@@ -22,9 +33,24 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
     if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
-    super();
-    this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>();
-    this.jsonSchemas = new Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>();
+    super(OCPPVersion.VERSION_20);
+    this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
+      [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],
+    ]);
+    this.jsonSchemas = new Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>([
+      [
+        OCPP20IncomingRequestCommand.CLEAR_CACHE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/2.0/ClearCacheRequest.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP20ClearCacheRequest>,
+      ],
+    ]);
     this.validatePayload.bind(this);
   }
 
@@ -127,5 +153,12 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
       `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
     );
     return false;
+  }
+
+  private handleRequestClearCache(chargingStation: ChargingStation): OCPP20ClearCacheResponse {
+    chargingStation.authorizedTagsCache.deleteAuthorizedTags(
+      ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
+    );
+    return Constants.OCPP_RESPONSE_ACCEPTED;
   }
 }

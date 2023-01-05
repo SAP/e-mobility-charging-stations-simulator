@@ -73,6 +73,7 @@ import {
 } from '../../../types/ocpp/1.6/Transaction';
 import type { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
 import type { DefaultResponse } from '../../../types/ocpp/Responses';
 import Constants from '../../../utils/Constants';
@@ -94,7 +95,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
-    super();
+    super(OCPPVersion.VERSION_16);
     this.incomingRequestHandlers = new Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>([
       [OCPP16IncomingRequestCommand.RESET, this.handleRequestReset.bind(this)],
       [OCPP16IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],

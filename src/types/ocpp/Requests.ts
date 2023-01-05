@@ -13,7 +13,11 @@ import {
   OCPP16RequestCommand,
   type OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
-import { OCPP20IncomingRequestCommand, OCPP20RequestCommand } from './2.0/Requests';
+import {
+  type OCPP20BootNotificationRequest,
+  OCPP20IncomingRequestCommand,
+  OCPP20RequestCommand,
+} from './2.0/Requests';
 import type { MessageType } from './MessageType';
 
 export const RequestCommand = {
@@ -53,7 +57,7 @@ export const MessageTrigger = {
 } as const;
 export type MessageTrigger = OCPP16MessageTrigger;
 
-export type BootNotificationRequest = OCPP16BootNotificationRequest;
+export type BootNotificationRequest = OCPP16BootNotificationRequest | OCPP20BootNotificationRequest;
 
 export type HeartbeatRequest = OCPP16HeartbeatRequest;
 

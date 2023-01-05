@@ -1,12 +1,13 @@
 import { AsyncResource } from 'async_hooks';
 
-import type { JSONSchemaType } from 'ajv';
-import Ajv from 'ajv-draft-04';
+import Ajv, { type JSONSchemaType } from 'ajv';
+import AjvDraft04 from 'ajv-draft-04';
 import ajvFormats from 'ajv-formats';
 
 import OCPPError from '../../exception/OCPPError';
 import type { HandleErrorParams } from '../../types/Error';
 import type { JsonType } from '../../types/JsonType';
+import { OCPPVersion } from '../../types/ocpp/OCPPVersion';
 import type { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import logger from '../../utils/Logger';
 import type ChargingStation from '../ChargingStation';
@@ -17,12 +18,22 @@ const moduleName = 'OCPPIncomingRequestService';
 export default abstract class OCPPIncomingRequestService {
   private static instance: OCPPIncomingRequestService | null = null;
   protected asyncResource: AsyncResource;
+  private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
 
-  protected constructor() {
-    this.asyncResource = new AsyncResource(moduleName);
-    this.ajv = new Ajv();
+  protected constructor(version: OCPPVersion) {
+    this.version = version;
+    switch (this.version) {
+      case OCPPVersion.VERSION_16:
+        this.ajv = new AjvDraft04();
+        break;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        this.ajv = new Ajv();
+        break;
+    }
     ajvFormats(this.ajv);
+    this.asyncResource = new AsyncResource(moduleName);
     this.incomingRequestHandler.bind(this);
     this.validateIncomingRequestPayload.bind(this);
   }

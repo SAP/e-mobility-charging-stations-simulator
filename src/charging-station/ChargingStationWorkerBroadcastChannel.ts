@@ -15,7 +15,7 @@ import {
   DataTransferStatus,
   type HeartbeatResponse,
   type MeterValuesResponse,
-  RegistrationStatus,
+  RegistrationStatusEnumType,
   type StatusNotificationResponse,
 } from '../types/ocpp/Responses';
 import {
@@ -324,7 +324,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         }
         return ResponseStatus.FAILURE;
       case BroadcastChannelProcedureName.BOOT_NOTIFICATION:
-        if (commandResponse?.status === RegistrationStatus.ACCEPTED) {
+        if (commandResponse?.status === RegistrationStatusEnumType.ACCEPTED) {
           return ResponseStatus.SUCCESS;
         }
         return ResponseStatus.FAILURE;

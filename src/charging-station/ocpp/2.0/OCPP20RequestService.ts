@@ -1,11 +1,20 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import type { JSONSchemaType } from 'ajv';
 
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
-import type { OCPP20RequestCommand } from '../../../types/ocpp/2.0/Requests';
+import {
+  BootReasonEnumType,
+  OCPP20BootNotificationRequest,
+  OCPP20RequestCommand,
+} from '../../../types/ocpp/2.0/Requests';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
+import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { RequestParams } from '../../../types/ocpp/Requests';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
@@ -23,8 +32,21 @@ export default class OCPP20RequestService extends OCPPRequestService {
     if (new.target?.name === moduleName) {
       throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     }
-    super(ocppResponseService);
-    this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>();
+    super(OCPPVersion.VERSION_20, ocppResponseService);
+    this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
+      [
+        OCPP20RequestCommand.BOOT_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/2.0/BootNotificationRequest.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP20BootNotificationRequest>,
+      ],
+    ]);
     this.buildRequestPayload.bind(this);
     this.validatePayload.bind(this);
   }
@@ -66,6 +88,29 @@ export default class OCPP20RequestService extends OCPPRequestService {
   ): Request {
     commandParams = commandParams as JsonObject;
     switch (commandName) {
+      case OCPP20RequestCommand.BOOT_NOTIFICATION:
+        commandParams.modem = commandParams.modem as JsonObject;
+        return {
+          reason: commandParams?.reason,
+          chargingStation: {
+            model: commandParams?.model,
+            vendorName: commandParams?.vendorName,
+            ...(!Utils.isUndefined(commandParams?.firmwareVersion) && {
+              firmwareVersion: commandParams.firmwareVersion,
+            }),
+            ...(!Utils.isUndefined(commandParams?.serialNumber) && {
+              serialNumber: commandParams.serialNumber,
+            }),
+            modem: {
+              ...(!Utils.isUndefined(commandParams?.modem?.iccid) && {
+                iccid: commandParams.modem.iccid,
+              }),
+              ...(!Utils.isUndefined(commandParams?.modem?.imsi) && {
+                imsi: commandParams.modem.imsi,
+              }),
+            },
+          },
+        } as unknown as Request;
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         throw new OCPPError(

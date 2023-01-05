@@ -1,5 +1,5 @@
-import type { JSONSchemaType } from 'ajv';
-import Ajv from 'ajv-draft-04';
+import Ajv, { type JSONSchemaType } from 'ajv';
+import AjvDraft04 from 'ajv-draft-04';
 import ajvFormats from 'ajv-formats';
 
 import OCPPError from '../../exception/OCPPError';
@@ -9,6 +9,7 @@ import type { HandleErrorParams } from '../../types/Error';
 import type { JsonObject, JsonType } from '../../types/JsonType';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { MessageType } from '../../types/ocpp/MessageType';
+import { OCPPVersion } from '../../types/ocpp/OCPPVersion';
 import {
   type ErrorCallback,
   type IncomingRequestCommand,
@@ -30,14 +31,24 @@ const moduleName = 'OCPPRequestService';
 
 export default abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
+  private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
 
   private readonly ocppResponseService: OCPPResponseService;
 
-  protected constructor(ocppResponseService: OCPPResponseService) {
-    this.ocppResponseService = ocppResponseService;
-    this.ajv = new Ajv();
+  protected constructor(version: OCPPVersion, ocppResponseService: OCPPResponseService) {
+    this.version = version;
+    switch (this.version) {
+      case OCPPVersion.VERSION_16:
+        this.ajv = new AjvDraft04();
+        break;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        this.ajv = new Ajv();
+        break;
+    }
     ajvFormats(this.ajv);
+    this.ocppResponseService = ocppResponseService;
     this.requestHandler.bind(this);
     this.sendMessage.bind(this);
     this.sendResponse.bind(this);
