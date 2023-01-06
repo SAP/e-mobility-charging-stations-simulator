@@ -58,7 +58,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     debug = false
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       sampledValue: [],
     };
     const connector = chargingStation.getConnectorStatus(connectorId);
@@ -686,7 +686,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     meterStart: number
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       sampledValue: [],
     };
     // Energy.Active.Import.Register measurand (default)
@@ -711,7 +711,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     meterStop: number
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       sampledValue: [],
     };
     // Energy.Active.Import.Register measurand (default)

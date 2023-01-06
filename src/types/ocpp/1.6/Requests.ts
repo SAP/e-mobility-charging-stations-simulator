@@ -55,7 +55,7 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
   errorCode: OCPP16ChargePointErrorCode;
   status: OCPP16ChargePointStatus;
   info?: string;
-  timestamp?: string;
+  timestamp?: Date;
   vendorId?: string;
   vendorErrorCode?: string;
 }

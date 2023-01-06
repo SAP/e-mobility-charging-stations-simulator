@@ -42,7 +42,7 @@ export interface OCPP16StartTransactionRequest extends JsonObject {
   connectorId: number;
   idTag: string;
   meterStart: number;
-  timestamp: string;
+  timestamp: Date;
   reservationId?: number;
 }
 
@@ -54,7 +54,7 @@ export interface OCPP16StartTransactionResponse extends JsonObject {
 export interface OCPP16StopTransactionRequest extends JsonObject {
   idTag?: string;
   meterStop: number;
-  timestamp: string;
+  timestamp: Date;
   transactionId: number;
   reason?: OCPP16StopTransactionReason;
   transactionData?: OCPP16MeterValue[];

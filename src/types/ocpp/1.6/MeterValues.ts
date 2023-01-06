@@ -93,7 +93,7 @@ export interface OCPP16SampledValue extends JsonObject {
 }
 
 export interface OCPP16MeterValue extends JsonObject {
-  timestamp: string;
+  timestamp: Date;
   sampledValue: OCPP16SampledValue[];
 }
 
