@@ -16,10 +16,10 @@ import type { OCPP20ClearCacheResponse } from '../../../types/ocpp/2.0/Responses
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
-import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationUtils } from '../../ChargingStationUtils';
+import OCPPConstants from '../OCPPConstants';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 
@@ -159,6 +159,6 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation.authorizedTagsCache.deleteAuthorizedTags(
       ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
     );
-    return Constants.OCPP_RESPONSE_ACCEPTED;
+    return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
   }
 }
