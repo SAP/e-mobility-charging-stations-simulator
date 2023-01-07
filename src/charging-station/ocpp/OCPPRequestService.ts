@@ -38,6 +38,7 @@ export default abstract class OCPPRequestService {
   protected constructor(version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version;
     this.ajv = new Ajv({
+      keywords: ['javaType'],
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);

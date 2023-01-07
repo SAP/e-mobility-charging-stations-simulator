@@ -99,26 +99,29 @@ export default class OCPP20RequestService extends OCPPRequestService {
     commandParams = commandParams as JsonObject;
     switch (commandName) {
       case OCPP20RequestCommand.BOOT_NOTIFICATION:
-        commandParams.modem = commandParams.modem as JsonObject;
+        commandParams.chargingStation = commandParams.chargingStation as JsonObject;
+        commandParams.chargingStation.modem = commandParams.chargingStation.modem as JsonObject;
         return {
           reason: commandParams?.reason,
           chargingStation: {
-            model: commandParams?.model,
-            vendorName: commandParams?.vendorName,
-            ...(!Utils.isUndefined(commandParams?.firmwareVersion) && {
-              firmwareVersion: commandParams.firmwareVersion,
+            model: commandParams?.chargingStation?.model,
+            vendorName: commandParams?.chargingStation?.vendorName,
+            ...(!Utils.isUndefined(commandParams?.chargingStation?.firmwareVersion) && {
+              firmwareVersion: commandParams.chargingStation?.firmwareVersion,
             }),
-            ...(!Utils.isUndefined(commandParams?.serialNumber) && {
-              serialNumber: commandParams.serialNumber,
+            ...(!Utils.isUndefined(commandParams?.chargingStation?.serialNumber) && {
+              serialNumber: commandParams.chargingStation?.serialNumber,
             }),
-            modem: {
-              ...(!Utils.isUndefined(commandParams?.modem?.iccid) && {
-                iccid: commandParams.modem.iccid,
-              }),
-              ...(!Utils.isUndefined(commandParams?.modem?.imsi) && {
-                imsi: commandParams.modem.imsi,
-              }),
-            },
+            ...(!Utils.isUndefined(commandParams?.chargingStation?.modem) && {
+              modem: {
+                ...(!Utils.isUndefined(commandParams?.chargingStation?.modem?.iccid) && {
+                  iccid: commandParams.chargingStation.modem.iccid,
+                }),
+                ...(!Utils.isUndefined(commandParams?.chargingStation?.modem?.imsi) && {
+                  imsi: commandParams.chargingStation.modem.imsi,
+                }),
+              },
+            }),
           },
         } as unknown as Request;
       default:

@@ -174,7 +174,11 @@ export default class Utils {
   }
 
   public static isObject(item: unknown): boolean {
-    return item && typeof item === 'object' && Array.isArray(item) === false;
+    return (
+      Utils.isNullOrUndefined(item) === false &&
+      typeof item === 'object' &&
+      Array.isArray(item) === false
+    );
   }
 
   public static cloneObject<T extends object>(object: T): T {

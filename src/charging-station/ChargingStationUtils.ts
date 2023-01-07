@@ -172,10 +172,12 @@ export class ChargingStationUtils {
             ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
               serialNumber: stationInfo.chargeBoxSerialNumber,
             }),
-            modem: {
-              ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-              ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-            },
+            ...((!Utils.isUndefined(stationInfo.iccid) || !Utils.isUndefined(stationInfo.imsi)) && {
+              modem: {
+                ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
+                ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
+              },
+            }),
           },
         } as OCPP20BootNotificationRequest;
     }
