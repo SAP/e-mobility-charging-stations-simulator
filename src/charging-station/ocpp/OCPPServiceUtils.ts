@@ -1,6 +1,7 @@
 import type { DefinedError, ErrorObject } from 'ajv';
 
 import BaseError from '../../exception/BaseError';
+import type { JsonObject, JsonType } from '../../types/JsonType';
 import type { SampledValueTemplate } from '../../types/MeasurandPerPhaseSampledValueTemplates';
 import { StandardParametersKey } from '../../types/ocpp/Configuration';
 import { ErrorType } from '../../types/ocpp/ErrorType';
@@ -102,6 +103,16 @@ export class OCPPServiceUtils {
       return false;
     }
     return true;
+  }
+
+  public static convertDateToISOString<T extends JsonType>(obj: T): void {
+    for (const k in obj) {
+      if (obj[k] instanceof Date) {
+        (obj as JsonObject)[k] = (obj[k] as Date).toISOString();
+      } else if (obj[k] !== null && typeof obj[k] === 'object') {
+        this.convertDateToISOString<T>(obj[k] as T);
+      }
+    }
   }
 
   protected static getSampledValueTemplate(

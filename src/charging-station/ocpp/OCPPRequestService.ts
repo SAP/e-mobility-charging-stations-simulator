@@ -140,7 +140,7 @@ export default abstract class OCPPRequestService {
       return true;
     }
     const validate = this.ajv.compile(schema);
-    this.convertDateToISOString<T>(payload);
+    OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
       return true;
     }
@@ -382,16 +382,6 @@ export default abstract class OCPPRequestService {
     logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error);
     if (params?.throwError === true) {
       throw error;
-    }
-  }
-
-  private convertDateToISOString<T extends JsonType>(obj: T): void {
-    for (const k in obj) {
-      if (obj[k] instanceof Date) {
-        (obj as JsonObject)[k] = (obj[k] as Date).toISOString();
-      } else if (obj[k] !== null && typeof obj[k] === 'object') {
-        this.convertDateToISOString<T>(obj[k] as T);
-      }
     }
   }
 
