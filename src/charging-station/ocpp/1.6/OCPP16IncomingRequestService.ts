@@ -291,6 +291,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           )
         ) as JSONSchemaType<OCPP16DataTransferRequest>,
       ],
+      [
+        OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/UpdateFirmware.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16UpdateFirmwareRequest>,
+      ],
     ]);
     this.validatePayload.bind(this);
   }
