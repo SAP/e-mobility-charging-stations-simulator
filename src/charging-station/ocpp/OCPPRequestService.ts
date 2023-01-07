@@ -37,7 +37,9 @@ export default abstract class OCPPRequestService {
 
   protected constructor(version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version;
-    this.ajv = new Ajv();
+    this.ajv = new Ajv({
+      multipleOfPrecision: 2,
+    });
     ajvFormats(this.ajv);
     this.ocppResponseService = ocppResponseService;
     this.requestHandler.bind(this);
@@ -127,19 +129,23 @@ export default abstract class OCPPRequestService {
 
   protected validateRequestPayload<T extends JsonType>(
     chargingStation: ChargingStation,
-    commandName: RequestCommand,
-    schema: JSONSchemaType<T>,
+    commandName: RequestCommand | IncomingRequestCommand,
     payload: T
   ): boolean {
     if (chargingStation.getPayloadSchemaValidation() === false) {
       return true;
     }
+    const schema = this.getRequestPayloadValidationSchema(chargingStation, commandName);
+    if (schema === false) {
+      return true;
+    }
     const validate = this.ajv.compile(schema);
+    this.convertDateToISOString<T>(payload);
     if (validate(payload)) {
       return true;
     }
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: Request PDU is invalid: %j`,
+      `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: Command '${commandName}' request PDU is invalid: %j`,
       validate.errors
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
@@ -327,6 +333,7 @@ export default abstract class OCPPRequestService {
           commandName,
           messagePayload as JsonType,
         ]);
+        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonType);
         messageToSend = JSON.stringify([
           messageType,
           messageId,
@@ -337,6 +344,7 @@ export default abstract class OCPPRequestService {
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
         // Build response
+        // FIXME: Validate response payload
         messageToSend = JSON.stringify([messageType, messageId, messagePayload] as Response);
         break;
       // Error Message
@@ -377,6 +385,16 @@ export default abstract class OCPPRequestService {
     }
   }
 
+  private convertDateToISOString<T extends JsonType>(obj: T): void {
+    for (const k in obj) {
+      if (obj[k] instanceof Date) {
+        (obj as JsonObject)[k] = (obj[k] as Date).toISOString();
+      } else if (obj[k] !== null && typeof obj[k] === 'object') {
+        this.convertDateToISOString<T>(obj[k] as T);
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
@@ -384,4 +402,9 @@ export default abstract class OCPPRequestService {
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<ResType>;
+
+  protected abstract getRequestPayloadValidationSchema(
+    chargingStation: ChargingStation,
+    commandName: RequestCommand | IncomingRequestCommand
+  ): JSONSchemaType<JsonObject> | false;
 }

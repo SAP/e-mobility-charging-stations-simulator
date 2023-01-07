@@ -18,7 +18,9 @@ export default abstract class OCPPResponseService {
 
   protected constructor(version: OCPPVersion) {
     this.version = version;
-    this.ajv = new Ajv();
+    this.ajv = new Ajv({
+      multipleOfPrecision: 2,
+    });
     ajvFormats(this.ajv);
     this.responseHandler.bind(this);
     this.validateResponsePayload.bind(this);
@@ -45,7 +47,7 @@ export default abstract class OCPPResponseService {
       return true;
     }
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Response PDU is invalid: %j`,
+      `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Command '${commandName}' response PDU is invalid: %j`,
       validate.errors
     );
     throw new OCPPError(

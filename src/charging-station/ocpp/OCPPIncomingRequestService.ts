@@ -22,7 +22,9 @@ export default abstract class OCPPIncomingRequestService {
 
   protected constructor(version: OCPPVersion) {
     this.version = version;
-    this.ajv = new Ajv();
+    this.ajv = new Ajv({
+      multipleOfPrecision: 2,
+    });
     ajvFormats(this.ajv);
     this.asyncResource = new AsyncResource(moduleName);
     this.incomingRequestHandler.bind(this);
@@ -71,7 +73,7 @@ export default abstract class OCPPIncomingRequestService {
       return true;
     }
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Incoming request PDU is invalid: %j`,
+      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Command '${commandName}' incoming request PDU is invalid: %j`,
       validate.errors
     );
     throw new OCPPError(

@@ -382,7 +382,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     commandName: OCPP16IncomingRequestCommand,
     commandPayload: JsonType
   ): boolean {
-    if (this.jsonSchemas.has(commandName)) {
+    if (this.jsonSchemas.has(commandName) === true) {
       return this.validateIncomingRequestPayload(
         chargingStation,
         commandName,

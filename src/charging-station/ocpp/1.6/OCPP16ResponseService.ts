@@ -238,7 +238,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     commandName: OCPP16RequestCommand,
     payload: JsonType
   ): boolean {
-    if (this.jsonSchemas.has(commandName)) {
+    if (this.jsonSchemas.has(commandName) === true) {
       return this.validateResponsePayload(
         chargingStation,
         commandName,

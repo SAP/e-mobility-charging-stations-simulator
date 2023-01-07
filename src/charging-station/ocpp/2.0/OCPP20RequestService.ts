@@ -47,7 +47,6 @@ export default class OCPP20RequestService extends OCPPRequestService {
       ],
     ]);
     this.buildRequestPayload.bind(this);
-    this.validatePayload.bind(this);
   }
 
   public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
@@ -62,7 +61,6 @@ export default class OCPP20RequestService extends OCPPRequestService {
         commandName,
         commandParams
       );
-      this.validatePayload(chargingStation, commandName, requestPayload);
       return (await this.sendMessage(
         chargingStation,
         Utils.generateUUID(),
@@ -78,6 +76,19 @@ export default class OCPP20RequestService extends OCPPRequestService {
       commandName,
       commandParams
     );
+  }
+
+  protected getRequestPayloadValidationSchema(
+    chargingStation: ChargingStation,
+    commandName: OCPP20RequestCommand
+  ): JSONSchemaType<JsonObject> | false {
+    if (this.jsonSchemas.has(commandName) === true) {
+      return this.jsonSchemas.get(commandName);
+    }
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.getPayloadValidationSchema: No JSON schema found for command ${commandName} PDU validation`
+    );
+    return false;
   }
 
   private buildRequestPayload<Request extends JsonType>(
@@ -120,24 +131,5 @@ export default class OCPP20RequestService extends OCPPRequestService {
           commandParams
         );
     }
-  }
-
-  private validatePayload<Request extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: OCPP20RequestCommand,
-    requestPayload: Request
-  ): boolean {
-    if (this.jsonSchemas.has(commandName)) {
-      return this.validateRequestPayload(
-        chargingStation,
-        commandName,
-        this.jsonSchemas.get(commandName),
-        requestPayload
-      );
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
-    );
-    return false;
   }
 }

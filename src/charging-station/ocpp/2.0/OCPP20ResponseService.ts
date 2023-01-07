@@ -105,7 +105,7 @@ export default class OCPP20ResponseService extends OCPPResponseService {
     commandName: OCPP20RequestCommand,
     payload: JsonType
   ): boolean {
-    if (this.jsonSchemas.has(commandName)) {
+    if (this.jsonSchemas.has(commandName) === true) {
       return this.validateResponsePayload(
         chargingStation,
         commandName,
