@@ -12,7 +12,10 @@ import {
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
 } from '../../../types/ocpp/2.0/Requests';
-import type { OCPP20BootNotificationResponse } from '../../../types/ocpp/2.0/Responses';
+import type {
+  OCPP20BootNotificationResponse,
+  OCPP20ClearCacheResponse,
+} from '../../../types/ocpp/2.0/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import { RegistrationStatusEnumType, ResponseHandler } from '../../../types/ocpp/Responses';
@@ -54,7 +57,20 @@ export default class OCPP20ResponseService extends OCPPResponseService {
         ) as JSONSchemaType<OCPP20BootNotificationResponse>,
       ],
     ]);
-    this.jsonIncomingRequestResponseSchemas = new Map();
+    this.jsonIncomingRequestResponseSchemas = new Map([
+      [
+        OCPP20IncomingRequestCommand.CLEAR_CACHE,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/2.0/ClearCacheResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP20ClearCacheResponse>,
+      ],
+    ]);
     this.validatePayload.bind(this);
   }
 

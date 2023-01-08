@@ -50,6 +50,7 @@ export default abstract class OCPPRequestService {
     this.internalSendMessage.bind(this);
     this.buildMessageToSend.bind(this);
     this.validateRequestPayload.bind(this);
+    this.validateIncomingRequestResponsePayload.bind(this);
   }
 
   public static getInstance<T extends OCPPRequestService>(
@@ -128,7 +129,7 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  protected validateRequestPayload<T extends JsonObject>(
+  private validateRequestPayload<T extends JsonObject>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T
@@ -161,7 +162,7 @@ export default abstract class OCPPRequestService {
     );
   }
 
-  protected validateResponsePayload<T extends JsonObject>(
+  private validateIncomingRequestResponsePayload<T extends JsonObject>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T
@@ -175,7 +176,7 @@ export default abstract class OCPPRequestService {
       ) === false
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: No JSON schema found for command '${commandName}' PDU validation`
+        `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: No JSON schema found for command '${commandName}' PDU validation`
       );
       return true;
     }
@@ -190,7 +191,7 @@ export default abstract class OCPPRequestService {
       return true;
     }
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Command '${commandName}' reponse PDU is invalid: %j`,
+      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: Command '${commandName}' reponse PDU is invalid: %j`,
       validate.errors
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
@@ -389,7 +390,11 @@ export default abstract class OCPPRequestService {
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
         // Build response
-        this.validateResponsePayload(chargingStation, commandName, messagePayload as JsonObject);
+        this.validateIncomingRequestResponsePayload(
+          chargingStation,
+          commandName,
+          messagePayload as JsonObject
+        );
         messageToSend = JSON.stringify([messageType, messageId, messagePayload] as Response);
         break;
       // Error Message

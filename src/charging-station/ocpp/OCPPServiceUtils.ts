@@ -106,11 +106,11 @@ export class OCPPServiceUtils {
   }
 
   public static convertDateToISOString<T extends JsonType>(obj: T): void {
-    for (const k in obj) {
-      if (obj[k] instanceof Date) {
-        (obj as JsonObject)[k] = (obj[k] as Date).toISOString();
-      } else if (obj[k] !== null && typeof obj[k] === 'object') {
-        this.convertDateToISOString<T>(obj[k] as T);
+    for (const key in obj) {
+      if (obj[key] instanceof Date) {
+        (obj as JsonObject)[key] = (obj[key] as Date).toISOString();
+      } else if (obj[key] !== null && typeof obj[key] === 'object') {
+        this.convertDateToISOString<T>(obj[key] as T);
       }
     }
   }
