@@ -1,4 +1,5 @@
 import type { ChargingStationTemplate } from './ChargingStationTemplate';
+import type { FirmwareStatus } from './ocpp/Requests';
 
 export type ChargingStationInfo = Omit<
   ChargingStationTemplate,
@@ -18,6 +19,7 @@ export type ChargingStationInfo = Omit<
   meterSerialNumber?: string;
   maximumPower?: number; // Always in Watt
   maximumAmperage?: number; // Always in Ampere
+  firmwareStatus?: FirmwareStatus;
 };
 
 export type ChargingStationInfoConfiguration = {

@@ -7,7 +7,9 @@ import {
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
   type OCPP16DataTransferRequest,
+  type OCPP16DiagnosticsStatusNotificationRequest,
   OCPP16FirmwareStatus,
+  type OCPP16FirmwareStatusNotificationRequest,
   type OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
@@ -67,6 +69,10 @@ export type StatusNotificationRequest = OCPP16StatusNotificationRequest;
 export type MeterValuesRequest = OCPP16MeterValuesRequest;
 
 export type DataTransferRequest = OCPP16DataTransferRequest;
+
+export type DiagnosticsStatusNotificationRequest = OCPP16DiagnosticsStatusNotificationRequest;
+
+export type FirmwareStatusNotificationRequest = OCPP16FirmwareStatusNotificationRequest;
 
 export type IncomingRequestHandler = (
   chargingStation: ChargingStation,

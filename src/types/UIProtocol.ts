@@ -45,6 +45,8 @@ export enum ProcedureName {
   HEARTBEAT = 'heartbeat',
   METER_VALUES = 'meterValues',
   DATA_TRANSFER = 'dataTransfer',
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
 }
 
 export interface RequestPayload extends JsonObject {

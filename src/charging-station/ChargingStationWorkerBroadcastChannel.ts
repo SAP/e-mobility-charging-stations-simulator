@@ -4,6 +4,8 @@ import { StandardParametersKey } from '../types/ocpp/Configuration';
 import {
   type BootNotificationRequest,
   type DataTransferRequest,
+  type DiagnosticsStatusNotificationRequest,
+  type FirmwareStatusNotificationRequest,
   type HeartbeatRequest,
   type MeterValuesRequest,
   RequestCommand,
@@ -13,6 +15,8 @@ import {
   type BootNotificationResponse,
   type DataTransferResponse,
   DataTransferStatus,
+  type DiagnosticsStatusNotificationResponse,
+  type FirmwareStatusNotificationResponse,
   type HeartbeatResponse,
   type MeterValuesResponse,
   RegistrationStatusEnumType,
@@ -53,7 +57,9 @@ type CommandResponse =
   | StatusNotificationResponse
   | HeartbeatResponse
   | MeterValuesResponse
-  | DataTransferResponse;
+  | DataTransferResponse
+  | DiagnosticsStatusNotificationResponse
+  | FirmwareStatusNotificationResponse;
 
 type CommandHandler = (
   requestPayload?: BroadcastChannelRequestPayload
@@ -190,6 +196,22 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             DataTransferResponse
           >(this.chargingStation, RequestCommand.DATA_TRANSFER, requestPayload),
       ],
+      [
+        BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
+            DiagnosticsStatusNotificationRequest,
+            DiagnosticsStatusNotificationResponse
+          >(this.chargingStation, RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, requestPayload),
+      ],
+      [
+        BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.ocppRequestService.requestHandler<
+            FirmwareStatusNotificationRequest,
+            FirmwareStatusNotificationResponse
+          >(this.chargingStation, RequestCommand.FIRMWARE_STATUS_NOTIFICATION, requestPayload),
+      ],
     ]);
     this.chargingStation = chargingStation;
     this.onmessage = this.requestHandler.bind(this) as (message: MessageEvent) => void;
@@ -221,7 +243,11 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
     let commandResponse: CommandResponse | void;
     try {
       commandResponse = await this.commandHandler(command, requestPayload);
-      if (commandResponse === undefined || commandResponse === null) {
+      if (
+        commandResponse === undefined ||
+        commandResponse === null ||
+        Utils.isEmptyObject(commandResponse as CommandResponse)
+      ) {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
           status: ResponseStatus.SUCCESS,

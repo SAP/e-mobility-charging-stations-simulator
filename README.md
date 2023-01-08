@@ -328,8 +328,8 @@ make SUBMODULES_INIT=true
 
 - :white_check_mark: GetDiagnostics
 - :white_check_mark: DiagnosticsStatusNotification
-- :x: FirmwareStatusNotification
-- :x: UpdateFirmware
+- :white_check_mark: FirmwareStatusNotification
+- :white_check_mark: UpdateFirmware
 
 #### Local Auth List Management Profile
 

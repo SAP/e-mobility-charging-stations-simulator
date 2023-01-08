@@ -43,6 +43,8 @@ import {
   type BootNotificationRequest,
   type CachedRequest,
   type ErrorCallback,
+  FirmwareStatus,
+  type FirmwareStatusNotificationRequest,
   type HeartbeatRequest,
   type IncomingRequest,
   IncomingRequestCommand,
@@ -54,6 +56,7 @@ import {
 import {
   type BootNotificationResponse,
   type ErrorResponse,
+  type FirmwareStatusNotificationResponse,
   type HeartbeatResponse,
   type MeterValuesResponse,
   RegistrationStatusEnumType,
@@ -1836,6 +1839,16 @@ export default class ChargingStation {
         errorCode: ChargePointErrorCode.NO_ERROR,
       });
       this.getConnectorStatus(connectorId).status = chargePointStatus;
+    }
+    if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
+      await this.ocppRequestService.requestHandler<
+        FirmwareStatusNotificationRequest,
+        FirmwareStatusNotificationResponse
+      >(this, RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+        status: FirmwareStatus.Installed,
+      });
+      this.stationInfo.firmwareStatus = FirmwareStatus.Installed;
+      // TODO: bump firmware version
     }
     // Start the ATG
     if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true) {

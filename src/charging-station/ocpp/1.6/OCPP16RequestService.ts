@@ -10,12 +10,13 @@ import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import type { OCPP16MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
 import {
-  type DiagnosticsStatusNotificationRequest,
   type OCPP16BootNotificationRequest,
   type OCPP16DataTransferRequest,
+  type OCPP16DiagnosticsStatusNotificationRequest,
   type OCPP16HeartbeatRequest,
   OCPP16RequestCommand,
   type OCPP16StatusNotificationRequest,
+  type OCPP16UpdateFirmwareRequest,
 } from '../../../types/ocpp/1.6/Requests';
 import type {
   OCPP16AuthorizeRequest,
@@ -77,7 +78,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
             ),
             'utf8'
           )
-        ) as JSONSchemaType<DiagnosticsStatusNotificationRequest>,
+        ) as JSONSchemaType<OCPP16DiagnosticsStatusNotificationRequest>,
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
@@ -151,6 +152,18 @@ export default class OCPP16RequestService extends OCPPRequestService {
           )
         ) as JSONSchemaType<OCPP16DataTransferRequest>,
       ],
+      [
+        OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP16UpdateFirmwareRequest>,
+      ],
     ]);
     this.buildRequestPayload.bind(this);
   }
@@ -223,7 +236,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
         } as unknown as Request;
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
         return {
-          status: commandParams?.diagnosticsStatus,
+          status: commandParams?.status,
         } as unknown as Request;
       case OCPP16RequestCommand.HEARTBEAT:
         return {} as unknown as Request;
@@ -281,6 +294,10 @@ export default class OCPP16RequestService extends OCPPRequestService {
         } as unknown as Request;
       case OCPP16RequestCommand.DATA_TRANSFER:
         return commandParams as unknown as Request;
+      case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
+        return {
+          status: commandParams?.status,
+        } as unknown as Request;
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         throw new OCPPError(

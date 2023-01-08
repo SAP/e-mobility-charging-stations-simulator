@@ -44,6 +44,10 @@ export default abstract class AbstractUIService {
     [ProcedureName.HEARTBEAT]: BroadcastChannelProcedureName.HEARTBEAT,
     [ProcedureName.METER_VALUES]: BroadcastChannelProcedureName.METER_VALUES,
     [ProcedureName.DATA_TRANSFER]: BroadcastChannelProcedureName.DATA_TRANSFER,
+    [ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION]:
+      BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
+    [ProcedureName.FIRMWARE_STATUS_NOTIFICATION]:
+      BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
   };
 
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;

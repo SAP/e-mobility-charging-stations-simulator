@@ -135,7 +135,7 @@ export enum OCPP16FirmwareStatus {
 
 export type OCPP16FirmwareStatusNotificationRequest = {
   status: OCPP16FirmwareStatus;
-};
+} & JsonObject;
 
 export interface GetDiagnosticsRequest extends JsonObject {
   location: string;
@@ -145,7 +145,7 @@ export interface GetDiagnosticsRequest extends JsonObject {
   stopTime?: Date;
 }
 
-export interface DiagnosticsStatusNotificationRequest extends JsonObject {
+export interface OCPP16DiagnosticsStatusNotificationRequest extends JsonObject {
   status: OCPP16DiagnosticsStatus;
 }
 

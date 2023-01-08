@@ -72,11 +72,13 @@ export interface ClearChargingProfileResponse extends JsonObject {
 
 export type OCPP16UpdateFirmwareResponse = EmptyObject;
 
+export type OCPP16FirmwareStatusNotificationResponse = EmptyObject;
+
 export interface GetDiagnosticsResponse extends JsonObject {
   fileName?: string;
 }
 
-export type DiagnosticsStatusNotificationResponse = EmptyObject;
+export type OCPP16DiagnosticsStatusNotificationResponse = EmptyObject;
 
 export enum OCPP16TriggerMessageStatus {
   ACCEPTED = 'Accepted',

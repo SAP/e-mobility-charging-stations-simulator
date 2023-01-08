@@ -9,6 +9,8 @@ import {
   OCPP16ConfigurationStatus,
   type OCPP16DataTransferResponse,
   OCPP16DataTransferStatus,
+  type OCPP16DiagnosticsStatusNotificationResponse,
+  type OCPP16FirmwareStatusNotificationResponse,
   type OCPP16HeartbeatResponse,
   type OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageStatus,
@@ -39,6 +41,10 @@ export type StatusNotificationResponse = OCPP16StatusNotificationResponse;
 export type MeterValuesResponse = OCPP16MeterValuesResponse;
 
 export type DataTransferResponse = OCPP16DataTransferResponse;
+
+export type DiagnosticsStatusNotificationResponse = OCPP16DiagnosticsStatusNotificationResponse;
+
+export type FirmwareStatusNotificationResponse = OCPP16FirmwareStatusNotificationResponse;
 
 export enum DefaultStatus {
   ACCEPTED = 'Accepted',

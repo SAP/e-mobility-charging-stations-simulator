@@ -25,7 +25,6 @@ import {
   type ChangeAvailabilityRequest,
   type ChangeConfigurationRequest,
   type ClearChargingProfileRequest,
-  type DiagnosticsStatusNotificationRequest,
   type GetConfigurationRequest,
   type GetDiagnosticsRequest,
   OCPP16AvailabilityType,
@@ -33,6 +32,9 @@ import {
   type OCPP16ClearCacheRequest,
   type OCPP16DataTransferRequest,
   OCPP16DataTransferVendorId,
+  type OCPP16DiagnosticsStatusNotificationRequest,
+  OCPP16FirmwareStatus,
+  type OCPP16FirmwareStatusNotificationRequest,
   type OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
@@ -50,12 +52,13 @@ import {
   type ChangeAvailabilityResponse,
   type ChangeConfigurationResponse,
   type ClearChargingProfileResponse,
-  type DiagnosticsStatusNotificationResponse,
   type GetConfigurationResponse,
   type GetDiagnosticsResponse,
   type OCPP16BootNotificationResponse,
   type OCPP16DataTransferResponse,
   OCPP16DataTransferStatus,
+  type OCPP16DiagnosticsStatusNotificationResponse,
+  type OCPP16FirmwareStatusNotificationResponse,
   type OCPP16HeartbeatResponse,
   type OCPP16StatusNotificationResponse,
   type OCPP16TriggerMessageResponse,
@@ -132,7 +135,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
       [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
       [OCPP16IncomingRequestCommand.DATA_TRANSFER, this.handleRequestDataTransfer.bind(this)],
-      // [OCPP16IncomingRequestCommand.UPDATE_FIRMWARE, this.handleRequestUpdateFirmware.bind(this)],
+      [OCPP16IncomingRequestCommand.UPDATE_FIRMWARE, this.handleRequestUpdateFirmware.bind(this)],
     ]);
     this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([
       [
@@ -1036,13 +1039,76 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       return OCPPConstants.OCPP_RESPONSE_EMPTY;
     }
-    logger.debug(
-      chargingStation.logPrefix() +
-        ' ' +
-        OCPP16IncomingRequestCommand.UPDATE_FIRMWARE +
-        ' request received: %j',
-      commandPayload
-    );
+    const retrieveDate = Utils.convertToDate(commandPayload.retrieveDate);
+    if (retrieveDate.getTime() <= Date.now()) {
+      this.asyncResource
+        .runInAsyncScope(
+          this.updateFirmware.bind(this) as (
+            this: OCPP16IncomingRequestService,
+            ...args: any[]
+          ) => Promise<void>,
+          this,
+          chargingStation
+        )
+        .catch(() => {
+          /* This is intentional */
+        });
+    } else {
+      setTimeout(() => {
+        this.updateFirmware(chargingStation).catch(() => {
+          /* Intentional */
+        });
+      }, retrieveDate.getTime() - Date.now());
+    }
+    return OCPPConstants.OCPP_RESPONSE_EMPTY;
+  }
+
+  private async updateFirmware(
+    chargingStation: ChargingStation,
+    minDelay = 15,
+    maxDelay = 30
+  ): Promise<void> {
+    chargingStation.stopAutomaticTransactionGenerator();
+    for (const connectorId of chargingStation.connectors.keys()) {
+      if (
+        connectorId > 0 &&
+        chargingStation.getConnectorStatus(connectorId).transactionStarted === false
+      ) {
+        await chargingStation.ocppRequestService.requestHandler<
+          OCPP16StatusNotificationRequest,
+          OCPP16StatusNotificationResponse
+        >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
+          connectorId,
+          status: OCPP16ChargePointStatus.UNAVAILABLE,
+          errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+        });
+      }
+    }
+    await chargingStation.ocppRequestService.requestHandler<
+      OCPP16FirmwareStatusNotificationRequest,
+      OCPP16FirmwareStatusNotificationResponse
+    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+      status: OCPP16FirmwareStatus.Downloading,
+    });
+    chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading;
+    await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
+    await chargingStation.ocppRequestService.requestHandler<
+      OCPP16FirmwareStatusNotificationRequest,
+      OCPP16FirmwareStatusNotificationResponse
+    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+      status: OCPP16FirmwareStatus.Downloaded,
+    });
+    chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloaded;
+    await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
+    await chargingStation.ocppRequestService.requestHandler<
+      OCPP16FirmwareStatusNotificationRequest,
+      OCPP16FirmwareStatusNotificationResponse
+    >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+      status: OCPP16FirmwareStatus.Installing,
+    });
+    chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing;
+    await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
+    await chargingStation.reset();
   }
 
   private async handleRequestGetDiagnostics(
@@ -1058,13 +1124,6 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     ) {
       return OCPPConstants.OCPP_RESPONSE_EMPTY;
     }
-    logger.debug(
-      chargingStation.logPrefix() +
-        ' ' +
-        OCPP16IncomingRequestCommand.GET_DIAGNOSTICS +
-        ' request received: %j',
-      commandPayload
-    );
     const uri = new URL(commandPayload.location);
     if (uri.protocol.startsWith('ftp:')) {
       let ftpClient: Client;
@@ -1092,8 +1151,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               } bytes transferred from diagnostics archive ${info.name}`
             );
             await chargingStation.ocppRequestService.requestHandler<
-              DiagnosticsStatusNotificationRequest,
-              DiagnosticsStatusNotificationResponse
+              OCPP16DiagnosticsStatusNotificationRequest,
+              OCPP16DiagnosticsStatusNotificationResponse
             >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
               status: OCPP16DiagnosticsStatus.Uploading,
             });
@@ -1107,8 +1166,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           );
           if (uploadResponse.code === 226) {
             await chargingStation.ocppRequestService.requestHandler<
-              DiagnosticsStatusNotificationRequest,
-              DiagnosticsStatusNotificationResponse
+              OCPP16DiagnosticsStatusNotificationRequest,
+              OCPP16DiagnosticsStatusNotificationResponse
             >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
               status: OCPP16DiagnosticsStatus.Uploaded,
             });
@@ -1134,8 +1193,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         );
       } catch (error) {
         await chargingStation.ocppRequestService.requestHandler<
-          DiagnosticsStatusNotificationRequest,
-          DiagnosticsStatusNotificationResponse
+          OCPP16DiagnosticsStatusNotificationRequest,
+          OCPP16DiagnosticsStatusNotificationResponse
         >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
           status: OCPP16DiagnosticsStatus.UploadFailed,
         });
@@ -1156,8 +1215,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         } to transfer the diagnostic logs archive`
       );
       await chargingStation.ocppRequestService.requestHandler<
-        DiagnosticsStatusNotificationRequest,
-        DiagnosticsStatusNotificationResponse
+        OCPP16DiagnosticsStatusNotificationRequest,
+        OCPP16DiagnosticsStatusNotificationResponse
       >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
         status: OCPP16DiagnosticsStatus.UploadFailed,
       });
