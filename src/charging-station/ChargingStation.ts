@@ -173,17 +173,15 @@ export default class ChargingStation {
     );
   }
 
-  public getEnableStatistics(): boolean | undefined {
-    return !Utils.isUndefined(this.stationInfo.enableStatistics)
-      ? this.stationInfo.enableStatistics
-      : true;
+  public getEnableStatistics(): boolean {
+    return this.stationInfo.enableStatistics ?? false;
   }
 
-  public getMustAuthorizeAtRemoteStart(): boolean | undefined {
+  public getMustAuthorizeAtRemoteStart(): boolean {
     return this.stationInfo.mustAuthorizeAtRemoteStart ?? true;
   }
 
-  public getPayloadSchemaValidation(): boolean | undefined {
+  public getPayloadSchemaValidation(): boolean {
     return this.stationInfo.payloadSchemaValidation ?? true;
   }
 
@@ -487,7 +485,7 @@ export default class ChargingStation {
     if (this.started === false) {
       if (this.starting === false) {
         this.starting = true;
-        if (this.getEnableStatistics()) {
+        if (this.getEnableStatistics() === true) {
           this.performanceStatistics.start();
         }
         this.openWSConnection();
@@ -515,7 +513,7 @@ export default class ChargingStation {
                 ) {
                   this.startAutomaticTransactionGenerator();
                 }
-                if (this.getEnableStatistics()) {
+                if (this.getEnableStatistics() === true) {
                   this.performanceStatistics.restart();
                 } else {
                   this.performanceStatistics.stop();
@@ -547,7 +545,7 @@ export default class ChargingStation {
         this.stopping = true;
         await this.stopMessageSequence(reason);
         this.closeWSConnection();
-        if (this.getEnableStatistics()) {
+        if (this.getEnableStatistics() === true) {
           this.performanceStatistics.stop();
         }
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
@@ -961,7 +959,7 @@ export default class ChargingStation {
     // Avoid duplication of connectors related information in RAM
     this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
-    if (this.getEnableStatistics()) {
+    if (this.getEnableStatistics() === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
         this.stationInfo.hashId,
         this.stationInfo.chargingStationId,
