@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:OCPP:Cp:1.6:2020:3:CertificateSigned.conf",
+  "definitions": {
+    "CertificateSignedStatusEnumType": {
+      "type": "string",
+      "additionalProperties": false,
+      "enum": ["Accepted", "Rejected"]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "$ref": "#/definitions/CertificateSignedStatusEnumType"
+    }
+  },
+  "required": ["status"]
+}
