@@ -1108,7 +1108,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing;
     await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
-    await chargingStation.reset();
+    await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
   }
 
   private async handleRequestGetDiagnostics(
