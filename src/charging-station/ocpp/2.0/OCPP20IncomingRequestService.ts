@@ -26,8 +26,8 @@ import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 const moduleName = 'OCPP20IncomingRequestService';
 
 export default class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
+  protected jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>;
   private incomingRequestHandlers: Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>;
-  private jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor() {
     if (new.target?.name === moduleName) {
@@ -150,7 +150,7 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
     );
     return false;
   }

@@ -8,7 +8,10 @@ import type { JSONSchemaType } from 'ajv';
 
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
-import { OCPP20RequestCommand } from '../../../types/ocpp/2.0/Requests';
+import {
+  OCPP20IncomingRequestCommand,
+  OCPP20RequestCommand,
+} from '../../../types/ocpp/2.0/Requests';
 import type { OCPP20BootNotificationResponse } from '../../../types/ocpp/2.0/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
@@ -21,6 +24,11 @@ import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 const moduleName = 'OCPP20ResponseService';
 
 export default class OCPP20ResponseService extends OCPPResponseService {
+  public jsonIncomingRequestResponseSchemas: Map<
+    OCPP20IncomingRequestCommand,
+    JSONSchemaType<JsonObject>
+  >;
+
   private responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>;
   private jsonSchemas: Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>;
 
@@ -46,6 +54,7 @@ export default class OCPP20ResponseService extends OCPPResponseService {
         ) as JSONSchemaType<OCPP20BootNotificationResponse>,
       ],
     ]);
+    this.jsonIncomingRequestResponseSchemas = new Map();
     this.validatePayload.bind(this);
   }
 
@@ -114,7 +123,7 @@ export default class OCPP20ResponseService extends OCPPResponseService {
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
     );
     return false;
   }

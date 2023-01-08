@@ -32,8 +32,8 @@ export default abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
-
   private readonly ocppResponseService: OCPPResponseService;
+  protected abstract jsonSchemas: Map<RequestCommand, JSONSchemaType<JsonObject>>;
 
   protected constructor(version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version;
@@ -128,7 +128,7 @@ export default abstract class OCPPRequestService {
     }
   }
 
-  protected validateRequestPayload<T extends JsonType>(
+  protected validateRequestPayload<T extends JsonObject>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T
@@ -136,11 +136,14 @@ export default abstract class OCPPRequestService {
     if (chargingStation.getPayloadSchemaValidation() === false) {
       return true;
     }
-    const schema = this.getRequestPayloadValidationSchema(chargingStation, commandName);
-    if (schema === false) {
+    if (this.jsonSchemas.has(commandName as RequestCommand) === false) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema found for command '${commandName}' PDU validation`
+      );
       return true;
     }
-    const validate = this.ajv.compile(schema);
+    const validate = this.ajv.compile(this.jsonSchemas.get(commandName as RequestCommand));
+    payload = Utils.cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
       return true;
@@ -153,6 +156,47 @@ export default abstract class OCPPRequestService {
     throw new OCPPError(
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
+      commandName,
+      JSON.stringify(validate.errors, null, 2)
+    );
+  }
+
+  protected validateResponsePayload<T extends JsonObject>(
+    chargingStation: ChargingStation,
+    commandName: RequestCommand | IncomingRequestCommand,
+    payload: T
+  ): boolean {
+    if (chargingStation.getPayloadSchemaValidation() === false) {
+      return true;
+    }
+    if (
+      this.ocppResponseService.jsonIncomingRequestResponseSchemas.has(
+        commandName as IncomingRequestCommand
+      ) === false
+    ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: No JSON schema found for command '${commandName}' PDU validation`
+      );
+      return true;
+    }
+    const validate = this.ajv.compile(
+      this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(
+        commandName as IncomingRequestCommand
+      )
+    );
+    payload = Utils.cloneObject<T>(payload);
+    OCPPServiceUtils.convertDateToISOString<T>(payload);
+    if (validate(payload)) {
+      return true;
+    }
+    logger.error(
+      `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Command '${commandName}' reponse PDU is invalid: %j`,
+      validate.errors
+    );
+    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
+    throw new OCPPError(
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      'Response PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2)
     );
@@ -334,7 +378,7 @@ export default abstract class OCPPRequestService {
           commandName,
           messagePayload as JsonType,
         ]);
-        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonType);
+        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonObject);
         messageToSend = JSON.stringify([
           messageType,
           messageId,
@@ -345,7 +389,7 @@ export default abstract class OCPPRequestService {
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
         // Build response
-        // FIXME: Validate response payload
+        this.validateResponsePayload(chargingStation, commandName, messagePayload as JsonObject);
         messageToSend = JSON.stringify([messageType, messageId, messagePayload] as Response);
         break;
       // Error Message
@@ -393,9 +437,4 @@ export default abstract class OCPPRequestService {
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<ResType>;
-
-  protected abstract getRequestPayloadValidationSchema(
-    chargingStation: ChargingStation,
-    commandName: RequestCommand | IncomingRequestCommand
-  ): JSONSchemaType<JsonObject> | false;
 }

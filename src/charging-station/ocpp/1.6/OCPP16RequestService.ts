@@ -26,7 +26,6 @@ import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { RequestParams } from '../../../types/ocpp/Requests';
 import Constants from '../../../utils/Constants';
-import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import OCPPRequestService from '../OCPPRequestService';
@@ -36,7 +35,7 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 const moduleName = 'OCPP16RequestService';
 
 export default class OCPP16RequestService extends OCPPRequestService {
-  private jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
+  protected jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor(ocppResponseService: OCPPResponseService) {
     if (new.target?.name === moduleName) {
@@ -183,19 +182,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
       commandName,
       commandParams
     );
-  }
-
-  protected getRequestPayloadValidationSchema(
-    chargingStation: ChargingStation,
-    commandName: OCPP16RequestCommand
-  ): JSONSchemaType<JsonObject> | false {
-    if (this.jsonSchemas.has(commandName) === true) {
-      return this.jsonSchemas.get(commandName);
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.getPayloadValidationSchema: No JSON schema found for command ${commandName} PDU validation`
-    );
-    return false;
   }
 
   private buildRequestPayload<Request extends JsonType>(

@@ -5,7 +5,7 @@ import ajvFormats from 'ajv-formats';
 
 import OCPPError from '../../exception/OCPPError';
 import type { HandleErrorParams } from '../../types/Error';
-import type { JsonType } from '../../types/JsonType';
+import type { JsonObject, JsonType } from '../../types/JsonType';
 import type { OCPPVersion } from '../../types/ocpp/OCPPVersion';
 import type { IncomingRequestCommand } from '../../types/ocpp/Requests';
 import logger from '../../utils/Logger';
@@ -19,6 +19,7 @@ export default abstract class OCPPIncomingRequestService {
   protected asyncResource: AsyncResource;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
+  protected abstract jsonSchemas: Map<IncomingRequestCommand, JSONSchemaType<JsonObject>>;
 
   protected constructor(version: OCPPVersion) {
     this.version = version;

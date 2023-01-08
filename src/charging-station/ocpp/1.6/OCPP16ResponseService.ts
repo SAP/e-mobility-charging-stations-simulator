@@ -17,6 +17,7 @@ import type {
 } from '../../../types/ocpp/1.6/MeterValues';
 import {
   type OCPP16BootNotificationRequest,
+  OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
   type OCPP16StatusNotificationRequest,
 } from '../../../types/ocpp/1.6/Requests';
@@ -50,6 +51,11 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 const moduleName = 'OCPP16ResponseService';
 
 export default class OCPP16ResponseService extends OCPPResponseService {
+  public jsonIncomingRequestResponseSchemas: Map<
+    OCPP16IncomingRequestCommand,
+    JSONSchemaType<JsonObject>
+  >;
+
   private responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>;
   private jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
 
@@ -179,6 +185,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
         ) as JSONSchemaType<OCPP16DataTransferResponse>,
       ],
     ]);
+    this.jsonIncomingRequestResponseSchemas = new Map();
     this.validatePayload.bind(this);
   }
 
@@ -247,7 +254,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command ${commandName} PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
     );
     return false;
   }
