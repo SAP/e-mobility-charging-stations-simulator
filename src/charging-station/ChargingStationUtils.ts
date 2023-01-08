@@ -49,7 +49,7 @@ export class ChargingStationUtils {
   }
 
   public static getHashId(index: number, stationTemplate: ChargingStationTemplate): string {
-    const hashBootNotificationRequest = {
+    const chargingStationInfo = {
       chargePointModel: stationTemplate.chargePointModel,
       chargePointVendor: stationTemplate.chargePointVendor,
       ...(!Utils.isUndefined(stationTemplate.chargeBoxSerialNumberPrefix) && {
@@ -74,7 +74,7 @@ export class ChargingStationUtils {
     return crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
       .update(
-        JSON.stringify(hashBootNotificationRequest) +
+        JSON.stringify(chargingStationInfo) +
           ChargingStationUtils.getChargingStationId(index, stationTemplate)
       )
       .digest('hex');
