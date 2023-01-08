@@ -240,47 +240,52 @@ export default abstract class OCPPRequestService {
           if (chargingStation.getEnableStatistics() === true) {
             chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
           }
+          let sendError = false;
           // Check if wsConnection opened
           if (chargingStation.isWebSocketConnectionOpened() === true) {
-            // Yes: Send Message
             const beginId = PerformanceStatistics.beginMeasure(commandName as string);
-            // FIXME: Handle sending error
-            chargingStation.wsConnection.send(messageToSend);
+            try {
+              chargingStation.wsConnection.send(messageToSend);
+            } catch (error) {
+              sendError = true;
+            }
             PerformanceStatistics.endMeasure(commandName as string, beginId);
             logger.debug(
               `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
                 messageType
               )} payload: ${messageToSend}`
             );
-          } else if (params.skipBufferingOnError === false) {
-            // Buffer it
+          }
+          const wsClosedOrErrored =
+            chargingStation.isWebSocketConnectionOpened() === false || sendError === true;
+          if (wsClosedOrErrored && params.skipBufferingOnError === false) {
+            // Buffer
             chargingStation.bufferMessage(messageToSend);
+            // Reject and keep request in the cache
+            return reject(
+              new OCPPError(
+                ErrorType.GENERIC_ERROR,
+                `WebSocket closed or errored for buffered message id '${messageId}' with content '${messageToSend}'`,
+                commandName,
+                (messagePayload as JsonObject)?.details ?? {}
+              )
+            );
+          } else if (wsClosedOrErrored) {
             const ocppError = new OCPPError(
               ErrorType.GENERIC_ERROR,
-              `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`,
+              `WebSocket closed or errored for non buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
               (messagePayload as JsonObject)?.details ?? {}
             );
-            if (messageType === MessageType.CALL_MESSAGE) {
-              // Reject it but keep the request in the cache
+            // Reject response
+            if (messageType !== MessageType.CALL_MESSAGE) {
               return reject(ocppError);
             }
+            // Reject and remove request from the cache
             return errorCallback(ocppError, false);
-          } else {
-            // Reject it
-            return errorCallback(
-              new OCPPError(
-                ErrorType.GENERIC_ERROR,
-                `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`,
-                commandName,
-                (messagePayload as JsonObject)?.details ?? {}
-              ),
-              false
-            );
           }
-          // Response?
+          // Resolve response
           if (messageType !== MessageType.CALL_MESSAGE) {
-            // Yes: send Ok
             return resolve(messagePayload);
           }
 
@@ -330,9 +335,10 @@ export default abstract class OCPPRequestService {
               );
             }
             logger.error(
-              `${chargingStation.logPrefix()} Error occurred when calling command ${commandName} with message data ${JSON.stringify(
-                messagePayload
-              )}:`,
+              `${chargingStation.logPrefix()} Error occurred at ${self.getMessageTypeString(
+                messageType
+              )} command ${commandName} with PDU %j:`,
+              messagePayload,
               error
             );
             chargingStation.requests.delete(messageId);
