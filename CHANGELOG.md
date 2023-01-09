@@ -47,7 +47,7 @@
 - Document simulator configuration for Web UI usage. [`8228f97`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8228f972d374b250307c36b1e7c91f720f692195)
 - Apply dependencies update [`b25b868`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b25b86842dc61b2a95f672dcf38992f7d63d6ec3)
 - Apply dependencies update [`fa238ed`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/fa238ed422568fba50a6def9c8b62f060079158e)
-- Bump patch level is firmware version at reboot at firmware update [`3637ca2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3637ca2c3a39b1185de71fae3577679a7e43891d)
+- Bump patch level in firmware version at reboot at firmware update [`3637ca2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3637ca2c3a39b1185de71fae3577679a7e43891d)
 - UI Server: fix connection upgrade error handling [`d1c6c83`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d1c6c833e3dcec4fbd2beacf221e87ad3b407634)
 - Fix error propagation into the UI server [`8ec8e3d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8ec8e3d00ee6b2dca0760dd77973e338ea5a23a7)
 - Apply dependencies update [`bbe10d5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/bbe10d5ffe049f3e843105a5b9126f49fa9b9dcc)
