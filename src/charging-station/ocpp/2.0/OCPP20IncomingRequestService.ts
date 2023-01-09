@@ -9,7 +9,7 @@ import type { JSONSchemaType } from 'ajv';
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import {
-  OCPP20ClearCacheRequest,
+  type OCPP20ClearCacheRequest,
   OCPP20IncomingRequestCommand,
 } from '../../../types/ocpp/2.0/Requests';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
@@ -60,9 +60,9 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
     let response: JsonType;
     if (
       chargingStation.getOcppStrictCompliance() === true &&
-      chargingStation.isInPendingState() === true /* &&
-       (commandName === OCPP20IncomingRequestCommand.REMOTE_START_TRANSACTION ||
-        commandName === OCPP20IncomingRequestCommand.REMOTE_STOP_TRANSACTION ) */
+      chargingStation.isInPendingState() === true &&
+      (commandName === OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION ||
+        commandName === OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION)
     ) {
       throw new OCPPError(
         ErrorType.SECURITY_ERROR,

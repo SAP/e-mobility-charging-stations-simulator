@@ -13,6 +13,10 @@ export type OCPP20BootNotificationResponse = {
   statusInfo?: StatusInfoType;
 } & JsonObject;
 
+export type OCPP20HeartbeatResponse = {
+  currentTime: Date;
+} & JsonObject;
+
 export type OCPP20ClearCacheResponse = {
   status: DefaultStatus;
   statusInfo?: StatusInfoType;

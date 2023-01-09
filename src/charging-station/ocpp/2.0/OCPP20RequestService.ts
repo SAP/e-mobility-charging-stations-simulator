@@ -10,6 +10,7 @@ import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import {
   type OCPP20BootNotificationRequest,
+  type OCPP20HeartbeatRequest,
   OCPP20RequestCommand,
 } from '../../../types/ocpp/2.0/Requests';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
@@ -43,6 +44,18 @@ export default class OCPP20RequestService extends OCPPRequestService {
             'utf8'
           )
         ) as JSONSchemaType<OCPP20BootNotificationRequest>,
+      ],
+      [
+        OCPP20RequestCommand.HEARTBEAT,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/2.0/HeartbeatRequest.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP20HeartbeatRequest>,
       ],
     ]);
     this.buildRequestPayload.bind(this);
@@ -110,6 +123,8 @@ export default class OCPP20RequestService extends OCPPRequestService {
             }),
           },
         } as unknown as Request;
+      case OCPP20RequestCommand.HEARTBEAT:
+        return {} as unknown as Request;
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         throw new OCPPError(

@@ -8,6 +8,8 @@ export enum OCPP20RequestCommand {
 
 export enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
+  REQUEST_START_TRANSACTION = 'RequestStartTransaction',
+  REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
 }
 
 export enum BootReasonEnumType {
@@ -39,5 +41,7 @@ export type OCPP20BootNotificationRequest = {
   reason: BootReasonEnumType;
   chargingStation: ChargingStationType;
 } & JsonObject;
+
+export type OCPP20HeartbeatRequest = EmptyObject;
 
 export type OCPP20ClearCacheRequest = EmptyObject;
