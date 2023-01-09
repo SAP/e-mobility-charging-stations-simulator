@@ -2,7 +2,7 @@
 
 ## [v1.1.89](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.88...v1.1.89)
 
-- Thanks. [`#341`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/341)
+- Add instructions to try out Web UI [`#341`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/341)
 - Add BootNotification and ClearCache OCPP 2.0.1 commands support [`d270cc8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d270cc878c61c42098557a0e03cc1620f74112de)
 - Fixes to OCA OCPP 2.0.1 JSON schemas [`98fc138`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/98fc1389a2464ce8738047f8990731ae31938ee5)
 - Add OCA security whitepaper JSON schemas [`61f26ca`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/61f26ca68c0cadd13c224dd613f9acc501649775)
@@ -19,8 +19,8 @@
 - Move OCPP command payload constants into its own file [`bf53cad`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/bf53cadfde620fe89e6438403658682feb5bd39e)
 - Optimize worker handlers calls by binding them to the current instance [`0e4fa34`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0e4fa348298d36900560f7466f21f44090d2fe1b)
 - Hook the OCPP 2.0 stack into the main code [`edd1343`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/edd134392e237a3242dc2093341df70244c51472)
-- Apply depedencies update [`0112bfe`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0112bfe05d14fa7d0e0a8e6b697d6997560c7a90)
-- Add incoming request response sent payloads validatio [`0288789`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/028878919a937f9307634c0316e27c677a87d305)
+- Apply dependencies update [`0112bfe`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0112bfe05d14fa7d0e0a8e6b697d6997560c7a90)
+- Add incoming request response sent payloads validation [`0288789`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/028878919a937f9307634c0316e27c677a87d305)
 - Add initial support for OCPP 1.6 firmware update simulation [`c9a4f9e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c9a4f9ea603df09541c6837fee50012256fb46ad)
 - Migrate all JSON schemas to draft-06 or higher [`b034299`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b0342994636646699094b2d16a767d6d902d2bde)
 - Apply dependencies update [`ee28062`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ee28062380e3dd0b0229a504c1c92af131da7b78)
@@ -57,7 +57,7 @@
 - Add configuration directive for the maximum log files size [`9988696`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9988696df26aba9c34733f9093ebf3d957ba9d02)
 - Move date conversion to ISO string helper to utils class [`1799761`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1799761a204a0cafc55637e33434babb739865b2)
 - Disable performance statistics by default [`ad774ce`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ad774cecafe0c4f31321ed6e7aff1b5c0c514097)
-- Cleanups uneeded encapsulating methods [`91ecff2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/91ecff2da29c7d1930ab1e8d90d159ae7a8c722e)
+- Cleanups unneeded encapsulating methods [`91ecff2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/91ecff2da29c7d1930ab1e8d90d159ae7a8c722e)
 - Apply dependencies update [`b78290e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b78290eabb767141f986f113f1695b025d07c5dd)
 - Fixes to OCPP 1.6 payload type definitions [`c38f0ce`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c38f0ced134bb1e7daf750500788e9c194e7b74c)
 - Fixes to performance: [`c60af6c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c60af6ca67ad2599e7e3e886f219da6323ead61b)
