@@ -34,6 +34,7 @@ export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand,
 export type RequestParams = {
   skipBufferingOnError?: boolean;
   triggerMessage?: boolean;
+  throwError?: boolean;
 };
 
 export const IncomingRequestCommand = {

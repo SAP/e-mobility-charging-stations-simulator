@@ -9,6 +9,7 @@ import {
   type HeartbeatRequest,
   type MeterValuesRequest,
   RequestCommand,
+  RequestParams,
   type StatusNotificationRequest,
 } from '../types/ocpp/Requests';
 import {
@@ -71,6 +72,9 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
 
   constructor(chargingStation: ChargingStation) {
     super();
+    const requestParams: RequestParams = {
+      throwError: true,
+    };
     this.commandHandlers = new Map<BroadcastChannelProcedureName, CommandHandler>([
       [BroadcastChannelProcedureName.START_CHARGING_STATION, () => this.chargingStation.start()],
       [
@@ -101,7 +105,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             StartTransactionRequest,
             StartTransactionResponse
-          >(this.chargingStation, RequestCommand.START_TRANSACTION, requestPayload),
+          >(this.chargingStation, RequestCommand.START_TRANSACTION, requestPayload, requestParams),
       ],
       [
         BroadcastChannelProcedureName.STOP_TRANSACTION,
@@ -115,6 +119,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
               true
             ),
             ...requestPayload,
+            requestParams,
           }),
       ],
       [
@@ -123,7 +128,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             AuthorizeRequest,
             AuthorizeResponse
-          >(this.chargingStation, RequestCommand.AUTHORIZE, requestPayload),
+          >(this.chargingStation, RequestCommand.AUTHORIZE, requestPayload, requestParams),
       ],
       [
         BroadcastChannelProcedureName.BOOT_NOTIFICATION,
@@ -141,6 +146,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
               },
               {
                 skipBufferingOnError: true,
+                throwError: true,
               }
             );
           return this.chargingStation.bootNotificationResponse;
@@ -152,7 +158,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             StatusNotificationRequest,
             StatusNotificationResponse
-          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, requestPayload),
+          >(
+            this.chargingStation,
+            RequestCommand.STATUS_NOTIFICATION,
+            requestPayload,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.HEARTBEAT,
@@ -160,7 +171,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             HeartbeatRequest,
             HeartbeatResponse
-          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload),
+          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload, requestParams),
       ],
       [
         BroadcastChannelProcedureName.METER_VALUES,
@@ -185,6 +196,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
               ),
             ],
             ...requestPayload,
+            requestParams,
           });
         },
       ],
@@ -194,7 +206,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             DataTransferRequest,
             DataTransferResponse
-          >(this.chargingStation, RequestCommand.DATA_TRANSFER, requestPayload),
+          >(this.chargingStation, RequestCommand.DATA_TRANSFER, requestPayload, requestParams),
       ],
       [
         BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
@@ -202,7 +214,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             DiagnosticsStatusNotificationRequest,
             DiagnosticsStatusNotificationResponse
-          >(this.chargingStation, RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, requestPayload),
+          >(
+            this.chargingStation,
+            RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+            requestPayload,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
@@ -210,7 +227,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             FirmwareStatusNotificationRequest,
             FirmwareStatusNotificationResponse
-          >(this.chargingStation, RequestCommand.FIRMWARE_STATUS_NOTIFICATION, requestPayload),
+          >(
+            this.chargingStation,
+            RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+            requestPayload,
+            requestParams
+          ),
       ],
     ]);
     this.chargingStation = chargingStation;

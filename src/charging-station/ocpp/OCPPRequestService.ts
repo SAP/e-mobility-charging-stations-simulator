@@ -113,6 +113,7 @@ export default abstract class OCPPRequestService {
     params: RequestParams = {
       skipBufferingOnError: false,
       triggerMessage: false,
+      throwError: false,
     }
   ): Promise<ResponseType> {
     try {
@@ -125,7 +126,9 @@ export default abstract class OCPPRequestService {
         params
       );
     } catch (error) {
-      this.handleSendMessageError(chargingStation, commandName, error as Error);
+      this.handleSendMessageError(chargingStation, commandName, error as Error, {
+        throwError: params.throwError,
+      });
     }
   }
 
