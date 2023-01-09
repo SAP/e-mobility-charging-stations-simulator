@@ -438,13 +438,6 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
   }
 
-  private handleRequestClearCache(chargingStation: ChargingStation): DefaultResponse {
-    chargingStation.authorizedTagsCache.deleteAuthorizedTags(
-      ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
-    );
-    return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
-  }
-
   private async handleRequestUnlockConnector(
     chargingStation: ChargingStation,
     commandPayload: UnlockConnectorRequest

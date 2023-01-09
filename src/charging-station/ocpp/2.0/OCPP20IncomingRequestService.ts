@@ -12,14 +12,11 @@ import {
   OCPP20ClearCacheRequest,
   OCPP20IncomingRequestCommand,
 } from '../../../types/ocpp/2.0/Requests';
-import type { OCPP20ClearCacheResponse } from '../../../types/ocpp/2.0/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
 import logger from '../../../utils/Logger';
 import type ChargingStation from '../../ChargingStation';
-import { ChargingStationUtils } from '../../ChargingStationUtils';
-import OCPPConstants from '../OCPPConstants';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 
@@ -153,12 +150,5 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
       `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
     );
     return false;
-  }
-
-  private handleRequestClearCache(chargingStation: ChargingStation): OCPP20ClearCacheResponse {
-    chargingStation.authorizedTagsCache.deleteAuthorizedTags(
-      ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
-    );
-    return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
   }
 }

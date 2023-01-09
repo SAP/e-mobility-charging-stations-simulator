@@ -235,6 +235,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           }),
         } as unknown as Request;
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
+      case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
         return {
           status: commandParams?.status,
         } as unknown as Request;
@@ -294,10 +295,6 @@ export default class OCPP16RequestService extends OCPPRequestService {
         } as unknown as Request;
       case OCPP16RequestCommand.DATA_TRANSFER:
         return commandParams as unknown as Request;
-      case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
-        return {
-          status: commandParams?.status,
-        } as unknown as Request;
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         throw new OCPPError(

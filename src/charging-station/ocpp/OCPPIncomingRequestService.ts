@@ -8,8 +8,11 @@ import type { HandleErrorParams } from '../../types/Error';
 import type { JsonObject, JsonType } from '../../types/JsonType';
 import type { OCPPVersion } from '../../types/ocpp/OCPPVersion';
 import type { IncomingRequestCommand } from '../../types/ocpp/Requests';
+import type { ClearCacheResponse } from '../../types/ocpp/Responses';
 import logger from '../../utils/Logger';
 import type ChargingStation from '../ChargingStation';
+import { ChargingStationUtils } from '../ChargingStationUtils';
+import OCPPConstants from './OCPPConstants';
 import { OCPPServiceUtils } from './OCPPServiceUtils';
 
 const moduleName = 'OCPPIncomingRequestService';
@@ -84,6 +87,13 @@ export default abstract class OCPPIncomingRequestService {
       commandName,
       JSON.stringify(validate.errors, null, 2)
     );
+  }
+
+  protected handleRequestClearCache(chargingStation: ChargingStation): ClearCacheResponse {
+    chargingStation.authorizedTagsCache.deleteAuthorizedTags(
+      ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
+    );
+    return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
   }
 
   public abstract incomingRequestHandler(
