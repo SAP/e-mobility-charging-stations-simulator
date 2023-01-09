@@ -1,13 +1,13 @@
 import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates';
-import type { ChargePointStatus } from './ocpp/ChargePointStatus';
 import type { ChargingProfile } from './ocpp/ChargingProfile';
+import type { ConnectorStatusEnum } from './ocpp/ConnectorStatusEnum';
 import type { MeterValue } from './ocpp/MeterValues';
 import type { AvailabilityType } from './ocpp/Requests';
 
 export type ConnectorStatus = {
   availability: AvailabilityType;
-  bootStatus?: ChargePointStatus;
-  status?: ChargePointStatus;
+  bootStatus?: ConnectorStatusEnum;
+  status?: ConnectorStatusEnum;
   MeterValues: SampledValueTemplate[];
   authorizeIdTag?: string;
   idTagAuthorized?: boolean;

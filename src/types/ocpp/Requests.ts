@@ -20,6 +20,7 @@ import {
   type OCPP20BootNotificationRequest,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
+  type OCPP20StatusNotificationRequest,
 } from './2.0/Requests';
 import type { MessageType } from './MessageType';
 
@@ -65,7 +66,9 @@ export type BootNotificationRequest = OCPP16BootNotificationRequest | OCPP20Boot
 
 export type HeartbeatRequest = OCPP16HeartbeatRequest;
 
-export type StatusNotificationRequest = OCPP16StatusNotificationRequest;
+export type StatusNotificationRequest =
+  | OCPP16StatusNotificationRequest
+  | OCPP20StatusNotificationRequest;
 
 export type MeterValuesRequest = OCPP16MeterValuesRequest;
 

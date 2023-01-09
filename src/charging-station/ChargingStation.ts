@@ -26,7 +26,6 @@ import type { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
 import type { JsonType } from '../types/JsonType';
 import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
-import { ChargePointStatus } from '../types/ocpp/ChargePointStatus';
 import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
 import {
   ConnectorPhaseRotation,
@@ -34,6 +33,7 @@ import {
   SupportedFeatureProfiles,
   VendorDefaultParametersKey,
 } from '../types/ocpp/Configuration';
+import { ConnectorStatusEnum } from '../types/ocpp/ConnectorStatusEnum';
 import { ErrorType } from '../types/ocpp/ErrorType';
 import { MessageType } from '../types/ocpp/MessageType';
 import { MeterValue, MeterValueMeasurand } from '../types/ocpp/MeterValues';
@@ -90,6 +90,7 @@ import OCPP20RequestService from './ocpp/2.0/OCPP20RequestService';
 import OCPP20ResponseService from './ocpp/2.0/OCPP20ResponseService';
 import type OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
 import type OCPPRequestService from './ocpp/OCPPRequestService';
+import { OCPPServiceUtils } from './ocpp/OCPPServiceUtils';
 import SharedLRUCache from './SharedLRUCache';
 
 export default class ChargingStation {
@@ -1815,7 +1816,7 @@ export default class ChargingStation {
     this.startHeartbeat();
     // Initialize connectors status
     for (const connectorId of this.connectors.keys()) {
-      let chargePointStatus: ChargePointStatus;
+      let connectorStatus: ConnectorStatusEnum;
       if (connectorId === 0) {
         continue;
       } else if (
@@ -1823,29 +1824,29 @@ export default class ChargingStation {
         (this.isChargingStationAvailable() === false ||
           this.isConnectorAvailable(connectorId) === false)
       ) {
-        chargePointStatus = ChargePointStatus.UNAVAILABLE;
+        connectorStatus = ConnectorStatusEnum.UNAVAILABLE;
       } else if (
         !this.getConnectorStatus(connectorId)?.status &&
         this.getConnectorStatus(connectorId)?.bootStatus
       ) {
         // Set boot status in template at startup
-        chargePointStatus = this.getConnectorStatus(connectorId).bootStatus;
+        connectorStatus = this.getConnectorStatus(connectorId).bootStatus;
       } else if (this.getConnectorStatus(connectorId)?.status) {
         // Set previous status at startup
-        chargePointStatus = this.getConnectorStatus(connectorId).status;
+        connectorStatus = this.getConnectorStatus(connectorId).status;
       } else {
         // Set default status
-        chargePointStatus = ChargePointStatus.AVAILABLE;
+        connectorStatus = ConnectorStatusEnum.AVAILABLE;
       }
       await this.ocppRequestService.requestHandler<
         StatusNotificationRequest,
         StatusNotificationResponse
-      >(this, RequestCommand.STATUS_NOTIFICATION, {
-        connectorId,
-        status: chargePointStatus,
-        errorCode: ChargePointErrorCode.NO_ERROR,
-      });
-      this.getConnectorStatus(connectorId).status = chargePointStatus;
+      >(
+        this,
+        RequestCommand.STATUS_NOTIFICATION,
+        OCPPServiceUtils.buildStatusNotificationRequest(this, connectorId, connectorStatus)
+      );
+      this.getConnectorStatus(connectorId).status = connectorStatus;
     }
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
@@ -1882,11 +1883,15 @@ export default class ChargingStation {
         await this.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-        >(this, RequestCommand.STATUS_NOTIFICATION, {
-          connectorId,
-          status: ChargePointStatus.UNAVAILABLE,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        });
+        >(
+          this,
+          RequestCommand.STATUS_NOTIFICATION,
+          OCPPServiceUtils.buildStatusNotificationRequest(
+            this,
+            connectorId,
+            ConnectorStatusEnum.UNAVAILABLE
+          )
+        );
         this.getConnectorStatus(connectorId).status = null;
       }
     }

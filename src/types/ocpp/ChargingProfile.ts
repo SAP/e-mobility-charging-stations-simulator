@@ -1,7 +1,7 @@
 import {
-  OCPP16ChargingProfile,
+  type OCPP16ChargingProfile,
   OCPP16ChargingRateUnitType,
-  OCPP16ChargingSchedulePeriod,
+  type OCPP16ChargingSchedulePeriod,
 } from './1.6/ChargingProfile';
 
 export type ChargingProfile = OCPP16ChargingProfile;

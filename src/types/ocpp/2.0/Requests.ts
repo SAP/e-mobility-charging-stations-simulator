@@ -4,6 +4,7 @@ import type { JsonObject } from '../../JsonType';
 export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
+  STATUS_NOTIFICATION = 'StatusNotification',
 }
 
 export enum OCPP20IncomingRequestCommand {
@@ -45,3 +46,18 @@ export type OCPP20BootNotificationRequest = {
 export type OCPP20HeartbeatRequest = EmptyObject;
 
 export type OCPP20ClearCacheRequest = EmptyObject;
+
+export enum OCPP20ConnectorStatusEnumType {
+  AVAILABLE = 'Available',
+  OCCUPIED = 'Occupied',
+  RESERVED = 'Reserved',
+  UNAVAILABLE = 'Unavailable',
+  FAULTED = 'Faulted',
+}
+
+export type OCPP20StatusNotificationRequest = {
+  timestamp: Date;
+  connectorStatus: OCPP20ConnectorStatusEnumType;
+  evseId: number;
+  connectorId: number;
+};

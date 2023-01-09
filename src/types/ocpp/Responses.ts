@@ -16,7 +16,11 @@ import {
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
 } from './1.6/Responses';
-import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses';
+import type {
+  OCPP20BootNotificationResponse,
+  OCPP20ClearCacheResponse,
+  OCPP20StatusNotificationResponse,
+} from './2.0/Responses';
 import type { ErrorType } from './ErrorType';
 import type { MessageType } from './MessageType';
 
@@ -38,7 +42,9 @@ export type HeartbeatResponse = OCPP16HeartbeatResponse;
 
 export type ClearCacheResponse = DefaultResponse | OCPP20ClearCacheResponse;
 
-export type StatusNotificationResponse = OCPP16StatusNotificationResponse;
+export type StatusNotificationResponse =
+  | OCPP16StatusNotificationResponse
+  | OCPP20StatusNotificationResponse;
 
 export type MeterValuesResponse = OCPP16MeterValuesResponse;
 

@@ -3,10 +3,20 @@ import type { DefinedError, ErrorObject } from 'ajv';
 import BaseError from '../../exception/BaseError';
 import type { JsonObject, JsonType } from '../../types/JsonType';
 import type { SampledValueTemplate } from '../../types/MeasurandPerPhaseSampledValueTemplates';
+import type { OCPP16StatusNotificationRequest } from '../../types/ocpp/1.6/Requests';
+import type { OCPP20StatusNotificationRequest } from '../../types/ocpp/2.0/Requests';
+import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
 import { StandardParametersKey } from '../../types/ocpp/Configuration';
+import type { ConnectorStatusEnum } from '../../types/ocpp/ConnectorStatusEnum';
 import { ErrorType } from '../../types/ocpp/ErrorType';
 import { MeterValueMeasurand, type MeterValuePhase } from '../../types/ocpp/MeterValues';
-import { IncomingRequestCommand, MessageTrigger, RequestCommand } from '../../types/ocpp/Requests';
+import { OCPPVersion } from '../../types/ocpp/OCPPVersion';
+import {
+  IncomingRequestCommand,
+  MessageTrigger,
+  RequestCommand,
+  type StatusNotificationRequest,
+} from '../../types/ocpp/Requests';
 import Constants from '../../utils/Constants';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
@@ -112,6 +122,29 @@ export class OCPPServiceUtils {
       } else if (obj[key] !== null && typeof obj[key] === 'object') {
         this.convertDateToISOString<T>(obj[key] as T);
       }
+    }
+  }
+
+  public static buildStatusNotificationRequest(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    status: ConnectorStatusEnum
+  ): StatusNotificationRequest {
+    switch (chargingStation.stationInfo.ocppVersion) {
+      case OCPPVersion.VERSION_16:
+        return {
+          connectorId,
+          status,
+          errorCode: ChargePointErrorCode.NO_ERROR,
+        } as OCPP16StatusNotificationRequest;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        return {
+          timestamp: new Date(),
+          connectorStatus: status,
+          connectorId,
+          evseId: connectorId,
+        } as OCPP20StatusNotificationRequest;
     }
   }
 

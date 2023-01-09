@@ -1,3 +1,4 @@
+import type { EmptyObject } from '../../EmptyObject';
 import type { JsonObject } from '../../JsonType';
 import type { DefaultStatus, RegistrationStatusEnumType } from '../Responses';
 
@@ -21,3 +22,5 @@ export type OCPP20ClearCacheResponse = {
   status: DefaultStatus;
   statusInfo?: StatusInfoType;
 } & JsonObject;
+
+export type OCPP20StatusNotificationResponse = EmptyObject;

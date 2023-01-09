@@ -16,6 +16,7 @@ import type {
   OCPP20BootNotificationResponse,
   OCPP20ClearCacheResponse,
   OCPP20HeartbeatResponse,
+  OCPP20StatusNotificationResponse,
 } from '../../../types/ocpp/2.0/Responses';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
@@ -44,6 +45,7 @@ export default class OCPP20ResponseService extends OCPPResponseService {
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
       [OCPP20RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],
       [OCPP20RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this)],
+      [OCPP20RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
     ]);
     this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
       [
@@ -69,6 +71,18 @@ export default class OCPP20ResponseService extends OCPPResponseService {
             'utf8'
           )
         ) as JSONSchemaType<OCPP20HeartbeatResponse>,
+      ],
+      [
+        OCPP20RequestCommand.STATUS_NOTIFICATION,
+        JSON.parse(
+          fs.readFileSync(
+            path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              '../../../assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json'
+            ),
+            'utf8'
+          )
+        ) as JSONSchemaType<OCPP20StatusNotificationResponse>,
       ],
     ]);
     this.jsonIncomingRequestResponseSchemas = new Map([
