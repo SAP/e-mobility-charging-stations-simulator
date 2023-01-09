@@ -825,21 +825,6 @@ export default class ChargingStation {
       'supervisionUrl',
       'supervisionUrls'
     );
-    const firmwareVersionRegExp = stationTemplate.firmwareVersionPattern
-      ? new RegExp(stationTemplate.firmwareVersionPattern)
-      : Constants.SEMVER_REGEXP;
-    if (
-      stationTemplate.firmwareVersion &&
-      firmwareVersionRegExp.test(stationTemplate.firmwareVersion) === false
-    ) {
-      logger.warn(
-        `${this.logPrefix()} Firmware version '${
-          stationTemplate.firmwareVersion
-        }' in template file ${
-          this.templateFile
-        } does not match regular expression '${firmwareVersionRegExp.toString()}'`
-      );
-    }
     const stationInfo: ChargingStationInfo =
       ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);
     stationInfo.hashId = ChargingStationUtils.getHashId(this.index, stationTemplate);
@@ -861,6 +846,18 @@ export default class ChargingStation {
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
           ? stationTemplate.power * 1000
           : stationTemplate.power;
+    }
+    stationInfo.firmwareVersionPattern =
+      stationTemplate.firmwareVersionPattern ?? Constants.SEMVER_PATTERN;
+    if (
+      stationInfo.firmwareVersion &&
+      new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion) === false
+    ) {
+      logger.warn(
+        `${this.logPrefix()} Firmware version '${stationInfo.firmwareVersion}' in template file ${
+          this.templateFile
+        } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
+      );
     }
     stationInfo.resetTime = stationTemplate.resetTime
       ? stationTemplate.resetTime * 1000
@@ -999,6 +996,18 @@ export default class ChargingStation {
         interval: this.getHeartbeatInterval() / 1000,
         status: RegistrationStatusEnumType.ACCEPTED,
       };
+    }
+    if (
+      this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
+      this.stationInfo.firmwareVersion &&
+      this.stationInfo.firmwareVersionPattern
+    ) {
+      const match = this.stationInfo.firmwareVersion
+        .match(new RegExp(this.stationInfo.firmwareVersionPattern))
+        .slice(1, this.stationInfo.firmwareVersion.split('.').length + 1);
+      const patchLevelIndex = match.length - 1;
+      match[patchLevelIndex] = (Utils.convertToInt(match[patchLevelIndex]) + 1).toString();
+      this.stationInfo.firmwareVersion = match.join('.');
     }
   }
 
@@ -1846,8 +1855,8 @@ export default class ChargingStation {
         status: FirmwareStatus.Installed,
       });
       this.stationInfo.firmwareStatus = FirmwareStatus.Installed;
-      // TODO: bump firmware version
     }
+
     // Start the ATG
     if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true) {
       this.startAutomaticTransactionGenerator();

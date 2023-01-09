@@ -1082,6 +1082,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           status: OCPP16ChargePointStatus.UNAVAILABLE,
           errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
         });
+        chargingStation.getConnectorStatus(connectorId).status =
+          OCPP16ChargePointStatus.UNAVAILABLE;
       }
     }
     await chargingStation.ocppRequestService.requestHandler<
