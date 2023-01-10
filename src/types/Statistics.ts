@@ -23,11 +23,11 @@ export type StatisticsData = {
   stdDevTimeMeasurement: number;
 };
 
-export type Statistics = WorkerData & {
+export type Statistics = {
   id: string;
   name: string;
   uri: string;
   createdAt: Date;
   updatedAt?: Date;
   statisticsData: Map<string | RequestCommand | IncomingRequestCommand, Partial<StatisticsData>>;
-};
+} & WorkerData;

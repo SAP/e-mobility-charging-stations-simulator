@@ -60,4 +60,4 @@ export type OCPP20StatusNotificationRequest = {
   connectorStatus: OCPP20ConnectorStatusEnumType;
   evseId: number;
   connectorId: number;
-};
+} & JsonObject;

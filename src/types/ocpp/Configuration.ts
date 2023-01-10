@@ -31,8 +31,8 @@ export enum ConnectorPhaseRotation {
   TSR = 'TSR',
 }
 
-export interface OCPPConfigurationKey extends JsonObject {
+export type OCPPConfigurationKey = {
   key: string | StandardParametersKey;
   readonly: boolean;
   value?: string;
-}
+} & JsonObject;
