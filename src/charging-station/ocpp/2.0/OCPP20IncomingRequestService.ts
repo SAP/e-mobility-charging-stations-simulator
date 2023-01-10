@@ -37,15 +37,9 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
     this.jsonSchemas = new Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/ClearCacheRequest.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20ClearCacheRequest>,
+        this.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
+          '../../../assets/json-schemas/ocpp/2.0/ClearCacheRequest.json'
+        ),
       ],
     ]);
     this.validatePayload.bind(this);
@@ -150,5 +144,14 @@ export default class OCPP20IncomingRequestService extends OCPPIncomingRequestSer
       `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
     );
     return false;
+  }
+
+  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
+    return JSON.parse(
+      fs.readFileSync(
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+        'utf8'
+      )
+    ) as JSONSchemaType<T>;
   }
 }

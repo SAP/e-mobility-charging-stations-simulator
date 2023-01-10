@@ -93,293 +93,149 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/BootNotificationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16BootNotificationResponse>,
+        this.parseJsonSchemaFile<OCPP16BootNotificationResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/BootNotificationResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/HeartbeatResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16HeartbeatResponse>,
+        this.parseJsonSchemaFile<OCPP16HeartbeatResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/HeartbeatResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.AUTHORIZE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/AuthorizeResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16AuthorizeResponse>,
+        this.parseJsonSchemaFile<OCPP16AuthorizeResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/AuthorizeResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.START_TRANSACTION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/StartTransactionResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16StartTransactionResponse>,
+        this.parseJsonSchemaFile<OCPP16StartTransactionResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/StartTransactionResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/StopTransactionResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16StopTransactionResponse>,
+        this.parseJsonSchemaFile<OCPP16StopTransactionResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/StopTransactionResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16StatusNotificationResponse>,
+        this.parseJsonSchemaFile<OCPP16StatusNotificationResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.METER_VALUES,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/MeterValuesResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16MeterValuesResponse>,
+        this.parseJsonSchemaFile<OCPP16MeterValuesResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/MeterValuesResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotificationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16DiagnosticsStatusNotificationResponse>,
+        this.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotificationResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.DATA_TRANSFER,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16DataTransferResponse>,
+        this.parseJsonSchemaFile<OCPP16DataTransferResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json'
+        ),
       ],
       [
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotificationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16FirmwareStatusNotificationResponse>,
+        this.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotificationResponse.json'
+        ),
       ],
     ]);
     this.jsonIncomingRequestResponseSchemas = new Map([
       [
         OCPP16IncomingRequestCommand.RESET,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ResetResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<DefaultResponse>,
+        this.parseJsonSchemaFile<DefaultResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/ResetResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ClearCacheResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<DefaultResponse>,
+        this.parseJsonSchemaFile<DefaultResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/ClearCacheResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<ChangeAvailabilityResponse>,
+        this.parseJsonSchemaFile<ChangeAvailabilityResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/UnlockConnectorResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<UnlockConnectorResponse>,
+        this.parseJsonSchemaFile<UnlockConnectorResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/UnlockConnectorResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/GetConfigurationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<GetConfigurationResponse>,
+        this.parseJsonSchemaFile<GetConfigurationResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/GetConfigurationResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<ChangeConfigurationResponse>,
+        this.parseJsonSchemaFile<ChangeConfigurationResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/SetChargingProfileResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<SetChargingProfileResponse>,
+        this.parseJsonSchemaFile<SetChargingProfileResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/SetChargingProfileResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<ClearChargingProfileResponse>,
+        this.parseJsonSchemaFile<ClearChargingProfileResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<DefaultResponse>,
+        this.parseJsonSchemaFile<DefaultResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<DefaultResponse>,
+        this.parseJsonSchemaFile<DefaultResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/GetDiagnosticsResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<GetDiagnosticsResponse>,
+        this.parseJsonSchemaFile<GetDiagnosticsResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/GetDiagnosticsResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/TriggerMessageResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16TriggerMessageResponse>,
+        this.parseJsonSchemaFile<OCPP16TriggerMessageResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/TriggerMessageResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16DataTransferResponse>,
+        this.parseJsonSchemaFile<OCPP16DataTransferResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16UpdateFirmwareResponse>,
+        this.parseJsonSchemaFile<OCPP16UpdateFirmwareResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json'
+        ),
       ],
     ]);
     this.validatePayload.bind(this);
@@ -825,5 +681,14 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           "'"
       );
     }
+  }
+
+  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
+    return JSON.parse(
+      fs.readFileSync(
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+        'utf8'
+      )
+    ) as JSONSchemaType<T>;
   }
 }

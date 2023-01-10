@@ -50,53 +50,29 @@ export default class OCPP20ResponseService extends OCPPResponseService {
     this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/BootNotificationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20BootNotificationResponse>,
+        this.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
+          '../../../assets/json-schemas/ocpp/2.0/BootNotificationResponse.json'
+        ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/HeartbeatResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20HeartbeatResponse>,
+        this.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
+          '../../../assets/json-schemas/ocpp/2.0/HeartbeatResponse.json'
+        ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20StatusNotificationResponse>,
+        this.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
+          '../../../assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json'
+        ),
       ],
     ]);
     this.jsonIncomingRequestResponseSchemas = new Map([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/ClearCacheResponse.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20ClearCacheResponse>,
+        this.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
+          '../../../assets/json-schemas/ocpp/2.0/ClearCacheResponse.json'
+        ),
       ],
     ]);
     this.validatePayload.bind(this);
@@ -209,5 +185,14 @@ export default class OCPP20ResponseService extends OCPPResponseService {
         payload
       );
     }
+  }
+
+  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
+    return JSON.parse(
+      fs.readFileSync(
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+        'utf8'
+      )
+    ) as JSONSchemaType<T>;
   }
 }

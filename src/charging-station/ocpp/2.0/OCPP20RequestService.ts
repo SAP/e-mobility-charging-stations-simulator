@@ -36,39 +36,21 @@ export default class OCPP20RequestService extends OCPPRequestService {
     this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/BootNotificationRequest.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20BootNotificationRequest>,
+        this.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
+          '../../../assets/json-schemas/ocpp/2.0/BootNotificationRequest.json'
+        ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/HeartbeatRequest.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20HeartbeatRequest>,
+        this.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
+          '../../../assets/json-schemas/ocpp/2.0/HeartbeatRequest.json'
+        ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP20StatusNotificationRequest>,
+        this.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
+          '../../../assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json'
+        ),
       ],
     ]);
     this.buildRequestPayload.bind(this);
@@ -155,5 +137,14 @@ export default class OCPP20RequestService extends OCPPRequestService {
           commandParams
         );
     }
+  }
+
+  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
+    return JSON.parse(
+      fs.readFileSync(
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+        'utf8'
+      )
+    ) as JSONSchemaType<T>;
   }
 }

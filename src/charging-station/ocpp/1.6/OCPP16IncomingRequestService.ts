@@ -140,171 +140,85 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP16IncomingRequestCommand.RESET,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/Reset.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<ResetRequest>,
+        this.parseJsonSchemaFile<ResetRequest>('../../../assets/json-schemas/ocpp/1.6/Reset.json'),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ClearCache.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16ClearCacheRequest>,
+        this.parseJsonSchemaFile<OCPP16ClearCacheRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/ClearCache.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/UnlockConnector.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<UnlockConnectorRequest>,
+        this.parseJsonSchemaFile<UnlockConnectorRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/UnlockConnector.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/GetConfiguration.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<GetConfigurationRequest>,
+        this.parseJsonSchemaFile<GetConfigurationRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/GetConfiguration.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ChangeConfiguration.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<ChangeConfigurationRequest>,
+        this.parseJsonSchemaFile<ChangeConfigurationRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/ChangeConfiguration.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<GetDiagnosticsRequest>,
+        this.parseJsonSchemaFile<GetDiagnosticsRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/SetChargingProfile.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<SetChargingProfileRequest>,
+        this.parseJsonSchemaFile<SetChargingProfileRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/SetChargingProfile.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfile.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<ClearChargingProfileRequest>,
+        this.parseJsonSchemaFile<ClearChargingProfileRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfile.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/ChangeAvailability.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<ChangeAvailabilityRequest>,
+        this.parseJsonSchemaFile<ChangeAvailabilityRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/ChangeAvailability.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<RemoteStartTransactionRequest>,
+        this.parseJsonSchemaFile<RemoteStartTransactionRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<RemoteStopTransactionRequest>,
+        this.parseJsonSchemaFile<RemoteStopTransactionRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/TriggerMessage.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16TriggerMessageRequest>,
+        this.parseJsonSchemaFile<OCPP16TriggerMessageRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/TriggerMessage.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16DataTransferRequest>,
+        this.parseJsonSchemaFile<OCPP16DataTransferRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-        JSON.parse(
-          fs.readFileSync(
-            path.resolve(
-              path.dirname(fileURLToPath(import.meta.url)),
-              '../../../assets/json-schemas/ocpp/1.6/UpdateFirmware.json'
-            ),
-            'utf8'
-          )
-        ) as JSONSchemaType<OCPP16UpdateFirmwareRequest>,
+        this.parseJsonSchemaFile<OCPP16UpdateFirmwareRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/UpdateFirmware.json'
+        ),
       ],
     ]);
     this.validatePayload.bind(this);
@@ -1358,5 +1272,14 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         { errorResponse: OCPPConstants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
       );
     }
+  }
+
+  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
+    return JSON.parse(
+      fs.readFileSync(
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+        'utf8'
+      )
+    ) as JSONSchemaType<T>;
   }
 }
