@@ -6,6 +6,7 @@ import path from 'path';
 import { URL } from 'url';
 import { parentPort } from 'worker_threads';
 
+import merge from 'just-merge';
 import WebSocket, { type RawData } from 'ws';
 
 import BaseError from '../exception/BaseError';
@@ -18,6 +19,7 @@ import type { ChargingStationOcppConfiguration } from '../types/ChargingStationO
 import {
   type ChargingStationTemplate,
   CurrentType,
+  type FirmwareUpgrade,
   PowerUnits,
   type WsOptions,
 } from '../types/ChargingStationTemplate';
@@ -563,6 +565,15 @@ export default class ChargingStation {
     }
   }
 
+  public getFirmwareUpgrade(): FirmwareUpgrade {
+    return merge(
+      {
+        reset: true,
+      },
+      this.stationInfo.firmwareUpgrade
+    );
+  }
+
   public async reset(reason?: StopTransactionReason): Promise<void> {
     await this.stop(reason);
     await Utils.sleep(this.stationInfo.resetTime);
@@ -1002,11 +1013,17 @@ export default class ChargingStation {
       this.stationInfo.firmwareVersion &&
       this.stationInfo.firmwareVersionPattern
     ) {
+      const versionStep = this.getFirmwareUpgrade()?.versionUpgrade?.step ?? 1;
+      const patternGroup: number =
+        this.getFirmwareUpgrade()?.versionUpgrade?.patternGroup ??
+        this.stationInfo.firmwareVersion.split('.').length;
       const match = this.stationInfo.firmwareVersion
         .match(new RegExp(this.stationInfo.firmwareVersionPattern))
-        .slice(1, this.stationInfo.firmwareVersion.split('.').length + 1);
+        .slice(1, patternGroup + 1);
       const patchLevelIndex = match.length - 1;
-      match[patchLevelIndex] = (Utils.convertToInt(match[patchLevelIndex]) + 1).toString();
+      match[patchLevelIndex] = (
+        Utils.convertToInt(match[patchLevelIndex]) + versionStep
+      ).toString();
       this.stationInfo.firmwareVersion = match.join('.');
     }
   }

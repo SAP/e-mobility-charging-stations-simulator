@@ -944,6 +944,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE
       ) === false
     ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} Cannot simulate firmware update: feature profile not supported`
+      );
+      return OCPPConstants.OCPP_RESPONSE_EMPTY;
+    }
+    if (
+      !Utils.isNullOrUndefined(chargingStation.stationInfo.firmwareStatus) &&
+      chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed
+    ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} Cannot simulate firmware update: firmware update is already in progress`
+      );
       return OCPPConstants.OCPP_RESPONSE_EMPTY;
     }
     const retrieveDate = Utils.convertToDate(commandPayload.retrieveDate);
@@ -993,6 +1005,18 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           OCPP16ChargePointStatus.UNAVAILABLE;
       }
     }
+    if (
+      chargingStation.getFirmwareUpgrade()?.failureStatus &&
+      !Utils.isEmptyString(chargingStation.getFirmwareUpgrade().failureStatus)
+    ) {
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16FirmwareStatusNotificationRequest,
+        OCPP16FirmwareStatusNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+        status: chargingStation.getFirmwareUpgrade().failureStatus,
+      });
+      return;
+    }
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1016,8 +1040,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       status: OCPP16FirmwareStatus.Installing,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing;
-    await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
-    await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
+    if (chargingStation.getFirmwareUpgrade().reset === true) {
+      await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
+      await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
+    }
   }
 
   private async handleRequestGetDiagnostics(

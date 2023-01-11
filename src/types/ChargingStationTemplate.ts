@@ -40,14 +40,13 @@ export enum Voltage {
 
 export type WsOptions = ClientOptions & ClientRequestArgs;
 
-type FirmwareUpgrade = {
+export type FirmwareUpgrade = {
   versionUpgrade: {
-    patternGroup?: number | number[];
+    patternGroup?: number;
     step?: number;
   };
   reset?: boolean;
-  resetDelay?: number;
-  failureMessage?: FirmwareStatus;
+  failureStatus?: FirmwareStatus;
 };
 
 type CommandsSupport = {

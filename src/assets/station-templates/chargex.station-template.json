@@ -11,6 +11,11 @@
   "voltageOut": 230,
   "beginEndMeterValues": true,
   "outOfOrderEndMeterValues": true,
+  "firmwareUpgrade": {
+    "versionUpgrade": {
+      "patternGroup": 3
+    }
+  },
   "commandsSupport": {
     "incomingCommands": {
       "Reset": true,
