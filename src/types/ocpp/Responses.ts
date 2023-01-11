@@ -40,7 +40,7 @@ export type BootNotificationResponse =
 
 export type HeartbeatResponse = OCPP16HeartbeatResponse;
 
-export type ClearCacheResponse = DefaultResponse | OCPP20ClearCacheResponse;
+export type ClearCacheResponse = GenericResponse | OCPP20ClearCacheResponse;
 
 export type StatusNotificationResponse =
   | OCPP16StatusNotificationResponse
@@ -54,13 +54,13 @@ export type DiagnosticsStatusNotificationResponse = OCPP16DiagnosticsStatusNotif
 
 export type FirmwareStatusNotificationResponse = OCPP16FirmwareStatusNotificationResponse;
 
-export enum DefaultStatus {
+export enum GenericStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
 }
 
-export type DefaultResponse = {
-  status: DefaultStatus;
+export type GenericResponse = {
+  status: GenericStatus;
 };
 
 export enum RegistrationStatusEnumType {

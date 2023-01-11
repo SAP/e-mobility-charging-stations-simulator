@@ -50,7 +50,7 @@ import {
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import {
-  type DefaultResponse,
+  type GenericResponse,
   RegistrationStatusEnumType,
   type ResponseHandler,
 } from '../../../types/ocpp/Responses';
@@ -155,13 +155,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     this.jsonIncomingRequestResponseSchemas = new Map([
       [
         OCPP16IncomingRequestCommand.RESET,
-        this.parseJsonSchemaFile<DefaultResponse>(
+        this.parseJsonSchemaFile<GenericResponse>(
           '../../../assets/json-schemas/ocpp/1.6/ResetResponse.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        this.parseJsonSchemaFile<DefaultResponse>(
+        this.parseJsonSchemaFile<GenericResponse>(
           '../../../assets/json-schemas/ocpp/1.6/ClearCacheResponse.json'
         ),
       ],
@@ -203,13 +203,13 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        this.parseJsonSchemaFile<DefaultResponse>(
+        this.parseJsonSchemaFile<GenericResponse>(
           '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        this.parseJsonSchemaFile<DefaultResponse>(
+        this.parseJsonSchemaFile<GenericResponse>(
           '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json'
         ),
       ],

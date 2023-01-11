@@ -1,6 +1,6 @@
 import type { EmptyObject } from '../../EmptyObject';
 import type { JsonObject } from '../../JsonType';
-import type { DefaultStatus, RegistrationStatusEnumType } from '../Responses';
+import type { GenericStatus, RegistrationStatusEnumType } from '../Responses';
 
 export type StatusInfoType = {
   reasonCode: string;
@@ -19,7 +19,7 @@ export type OCPP20HeartbeatResponse = {
 } & JsonObject;
 
 export type OCPP20ClearCacheResponse = {
-  status: DefaultStatus;
+  status: GenericStatus;
   statusInfo?: StatusInfoType;
 } & JsonObject;
 

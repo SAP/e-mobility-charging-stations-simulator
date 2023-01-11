@@ -78,7 +78,7 @@ import type { OCPPConfigurationKey } from '../../../types/ocpp/Configuration';
 import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
-import type { DefaultResponse } from '../../../types/ocpp/Responses';
+import type { GenericResponse } from '../../../types/ocpp/Responses';
 import Constants from '../../../utils/Constants';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
@@ -329,7 +329,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private handleRequestReset(
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
-  ): DefaultResponse {
+  ): GenericResponse {
     this.asyncResource
       .runInAsyncScope(
         chargingStation.reset.bind(chargingStation) as (
@@ -694,7 +694,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private async handleRequestRemoteStartTransaction(
     chargingStation: ChargingStation,
     commandPayload: RemoteStartTransactionRequest
-  ): Promise<DefaultResponse> {
+  ): Promise<GenericResponse> {
     const transactionConnectorId = commandPayload.connectorId;
     if (chargingStation.connectors.has(transactionConnectorId) === true) {
       const remoteStartTransactionLogMsg =
@@ -843,7 +843,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     connectorId: number,
     idTag: string
-  ): Promise<DefaultResponse> {
+  ): Promise<GenericResponse> {
     if (
       chargingStation.getConnectorStatus(connectorId).status !== OCPP16ChargePointStatus.AVAILABLE
     ) {
@@ -899,7 +899,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   private async handleRequestRemoteStopTransaction(
     chargingStation: ChargingStation,
     commandPayload: RemoteStopTransactionRequest
-  ): Promise<DefaultResponse> {
+  ): Promise<GenericResponse> {
     const transactionId = commandPayload.transactionId;
     for (const connectorId of chargingStation.connectors.keys()) {
       if (

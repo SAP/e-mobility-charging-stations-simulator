@@ -4,15 +4,15 @@ import {
   ClearChargingProfileStatus,
   ConfigurationStatus,
   DataTransferStatus,
-  DefaultStatus,
+  GenericStatus,
   TriggerMessageStatus,
   UnlockStatus,
 } from '../../types/ocpp/Responses';
 
 export default class OCPPConstants {
   static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
-  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: DefaultStatus.ACCEPTED });
-  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: DefaultStatus.REJECTED });
+  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.ACCEPTED });
+  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: GenericStatus.REJECTED });
 
   static readonly OCPP_CONFIGURATION_RESPONSE_ACCEPTED = Object.freeze({
     status: ConfigurationStatus.ACCEPTED,

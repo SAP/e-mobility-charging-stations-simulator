@@ -25,7 +25,6 @@ import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import type { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
 import type { JsonType } from '../types/JsonType';
-import { ChargePointErrorCode } from '../types/ocpp/ChargePointErrorCode';
 import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
 import {
   ConnectorPhaseRotation,
