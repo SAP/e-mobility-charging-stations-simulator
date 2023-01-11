@@ -945,7 +945,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       ) === false
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} Cannot simulate firmware update: feature profile not supported`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: feature profile not supported`
       );
       return OCPPConstants.OCPP_RESPONSE_EMPTY;
     }
@@ -954,7 +954,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} Cannot simulate firmware update: firmware update is already in progress`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`
       );
       return OCPPConstants.OCPP_RESPONSE_EMPTY;
     }
@@ -984,8 +984,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
 
   private async updateFirmware(
     chargingStation: ChargingStation,
-    minDelay = 15,
-    maxDelay = 30
+    maxDelay = 30,
+    minDelay = 15
   ): Promise<void> {
     chargingStation.stopAutomaticTransactionGenerator();
     for (const connectorId of chargingStation.connectors.keys()) {
@@ -1024,7 +1024,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       status: OCPP16FirmwareStatus.Downloading,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading;
-    await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
+    await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1032,7 +1032,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       status: OCPP16FirmwareStatus.Downloaded,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloaded;
-    await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
+    await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1041,7 +1041,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing;
     if (chargingStation.getFirmwareUpgrade().reset === true) {
-      await Utils.sleep(Utils.getRandomInteger(minDelay, maxDelay) * 1000);
+      await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
     }
   }
@@ -1057,6 +1057,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
       ) === false
     ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Cannot get diagnostics: feature profile not supported`
+      );
       return OCPPConstants.OCPP_RESPONSE_EMPTY;
     }
     const uri = new URL(commandPayload.location);
