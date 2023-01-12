@@ -390,7 +390,6 @@ export default class Configuration {
   }
 
   private static getDefaultPerformanceStorageUri(storageType: StorageType) {
-    const SQLiteFileName = `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`;
     switch (storageType) {
       case StorageType.JSON_FILE:
         return `file://${path.join(
@@ -400,7 +399,7 @@ export default class Configuration {
       case StorageType.SQLITE:
         return `file://${path.join(
           path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
-          SQLiteFileName
+          `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
         )}`;
       default:
         throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);
