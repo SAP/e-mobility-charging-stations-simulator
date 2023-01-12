@@ -8,6 +8,7 @@ import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
 import tar from 'tar';
 
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
@@ -87,7 +88,6 @@ import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigur
 import { ChargingStationUtils } from '../../ChargingStationUtils';
 import OCPPConstants from '../OCPPConstants';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 
 const moduleName = 'OCPP16IncomingRequestService';
 

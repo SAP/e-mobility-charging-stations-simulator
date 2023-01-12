@@ -4,13 +4,13 @@ import type internal from 'stream';
 import { StatusCodes } from 'http-status-codes';
 import WebSocket, { type RawData, WebSocketServer } from 'ws';
 
+import { AbstractUIServer } from './AbstractUIServer';
+import { UIServerUtils } from './UIServerUtils';
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import type { ProtocolRequest, ProtocolResponse } from '../../types/UIProtocol';
 import { WebSocketCloseEventStatusCode } from '../../types/WebSocket';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
-import { AbstractUIServer } from './AbstractUIServer';
-import { UIServerUtils } from './UIServerUtils';
 
 const moduleName = 'UIWebSocketServer';
 

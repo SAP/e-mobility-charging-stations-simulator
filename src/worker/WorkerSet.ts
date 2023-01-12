@@ -2,6 +2,8 @@
 
 import { Worker } from 'worker_threads';
 
+import WorkerAbstract from './WorkerAbstract';
+import { WorkerUtils } from './WorkerUtils';
 import {
   type MessageHandler,
   type WorkerData,
@@ -10,8 +12,6 @@ import {
   type WorkerSetElement,
 } from '../types/Worker';
 import Utils from '../utils/Utils';
-import WorkerAbstract from './WorkerAbstract';
-import { WorkerUtils } from './WorkerUtils';
 
 export default class WorkerSet extends WorkerAbstract<WorkerData> {
   private readonly workerSet: Set<WorkerSetElement>;

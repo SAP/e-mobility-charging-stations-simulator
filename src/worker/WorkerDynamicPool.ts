@@ -2,10 +2,10 @@ import type { Worker } from 'worker_threads';
 
 import { DynamicThreadPool, type ErrorHandler, type ExitHandler } from 'poolifier';
 
-import type { WorkerData, WorkerOptions } from '../types/Worker';
-import Utils from '../utils/Utils';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
+import type { WorkerData, WorkerOptions } from '../types/Worker';
+import Utils from '../utils/Utils';
 
 export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   private readonly pool: DynamicThreadPool<WorkerData>;

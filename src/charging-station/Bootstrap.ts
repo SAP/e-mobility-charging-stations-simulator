@@ -6,6 +6,9 @@ import { type Worker, isMainThread } from 'worker_threads';
 
 import chalk from 'chalk';
 
+import { ChargingStationUtils } from './ChargingStationUtils';
+import type { AbstractUIServer } from './ui-server/AbstractUIServer';
+import UIServerFactory from './ui-server/UIServerFactory';
 import { version } from '../../package.json';
 import BaseError from '../exception/BaseError';
 import type { Storage } from '../performance/storage/Storage';
@@ -25,9 +28,6 @@ import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 import type WorkerAbstract from '../worker/WorkerAbstract';
 import WorkerFactory from '../worker/WorkerFactory';
-import { ChargingStationUtils } from './ChargingStationUtils';
-import type { AbstractUIServer } from './ui-server/AbstractUIServer';
-import UIServerFactory from './ui-server/UIServerFactory';
 
 const moduleName = 'Bootstrap';
 

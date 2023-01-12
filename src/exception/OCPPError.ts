@@ -1,9 +1,9 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import BaseError from './BaseError';
 import type { JsonType } from '../types/JsonType';
 import { ErrorType } from '../types/ocpp/ErrorType';
 import type { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
-import BaseError from './BaseError';
 
 export default class OCPPError extends BaseError {
   code: ErrorType;

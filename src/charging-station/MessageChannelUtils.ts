@@ -1,10 +1,10 @@
+import type ChargingStation from './ChargingStation';
 import {
   type ChargingStationData,
   type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
 } from '../types/ChargingStationWorker';
 import type { Statistics } from '../types/Statistics';
-import type ChargingStation from './ChargingStation';
 
 export class MessageChannelUtils {
   private constructor() {

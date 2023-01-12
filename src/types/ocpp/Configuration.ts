@@ -1,9 +1,9 @@
-import type { JsonObject } from '../JsonType';
 import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
   OCPP16VendorDefaultParametersKey,
 } from './1.6/Configuration';
+import type { JsonObject } from '../JsonType';
 
 export const StandardParametersKey = {
   ...OCPP16StandardParametersKey,

@@ -1,3 +1,7 @@
+import type ChargingStation from './ChargingStation';
+import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
+import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
+import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 import BaseError from '../exception/BaseError';
 import type OCPPError from '../exception/OCPPError';
 import { StandardParametersKey } from '../types/ocpp/Configuration';
@@ -43,10 +47,6 @@ import {
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
-import type ChargingStation from './ChargingStation';
-import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
-import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
-import WorkerBroadcastChannel from './WorkerBroadcastChannel';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 

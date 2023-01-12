@@ -2,6 +2,8 @@ import { type IncomingMessage, Server, type ServerResponse } from 'http';
 
 import type { WebSocket } from 'ws';
 
+import type AbstractUIService from './ui-services/AbstractUIService';
+import UIServiceFactory from './ui-services/UIServiceFactory';
 import type { ChargingStationData } from '../../types/ChargingStationWorker';
 import type { UIServerConfiguration } from '../../types/ConfigurationData';
 import {
@@ -13,8 +15,6 @@ import {
   type RequestPayload,
   type ResponsePayload,
 } from '../../types/UIProtocol';
-import type AbstractUIService from './ui-services/AbstractUIService';
-import UIServiceFactory from './ui-services/UIServiceFactory';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;

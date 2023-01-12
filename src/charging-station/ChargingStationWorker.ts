@@ -4,12 +4,12 @@ import { parentPort, workerData } from 'worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 
+import ChargingStation from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
 import type { ChargingStationWorkerData } from '../types/ChargingStationWorker';
 import { type WorkerMessage, WorkerMessageEvents } from '../types/Worker';
 import Utils from '../utils/Utils';
 import WorkerConstants from '../worker/WorkerConstants';
-import ChargingStation from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;

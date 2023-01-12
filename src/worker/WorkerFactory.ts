@@ -2,12 +2,12 @@ import { type Worker, isMainThread } from 'worker_threads';
 
 import type { PoolOptions } from 'poolifier';
 
-import { type WorkerData, type WorkerOptions, WorkerProcessType } from '../types/Worker';
 import type WorkerAbstract from './WorkerAbstract';
 import WorkerConstants from './WorkerConstants';
 import WorkerDynamicPool from './WorkerDynamicPool';
 import WorkerSet from './WorkerSet';
 import WorkerStaticPool from './WorkerStaticPool';
+import { type WorkerData, type WorkerOptions, WorkerProcessType } from '../types/Worker';
 
 export default class WorkerFactory {
   private constructor() {

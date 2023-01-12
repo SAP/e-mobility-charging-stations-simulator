@@ -1,10 +1,10 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { StorageType } from '../../types/Storage';
 import { JsonFileStorage } from './JsonFileStorage';
 import { MikroOrmStorage } from './MikroOrmStorage';
 import { MongoDBStorage } from './MongoDBStorage';
 import type { Storage } from './Storage';
+import { StorageType } from '../../types/Storage';
 
 export class StorageFactory {
   private constructor() {

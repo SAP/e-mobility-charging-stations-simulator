@@ -2,6 +2,8 @@
 
 import { AsyncResource } from 'async_hooks';
 
+import type ChargingStation from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
 import BaseError from '../exception/BaseError';
 import PerformanceStatistics from '../performance/PerformanceStatistics';
 import {
@@ -22,8 +24,6 @@ import {
 import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
-import type ChargingStation from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
 
 const moduleName = 'AutomaticTransactionGenerator';
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 
-import type { WorkerData, WorkerOptions } from '../types/Worker';
 import WorkerConstants from './WorkerConstants';
+import type { WorkerData, WorkerOptions } from '../types/Worker';
 
 export default abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;

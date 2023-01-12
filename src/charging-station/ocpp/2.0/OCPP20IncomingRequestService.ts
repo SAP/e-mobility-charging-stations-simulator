@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 
 import type { JSONSchemaType } from 'ajv';
 
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import {
@@ -18,7 +19,6 @@ import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
 import logger from '../../../utils/Logger';
 import type ChargingStation from '../../ChargingStation';
 import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 
 const moduleName = 'OCPP20IncomingRequestService';
 

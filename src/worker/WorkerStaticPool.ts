@@ -2,10 +2,10 @@ import type { Worker } from 'worker_threads';
 
 import { type ErrorHandler, type ExitHandler, FixedThreadPool } from 'poolifier';
 
-import type { WorkerData, WorkerOptions } from '../types/Worker';
-import Utils from '../utils/Utils';
 import WorkerAbstract from './WorkerAbstract';
 import { WorkerUtils } from './WorkerUtils';
+import type { WorkerData, WorkerOptions } from '../types/Worker';
+import Utils from '../utils/Utils';
 
 export default class WorkerStaticPool extends WorkerAbstract<WorkerData> {
   private readonly pool: FixedThreadPool<WorkerData>;

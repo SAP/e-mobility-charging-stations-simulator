@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 
 import type { JSONSchemaType } from 'ajv';
 
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import OCPPError from '../../../exception/OCPPError';
 import type { JsonObject, JsonType } from '../../../types/JsonType';
 import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
@@ -60,7 +61,6 @@ import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
 import OCPPResponseService from '../OCPPResponseService';
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 
 const moduleName = 'OCPP16ResponseService';
 

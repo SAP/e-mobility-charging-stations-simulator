@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import merge from 'just-merge';
 import { WorkerChoiceStrategies } from 'poolifier';
 
+import Constants from './Constants';
 import {
   type ConfigurationData,
   type StationTemplateUrl,
@@ -21,7 +22,6 @@ import { StorageType } from '../types/Storage';
 import { ApplicationProtocol } from '../types/UIProtocol';
 import { WorkerProcessType } from '../types/Worker';
 import WorkerConstants from '../worker/WorkerConstants';
-import Constants from './Constants';
 
 export default class Configuration {
   private static configurationFile = path.join(
