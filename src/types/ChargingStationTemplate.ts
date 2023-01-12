@@ -41,7 +41,7 @@ export enum Voltage {
 export type WsOptions = ClientOptions & ClientRequestArgs;
 
 export type FirmwareUpgrade = {
-  versionUpgrade: {
+  versionUpgrade?: {
     patternGroup?: number;
     step?: number;
   };

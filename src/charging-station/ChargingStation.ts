@@ -565,15 +565,6 @@ export default class ChargingStation {
     }
   }
 
-  public getFirmwareUpgrade(): FirmwareUpgrade {
-    return merge(
-      {
-        reset: true,
-      },
-      this.stationInfo.firmwareUpgrade
-    );
-  }
-
   public async reset(reason?: StopTransactionReason): Promise<void> {
     await this.stop(reason);
     await Utils.sleep(this.stationInfo.resetTime);
@@ -870,6 +861,12 @@ export default class ChargingStation {
         } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
       );
     }
+    stationInfo.firmwareUpgrade = merge(
+      {
+        reset: true,
+      },
+      stationTemplate.firmwareUpgrade ?? {}
+    );
     stationInfo.resetTime = stationTemplate.resetTime
       ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
@@ -1013,9 +1010,9 @@ export default class ChargingStation {
       this.stationInfo.firmwareVersion &&
       this.stationInfo.firmwareVersionPattern
     ) {
-      const versionStep = this.getFirmwareUpgrade()?.versionUpgrade?.step ?? 1;
+      const versionStep = this.stationInfo.firmwareUpgrade?.versionUpgrade?.step ?? 1;
       const patternGroup: number =
-        this.getFirmwareUpgrade()?.versionUpgrade?.patternGroup ??
+        this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
         this.stationInfo.firmwareVersion.split('.').length;
       const match = this.stationInfo.firmwareVersion
         .match(new RegExp(this.stationInfo.firmwareVersionPattern))

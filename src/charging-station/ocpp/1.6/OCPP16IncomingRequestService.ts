@@ -1006,14 +1006,14 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       }
     }
     if (
-      chargingStation.getFirmwareUpgrade()?.failureStatus &&
-      !Utils.isEmptyString(chargingStation.getFirmwareUpgrade().failureStatus)
+      chargingStation.stationInfo?.firmwareUpgrade?.failureStatus &&
+      !Utils.isEmptyString(chargingStation.stationInfo?.firmwareUpgrade?.failureStatus)
     ) {
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
       >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-        status: chargingStation.getFirmwareUpgrade().failureStatus,
+        status: chargingStation.stationInfo?.firmwareUpgrade?.failureStatus,
       });
       return;
     }
@@ -1040,7 +1040,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       status: OCPP16FirmwareStatus.Installing,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing;
-    if (chargingStation.getFirmwareUpgrade().reset === true) {
+    if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
       await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
     }
