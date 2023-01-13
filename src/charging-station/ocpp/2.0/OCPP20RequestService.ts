@@ -122,7 +122,7 @@ export default class OCPP20RequestService extends OCPPRequestService {
         return {} as unknown as Request;
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return {
-          timestamp: commandParams?.timestamp,
+          timestamp: commandParams?.timestamp ?? new Date(),
           connectorStatus: commandParams?.connectorStatus,
           evseId: commandParams?.evseId,
           connectorId: commandParams?.connectorId,
