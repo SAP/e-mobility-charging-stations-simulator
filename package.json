@@ -72,10 +72,10 @@
     "release": "release-it"
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.6.6",
-    "@mikro-orm/mariadb": "^5.6.6",
-    "@mikro-orm/reflection": "^5.6.6",
-    "@mikro-orm/sqlite": "^5.6.6",
+    "@mikro-orm/core": "^5.6.7",
+    "@mikro-orm/mariadb": "^5.6.7",
+    "@mikro-orm/reflection": "^5.6.7",
+    "@mikro-orm/sqlite": "^5.6.7",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.2",
@@ -101,7 +101,7 @@
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@mikro-orm/cli": "^5.6.6",
+    "@mikro-orm/cli": "^5.6.7",
     "@release-it/bumper": "^4.0.2",
     "@rollup/plugin-json": "^6.0.0",
     "@types/mocha": "^10.0.1",

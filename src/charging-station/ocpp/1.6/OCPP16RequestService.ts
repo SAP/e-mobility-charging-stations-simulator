@@ -192,6 +192,18 @@ export default class OCPP16RequestService extends OCPPRequestService {
           connectorId: commandParams?.connectorId,
           status: commandParams?.status,
           errorCode: commandParams?.errorCode,
+          ...(!Utils.isUndefined(commandParams?.info) && {
+            info: commandParams?.info,
+          }),
+          ...(!Utils.isUndefined(commandParams?.timestamp) && {
+            timestamp: commandParams?.timestamp,
+          }),
+          ...(!Utils.isUndefined(commandParams?.vendorId) && {
+            vendorId: commandParams?.vendorId,
+          }),
+          ...(!Utils.isUndefined(commandParams?.vendorErrorCode) && {
+            vendorErrorCode: commandParams?.vendorErrorCode,
+          }),
         } as unknown as Request;
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
@@ -199,16 +211,23 @@ export default class OCPP16RequestService extends OCPPRequestService {
           ...(!Utils.isUndefined(commandParams?.idTag)
             ? { idTag: commandParams?.idTag }
             : { idTag: Constants.DEFAULT_IDTAG }),
-          meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
-            commandParams?.connectorId as number
-          ),
+          meterStart:
+            commandParams?.meterStart ??
+            chargingStation.getEnergyActiveImportRegisterByConnectorId(
+              commandParams?.connectorId as number
+            ),
           timestamp: commandParams?.timestamp ?? new Date(),
+          ...(!Utils.isUndefined(commandParams?.reservationId) && {
+            reservationId: commandParams?.reservationId,
+          }),
         } as unknown as Request;
       case OCPP16RequestCommand.STOP_TRANSACTION:
-        connectorId = chargingStation.getConnectorIdByTransactionId(
-          commandParams?.transactionId as number
-        );
-        commandParams?.meterStop &&
+        chargingStation.getTransactionDataMeterValues() &&
+          Utils.isUndefined(commandParams?.transactionData) &&
+          (connectorId = chargingStation.getConnectorIdByTransactionId(
+            commandParams?.transactionId as number
+          ));
+        !commandParams?.meterStop &&
           (energyActiveImportRegister =
             chargingStation.getEnergyActiveImportRegisterByTransactionId(
               commandParams?.transactionId as number,
@@ -221,17 +240,21 @@ export default class OCPP16RequestService extends OCPPRequestService {
             chargingStation.getTransactionIdTag(commandParams?.transactionId as number),
           meterStop: commandParams?.meterStop ?? energyActiveImportRegister,
           timestamp: commandParams?.timestamp ?? new Date(),
-          reason: commandParams?.reason,
-          ...(chargingStation.getTransactionDataMeterValues() && {
-            transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-              chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
-              OCPP16ServiceUtils.buildTransactionEndMeterValue(
-                chargingStation,
-                connectorId,
-                (commandParams?.meterStop as number) ?? energyActiveImportRegister
-              )
-            ),
+          ...(!Utils.isUndefined(commandParams?.reason) && {
+            reason: commandParams?.reason,
           }),
+          ...(!Utils.isUndefined(commandParams?.transactionData)
+            ? { transactionData: commandParams?.transactionData }
+            : chargingStation.getTransactionDataMeterValues() && {
+                transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
+                  chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
+                  OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                    chargingStation,
+                    connectorId,
+                    (commandParams?.meterStop as number) ?? energyActiveImportRegister
+                  )
+                ),
+              }),
         } as unknown as Request;
       case OCPP16RequestCommand.DATA_TRANSFER:
         return commandParams as unknown as Request;
