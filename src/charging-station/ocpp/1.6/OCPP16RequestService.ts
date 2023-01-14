@@ -30,6 +30,7 @@ import type { RequestParams } from '../../../types/ocpp/Requests';
 import Constants from '../../../utils/Constants';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
+import OCPPConstants from '../OCPPConstants';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
 
@@ -180,7 +181,7 @@ export default class OCPP16RequestService extends OCPPRequestService {
           status: commandParams?.status,
         } as unknown as Request;
       case OCPP16RequestCommand.HEARTBEAT:
-        return {} as unknown as Request;
+        return OCPPConstants.OCPP_REQUEST_EMPTY as unknown as Request;
       case OCPP16RequestCommand.METER_VALUES:
         return {
           connectorId: commandParams?.connectorId,

@@ -10,6 +10,7 @@ import {
 } from '../../types/ocpp/Responses';
 
 export default class OCPPConstants {
+  static readonly OCPP_REQUEST_EMPTY = Object.freeze({});
   static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.ACCEPTED });
   static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: GenericStatus.REJECTED });

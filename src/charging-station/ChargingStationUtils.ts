@@ -244,7 +244,7 @@ export class ChargingStationUtils {
 
   public static createSerialNumber(
     stationTemplate: ChargingStationTemplate,
-    stationInfo: ChargingStationInfo = {} as ChargingStationInfo,
+    stationInfo: ChargingStationInfo,
     params: {
       randomSerialNumberUpperCase?: boolean;
       randomSerialNumber?: boolean;
@@ -275,7 +275,7 @@ export class ChargingStationUtils {
   public static propagateSerialNumber(
     stationTemplate: ChargingStationTemplate,
     stationInfoSrc: ChargingStationInfo,
-    stationInfoDst: ChargingStationInfo = {} as ChargingStationInfo
+    stationInfoDst: ChargingStationInfo
   ) {
     if (!stationInfoSrc || !stationTemplate) {
       throw new BaseError(

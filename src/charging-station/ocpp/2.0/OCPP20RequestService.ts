@@ -20,6 +20,7 @@ import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import type { RequestParams } from '../../../types/ocpp/Requests';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
+import OCPPConstants from '../OCPPConstants';
 import OCPPRequestService from '../OCPPRequestService';
 import type OCPPResponseService from '../OCPPResponseService';
 
@@ -119,7 +120,7 @@ export default class OCPP20RequestService extends OCPPRequestService {
           },
         } as unknown as Request;
       case OCPP20RequestCommand.HEARTBEAT:
-        return {} as unknown as Request;
+        return OCPPConstants.OCPP_RESPONSE_EMPTY as unknown as Request;
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return {
           timestamp: commandParams?.timestamp ?? new Date(),
