@@ -1806,8 +1806,11 @@ export default class ChargingStation {
           logger.error(
             `${this.logPrefix()} Charging profile id ${
               matchingChargingProfile.chargingProfileId
-            } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}, dump charging profiles' stack: %j`,
-            this.getConnectorStatus(connectorId).chargingProfiles
+            } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
+            this.getConnectorStatus(connectorId).chargingProfiles.find(
+              (chargingProfile) =>
+                chargingProfile.chargingProfileId === matchingChargingProfile.chargingProfileId
+            )
           );
           limit = connectorMaximumPower;
         }
