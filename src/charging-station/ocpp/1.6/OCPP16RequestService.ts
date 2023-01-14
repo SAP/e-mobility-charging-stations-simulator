@@ -223,11 +223,11 @@ export default class OCPP16RequestService extends OCPPRequestService {
         } as unknown as Request;
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.getTransactionDataMeterValues() &&
-          Utils.isUndefined(commandParams?.transactionData) &&
+          Utils.isNullOrUndefined(commandParams?.transactionData) &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams?.transactionId as number
           ));
-        !commandParams?.meterStop &&
+        Utils.isNullOrUndefined(commandParams?.meterStop) &&
           (energyActiveImportRegister =
             chargingStation.getEnergyActiveImportRegisterByTransactionId(
               commandParams?.transactionId as number,

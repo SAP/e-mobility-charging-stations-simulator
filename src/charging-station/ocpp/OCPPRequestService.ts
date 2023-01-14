@@ -382,13 +382,13 @@ export default abstract class OCPPRequestService {
       // Request
       case MessageType.CALL_MESSAGE:
         // Build request
+        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonObject);
         chargingStation.requests.set(messageId, [
           responseCallback,
           errorCallback,
           commandName,
           messagePayload as JsonType,
         ]);
-        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonObject);
         messageToSend = JSON.stringify([
           messageType,
           messageId,

@@ -632,7 +632,7 @@ export default class ChargingStation {
     if (params?.terminateOpened) {
       this.terminateWSConnection();
     }
-    const ocppVersion = this.getOcppVersion();
+    const ocppVersion = this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
     let protocol: string;
     switch (ocppVersion) {
       case OCPPVersion.VERSION_16:
@@ -834,6 +834,7 @@ export default class ChargingStation {
       this.index,
       stationTemplate
     );
+    stationInfo.ocppVersion = stationTemplate.ocppVersion ?? OCPPVersion.VERSION_16;
     ChargingStationUtils.createSerialNumber(stationTemplate, stationInfo);
     if (!Utils.isEmptyArray(stationTemplate.power)) {
       stationTemplate.power = stationTemplate.power as number[];
@@ -936,10 +937,6 @@ export default class ChargingStation {
     }
   }
 
-  private getOcppVersion(): OCPPVersion {
-    return this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
-  }
-
   private getOcppPersistentConfiguration(): boolean {
     return this.stationInfo?.ocppPersistentConfiguration ?? true;
   }
@@ -978,7 +975,8 @@ export default class ChargingStation {
     // OCPP configuration
     this.ocppConfiguration = this.getOcppConfiguration();
     this.initializeOcppConfiguration();
-    switch (this.getOcppVersion()) {
+    const ocppVersion = this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
+    switch (ocppVersion) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
           OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>();
@@ -995,7 +993,7 @@ export default class ChargingStation {
         );
         break;
       default:
-        this.handleUnsupportedVersion(this.getOcppVersion());
+        this.handleUnsupportedVersion(ocppVersion);
         break;
     }
     if (this.stationInfo?.autoRegister === true) {

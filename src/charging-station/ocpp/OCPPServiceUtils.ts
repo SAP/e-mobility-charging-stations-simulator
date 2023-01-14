@@ -130,7 +130,7 @@ export class OCPPServiceUtils {
     connectorId: number,
     status: ConnectorStatusEnum
   ): StatusNotificationRequest {
-    switch (chargingStation.stationInfo.ocppVersion) {
+    switch (chargingStation.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16) {
       case OCPPVersion.VERSION_16:
         return {
           connectorId,
@@ -145,6 +145,8 @@ export class OCPPServiceUtils {
           connectorId,
           evseId: connectorId,
         } as OCPP20StatusNotificationRequest;
+      default:
+        throw new BaseError('Cannot build status notification payload: OCPP version not supported');
     }
   }
 
