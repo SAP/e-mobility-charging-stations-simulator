@@ -956,7 +956,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       return OCPPConstants.OCPP_RESPONSE_EMPTY;
     }
     const retrieveDate = Utils.convertToDate(commandPayload.retrieveDate);
-    if (retrieveDate.getTime() <= Date.now()) {
+    const now = Date.now();
+    if (retrieveDate.getTime() <= now) {
       this.asyncResource
         .runInAsyncScope(
           this.updateFirmware.bind(this) as (
@@ -974,7 +975,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         this.updateFirmware(chargingStation).catch(() => {
           /* Intentional */
         });
-      }, retrieveDate.getTime() - Date.now());
+      }, retrieveDate.getTime() - now);
     }
     return OCPPConstants.OCPP_RESPONSE_EMPTY;
   }
