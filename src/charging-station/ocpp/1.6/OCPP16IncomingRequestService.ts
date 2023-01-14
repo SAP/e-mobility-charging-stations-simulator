@@ -1081,19 +1081,27 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         });
         let uploadResponse: FTPResponse;
         if (accessResponse.code === 220) {
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          ftpClient.trackProgress(async (info) => {
+          ftpClient.trackProgress((info) => {
             logger.info(
               `${chargingStation.logPrefix()} ${
                 info.bytes / 1024
               } bytes transferred from diagnostics archive ${info.name}`
             );
-            await chargingStation.ocppRequestService.requestHandler<
-              OCPP16DiagnosticsStatusNotificationRequest,
-              OCPP16DiagnosticsStatusNotificationResponse
-            >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
-              status: OCPP16DiagnosticsStatus.Uploading,
-            });
+            chargingStation.ocppRequestService
+              .requestHandler<
+                OCPP16DiagnosticsStatusNotificationRequest,
+                OCPP16DiagnosticsStatusNotificationResponse
+              >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
+                status: OCPP16DiagnosticsStatus.Uploading,
+              })
+              .catch((error) => {
+                logger.error(
+                  `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Error while sending '${
+                    OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION
+                  }'`,
+                  error
+                );
+              });
           });
           uploadResponse = await ftpClient.uploadFrom(
             path.join(

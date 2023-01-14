@@ -377,12 +377,15 @@ export default class ChargingStation {
       this.getHeartbeatInterval() > 0 &&
       !this.heartbeatSetInterval
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      this.heartbeatSetInterval = setInterval(async (): Promise<void> => {
-        await this.ocppRequestService.requestHandler<HeartbeatRequest, HeartbeatResponse>(
-          this,
-          RequestCommand.HEARTBEAT
-        );
+      this.heartbeatSetInterval = setInterval(() => {
+        this.ocppRequestService
+          .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
+          .catch((error) => {
+            logger.error(
+              `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
+              error
+            );
+          });
       }, this.getHeartbeatInterval());
       logger.info(
         this.logPrefix() +
@@ -448,18 +451,16 @@ export default class ChargingStation {
       return;
     }
     if (interval > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      this.getConnectorStatus(connectorId).transactionSetInterval = setInterval(
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        async (): Promise<void> => {
-          // FIXME: Implement OCPP version agnostic helpers
-          const meterValue: MeterValue = OCPP16ServiceUtils.buildMeterValue(
-            this,
-            connectorId,
-            this.getConnectorStatus(connectorId).transactionId,
-            interval
-          );
-          await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+      this.getConnectorStatus(connectorId).transactionSetInterval = setInterval(() => {
+        // FIXME: Implement OCPP version agnostic helpers
+        const meterValue: MeterValue = OCPP16ServiceUtils.buildMeterValue(
+          this,
+          connectorId,
+          this.getConnectorStatus(connectorId).transactionId,
+          interval
+        );
+        this.ocppRequestService
+          .requestHandler<MeterValuesRequest, MeterValuesResponse>(
             this,
             RequestCommand.METER_VALUES,
             {
@@ -467,10 +468,14 @@ export default class ChargingStation {
               transactionId: this.getConnectorStatus(connectorId).transactionId,
               meterValue: [meterValue],
             }
-          );
-        },
-        interval
-      );
+          )
+          .catch((error) => {
+            logger.error(
+              `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
+              error
+            );
+          });
+      }, interval);
     } else {
       logger.error(
         `${this.logPrefix()} Charging station ${
