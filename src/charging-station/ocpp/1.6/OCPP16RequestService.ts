@@ -147,118 +147,54 @@ export default class OCPP16RequestService extends OCPPRequestService {
     let energyActiveImportRegister: number;
     commandParams = commandParams as JsonObject;
     switch (commandName) {
-      case OCPP16RequestCommand.AUTHORIZE:
-        return {
-          ...(!Utils.isUndefined(commandParams?.idTag)
-            ? { idTag: commandParams.idTag }
-            : { idTag: Constants.DEFAULT_IDTAG }),
-        } as unknown as Request;
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
-        return {
-          chargePointModel: commandParams?.chargePointModel,
-          chargePointVendor: commandParams?.chargePointVendor,
-          ...(!Utils.isUndefined(commandParams?.chargeBoxSerialNumber) && {
-            chargeBoxSerialNumber: commandParams.chargeBoxSerialNumber,
-          }),
-          ...(!Utils.isUndefined(commandParams?.chargePointSerialNumber) && {
-            chargePointSerialNumber: commandParams.chargePointSerialNumber,
-          }),
-          ...(!Utils.isUndefined(commandParams?.firmwareVersion) && {
-            firmwareVersion: commandParams.firmwareVersion,
-          }),
-          ...(!Utils.isUndefined(commandParams?.iccid) && { iccid: commandParams.iccid }),
-          ...(!Utils.isUndefined(commandParams?.imsi) && { imsi: commandParams.imsi }),
-          ...(!Utils.isUndefined(commandParams?.meterSerialNumber) && {
-            meterSerialNumber: commandParams.meterSerialNumber,
-          }),
-          ...(!Utils.isUndefined(commandParams?.meterType) && {
-            meterType: commandParams.meterType,
-          }),
-        } as unknown as Request;
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
       case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
+      case OCPP16RequestCommand.METER_VALUES:
+      case OCPP16RequestCommand.STATUS_NOTIFICATION:
+      case OCPP16RequestCommand.DATA_TRANSFER:
+        return commandParams as unknown as Request;
+      case OCPP16RequestCommand.AUTHORIZE:
         return {
-          status: commandParams?.status,
+          idTag: Constants.DEFAULT_IDTAG,
+          ...commandParams,
         } as unknown as Request;
       case OCPP16RequestCommand.HEARTBEAT:
         return OCPPConstants.OCPP_REQUEST_EMPTY as unknown as Request;
-      case OCPP16RequestCommand.METER_VALUES:
-        return {
-          connectorId: commandParams?.connectorId,
-          transactionId: commandParams?.transactionId,
-          meterValue: commandParams?.meterValue,
-        } as unknown as Request;
-      case OCPP16RequestCommand.STATUS_NOTIFICATION:
-        return {
-          connectorId: commandParams?.connectorId,
-          status: commandParams?.status,
-          errorCode: commandParams?.errorCode,
-          ...(!Utils.isUndefined(commandParams?.info) && {
-            info: commandParams?.info,
-          }),
-          ...(!Utils.isUndefined(commandParams?.timestamp) && {
-            timestamp: commandParams?.timestamp,
-          }),
-          ...(!Utils.isUndefined(commandParams?.vendorId) && {
-            vendorId: commandParams?.vendorId,
-          }),
-          ...(!Utils.isUndefined(commandParams?.vendorErrorCode) && {
-            vendorErrorCode: commandParams?.vendorErrorCode,
-          }),
-        } as unknown as Request;
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
-          connectorId: commandParams?.connectorId,
-          ...(!Utils.isUndefined(commandParams?.idTag)
-            ? { idTag: commandParams?.idTag }
-            : { idTag: Constants.DEFAULT_IDTAG }),
-          meterStart:
-            commandParams?.meterStart ??
-            chargingStation.getEnergyActiveImportRegisterByConnectorId(
-              commandParams?.connectorId as number
-            ),
-          timestamp: commandParams?.timestamp ?? new Date(),
-          ...(!Utils.isUndefined(commandParams?.reservationId) && {
-            reservationId: commandParams?.reservationId,
-          }),
+          idTag: Constants.DEFAULT_IDTAG,
+          meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
+            commandParams?.connectorId as number
+          ),
+          timestamp: new Date(),
+          ...commandParams,
         } as unknown as Request;
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.getTransactionDataMeterValues() &&
-          Utils.isNullOrUndefined(commandParams?.transactionData) &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams?.transactionId as number
           ));
-        Utils.isNullOrUndefined(commandParams?.meterStop) &&
-          (energyActiveImportRegister =
-            chargingStation.getEnergyActiveImportRegisterByTransactionId(
-              commandParams?.transactionId as number,
-              true
-            ));
+        energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
+          commandParams?.transactionId as number,
+          true
+        );
         return {
-          transactionId: commandParams?.transactionId,
-          idTag:
-            commandParams?.idTag ??
-            chargingStation.getTransactionIdTag(commandParams?.transactionId as number),
-          meterStop: commandParams?.meterStop ?? energyActiveImportRegister,
-          timestamp: commandParams?.timestamp ?? new Date(),
-          ...(!Utils.isUndefined(commandParams?.reason) && {
-            reason: commandParams?.reason,
+          idTag: chargingStation.getTransactionIdTag(commandParams?.transactionId as number),
+          meterStop: energyActiveImportRegister,
+          timestamp: new Date(),
+          ...(chargingStation.getTransactionDataMeterValues() && {
+            transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
+              chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
+              OCPP16ServiceUtils.buildTransactionEndMeterValue(
+                chargingStation,
+                connectorId,
+                energyActiveImportRegister
+              )
+            ),
           }),
-          ...(!Utils.isUndefined(commandParams?.transactionData)
-            ? { transactionData: commandParams?.transactionData }
-            : chargingStation.getTransactionDataMeterValues() && {
-                transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-                  chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
-                  OCPP16ServiceUtils.buildTransactionEndMeterValue(
-                    chargingStation,
-                    connectorId,
-                    (commandParams?.meterStop as number) ?? energyActiveImportRegister
-                  )
-                ),
-              }),
+          ...commandParams,
         } as unknown as Request;
-      case OCPP16RequestCommand.DATA_TRANSFER:
-        return commandParams as unknown as Request;
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         throw new OCPPError(

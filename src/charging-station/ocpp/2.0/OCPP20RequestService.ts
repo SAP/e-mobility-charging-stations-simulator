@@ -94,39 +94,13 @@ export default class OCPP20RequestService extends OCPPRequestService {
     commandParams = commandParams as JsonObject;
     switch (commandName) {
       case OCPP20RequestCommand.BOOT_NOTIFICATION:
-        commandParams.chargingStation = commandParams.chargingStation as JsonObject;
-        commandParams.chargingStation.modem = commandParams.chargingStation.modem as JsonObject;
-        return {
-          reason: commandParams?.reason,
-          chargingStation: {
-            model: commandParams?.chargingStation?.model,
-            vendorName: commandParams?.chargingStation?.vendorName,
-            ...(!Utils.isUndefined(commandParams?.chargingStation?.firmwareVersion) && {
-              firmwareVersion: commandParams.chargingStation?.firmwareVersion,
-            }),
-            ...(!Utils.isUndefined(commandParams?.chargingStation?.serialNumber) && {
-              serialNumber: commandParams.chargingStation?.serialNumber,
-            }),
-            ...(!Utils.isUndefined(commandParams?.chargingStation?.modem) && {
-              modem: {
-                ...(!Utils.isUndefined(commandParams?.chargingStation?.modem?.iccid) && {
-                  iccid: commandParams.chargingStation.modem.iccid,
-                }),
-                ...(!Utils.isUndefined(commandParams?.chargingStation?.modem?.imsi) && {
-                  imsi: commandParams.chargingStation.modem.imsi,
-                }),
-              },
-            }),
-          },
-        } as unknown as Request;
+        return commandParams as unknown as Request;
       case OCPP20RequestCommand.HEARTBEAT:
         return OCPPConstants.OCPP_RESPONSE_EMPTY as unknown as Request;
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return {
-          timestamp: commandParams?.timestamp ?? new Date(),
-          connectorStatus: commandParams?.connectorStatus,
-          evseId: commandParams?.evseId,
-          connectorId: commandParams?.connectorId,
+          timestamp: new Date(),
+          ...commandParams,
         } as unknown as Request;
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
