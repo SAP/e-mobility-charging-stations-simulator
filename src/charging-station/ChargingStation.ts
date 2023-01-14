@@ -36,7 +36,6 @@ import type { ChargingStationOcppConfiguration } from '../types/ChargingStationO
 import {
   type ChargingStationTemplate,
   CurrentType,
-  type FirmwareUpgrade,
   PowerUnits,
   type WsOptions,
 } from '../types/ChargingStationTemplate';

@@ -186,6 +186,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
             MeterValuesResponse
           >(this.chargingStation, RequestCommand.METER_VALUES, {
             meterValue: [
+              // FIXME: Implement OCPP version agnostic helpers
               OCPP16ServiceUtils.buildMeterValue(
                 this.chargingStation,
                 requestPayload.connectorId,
