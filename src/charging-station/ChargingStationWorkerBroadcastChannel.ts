@@ -113,14 +113,18 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           this.chargingStation.ocppRequestService.requestHandler<
             StopTransactionRequest,
             StartTransactionResponse
-          >(this.chargingStation, RequestCommand.STOP_TRANSACTION, {
-            meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-              requestPayload.transactionId,
-              true
-            ),
-            ...requestPayload,
-            requestParams,
-          }),
+          >(
+            this.chargingStation,
+            RequestCommand.STOP_TRANSACTION,
+            {
+              meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
+                requestPayload.transactionId,
+                true
+              ),
+              ...requestPayload,
+            },
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.AUTHORIZE,
@@ -184,21 +188,26 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
           return this.chargingStation.ocppRequestService.requestHandler<
             MeterValuesRequest,
             MeterValuesResponse
-          >(this.chargingStation, RequestCommand.METER_VALUES, {
-            meterValue: [
-              // FIXME: Implement OCPP version agnostic helpers
-              OCPP16ServiceUtils.buildMeterValue(
-                this.chargingStation,
-                requestPayload.connectorId,
-                this.chargingStation.getConnectorStatus(requestPayload.connectorId)?.transactionId,
-                configuredMeterValueSampleInterval
-                  ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000
-                  : Constants.DEFAULT_METER_VALUES_INTERVAL
-              ),
-            ],
-            ...requestPayload,
-            requestParams,
-          });
+          >(
+            this.chargingStation,
+            RequestCommand.METER_VALUES,
+            {
+              meterValue: [
+                // FIXME: Implement OCPP version agnostic helpers
+                OCPP16ServiceUtils.buildMeterValue(
+                  this.chargingStation,
+                  requestPayload.connectorId,
+                  this.chargingStation.getConnectorStatus(requestPayload.connectorId)
+                    ?.transactionId,
+                  configuredMeterValueSampleInterval
+                    ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000
+                    : Constants.DEFAULT_METER_VALUES_INTERVAL
+                ),
+              ],
+              ...requestPayload,
+            },
+            requestParams
+          );
         },
       ],
       [
