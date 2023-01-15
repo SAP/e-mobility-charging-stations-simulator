@@ -13,7 +13,7 @@ import {
   type HeartbeatRequest,
   type MeterValuesRequest,
   RequestCommand,
-  RequestParams,
+  type RequestParams,
   type StatusNotificationRequest,
 } from '../types/ocpp/Requests';
 import {
