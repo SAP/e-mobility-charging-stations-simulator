@@ -11,6 +11,7 @@
 .husky
 .editorconfig
 .vscode
+*.code-workspace
 .clinic
 *.clinic-*
 .tscache
@@ -45,10 +46,12 @@
 *tags-template.*
 *config-template.*
 *cf-template.*
+manifest-*.yml
 *.tar.gz
 *.mta
 rollup.config.js
 rollup.config.mjs
+mikro-orm.config.ts
 mta.yaml
 mta_archives
 docker

@@ -116,15 +116,10 @@ export default class OCPP16RequestService extends OCPPRequestService {
     params?: RequestParams
   ): Promise<ResponseType> {
     if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName) === true) {
-      const requestPayload = this.buildRequestPayload<RequestType>(
-        chargingStation,
-        commandName,
-        commandParams
-      );
       return (await this.sendMessage(
         chargingStation,
         Utils.generateUUID(),
-        requestPayload,
+        this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
         commandName,
         params
       )) as unknown as ResponseType;
@@ -165,7 +160,8 @@ export default class OCPP16RequestService extends OCPPRequestService {
         return {
           idTag: Constants.DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
-            commandParams?.connectorId as number
+            commandParams?.connectorId as number,
+            true
           ),
           timestamp: new Date(),
           ...commandParams,

@@ -249,15 +249,21 @@ export default abstract class OCPPRequestService {
             const beginId = PerformanceStatistics.beginMeasure(commandName as string);
             try {
               chargingStation.wsConnection.send(messageToSend);
+              logger.debug(
+                `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
+                  messageType
+                )} payload: ${messageToSend}`
+              );
             } catch (error) {
+              logger.error(
+                `${chargingStation.logPrefix()} >> Command '${commandName}' failed to send ${this.getMessageTypeString(
+                  messageType
+                )} payload: ${messageToSend}:`,
+                error
+              );
               sendError = true;
             }
             PerformanceStatistics.endMeasure(commandName as string, beginId);
-            logger.debug(
-              `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
-                messageType
-              )} payload: ${messageToSend}`
-            );
           }
           const wsClosedOrErrored =
             chargingStation.isWebSocketConnectionOpened() === false || sendError === true;

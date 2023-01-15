@@ -341,16 +341,16 @@ export default class ChargingStation {
 
   public getEnergyActiveImportRegisterByTransactionId(
     transactionId: number,
-    meterStop = false
+    rounded = false
   ): number {
     return this.getEnergyActiveImportRegister(
       this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)),
-      meterStop
+      rounded
     );
   }
 
-  public getEnergyActiveImportRegisterByConnectorId(connectorId: number): number {
-    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId));
+  public getEnergyActiveImportRegisterByConnectorId(connectorId: number, rounded = false): number {
+    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded);
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
@@ -1637,19 +1637,16 @@ export default class ChargingStation {
     logger.error(this.logPrefix() + ' WebSocket error:', error);
   }
 
-  private getEnergyActiveImportRegister(
-    connectorStatus: ConnectorStatus,
-    meterStop = false
-  ): number {
+  private getEnergyActiveImportRegister(connectorStatus: ConnectorStatus, rounded = false): number {
     if (this.getMeteringPerTransaction() === true) {
       return (
-        (meterStop === true
+        (rounded === true
           ? Math.round(connectorStatus?.transactionEnergyActiveImportRegisterValue)
           : connectorStatus?.transactionEnergyActiveImportRegisterValue) ?? 0
       );
     }
     return (
-      (meterStop === true
+      (rounded === true
         ? Math.round(connectorStatus?.energyActiveImportRegisterValue)
         : connectorStatus?.energyActiveImportRegisterValue) ?? 0
     );
