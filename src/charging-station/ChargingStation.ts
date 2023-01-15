@@ -1568,7 +1568,7 @@ export default class ChargingStation {
             logger.debug(
               `${this.logPrefix()} << Command '${
                 requestCommandName ?? Constants.UNKNOWN_COMMAND
-              }' received error payload: ${JSON.stringify(request)}`
+              }' received error response payload: ${JSON.stringify(request)}`
             );
             errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails));
             break;

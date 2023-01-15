@@ -9,6 +9,7 @@ import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
 import { StandardParametersKey } from '../../types/ocpp/Configuration';
 import type { ConnectorStatusEnum } from '../../types/ocpp/ConnectorStatusEnum';
 import { ErrorType } from '../../types/ocpp/ErrorType';
+import { MessageType } from '../../types/ocpp/MessageType';
 import { MeterValueMeasurand, type MeterValuePhase } from '../../types/ocpp/MeterValues';
 import { OCPPVersion } from '../../types/ocpp/OCPPVersion';
 import {
@@ -42,6 +43,17 @@ export class OCPPServiceUtils {
       }
     }
     return ErrorType.FORMAT_VIOLATION;
+  }
+
+  public static getMessageTypeString(messageType: MessageType): string {
+    switch (messageType) {
+      case MessageType.CALL_MESSAGE:
+        return 'request';
+      case MessageType.CALL_RESULT_MESSAGE:
+        return 'response';
+      case MessageType.CALL_ERROR_MESSAGE:
+        return 'error';
+    }
   }
 
   public static isRequestCommandSupported(

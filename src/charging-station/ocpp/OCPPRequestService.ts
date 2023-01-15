@@ -250,13 +250,13 @@ export default abstract class OCPPRequestService {
             try {
               chargingStation.wsConnection.send(messageToSend);
               logger.debug(
-                `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${this.getMessageTypeString(
+                `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
                   messageType
                 )} payload: ${messageToSend}`
               );
             } catch (error) {
               logger.error(
-                `${chargingStation.logPrefix()} >> Command '${commandName}' failed to send ${this.getMessageTypeString(
+                `${chargingStation.logPrefix()} >> Command '${commandName}' failed to send ${OCPPServiceUtils.getMessageTypeString(
                   messageType
                 )} payload: ${messageToSend}:`,
                 error
@@ -344,7 +344,7 @@ export default abstract class OCPPRequestService {
               );
             }
             logger.error(
-              `${chargingStation.logPrefix()} Error occurred at ${self.getMessageTypeString(
+              `${chargingStation.logPrefix()} Error occurred at ${OCPPServiceUtils.getMessageTypeString(
                 messageType
               )} command ${commandName} with PDU %j:`,
               messagePayload,
@@ -425,17 +425,6 @@ export default abstract class OCPPRequestService {
         break;
     }
     return messageToSend;
-  }
-
-  private getMessageTypeString(messageType: MessageType): string {
-    switch (messageType) {
-      case MessageType.CALL_MESSAGE:
-        return 'request';
-      case MessageType.CALL_RESULT_MESSAGE:
-        return 'response';
-      case MessageType.CALL_ERROR_MESSAGE:
-        return 'error';
-    }
   }
 
   private handleSendMessageError(
