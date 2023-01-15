@@ -43,7 +43,6 @@ import { SupervisionUrlDistribution } from '../types/ConfigurationData';
 import type { ConnectorStatus } from '../types/ConnectorStatus';
 import { FileType } from '../types/FileType';
 import type { JsonType } from '../types/JsonType';
-import { ChargingProfile, ChargingRateUnitType } from '../types/ocpp/ChargingProfile';
 import {
   ConnectorPhaseRotation,
   StandardParametersKey,
@@ -265,6 +264,11 @@ export default class ChargingStation {
       : defaultVoltageOut;
   }
 
+  public getMaximumPower(stationInfo?: ChargingStationInfo): number {
+    const localStationInfo = stationInfo ?? this.stationInfo;
+    return (localStationInfo['maxPower'] as number) ?? localStationInfo.maximumPower;
+  }
+
   public getConnectorMaximumAvailablePower(connectorId: number): number {
     let connectorAmperageLimitationPowerLimit: number;
     if (
@@ -282,13 +286,14 @@ export default class ChargingStation {
         this.powerDivider;
     }
     const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
-    const connectorChargingProfilePowerLimit = this.getChargingProfilePowerLimit(connectorId);
+    const connectorChargingProfilesPowerLimit =
+      ChargingStationUtils.getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
       isNaN(connectorAmperageLimitationPowerLimit)
         ? Infinity
         : connectorAmperageLimitationPowerLimit,
-      isNaN(connectorChargingProfilePowerLimit) ? Infinity : connectorChargingProfilePowerLimit
+      isNaN(connectorChargingProfilesPowerLimit) ? Infinity : connectorChargingProfilesPowerLimit
     );
   }
 
@@ -1724,11 +1729,6 @@ export default class ChargingStation {
     return powerDivider;
   }
 
-  private getMaximumPower(stationInfo?: ChargingStationInfo): number {
-    const localStationInfo = stationInfo ?? this.stationInfo;
-    return (localStationInfo['maxPower'] as number) ?? localStationInfo.maximumPower;
-  }
-
   private getMaximumAmperage(stationInfo: ChargingStationInfo): number | undefined {
     const maximumPower = this.getMaximumPower(stationInfo);
     switch (this.getCurrentOutType(stationInfo)) {
@@ -1760,57 +1760,6 @@ export default class ChargingStation {
         ) / ChargingStationUtils.getAmperageLimitationUnitDivider(this.stationInfo)
       );
     }
-  }
-
-  private getChargingProfilePowerLimit(connectorId: number): number | undefined {
-    let limit: number, matchingChargingProfile: ChargingProfile;
-    let chargingProfiles: ChargingProfile[] = [];
-    // Get charging profiles for connector and sort by stack level
-    chargingProfiles = this.getConnectorStatus(connectorId).chargingProfiles.sort(
-      (a, b) => b.stackLevel - a.stackLevel
-    );
-    // Get profiles on connector 0
-    if (this.getConnectorStatus(0).chargingProfiles) {
-      chargingProfiles.push(
-        ...this.getConnectorStatus(0).chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel)
-      );
-    }
-    if (!Utils.isEmptyArray(chargingProfiles)) {
-      const result = ChargingStationUtils.getLimitFromChargingProfiles(
-        chargingProfiles,
-        this.logPrefix()
-      );
-      if (!Utils.isNullOrUndefined(result)) {
-        limit = result.limit;
-        matchingChargingProfile = result.matchingChargingProfile;
-        switch (this.getCurrentOutType()) {
-          case CurrentType.AC:
-            limit =
-              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
-              ChargingRateUnitType.WATT
-                ? limit
-                : ACElectricUtils.powerTotal(this.getNumberOfPhases(), this.getVoltageOut(), limit);
-            break;
-          case CurrentType.DC:
-            limit =
-              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
-              ChargingRateUnitType.WATT
-                ? limit
-                : DCElectricUtils.power(this.getVoltageOut(), limit);
-        }
-        const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
-        if (limit > connectorMaximumPower) {
-          logger.error(
-            `${this.logPrefix()} Charging profile id ${
-              matchingChargingProfile.chargingProfileId
-            } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
-            result
-          );
-          limit = connectorMaximumPower;
-        }
-      }
-    }
-    return limit;
   }
 
   private async startMessageSequence(): Promise<void> {

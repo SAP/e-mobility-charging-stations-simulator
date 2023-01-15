@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 import moment from 'moment';
 
+import type ChargingStation from './ChargingStation';
 import BaseError from '../exception/BaseError';
 import type { ChargingStationInfo } from '../types/ChargingStationInfo';
 import {
@@ -14,13 +15,18 @@ import {
 } from '../types/ChargingStationTemplate';
 import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
 import type { OCPP16BootNotificationRequest } from '../types/ocpp/1.6/Requests';
-import { BootReasonEnumType, OCPP20BootNotificationRequest } from '../types/ocpp/2.0/Requests';
-import type { ChargingProfile, ChargingSchedulePeriod } from '../types/ocpp/ChargingProfile';
+import { BootReasonEnumType, type OCPP20BootNotificationRequest } from '../types/ocpp/2.0/Requests';
+import {
+  type ChargingProfile,
+  ChargingRateUnitType,
+  type ChargingSchedulePeriod,
+} from '../types/ocpp/ChargingProfile';
 import { OCPPVersion } from '../types/ocpp/OCPPVersion';
 import type { BootNotificationRequest } from '../types/ocpp/Requests';
 import { WorkerProcessType } from '../types/Worker';
 import Configuration from '../utils/Configuration';
 import Constants from '../utils/Constants';
+import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 
@@ -133,7 +139,8 @@ export class ChargingStationUtils {
   }
 
   public static createBootNotificationRequest(
-    stationInfo: ChargingStationInfo
+    stationInfo: ChargingStationInfo,
+    bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp
   ): BootNotificationRequest {
     const ocppVersion = stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
     switch (ocppVersion) {
@@ -162,7 +169,7 @@ export class ChargingStationUtils {
       case OCPPVersion.VERSION_20:
       case OCPPVersion.VERSION_201:
         return {
-          reason: BootReasonEnumType.PowerUp,
+          reason: bootReason,
           chargingStation: {
             model: stationInfo.chargePointModel,
             vendorName: stationInfo.chargePointVendor,
@@ -309,6 +316,99 @@ export class ChargingStationUtils {
     return unitDivider;
   }
 
+  public static getChargingStationConnectorChargingProfilesPowerLimit(
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): number | undefined {
+    let limit: number, matchingChargingProfile: ChargingProfile;
+    let chargingProfiles: ChargingProfile[] = [];
+    // Get charging profiles for connector and sort by stack level
+    chargingProfiles = chargingStation
+      .getConnectorStatus(connectorId)
+      .chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel);
+    // Get profiles on connector 0
+    if (chargingStation.getConnectorStatus(0).chargingProfiles) {
+      chargingProfiles.push(
+        ...chargingStation
+          .getConnectorStatus(0)
+          .chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel)
+      );
+    }
+    if (!Utils.isEmptyArray(chargingProfiles)) {
+      const result = ChargingStationUtils.getLimitFromChargingProfiles(
+        chargingProfiles,
+        chargingStation.logPrefix()
+      );
+      if (!Utils.isNullOrUndefined(result)) {
+        limit = result.limit;
+        matchingChargingProfile = result.matchingChargingProfile;
+        switch (chargingStation.getCurrentOutType()) {
+          case CurrentType.AC:
+            limit =
+              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
+              ChargingRateUnitType.WATT
+                ? limit
+                : ACElectricUtils.powerTotal(
+                    chargingStation.getNumberOfPhases(),
+                    chargingStation.getVoltageOut(),
+                    limit
+                  );
+            break;
+          case CurrentType.DC:
+            limit =
+              matchingChargingProfile.chargingSchedule.chargingRateUnit ===
+              ChargingRateUnitType.WATT
+                ? limit
+                : DCElectricUtils.power(chargingStation.getVoltageOut(), limit);
+        }
+        const connectorMaximumPower =
+          chargingStation.getMaximumPower() / chargingStation.powerDivider;
+        if (limit > connectorMaximumPower) {
+          logger.error(
+            `${chargingStation.logPrefix()} Charging profile id ${
+              matchingChargingProfile.chargingProfileId
+            } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
+            result
+          );
+          limit = connectorMaximumPower;
+        }
+      }
+    }
+    return limit;
+  }
+
+  public static getDefaultVoltageOut(
+    currentType: CurrentType,
+    templateFile: string,
+    logPrefix: string
+  ): Voltage {
+    const errMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
+    let defaultVoltageOut: number;
+    switch (currentType) {
+      case CurrentType.AC:
+        defaultVoltageOut = Voltage.VOLTAGE_230;
+        break;
+      case CurrentType.DC:
+        defaultVoltageOut = Voltage.VOLTAGE_400;
+        break;
+      default:
+        logger.error(`${logPrefix} ${errMsg}`);
+        throw new BaseError(errMsg);
+    }
+    return defaultVoltageOut;
+  }
+
+  public static getAuthorizationFile(stationInfo: ChargingStationInfo): string | undefined {
+    return (
+      stationInfo.authorizationFile &&
+      path.join(
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
+        'assets',
+        path.basename(stationInfo.authorizationFile)
+      )
+    );
+  }
+
   /**
    * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
    *
@@ -316,7 +416,7 @@ export class ChargingStationUtils {
    * @param logPrefix -
    * @returns
    */
-  public static getLimitFromChargingProfiles(
+  private static getLimitFromChargingProfiles(
     chargingProfiles: ChargingProfile[],
     logPrefix: string
   ): {
@@ -404,38 +504,6 @@ export class ChargingStationUtils {
       }
     }
     return null;
-  }
-
-  public static getDefaultVoltageOut(
-    currentType: CurrentType,
-    templateFile: string,
-    logPrefix: string
-  ): Voltage {
-    const errMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
-    let defaultVoltageOut: number;
-    switch (currentType) {
-      case CurrentType.AC:
-        defaultVoltageOut = Voltage.VOLTAGE_230;
-        break;
-      case CurrentType.DC:
-        defaultVoltageOut = Voltage.VOLTAGE_400;
-        break;
-      default:
-        logger.error(`${logPrefix} ${errMsg}`);
-        throw new BaseError(errMsg);
-    }
-    return defaultVoltageOut;
-  }
-
-  public static getAuthorizationFile(stationInfo: ChargingStationInfo): string | undefined {
-    return (
-      stationInfo.authorizationFile &&
-      path.join(
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
-        'assets',
-        path.basename(stationInfo.authorizationFile)
-      )
-    );
   }
 
   private static getRandomSerialNumberSuffix(params?: {
