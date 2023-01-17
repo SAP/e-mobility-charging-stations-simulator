@@ -39,7 +39,7 @@ export default {
     'async_hooks',
     'basic-ftp',
     'chalk',
-    'crypto',
+    'node:crypto',
     'fs',
     'http',
     'http-status-codes',
