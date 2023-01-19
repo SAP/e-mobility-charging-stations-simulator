@@ -614,72 +614,70 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       );
       return;
     }
-    if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      chargingStation.getBeginEndMeterValues() === true &&
-        chargingStation.getOcppStrictCompliance() === false &&
-        chargingStation.getOutOfOrderEndMeterValues() === true &&
-        (await chargingStation.ocppRequestService.requestHandler<
-          OCPP16MeterValuesRequest,
-          OCPP16MeterValuesResponse
-        >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
-          connectorId: transactionConnectorId,
-          transactionId: requestPayload.transactionId,
-          meterValue: [
-            OCPP16ServiceUtils.buildTransactionEndMeterValue(
-              chargingStation,
-              transactionConnectorId,
-              requestPayload.meterStop
-            ),
-          ],
-        }));
-      if (
-        chargingStation.isChargingStationAvailable() === false ||
-        chargingStation.isConnectorAvailable(transactionConnectorId) === false
-      ) {
-        await chargingStation.ocppRequestService.requestHandler<
-          OCPP16StatusNotificationRequest,
-          OCPP16StatusNotificationResponse
-        >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
-          connectorId: transactionConnectorId,
-          status: OCPP16ChargePointStatus.UNAVAILABLE,
-          errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-        });
-        chargingStation.getConnectorStatus(transactionConnectorId).status =
-          OCPP16ChargePointStatus.UNAVAILABLE;
-      } else {
-        await chargingStation.ocppRequestService.requestHandler<
-          OCPP16BootNotificationRequest,
-          OCPP16BootNotificationResponse
-        >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
-          connectorId: transactionConnectorId,
-          status: OCPP16ChargePointStatus.AVAILABLE,
-          errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-        });
-        chargingStation.getConnectorStatus(transactionConnectorId).status =
-          OCPP16ChargePointStatus.AVAILABLE;
-      }
-      if (chargingStation.stationInfo.powerSharedByConnectors) {
-        chargingStation.powerDivider--;
-      }
-      chargingStation.resetConnectorStatus(transactionConnectorId);
-      logger.info(
-        chargingStation.logPrefix() +
-          ' Transaction ' +
-          requestPayload.transactionId.toString() +
-          ' STOPPED on ' +
-          chargingStation.stationInfo.chargingStationId +
-          '#' +
-          transactionConnectorId.toString()
-      );
+    chargingStation.getBeginEndMeterValues() === true &&
+      chargingStation.getOcppStrictCompliance() === false &&
+      chargingStation.getOutOfOrderEndMeterValues() === true &&
+      (await chargingStation.ocppRequestService.requestHandler<
+        OCPP16MeterValuesRequest,
+        OCPP16MeterValuesResponse
+      >(chargingStation, OCPP16RequestCommand.METER_VALUES, {
+        connectorId: transactionConnectorId,
+        transactionId: requestPayload.transactionId,
+        meterValue: [
+          OCPP16ServiceUtils.buildTransactionEndMeterValue(
+            chargingStation,
+            transactionConnectorId,
+            requestPayload.meterStop
+          ),
+        ],
+      }));
+    if (
+      chargingStation.isChargingStationAvailable() === false ||
+      chargingStation.isConnectorAvailable(transactionConnectorId) === false
+    ) {
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16StatusNotificationRequest,
+        OCPP16StatusNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
+        connectorId: transactionConnectorId,
+        status: OCPP16ChargePointStatus.UNAVAILABLE,
+        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+      });
+      chargingStation.getConnectorStatus(transactionConnectorId).status =
+        OCPP16ChargePointStatus.UNAVAILABLE;
     } else {
-      logger.warn(
-        chargingStation.logPrefix() +
-          ' Stopping transaction id ' +
-          requestPayload.transactionId.toString() +
-          " REJECTED with status '" +
-          payload.idTagInfo?.status +
-          "'"
-      );
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16BootNotificationRequest,
+        OCPP16BootNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
+        connectorId: transactionConnectorId,
+        status: OCPP16ChargePointStatus.AVAILABLE,
+        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+      });
+      chargingStation.getConnectorStatus(transactionConnectorId).status =
+        OCPP16ChargePointStatus.AVAILABLE;
+    }
+    if (chargingStation.stationInfo.powerSharedByConnectors) {
+      chargingStation.powerDivider--;
+    }
+    chargingStation.resetConnectorStatus(transactionConnectorId);
+    const logMsg =
+      chargingStation.logPrefix() +
+        ' Transaction ' +
+        requestPayload.transactionId.toString() +
+        ' STOPPED on ' +
+        chargingStation.stationInfo.chargingStationId +
+        '#' +
+        transactionConnectorId.toString() +
+        " with status '" +
+        payload.idTagInfo?.status ?? 'undefined' + "'";
+    if (
+      Utils.isNullOrUndefined(payload.idTagInfo) ||
+      payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED
+    ) {
+      logger.info(logMsg);
+    } else {
+      logger.warn(logMsg);
     }
   }
 
