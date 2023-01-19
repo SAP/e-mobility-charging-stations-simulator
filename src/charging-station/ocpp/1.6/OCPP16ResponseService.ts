@@ -569,7 +569,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
           ' Starting transaction id ' +
           payload.transactionId.toString() +
           " REJECTED with status '" +
-          payload?.idTagInfo?.status +
+          payload.idTagInfo?.status +
           "', idTag '" +
           requestPayload.idTag +
           "'"
@@ -661,16 +661,11 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.powerDivider--;
     }
     chargingStation.resetConnectorStatus(transactionConnectorId);
-    const logMsg =
-      chargingStation.logPrefix() +
-        ' Transaction ' +
-        requestPayload.transactionId.toString() +
-        ' STOPPED on ' +
-        chargingStation.stationInfo.chargingStationId +
-        '#' +
-        transactionConnectorId.toString() +
-        " with status '" +
-        payload.idTagInfo?.status ?? 'undefined' + "'";
+    const logMsg = `${chargingStation.logPrefix()} Transaction ${requestPayload.transactionId.toString()} STOPPED on ${
+      chargingStation.stationInfo.chargingStationId
+    }#${transactionConnectorId.toString()} with status '${
+      payload.idTagInfo?.status ?? 'undefined'
+    }'`;
     if (
       Utils.isNullOrUndefined(payload.idTagInfo) ||
       payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED

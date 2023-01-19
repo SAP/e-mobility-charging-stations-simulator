@@ -65,6 +65,7 @@ import {
   type IncomingRequest,
   IncomingRequestCommand,
   type MeterValuesRequest,
+  type OutgoingRequest,
   RequestCommand,
   type ResponseCallback,
   type StatusNotificationRequest,
@@ -769,6 +770,12 @@ export default class ChargingStation {
       this.messageBuffer.forEach((message) => {
         // TODO: evaluate the need to track performance
         this.wsConnection.send(message);
+        const [messageType] = JSON.parse(message) as OutgoingRequest | Response | ErrorResponse;
+        logger.debug(
+          `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
+            messageType
+          )} payload sent: ${message}`
+        );
         this.messageBuffer.delete(message);
       });
     }
