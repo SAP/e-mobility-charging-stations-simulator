@@ -231,6 +231,9 @@ export default abstract class OCPPRequestService {
       // Send a message through wsConnection
       return Utils.promiseWithTimeout(
         new Promise((resolve, reject) => {
+          if (chargingStation.getEnableStatistics() === true) {
+            chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
+          }
           const messageToSend = this.buildMessageToSend(
             chargingStation,
             messageId,
@@ -240,12 +243,10 @@ export default abstract class OCPPRequestService {
             responseCallback,
             errorCallback
           );
-          if (chargingStation.getEnableStatistics() === true) {
-            chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
-          }
           let sendError = false;
           // Check if wsConnection opened
-          if (chargingStation.isWebSocketConnectionOpened() === true) {
+          const wsOpened = chargingStation.isWebSocketConnectionOpened() === true;
+          if (wsOpened) {
             const beginId = PerformanceStatistics.beginMeasure(commandName as string);
             try {
               chargingStation.wsConnection.send(messageToSend);
@@ -265,8 +266,7 @@ export default abstract class OCPPRequestService {
             }
             PerformanceStatistics.endMeasure(commandName as string, beginId);
           }
-          const wsClosedOrErrored =
-            chargingStation.isWebSocketConnectionOpened() === false || sendError === true;
+          const wsClosedOrErrored = !wsOpened || sendError === true;
           if (wsClosedOrErrored && params.skipBufferingOnError === false) {
             // Buffer
             chargingStation.bufferMessage(messageToSend);

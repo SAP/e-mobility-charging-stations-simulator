@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import util from 'node:util';
 
 import clone from 'just-clone';
 
@@ -241,6 +242,10 @@ export default class Utils {
     return delay + randomSum;
   }
 
+  public static isPromisePending(promise: Promise<unknown>): boolean {
+    return util.inspect(promise).includes('pending');
+  }
+
   public static async promiseWithTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
@@ -252,7 +257,9 @@ export default class Utils {
     // Create a timeout promise that rejects in timeout milliseconds
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        timeoutCallback();
+        if (Utils.isPromisePending(promise)) {
+          timeoutCallback();
+        }
         reject(timeoutError);
       }, timeoutMs);
     });
