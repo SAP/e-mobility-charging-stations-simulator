@@ -768,9 +768,16 @@ export default class ChargingStation {
   private flushMessageBuffer(): void {
     if (this.messageBuffer.size > 0) {
       this.messageBuffer.forEach((message) => {
-        // TODO: evaluate the need to track performance
-        this.wsConnection.send(message);
+        let beginId: string;
+        let commandName: RequestCommand;
         const [messageType] = JSON.parse(message) as OutgoingRequest | Response | ErrorResponse;
+        const isRequest = messageType === MessageType.CALL_MESSAGE;
+        if (isRequest) {
+          [, , commandName] = JSON.parse(message) as OutgoingRequest;
+          beginId = PerformanceStatistics.beginMeasure(commandName);
+        }
+        this.wsConnection.send(message);
+        isRequest && PerformanceStatistics.endMeasure(commandName, beginId);
         logger.debug(
           `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
             messageType

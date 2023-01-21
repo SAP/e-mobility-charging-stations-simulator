@@ -247,7 +247,7 @@ export default abstract class OCPPRequestService {
           // Check if wsConnection opened
           const wsOpened = chargingStation.isWebSocketConnectionOpened() === true;
           if (wsOpened) {
-            const beginId = PerformanceStatistics.beginMeasure(commandName as string);
+            const beginId = PerformanceStatistics.beginMeasure(commandName);
             try {
               chargingStation.wsConnection.send(messageToSend);
               logger.debug(
@@ -264,7 +264,7 @@ export default abstract class OCPPRequestService {
               );
               sendError = true;
             }
-            PerformanceStatistics.endMeasure(commandName as string, beginId);
+            PerformanceStatistics.endMeasure(commandName, beginId);
           }
           const wsClosedOrErrored = !wsOpened || sendError === true;
           if (wsClosedOrErrored && params.skipBufferingOnError === false) {
