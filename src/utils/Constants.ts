@@ -45,6 +45,8 @@ export default class Constants {
 
   static readonly UNKNOWN_COMMAND = 'unknown command';
 
+  static readonly MAX_RANDOM_INTEGER = 281474976710654;
+
   private constructor() {
     // This is intentional
   }

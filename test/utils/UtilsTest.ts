@@ -1,5 +1,6 @@
 import expect from 'expect';
 
+import Constants from '../../src/utils/Constants';
 import Utils from '../../src/utils/Utils';
 
 describe('Utils test suite', () => {
@@ -107,11 +108,19 @@ describe('Utils test suite', () => {
     let randomInteger = Utils.getRandomInteger();
     expect(Number.isSafeInteger(randomInteger)).toBe(true);
     expect(randomInteger).toBeGreaterThanOrEqual(0);
-    expect(randomInteger).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+    expect(randomInteger).toBeLessThanOrEqual(Constants.MAX_RANDOM_INTEGER);
     expect(randomInteger).not.toEqual(Utils.getRandomInteger());
-    expect(() => Utils.getRandomInteger(0, 1)).toThrowError(new RangeError('Invalid interval'));
-    expect(() => Utils.getRandomInteger(-1)).toThrowError(new RangeError('Invalid interval'));
-    expect(() => Utils.getRandomInteger(0, -1)).toThrowError(new RangeError('Invalid interval'));
+    expect(() => Utils.getRandomInteger(0, 1)).toThrowError(
+      'The value of "max" is out of range. It must be greater than the value of "min" (1). Received 1'
+    );
+    expect(() => Utils.getRandomInteger(-1)).toThrowError(
+      'The value of "max" is out of range. It must be greater than the value of "min" (0). Received 0'
+    );
+    expect(() => Utils.getRandomInteger(Constants.MAX_RANDOM_INTEGER + 1)).toThrowError(
+      `The value of "max" is out of range. It must be <= ${
+        Constants.MAX_RANDOM_INTEGER + 1
+      }. Received 281_474_976_710_656`
+    );
     randomInteger = Utils.getRandomInteger(2, 1);
     expect(randomInteger).toBeGreaterThanOrEqual(1);
     expect(randomInteger).toBeLessThanOrEqual(2);

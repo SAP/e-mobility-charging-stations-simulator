@@ -3,6 +3,7 @@ import util from 'node:util';
 
 import clone from 'just-clone';
 
+import Constants from './Constants';
 import { WebSocketCloseEventStatusString } from '../types/WebSocket';
 
 export default class Utils {
@@ -129,16 +130,13 @@ export default class Utils {
     return sign * (randomPositiveFloat * (max - min) + min);
   }
 
-  public static getRandomInteger(max = Number.MAX_SAFE_INTEGER, min = 0): number {
-    if (max < min || max < 0 || min < 0) {
-      throw new RangeError('Invalid interval');
-    }
+  public static getRandomInteger(max = Constants.MAX_RANDOM_INTEGER, min = 0): number {
     max = Math.floor(max);
     if (!Utils.isNullOrUndefined(min) && min !== 0) {
       min = Math.ceil(min);
-      return Math.floor(Utils.secureRandom() * (max - min + 1)) + min;
+      return Math.floor(crypto.randomInt(min, max + 1));
     }
-    return Math.floor(Utils.secureRandom() * (max + 1));
+    return Math.floor(crypto.randomInt(max + 1));
   }
 
   public static roundTo(numberValue: number, scale: number): number {
@@ -259,6 +257,7 @@ export default class Utils {
       setTimeout(() => {
         if (Utils.isPromisePending(promise)) {
           timeoutCallback();
+          // FIXME: The original promise shall be canceled
         }
         reject(timeoutError);
       }, timeoutMs);
