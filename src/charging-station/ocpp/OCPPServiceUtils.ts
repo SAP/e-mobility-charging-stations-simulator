@@ -53,6 +53,8 @@ export class OCPPServiceUtils {
         return 'response';
       case MessageType.CALL_ERROR_MESSAGE:
         return 'error';
+      default:
+        return 'unknown';
     }
   }
 
