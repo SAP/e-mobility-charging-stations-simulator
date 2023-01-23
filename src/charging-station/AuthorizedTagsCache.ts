@@ -38,10 +38,7 @@ export default class AuthorizedTagsCache {
               if (filename && event === 'change') {
                 try {
                   logger.debug(
-                    this.logPrefix(file) +
-                      ' ' +
-                      FileType.Authorization +
-                      ' file have changed, reload'
+                    `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`
                   );
                   this.deleteTags(file);
                   this.deleteFSWatcher(file);
@@ -104,7 +101,7 @@ export default class AuthorizedTagsCache {
         );
       }
     } else {
-      logger.info(this.logPrefix(file) + ' No authorization file given)');
+      logger.info(`${this.logPrefix(file)} No authorization file given`);
     }
     return authorizedTags;
   }

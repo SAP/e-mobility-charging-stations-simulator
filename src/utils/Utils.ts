@@ -39,15 +39,15 @@ export default class Utils {
     let secondsStr = seconds.toString();
 
     if (hours < 10) {
-      hoursStr = '0' + hours.toString();
+      hoursStr = `0${hours.toString()}`;
     }
     if (minutes < 10) {
-      minutesStr = '0' + minutes.toString();
+      minutesStr = `0${minutes.toString()}`;
     }
     if (seconds < 10) {
-      secondsStr = '0' + seconds.toString();
+      secondsStr = `0${seconds.toString()}`;
     }
-    return hoursStr + ':' + minutesStr + ':' + secondsStr.substring(0, 6);
+    return `${hoursStr}:${minutesStr}:${secondsStr.substring(0, 6)}`;
   }
 
   public static formatDurationSeconds(duration: number): string {

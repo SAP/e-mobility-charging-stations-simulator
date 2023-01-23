@@ -337,7 +337,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           ...args: any[]
         ) => Promise<void>,
         chargingStation,
-        (commandPayload.type + 'Reset') as OCPP16StopTransactionReason
+        `${commandPayload.type}Reset` as OCPP16StopTransactionReason
       )
       .catch(() => {
         /* This is intentional */
@@ -365,7 +365,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     if (connectorId === 0) {
       logger.error(
-        chargingStation.logPrefix() + ' Trying to unlock connector Id ' + connectorId.toString()
+        `${chargingStation.logPrefix()} Trying to unlock connector Id ${connectorId.toString()}`
       );
       return OCPPConstants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
@@ -694,15 +694,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   ): Promise<GenericResponse> {
     const transactionConnectorId = commandPayload.connectorId;
     if (chargingStation.connectors.has(transactionConnectorId) === true) {
-      const remoteStartTransactionLogMsg =
-        chargingStation.logPrefix() +
-        ' Transaction remotely STARTED on ' +
-        chargingStation.stationInfo.chargingStationId +
-        '#' +
-        transactionConnectorId.toString() +
-        " for idTag '" +
-        commandPayload.idTag +
-        "'";
+      const remoteStartTransactionLogMsg = `${chargingStation.logPrefix()} Transaction remotely STARTED on ${
+        chargingStation.stationInfo.chargingStationId
+      }#${transactionConnectorId.toString()} for idTag '${commandPayload.idTag}'`;
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16StatusNotificationRequest,
         OCPP16StatusNotificationResponse
@@ -855,16 +849,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
     }
     logger.warn(
-      chargingStation.logPrefix() +
-        ' Remote starting transaction REJECTED on connector Id ' +
-        connectorId.toString() +
-        ", idTag '" +
-        idTag +
-        "', availability '" +
-        chargingStation.getConnectorStatus(connectorId).availability +
-        "', status '" +
-        chargingStation.getConnectorStatus(connectorId).status +
-        "'"
+      `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector Id ${connectorId.toString()}, idTag '${idTag}', availability '${
+        chargingStation.getConnectorStatus(connectorId).availability
+      }', status '${chargingStation.getConnectorStatus(connectorId).status}'`
     );
     return OCPPConstants.OCPP_RESPONSE_REJECTED;
   }
@@ -923,9 +910,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       }
     }
     logger.warn(
-      chargingStation.logPrefix() +
-        ' Trying to remote stop a non existing transaction ' +
-        transactionId.toString()
+      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction ${transactionId.toString()}`
     );
     return OCPPConstants.OCPP_RESPONSE_REJECTED;
   }
@@ -1068,7 +1053,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           .readdirSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'))
           .filter((file) => file.endsWith('.log'))
           .map((file) => path.join('./', file));
-        const diagnosticsArchive = chargingStation.stationInfo.chargingStationId + '_logs.tar.gz';
+        const diagnosticsArchive = `${chargingStation.stationInfo.chargingStationId}_logs.tar.gz`;
         tar.create({ gzip: true }, logFiles).pipe(fs.createWriteStream(diagnosticsArchive));
         ftpClient = new Client();
         const accessResponse = await ftpClient.access({
@@ -1123,7 +1108,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           throw new OCPPError(
             ErrorType.GENERIC_ERROR,
             `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${
-              uploadResponse?.code && '|' + uploadResponse?.code.toString()
+              uploadResponse?.code && `|${uploadResponse?.code.toString()}`
             }`,
             OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
           );
@@ -1131,7 +1116,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         throw new OCPPError(
           ErrorType.GENERIC_ERROR,
           `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${
-            uploadResponse?.code && '|' + uploadResponse?.code.toString()
+            uploadResponse?.code && `|${uploadResponse?.code.toString()}`
           }`,
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS
         );

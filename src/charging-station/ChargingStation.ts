@@ -146,14 +146,14 @@ export default class ChargingStation {
 
   private get wsConnectionUrl(): URL {
     return new URL(
-      (this.getSupervisionUrlOcppConfiguration()
-        ? ChargingStationConfigurationUtils.getConfigurationKey(
-            this,
-            this.getSupervisionUrlOcppKey()
-          ).value
-        : this.configuredSupervisionUrl.href) +
-        '/' +
-        this.stationInfo.chargingStationId
+      `${
+        this.getSupervisionUrlOcppConfiguration()
+          ? ChargingStationConfigurationUtils.getConfigurationKey(
+              this,
+              this.getSupervisionUrlOcppKey()
+            ).value
+          : this.configuredSupervisionUrl.href
+      }/${this.stationInfo.chargingStationId}`
     );
   }
 
@@ -394,15 +394,15 @@ export default class ChargingStation {
           });
       }, this.getHeartbeatInterval());
       logger.info(
-        this.logPrefix() +
-          ' Heartbeat started every ' +
-          Utils.formatDurationMilliSeconds(this.getHeartbeatInterval())
+        `${this.logPrefix()} Heartbeat started every ${Utils.formatDurationMilliSeconds(
+          this.getHeartbeatInterval()
+        )}`
       );
     } else if (this.heartbeatSetInterval) {
       logger.info(
-        this.logPrefix() +
-          ' Heartbeat already started every ' +
-          Utils.formatDurationMilliSeconds(this.getHeartbeatInterval())
+        `${this.logPrefix()} Heartbeat already started every ${Utils.formatDurationMilliSeconds(
+          this.getHeartbeatInterval()
+        )}`
       );
     } else {
       logger.error(
@@ -648,7 +648,7 @@ export default class ChargingStation {
       case OCPPVersion.VERSION_16:
       case OCPPVersion.VERSION_20:
       case OCPPVersion.VERSION_201:
-        protocol = 'ocpp' + ocppVersion;
+        protocol = `ocpp${ocppVersion}`;
         break;
       default:
         this.handleUnsupportedVersion(ocppVersion);
@@ -977,7 +977,7 @@ export default class ChargingStation {
   private initialize(): void {
     this.configurationFile = path.join(
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),
-      ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile()) + '.json'
+      `${ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile())}.json`
     );
     this.stationInfo = this.getStationInfo();
     this.saveStationInfo();
@@ -1644,16 +1644,16 @@ export default class ChargingStation {
   }
 
   private onPing(): void {
-    logger.debug(this.logPrefix() + ' Received a WS ping (rfc6455) from the server');
+    logger.debug(`${this.logPrefix()} Received a WS ping (rfc6455) from the server`);
   }
 
   private onPong(): void {
-    logger.debug(this.logPrefix() + ' Received a WS pong (rfc6455) from the server');
+    logger.debug(`${this.logPrefix()} Received a WS pong (rfc6455) from the server`);
   }
 
   private onError(error: WSError): void {
     this.closeWSConnection();
-    logger.error(this.logPrefix() + ' WebSocket error:', error);
+    logger.error(`${this.logPrefix()} WebSocket error:`, error);
   }
 
   private getEnergyActiveImportRegister(connectorStatus: ConnectorStatus, rounded = false): number {
@@ -1891,15 +1891,15 @@ export default class ChargingStation {
         }
       }, webSocketPingInterval * 1000);
       logger.info(
-        this.logPrefix() +
-          ' WebSocket ping started every ' +
-          Utils.formatDurationSeconds(webSocketPingInterval)
+        `${this.logPrefix()} WebSocket ping started every ${Utils.formatDurationSeconds(
+          webSocketPingInterval
+        )}`
       );
     } else if (this.webSocketPingSetInterval) {
       logger.info(
-        this.logPrefix() +
-          ' WebSocket ping already started every ' +
-          Utils.formatDurationSeconds(webSocketPingInterval)
+        `${this.logPrefix()} WebSocket ping already started every ${Utils.formatDurationSeconds(
+          webSocketPingInterval
+        )}`
       );
     } else {
       logger.error(
@@ -2027,7 +2027,7 @@ export default class ChargingStation {
       );
       await Utils.sleep(reconnectDelay);
       logger.error(
-        this.logPrefix() + ' WebSocket connection retry #' + this.autoReconnectRetryCount.toString()
+        `${this.logPrefix()} WebSocket connection retry #${this.autoReconnectRetryCount.toString()}`
       );
       this.openWSConnection(
         { ...(this.stationInfo?.wsOptions ?? {}), handshakeTimeout: reconnectTimeout },

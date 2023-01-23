@@ -162,16 +162,13 @@ export default class PerformanceStatistics {
         this.logStatistics();
       }, Configuration.getLogStatisticsInterval() * 1000);
       logger.info(
-        this.logPrefix() +
-          ' logged every ' +
-          Utils.formatDurationSeconds(Configuration.getLogStatisticsInterval())
+        `${this.logPrefix()} logged every ${Utils.formatDurationSeconds(
+          Configuration.getLogStatisticsInterval()
+        )}`
       );
     } else {
       logger.info(
-        this.logPrefix() +
-          ' log interval is set to ' +
-          Configuration.getLogStatisticsInterval().toString() +
-          '. Not logging statistics'
+        `${this.logPrefix()} log interval is set to ${Configuration.getLogStatisticsInterval().toString()}. Not logging statistics`
       );
     }
   }

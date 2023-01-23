@@ -170,7 +170,7 @@ export default class UIClient {
     const response = JSON.parse(messageEvent.data) as ProtocolResponse;
 
     if (Array.isArray(response) === false) {
-      throw new Error('Response not an array: ' + JSON.stringify(response, null, 2));
+      throw new Error(`Response not an array: ${JSON.stringify(response, null, 2)}`);
     }
 
     const [uuid, responsePayload] = response;
@@ -188,7 +188,7 @@ export default class UIClient {
       }
       this.deleteResponseHandler(uuid);
     } else {
-      throw new Error('Not a response to a request: ' + JSON.stringify(response, null, 2));
+      throw new Error(`Not a response to a request: ${JSON.stringify(response, null, 2)}`);
     }
   }
 }

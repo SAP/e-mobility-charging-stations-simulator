@@ -180,8 +180,7 @@ export default class OCPP20ResponseService extends OCPPResponseService {
         : logger.info(logMsg);
     } else {
       logger.error(
-        chargingStation.logPrefix() +
-          ' Charging station boot notification response received: %j with undefined registration status',
+        `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
         payload
       );
     }

@@ -44,14 +44,12 @@ export class ChargingStationUtils {
     // In case of multiple instances: add instance index to charging station id
     const instanceIndex = process.env.CF_INSTANCE_INDEX ?? 0;
     const idSuffix = stationTemplate.nameSuffix ?? '';
-    const idStr = '000000000' + index.toString();
+    const idStr = `000000000${index.toString()}`;
     return stationTemplate?.fixedName
       ? stationTemplate.baseName
-      : stationTemplate.baseName +
-          '-' +
-          instanceIndex.toString() +
-          idStr.substring(idStr.length - 4) +
-          idSuffix;
+      : `${stationTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
+          idStr.length - 4
+        )}${idSuffix}`;
   }
 
   public static getHashId(index: number, stationTemplate: ChargingStationTemplate): string {
@@ -210,7 +208,7 @@ export class ChargingStationUtils {
     if (!Utils.isUndefined(template[key])) {
       logger.warn(
         `${logPrefix} Deprecated template key '${key}' usage in file '${templateFile}'${
-          logMsgToAppend && '. ' + logMsgToAppend
+          logMsgToAppend && `. ${logMsgToAppend}`
         }`
       );
     }

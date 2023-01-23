@@ -54,7 +54,7 @@ export class Bootstrap {
     this.workerScript = path.join(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',
-      'ChargingStationWorker' + path.extname(fileURLToPath(import.meta.url))
+      `ChargingStationWorker${path.extname(fileURLToPath(import.meta.url))}`
     );
     this.initialize();
     Configuration.getUIServer().enabled === true &&
@@ -98,9 +98,7 @@ export class Bootstrap {
             } catch (error) {
               console.error(
                 chalk.red(
-                  'Error at starting charging station with template file ' +
-                    stationTemplateUrl.file +
-                    ': '
+                  `Error at starting charging station with template file ${stationTemplateUrl.file}: `
                 ),
                 error
               );

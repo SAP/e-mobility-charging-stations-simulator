@@ -151,12 +151,12 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   private async internalStartConnector(connectorId: number): Promise<void> {
     this.setStartConnectorStatus(connectorId);
     logger.info(
-      this.logPrefix(connectorId) +
-        ' started on connector and will run for ' +
-        Utils.formatDurationMilliSeconds(
-          this.connectorsStatus.get(connectorId).stopDate.getTime() -
-            this.connectorsStatus.get(connectorId).startDate.getTime()
-        )
+      `${this.logPrefix(
+        connectorId
+      )} started on connector and will run for ${Utils.formatDurationMilliSeconds(
+        this.connectorsStatus.get(connectorId).stopDate.getTime() -
+          this.connectorsStatus.get(connectorId).startDate.getTime()
+      )}`
     );
     while (this.connectorsStatus.get(connectorId).start === true) {
       if (new Date() > this.connectorsStatus.get(connectorId).stopDate) {
@@ -165,16 +165,18 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
       }
       if (this.chargingStation.isInAcceptedState() === false) {
         logger.error(
-          this.logPrefix(connectorId) +
-            ' entered in transaction loop while the charging station is not in accepted state'
+          `${this.logPrefix(
+            connectorId
+          )} entered in transaction loop while the charging station is not in accepted state`
         );
         this.stopConnector(connectorId);
         break;
       }
       if (this.chargingStation.isChargingStationAvailable() === false) {
         logger.info(
-          this.logPrefix(connectorId) +
-            ' entered in transaction loop while the charging station is unavailable'
+          `${this.logPrefix(
+            connectorId
+          )} entered in transaction loop while the charging station is unavailable`
         );
         this.stopConnector(connectorId);
         break;
@@ -204,7 +206,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
           this.configuration.minDelayBetweenTwoTransactions
         ) * 1000;
       logger.info(
-        this.logPrefix(connectorId) + ' waiting for ' + Utils.formatDurationMilliSeconds(wait)
+        `${this.logPrefix(connectorId)} waiting for ${Utils.formatDurationMilliSeconds(wait)}`
       );
       await Utils.sleep(wait);
       const start = Utils.secureRandom();
@@ -218,18 +220,18 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
             Utils.getRandomInteger(this.configuration.maxDuration, this.configuration.minDuration) *
             1000;
           logger.info(
-            this.logPrefix(connectorId) +
-              ' transaction ' +
-              this.chargingStation.getConnectorStatus(connectorId).transactionId.toString() +
-              ' started and will stop in ' +
-              Utils.formatDurationMilliSeconds(waitTrxEnd)
+            `${this.logPrefix(connectorId)} transaction ${this.chargingStation
+              .getConnectorStatus(connectorId)
+              .transactionId.toString()} started and will stop in ${Utils.formatDurationMilliSeconds(
+              waitTrxEnd
+            )}`
           );
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
           logger.info(
-            this.logPrefix(connectorId) +
-              ' stop transaction ' +
-              this.chargingStation.getConnectorStatus(connectorId).transactionId.toString()
+            `${this.logPrefix(connectorId)} stop transaction ${this.chargingStation
+              .getConnectorStatus(connectorId)
+              .transactionId.toString()}`
           );
           await this.stopTransaction(connectorId);
         }
@@ -237,24 +239,23 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
         this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions++;
         this.connectorsStatus.get(connectorId).skippedTransactions++;
         logger.info(
-          this.logPrefix(connectorId) +
-            ' skipped consecutively ' +
-            this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions.toString() +
-            '/' +
-            this.connectorsStatus.get(connectorId).skippedTransactions.toString() +
-            ' transaction(s)'
+          `${this.logPrefix(connectorId)} skipped consecutively ${this.connectorsStatus
+            .get(connectorId)
+            .skippedConsecutiveTransactions.toString()}/${this.connectorsStatus
+            .get(connectorId)
+            .skippedTransactions.toString()} transaction(s)`
         );
       }
       this.connectorsStatus.get(connectorId).lastRunDate = new Date();
     }
     this.connectorsStatus.get(connectorId).stoppedDate = new Date();
     logger.info(
-      this.logPrefix(connectorId) +
-        ' stopped on connector and lasted for ' +
-        Utils.formatDurationMilliSeconds(
-          this.connectorsStatus.get(connectorId).stoppedDate.getTime() -
-            this.connectorsStatus.get(connectorId).startDate.getTime()
-        )
+      `${this.logPrefix(
+        connectorId
+      )} stopped on connector and lasted for ${Utils.formatDurationMilliSeconds(
+        this.connectorsStatus.get(connectorId).stoppedDate.getTime() -
+          this.connectorsStatus.get(connectorId).startDate.getTime()
+      )}`
     );
     logger.debug(
       `${this.logPrefix(connectorId)} connector status: %j`,
@@ -386,7 +387,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
       logger.warn(
         `${this.logPrefix(connectorId)} stopping a not started transaction${
-          transactionId ? ' ' + transactionId.toString() : ''
+          transactionId ? ` ${transactionId.toString()}` : ''
         }`
       );
     }
@@ -449,7 +450,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
     if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
       this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
     } else {
-      logger.warn(this.logPrefix(connectorId) + ' start transaction rejected');
+      logger.warn(`${this.logPrefix(connectorId)} start transaction rejected`);
       this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
     }
   }
