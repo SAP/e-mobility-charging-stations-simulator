@@ -1228,7 +1228,7 @@ export default class ChargingStation {
     if (stationInfo?.Connectors) {
       const connectorsConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(JSON.stringify(stationInfo?.Connectors) + configuredMaxConnectors.toString())
+        .update(`${JSON.stringify(stationInfo?.Connectors)}${configuredMaxConnectors.toString()}`)
         .digest('hex');
       const connectorsConfigChanged =
         this.connectors?.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;

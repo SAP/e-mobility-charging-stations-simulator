@@ -50,7 +50,7 @@ export default class PerformanceStatistics {
   }
 
   public static beginMeasure(id: string): string {
-    const markId = `${id.charAt(0).toUpperCase() + id.slice(1)}~${Utils.generateUUID()}`;
+    const markId = `${id.charAt(0).toUpperCase()}${id.slice(1)}~${Utils.generateUUID()}`;
     performance.mark(markId);
     return markId;
   }

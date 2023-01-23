@@ -311,7 +311,7 @@ export default class Configuration {
   }
 
   private static logPrefix(): string {
-    return new Date().toLocaleString() + ' Simulator configuration |';
+    return `${new Date().toLocaleString()} Simulator configuration |`;
   }
 
   private static warnDeprecatedConfigurationKey(
@@ -421,7 +421,7 @@ export default class Configuration {
     error: NodeJS.ErrnoException,
     params: HandleErrorParams<EmptyObject> = { throwError: true }
   ): void {
-    const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
+    const prefix = logPrefix.trim().length !== 0 ? `${logPrefix} ` : '';
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':

@@ -21,7 +21,7 @@ if (config && config.mongoConnectionString) {
 
     for await (const tenantID of config.tenantIDs) {
       const response = await db
-        .collection(tenantID + '.chargingstations')
+        .collection(`${tenantID}.chargingstations`)
         .updateMany({ _id: { $regex: config.idPattern } }, { $set: { public: config.publicFlag } });
       console.info(
         response.modifiedCount,

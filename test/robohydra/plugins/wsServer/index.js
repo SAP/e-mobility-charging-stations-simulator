@@ -43,10 +43,10 @@ exports.getBodyParts = function (conf) {
         mountPath: '/proxy',
         proxyTo: 'ws://server.example.com',
         preProcessor: function (data) {
-          console.info('From the client: ' + data);
+          console.info(`From the client: ${data}`);
         },
         postProcessor: function (data) {
-          console.info('From the server: ' + data);
+          console.info(`From the server: ${data}`);
         },
       }),
 

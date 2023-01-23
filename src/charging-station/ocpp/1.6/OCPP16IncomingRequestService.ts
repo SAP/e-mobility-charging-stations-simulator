@@ -1091,7 +1091,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'),
               diagnosticsArchive
             ),
-            uri.pathname + diagnosticsArchive
+            `${uri.pathname}${diagnosticsArchive}`
           );
           if (uploadResponse.code === 226) {
             await chargingStation.ocppRequestService.requestHandler<

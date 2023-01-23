@@ -52,7 +52,7 @@ export default class FileUtils {
     error: NodeJS.ErrnoException,
     params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }
   ): void {
-    const prefix = !Utils.isEmptyString(logPrefix) ? logPrefix + ' ' : '';
+    const prefix = !Utils.isEmptyString(logPrefix) ? `${logPrefix} ` : '';
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':

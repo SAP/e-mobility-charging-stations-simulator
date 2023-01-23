@@ -20,7 +20,7 @@ if (config && config.mongoConnectionString) {
 
     for await (const tenantID of config.tenantIDs) {
       const response = await db
-        .collection(tenantID + '.chargingstations')
+        .collection(`${tenantID}.chargingstations`)
         .deleteMany({ _id: { $regex: config.idPattern } });
       console.info(
         response.deletedCount,

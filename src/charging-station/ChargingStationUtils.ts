@@ -78,8 +78,10 @@ export class ChargingStationUtils {
     return crypto
       .createHash(Constants.DEFAULT_HASH_ALGORITHM)
       .update(
-        JSON.stringify(chargingStationInfo) +
-          ChargingStationUtils.getChargingStationId(index, stationTemplate)
+        `${JSON.stringify(chargingStationInfo)}${ChargingStationUtils.getChargingStationId(
+          index,
+          stationTemplate
+        )}`
       )
       .digest('hex');
   }
@@ -268,13 +270,13 @@ export class ChargingStationUtils {
       : '';
     stationInfo.chargePointSerialNumber =
       stationTemplate?.chargePointSerialNumberPrefix &&
-      stationTemplate.chargePointSerialNumberPrefix + serialNumberSuffix;
+      `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`;
     stationInfo.chargeBoxSerialNumber =
       stationTemplate?.chargeBoxSerialNumberPrefix &&
-      stationTemplate.chargeBoxSerialNumberPrefix + serialNumberSuffix;
+      `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`;
     stationInfo.meterSerialNumber =
       stationTemplate?.meterSerialNumberPrefix &&
-      stationTemplate.meterSerialNumberPrefix + serialNumberSuffix;
+      `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`;
   }
 
   public static propagateSerialNumber(

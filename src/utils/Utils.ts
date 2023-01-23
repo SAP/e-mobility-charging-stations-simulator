@@ -12,7 +12,7 @@ export default class Utils {
   }
 
   public static logPrefix(prefixString = ''): string {
-    return new Date().toLocaleString() + prefixString;
+    return `${new Date().toLocaleString()} ${prefixString}`;
   }
 
   public static generateUUID(): string {

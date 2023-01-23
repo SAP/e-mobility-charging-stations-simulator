@@ -79,11 +79,11 @@ export default class SharedLRUCache {
   }
 
   private getChargingStationConfigurationKey(hash: string): string {
-    return CacheType.CHARGING_STATION_CONFIGURATION + hash;
+    return `${CacheType.CHARGING_STATION_CONFIGURATION}${hash}`;
   }
 
   private getChargingStationTemplateKey(hash: string): string {
-    return CacheType.CHARGING_STATION_TEMPLATE + hash;
+    return `${CacheType.CHARGING_STATION_TEMPLATE}${hash}`;
   }
 
   private has(key: string): boolean {
