@@ -22,7 +22,7 @@ export default class FileUtils {
     listener: fs.WatchListener<string> = (event, filename) => {
       if (filename && event === 'change') {
         try {
-          logger.debug(`${logPrefix} ${fileType} file ${file} + ' have changed, reload'`);
+          logger.debug(`${logPrefix} ${fileType} file ${file} have changed, reload`);
           refreshedVariable && (refreshedVariable = JSON.parse(fs.readFileSync(file, 'utf8')) as T);
         } catch (error) {
           FileUtils.handleFileException(logPrefix, fileType, file, error as NodeJS.ErrnoException, {
