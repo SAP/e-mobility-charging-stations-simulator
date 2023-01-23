@@ -422,27 +422,21 @@ export default class Configuration {
     params: HandleErrorParams<EmptyObject> = { throwError: true }
   ): void {
     const prefix = logPrefix.length !== 0 ? logPrefix + ' ' : '';
-    if (error.code === 'ENOENT') {
-      console.error(
-        chalk.green(prefix) + chalk.red(fileType + ' file ' + filePath + ' not found: '),
-        error
-      );
-    } else if (error.code === 'EEXIST') {
-      console.error(
-        chalk.green(prefix) + chalk.red(fileType + ' file ' + filePath + ' already exists: '),
-        error
-      );
-    } else if (error.code === 'EACCES') {
-      console.error(
-        chalk.green(prefix) + chalk.red(fileType + ' file ' + filePath + ' access denied: '),
-        error
-      );
-    } else {
-      console.error(
-        chalk.green(prefix) + chalk.red(fileType + ' file ' + filePath + ' error: '),
-        error
-      );
+    let logMsg: string;
+    switch (error.code) {
+      case 'ENOENT':
+        logMsg = `${fileType} file ${filePath} not found: `;
+        break;
+      case 'EEXIST':
+        logMsg = `${fileType} file ${filePath} already exists: `;
+        break;
+      case 'EACCES':
+        logMsg = `${fileType} file ${filePath} access denied: `;
+        break;
+      default:
+        logMsg = `${fileType} file ${filePath} error: `;
     }
+    console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error);
     if (params?.throwError) {
       throw error;
     }

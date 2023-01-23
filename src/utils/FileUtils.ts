@@ -22,7 +22,7 @@ export default class FileUtils {
     listener: fs.WatchListener<string> = (event, filename) => {
       if (filename && event === 'change') {
         try {
-          logger.debug(logPrefix + ' ' + fileType + ' file ' + file + ' have changed, reload');
+          logger.debug(`${logPrefix} ${fileType} file ${file} + ' have changed, reload'`);
           refreshedVariable && (refreshedVariable = JSON.parse(fs.readFileSync(file, 'utf8')) as T);
         } catch (error) {
           FileUtils.handleFileException(logPrefix, fileType, file, error as NodeJS.ErrnoException, {
@@ -53,45 +53,28 @@ export default class FileUtils {
     params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }
   ): void {
     const prefix = !Utils.isEmptyString(logPrefix) ? logPrefix + ' ' : '';
-    if (error.code === 'ENOENT') {
-      if (params?.consoleOut) {
-        console.warn(
-          chalk.green(prefix) + chalk.yellow(fileType + ' file ' + file + ' not found: '),
-          error
-        );
-      } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' not found:', error);
-      }
-    } else if (error.code === 'EEXIST') {
-      if (params?.consoleOut) {
-        console.warn(
-          chalk.green(prefix) + chalk.yellow(fileType + ' file ' + file + ' already exists: '),
-          error
-        );
-      } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' already exists:', error);
-      }
-    } else if (error.code === 'EACCES') {
-      if (params?.consoleOut) {
-        console.warn(
-          chalk.green(prefix) + chalk.yellow(fileType + ' file ' + file + ' access denied: '),
-          error
-        );
-      } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' access denied:', error);
-      }
+    let logMsg: string;
+    switch (error.code) {
+      case 'ENOENT':
+        logMsg = `${fileType} file ${file} not found:`;
+        break;
+      case 'EEXIST':
+        logMsg = `${fileType} file ${file} already exists:`;
+        break;
+      case 'EACCES':
+        logMsg = `${fileType} file ${file} access denied:`;
+        break;
+      default:
+        logMsg = `${fileType} file ${file} error:`;
+    }
+    if (params?.consoleOut) {
+      logMsg = `${logMsg} `;
+      console.warn(`${chalk.green(prefix)}${chalk.yellow(logMsg)}`, error);
     } else {
-      if (params?.consoleOut) {
-        console.warn(
-          chalk.green(prefix) + chalk.yellow(fileType + ' file ' + file + ' error: '),
-          error
-        );
-      } else {
-        logger.warn(prefix + fileType + ' file ' + file + ' error:', error);
-      }
-      if (params?.throwError) {
-        throw error;
-      }
+      logger.warn(`${prefix}${logMsg}`, error);
+    }
+    if (params?.throwError) {
+      throw error;
     }
   }
 }
