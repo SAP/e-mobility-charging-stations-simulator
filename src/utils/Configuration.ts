@@ -369,7 +369,7 @@ export default class Configuration {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
           if (!Configuration.isUndefined(Configuration.configurationChangeCallback)) {
-            Configuration.configurationChangeCallback().catch((error) => {
+            Configuration.configurationChangeCallback().catch(error => {
               throw typeof error === 'string' ? new Error(error) : error;
             });
           }

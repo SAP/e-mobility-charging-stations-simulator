@@ -322,7 +322,7 @@ export default abstract class OCPPRequestService {
               .then(() => {
                 resolve(payload);
               })
-              .catch((error) => {
+              .catch(error => {
                 reject(error);
               })
               .finally(() => {

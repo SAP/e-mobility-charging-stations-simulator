@@ -112,10 +112,10 @@ export default class UIClient {
       config.uiServer.protocol
     );
     this._ws.onmessage = this.responseHandler.bind(this);
-    this._ws.onerror = (errorEvent) => {
+    this._ws.onerror = errorEvent => {
       console.error('WebSocket error: ', errorEvent);
     };
-    this._ws.onclose = (closeEvent) => {
+    this._ws.onclose = closeEvent => {
       console.info('WebSocket closed: ', closeEvent);
     };
   }

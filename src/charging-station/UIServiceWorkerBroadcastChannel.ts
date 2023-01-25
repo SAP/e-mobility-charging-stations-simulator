@@ -74,7 +74,7 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
             return hashId;
           }
         })
-        .filter((hashId) => hashId !== undefined),
+        .filter(hashId => hashId !== undefined),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: this.responses
           .get(uuid)
@@ -83,17 +83,17 @@ export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChan
               return hashId;
             }
           })
-          .filter((hashId) => hashId !== undefined),
+          .filter(hashId => hashId !== undefined),
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: this.responses
           .get(uuid)
-          ?.responses.map((response) => {
+          ?.responses.map(response => {
             if (response.status === ResponseStatus.FAILURE) {
               return response;
             }
           })
-          .filter((response) => response !== undefined),
+          .filter(response => response !== undefined),
       }),
     };
   }

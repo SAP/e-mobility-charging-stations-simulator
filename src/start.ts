@@ -6,6 +6,6 @@ import { Bootstrap } from './internal';
 
 Bootstrap.getInstance()
   .start()
-  .catch((error) => {
+  .catch(error => {
     console.error(chalk.red(error));
   });

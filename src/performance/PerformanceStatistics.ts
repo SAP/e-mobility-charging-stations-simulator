@@ -138,7 +138,7 @@ export default class PerformanceStatistics {
   }
 
   private initializePerformanceObserver(): void {
-    this.performanceObserver = new PerformanceObserver((performanceObserverList) => {
+    this.performanceObserver = new PerformanceObserver(performanceObserverList => {
       const lastPerformanceEntry = performanceObserverList.getEntries()[0];
       // logger.debug(
       //   `${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`,
@@ -287,7 +287,7 @@ export default class PerformanceStatistics {
   }
 
   private extractTimeSeriesValues(timeSeries: CircularArray<TimeSeries>): number[] {
-    return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
+    return timeSeries.map(timeSeriesItem => timeSeriesItem.value);
   }
 
   private logPrefix(): string {

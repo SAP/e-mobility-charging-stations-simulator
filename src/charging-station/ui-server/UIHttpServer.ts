@@ -68,7 +68,7 @@ export default class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener(req: IncomingMessage, res: ServerResponse): void {
-    this.authenticate(req, (err) => {
+    this.authenticate(req, err => {
       if (err) {
         res
           .writeHead(StatusCodes.UNAUTHORIZED, {
@@ -94,7 +94,7 @@ export default class UIHttpServer extends AbstractUIServer {
         throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`);
       }
       this.registerProtocolVersionUIService(version);
-      req.on('error', (error) => {
+      req.on('error', error => {
         logger.error(
           `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
           error
@@ -103,7 +103,7 @@ export default class UIHttpServer extends AbstractUIServer {
       if (req.method === 'POST') {
         const bodyBuffer = [];
         req
-          .on('data', (chunk) => {
+          .on('data', chunk => {
             bodyBuffer.push(chunk);
           })
           .on('end', () => {

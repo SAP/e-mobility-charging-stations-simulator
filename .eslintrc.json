@@ -85,7 +85,7 @@
     "spaced-comment": ["error", "always"],
     "switch-colon-spacing": "error",
     "arrow-body-style": ["error", "as-needed"],
-    "arrow-parens": ["error", "always"],
+    "arrow-parens": ["error", "as-needed"],
     "arrow-spacing": "error",
     "no-duplicate-imports": "error",
     "no-var": "error",

@@ -386,7 +386,7 @@ export default class ChargingStation {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
-          .catch((error) => {
+          .catch(error => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
               error
@@ -475,7 +475,7 @@ export default class ChargingStation {
               meterValue: [meterValue],
             }
           )
-          .catch((error) => {
+          .catch(error => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
               error
@@ -767,7 +767,7 @@ export default class ChargingStation {
 
   private flushMessageBuffer(): void {
     if (this.messageBuffer.size > 0) {
-      this.messageBuffer.forEach((message) => {
+      this.messageBuffer.forEach(message => {
         let beginId: string;
         let commandName: RequestCommand;
         const [messageType] = JSON.parse(message) as OutgoingRequest | Response | ErrorResponse;

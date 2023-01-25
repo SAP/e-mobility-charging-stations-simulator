@@ -22,7 +22,7 @@ export class JsonFileStorage extends Storage {
     this.checkPerformanceRecordsFile();
     lockfile
       .lock(this.dbName, { stale: 5000, retries: 3 })
-      .then(async (release) => {
+      .then(async release => {
         try {
           const fileData = fs.readFileSync(this.dbName, 'utf8');
           const performanceRecords: Statistics[] = fileData

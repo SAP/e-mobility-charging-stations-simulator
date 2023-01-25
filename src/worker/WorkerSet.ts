@@ -98,7 +98,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
       ).bind(this) as MessageHandler<Worker>
     );
     worker.on('error', WorkerUtils.defaultErrorHandler.bind(this) as (err: Error) => void);
-    worker.on('exit', (code) => {
+    worker.on('exit', code => {
       WorkerUtils.defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });

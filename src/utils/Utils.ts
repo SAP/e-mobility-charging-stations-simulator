@@ -26,7 +26,7 @@ export default class Utils {
   }
 
   public static async sleep(milliSeconds: number): Promise<NodeJS.Timeout> {
-    return new Promise((resolve) => setTimeout(resolve as () => void, milliSeconds));
+    return new Promise(resolve => setTimeout(resolve as () => void, milliSeconds));
   }
 
   public static formatDurationMilliSeconds(duration: number): string {

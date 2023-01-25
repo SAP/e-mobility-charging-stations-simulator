@@ -718,7 +718,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               .getAuthorizedTags(
                 ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
               )
-              .find((idTag) => idTag === commandPayload.idTag)
+              .find(idTag => idTag === commandPayload.idTag)
           ) {
             connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
             connectorStatus.idTagLocalAuthorized = true;
@@ -1051,8 +1051,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       try {
         const logFiles = fs
           .readdirSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'))
-          .filter((file) => file.endsWith('.log'))
-          .map((file) => path.join('./', file));
+          .filter(file => file.endsWith('.log'))
+          .map(file => path.join('./', file));
         const diagnosticsArchive = `${chargingStation.stationInfo.chargingStationId}_logs.tar.gz`;
         tar.create({ gzip: true }, logFiles).pipe(fs.createWriteStream(diagnosticsArchive));
         ftpClient = new Client();
@@ -1064,7 +1064,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         });
         let uploadResponse: FTPResponse;
         if (accessResponse.code === 220) {
-          ftpClient.trackProgress((info) => {
+          ftpClient.trackProgress(info => {
             logger.info(
               `${chargingStation.logPrefix()} ${
                 info.bytes / 1024
@@ -1077,7 +1077,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
                 status: OCPP16DiagnosticsStatus.Uploading,
               })
-              .catch((error) => {
+              .catch(error => {
                 logger.error(
                   `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Error while sending '${
                     OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION
@@ -1190,7 +1190,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 chargingStation.bootNotificationRequest,
                 { skipBufferingOnError: true, triggerMessage: true }
               )
-              .then((response) => {
+              .then(response => {
                 chargingStation.bootNotificationResponse = response;
               })
               .catch(() => {
