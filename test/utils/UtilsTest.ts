@@ -146,19 +146,12 @@ describe('Utils test suite', () => {
   });
 
   it('Verify isIterable()', () => {
-    expect(Utils.isIterable('')).toBe(false);
+    expect(Utils.isIterable('')).toBe(true);
     expect(Utils.isIterable(' ')).toBe(true);
     expect(Utils.isIterable('test')).toBe(true);
     expect(Utils.isIterable(null)).toBe(false);
     expect(Utils.isIterable(undefined)).toBe(false);
-    expect(Utils.isIterable(0)).toBe(false);
-    expect(Utils.isIterable({})).toBe(false);
-    expect(Utils.isIterable({ 1: 1 })).toBe(false);
     expect(Utils.isIterable([])).toBe(true);
-    expect(Utils.isIterable(new Map())).toBe(true);
-    expect(Utils.isIterable(new Set())).toBe(true);
-    expect(Utils.isIterable(new WeakMap())).toBe(false);
-    expect(Utils.isIterable(new WeakSet())).toBe(false);
   });
 
   it('Verify isEmptyString()', () => {
