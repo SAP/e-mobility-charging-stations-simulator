@@ -35,7 +35,7 @@ export default class AuthorizedTagsCache {
             file,
             null,
             (event, filename) => {
-              if (filename && event === 'change') {
+              if (!Utils.isEmptyString(filename) && event === 'change') {
                 try {
                   logger.debug(
                     `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`

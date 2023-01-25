@@ -511,7 +511,7 @@ export default class ChargingStation {
           this.templateFile,
           null,
           (event, filename): void => {
-            if (filename && event === 'change') {
+            if (!Utils.isEmptyString(filename) && event === 'change') {
               try {
                 logger.debug(
                   `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${

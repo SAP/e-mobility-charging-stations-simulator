@@ -336,13 +336,13 @@ export default class Configuration {
     ) {
       console.error(
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key '${key}' usage in section '${sectionName}'${
-          logMsgToAppend && `. ${logMsgToAppend}`
+          logMsgToAppend.trim().length !== 0 && `. ${logMsgToAppend}`
         }}`
       );
     } else if (!Configuration.isUndefined(Configuration.getConfig()[key])) {
       console.error(
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key '${key}' usage${
-          logMsgToAppend && `. ${logMsgToAppend}`
+          logMsgToAppend.trim().length !== 0 && `. ${logMsgToAppend}`
         }}`
       );
     }

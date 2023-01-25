@@ -210,7 +210,7 @@ export class ChargingStationUtils {
     if (!Utils.isUndefined(template[key])) {
       logger.warn(
         `${logPrefix} Deprecated template key '${key}' usage in file '${templateFile}'${
-          logMsgToAppend && `. ${logMsgToAppend}`
+          !Utils.isEmptyString(logMsgToAppend) && `. ${logMsgToAppend}`
         }`
       );
     }
