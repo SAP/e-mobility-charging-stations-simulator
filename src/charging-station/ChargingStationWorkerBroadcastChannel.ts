@@ -278,7 +278,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       if (
         commandResponse === undefined ||
         commandResponse === null ||
-        Utils.isEmptyObject(commandResponse)
+        Utils.isEmptyObject(commandResponse as CommandResponse)
       ) {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
@@ -288,7 +288,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         responsePayload = this.commandResponseToResponsePayload(
           command,
           requestPayload,
-          commandResponse
+          commandResponse as CommandResponse
         );
       }
     } catch (error) {
