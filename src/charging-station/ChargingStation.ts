@@ -452,7 +452,7 @@ export default class ChargingStation {
       return;
     } else if (
       this.getConnectorStatus(connectorId)?.transactionStarted === true &&
-      !this.getConnectorStatus(connectorId)?.transactionId
+      Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionId)
     ) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction id`
@@ -596,12 +596,12 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).idTagAuthorized = false;
     this.getConnectorStatus(connectorId).transactionRemoteStarted = false;
     this.getConnectorStatus(connectorId).transactionStarted = false;
-    delete this.getConnectorStatus(connectorId).localAuthorizeIdTag;
-    delete this.getConnectorStatus(connectorId).authorizeIdTag;
-    delete this.getConnectorStatus(connectorId).transactionId;
-    delete this.getConnectorStatus(connectorId).transactionIdTag;
+    delete this.getConnectorStatus(connectorId)?.localAuthorizeIdTag;
+    delete this.getConnectorStatus(connectorId)?.authorizeIdTag;
+    delete this.getConnectorStatus(connectorId)?.transactionId;
+    delete this.getConnectorStatus(connectorId)?.transactionIdTag;
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
-    delete this.getConnectorStatus(connectorId).transactionBeginMeterValue;
+    delete this.getConnectorStatus(connectorId)?.transactionBeginMeterValue;
     this.stopMeterValues(connectorId);
     parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
@@ -879,7 +879,7 @@ export default class ChargingStation {
     stationInfo.firmwareVersionPattern =
       stationTemplate?.firmwareVersionPattern ?? Constants.SEMVER_PATTERN;
     if (
-      stationInfo.firmwareVersion &&
+      !Utils.isEmptyString(stationInfo.firmwareVersion) &&
       new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion) === false
     ) {
       logger.warn(
@@ -894,7 +894,7 @@ export default class ChargingStation {
       },
       stationTemplate?.firmwareUpgrade ?? {}
     );
-    stationInfo.resetTime = stationTemplate?.resetTime
+    stationInfo.resetTime = !Utils.isNullOrUndefined(stationTemplate?.resetTime)
       ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     const configuredMaxConnectors =
@@ -1031,13 +1031,13 @@ export default class ChargingStation {
     }
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
-      this.stationInfo.firmwareVersion &&
-      this.stationInfo.firmwareVersionPattern
+      !Utils.isEmptyString(this.stationInfo.firmwareVersion) &&
+      !Utils.isEmptyString(this.stationInfo.firmwareVersionPattern)
     ) {
       const versionStep = this.stationInfo.firmwareUpgrade?.versionUpgrade?.step ?? 1;
-      const patternGroup: number =
+      const patternGroup: number | undefined =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
-        this.stationInfo.firmwareVersion.split('.').length;
+        this.stationInfo.firmwareVersion?.split('.').length;
       const match = this.stationInfo?.firmwareVersion
         ?.match(new RegExp(this.stationInfo.firmwareVersionPattern))
         ?.slice(1, patternGroup + 1);
@@ -1096,7 +1096,7 @@ export default class ChargingStation {
       );
     }
     if (
-      this.stationInfo.amperageLimitationOcppKey &&
+      !Utils.isEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         this.stationInfo.amperageLimitationOcppKey
@@ -1761,7 +1761,7 @@ export default class ChargingStation {
 
   private getAmperageLimitation(): number | undefined {
     if (
-      this.stationInfo.amperageLimitationOcppKey &&
+      !Utils.isEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         this.stationInfo.amperageLimitationOcppKey

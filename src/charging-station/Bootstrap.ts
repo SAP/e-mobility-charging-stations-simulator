@@ -129,7 +129,7 @@ export class Bootstrap {
                   ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
                   : ''
               } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
-                this.workerImplementation?.maxElementsPerWorker
+                !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
                   ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                   : ''
               }`

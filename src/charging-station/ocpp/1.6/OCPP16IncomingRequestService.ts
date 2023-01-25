@@ -572,7 +572,10 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       return OCPPConstants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
     const connectorStatus = chargingStation.getConnectorStatus(commandPayload.connectorId);
-    if (commandPayload.connectorId && !Utils.isEmptyArray(connectorStatus?.chargingProfiles)) {
+    if (
+      !Utils.isNullOrUndefined(commandPayload.connectorId) &&
+      !Utils.isEmptyArray(connectorStatus?.chargingProfiles)
+    ) {
       connectorStatus.chargingProfiles = [];
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${
@@ -581,7 +584,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       );
       return OCPPConstants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED;
     }
-    if (!commandPayload.connectorId) {
+    if (Utils.isNullOrUndefined(commandPayload.connectorId)) {
       let clearedCP = false;
       for (const connectorId of chargingStation.connectors.keys()) {
         if (
@@ -716,11 +719,13 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           if (
             chargingStation.getLocalAuthListEnabled() === true &&
             chargingStation.hasAuthorizedTags() === true &&
-            chargingStation.authorizedTagsCache
-              .getAuthorizedTags(
-                ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
-              )
-              ?.find((idTag) => idTag === commandPayload.idTag)
+            !Utils.isEmptyString(
+              chargingStation.authorizedTagsCache
+                .getAuthorizedTags(
+                  ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
+                )
+                ?.find((idTag) => idTag === commandPayload.idTag)
+            )
           ) {
             connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
             connectorStatus.idTagLocalAuthorized = true;
@@ -1218,7 +1223,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           return OCPPConstants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         case OCPP16MessageTrigger.StatusNotification:
           setTimeout(() => {
-            if (commandPayload?.connectorId) {
+            if (!Utils.isNullOrUndefined(commandPayload?.connectorId)) {
               chargingStation.ocppRequestService
                 .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
                   chargingStation,

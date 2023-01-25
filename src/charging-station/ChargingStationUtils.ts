@@ -269,13 +269,13 @@ export class ChargingStationUtils {
         })
       : '';
     stationInfo.chargePointSerialNumber =
-      stationTemplate?.chargePointSerialNumberPrefix &&
+      !Utils.isEmptyString(stationTemplate?.chargePointSerialNumberPrefix) &&
       `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`;
     stationInfo.chargeBoxSerialNumber =
-      stationTemplate?.chargeBoxSerialNumberPrefix &&
+      !Utils.isEmptyString(stationTemplate?.chargeBoxSerialNumberPrefix) &&
       `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`;
     stationInfo.meterSerialNumber =
-      stationTemplate?.meterSerialNumberPrefix &&
+      !Utils.isEmptyString(stationTemplate?.meterSerialNumberPrefix) &&
       `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`;
   }
 

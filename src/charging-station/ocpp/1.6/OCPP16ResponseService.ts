@@ -376,7 +376,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     } else {
       if (authorizeConnectorIdDefined) {
         chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = false;
-        delete chargingStation.getConnectorStatus(authorizeConnectorId).authorizeIdTag;
+        delete chargingStation.getConnectorStatus(authorizeConnectorId)?.authorizeIdTag;
       }
       logger.debug(
         `${chargingStation.logPrefix()} IdTag '${requestPayload.idTag}' rejected with status '${
@@ -580,7 +580,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     );
-    if (!transactionConnectorId) {
+    if (Utils.isNullOrUndefined(transactionConnectorId)) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to stop a non existing transaction ${requestPayload.transactionId.toString()}`
       );
@@ -635,7 +635,7 @@ export default class OCPP16ResponseService extends OCPPResponseService {
     chargingStation.resetConnectorStatus(transactionConnectorId);
     const logMsg = `${chargingStation.logPrefix()} Transaction ${requestPayload.transactionId.toString()} STOPPED on ${
       chargingStation.stationInfo.chargingStationId
-    }#${transactionConnectorId.toString()} with status '${
+    }#${transactionConnectorId?.toString()} with status '${
       payload.idTagInfo?.status ?? 'undefined'
     }'`;
     if (
