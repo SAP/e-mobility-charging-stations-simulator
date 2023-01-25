@@ -20,7 +20,7 @@ export default class FileUtils {
     file: string,
     refreshedVariable?: T,
     listener: fs.WatchListener<string> = (event, filename) => {
-      if (filename && event === 'change') {
+      if (!Utils.isEmptyString(filename) && event === 'change') {
         try {
           logger.debug(`${logPrefix} ${fileType} file ${file} have changed, reload`);
           refreshedVariable && (refreshedVariable = JSON.parse(fs.readFileSync(file, 'utf8')) as T);
@@ -32,7 +32,7 @@ export default class FileUtils {
       }
     }
   ): fs.FSWatcher | undefined {
-    if (file) {
+    if (!Utils.isEmptyString(file)) {
       try {
         return fs.watch(file, listener);
       } catch (error) {
