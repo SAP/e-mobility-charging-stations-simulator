@@ -30,7 +30,7 @@ export default class Configuration {
     'config.json'
   );
 
-  private static configurationFileWatcher: fs.FSWatcher;
+  private static configurationFileWatcher: fs.FSWatcher | undefined;
   private static configuration: ConfigurationData | null = null;
   private static configurationChangeCallback: () => Promise<void>;
 
@@ -42,15 +42,15 @@ export default class Configuration {
     Configuration.configurationChangeCallback = cb;
   }
 
-  static getLogStatisticsInterval(): number {
+  static getLogStatisticsInterval(): number | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'statisticsDisplayInterval',
-      null,
+      undefined,
       "Use 'logStatisticsInterval' instead"
     );
     // Read conf
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logStatisticsInterval')
-      ? Configuration.getConfig().logStatisticsInterval
+      ? Configuration.getConfig()?.logStatisticsInterval
       : Constants.DEFAULT_LOG_STATISTICS_INTERVAL;
   }
 
@@ -69,7 +69,7 @@ export default class Configuration {
       },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
-      uiServerConfiguration = merge(uiServerConfiguration, Configuration.getConfig().uiServer);
+      uiServerConfiguration = merge(uiServerConfiguration, Configuration.getConfig()?.uiServer);
     }
     if (Configuration.isCFEnvironment() === true) {
       delete uiServerConfiguration.options.host;
@@ -88,44 +88,44 @@ export default class Configuration {
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration = {
         ...storageConfiguration,
-        ...Configuration.getConfig().performanceStorage,
+        ...Configuration.getConfig()?.performanceStorage,
       };
     }
     return storageConfiguration;
   }
 
-  static getAutoReconnectMaxRetries(): number {
+  static getAutoReconnectMaxRetries(): number | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'autoReconnectTimeout',
-      null,
+      undefined,
       "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'connectionTimeout',
-      null,
+      undefined,
       "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'autoReconnectMaxRetries',
-      null,
+      undefined,
       'Use it in charging station template instead'
     );
     // Read conf
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
-      return Configuration.getConfig().autoReconnectMaxRetries;
+      return Configuration.getConfig()?.autoReconnectMaxRetries;
     }
   }
 
-  static getStationTemplateUrls(): StationTemplateUrl[] {
+  static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'stationTemplateURLs',
-      null,
+      undefined,
       "Use 'stationTemplateUrls' instead"
     );
     !Configuration.isUndefined(Configuration.getConfig()['stationTemplateURLs']) &&
       (Configuration.getConfig().stationTemplateUrls = Configuration.getConfig()[
         'stationTemplateURLs'
-      ] as StationTemplateUrl[]);
+      ] as unknown as StationTemplateUrl[]);
     Configuration.getConfig().stationTemplateUrls.forEach((stationUrl: StationTemplateUrl) => {
       if (!Configuration.isUndefined(stationUrl['numberOfStation'])) {
         console.error(
@@ -136,177 +136,185 @@ export default class Configuration {
       }
     });
     // Read conf
-    return Configuration.getConfig().stationTemplateUrls;
+    return Configuration.getConfig()?.stationTemplateUrls;
   }
 
   static getWorker(): WorkerConfiguration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
-      null,
+      undefined,
       "Use 'worker' section to define the type of worker process model instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerProcess',
-      null,
+      undefined,
       "Use 'worker' section to define the type of worker process model instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerStartDelay',
-      null,
+      undefined,
       "Use 'worker' section to define the worker start delay instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'chargingStationsPerWorker',
-      null,
+      undefined,
       "Use 'worker' section to define the number of element(s) per worker instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'elementStartDelay',
-      null,
+      undefined,
       "Use 'worker' section to define the worker's element start delay instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMinSize',
-      null,
+      undefined,
       "Use 'worker' section to define the worker pool minimum size instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolSize;',
-      null,
+      undefined,
       "Use 'worker' section to define the worker pool maximum size instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMaxSize;',
-      null,
+      undefined,
       "Use 'worker' section to define the worker pool maximum size instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolStrategy;',
-      null,
+      undefined,
       "Use 'worker' section to define the worker pool strategy instead"
     );
     let workerConfiguration: WorkerConfiguration = {
       processType: Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess')
-        ? Configuration.getConfig().workerProcess
+        ? Configuration.getConfig()?.workerProcess
         : WorkerProcessType.WORKER_SET,
       startDelay: Configuration.objectHasOwnProperty(Configuration.getConfig(), 'workerStartDelay')
-        ? Configuration.getConfig().workerStartDelay
+        ? Configuration.getConfig()?.workerStartDelay
         : WorkerConstants.DEFAULT_WORKER_START_DELAY,
       elementsPerWorker: Configuration.objectHasOwnProperty(
         Configuration.getConfig(),
         'chargingStationsPerWorker'
       )
-        ? Configuration.getConfig().chargingStationsPerWorker
+        ? Configuration.getConfig()?.chargingStationsPerWorker
         : WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
       elementStartDelay: Configuration.objectHasOwnProperty(
         Configuration.getConfig(),
         'elementStartDelay'
       )
-        ? Configuration.getConfig().elementStartDelay
+        ? Configuration.getConfig()?.elementStartDelay
         : WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
       poolMinSize: Configuration.objectHasOwnProperty(
         Configuration.getConfig(),
         'workerPoolMinSize'
       )
-        ? Configuration.getConfig().workerPoolMinSize
+        ? Configuration.getConfig()?.workerPoolMinSize
         : WorkerConstants.DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: Configuration.objectHasOwnProperty(
         Configuration.getConfig(),
         'workerPoolMaxSize'
       )
-        ? Configuration.getConfig().workerPoolMaxSize
+        ? Configuration.getConfig()?.workerPoolMaxSize
         : WorkerConstants.DEFAULT_POOL_MAX_SIZE,
       poolStrategy:
-        Configuration.getConfig().workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
+        Configuration.getConfig()?.workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'worker')) {
-      workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig().worker };
+      workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig()?.worker };
     }
     return workerConfiguration;
   }
 
-  static getLogConsole(): boolean {
-    Configuration.warnDeprecatedConfigurationKey('consoleLog', null, "Use 'logConsole' instead");
+  static getLogConsole(): boolean | undefined {
+    Configuration.warnDeprecatedConfigurationKey(
+      'consoleLog',
+      undefined,
+      "Use 'logConsole' instead"
+    );
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logConsole')
-      ? Configuration.getConfig().logConsole
+      ? Configuration.getConfig()?.logConsole
       : false;
   }
 
-  static getLogFormat(): string {
+  static getLogFormat(): string | undefined {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logFormat')
-      ? Configuration.getConfig().logFormat
+      ? Configuration.getConfig()?.logFormat
       : 'simple';
   }
 
-  static getLogRotate(): boolean {
+  static getLogRotate(): boolean | undefined {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logRotate')
-      ? Configuration.getConfig().logRotate
+      ? Configuration.getConfig()?.logRotate
       : true;
   }
 
-  static getLogMaxFiles(): number | string | undefined {
+  static getLogMaxFiles(): number | string | false | undefined {
     return (
       Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') &&
-      Configuration.getConfig().logMaxFiles
+      Configuration.getConfig()?.logMaxFiles
     );
   }
 
-  static getLogMaxSize(): number | string | undefined {
+  static getLogMaxSize(): number | string | false | undefined {
     return (
       Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') &&
-      Configuration.getConfig().logMaxSize
+      Configuration.getConfig()?.logMaxSize
     );
   }
 
-  static getLogLevel(): string {
+  static getLogLevel(): string | undefined {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logLevel')
-      ? Configuration.getConfig().logLevel.toLowerCase()
+      ? Configuration.getConfig()?.logLevel?.toLowerCase()
       : 'info';
   }
 
-  static getLogFile(): string {
+  static getLogFile(): string | undefined {
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logFile')
-      ? Configuration.getConfig().logFile
+      ? Configuration.getConfig()?.logFile
       : 'combined.log';
   }
 
-  static getLogErrorFile(): string {
-    Configuration.warnDeprecatedConfigurationKey('errorFile', null, "Use 'logErrorFile' instead");
+  static getLogErrorFile(): string | undefined {
+    Configuration.warnDeprecatedConfigurationKey(
+      'errorFile',
+      undefined,
+      "Use 'logErrorFile' instead"
+    );
     return Configuration.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile')
-      ? Configuration.getConfig().logErrorFile
+      ? Configuration.getConfig()?.logErrorFile
       : 'error.log';
   }
 
-  static getSupervisionUrls(): string | string[] {
+  static getSupervisionUrls(): string | string[] | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'supervisionURLs',
-      null,
+      undefined,
       "Use 'supervisionUrls' instead"
     );
     !Configuration.isUndefined(Configuration.getConfig()['supervisionURLs']) &&
-      (Configuration.getConfig().supervisionUrls = Configuration.getConfig()[
-        'supervisionURLs'
-      ] as string[]);
+      (Configuration.getConfig().supervisionUrls = Configuration.getConfig()['supervisionURLs'] as
+        | string
+        | string[]);
     // Read conf
-    return Configuration.getConfig().supervisionUrls;
+    return Configuration.getConfig()?.supervisionUrls;
   }
 
-  static getSupervisionUrlDistribution(): SupervisionUrlDistribution {
+  static getSupervisionUrlDistribution(): SupervisionUrlDistribution | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'distributeStationToTenantEqually',
-      null,
+      undefined,
       "Use 'supervisionUrlDistribution' instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'distributeStationsToTenantsEqually',
-      null,
+      undefined,
       "Use 'supervisionUrlDistribution' instead"
     );
     return Configuration.objectHasOwnProperty(
       Configuration.getConfig(),
       'supervisionUrlDistribution'
     )
-      ? Configuration.getConfig().supervisionUrlDistribution
+      ? Configuration.getConfig()?.supervisionUrlDistribution
       : SupervisionUrlDistribution.ROUND_ROBIN;
   }
 
@@ -341,7 +349,7 @@ export default class Configuration {
   }
 
   // Read the config file
-  private static getConfig(): ConfigurationData {
+  private static getConfig(): ConfigurationData | null {
     if (!Configuration.configuration) {
       try {
         Configuration.configuration = JSON.parse(
@@ -362,7 +370,7 @@ export default class Configuration {
     return Configuration.configuration;
   }
 
-  private static getConfigurationFileWatcher(): fs.FSWatcher {
+  private static getConfigurationFileWatcher(): fs.FSWatcher | undefined {
     try {
       return fs.watch(Configuration.configurationFile, (event, filename): void => {
         if (filename && event === 'change') {
@@ -411,7 +419,7 @@ export default class Configuration {
   }
 
   private static isUndefined(obj: unknown): boolean {
-    return typeof obj === 'undefined';
+    return obj === undefined;
   }
 
   private static handleFileException(

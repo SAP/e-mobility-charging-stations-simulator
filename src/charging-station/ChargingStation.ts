@@ -109,7 +109,7 @@ export default class ChargingStation {
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
   public bootNotificationRequest!: BootNotificationRequest;
-  public bootNotificationResponse!: BootNotificationResponse | null;
+  public bootNotificationResponse!: BootNotificationResponse | undefined;
   public powerDivider!: number;
   private stopping: boolean;
   private configurationFile!: string;
@@ -202,7 +202,7 @@ export default class ChargingStation {
     return this?.wsConnection?.readyState === WebSocket.OPEN;
   }
 
-  public getRegistrationStatus(): RegistrationStatusEnumType {
+  public getRegistrationStatus(): RegistrationStatusEnumType | undefined {
     return this?.bootNotificationResponse?.status;
   }
 
@@ -230,11 +230,11 @@ export default class ChargingStation {
   }
 
   public isChargingStationAvailable(): boolean {
-    return this.getConnectorStatus(0).availability === AvailabilityType.OPERATIVE;
+    return this.getConnectorStatus(0)?.availability === AvailabilityType.OPERATIVE;
   }
 
   public isConnectorAvailable(id: number): boolean {
-    return id > 0 && this.getConnectorStatus(id).availability === AvailabilityType.OPERATIVE;
+    return id > 0 && this.getConnectorStatus(id)?.availability === AvailabilityType.OPERATIVE;
   }
 
   public getNumberOfConnectors(): number {
@@ -300,7 +300,10 @@ export default class ChargingStation {
 
   public getTransactionIdTag(transactionId: number): string | undefined {
     for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId).transactionId === transactionId) {
+      if (
+        connectorId > 0 &&
+        this.getConnectorStatus(connectorId)?.transactionId === transactionId
+      ) {
         return this.getConnectorStatus(connectorId).transactionIdTag;
       }
     }
@@ -541,7 +544,7 @@ export default class ChargingStation {
           }
         );
         this.started = true;
-        parentPort.postMessage(MessageChannelUtils.buildStartedMessage(this));
+        parentPort?.postMessage(MessageChannelUtils.buildStartedMessage(this));
         this.starting = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already starting...`);
@@ -563,9 +566,9 @@ export default class ChargingStation {
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
         this.templateFileWatcher.close();
         this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
-        this.bootNotificationResponse = null;
+        this.bootNotificationResponse = undefined;
         this.started = false;
-        parentPort.postMessage(MessageChannelUtils.buildStoppedMessage(this));
+        parentPort?.postMessage(MessageChannelUtils.buildStoppedMessage(this));
         this.stopping = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already stopping...`);
@@ -600,7 +603,7 @@ export default class ChargingStation {
     this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
     delete this.getConnectorStatus(connectorId).transactionBeginMeterValue;
     this.stopMeterValues(connectorId);
-    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   public hasFeatureProfile(featureProfile: SupportedFeatureProfiles): boolean {
@@ -714,7 +717,7 @@ export default class ChargingStation {
     } else {
       this.automaticTransactionGenerator.start();
     }
-    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
@@ -725,7 +728,7 @@ export default class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.stop();
     }
-    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   public async stopTransactionOnConnector(
@@ -1431,7 +1434,7 @@ export default class ChargingStation {
           if (this.isRegistered() === false) {
             this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
             await Utils.sleep(
-              this.bootNotificationResponse?.interval
+              this?.bootNotificationResponse?.interval
                 ? this.bootNotificationResponse.interval * 1000
                 : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL
             );
@@ -1453,7 +1456,7 @@ export default class ChargingStation {
       }
       this.wsConnectionRestarted = false;
       this.autoReconnectRetryCount = 0;
-      parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+      parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
     } else {
       logger.warn(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
@@ -1483,7 +1486,7 @@ export default class ChargingStation {
         this.started === true && (await this.reconnect());
         break;
     }
-    parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   private async onMessage(data: RawData): Promise<void> {
@@ -1593,7 +1596,7 @@ export default class ChargingStation {
             logger.error(`${this.logPrefix()} ${errMsg}`);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
         }
-        parentPort.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+        parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not an array', null, {
           request,

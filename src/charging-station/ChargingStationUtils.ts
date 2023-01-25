@@ -325,9 +325,9 @@ export class ChargingStationUtils {
     // Get charging profiles for connector and sort by stack level
     chargingProfiles = chargingStation
       .getConnectorStatus(connectorId)
-      .chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel);
+      ?.chargingProfiles?.sort((a, b) => b.stackLevel - a.stackLevel);
     // Get profiles on connector 0
-    if (chargingStation.getConnectorStatus(0).chargingProfiles) {
+    if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
       chargingProfiles.push(
         ...chargingStation
           .getConnectorStatus(0)
@@ -340,8 +340,8 @@ export class ChargingStationUtils {
         chargingStation.logPrefix()
       );
       if (!Utils.isNullOrUndefined(result)) {
-        limit = result.limit;
-        matchingChargingProfile = result.matchingChargingProfile;
+        limit = result?.limit;
+        matchingChargingProfile = result?.matchingChargingProfile;
         switch (chargingStation.getCurrentOutType()) {
           case CurrentType.AC:
             limit =

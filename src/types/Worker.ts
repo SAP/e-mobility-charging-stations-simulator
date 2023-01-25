@@ -13,8 +13,8 @@ export type MessageHandler<T> = (this: T, message: unknown) => void;
 export type WorkerOptions = {
   workerStartDelay?: number;
   elementStartDelay?: number;
-  poolMaxSize?: number;
-  poolMinSize?: number;
+  poolMaxSize: number;
+  poolMinSize: number;
   elementsPerWorker?: number;
   poolOptions?: PoolOptions<Worker>;
   messageHandler?: MessageHandler<Worker>;

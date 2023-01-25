@@ -12,7 +12,7 @@ import Utils from '../../utils/Utils';
 export abstract class Storage {
   protected readonly storageUri: URL;
   protected readonly logPrefix: string;
-  protected dbName: string;
+  protected dbName!: string;
 
   constructor(storageUri: string, logPrefix: string) {
     this.storageUri = new URL(storageUri);
@@ -38,7 +38,7 @@ export abstract class Storage {
     }
   }
 
-  protected getDBNameFromStorageType(type: StorageType): DBName {
+  protected getDBNameFromStorageType(type: StorageType): DBName | undefined {
     switch (type) {
       case StorageType.MARIA_DB:
         return DBName.MARIA_DB;

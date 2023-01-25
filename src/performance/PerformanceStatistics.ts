@@ -21,9 +21,9 @@ export default class PerformanceStatistics {
 
   private readonly objId: string;
   private readonly objName: string;
-  private performanceObserver: PerformanceObserver;
+  private performanceObserver!: PerformanceObserver;
   private readonly statistics: Statistics;
-  private displayInterval: NodeJS.Timeout;
+  private displayInterval!: NodeJS.Timeout;
 
   private constructor(objId: string, objName: string, uri: URL) {
     this.objId = objId;
@@ -280,7 +280,7 @@ export default class PerformanceStatistics {
       )
     );
     if (Configuration.getPerformanceStorage().enabled) {
-      parentPort.postMessage(
+      parentPort?.postMessage(
         MessageChannelUtils.buildPerformanceStatisticsMessage(this.statistics)
       );
     }

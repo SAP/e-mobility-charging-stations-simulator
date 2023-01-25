@@ -8,11 +8,11 @@ import Utils from '../utils/Utils';
 export default class AuthorizedTagsCache {
   private static instance: AuthorizedTagsCache | null = null;
   private readonly tagsCaches: Map<string, string[]>;
-  private readonly FSWatchers: Map<string, fs.FSWatcher>;
+  private readonly FSWatchers: Map<string, fs.FSWatcher | undefined>;
 
   private constructor() {
     this.tagsCaches = new Map<string, string[]>();
-    this.FSWatchers = new Map<string, fs.FSWatcher>();
+    this.FSWatchers = new Map<string, fs.FSWatcher | undefined>();
   }
 
   public static getInstance(): AuthorizedTagsCache {
@@ -22,7 +22,7 @@ export default class AuthorizedTagsCache {
     return AuthorizedTagsCache.instance;
   }
 
-  public getAuthorizedTags(file: string): string[] {
+  public getAuthorizedTags(file: string): string[] | undefined {
     if (this.hasTags(file) === false) {
       this.setTags(file, this.getAuthorizedTagsFromFile(file));
       // Monitor authorization file
@@ -73,7 +73,7 @@ export default class AuthorizedTagsCache {
     return this.tagsCaches.set(file, tags);
   }
 
-  private getTags(file: string): string[] {
+  private getTags(file: string): string[] | undefined {
     return this.tagsCaches.get(file);
   }
 
@@ -82,7 +82,7 @@ export default class AuthorizedTagsCache {
   }
 
   private deleteFSWatcher(file: string): boolean {
-    this.FSWatchers.get(file).close();
+    this.FSWatchers.get(file)?.close();
     return this.FSWatchers.delete(file);
   }
 

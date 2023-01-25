@@ -83,7 +83,7 @@ export class Bootstrap {
         this.logUncaughtException();
         this.initialize();
         await this.storage?.open();
-        await this.workerImplementation.start();
+        await this.workerImplementation?.start();
         this.uiServer?.start();
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
@@ -122,15 +122,15 @@ export class Bootstrap {
                 this.version
               } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
                 ChargingStationUtils.workerDynamicPoolInUse()
-                  ? `${Configuration.getWorker().poolMinSize.toString()}/`
+                  ? `${Configuration.getWorker().poolMinSize?.toString()}/`
                   : ''
-              }${this.workerImplementation.size}${
+              }${this.workerImplementation?.size}${
                 ChargingStationUtils.workerPoolInUse()
-                  ? `/${Configuration.getWorker().poolMaxSize.toString()}`
+                  ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
                   : ''
               } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
-                this.workerImplementation.maxElementsPerWorker
-                  ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
+                this.workerImplementation?.maxElementsPerWorker
+                  ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                   : ''
               }`
             )
@@ -147,7 +147,7 @@ export class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started === true) {
-      await this.workerImplementation.stop();
+      await this.workerImplementation?.stop();
       this.workerImplementation = null;
       this.uiServer?.stop();
       await this.storage?.close();

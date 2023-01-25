@@ -90,7 +90,7 @@ export default class SharedLRUCache {
     return this.lruCache.has(key);
   }
 
-  private get(key: string): CacheableType {
+  private get(key: string): CacheableType | undefined {
     return this.lruCache.get(key);
   }
 

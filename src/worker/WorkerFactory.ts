@@ -30,7 +30,7 @@ export default class WorkerFactory {
     workerOptions.poolOptions = workerOptions?.poolOptions ?? ({} as PoolOptions<Worker>);
     workerOptions?.messageHandler &&
       (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
-    let workerImplementation: WorkerAbstract<T> = null;
+    let workerImplementation: WorkerAbstract<T> | null = null;
     switch (workerProcessType) {
       case WorkerProcessType.WORKER_SET:
         workerOptions.elementsPerWorker =

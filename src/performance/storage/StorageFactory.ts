@@ -12,7 +12,7 @@ export class StorageFactory {
   }
 
   public static getStorage(type: StorageType, connectionUri: string, logPrefix: string): Storage {
-    let storageInstance: Storage = null;
+    let storageInstance: Storage | null = null;
     switch (type) {
       case StorageType.JSON_FILE:
         storageInstance = new JsonFileStorage(connectionUri, logPrefix);

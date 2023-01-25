@@ -31,7 +31,7 @@ export default class FileUtils {
         }
       }
     }
-  ): fs.FSWatcher {
+  ): fs.FSWatcher | undefined {
     if (file) {
       try {
         return fs.watch(file, listener);

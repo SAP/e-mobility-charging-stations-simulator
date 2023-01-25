@@ -55,7 +55,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   public static getInstance(
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
     chargingStation: ChargingStation
-  ): AutomaticTransactionGenerator {
+  ): AutomaticTransactionGenerator | undefined {
     if (AutomaticTransactionGenerator.instances.has(chargingStation.stationInfo.hashId) === false) {
       AutomaticTransactionGenerator.instances.set(
         chargingStation.stationInfo.hashId,
@@ -158,7 +158,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
           this.connectorsStatus.get(connectorId).startDate.getTime()
       )}`
     );
-    while (this.connectorsStatus.get(connectorId).start === true) {
+    while (this.connectorsStatus.get(connectorId)?.start === true) {
       if (new Date() > this.connectorsStatus.get(connectorId).stopDate) {
         this.stopConnector(connectorId);
         break;
@@ -231,7 +231,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
           logger.info(
             `${this.logPrefix(connectorId)} stop transaction ${this.chargingStation
               .getConnectorStatus(connectorId)
-              .transactionId.toString()}`
+              ?.transactionId?.toString()}`
           );
           await this.stopTransaction(connectorId);
         }
@@ -241,9 +241,9 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
         logger.info(
           `${this.logPrefix(connectorId)} skipped consecutively ${this.connectorsStatus
             .get(connectorId)
-            .skippedConsecutiveTransactions.toString()}/${this.connectorsStatus
+            ?.skippedConsecutiveTransactions?.toString()}/${this.connectorsStatus
             .get(connectorId)
-            .skippedTransactions.toString()} transaction(s)`
+            ?.skippedTransactions?.toString()} transaction(s)`
         );
       }
       this.connectorsStatus.get(connectorId).lastRunDate = new Date();
@@ -384,7 +384,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
         this.connectorsStatus.get(connectorId).rejectedStopTransactionRequests++;
       }
     } else {
-      const transactionId = this.chargingStation.getConnectorStatus(connectorId).transactionId;
+      const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId;
       logger.warn(
         `${this.logPrefix(connectorId)} stopping a not started transaction${
           transactionId ? ` ${transactionId.toString()}` : ''

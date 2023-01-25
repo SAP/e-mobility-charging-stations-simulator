@@ -26,7 +26,7 @@ export interface ChargingStationData extends WorkerData {
     | typeof WebSocket.OPEN
     | typeof WebSocket.CLOSING
     | typeof WebSocket.CLOSED;
-  bootNotificationResponse: BootNotificationResponse;
+  bootNotificationResponse?: BootNotificationResponse;
   connectors: ConnectorStatus[];
   automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration;
 }

@@ -15,7 +15,7 @@ if (Configuration.getLogRotate() === true) {
       filename: Utils.insertAt(
         Configuration.getLogErrorFile(),
         '-%DATE%',
-        Configuration.getLogErrorFile().indexOf('.log')
+        Configuration.getLogErrorFile()?.indexOf('.log')
       ),
       level: 'error',
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
@@ -25,7 +25,7 @@ if (Configuration.getLogRotate() === true) {
       filename: Utils.insertAt(
         Configuration.getLogFile(),
         '-%DATE%',
-        Configuration.getLogFile().indexOf('.log')
+        Configuration.getLogFile()?.indexOf('.log')
       ),
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
       ...(logMaxSize && { maxSize: logMaxSize }),

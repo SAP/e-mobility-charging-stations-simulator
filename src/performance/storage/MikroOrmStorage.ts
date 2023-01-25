@@ -12,7 +12,7 @@ import Constants from '../../utils/Constants';
 
 export class MikroOrmStorage extends Storage {
   private storageType: StorageType;
-  private orm: MikroORM | null;
+  private orm!: MikroORM | null;
 
   constructor(storageUri: string, logPrefix: string, storageType: StorageType) {
     super(storageUri, logPrefix);
@@ -23,7 +23,7 @@ export class MikroOrmStorage extends Storage {
   public async storePerformanceStatistics(performanceStatistics: Statistics): Promise<void> {
     try {
       const performanceRecord = new PerformanceRecord();
-      await this.orm.em.persistAndFlush(performanceRecord);
+      await this.orm?.em.persistAndFlush(performanceRecord);
     } catch (error) {
       this.handleDBError(this.storageType, error as Error, Constants.PERFORMANCE_RECORDS_TABLE);
     }
@@ -71,7 +71,7 @@ export class MikroOrmStorage extends Storage {
     };
   }
 
-  private getClientUrl(): string {
+  private getClientUrl(): string | undefined {
     switch (this.storageType) {
       case StorageType.SQLITE:
       case StorageType.MARIA_DB:
