@@ -1677,9 +1677,7 @@ export default class ChargingStation {
 
   private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean {
     const localStationInfo = stationInfo ?? this.stationInfo;
-    return !Utils.isUndefined(localStationInfo.useConnectorId0)
-      ? localStationInfo.useConnectorId0
-      : true;
+    return localStationInfo?.useConnectorId0 ?? true;
   }
 
   private getNumberOfRunningTransactions(): number {
@@ -1996,9 +1994,7 @@ export default class ChargingStation {
   }
 
   private getReconnectExponentialDelay(): boolean {
-    return !Utils.isUndefined(this.stationInfo.reconnectExponentialDelay)
-      ? this.stationInfo.reconnectExponentialDelay
-      : false;
+    return this.stationInfo?.reconnectExponentialDelay ?? false;
   }
 
   private async reconnect(): Promise<void> {
