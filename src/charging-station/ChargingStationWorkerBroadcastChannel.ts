@@ -92,12 +92,12 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       [
         BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) =>
-          this.chargingStation.startAutomaticTransactionGenerator(requestPayload.connectorIds),
+          this.chargingStation.startAutomaticTransactionGenerator(requestPayload?.connectorIds),
       ],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) =>
-          this.chargingStation.stopAutomaticTransactionGenerator(requestPayload.connectorIds),
+          this.chargingStation.stopAutomaticTransactionGenerator(requestPayload?.connectorIds),
       ],
       [
         BroadcastChannelProcedureName.START_TRANSACTION,
@@ -278,7 +278,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
       if (
         commandResponse === undefined ||
         commandResponse === null ||
-        Utils.isEmptyObject(commandResponse as CommandResponse)
+        Utils.isEmptyObject(commandResponse)
       ) {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
@@ -288,7 +288,7 @@ export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadca
         responsePayload = this.commandResponseToResponsePayload(
           command,
           requestPayload,
-          commandResponse as CommandResponse
+          commandResponse
         );
       }
     } catch (error) {

@@ -7,7 +7,7 @@ export default abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;
   protected readonly workerOptions: WorkerOptions;
   public abstract readonly size: number;
-  public abstract readonly maxElementsPerWorker: number | null;
+  public abstract readonly maxElementsPerWorker: number | undefined;
 
   /**
    * `WorkerAbstract` constructor.

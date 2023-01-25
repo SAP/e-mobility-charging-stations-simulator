@@ -222,7 +222,7 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
           logger.info(
             `${this.logPrefix(connectorId)} transaction ${this.chargingStation
               .getConnectorStatus(connectorId)
-              .transactionId.toString()} started and will stop in ${Utils.formatDurationMilliSeconds(
+              ?.transactionId?.toString()} started and will stop in ${Utils.formatDurationMilliSeconds(
               waitTrxEnd
             )}`
           );
@@ -266,8 +266,8 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
   private setStartConnectorStatus(connectorId: number): void {
     this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
     const previousRunDuration =
-      this?.connectorsStatus.get(connectorId)?.startDate &&
-      this?.connectorsStatus.get(connectorId)?.lastRunDate
+      this.connectorsStatus.get(connectorId)?.startDate &&
+      this.connectorsStatus.get(connectorId)?.lastRunDate
         ? this.connectorsStatus.get(connectorId).lastRunDate.getTime() -
           this.connectorsStatus.get(connectorId).startDate.getTime()
         : 0;

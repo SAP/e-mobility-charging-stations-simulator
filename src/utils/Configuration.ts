@@ -72,7 +72,7 @@ export default class Configuration {
       uiServerConfiguration = merge(uiServerConfiguration, Configuration.getConfig()?.uiServer);
     }
     if (Configuration.isCFEnvironment() === true) {
-      delete uiServerConfiguration.options.host;
+      delete uiServerConfiguration.options?.host;
       uiServerConfiguration.options.port = parseInt(process.env.PORT);
     }
     return uiServerConfiguration;
@@ -377,7 +377,7 @@ export default class Configuration {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
           if (!Configuration.isUndefined(Configuration.configurationChangeCallback)) {
-            Configuration.configurationChangeCallback().catch(error => {
+            Configuration.configurationChangeCallback().catch((error) => {
               throw typeof error === 'string' ? new Error(error) : error;
             });
           }

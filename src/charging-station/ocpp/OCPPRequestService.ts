@@ -68,7 +68,7 @@ export default abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType,
     commandName: IncomingRequestCommand
-  ): Promise<ResponseType> {
+  ): Promise<ResponseType | undefined> {
     try {
       // Send response message
       return await this.internalSendMessage(
@@ -211,7 +211,7 @@ export default abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName?: RequestCommand | IncomingRequestCommand,
+    commandName: RequestCommand | IncomingRequestCommand,
     params: RequestParams = {
       skipBufferingOnError: false,
       triggerMessage: false,
@@ -249,7 +249,7 @@ export default abstract class OCPPRequestService {
           if (wsOpened) {
             const beginId = PerformanceStatistics.beginMeasure(commandName);
             try {
-              chargingStation.wsConnection.send(messageToSend);
+              chargingStation.wsConnection?.send(messageToSend);
               logger.debug(
                 `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
                   messageType
@@ -322,7 +322,7 @@ export default abstract class OCPPRequestService {
               .then(() => {
                 resolve(payload);
               })
-              .catch(error => {
+              .catch((error) => {
                 reject(error);
               })
               .finally(() => {
@@ -378,9 +378,9 @@ export default abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
-    commandName?: RequestCommand | IncomingRequestCommand,
-    responseCallback?: ResponseCallback,
-    errorCallback?: ErrorCallback
+    commandName: RequestCommand | IncomingRequestCommand,
+    responseCallback: ResponseCallback,
+    errorCallback: ErrorCallback
   ): string {
     let messageToSend: string;
     // Type of message

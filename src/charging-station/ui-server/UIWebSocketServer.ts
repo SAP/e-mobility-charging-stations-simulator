@@ -39,7 +39,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
       }
       const [, version] = UIServerUtils.getProtocolAndVersion(ws.protocol);
       this.registerProtocolVersionUIService(version);
-      ws.on('message', rawData => {
+      ws.on('message', (rawData) => {
         const request = this.validateRawDataRequest(rawData);
         if (request === false) {
           ws.close(WebSocketCloseEventStatusCode.CLOSE_INVALID_PAYLOAD);
@@ -54,7 +54,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
             /* Error caught by AbstractUIService */
           });
       });
-      ws.on('error', error => {
+      ws.on('error', (error) => {
         logger.error(`${this.logPrefix(moduleName, 'start.ws.onerror')} WebSocket error:`, error);
       });
       ws.on('close', (code, reason) => {
@@ -78,7 +78,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
     this.httpServer.on(
       'upgrade',
       (req: IncomingMessage, socket: internal.Duplex, head: Buffer): void => {
-        this.authenticate(req, err => {
+        this.authenticate(req, (err) => {
           if (err) {
             socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`);
             socket.destroy();

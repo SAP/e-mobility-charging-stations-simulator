@@ -41,7 +41,7 @@ export class Bootstrap {
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null;
   private readonly uiServer!: AbstractUIServer;
   private readonly storage!: Storage;
-  private numberOfChargingStationTemplates!: number;
+  private numberOfChargingStationTemplates!: number | undefined;
   private numberOfChargingStations!: number;
   private numberOfStartedChargingStations!: number;
   private readonly version: string = version;
@@ -86,7 +86,7 @@ export class Bootstrap {
         await this.workerImplementation?.start();
         this.uiServer?.start();
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
-        this.numberOfChargingStationTemplates = stationTemplateUrls.length;
+        this.numberOfChargingStationTemplates = stationTemplateUrls?.length;
         // Start ChargingStation object in worker thread
         if (!Utils.isEmptyArray(stationTemplateUrls)) {
           for (const stationTemplateUrl of stationTemplateUrls) {
@@ -285,7 +285,7 @@ export class Bootstrap {
         stationTemplateUrl.file
       ),
     };
-    await this.workerImplementation.addElement(workerData);
+    await this.workerImplementation?.addElement(workerData);
     ++this.numberOfChargingStations;
   }
 

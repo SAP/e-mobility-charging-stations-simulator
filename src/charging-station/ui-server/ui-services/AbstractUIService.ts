@@ -156,7 +156,7 @@ export default abstract class AbstractUIService {
   ): void {
     if (!Utils.isEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
-        .map(hashId => {
+        .map((hashId) => {
           if (this.uiServer.chargingStations.has(hashId) === true) {
             return hashId;
           }
@@ -167,7 +167,7 @@ export default abstract class AbstractUIService {
             )} Charging station with hashId '${hashId}' not found`
           );
         })
-        .filter(hashId => hashId !== undefined);
+        .filter((hashId) => hashId !== undefined);
     }
     const expectedNumberOfResponses = !Utils.isEmptyArray(payload.hashIds)
       ? payload.hashIds.length

@@ -138,7 +138,7 @@ export default class PerformanceStatistics {
   }
 
   private initializePerformanceObserver(): void {
-    this.performanceObserver = new PerformanceObserver(performanceObserverList => {
+    this.performanceObserver = new PerformanceObserver((performanceObserverList) => {
       const lastPerformanceEntry = performanceObserverList.getEntries()[0];
       // logger.debug(
       //   `${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`,
@@ -168,7 +168,7 @@ export default class PerformanceStatistics {
       );
     } else {
       logger.info(
-        `${this.logPrefix()} log interval is set to ${Configuration.getLogStatisticsInterval().toString()}. Not logging statistics`
+        `${this.logPrefix()} log interval is set to ${Configuration.getLogStatisticsInterval()?.toString()}. Not logging statistics`
       );
     }
   }
@@ -253,10 +253,10 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData.get(entryName).avgTimeMeasurement =
       this.statistics.statisticsData.get(entryName).totalTimeMeasurement /
       this.statistics.statisticsData.get(entryName).countTimeMeasurement;
-    Array.isArray(this.statistics.statisticsData.get(entryName).timeMeasurementSeries) === true
+    Array.isArray(this.statistics.statisticsData.get(entryName)?.timeMeasurementSeries) === true
       ? this.statistics.statisticsData
           .get(entryName)
-          .timeMeasurementSeries.push({ timestamp: entry.startTime, value: entry.duration })
+          ?.timeMeasurementSeries?.push({ timestamp: entry.startTime, value: entry.duration })
       : (this.statistics.statisticsData.get(entryName).timeMeasurementSeries =
           new CircularArray<TimeSeries>(DEFAULT_CIRCULAR_ARRAY_SIZE, {
             timestamp: entry.startTime,
@@ -287,7 +287,7 @@ export default class PerformanceStatistics {
   }
 
   private extractTimeSeriesValues(timeSeries: CircularArray<TimeSeries>): number[] {
-    return timeSeries.map(timeSeriesItem => timeSeriesItem.value);
+    return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
   }
 
   private logPrefix(): string {

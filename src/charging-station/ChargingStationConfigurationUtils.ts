@@ -17,7 +17,7 @@ export class ChargingStationConfigurationUtils {
     key: string | StandardParametersKey,
     caseInsensitive = false
   ): ConfigurationKey | undefined {
-    return chargingStation.ocppConfiguration.configurationKey?.find(configElement => {
+    return chargingStation.ocppConfiguration?.configurationKey?.find((configElement) => {
       if (caseInsensitive) {
         return configElement.key.toLowerCase() === key.toLowerCase();
       }
@@ -48,7 +48,7 @@ export class ChargingStationConfigurationUtils {
       keyFound = undefined;
     }
     if (!keyFound) {
-      chargingStation.ocppConfiguration.configurationKey?.push({
+      chargingStation.ocppConfiguration?.configurationKey?.push({
         key,
         readonly: options.readonly,
         value,
@@ -99,7 +99,7 @@ export class ChargingStationConfigurationUtils {
       params?.caseInsensitive
     );
     if (keyFound) {
-      const deletedConfigurationKey = chargingStation.ocppConfiguration.configurationKey.splice(
+      const deletedConfigurationKey = chargingStation.ocppConfiguration?.configurationKey?.splice(
         chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound),
         1
       );

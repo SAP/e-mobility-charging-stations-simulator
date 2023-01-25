@@ -24,7 +24,7 @@ export class MongoDBStorage extends Storage {
     try {
       this.checkDBConnection();
       await this.client
-        .db(this.dbName)
+        ?.db(this.dbName)
         .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
         .insertOne(performanceStatistics);
     } catch (error) {

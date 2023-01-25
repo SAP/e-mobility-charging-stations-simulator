@@ -182,7 +182,7 @@ export class OCPPServiceUtils {
       ChargingStationConfigurationUtils.getConfigurationKey(
         chargingStation,
         StandardParametersKey.MeterValuesSampledData
-      )?.value.includes(measurand) === false
+      )?.value?.includes(measurand) === false
     ) {
       logger.debug(
         `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
@@ -192,7 +192,7 @@ export class OCPPServiceUtils {
       return;
     }
     const sampledValueTemplates: SampledValueTemplate[] =
-      chargingStation.getConnectorStatus(connectorId).MeterValues;
+      chargingStation.getConnectorStatus(connectorId)?.MeterValues;
     for (
       let index = 0;
       Utils.isEmptyArray(sampledValueTemplates) === false && index < sampledValueTemplates.length;
@@ -214,7 +214,7 @@ export class OCPPServiceUtils {
         ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
           StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand) === true
+        )?.value?.includes(measurand) === true
       ) {
         return sampledValueTemplates[index];
       } else if (
@@ -224,7 +224,7 @@ export class OCPPServiceUtils {
         ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
           StandardParametersKey.MeterValuesSampledData
-        )?.value.includes(measurand) === true
+        )?.value?.includes(measurand) === true
       ) {
         return sampledValueTemplates[index];
       } else if (

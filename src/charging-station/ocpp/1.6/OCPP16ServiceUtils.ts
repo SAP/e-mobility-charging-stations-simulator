@@ -84,7 +84,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
+          }: connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
             meterValue.sampledValue[sampledValuesIndex].value
           }/100`
         );
@@ -145,7 +145,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           OCPP16ServiceUtils.buildSampledValue(
             voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
             voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
-            null,
+            undefined,
             phaseLineToNeutralValue as OCPP16MeterValuePhase
           )
         );
@@ -184,7 +184,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             OCPP16ServiceUtils.buildSampledValue(
               voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
               voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
-              null,
+              undefined,
               phaseLineToLineValue as OCPP16MeterValuePhase
             )
           );
@@ -355,7 +355,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
+          }: connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
             meterValue.sampledValue[sampledValuesIndex].value
           }/${connectorMaximumPowerRounded}`
         );
@@ -371,7 +371,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             (powerPerPhaseSampledValueTemplates[`L${phase}`] as SampledValueTemplate) ??
               powerSampledValueTemplate,
             powerMeasurandValues[`L${phase}`] as number,
-            null,
+            undefined,
             phaseValue as OCPP16MeterValuePhase
           )
         );
@@ -391,7 +391,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
+            }, connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
             }/${connectorMaximumPowerPerPhaseRounded}`
           );
@@ -567,7 +567,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
+          }: connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
             meterValue.sampledValue[sampledValuesIndex].value
           }/${connectorMaximumAmperage}`
         );
@@ -583,7 +583,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             (currentPerPhaseSampledValueTemplates[phaseValue] as SampledValueTemplate) ??
               currentSampledValueTemplate,
             currentMeasurandValues[phaseValue] as number,
-            null,
+            undefined,
             phaseValue as OCPP16MeterValuePhase
           )
         );
@@ -599,7 +599,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connectorId ${connectorId}, transaction ${connector.transactionId}, value: ${
+            }, connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
             }/${connectorMaximumAmperage}`
           );
@@ -669,7 +669,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
           }: connectorId ${connectorId}, transaction ${
-            connector.transactionId
+            connector?.transactionId
           }, value: ${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${Utils.roundTo(
             interval / (3600 * 1000),
             4
@@ -745,23 +745,27 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     connectorId: number,
     cp: OCPP16ChargingProfile
   ): void {
-    if (Utils.isNullOrUndefined(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
+    if (
+      Utils.isNullOrUndefined(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)
+    ) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
       );
       chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
     }
-    if (Array.isArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles) === false) {
+    if (
+      Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles) === false
+    ) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
       );
       chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
     }
     let cpReplaced = false;
-    if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
+    if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       chargingStation
         .getConnectorStatus(connectorId)
-        .chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
+        ?.chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
           if (
             chargingProfile.chargingProfileId === cp.chargingProfileId ||
             (chargingProfile.stackLevel === cp.stackLevel &&
@@ -772,7 +776,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           }
         });
     }
-    !cpReplaced && chargingStation.getConnectorStatus(connectorId).chargingProfiles?.push(cp);
+    !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp);
   }
 
   private static buildSampledValue(

@@ -572,7 +572,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       return OCPPConstants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
     const connectorStatus = chargingStation.getConnectorStatus(commandPayload.connectorId);
-    if (commandPayload.connectorId && !Utils.isEmptyArray(connectorStatus.chargingProfiles)) {
+    if (commandPayload.connectorId && !Utils.isEmptyArray(connectorStatus?.chargingProfiles)) {
       connectorStatus.chargingProfiles = [];
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${
@@ -584,10 +584,12 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     if (!commandPayload.connectorId) {
       let clearedCP = false;
       for (const connectorId of chargingStation.connectors.keys()) {
-        if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId).chargingProfiles)) {
+        if (
+          !Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)
+        ) {
           chargingStation
             .getConnectorStatus(connectorId)
-            .chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
+            ?.chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
               let clearCurrentCP = false;
               if (chargingProfile.chargingProfileId === commandPayload.id) {
                 clearCurrentCP = true;
@@ -611,7 +613,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 clearCurrentCP = true;
               }
               if (clearCurrentCP) {
-                connectorStatus.chargingProfiles.splice(index, 1);
+                connectorStatus?.chargingProfiles?.splice(index, 1);
                 logger.debug(
                   `${chargingStation.logPrefix()} Matching charging profile(s) cleared: %j`,
                   chargingProfile
@@ -718,7 +720,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               .getAuthorizedTags(
                 ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
               )
-              .find(idTag => idTag === commandPayload.idTag)
+              ?.find((idTag) => idTag === commandPayload.idTag)
           ) {
             connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
             connectorStatus.idTagLocalAuthorized = true;
@@ -836,7 +838,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     idTag: string
   ): Promise<GenericResponse> {
     if (
-      chargingStation.getConnectorStatus(connectorId).status !== OCPP16ChargePointStatus.AVAILABLE
+      chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.AVAILABLE
     ) {
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16StatusNotificationRequest,
@@ -850,8 +852,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     logger.warn(
       `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector Id ${connectorId.toString()}, idTag '${idTag}', availability '${
-        chargingStation.getConnectorStatus(connectorId).availability
-      }', status '${chargingStation.getConnectorStatus(connectorId).status}'`
+        chargingStation.getConnectorStatus(connectorId)?.availability
+      }', status '${chargingStation.getConnectorStatus(connectorId)?.status}'`
     );
     return OCPPConstants.OCPP_RESPONSE_REJECTED;
   }
@@ -942,7 +944,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     const retrieveDate = Utils.convertToDate(commandPayload.retrieveDate);
     const now = Date.now();
-    if (retrieveDate.getTime() <= now) {
+    if (retrieveDate?.getTime() <= now) {
       this.asyncResource
         .runInAsyncScope(
           this.updateFirmware.bind(this) as (
@@ -960,7 +962,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         this.updateFirmware(chargingStation).catch(() => {
           /* Intentional */
         });
-      }, retrieveDate.getTime() - now);
+      }, retrieveDate?.getTime() - now);
     }
     return OCPPConstants.OCPP_RESPONSE_EMPTY;
   }
@@ -974,7 +976,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     for (const connectorId of chargingStation.connectors.keys()) {
       if (
         connectorId > 0 &&
-        chargingStation.getConnectorStatus(connectorId).transactionStarted === false
+        chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false
       ) {
         await chargingStation.ocppRequestService.requestHandler<
           OCPP16StatusNotificationRequest,
@@ -1051,8 +1053,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       try {
         const logFiles = fs
           .readdirSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'))
-          .filter(file => file.endsWith('.log'))
-          .map(file => path.join('./', file));
+          .filter((file) => file.endsWith('.log'))
+          .map((file) => path.join('./', file));
         const diagnosticsArchive = `${chargingStation.stationInfo.chargingStationId}_logs.tar.gz`;
         tar.create({ gzip: true }, logFiles).pipe(fs.createWriteStream(diagnosticsArchive));
         ftpClient = new Client();
@@ -1064,7 +1066,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         });
         let uploadResponse: FTPResponse;
         if (accessResponse.code === 220) {
-          ftpClient.trackProgress(info => {
+          ftpClient.trackProgress((info) => {
             logger.info(
               `${chargingStation.logPrefix()} ${
                 info.bytes / 1024
@@ -1077,7 +1079,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
               >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
                 status: OCPP16DiagnosticsStatus.Uploading,
               })
-              .catch(error => {
+              .catch((error) => {
                 logger.error(
                   `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Error while sending '${
                     OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION
@@ -1190,7 +1192,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                 chargingStation.bootNotificationRequest,
                 { skipBufferingOnError: true, triggerMessage: true }
               )
-              .then(response => {
+              .then((response) => {
                 chargingStation.bootNotificationResponse = response;
               })
               .catch(() => {
@@ -1224,7 +1226,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                   {
                     connectorId: commandPayload.connectorId,
                     errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                    status: chargingStation.getConnectorStatus(commandPayload.connectorId).status,
+                    status: chargingStation.getConnectorStatus(commandPayload.connectorId)?.status,
                   },
                   {
                     triggerMessage: true,
@@ -1245,7 +1247,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
                     {
                       connectorId,
                       errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                      status: chargingStation.getConnectorStatus(connectorId).status,
+                      status: chargingStation.getConnectorStatus(connectorId)?.status,
                     },
                     {
                       triggerMessage: true,
