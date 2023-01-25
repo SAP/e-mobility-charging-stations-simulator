@@ -51,7 +51,7 @@ export class JsonFileStorage extends Storage {
 
   public open(): void {
     try {
-      if (this?.fd === undefined && this?.fd === null) {
+      if (this?.fd === undefined || this?.fd === null) {
         this.fd = fs.openSync(this.dbName, 'a+');
       }
     } catch (error) {

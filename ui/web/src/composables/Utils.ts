@@ -9,7 +9,7 @@ export default class Utils {
     return value as T;
   }
 
-  public static isIterable(obj: any): boolean {
+  public static isIterable<T extends Iterable<T>>(obj: T): boolean {
     if (obj === null || obj === undefined) {
       return false;
     }
