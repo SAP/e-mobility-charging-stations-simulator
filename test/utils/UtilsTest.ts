@@ -161,15 +161,15 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyString('test')).toBe(false);
     expect(Utils.isEmptyString(' test')).toBe(false);
     expect(Utils.isEmptyString('test ')).toBe(false);
-    expect(Utils.isEmptyString(null)).toBe(true);
-    expect(Utils.isEmptyString(undefined)).toBe(true);
-    expect(Utils.isEmptyString(0)).toBe(true);
-    expect(Utils.isEmptyString({})).toBe(true);
-    expect(Utils.isEmptyString([])).toBe(true);
-    expect(Utils.isEmptyString(new Map())).toBe(true);
-    expect(Utils.isEmptyString(new Set())).toBe(true);
-    expect(Utils.isEmptyString(new WeakMap())).toBe(true);
-    expect(Utils.isEmptyString(new WeakSet())).toBe(true);
+    expect(Utils.isEmptyString(null)).toBe(false);
+    expect(Utils.isEmptyString(undefined)).toBe(false);
+    expect(Utils.isEmptyString(0)).toBe(false);
+    expect(Utils.isEmptyString({})).toBe(false);
+    expect(Utils.isEmptyString([])).toBe(false);
+    expect(Utils.isEmptyString(new Map())).toBe(false);
+    expect(Utils.isEmptyString(new Set())).toBe(false);
+    expect(Utils.isEmptyString(new WeakMap())).toBe(false);
+    expect(Utils.isEmptyString(new WeakSet())).toBe(false);
   });
 
   it('Verify isUndefined()', () => {

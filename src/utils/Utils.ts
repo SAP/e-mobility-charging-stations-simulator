@@ -193,7 +193,7 @@ export default class Utils {
   }
 
   public static isEmptyString(value: unknown): boolean {
-    return Utils.isString(value) ? (value as string).trim().length === 0 : true;
+    return Utils.isString(value) && (value as string).trim().length === 0;
   }
 
   public static isUndefined(value: unknown): boolean {
