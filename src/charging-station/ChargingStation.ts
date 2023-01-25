@@ -100,12 +100,12 @@ export default class ChargingStation {
   public started: boolean;
   public starting: boolean;
   public authorizedTagsCache: AuthorizedTagsCache;
-  public automaticTransactionGenerator!: AutomaticTransactionGenerator;
-  public ocppConfiguration!: ChargingStationOcppConfiguration | null;
+  public automaticTransactionGenerator!: AutomaticTransactionGenerator | undefined;
+  public ocppConfiguration!: ChargingStationOcppConfiguration | undefined;
   public wsConnection!: WebSocket | null;
   public readonly connectors: Map<number, ConnectorStatus>;
   public readonly requests: Map<string, CachedRequest>;
-  public performanceStatistics!: PerformanceStatistics;
+  public performanceStatistics!: PerformanceStatistics | undefined;
   public heartbeatSetInterval!: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
   public bootNotificationRequest!: BootNotificationRequest;
@@ -501,7 +501,7 @@ export default class ChargingStation {
       if (this.starting === false) {
         this.starting = true;
         if (this.getEnableStatistics() === true) {
-          this.performanceStatistics.start();
+          this.performanceStatistics?.start();
         }
         this.openWSConnection();
         // Monitor charging station template file
@@ -529,9 +529,9 @@ export default class ChargingStation {
                   this.startAutomaticTransactionGenerator();
                 }
                 if (this.getEnableStatistics() === true) {
-                  this.performanceStatistics.restart();
+                  this.performanceStatistics?.restart();
                 } else {
-                  this.performanceStatistics.stop();
+                  this.performanceStatistics?.stop();
                 }
                 // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
               } catch (error) {
@@ -561,7 +561,7 @@ export default class ChargingStation {
         await this.stopMessageSequence(reason);
         this.closeWSConnection();
         if (this.getEnableStatistics() === true) {
-          this.performanceStatistics.stop();
+          this.performanceStatistics?.stop();
         }
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
         this.templateFileWatcher?.close();
@@ -712,10 +712,10 @@ export default class ChargingStation {
     );
     if (!Utils.isEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
-        this.automaticTransactionGenerator.startConnector(connectorId);
+        this.automaticTransactionGenerator?.startConnector(connectorId);
       }
     } else {
-      this.automaticTransactionGenerator.start();
+      this.automaticTransactionGenerator?.start();
     }
     parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
@@ -863,14 +863,14 @@ export default class ChargingStation {
     stationInfo.ocppVersion = stationTemplate?.ocppVersion ?? OCPPVersion.VERSION_16;
     ChargingStationUtils.createSerialNumber(stationTemplate, stationInfo);
     if (!Utils.isEmptyArray(stationTemplate?.power)) {
-      stationTemplate.power = stationTemplate?.power as number[];
+      stationTemplate.power = stationTemplate.power as number[];
       const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationTemplate.power.length);
       stationInfo.maximumPower =
         stationTemplate?.powerUnit === PowerUnits.KILO_WATT
           ? stationTemplate.power[powerArrayRandomIndex] * 1000
           : stationTemplate.power[powerArrayRandomIndex];
     } else {
-      stationTemplate.power = stationTemplate.power as number;
+      stationTemplate.power = stationTemplate?.power as number;
       stationInfo.maximumPower =
         stationTemplate?.powerUnit === PowerUnits.KILO_WATT
           ? stationTemplate.power * 1000
@@ -930,17 +930,17 @@ export default class ChargingStation {
     return stationInfo;
   }
 
-  private getStationInfoFromFile(): ChargingStationInfo | null {
-    let stationInfo: ChargingStationInfo | null = null;
+  private getStationInfoFromFile(): ChargingStationInfo | undefined {
+    let stationInfo: ChargingStationInfo | undefined;
     this.getStationInfoPersistentConfiguration() &&
-      (stationInfo = this.getConfigurationFromFile()?.stationInfo ?? null);
+      (stationInfo = this.getConfigurationFromFile()?.stationInfo);
     stationInfo && ChargingStationUtils.createStationInfoHash(stationInfo);
     return stationInfo;
   }
 
   private getStationInfo(): ChargingStationInfo {
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
-    const stationInfoFromFile: ChargingStationInfo | null = this.getStationInfoFromFile();
+    const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile();
     // Priority: charging station info from template > charging station info from configuration file > charging station info attribute
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
       if (this.stationInfo?.infoHash === stationInfoFromFile?.infoHash) {
@@ -1315,8 +1315,8 @@ export default class ChargingStation {
     }
   }
 
-  private getConfigurationFromFile(): ChargingStationConfiguration | null {
-    let configuration: ChargingStationConfiguration | null = null;
+  private getConfigurationFromFile(): ChargingStationConfiguration | undefined {
+    let configuration: ChargingStationConfiguration | undefined;
     if (this.configurationFile && fs.existsSync(this.configurationFile)) {
       try {
         if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
@@ -1394,12 +1394,12 @@ export default class ChargingStation {
     }
   }
 
-  private getOcppConfigurationFromTemplate(): ChargingStationOcppConfiguration | null {
-    return this.getTemplateFromFile()?.Configuration ?? null;
+  private getOcppConfigurationFromTemplate(): ChargingStationOcppConfiguration | undefined {
+    return this.getTemplateFromFile()?.Configuration;
   }
 
-  private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | null {
-    let configuration: ChargingStationConfiguration | null = null;
+  private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | undefined {
+    let configuration: ChargingStationConfiguration | undefined;
     if (this.getOcppPersistentConfiguration() === true) {
       const configurationFromFile = this.getConfigurationFromFile();
       configuration = configurationFromFile?.configurationKey && configurationFromFile;
@@ -1408,8 +1408,8 @@ export default class ChargingStation {
     return configuration;
   }
 
-  private getOcppConfiguration(): ChargingStationOcppConfiguration | null {
-    let ocppConfiguration: ChargingStationOcppConfiguration | null =
+  private getOcppConfiguration(): ChargingStationOcppConfiguration | undefined {
+    let ocppConfiguration: ChargingStationOcppConfiguration | undefined =
       this.getOcppConfigurationFromFile();
     if (!ocppConfiguration) {
       ocppConfiguration = this.getOcppConfigurationFromTemplate();
@@ -1514,7 +1514,7 @@ export default class ChargingStation {
           case MessageType.CALL_MESSAGE:
             [, , commandName, commandPayload] = request as IncomingRequest;
             if (this.getEnableStatistics() === true) {
-              this.performanceStatistics.addRequestStatistic(commandName, messageType);
+              this.performanceStatistics?.addRequestStatistic(commandName, messageType);
             }
             logger.debug(
               `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
@@ -2047,8 +2047,10 @@ export default class ChargingStation {
     }
   }
 
-  private getAutomaticTransactionGeneratorConfigurationFromTemplate(): AutomaticTransactionGeneratorConfiguration | null {
-    return this.getTemplateFromFile()?.AutomaticTransactionGenerator ?? null;
+  private getAutomaticTransactionGeneratorConfigurationFromTemplate():
+    | AutomaticTransactionGeneratorConfiguration
+    | undefined {
+    return this.getTemplateFromFile()?.AutomaticTransactionGenerator;
   }
 
   private initializeConnectorStatus(connectorId: number): void {

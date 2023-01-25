@@ -47,7 +47,7 @@ export class CircularArray<T> extends Array<T> {
 
   public splice(start: number, deleteCount?: number, ...items: T[]): T[] {
     let itemsRemoved: T[];
-    if (arguments.length >= 3 && typeof deleteCount !== 'undefined') {
+    if (arguments.length >= 3 && deleteCount !== undefined) {
       itemsRemoved = super.splice(start, deleteCount);
       // FIXME: that makes the items insert not in place
       this.push(...items);

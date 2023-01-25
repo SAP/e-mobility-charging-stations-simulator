@@ -11,12 +11,10 @@ export default class UIServiceFactory {
   public static getUIServiceImplementation(
     version: ProtocolVersion,
     uiServer: AbstractUIServer
-  ): AbstractUIService | null {
+  ): AbstractUIService {
     switch (version) {
       case ProtocolVersion['0.0.1']:
         return new UIService001(uiServer);
-      default:
-        return null;
     }
   }
 }

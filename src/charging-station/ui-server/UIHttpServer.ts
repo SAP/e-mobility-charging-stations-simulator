@@ -110,7 +110,7 @@ export default class UIHttpServer extends AbstractUIServer {
             const body = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload;
             this.uiServices
               .get(version)
-              .requestHandler(this.buildProtocolRequest(uuid, procedureName, body ?? {}))
+              ?.requestHandler(this.buildProtocolRequest(uuid, procedureName, body ?? {}))
               .catch(() => {
                 /* Error caught by AbstractUIService */
               });

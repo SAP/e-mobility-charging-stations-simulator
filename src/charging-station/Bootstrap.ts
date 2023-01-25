@@ -39,7 +39,7 @@ enum exitCodes {
 export class Bootstrap {
   private static instance: Bootstrap | null = null;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null;
-  private readonly uiServer!: AbstractUIServer;
+  private readonly uiServer!: AbstractUIServer | null;
   private readonly storage!: Storage;
   private numberOfChargingStationTemplates!: number | undefined;
   private numberOfChargingStations!: number;

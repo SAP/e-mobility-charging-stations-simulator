@@ -92,7 +92,7 @@ export default abstract class AbstractUIService {
       // Log
       logger.error(`${this.logPrefix(moduleName, 'messageHandler')} Handle request error:`, error);
       responsePayload = {
-        hashIds: requestPayload.hashIds,
+        hashIds: requestPayload?.hashIds,
         status: ResponseStatus.FAILURE,
         command,
         requestPayload,

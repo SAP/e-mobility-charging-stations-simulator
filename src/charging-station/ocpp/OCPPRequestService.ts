@@ -232,7 +232,7 @@ export default abstract class OCPPRequestService {
       return Utils.promiseWithTimeout(
         new Promise((resolve, reject) => {
           if (chargingStation.getEnableStatistics() === true) {
-            chargingStation.performanceStatistics.addRequestStatistic(commandName, messageType);
+            chargingStation.performanceStatistics?.addRequestStatistic(commandName, messageType);
           }
           const messageToSend = this.buildMessageToSend(
             chargingStation,
@@ -306,7 +306,7 @@ export default abstract class OCPPRequestService {
            */
           function responseCallback(payload: JsonType, requestPayload: JsonType): void {
             if (chargingStation.getEnableStatistics() === true) {
-              chargingStation.performanceStatistics.addRequestStatistic(
+              chargingStation.performanceStatistics?.addRequestStatistic(
                 commandName,
                 MessageType.CALL_RESULT_MESSAGE
               );
@@ -338,7 +338,7 @@ export default abstract class OCPPRequestService {
            */
           function errorCallback(error: OCPPError, requestStatistic = true): void {
             if (requestStatistic === true && chargingStation.getEnableStatistics() === true) {
-              chargingStation.performanceStatistics.addRequestStatistic(
+              chargingStation.performanceStatistics?.addRequestStatistic(
                 commandName,
                 MessageType.CALL_ERROR_MESSAGE
               );

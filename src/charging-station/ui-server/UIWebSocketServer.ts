@@ -49,7 +49,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
         this.responseHandlers.set(requestId, ws);
         this.uiServices
           .get(version)
-          .requestHandler(request)
+          ?.requestHandler(request)
           .catch(() => {
             /* Error caught by AbstractUIService */
           });
