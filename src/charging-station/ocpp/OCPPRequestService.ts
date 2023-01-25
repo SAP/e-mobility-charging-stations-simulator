@@ -68,7 +68,7 @@ export default abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType,
     commandName: IncomingRequestCommand
-  ): Promise<ResponseType | undefined> {
+  ): Promise<ResponseType> {
     try {
       // Send response message
       return await this.internalSendMessage(
