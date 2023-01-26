@@ -151,6 +151,7 @@ describe('Utils test suite', () => {
     expect(Utils.isIterable('test')).toBe(true);
     expect(Utils.isIterable(null)).toBe(false);
     expect(Utils.isIterable(undefined)).toBe(false);
+    expect(Utils.isIterable(0)).toBe(false);
     expect(Utils.isIterable([0, 1])).toBe(true);
     expect(Utils.isIterable({ 1: 1 })).toBe(false);
     expect(Utils.isIterable(new Map())).toBe(true);
