@@ -1,8 +1,8 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'fs';
-import path from 'path';
-import { URL, fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
@@ -140,83 +140,85 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP16IncomingRequestCommand.RESET,
-        this.parseJsonSchemaFile<ResetRequest>('../../../assets/json-schemas/ocpp/1.6/Reset.json'),
+        OCPP16ServiceUtils.parseJsonSchemaFile<ResetRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/Reset.json'
+        ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        this.parseJsonSchemaFile<OCPP16ClearCacheRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearCacheRequest>(
           '../../../assets/json-schemas/ocpp/1.6/ClearCache.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-        this.parseJsonSchemaFile<UnlockConnectorRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<UnlockConnectorRequest>(
           '../../../assets/json-schemas/ocpp/1.6/UnlockConnector.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        this.parseJsonSchemaFile<GetConfigurationRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<GetConfigurationRequest>(
           '../../../assets/json-schemas/ocpp/1.6/GetConfiguration.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        this.parseJsonSchemaFile<ChangeConfigurationRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationRequest>(
           '../../../assets/json-schemas/ocpp/1.6/ChangeConfiguration.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        this.parseJsonSchemaFile<GetDiagnosticsRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsRequest>(
           '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        this.parseJsonSchemaFile<SetChargingProfileRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<SetChargingProfileRequest>(
           '../../../assets/json-schemas/ocpp/1.6/SetChargingProfile.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        this.parseJsonSchemaFile<ClearChargingProfileRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<ClearChargingProfileRequest>(
           '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfile.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        this.parseJsonSchemaFile<ChangeAvailabilityRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<ChangeAvailabilityRequest>(
           '../../../assets/json-schemas/ocpp/1.6/ChangeAvailability.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        this.parseJsonSchemaFile<RemoteStartTransactionRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<RemoteStartTransactionRequest>(
           '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        this.parseJsonSchemaFile<RemoteStopTransactionRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<RemoteStopTransactionRequest>(
           '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        this.parseJsonSchemaFile<OCPP16TriggerMessageRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16TriggerMessageRequest>(
           '../../../assets/json-schemas/ocpp/1.6/TriggerMessage.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        this.parseJsonSchemaFile<OCPP16DataTransferRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
           '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-        this.parseJsonSchemaFile<OCPP16UpdateFirmwareRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareRequest>(
           '../../../assets/json-schemas/ocpp/1.6/UpdateFirmware.json'
         ),
       ],
@@ -1299,14 +1301,5 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         { errorResponse: OCPPConstants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
       );
     }
-  }
-
-  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
-    return JSON.parse(
-      fs.readFileSync(
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
-        'utf8'
-      )
-    ) as JSONSchemaType<T>;
   }
 }

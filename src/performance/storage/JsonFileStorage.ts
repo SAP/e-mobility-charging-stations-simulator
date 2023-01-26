@@ -1,6 +1,6 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'fs';
+import fs from 'node:fs';
 
 import lockfile from 'proper-lockfile';
 

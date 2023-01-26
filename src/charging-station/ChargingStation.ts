@@ -1,9 +1,9 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'fs';
 import crypto from 'node:crypto';
-import path from 'path';
-import { URL } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { URL } from 'node:url';
 import { parentPort } from 'worker_threads';
 
 import merge from 'just-merge';

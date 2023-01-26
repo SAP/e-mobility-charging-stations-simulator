@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'node:fs';
 
 import { FileType } from '../types/FileType';
 import FileUtils from '../utils/FileUtils';

@@ -164,6 +164,10 @@ export class OCPPServiceUtils {
     }
   }
 
+  protected static logPrefix(ocppVersion: OCPPVersion): string {
+    return Utils.logPrefix(` OCPP ${ocppVersion} |`);
+  }
+
   protected static getSampledValueTemplate(
     chargingStation: ChargingStation,
     connectorId: number,

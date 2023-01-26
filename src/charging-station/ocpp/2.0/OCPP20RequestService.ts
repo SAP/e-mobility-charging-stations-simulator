@@ -1,9 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
@@ -37,19 +33,19 @@ export default class OCPP20RequestService extends OCPPRequestService {
     this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
+        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
           '../../../assets/json-schemas/ocpp/2.0/BootNotificationRequest.json'
         ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        this.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
+        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
           '../../../assets/json-schemas/ocpp/2.0/HeartbeatRequest.json'
         ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
+        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
           '../../../assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json'
         ),
       ],
@@ -107,14 +103,5 @@ export default class OCPP20RequestService extends OCPPRequestService {
           commandParams
         );
     }
-  }
-
-  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
-    return JSON.parse(
-      fs.readFileSync(
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
-        'utf8'
-      )
-    ) as JSONSchemaType<T>;
   }
 }

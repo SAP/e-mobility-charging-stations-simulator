@@ -1,6 +1,6 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { URL } from 'url';
+import { URL } from 'node:url';
 
 import type { EmptyObject } from '../../types/EmptyObject';
 import type { HandleErrorParams } from '../../types/Error';

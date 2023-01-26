@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { type Worker, isMainThread } from 'worker_threads';
 
 import chalk from 'chalk';

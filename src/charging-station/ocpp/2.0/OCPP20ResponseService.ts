@@ -1,9 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
@@ -50,19 +46,19 @@ export default class OCPP20ResponseService extends OCPPResponseService {
     this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
+        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
           '../../../assets/json-schemas/ocpp/2.0/BootNotificationResponse.json'
         ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        this.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
+        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
           '../../../assets/json-schemas/ocpp/2.0/HeartbeatResponse.json'
         ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
+        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
           '../../../assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json'
         ),
       ],
@@ -70,7 +66,7 @@ export default class OCPP20ResponseService extends OCPPResponseService {
     this.jsonIncomingRequestResponseSchemas = new Map([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
+        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
           '../../../assets/json-schemas/ocpp/2.0/ClearCacheResponse.json'
         ),
       ],
@@ -184,14 +180,5 @@ export default class OCPP20ResponseService extends OCPPResponseService {
         payload
       );
     }
-  }
-
-  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
-    return JSON.parse(
-      fs.readFileSync(
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
-        'utf8'
-      )
-    ) as JSONSchemaType<T>;
   }
 }

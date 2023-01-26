@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'node:fs';
 
 import WorkerConstants from './WorkerConstants';
 import type { WorkerData, WorkerOptions } from '../types/Worker';

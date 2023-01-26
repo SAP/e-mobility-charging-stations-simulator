@@ -1,9 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
@@ -47,61 +43,61 @@ export default class OCPP16RequestService extends OCPPRequestService {
     this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
       [
         OCPP16RequestCommand.AUTHORIZE,
-        this.parseJsonSchemaFile<OCPP16AuthorizeRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeRequest>(
           '../../../assets/json-schemas/ocpp/1.6/Authorize.json'
         ),
       ],
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP16BootNotificationRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationRequest>(
           '../../../assets/json-schemas/ocpp/1.6/BootNotification.json'
         ),
       ],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationRequest>(
           '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotification.json'
         ),
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
-        this.parseJsonSchemaFile<OCPP16HeartbeatRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatRequest>(
           '../../../assets/json-schemas/ocpp/1.6/Heartbeat.json'
         ),
       ],
       [
         OCPP16RequestCommand.METER_VALUES,
-        this.parseJsonSchemaFile<OCPP16MeterValuesRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesRequest>(
           '../../../assets/json-schemas/ocpp/1.6/MeterValues.json'
         ),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP16StatusNotificationRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationRequest>(
           '../../../assets/json-schemas/ocpp/1.6/StatusNotification.json'
         ),
       ],
       [
         OCPP16RequestCommand.START_TRANSACTION,
-        this.parseJsonSchemaFile<OCPP16StartTransactionRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionRequest>(
           '../../../assets/json-schemas/ocpp/1.6/StartTransaction.json'
         ),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
-        this.parseJsonSchemaFile<OCPP16StopTransactionRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionRequest>(
           '../../../assets/json-schemas/ocpp/1.6/StopTransaction.json'
         ),
       ],
       [
         OCPP16RequestCommand.DATA_TRANSFER,
-        this.parseJsonSchemaFile<OCPP16DataTransferRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
           '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json'
         ),
       ],
       [
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-        this.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationRequest>(
           '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json'
         ),
       ],
@@ -201,14 +197,5 @@ export default class OCPP16RequestService extends OCPPRequestService {
           commandParams
         );
     }
-  }
-
-  private parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
-    return JSON.parse(
-      fs.readFileSync(
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
-        'utf8'
-      )
-    ) as JSONSchemaType<T>;
   }
 }
