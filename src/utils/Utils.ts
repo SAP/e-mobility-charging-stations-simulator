@@ -184,7 +184,7 @@ export default class Utils {
     return clone<T>(object);
   }
 
-  public static isIterable<T extends Iterable<T>>(obj: T): boolean {
+  public static isIterable<T>(obj: T): boolean {
     return !Utils.isNullOrUndefined(obj) ? typeof obj[Symbol.iterator] === 'function' : false;
   }
 

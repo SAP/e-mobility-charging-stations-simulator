@@ -9,11 +9,11 @@ export default class Utils {
     return value as T;
   }
 
-  public static isIterable<T extends Iterable<T>>(obj: T): boolean {
+  public static isIterable<T>(obj: T): boolean {
     if (obj === null || obj === undefined) {
       return false;
     }
-    return typeof obj[Symbol.iterator] === 'function';
+    return typeof (obj as any)[Symbol.iterator] === 'function';
   }
 
   // public static ifNotIterableDo<T>(obj: T, cb: () => void): void {
