@@ -289,7 +289,7 @@ export class Bootstrap {
     ++this.numberOfChargingStations;
   }
 
-  private logPrefix(): string {
+  private logPrefix = (): string => {
     return Utils.logPrefix(' Bootstrap |');
-  }
+  };
 }

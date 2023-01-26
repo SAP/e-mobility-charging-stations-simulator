@@ -434,13 +434,13 @@ export default class AutomaticTransactionGenerator extends AsyncResource {
     }
   }
 
-  private logPrefix(connectorId?: number): string {
+  private logPrefix = (connectorId?: number): string => {
     return Utils.logPrefix(
       ` ${this.chargingStation.stationInfo.chargingStationId} | ATG${
         connectorId !== undefined ? ` on connector #${connectorId.toString()}` : ''
       }:`
     );
-  }
+  };
 
   private handleStartTransactionResponse(
     connectorId: number,

@@ -318,9 +318,9 @@ export default class Configuration {
       : SupervisionUrlDistribution.ROUND_ROBIN;
   }
 
-  private static logPrefix(): string {
+  private static logPrefix = (): string => {
     return `${new Date().toLocaleString()} Simulator configuration |`;
-  }
+  };
 
   private static warnDeprecatedConfigurationKey(
     key: string,

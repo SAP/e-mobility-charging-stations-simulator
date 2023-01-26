@@ -123,9 +123,9 @@ export default abstract class AbstractUIService {
     this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
   }
 
-  public logPrefix(modName: string, methodName: string): string {
+  public logPrefix = (modName: string, methodName: string): string => {
     return this.uiServer.logPrefix(modName, methodName, this.version);
-  }
+  };
 
   public deleteBroadcastChannelRequest(uuid: string): void {
     this.broadcastChannelRequests.delete(uuid);

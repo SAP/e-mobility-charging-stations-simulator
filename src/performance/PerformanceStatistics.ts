@@ -290,7 +290,7 @@ export default class PerformanceStatistics {
     return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
   }
 
-  private logPrefix(): string {
+  private logPrefix = (): string => {
     return Utils.logPrefix(` ${this.objName} | Performance statistics`);
-  }
+  };
 }

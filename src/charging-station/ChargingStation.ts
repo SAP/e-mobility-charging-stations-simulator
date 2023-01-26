@@ -157,14 +157,14 @@ export default class ChargingStation {
     );
   }
 
-  public logPrefix(): string {
+  public logPrefix = (): string => {
     return Utils.logPrefix(
       ` ${
         this?.stationInfo?.chargingStationId ??
         ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())
       } |`
     );
-  }
+  };
 
   public hasAuthorizedTags(): boolean {
     return !Utils.isEmptyArray(

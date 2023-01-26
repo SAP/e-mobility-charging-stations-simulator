@@ -54,7 +54,7 @@ export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
     return messageEvent;
   }
 
-  private logPrefix(modName: string, methodName: string): string {
+  private logPrefix = (modName: string, methodName: string): string => {
     return Utils.logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`);
-  }
+  };
 }

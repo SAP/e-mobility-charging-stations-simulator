@@ -283,7 +283,7 @@ export class OCPPServiceUtils {
       : numberValue * options.unitMultiplier;
   }
 
-  private static logPrefix(ocppVersion: OCPPVersion): string {
+  private static logPrefix = (ocppVersion: OCPPVersion): string => {
     return Utils.logPrefix(` OCPP ${ocppVersion} |`);
-  }
+  };
 }

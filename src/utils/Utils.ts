@@ -11,9 +11,9 @@ export default class Utils {
     // This is intentional
   }
 
-  public static logPrefix(prefixString = ''): string {
+  public static logPrefix = (prefixString = ''): string => {
     return `${new Date().toLocaleString()}${prefixString}`;
-  }
+  };
 
   public static generateUUID(): string {
     return crypto.randomUUID();

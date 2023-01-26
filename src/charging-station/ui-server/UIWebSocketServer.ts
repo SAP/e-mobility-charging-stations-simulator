@@ -145,14 +145,14 @@ export default class UIWebSocketServer extends AbstractUIServer {
     }
   }
 
-  public logPrefix(modName?: string, methodName?: string, prefixSuffix?: string): string {
+  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
     const logMsgPrefix = prefixSuffix
       ? `UI WebSocket Server ${prefixSuffix}`
       : 'UI WebSocket Server';
     const logMsg =
       modName && methodName ? ` ${logMsgPrefix} | ${modName}.${methodName}:` : ` ${logMsgPrefix} |`;
     return Utils.logPrefix(logMsg);
-  }
+  };
 
   private broadcastToClients(message: string): void {
     for (const client of this.webSocketServer.clients) {

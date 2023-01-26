@@ -106,7 +106,7 @@ export default class AuthorizedTagsCache {
     return authorizedTags;
   }
 
-  private logPrefix(file: string): string {
+  private logPrefix = (file: string): string => {
     return Utils.logPrefix(` Authorized tags cache for authorization file '${file}' |`);
-  }
+  };
 }
