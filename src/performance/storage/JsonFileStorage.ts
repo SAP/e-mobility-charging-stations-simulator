@@ -36,10 +36,10 @@ export class JsonFileStorage extends Storage {
           );
         } catch (error) {
           FileUtils.handleFileException(
-            this.logPrefix,
-            FileType.PerformanceRecords,
             this.dbName,
-            error as NodeJS.ErrnoException
+            FileType.PerformanceRecords,
+            error as NodeJS.ErrnoException,
+            this.logPrefix
           );
         }
         await release();
@@ -56,10 +56,10 @@ export class JsonFileStorage extends Storage {
       }
     } catch (error) {
       FileUtils.handleFileException(
-        this.logPrefix,
-        FileType.PerformanceRecords,
         this.dbName,
-        error as NodeJS.ErrnoException
+        FileType.PerformanceRecords,
+        error as NodeJS.ErrnoException,
+        this.logPrefix
       );
     }
   }
@@ -72,10 +72,10 @@ export class JsonFileStorage extends Storage {
       }
     } catch (error) {
       FileUtils.handleFileException(
-        this.logPrefix,
-        FileType.PerformanceRecords,
         this.dbName,
-        error as NodeJS.ErrnoException
+        FileType.PerformanceRecords,
+        error as NodeJS.ErrnoException,
+        this.logPrefix
       );
     }
   }

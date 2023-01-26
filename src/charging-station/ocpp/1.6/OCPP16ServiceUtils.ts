@@ -1,6 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,7 +7,6 @@ import type { JSONSchemaType } from 'ajv';
 
 import OCPPError from '../../../exception/OCPPError';
 import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
-import { FileType } from '../../../types/FileType';
 import type { JsonType } from '../../../types/JsonType';
 import type {
   MeasurandPerPhaseSampledValueTemplates,
@@ -37,7 +35,6 @@ import { ErrorType } from '../../../types/ocpp/ErrorType';
 import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import Constants from '../../../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
-import FileUtils from '../../../utils/FileUtils';
 import logger from '../../../utils/Logger';
 import Utils from '../../../utils/Utils';
 import type ChargingStation from '../../ChargingStation';
@@ -790,18 +787,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   }
 
   public static parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
-    const filePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath);
-    try {
-      return JSON.parse(fs.readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
-    } catch (error) {
-      FileUtils.handleFileException(
-        OCPPServiceUtils.logPrefix(OCPPVersion.VERSION_16),
-        FileType.JsonSchema,
-        filePath,
-        error as NodeJS.ErrnoException,
-        { throwError: false }
-      );
-    }
+    return super.parseJsonSchemaFile<T>(
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+      OCPPVersion.VERSION_16
+    );
   }
 
   private static buildSampledValue(

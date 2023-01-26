@@ -15,9 +15,9 @@ export default class FileUtils {
   }
 
   public static watchJsonFile<T extends JsonType>(
-    logPrefix: string,
-    fileType: FileType,
     file: string,
+    fileType: FileType,
+    logPrefix: string,
     refreshedVariable?: T,
     listener: fs.WatchListener<string> = (event, filename) => {
       if (!Utils.isEmptyString(filename) && event === 'change') {
@@ -25,7 +25,7 @@ export default class FileUtils {
           logger.debug(`${logPrefix} ${fileType} file ${file} have changed, reload`);
           refreshedVariable && (refreshedVariable = JSON.parse(fs.readFileSync(file, 'utf8')) as T);
         } catch (error) {
-          FileUtils.handleFileException(logPrefix, fileType, file, error as NodeJS.ErrnoException, {
+          FileUtils.handleFileException(file, fileType, error as NodeJS.ErrnoException, logPrefix, {
             throwError: false,
           });
         }
@@ -36,7 +36,7 @@ export default class FileUtils {
       try {
         return fs.watch(file, listener);
       } catch (error) {
-        FileUtils.handleFileException(logPrefix, fileType, file, error as NodeJS.ErrnoException, {
+        FileUtils.handleFileException(file, fileType, error as NodeJS.ErrnoException, logPrefix, {
           throwError: false,
         });
       }
@@ -46,10 +46,10 @@ export default class FileUtils {
   }
 
   public static handleFileException(
-    logPrefix: string,
-    fileType: FileType,
     file: string,
+    fileType: FileType,
     error: NodeJS.ErrnoException,
+    logPrefix: string,
     params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }
   ): void {
     const prefix = !Utils.isEmptyString(logPrefix) ? `${logPrefix} ` : '';

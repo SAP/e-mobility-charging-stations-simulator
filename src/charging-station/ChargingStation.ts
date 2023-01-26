@@ -506,10 +506,10 @@ export default class ChargingStation {
         this.openWSConnection();
         // Monitor charging station template file
         this.templateFileWatcher = FileUtils.watchJsonFile(
-          this.logPrefix(),
-          FileType.ChargingStationTemplate,
           this.templateFile,
-          null,
+          FileType.ChargingStationTemplate,
+          this.logPrefix(),
+          undefined,
           (event, filename): void => {
             if (!Utils.isEmptyString(filename) && event === 'change') {
               try {
@@ -819,10 +819,10 @@ export default class ChargingStation {
       }
     } catch (error) {
       FileUtils.handleFileException(
-        this.logPrefix(),
-        FileType.ChargingStationTemplate,
         this.templateFile,
-        error as NodeJS.ErrnoException
+        FileType.ChargingStationTemplate,
+        error as NodeJS.ErrnoException,
+        this.logPrefix()
       );
     }
     return template;
@@ -1335,10 +1335,10 @@ export default class ChargingStation {
         }
       } catch (error) {
         FileUtils.handleFileException(
-          this.logPrefix(),
-          FileType.ChargingStationConfiguration,
           this.configurationFile,
-          error as NodeJS.ErrnoException
+          FileType.ChargingStationConfiguration,
+          error as NodeJS.ErrnoException,
+          this.logPrefix()
         );
       }
     }
@@ -1381,10 +1381,10 @@ export default class ChargingStation {
         }
       } catch (error) {
         FileUtils.handleFileException(
-          this.logPrefix(),
-          FileType.ChargingStationConfiguration,
           this.configurationFile,
-          error as NodeJS.ErrnoException
+          FileType.ChargingStationConfiguration,
+          error as NodeJS.ErrnoException,
+          this.logPrefix()
         );
       }
     } else {

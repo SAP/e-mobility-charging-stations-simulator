@@ -1,6 +1,9 @@
-import type { DefinedError, ErrorObject } from 'ajv';
+import fs from 'node:fs';
+
+import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 
 import BaseError from '../../exception/BaseError';
+import { FileType } from '../../types/FileType';
 import type { JsonObject, JsonType } from '../../types/JsonType';
 import type { SampledValueTemplate } from '../../types/MeasurandPerPhaseSampledValueTemplates';
 import type { OCPP16StatusNotificationRequest } from '../../types/ocpp/1.6/Requests';
@@ -19,6 +22,7 @@ import {
   type StatusNotificationRequest,
 } from '../../types/ocpp/Requests';
 import Constants from '../../utils/Constants';
+import FileUtils from '../../utils/FileUtils';
 import logger from '../../utils/Logger';
 import Utils from '../../utils/Utils';
 import type ChargingStation from '../ChargingStation';
@@ -164,8 +168,21 @@ export class OCPPServiceUtils {
     }
   }
 
-  protected static logPrefix(ocppVersion: OCPPVersion): string {
-    return Utils.logPrefix(` OCPP ${ocppVersion} |`);
+  protected static parseJsonSchemaFile<T extends JsonType>(
+    filePath: string,
+    ocppVersion: OCPPVersion
+  ): JSONSchemaType<T> {
+    try {
+      return JSON.parse(fs.readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
+    } catch (error) {
+      FileUtils.handleFileException(
+        filePath,
+        FileType.JsonSchema,
+        error as NodeJS.ErrnoException,
+        OCPPServiceUtils.logPrefix(ocppVersion),
+        { throwError: false }
+      );
+    }
   }
 
   protected static getSampledValueTemplate(
@@ -264,5 +281,9 @@ export class OCPPServiceUtils {
     return options?.limitationEnabled
       ? Math.min(numberValue * options.unitMultiplier, limit)
       : numberValue * options.unitMultiplier;
+  }
+
+  private static logPrefix(ocppVersion: OCPPVersion): string {
+    return Utils.logPrefix(` OCPP ${ocppVersion} |`);
   }
 }

@@ -357,10 +357,10 @@ export default class Configuration {
         ) as ConfigurationData;
       } catch (error) {
         Configuration.handleFileException(
-          Configuration.logPrefix(),
-          FileType.Configuration,
           Configuration.configurationFile,
-          error as NodeJS.ErrnoException
+          FileType.Configuration,
+          error as NodeJS.ErrnoException,
+          Configuration.logPrefix()
         );
       }
       if (!Configuration.configurationFileWatcher) {
@@ -385,10 +385,10 @@ export default class Configuration {
       });
     } catch (error) {
       Configuration.handleFileException(
-        Configuration.logPrefix(),
-        FileType.Configuration,
         Configuration.configurationFile,
-        error as NodeJS.ErrnoException
+        FileType.Configuration,
+        error as NodeJS.ErrnoException,
+        Configuration.logPrefix()
       );
     }
   }
@@ -423,10 +423,10 @@ export default class Configuration {
   }
 
   private static handleFileException(
-    logPrefix: string,
-    fileType: FileType,
     filePath: string,
+    fileType: FileType,
     error: NodeJS.ErrnoException,
+    logPrefix: string,
     params: HandleErrorParams<EmptyObject> = { throwError: true }
   ): void {
     const prefix = logPrefix.trim().length !== 0 ? `${logPrefix} ` : '';

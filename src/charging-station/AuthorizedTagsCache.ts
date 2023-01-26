@@ -30,10 +30,10 @@ export default class AuthorizedTagsCache {
         this.FSWatchers.set(
           file,
           FileUtils.watchJsonFile(
-            this.logPrefix(file),
-            FileType.Authorization,
             file,
-            null,
+            FileType.Authorization,
+            this.logPrefix(file),
+            undefined,
             (event, filename) => {
               if (!Utils.isEmptyString(filename) && event === 'change') {
                 try {
@@ -44,10 +44,10 @@ export default class AuthorizedTagsCache {
                   this.deleteFSWatcher(file);
                 } catch (error) {
                   FileUtils.handleFileException(
-                    this.logPrefix(file),
-                    FileType.Authorization,
                     file,
+                    FileType.Authorization,
                     error as NodeJS.ErrnoException,
+                    this.logPrefix(file),
                     {
                       throwError: false,
                     }
@@ -94,10 +94,10 @@ export default class AuthorizedTagsCache {
         authorizedTags = JSON.parse(fs.readFileSync(file, 'utf8')) as string[];
       } catch (error) {
         FileUtils.handleFileException(
-          this.logPrefix(file),
-          FileType.Authorization,
           file,
-          error as NodeJS.ErrnoException
+          FileType.Authorization,
+          error as NodeJS.ErrnoException,
+          this.logPrefix(file)
         );
       }
     } else {
