@@ -373,7 +373,7 @@ export default class Configuration {
   private static getConfigurationFileWatcher(): fs.FSWatcher | undefined {
     try {
       return fs.watch(Configuration.configurationFile, (event, filename): void => {
-        if (filename.trim().length !== 0 && event === 'change') {
+        if (filename?.trim().length !== 0 && event === 'change') {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
           if (!Configuration.isUndefined(Configuration.configurationChangeCallback)) {
@@ -429,7 +429,7 @@ export default class Configuration {
     logPrefix: string,
     params: HandleErrorParams<EmptyObject> = { throwError: true }
   ): void {
-    const prefix = logPrefix.trim().length !== 0 ? `${logPrefix} ` : '';
+    const prefix = logPrefix?.trim().length !== 0 ? `${logPrefix} ` : '';
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':
