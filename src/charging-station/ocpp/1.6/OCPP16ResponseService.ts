@@ -90,61 +90,81 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/BootNotificationResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/BootNotificationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/HeartbeatResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/HeartbeatResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.AUTHORIZE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/AuthorizeResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/AuthorizeResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.START_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/StartTransactionResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/StartTransactionResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/StopTransactionResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/StopTransactionResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.METER_VALUES,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/MeterValuesResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/MeterValuesResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotificationResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotificationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.DATA_TRANSFER,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotificationResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotificationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
     ]);
@@ -152,85 +172,113 @@ export default class OCPP16ResponseService extends OCPPResponseService {
       [
         OCPP16IncomingRequestCommand.RESET,
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/ResetResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/ResetResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/ClearCacheResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/ClearCacheResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
         OCPP16ServiceUtils.parseJsonSchemaFile<ChangeAvailabilityResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
         OCPP16ServiceUtils.parseJsonSchemaFile<UnlockConnectorResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/UnlockConnectorResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/UnlockConnectorResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<GetConfigurationResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/GetConfigurationResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/GetConfigurationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
         OCPP16ServiceUtils.parseJsonSchemaFile<SetChargingProfileResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/SetChargingProfileResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/SetChargingProfileResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
         OCPP16ServiceUtils.parseJsonSchemaFile<ClearChargingProfileResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
         OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/GetDiagnosticsResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/GetDiagnosticsResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16TriggerMessageResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/TriggerMessageResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/TriggerMessageResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/DataTransferResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareResponse>(
-          '../../../assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json'
+          '../../../assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
     ]);

@@ -44,61 +44,81 @@ export default class OCPP16RequestService extends OCPPRequestService {
       [
         OCPP16RequestCommand.AUTHORIZE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/Authorize.json'
+          '../../../assets/json-schemas/ocpp/1.6/Authorize.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/BootNotification.json'
+          '../../../assets/json-schemas/ocpp/1.6/BootNotification.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotification.json'
+          '../../../assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotification.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/Heartbeat.json'
+          '../../../assets/json-schemas/ocpp/1.6/Heartbeat.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.METER_VALUES,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/MeterValues.json'
+          '../../../assets/json-schemas/ocpp/1.6/MeterValues.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/StatusNotification.json'
+          '../../../assets/json-schemas/ocpp/1.6/StatusNotification.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.START_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/StartTransaction.json'
+          '../../../assets/json-schemas/ocpp/1.6/StartTransaction.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/StopTransaction.json'
+          '../../../assets/json-schemas/ocpp/1.6/StopTransaction.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.DATA_TRANSFER,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json'
+          '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json'
+          '../../../assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json',
+          moduleName,
+          'constructor'
         ),
       ],
     ]);

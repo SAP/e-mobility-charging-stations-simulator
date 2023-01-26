@@ -34,19 +34,25 @@ export default class OCPP20RequestService extends OCPPRequestService {
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
-          '../../../assets/json-schemas/ocpp/2.0/BootNotificationRequest.json'
+          '../../../assets/json-schemas/ocpp/2.0/BootNotificationRequest.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
-          '../../../assets/json-schemas/ocpp/2.0/HeartbeatRequest.json'
+          '../../../assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
-          '../../../assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json'
+          '../../../assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json',
+          moduleName,
+          'constructor'
         ),
       ],
     ]);

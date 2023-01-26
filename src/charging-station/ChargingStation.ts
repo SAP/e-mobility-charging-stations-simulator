@@ -160,8 +160,10 @@ export default class ChargingStation {
   public logPrefix = (): string => {
     return Utils.logPrefix(
       ` ${
-        this?.stationInfo?.chargingStationId ??
-        ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())
+        (!Utils.isEmptyString(this?.stationInfo?.chargingStationId) &&
+          this?.stationInfo?.chargingStationId) ??
+        ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile()) ??
+        ''
       } |`
     );
   };

@@ -170,7 +170,9 @@ export class OCPPServiceUtils {
 
   protected static parseJsonSchemaFile<T extends JsonType>(
     filePath: string,
-    ocppVersion: OCPPVersion
+    ocppVersion: OCPPVersion,
+    moduleName?: string,
+    methodName?: string
   ): JSONSchemaType<T> {
     try {
       return JSON.parse(fs.readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
@@ -179,7 +181,7 @@ export class OCPPServiceUtils {
         filePath,
         FileType.JsonSchema,
         error as NodeJS.ErrnoException,
-        OCPPServiceUtils.logPrefix(ocppVersion),
+        OCPPServiceUtils.logPrefix(ocppVersion, moduleName, methodName),
         { throwError: false }
       );
     }
@@ -283,7 +285,15 @@ export class OCPPServiceUtils {
       : numberValue * options.unitMultiplier;
   }
 
-  private static logPrefix = (ocppVersion: OCPPVersion): string => {
-    return Utils.logPrefix(` OCPP ${ocppVersion} |`);
+  private static logPrefix = (
+    ocppVersion: OCPPVersion,
+    moduleName?: string,
+    methodName?: string
+  ): string => {
+    const logMsg =
+      !Utils.isEmptyString(moduleName) && !Utils.isEmptyString(methodName)
+        ? ` OCPP ${ocppVersion} | ${moduleName}.${methodName}:`
+        : ` OCPP ${ocppVersion} |`;
+    return Utils.logPrefix(logMsg);
   };
 }

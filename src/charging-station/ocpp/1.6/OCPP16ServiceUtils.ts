@@ -786,10 +786,16 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp);
   }
 
-  public static parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
+  public static parseJsonSchemaFile<T extends JsonType>(
+    relativePath: string,
+    moduleName?: string,
+    methodName?: string
+  ): JSONSchemaType<T> {
     return super.parseJsonSchemaFile<T>(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
-      OCPPVersion.VERSION_16
+      OCPPVersion.VERSION_16,
+      moduleName,
+      methodName
     );
   }
 

@@ -63,7 +63,9 @@ export default class UIHttpServer extends AbstractUIServer {
   public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
     const logMsgPrefix = prefixSuffix ? `UI HTTP Server ${prefixSuffix}` : 'UI HTTP Server';
     const logMsg =
-      modName && methodName ? ` ${logMsgPrefix} | ${modName}.${methodName}:` : ` ${logMsgPrefix} |`;
+      !Utils.isEmptyString(modName) && !Utils.isEmptyString(methodName)
+        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
+        : ` ${logMsgPrefix} |`;
     return Utils.logPrefix(logMsg);
   };
 

@@ -47,19 +47,25 @@ export default class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
-          '../../../assets/json-schemas/ocpp/2.0/BootNotificationResponse.json'
+          '../../../assets/json-schemas/ocpp/2.0/BootNotificationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
-          '../../../assets/json-schemas/ocpp/2.0/HeartbeatResponse.json'
+          '../../../assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
-          '../../../assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json'
+          '../../../assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
     ]);
@@ -67,7 +73,9 @@ export default class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
-          '../../../assets/json-schemas/ocpp/2.0/ClearCacheResponse.json'
+          '../../../assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
+          moduleName,
+          'constructor'
         ),
       ],
     ]);

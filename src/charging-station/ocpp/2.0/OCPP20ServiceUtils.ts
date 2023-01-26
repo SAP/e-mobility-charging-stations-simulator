@@ -10,10 +10,16 @@ import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
 import { OCPPServiceUtils } from '../OCPPServiceUtils';
 
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
-  public static parseJsonSchemaFile<T extends JsonType>(relativePath: string): JSONSchemaType<T> {
+  public static parseJsonSchemaFile<T extends JsonType>(
+    relativePath: string,
+    moduleName?: string,
+    methodName?: string
+  ): JSONSchemaType<T> {
     return super.parseJsonSchemaFile<T>(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
-      OCPPVersion.VERSION_20
+      OCPPVersion.VERSION_20,
+      moduleName,
+      methodName
     );
   }
 }
