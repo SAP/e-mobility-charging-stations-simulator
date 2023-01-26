@@ -149,8 +149,8 @@ describe('Utils test suite', () => {
     expect(Utils.isIterable('')).toBe(true);
     expect(Utils.isIterable(' ')).toBe(true);
     expect(Utils.isIterable('test')).toBe(true);
-    expect(Utils.isIterable(null)).toBe(false);
     expect(Utils.isIterable(undefined)).toBe(false);
+    expect(Utils.isIterable(null)).toBe(false);
     expect(Utils.isIterable(0)).toBe(false);
     expect(Utils.isIterable([0, 1])).toBe(true);
     expect(Utils.isIterable({ 1: 1 })).toBe(false);
@@ -167,8 +167,8 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyString('test')).toBe(false);
     expect(Utils.isEmptyString(' test')).toBe(false);
     expect(Utils.isEmptyString('test ')).toBe(false);
-    expect(Utils.isEmptyString(null)).toBe(false);
     expect(Utils.isEmptyString(undefined)).toBe(false);
+    expect(Utils.isEmptyString(null)).toBe(false);
     expect(Utils.isEmptyString(0)).toBe(false);
     expect(Utils.isEmptyString({})).toBe(false);
     expect(Utils.isEmptyString([])).toBe(false);
@@ -192,8 +192,8 @@ describe('Utils test suite', () => {
   });
 
   it('Verify isNullOrUndefined()', () => {
-    expect(Utils.isNullOrUndefined(null)).toBe(true);
     expect(Utils.isNullOrUndefined(undefined)).toBe(true);
+    expect(Utils.isNullOrUndefined(null)).toBe(true);
     expect(Utils.isNullOrUndefined('')).toBe(false);
     expect(Utils.isNullOrUndefined(0)).toBe(false);
     expect(Utils.isNullOrUndefined({})).toBe(false);
@@ -207,8 +207,8 @@ describe('Utils test suite', () => {
   it('Verify isEmptyArray()', () => {
     expect(Utils.isEmptyArray([])).toBe(true);
     expect(Utils.isEmptyArray([1, 2])).toBe(false);
-    expect(Utils.isEmptyArray(null)).toBe(true);
     expect(Utils.isEmptyArray(undefined)).toBe(true);
+    expect(Utils.isEmptyArray(null)).toBe(true);
     expect(Utils.isEmptyArray('')).toBe(true);
     expect(Utils.isEmptyArray('test')).toBe(true);
     expect(Utils.isEmptyArray(0)).toBe(true);
@@ -222,8 +222,8 @@ describe('Utils test suite', () => {
   it('Verify isEmptyObject()', () => {
     expect(Utils.isEmptyObject({})).toBe(true);
     expect(Utils.isEmptyObject({ 1: 1, 2: 2 })).toBe(false);
-    expect(Utils.isEmptyObject(null)).toBe(false);
     expect(Utils.isEmptyObject(undefined)).toBe(false);
+    expect(Utils.isEmptyObject(null)).toBe(false);
     expect(Utils.isEmptyObject(new Map())).toBe(false);
     expect(Utils.isEmptyObject(new Set())).toBe(false);
     expect(Utils.isEmptyObject(new WeakMap())).toBe(false);
