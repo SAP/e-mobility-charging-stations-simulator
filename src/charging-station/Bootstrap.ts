@@ -49,17 +49,16 @@ export class Bootstrap {
   private readonly workerScript: string;
 
   private constructor() {
-    this.started = false;
-    this.workerImplementation = null;
     // Enable unconditionally for now
     this.logUnhandledRejection();
     this.logUncaughtException();
+    this.started = false;
+    this.workerImplementation = null;
     this.workerScript = path.join(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',
       `ChargingStationWorker${path.extname(fileURLToPath(import.meta.url))}`
     );
-    this.initializeCounters();
     Configuration.getUIServer().enabled === true &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer()));
     Configuration.getPerformanceStorage().enabled === true &&
@@ -145,8 +144,6 @@ export class Bootstrap {
 
   public async restart(): Promise<void> {
     await this.stop();
-    this.initializeCounters();
-    this.initializeWorkerImplementation();
     await this.start();
   }
 
