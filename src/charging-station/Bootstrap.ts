@@ -102,32 +102,25 @@ export class Bootstrap {
             );
           }
         }
-        if (this.numberOfChargingStations === 0) {
-          console.warn(
-            chalk.yellow('No charging station template enabled in configuration, exiting')
-          );
-          process.exit(exitCodes.noChargingStationTemplates);
-        } else {
-          console.info(
-            chalk.green(
-              `Charging stations simulator ${
-                this.version
-              } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
-                ChargingStationUtils.workerDynamicPoolInUse()
-                  ? `${Configuration.getWorker().poolMinSize?.toString()}/`
-                  : ''
-              }${this.workerImplementation?.size}${
-                ChargingStationUtils.workerPoolInUse()
-                  ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
-                  : ''
-              } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
-                !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
-                  ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
-                  : ''
-              }`
-            )
-          );
-        }
+        console.info(
+          chalk.green(
+            `Charging stations simulator ${
+              this.version
+            } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
+              ChargingStationUtils.workerDynamicPoolInUse()
+                ? `${Configuration.getWorker().poolMinSize?.toString()}/`
+                : ''
+            }${this.workerImplementation?.size}${
+              ChargingStationUtils.workerPoolInUse()
+                ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
+                : ''
+            } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
+              !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
+                ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
+                : ''
+            }`
+          )
+        );
         this.started = true;
       } catch (error) {
         console.error(chalk.red('Bootstrap start error: '), error);
@@ -259,6 +252,10 @@ export class Bootstrap {
         chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
       );
       process.exit(exitCodes.missingChargingStationsConfiguration);
+    }
+    if (this.numberOfChargingStations === 0) {
+      console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'));
+      process.exit(exitCodes.noChargingStationTemplates);
     }
     this.numberOfStartedChargingStations = 0;
     this.initializeWorkerImplementation();
