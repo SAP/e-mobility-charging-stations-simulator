@@ -51,6 +51,9 @@ export class Bootstrap {
   private constructor() {
     this.started = false;
     this.workerImplementation = null;
+    // Enable unconditionally for now
+    this.logUnhandledRejection();
+    this.logUncaughtException();
     this.workerScript = path.join(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       'charging-station',
@@ -78,9 +81,6 @@ export class Bootstrap {
   public async start(): Promise<void> {
     if (isMainThread && this.started === false) {
       try {
-        // Enable unconditionally for now
-        this.logUnhandledRejection();
-        this.logUncaughtException();
         this.initializeCounters();
         this.initializeWorkerImplementation();
         await this.storage?.open();

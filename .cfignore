@@ -49,6 +49,7 @@
 manifest-*.yml
 *.tar.gz
 *.mta
+commitlint.config.js
 rollup.config.js
 rollup.config.mjs
 mikro-orm.config.ts
