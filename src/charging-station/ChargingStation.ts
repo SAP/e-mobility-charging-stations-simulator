@@ -36,6 +36,7 @@ import type { ChargingStationOcppConfiguration } from '../types/ChargingStationO
 import {
   type ChargingStationTemplate,
   CurrentType,
+  type FirmwareUpgrade,
   PowerUnits,
   type WsOptions,
 } from '../types/ChargingStationTemplate';
@@ -890,8 +891,11 @@ export default class ChargingStation {
         } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
       );
     }
-    stationInfo.firmwareUpgrade = merge(
+    stationInfo.firmwareUpgrade = merge<FirmwareUpgrade>(
       {
+        versionUpgrade: {
+          step: 1,
+        },
         reset: true,
       },
       stationTemplate?.firmwareUpgrade ?? {}

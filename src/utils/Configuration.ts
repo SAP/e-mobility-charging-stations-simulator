@@ -69,7 +69,10 @@ export default class Configuration {
       },
     };
     if (Configuration.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
-      uiServerConfiguration = merge(uiServerConfiguration, Configuration.getConfig()?.uiServer);
+      uiServerConfiguration = merge<UIServerConfiguration>(
+        uiServerConfiguration,
+        Configuration.getConfig()?.uiServer
+      );
     }
     if (Configuration.isCFEnvironment() === true) {
       delete uiServerConfiguration.options?.host;
