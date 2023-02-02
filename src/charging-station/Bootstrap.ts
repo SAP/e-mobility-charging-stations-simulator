@@ -45,6 +45,7 @@ export class Bootstrap {
   private readonly storage!: Storage;
   private numberOfStartedChargingStations!: number;
   private readonly version: string = version;
+  private initializedCounters: boolean;
   private started: boolean;
   private readonly workerScript: string;
 
@@ -52,7 +53,9 @@ export class Bootstrap {
     // Enable unconditionally for now
     this.logUnhandledRejection();
     this.logUncaughtException();
+    this.initializedCounters = false;
     this.started = false;
+    this.initializeCounters();
     this.workerImplementation = null;
     this.workerScript = path.join(
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
@@ -82,11 +85,11 @@ export class Bootstrap {
       try {
         this.initializeCounters();
         this.initializeWorkerImplementation();
-        await this.storage?.open();
         await this.workerImplementation?.start();
+        await this.storage?.open();
         this.uiServer?.start();
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
-        // Start ChargingStation object in worker thread
+        // Start ChargingStation object instance in worker thread
         for (const stationTemplateUrl of stationTemplateUrls) {
           try {
             const nbStations = stationTemplateUrl.numberOfStations ?? 0;
@@ -132,6 +135,7 @@ export class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started === true) {
+      this.initializedCounters = false;
       await this.workerImplementation?.stop();
       this.workerImplementation = null;
       this.uiServer?.stop();
@@ -238,25 +242,30 @@ export class Bootstrap {
   };
 
   private initializeCounters() {
-    this.numberOfChargingStationTemplates = 0;
-    this.numberOfChargingStations = 0;
-    const stationTemplateUrls = Configuration.getStationTemplateUrls();
-    if (!Utils.isEmptyArray(stationTemplateUrls)) {
-      this.numberOfChargingStationTemplates = stationTemplateUrls?.length;
-      stationTemplateUrls.forEach((stationTemplateUrl) => {
-        this.numberOfChargingStations += stationTemplateUrl.numberOfStations ?? 0;
-      });
-    } else {
-      console.warn(
-        chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
-      );
-      process.exit(exitCodes.missingChargingStationsConfiguration);
+    if (this.initializedCounters === false) {
+      this.numberOfChargingStationTemplates = 0;
+      this.numberOfChargingStations = 0;
+      const stationTemplateUrls = Configuration.getStationTemplateUrls();
+      if (!Utils.isEmptyArray(stationTemplateUrls)) {
+        this.numberOfChargingStationTemplates = stationTemplateUrls?.length;
+        stationTemplateUrls.forEach((stationTemplateUrl) => {
+          this.numberOfChargingStations += stationTemplateUrl.numberOfStations ?? 0;
+        });
+      } else {
+        console.warn(
+          chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
+        );
+        process.exit(exitCodes.missingChargingStationsConfiguration);
+      }
+      if (this.numberOfChargingStations === 0) {
+        console.warn(
+          chalk.yellow('No charging station template enabled in configuration, exiting')
+        );
+        process.exit(exitCodes.noChargingStationTemplates);
+      }
+      this.numberOfStartedChargingStations = 0;
+      this.initializedCounters = true;
     }
-    if (this.numberOfChargingStations === 0) {
-      console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'));
-      process.exit(exitCodes.noChargingStationTemplates);
-    }
-    this.numberOfStartedChargingStations = 0;
   }
 
   private logUncaughtException(): void {
