@@ -14,7 +14,7 @@
     "core-js": "^3.27.2",
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.2.45",
+    "vue": "^3.2.47",
     "vue-class-component": "^8.0.0-rc.1",
     "vue-router": "^4.1.6"
   },
