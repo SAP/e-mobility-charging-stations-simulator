@@ -88,9 +88,8 @@ export class Bootstrap {
         await this.workerImplementation?.start();
         await this.storage?.open();
         this.uiServer?.start();
-        const stationTemplateUrls = Configuration.getStationTemplateUrls();
         // Start ChargingStation object instance in worker thread
-        for (const stationTemplateUrl of stationTemplateUrls) {
+        for (const stationTemplateUrl of Configuration.getStationTemplateUrls()) {
           try {
             const nbStations = stationTemplateUrl.numberOfStations ?? 0;
             for (let index = 1; index <= nbStations; index++) {
@@ -284,7 +283,7 @@ export class Bootstrap {
     index: number,
     stationTemplateUrl: StationTemplateUrl
   ): Promise<void> {
-    const workerData: ChargingStationWorkerData = {
+    await this.workerImplementation?.addElement({
       index,
       templateFile: path.join(
         path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
@@ -292,8 +291,7 @@ export class Bootstrap {
         'station-templates',
         stationTemplateUrl.file
       ),
-    };
-    await this.workerImplementation?.addElement(workerData);
+    });
   }
 
   private logPrefix = (): string => {
