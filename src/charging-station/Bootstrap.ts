@@ -56,7 +56,7 @@ export class Bootstrap {
       'charging-station',
       `ChargingStationWorker${path.extname(fileURLToPath(import.meta.url))}`
     );
-    this.initialize();
+    this.initializeCounters();
     Configuration.getUIServer().enabled === true &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer()));
     Configuration.getPerformanceStorage().enabled === true &&
@@ -81,7 +81,8 @@ export class Bootstrap {
         // Enable unconditionally for now
         this.logUnhandledRejection();
         this.logUncaughtException();
-        this.initialize();
+        this.initializeCounters();
+        this.initializeWorkerImplementation();
         await this.storage?.open();
         await this.workerImplementation?.start();
         this.uiServer?.start();
@@ -144,7 +145,8 @@ export class Bootstrap {
 
   public async restart(): Promise<void> {
     await this.stop();
-    this.initialize();
+    this.initializeCounters();
+    this.initializeWorkerImplementation();
     await this.start();
   }
 
@@ -238,7 +240,7 @@ export class Bootstrap {
     this.storage.storePerformanceStatistics(data) as void;
   };
 
-  private initialize() {
+  private initializeCounters() {
     this.numberOfChargingStationTemplates = 0;
     this.numberOfChargingStations = 0;
     const stationTemplateUrls = Configuration.getStationTemplateUrls();
@@ -258,7 +260,6 @@ export class Bootstrap {
       process.exit(exitCodes.noChargingStationTemplates);
     }
     this.numberOfStartedChargingStations = 0;
-    this.initializeWorkerImplementation();
   }
 
   private logUncaughtException(): void {
