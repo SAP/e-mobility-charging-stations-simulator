@@ -1,5 +1,6 @@
 import LRUCache from 'mnemonist/lru-map-with-delete';
 
+import { Bootstrap } from '../internal';
 import type { ChargingStationConfiguration } from '../types/ChargingStationConfiguration';
 import type { ChargingStationTemplate } from '../types/ChargingStationTemplate';
 import Utils from '../utils/Utils';
@@ -16,7 +17,10 @@ export default class SharedLRUCache {
   private readonly lruCache: LRUCache<string, CacheableType>;
 
   private constructor() {
-    this.lruCache = new LRUCache<string, CacheableType>(1000);
+    this.lruCache = new LRUCache<string, CacheableType>(
+      Bootstrap.getInstance().numberOfChargingStations +
+        Bootstrap.getInstance().numberOfChargingStationTemplates
+    );
   }
 
   public static getInstance(): SharedLRUCache {

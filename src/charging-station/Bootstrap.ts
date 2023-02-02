@@ -38,11 +38,11 @@ enum exitCodes {
 
 export class Bootstrap {
   private static instance: Bootstrap | null = null;
+  public numberOfChargingStations!: number;
+  public numberOfChargingStationTemplates!: number;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null;
   private readonly uiServer!: AbstractUIServer | null;
   private readonly storage!: Storage;
-  private numberOfChargingStationTemplates!: number | undefined;
-  private numberOfChargingStations!: number;
   private numberOfStartedChargingStations!: number;
   private readonly version: string = version;
   private started: boolean;
@@ -86,29 +86,21 @@ export class Bootstrap {
         await this.workerImplementation?.start();
         this.uiServer?.start();
         const stationTemplateUrls = Configuration.getStationTemplateUrls();
-        this.numberOfChargingStationTemplates = stationTemplateUrls?.length;
         // Start ChargingStation object in worker thread
-        if (!Utils.isEmptyArray(stationTemplateUrls)) {
-          for (const stationTemplateUrl of stationTemplateUrls) {
-            try {
-              const nbStations = stationTemplateUrl.numberOfStations ?? 0;
-              for (let index = 1; index <= nbStations; index++) {
-                await this.startChargingStation(index, stationTemplateUrl);
-              }
-            } catch (error) {
-              console.error(
-                chalk.red(
-                  `Error at starting charging station with template file ${stationTemplateUrl.file}: `
-                ),
-                error
-              );
+        for (const stationTemplateUrl of stationTemplateUrls) {
+          try {
+            const nbStations = stationTemplateUrl.numberOfStations ?? 0;
+            for (let index = 1; index <= nbStations; index++) {
+              await this.startChargingStation(index, stationTemplateUrl);
             }
+          } catch (error) {
+            console.error(
+              chalk.red(
+                `Error at starting charging station with template file ${stationTemplateUrl.file}: `
+              ),
+              error
+            );
           }
-        } else {
-          console.warn(
-            chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
-          );
-          process.exit(exitCodes.missingChargingStationsConfiguration);
         }
         if (this.numberOfChargingStations === 0) {
           console.warn(
@@ -256,6 +248,18 @@ export class Bootstrap {
   private initialize() {
     this.numberOfChargingStationTemplates = 0;
     this.numberOfChargingStations = 0;
+    const stationTemplateUrls = Configuration.getStationTemplateUrls();
+    if (!Utils.isEmptyArray(stationTemplateUrls)) {
+      this.numberOfChargingStationTemplates = stationTemplateUrls?.length;
+      stationTemplateUrls.forEach((stationTemplateUrl) => {
+        this.numberOfChargingStations += stationTemplateUrl.numberOfStations ?? 0;
+      });
+    } else {
+      console.warn(
+        chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
+      );
+      process.exit(exitCodes.missingChargingStationsConfiguration);
+    }
     this.numberOfStartedChargingStations = 0;
     this.initializeWorkerImplementation();
   }
@@ -286,7 +290,6 @@ export class Bootstrap {
       ),
     };
     await this.workerImplementation?.addElement(workerData);
-    ++this.numberOfChargingStations;
   }
 
   private logPrefix = (): string => {
