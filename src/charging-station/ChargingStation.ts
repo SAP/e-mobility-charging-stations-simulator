@@ -1040,7 +1040,6 @@ export default class ChargingStation {
       !Utils.isEmptyString(this.stationInfo.firmwareVersion) &&
       !Utils.isEmptyString(this.stationInfo.firmwareVersionPattern)
     ) {
-      const versionStep = this.stationInfo.firmwareUpgrade?.versionUpgrade?.step ?? 1;
       const patternGroup: number | undefined =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
         this.stationInfo.firmwareVersion?.split('.').length;
@@ -1049,7 +1048,8 @@ export default class ChargingStation {
         ?.slice(1, patternGroup + 1);
       const patchLevelIndex = match.length - 1;
       match[patchLevelIndex] = (
-        Utils.convertToInt(match[patchLevelIndex]) + versionStep
+        Utils.convertToInt(match[patchLevelIndex]) +
+        this.stationInfo.firmwareUpgrade?.versionUpgrade?.step
       ).toString();
       this.stationInfo.firmwareVersion = match?.join('.');
     }
