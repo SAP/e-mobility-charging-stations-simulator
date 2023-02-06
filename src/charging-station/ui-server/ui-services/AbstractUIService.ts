@@ -184,12 +184,20 @@ export default abstract class AbstractUIService {
   }
 
   private async handleStartSimulator(): Promise<ResponsePayload> {
-    await Bootstrap.getInstance().start();
-    return { status: ResponseStatus.SUCCESS };
+    try {
+      await Bootstrap.getInstance().start();
+      return { status: ResponseStatus.SUCCESS };
+    } catch (error) {
+      return { status: ResponseStatus.FAILURE };
+    }
   }
 
   private async handleStopSimulator(): Promise<ResponsePayload> {
-    await Bootstrap.getInstance().stop();
-    return { status: ResponseStatus.SUCCESS };
+    try {
+      await Bootstrap.getInstance().stop();
+      return { status: ResponseStatus.SUCCESS };
+    } catch (error) {
+      return { status: ResponseStatus.FAILURE };
+    }
   }
 }

@@ -7,5 +7,5 @@ import { Bootstrap } from './internal';
 Bootstrap.getInstance()
   .start()
   .catch((error) => {
-    console.error(chalk.red(error));
+    console.error(chalk.red('Startup error: '), error);
   });

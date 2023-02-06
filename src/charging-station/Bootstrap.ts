@@ -82,51 +82,47 @@ export class Bootstrap {
 
   public async start(): Promise<void> {
     if (isMainThread && this.started === false) {
-      try {
-        this.initializeCounters();
-        this.initializeWorkerImplementation();
-        await this.workerImplementation?.start();
-        await this.storage?.open();
-        this.uiServer?.start();
-        // Start ChargingStation object instance in worker thread
-        for (const stationTemplateUrl of Configuration.getStationTemplateUrls()) {
-          try {
-            const nbStations = stationTemplateUrl.numberOfStations ?? 0;
-            for (let index = 1; index <= nbStations; index++) {
-              await this.startChargingStation(index, stationTemplateUrl);
-            }
-          } catch (error) {
-            console.error(
-              chalk.red(
-                `Error at starting charging station with template file ${stationTemplateUrl.file}: `
-              ),
-              error
-            );
+      this.initializeCounters();
+      this.initializeWorkerImplementation();
+      await this.workerImplementation?.start();
+      await this.storage?.open();
+      this.uiServer?.start();
+      // Start ChargingStation object instance in worker thread
+      for (const stationTemplateUrl of Configuration.getStationTemplateUrls()) {
+        try {
+          const nbStations = stationTemplateUrl.numberOfStations ?? 0;
+          for (let index = 1; index <= nbStations; index++) {
+            await this.startChargingStation(index, stationTemplateUrl);
           }
+        } catch (error) {
+          console.error(
+            chalk.red(
+              `Error at starting charging station with template file ${stationTemplateUrl.file}: `
+            ),
+            error
+          );
         }
-        console.info(
-          chalk.green(
-            `Charging stations simulator ${
-              this.version
-            } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
-              ChargingStationUtils.workerDynamicPoolInUse()
-                ? `${Configuration.getWorker().poolMinSize?.toString()}/`
-                : ''
-            }${this.workerImplementation?.size}${
-              ChargingStationUtils.workerPoolInUse()
-                ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
-                : ''
-            } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
-              !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
-                ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
-                : ''
-            }`
-          )
-        );
-        this.started = true;
-      } catch (error) {
-        console.error(chalk.red('Bootstrap start error: '), error);
       }
+      console.info(
+        chalk.green(
+          `Charging stations simulator ${
+            this.version
+          } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
+            ChargingStationUtils.workerDynamicPoolInUse()
+              ? `${Configuration.getWorker().poolMinSize?.toString()}/`
+              : ''
+          }${this.workerImplementation?.size}${
+            ChargingStationUtils.workerPoolInUse()
+              ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
+              : ''
+          } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
+            !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
+              ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
+              : ''
+          }`
+        )
+      );
+      this.started = true;
     } else {
       console.error(chalk.red('Cannot start an already started charging stations simulator'));
     }
