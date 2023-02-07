@@ -1,5 +1,5 @@
 import type { Format } from 'logform';
-import { Logger, createLogger, format, transport } from 'winston';
+import { type Logger, createLogger, format, type transport } from 'winston';
 import TransportType from 'winston/lib/winston/transports';
 import DailyRotateFile from 'winston-daily-rotate-file';
 

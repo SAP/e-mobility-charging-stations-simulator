@@ -291,7 +291,7 @@ export class OCPPServiceUtils {
     methodName?: string
   ): string => {
     const logMsg =
-      !Utils.isEmptyString(moduleName) && !Utils.isEmptyString(methodName)
+      Utils.isNotEmptyString(moduleName) && Utils.isNotEmptyString(methodName)
         ? ` OCPP ${ocppVersion} | ${moduleName}.${methodName}:`
         : ` OCPP ${ocppVersion} |`;
     return Utils.logPrefix(logMsg);

@@ -20,7 +20,7 @@ export default class FileUtils {
     logPrefix: string,
     refreshedVariable?: T,
     listener: fs.WatchListener<string> = (event, filename) => {
-      if (!Utils.isEmptyString(filename) && event === 'change') {
+      if (Utils.isNotEmptyString(filename) && event === 'change') {
         try {
           logger.debug(`${logPrefix} ${fileType} file ${file} have changed, reload`);
           refreshedVariable && (refreshedVariable = JSON.parse(fs.readFileSync(file, 'utf8')) as T);
@@ -32,7 +32,7 @@ export default class FileUtils {
       }
     }
   ): fs.FSWatcher | undefined {
-    if (!Utils.isEmptyString(file)) {
+    if (Utils.isNotEmptyString(file)) {
       try {
         return fs.watch(file, listener);
       } catch (error) {
@@ -52,7 +52,7 @@ export default class FileUtils {
     logPrefix: string,
     params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }
   ): void {
-    const prefix = !Utils.isEmptyString(logPrefix) ? `${logPrefix} ` : '';
+    const prefix = Utils.isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':

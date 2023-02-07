@@ -150,7 +150,7 @@ export default class UIWebSocketServer extends AbstractUIServer {
       ? `UI WebSocket Server ${prefixSuffix}`
       : 'UI WebSocket Server';
     const logMsg =
-      !Utils.isEmptyString(modName) && !Utils.isEmptyString(methodName)
+      Utils.isNotEmptyString(modName) && Utils.isNotEmptyString(methodName)
         ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
         : ` ${logMsgPrefix} |`;
     return Utils.logPrefix(logMsg);

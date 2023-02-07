@@ -161,7 +161,7 @@ export default class ChargingStation {
   public logPrefix = (): string => {
     return Utils.logPrefix(
       ` ${
-        (!Utils.isEmptyString(this?.stationInfo?.chargingStationId) &&
+        (Utils.isNotEmptyString(this?.stationInfo?.chargingStationId) &&
           this?.stationInfo?.chargingStationId) ??
         ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile()) ??
         ''
@@ -514,7 +514,7 @@ export default class ChargingStation {
           this.logPrefix(),
           undefined,
           (event, filename): void => {
-            if (!Utils.isEmptyString(filename) && event === 'change') {
+            if (Utils.isNotEmptyString(filename) && event === 'change') {
               try {
                 logger.debug(
                   `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
@@ -882,7 +882,7 @@ export default class ChargingStation {
     stationInfo.firmwareVersionPattern =
       stationTemplate?.firmwareVersionPattern ?? Constants.SEMVER_PATTERN;
     if (
-      !Utils.isEmptyString(stationInfo.firmwareVersion) &&
+      Utils.isNotEmptyString(stationInfo.firmwareVersion) &&
       new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion) === false
     ) {
       logger.warn(
@@ -1037,8 +1037,8 @@ export default class ChargingStation {
     }
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
-      !Utils.isEmptyString(this.stationInfo.firmwareVersion) &&
-      !Utils.isEmptyString(this.stationInfo.firmwareVersionPattern)
+      Utils.isNotEmptyString(this.stationInfo.firmwareVersion) &&
+      Utils.isNotEmptyString(this.stationInfo.firmwareVersionPattern)
     ) {
       const patternGroup: number | undefined =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
@@ -1102,7 +1102,7 @@ export default class ChargingStation {
       );
     }
     if (
-      !Utils.isEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
+      Utils.isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         this.stationInfo.amperageLimitationOcppKey
@@ -1767,7 +1767,7 @@ export default class ChargingStation {
 
   private getAmperageLimitation(): number | undefined {
     if (
-      !Utils.isEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
+      Utils.isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         this.stationInfo.amperageLimitationOcppKey

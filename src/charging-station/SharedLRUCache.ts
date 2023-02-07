@@ -115,7 +115,7 @@ export default class SharedLRUCache {
       Utils.isNullOrUndefined(chargingStationConfiguration?.configurationHash) === false &&
       Utils.isEmptyArray(chargingStationConfiguration?.configurationKey) === false &&
       Utils.isEmptyObject(chargingStationConfiguration?.stationInfo) === false &&
-      Utils.isEmptyString(chargingStationConfiguration?.configurationHash) === false
+      Utils.isNotEmptyString(chargingStationConfiguration?.configurationHash) === true
     );
   }
 }

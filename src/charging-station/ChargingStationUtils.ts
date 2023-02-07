@@ -210,7 +210,7 @@ export class ChargingStationUtils {
     if (!Utils.isUndefined(template[key])) {
       logger.warn(
         `${logPrefix} Deprecated template key '${key}' usage in file '${templateFile}'${
-          !Utils.isEmptyString(logMsgToAppend) && `. ${logMsgToAppend}`
+          Utils.isNotEmptyString(logMsgToAppend) && `. ${logMsgToAppend}`
         }`
       );
     }
@@ -269,13 +269,13 @@ export class ChargingStationUtils {
         })
       : '';
     stationInfo.chargePointSerialNumber =
-      !Utils.isEmptyString(stationTemplate?.chargePointSerialNumberPrefix) &&
+      Utils.isNotEmptyString(stationTemplate?.chargePointSerialNumberPrefix) &&
       `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`;
     stationInfo.chargeBoxSerialNumber =
-      !Utils.isEmptyString(stationTemplate?.chargeBoxSerialNumberPrefix) &&
+      Utils.isNotEmptyString(stationTemplate?.chargeBoxSerialNumberPrefix) &&
       `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`;
     stationInfo.meterSerialNumber =
-      !Utils.isEmptyString(stationTemplate?.meterSerialNumberPrefix) &&
+      Utils.isNotEmptyString(stationTemplate?.meterSerialNumberPrefix) &&
       `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`;
   }
 

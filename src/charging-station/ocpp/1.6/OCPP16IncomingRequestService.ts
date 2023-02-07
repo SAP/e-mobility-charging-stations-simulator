@@ -749,7 +749,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           if (
             chargingStation.getLocalAuthListEnabled() === true &&
             chargingStation.hasAuthorizedTags() === true &&
-            !Utils.isEmptyString(
+            Utils.isNotEmptyString(
               chargingStation.authorizedTagsCache
                 .getAuthorizedTags(
                   ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
@@ -1027,7 +1027,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     }
     if (
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus &&
-      !Utils.isEmptyString(chargingStation.stationInfo?.firmwareUpgrade?.failureStatus)
+      Utils.isNotEmptyString(chargingStation.stationInfo?.firmwareUpgrade?.failureStatus)
     ) {
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
@@ -1095,9 +1095,9 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
         ftpClient = new Client();
         const accessResponse = await ftpClient.access({
           host: uri.host,
-          ...(!Utils.isEmptyString(uri.port) && { port: Utils.convertToInt(uri.port) }),
-          ...(!Utils.isEmptyString(uri.username) && { user: uri.username }),
-          ...(!Utils.isEmptyString(uri.password) && { password: uri.password }),
+          ...(Utils.isNotEmptyString(uri.port) && { port: Utils.convertToInt(uri.port) }),
+          ...(Utils.isNotEmptyString(uri.username) && { user: uri.username }),
+          ...(Utils.isNotEmptyString(uri.password) && { password: uri.password }),
         });
         let uploadResponse: FTPResponse;
         if (accessResponse.code === 220) {

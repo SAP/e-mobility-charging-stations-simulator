@@ -167,8 +167,8 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyString('test')).toBe(false);
     expect(Utils.isEmptyString(' test')).toBe(false);
     expect(Utils.isEmptyString('test ')).toBe(false);
-    expect(Utils.isEmptyString(undefined)).toBe(false);
-    expect(Utils.isEmptyString(null)).toBe(false);
+    expect(Utils.isEmptyString(undefined)).toBe(true);
+    expect(Utils.isEmptyString(null)).toBe(true);
     expect(Utils.isEmptyString(0)).toBe(false);
     expect(Utils.isEmptyString({})).toBe(false);
     expect(Utils.isEmptyString([])).toBe(false);
@@ -176,6 +176,24 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyString(new Set())).toBe(false);
     expect(Utils.isEmptyString(new WeakMap())).toBe(false);
     expect(Utils.isEmptyString(new WeakSet())).toBe(false);
+  });
+
+  it('Verify isNotEmptyString()', () => {
+    expect(Utils.isNotEmptyString('')).toBe(false);
+    expect(Utils.isNotEmptyString(' ')).toBe(false);
+    expect(Utils.isNotEmptyString('     ')).toBe(false);
+    expect(Utils.isNotEmptyString('test')).toBe(true);
+    expect(Utils.isNotEmptyString(' test')).toBe(true);
+    expect(Utils.isNotEmptyString('test ')).toBe(true);
+    expect(Utils.isNotEmptyString(undefined)).toBe(false);
+    expect(Utils.isNotEmptyString(null)).toBe(false);
+    expect(Utils.isNotEmptyString(0)).toBe(false);
+    expect(Utils.isNotEmptyString({})).toBe(false);
+    expect(Utils.isNotEmptyString([])).toBe(false);
+    expect(Utils.isNotEmptyString(new Map())).toBe(false);
+    expect(Utils.isNotEmptyString(new Set())).toBe(false);
+    expect(Utils.isNotEmptyString(new WeakMap())).toBe(false);
+    expect(Utils.isNotEmptyString(new WeakSet())).toBe(false);
   });
 
   it('Verify isUndefined()', () => {
