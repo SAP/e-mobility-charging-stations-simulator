@@ -209,7 +209,7 @@ export default class Utils {
 
   public static isNullOrUndefined(value: unknown): boolean {
     // eslint-disable-next-line eqeqeq, no-eq-null
-    return value == null ? true : false;
+    return value == null;
   }
 
   public static isEmptyArray(object: unknown | unknown[]): boolean {
