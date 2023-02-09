@@ -17,21 +17,20 @@ import { ChargingStationUtils } from '../ChargingStationUtils';
 
 const moduleName = 'OCPPIncomingRequestService';
 
-export default abstract class OCPPIncomingRequestService {
+export default abstract class OCPPIncomingRequestService extends AsyncResource {
   private static instance: OCPPIncomingRequestService | null = null;
-  protected asyncResource: AsyncResource;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
   protected abstract jsonSchemas: Map<IncomingRequestCommand, JSONSchemaType<JsonObject>>;
 
   protected constructor(version: OCPPVersion) {
+    super(moduleName);
     this.version = version;
     this.ajv = new Ajv({
       keywords: ['javaType'],
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.asyncResource = new AsyncResource(moduleName);
     this.incomingRequestHandler.bind(this);
     this.validateIncomingRequestPayload.bind(this);
   }

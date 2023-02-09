@@ -360,18 +360,16 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
   ): GenericResponse {
-    this.asyncResource
-      .runInAsyncScope(
-        chargingStation.reset.bind(chargingStation) as (
-          this: ChargingStation,
-          ...args: any[]
-        ) => Promise<void>,
-        chargingStation,
-        `${commandPayload.type}Reset` as OCPP16StopTransactionReason
-      )
-      .catch(() => {
-        /* This is intentional */
-      });
+    this.runInAsyncScope(
+      chargingStation.reset.bind(chargingStation) as (
+        this: ChargingStation,
+        ...args: any[]
+      ) => Promise<void>,
+      chargingStation,
+      `${commandPayload.type}Reset` as OCPP16StopTransactionReason
+    ).catch(() => {
+      /* This is intentional */
+    });
     logger.info(
       `${chargingStation.logPrefix()} ${
         commandPayload.type
@@ -980,18 +978,16 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     const retrieveDate = Utils.convertToDate(commandPayload.retrieveDate);
     const now = Date.now();
     if (retrieveDate?.getTime() <= now) {
-      this.asyncResource
-        .runInAsyncScope(
-          this.updateFirmware.bind(this) as (
-            this: OCPP16IncomingRequestService,
-            ...args: any[]
-          ) => Promise<void>,
-          this,
-          chargingStation
-        )
-        .catch(() => {
-          /* This is intentional */
-        });
+      this.runInAsyncScope(
+        this.updateFirmware.bind(this) as (
+          this: OCPP16IncomingRequestService,
+          ...args: any[]
+        ) => Promise<void>,
+        this,
+        chargingStation
+      ).catch(() => {
+        /* This is intentional */
+      });
     } else {
       setTimeout(() => {
         this.updateFirmware(chargingStation).catch(() => {
