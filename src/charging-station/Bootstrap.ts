@@ -130,11 +130,11 @@ export class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started === true) {
-      this.initializedCounters = false;
       await this.workerImplementation?.stop();
       this.workerImplementation = null;
       this.uiServer?.stop();
       await this.storage?.close();
+      this.initializedCounters = false;
       this.started = false;
     } else {
       console.error(chalk.red('Cannot stop a not started charging stations simulator'));
