@@ -121,13 +121,15 @@ export default class Utils {
     return result;
   }
 
-  public static getRandomFloat(max = Number.MAX_VALUE, min = 0, negative = false): number {
-    if (max < min || max < 0 || min < 0) {
+  public static getRandomFloat(max = Number.MAX_VALUE, min = 0): number {
+    if (max < min) {
+      throw new RangeError('Invalid interval');
+    }
+    if (max - min === Infinity) {
       throw new RangeError('Invalid interval');
     }
     const randomPositiveFloat = crypto.randomBytes(4).readUInt32LE() / 0xffffffff;
-    const sign = negative && randomPositiveFloat < 0.5 ? -1 : 1;
-    return sign * (randomPositiveFloat * (max - min) + min);
+    return randomPositiveFloat * (max - min) + min;
   }
 
   public static getRandomInteger(max = Constants.MAX_RANDOM_INTEGER, min = 0): number {
