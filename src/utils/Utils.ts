@@ -128,8 +128,7 @@ export default class Utils {
     if (max - min === Infinity) {
       throw new RangeError('Invalid interval');
     }
-    const randomPositiveFloat = crypto.randomBytes(4).readUInt32LE() / 0xffffffff;
-    return randomPositiveFloat * (max - min) + min;
+    return (crypto.randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min;
   }
 
   public static getRandomInteger(max = Constants.MAX_RANDOM_INTEGER, min = 0): number {
