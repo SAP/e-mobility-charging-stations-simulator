@@ -443,7 +443,8 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       for (const key of commandPayload.key) {
         const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
-          key
+          key,
+          true
         );
         if (keyFound) {
           if (Utils.isUndefined(keyFound.visible) === true) {
