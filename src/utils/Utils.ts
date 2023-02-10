@@ -214,13 +214,17 @@ export default class Utils {
   }
 
   public static isEmptyArray(object: unknown | unknown[]): boolean {
-    if (!Array.isArray(object)) {
+    if (Array.isArray(object) && object.length === 0) {
       return true;
     }
-    if (object.length > 0) {
-      return false;
+    return false;
+  }
+
+  public static isNotEmptyArray(object: unknown | unknown[]): boolean {
+    if (Array.isArray(object) && object.length > 0) {
+      return true;
     }
-    return true;
+    return false;
   }
 
   public static isEmptyObject(obj: object): boolean {

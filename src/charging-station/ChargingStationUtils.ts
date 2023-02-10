@@ -112,7 +112,7 @@ export class ChargingStationUtils {
 
   public static getConfiguredNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
     let configuredMaxConnectors: number;
-    if (Utils.isEmptyArray(stationTemplate.numberOfConnectors) === false) {
+    if (Utils.isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
       const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
       configuredMaxConnectors =
         numberOfConnectors[Math.floor(Utils.secureRandom() * numberOfConnectors.length)];
@@ -334,7 +334,7 @@ export class ChargingStationUtils {
           .chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel)
       );
     }
-    if (!Utils.isEmptyArray(chargingProfiles)) {
+    if (Utils.isNotEmptyArray(chargingProfiles)) {
       const result = ChargingStationUtils.getLimitFromChargingProfiles(
         chargingProfiles,
         chargingStation.logPrefix()

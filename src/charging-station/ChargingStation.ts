@@ -170,7 +170,7 @@ export default class ChargingStation {
   };
 
   public hasAuthorizedTags(): boolean {
-    return !Utils.isEmptyArray(
+    return Utils.isNotEmptyArray(
       this.authorizedTagsCache.getAuthorizedTags(
         ChargingStationUtils.getAuthorizationFile(this.stationInfo)
       )
@@ -713,7 +713,7 @@ export default class ChargingStation {
         this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
       this
     );
-    if (!Utils.isEmptyArray(connectorIds)) {
+    if (Utils.isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.startConnector(connectorId);
       }
@@ -724,7 +724,7 @@ export default class ChargingStation {
   }
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
-    if (!Utils.isEmptyArray(connectorIds)) {
+    if (Utils.isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.stopConnector(connectorId);
       }
@@ -865,7 +865,7 @@ export default class ChargingStation {
     );
     stationInfo.ocppVersion = stationTemplate?.ocppVersion ?? OCPPVersion.VERSION_16;
     ChargingStationUtils.createSerialNumber(stationTemplate, stationInfo);
-    if (!Utils.isEmptyArray(stationTemplate?.power)) {
+    if (Utils.isNotEmptyArray(stationTemplate?.power)) {
       stationTemplate.power = stationTemplate.power as number[];
       const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationTemplate.power.length);
       stationInfo.maximumPower =
@@ -1928,7 +1928,7 @@ export default class ChargingStation {
 
   private getConfiguredSupervisionUrl(): URL {
     const supervisionUrls = this.stationInfo?.supervisionUrls ?? Configuration.getSupervisionUrls();
-    if (!Utils.isEmptyArray(supervisionUrls)) {
+    if (Utils.isNotEmptyArray(supervisionUrls)) {
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.ROUND_ROBIN:
           // FIXME

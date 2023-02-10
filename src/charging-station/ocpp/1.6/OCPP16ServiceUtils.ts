@@ -769,7 +769,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
     }
     let cpReplaced = false;
-    if (!Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
+    if (Utils.isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       chargingStation
         .getConnectorStatus(connectorId)
         ?.chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {

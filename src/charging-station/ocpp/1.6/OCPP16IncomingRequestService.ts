@@ -602,7 +602,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
     const connectorStatus = chargingStation.getConnectorStatus(commandPayload.connectorId);
     if (
       !Utils.isNullOrUndefined(commandPayload.connectorId) &&
-      !Utils.isEmptyArray(connectorStatus?.chargingProfiles)
+      Utils.isNotEmptyArray(connectorStatus?.chargingProfiles)
     ) {
       connectorStatus.chargingProfiles = [];
       logger.debug(
@@ -616,7 +616,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
       let clearedCP = false;
       for (const connectorId of chargingStation.connectors.keys()) {
         if (
-          !Utils.isEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)
+          Utils.isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)
         ) {
           chargingStation
             .getConnectorStatus(connectorId)

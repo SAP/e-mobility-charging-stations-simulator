@@ -218,7 +218,7 @@ export class OCPPServiceUtils {
       chargingStation.getConnectorStatus(connectorId)?.MeterValues;
     for (
       let index = 0;
-      Utils.isEmptyArray(sampledValueTemplates) === false && index < sampledValueTemplates.length;
+      Utils.isNotEmptyArray(sampledValueTemplates) === true && index < sampledValueTemplates.length;
       index++
     ) {
       if (

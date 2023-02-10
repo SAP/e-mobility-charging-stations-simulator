@@ -154,7 +154,7 @@ export default abstract class AbstractUIService {
     procedureName: BroadcastChannelProcedureName,
     payload: BroadcastChannelRequestPayload
   ): void {
-    if (!Utils.isEmptyArray(payload.hashIds)) {
+    if (Utils.isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
         .map((hashId) => {
           if (this.uiServer.chargingStations.has(hashId) === true) {
@@ -169,7 +169,7 @@ export default abstract class AbstractUIService {
         })
         .filter((hashId) => hashId !== undefined);
     }
-    const expectedNumberOfResponses = !Utils.isEmptyArray(payload.hashIds)
+    const expectedNumberOfResponses = Utils.isNotEmptyArray(payload.hashIds)
       ? payload.hashIds.length
       : this.uiServer.chargingStations.size;
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);

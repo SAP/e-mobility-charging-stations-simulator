@@ -241,7 +241,7 @@ export class Bootstrap {
       this.numberOfChargingStationTemplates = 0;
       this.numberOfChargingStations = 0;
       const stationTemplateUrls = Configuration.getStationTemplateUrls();
-      if (!Utils.isEmptyArray(stationTemplateUrls)) {
+      if (Utils.isNotEmptyArray(stationTemplateUrls)) {
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
         stationTemplateUrls.forEach((stationTemplateUrl) => {
           this.numberOfChargingStations += stationTemplateUrl.numberOfStations ?? 0;
