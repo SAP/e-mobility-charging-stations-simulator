@@ -8,8 +8,9 @@ import { MessageChannelUtils } from '../charging-station/MessageChannelUtils';
 import { MessageType } from '../types/ocpp/MessageType';
 import type { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
 import type { Statistics, TimeSeries } from '../types/Statistics';
-import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../utils/CircularArray';
+import { CircularArray } from '../utils/CircularArray';
 import Configuration from '../utils/Configuration';
+import Constants from '../utils/Constants';
 import logger from '../utils/Logger';
 import Utils from '../utils/Utils';
 
@@ -253,12 +254,12 @@ export default class PerformanceStatistics {
     this.statistics.statisticsData.get(entryName).avgTimeMeasurement =
       this.statistics.statisticsData.get(entryName).totalTimeMeasurement /
       this.statistics.statisticsData.get(entryName).countTimeMeasurement;
-    Array.isArray(this.statistics.statisticsData.get(entryName)?.timeMeasurementSeries) === true
+    this.statistics.statisticsData.get(entryName)?.timeMeasurementSeries instanceof CircularArray
       ? this.statistics.statisticsData
           .get(entryName)
           ?.timeMeasurementSeries?.push({ timestamp: entry.startTime, value: entry.duration })
       : (this.statistics.statisticsData.get(entryName).timeMeasurementSeries =
-          new CircularArray<TimeSeries>(DEFAULT_CIRCULAR_ARRAY_SIZE, {
+          new CircularArray<TimeSeries>(Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY, {
             timestamp: entry.startTime,
             value: entry.duration,
           }));

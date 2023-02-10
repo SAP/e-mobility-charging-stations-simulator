@@ -1,6 +1,6 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-export const DEFAULT_CIRCULAR_ARRAY_SIZE = Number.MAX_SAFE_INTEGER;
+const DEFAULT_CIRCULAR_ARRAY_SIZE = 1024;
 
 /**
  * Array with a maximum length shifting items when full.

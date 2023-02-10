@@ -82,7 +82,7 @@ export interface UnlockConnectorRequest extends JsonObject {
 }
 
 export interface GetConfigurationRequest extends JsonObject {
-  key?: string | OCPP16StandardParametersKey[];
+  key?: (string | OCPP16StandardParametersKey)[];
 }
 
 export enum ResetType {

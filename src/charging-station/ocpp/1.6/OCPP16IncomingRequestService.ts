@@ -425,7 +425,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
   ): GetConfigurationResponse {
     const configurationKey: OCPPConfigurationKey[] = [];
     const unknownKey: string[] = [];
-    if (Utils.isEmptyArray(commandPayload.key) === true) {
+    if (Utils.isUndefined(commandPayload.key) === true) {
       for (const configuration of chargingStation.ocppConfiguration.configurationKey) {
         if (Utils.isUndefined(configuration.visible) === true) {
           configuration.visible = true;
@@ -439,7 +439,7 @@ export default class OCPP16IncomingRequestService extends OCPPIncomingRequestSer
           value: configuration.value,
         });
       }
-    } else {
+    } else if (Utils.isNotEmptyArray(commandPayload.key) === true) {
       for (const key of commandPayload.key) {
         const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
