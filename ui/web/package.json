@@ -10,6 +10,10 @@
     "lint:fix": "vue-cli-service lint --fix",
     "test": "vue-cli-service test:unit"
   },
+  "overrides": {
+    "cacheable-request": "^10.2.7",
+    "got": "^11.8.5"
+  },
   "dependencies": {
     "core-js": "^3.27.2",
     "finalhandler": "^1.2.0",

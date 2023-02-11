@@ -3,7 +3,7 @@
   "version": "1.1.93",
   "engines": {
     "node": ">=16.0.0",
-    "npm": ">=8.0.0"
+    "npm": ">=8.3.0"
   },
   "repository": {
     "type": "git",
@@ -70,6 +70,10 @@
     "git:supdate": "git submodule update --remote --recursive --merge",
     "git:spush": "git push --recurse-submodules=on-demand",
     "release": "release-it"
+  },
+  "overrides": {
+    "cacheable-request": "^10.2.7",
+    "d3-color": "^3.1.0"
   },
   "dependencies": {
     "@mikro-orm/core": "^5.6.9",
