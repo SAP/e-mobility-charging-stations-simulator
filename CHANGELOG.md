@@ -1,6 +1,15 @@
 # Changelog
 
-## [v1.1.93](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.92...v1.1.93)
+## [v1.1.94](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.93...v1.1.94)
+
+- fix: apply dependencies overrides [`db64a53`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/db64a53bae8bfe40bcdcff64fe5e4b1287cdfae3)
+- chore: apply dependencies update [`3d1b570`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3d1b570a5cafb042d73719311e1abce73a18965d)
+- fix(simulator): fix empty array detection helper semantic [`53ac516`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/53ac516c575adaacd199a68d39b5ace22876ee83)
+- fix(simulator): fix brown paper bag bugs after helpers semantic fix [`9a15316`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9a15316cb7ede50d57ab25f758f0ccf1aa1bd903)
+- chore(simulator): apply dependencies update [`b6a45d9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b6a45d9ada7e4b734c86d1c54cabbda58a6b72bb)
+- fix(simulator): lookup OCPP configuration key case insensitively [`acda9ca`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/acda9cab8724c9b51d1f5f9a8a12c6dd3617ff55)
+
+## [v1.1.93](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.92...v1.1.93) (2023-02-10)
 
 - fix(simulator): detect string emptyness properly [`#390`](https://github.com/sap/e-mobility-charging-stations-simulator/issues/390)
 - Apply dependencies update [`910bff7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/910bff7b6fc78f799a860bf6a50a400afd4447cd)
@@ -18,6 +27,7 @@
 - chore: apply dependencies update [`b34de72`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b34de720f4839ac20de72e10d5550c01312f5c8a)
 - chore: apply dependencies update [`db407f0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/db407f05ffa8cad8bcc26ba12773f619a13f04ba)
 - fix(simulator): calculate LRU cache capacity dynamically at startup to [`d1c99c5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d1c99c59787e98b3954760fbc208a5dfbc3d8f57)
+- chore: version 1.1.93 [`27bdf05`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/27bdf05539fbeda022a73281c98acf65b830163b)
 - fix(simulator): fix delayed initialization in promise at startup [`a596d20`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a596d200439848662293885dd9730f91be083114)
 - refactor(simulator): move configuration checks at initialization [`846d285`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/846d285145c208d251fedf80426c7a4abf12d731)
 - Use arrow function for log messages prefixing [`8b7072d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8b7072dca602c80ec6ef9a3463b6d53b43aa8fa5)
