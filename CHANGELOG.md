@@ -57,7 +57,7 @@
 - Switch log messages to string literal [`44eb602`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/44eb6026079c8dc2c77b10a96a42d0c0b2da7c8f)
 - Apply dependencies update [`b099197`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b09919731582dad401825be0aeb0185344a1d845)
 - Strict null type check fixes [`1895299`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1895299db899eb53db7fb1615b82624f806017e8)
-- Apply depedencies update [`dec8f36`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/dec8f3602f5ed9cd916cce460ee0e10aedaa087e)
+- Apply dependencies update [`dec8f36`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/dec8f3602f5ed9cd916cce460ee0e10aedaa087e)
 - Factor out JSON schemas parsing with per OCPP stack version [`7164966`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7164966d863b4539243b473c5e2e9d22fb9b5fd1)
 - Fix file error handling propagation [`6d8b0b0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6d8b0b0e25a198e2328d165b9413f6f4d13db2e7)
 - Strict null check fixes [`551e477`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/551e477c2cc2461de8dcc2b263a35c0c50240bbf)
