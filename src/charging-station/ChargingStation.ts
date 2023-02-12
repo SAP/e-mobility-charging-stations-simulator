@@ -15,16 +15,18 @@ import { ChargingStationConfigurationUtils } from './ChargingStationConfiguratio
 import { ChargingStationUtils } from './ChargingStationUtils';
 import { ChargingStationWorkerBroadcastChannel } from './ChargingStationWorkerBroadcastChannel';
 import { MessageChannelUtils } from './MessageChannelUtils';
-import { OCPP16IncomingRequestService } from './ocpp/1.6/OCPP16IncomingRequestService';
-import { OCPP16RequestService } from './ocpp/1.6/OCPP16RequestService';
-import { OCPP16ResponseService } from './ocpp/1.6/OCPP16ResponseService';
-import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
-import { OCPP20IncomingRequestService } from './ocpp/2.0/OCPP20IncomingRequestService';
-import { OCPP20RequestService } from './ocpp/2.0/OCPP20RequestService';
-import { OCPP20ResponseService } from './ocpp/2.0/OCPP20ResponseService';
-import type { OCPPIncomingRequestService } from './ocpp/OCPPIncomingRequestService';
-import type { OCPPRequestService } from './ocpp/OCPPRequestService';
-import { OCPPServiceUtils } from './ocpp/OCPPServiceUtils';
+import {
+  OCPP16IncomingRequestService,
+  OCPP16RequestService,
+  OCPP16ResponseService,
+  OCPP16ServiceUtils,
+  OCPP20IncomingRequestService,
+  OCPP20RequestService,
+  OCPP20ResponseService,
+  type OCPPIncomingRequestService,
+  type OCPPRequestService,
+  OCPPServiceUtils,
+} from './ocpp';
 import { SharedLRUCache } from './SharedLRUCache';
 import { BaseError, OCPPError } from '../exception';
 import { PerformanceStatistics } from '../performance/PerformanceStatistics';

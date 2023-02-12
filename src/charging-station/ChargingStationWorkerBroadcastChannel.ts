@@ -1,6 +1,6 @@
 import type { ChargingStation } from './ChargingStation';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
-import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
+import { OCPP16ServiceUtils } from './ocpp';
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
 import { BaseError, type OCPPError } from '../exception';
 import {
