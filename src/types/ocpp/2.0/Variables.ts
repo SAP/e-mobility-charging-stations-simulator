@@ -1,0 +1,60 @@
+export enum OCPP20ComponentName {
+  AlignedDataCtrlr = 'AlignedDataCtrlr',
+  AuthCacheCtrlr = 'AuthCacheCtrlr',
+  AuthCtrlr = 'AuthCtrlr',
+  CHAdeMOCtrlr = 'CHAdeMOCtrlr',
+  ClockCtrlr = 'ClockCtrlr',
+  CustomizationCtrlr = 'CustomizationCtrlr',
+  DeviceDataCtrlr = 'DeviceDataCtrlr',
+  DisplayMessageCtrlr = 'DisplayMessageCtrlr',
+  ISO15118Ctrlr = 'ISO15118Ctrlr',
+  LocalAuthListCtrlr = 'LocalAuthListCtrlr',
+  MonitoringCtrlr = 'MonitoringCtrlr',
+  OCPPCommCtrlr = 'OCPPCommCtrlr',
+  ReservationCtrlr = 'ReservationCtrlr',
+  SampledDataCtrlr = 'SampledDataCtrlr',
+  SecurityCtrlr = 'SecurityCtrlr',
+  SmartChargingCtrlr = 'SmartChargingCtrlr',
+  TariffCostCtrlr = 'TariffCostCtrlr',
+  TxCtrlr = 'TxCtrlr',
+}
+
+export enum OCPP20RequiredVariableName {
+  MessageTimeout = 'MessageTimeout',
+  FileTransferProtocols = 'FileTransferProtocols',
+  NetworkConfigurationPriority = 'NetworkConfigurationPriority',
+  NetworkProfileConnectionAttempts = 'NetworkProfileConnectionAttempts',
+  OfflineThreshold = 'OfflineThreshold',
+  MessageAttempts = 'TransactionEvent',
+  MessageAttemptInterval = 'MessageAttemptInterval',
+  UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
+  ResetRetries = 'ResetRetries',
+  ItemsPerMessage = 'ItemsPerMessage',
+  BytesPerMessage = 'BytesPerMessage',
+  DateTime = 'DateTime',
+  TimeSource = 'TimeSource',
+  OrganizationName = 'OrganizationName',
+  CertificateEntries = 'CertificateEntries',
+  SecurityProfile = 'SecurityProfile',
+  AuthorizeRemoteStart = 'AuthorizeRemoteStart',
+  LocalAuthorizeOffline = 'LocalAuthorizeOffline',
+  LocalPreAuthorize = 'LocalPreAuthorize',
+  EVConnectionTimeOut = 'EVConnectionTimeOut',
+  StopTxOnEVSideDisconnect = 'StopTxOnEVSideDisconnect',
+  TxStartPoint = 'TxStartPoint',
+  TxStopPoint = 'TxStopPoint',
+  StopTxOnInvalidId = 'StopTxOnInvalidId',
+  TxEndedMeasurands = 'TxEndedMeasurands',
+  TxStartedMeasurands = 'TxStartedMeasurands',
+  TxUpdatedMeasurands = 'TxUpdatedMeasurands',
+  TxUpdatedInterval = 'TxUpdatedInterval',
+}
+
+export enum OCPP20OptionalVariableName {
+  HeartbeatInterval = 'HeartbeatInterval',
+  WebSocketPingInterval = 'WebSocketPingInterval',
+}
+
+export enum OCPP20VendorVariableName {
+  ConnectionUrl = 'ConnectionUrl',
+}

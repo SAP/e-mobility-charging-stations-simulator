@@ -8,11 +8,11 @@ import {
   ErrorType,
   type JsonObject,
   type JsonType,
-  OCPP16StandardParametersKey,
   type OCPP20BootNotificationResponse,
   type OCPP20ClearCacheResponse,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
+  OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationResponse,
   OCPPVersion,
@@ -161,16 +161,9 @@ export class OCPP20ResponseService extends OCPPResponseService {
     if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         chargingStation,
-        OCPP16StandardParametersKey.HeartbeatInterval,
+        OCPP20OptionalVariableName.HeartbeatInterval,
         payload.interval.toString(),
         {},
-        { overwrite: true, save: true }
-      );
-      ChargingStationConfigurationUtils.addConfigurationKey(
-        chargingStation,
-        OCPP16StandardParametersKey.HeartBeatInterval,
-        payload.interval.toString(),
-        { visible: false },
         { overwrite: true, save: true }
       );
       chargingStation.heartbeatSetInterval

@@ -21,6 +21,7 @@ export * from './ocpp/1.6/Responses';
 export * from './ocpp/1.6/Transaction';
 export * from './ocpp/2.0/Requests';
 export * from './ocpp/2.0/Responses';
+export * from './ocpp/2.0/Variables';
 export * from './orm/entities/PerformanceData';
 export * from './orm/entities/PerformanceRecord';
 export * from './AutomaticTransactionGenerator';
