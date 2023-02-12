@@ -2,7 +2,7 @@
 
 import chalk from 'chalk';
 
-import { Bootstrap } from './internal';
+import { Bootstrap } from './charging-station';
 
 Bootstrap.getInstance()
   .start()

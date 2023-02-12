@@ -7,12 +7,10 @@ import { type Worker, isMainThread } from 'worker_threads';
 import chalk from 'chalk';
 
 import { ChargingStationUtils } from './ChargingStationUtils';
-import type { AbstractUIServer } from './ui-server/AbstractUIServer';
-import { UIServerFactory } from './ui-server/UIServerFactory';
+import { type AbstractUIServer, UIServerFactory } from './internal';
 import { version } from '../../package.json';
 import { BaseError } from '../exception';
-import type { Storage } from '../performance/storage/Storage';
-import { StorageFactory } from '../performance/storage/StorageFactory';
+import { type Storage, StorageFactory } from '../performance';
 import {
   type ChargingStationData,
   type ChargingStationWorkerData,

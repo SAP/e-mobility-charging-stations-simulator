@@ -1,2 +1,2 @@
-export * from './BaseError';
-export * from './OCPPError';
+export { BaseError } from './BaseError';
+export { OCPPError } from './OCPPError';

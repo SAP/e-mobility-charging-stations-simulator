@@ -1,7 +1,5 @@
-import type { AbstractUIService } from './AbstractUIService';
-import { UIService001 } from './UIService001';
 import { ProtocolVersion } from '../../../types';
-import type { AbstractUIServer } from '../AbstractUIServer';
+import { type AbstractUIServer, type AbstractUIService, UIService001 } from '../../internal';
 
 export class UIServiceFactory {
   private constructor() {

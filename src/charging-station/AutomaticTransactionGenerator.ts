@@ -5,7 +5,7 @@ import { AsyncResource } from 'async_hooks';
 import type { ChargingStation } from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import { BaseError } from '../exception';
-import { PerformanceStatistics } from '../performance/PerformanceStatistics';
+import { PerformanceStatistics } from '../performance';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,

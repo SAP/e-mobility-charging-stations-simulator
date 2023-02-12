@@ -1,5 +1,4 @@
 import { BaseError, type OCPPError } from '../../../exception';
-import { Bootstrap } from '../../../internal';
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
@@ -13,8 +12,8 @@ import {
 } from '../../../types';
 import { logger } from '../../../utils/Logger';
 import { Utils } from '../../../utils/Utils';
+import { type AbstractUIServer, Bootstrap } from '../../internal';
 import { UIServiceWorkerBroadcastChannel } from '../../UIServiceWorkerBroadcastChannel';
-import type { AbstractUIServer } from '../AbstractUIServer';
 
 const moduleName = 'AbstractUIService';
 

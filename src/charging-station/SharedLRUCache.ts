@@ -1,6 +1,6 @@
 import LRUCache from 'mnemonist/lru-map-with-delete';
 
-import { Bootstrap } from '../internal';
+import { Bootstrap } from './internal';
 import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types';
 import { Utils } from '../utils/Utils';
 
