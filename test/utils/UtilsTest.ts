@@ -1,7 +1,7 @@
 import expect from 'expect';
 
-import Constants from '../../src/utils/Constants';
-import Utils from '../../src/utils/Utils';
+import { Constants } from '../../src/utils/Constants';
+import { Utils } from '../../src/utils/Utils';
 
 describe('Utils test suite', () => {
   it('Verify generateUUID()/validateUUID()', () => {

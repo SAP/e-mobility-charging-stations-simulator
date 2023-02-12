@@ -5,39 +5,34 @@ import { fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 
-import OCPPError from '../../../exception/OCPPError';
-import { CurrentType, Voltage } from '../../../types/ChargingStationTemplate';
-import type { JsonType } from '../../../types/JsonType';
-import type {
-  MeasurandPerPhaseSampledValueTemplates,
-  SampledValueTemplate,
-} from '../../../types/MeasurandPerPhaseSampledValueTemplates';
-import type { MeasurandValues } from '../../../types/MeasurandValues';
-import type { OCPP16ChargingProfile } from '../../../types/ocpp/1.6/ChargingProfile';
+import { OCPPError } from '../../../exception';
 import {
-  OCPP16StandardParametersKey,
-  OCPP16SupportedFeatureProfiles,
-} from '../../../types/ocpp/1.6/Configuration';
-import {
+  CurrentType,
+  ErrorType,
+  type JsonType,
+  type MeasurandPerPhaseSampledValueTemplates,
+  type MeasurandValues,
   MeterValueContext,
   MeterValueLocation,
   MeterValueUnit,
+  type OCPP16ChargingProfile,
+  type OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValuePhase,
-  type OCPP16SampledValue,
-} from '../../../types/ocpp/1.6/MeterValues';
-import {
-  type OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
-} from '../../../types/ocpp/1.6/Requests';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
-import Constants from '../../../utils/Constants';
+  type OCPP16SampledValue,
+  OCPP16StandardParametersKey,
+  type OCPP16SupportedFeatureProfiles,
+  OCPPVersion,
+  type SampledValueTemplate,
+  Voltage,
+} from '../../../types';
+import { Constants } from '../../../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
-import logger from '../../../utils/Logger';
-import Utils from '../../../utils/Utils';
-import type ChargingStation from '../../ChargingStation';
+import { logger } from '../../../utils/Logger';
+import { Utils } from '../../../utils/Utils';
+import type { ChargingStation } from '../../ChargingStation';
 import { OCPPServiceUtils } from '../OCPPServiceUtils';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {

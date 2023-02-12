@@ -1,6 +1,6 @@
 import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
-import type { WorkerData } from './Worker';
 import type { CircularArray } from '../utils/CircularArray';
+import type { WorkerData } from '../worker';
 
 export type TimeSeries = {
   timestamp: number;

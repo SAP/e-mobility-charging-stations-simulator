@@ -1,9 +1,8 @@
 import LRUCache from 'mnemonist/lru-map-with-delete';
 
 import { Bootstrap } from '../internal';
-import type { ChargingStationConfiguration } from '../types/ChargingStationConfiguration';
-import type { ChargingStationTemplate } from '../types/ChargingStationTemplate';
-import Utils from '../utils/Utils';
+import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types';
+import { Utils } from '../utils/Utils';
 
 enum CacheType {
   CHARGING_STATION_TEMPLATE = 'chargingStationTemplate',
@@ -12,7 +11,7 @@ enum CacheType {
 
 type CacheableType = ChargingStationTemplate | ChargingStationConfiguration;
 
-export default class SharedLRUCache {
+export class SharedLRUCache {
   private static instance: SharedLRUCache | null = null;
   private readonly lruCache: LRUCache<string, CacheableType>;
 

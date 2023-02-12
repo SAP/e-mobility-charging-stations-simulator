@@ -1,8 +1,8 @@
 import type { IncomingMessage } from 'http';
 
-import { Protocol, ProtocolVersion } from '../../types/UIProtocol';
-import logger from '../../utils/Logger';
-import Utils from '../../utils/Utils';
+import { Protocol, ProtocolVersion } from '../../types';
+import { logger } from '../../utils/Logger';
+import { Utils } from '../../utils/Utils';
 
 export class UIServerUtils {
   private constructor() {

@@ -1,7 +1,6 @@
-import type ChargingStation from './ChargingStation';
-import type { ConfigurationKey } from '../types/ChargingStationOcppConfiguration';
-import type { StandardParametersKey } from '../types/ocpp/Configuration';
-import logger from '../utils/Logger';
+import type { ChargingStation } from './ChargingStation';
+import type { ConfigurationKey, StandardParametersKey } from '../types';
+import { logger } from '../utils/Logger';
 
 type ConfigurationKeyOptions = { readonly?: boolean; visible?: boolean; reboot?: boolean };
 type DeleteConfigurationKeyParams = { save?: boolean; caseInsensitive?: boolean };

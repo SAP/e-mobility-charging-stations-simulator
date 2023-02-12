@@ -2,32 +2,30 @@
 
 import { AsyncResource } from 'async_hooks';
 
-import type ChargingStation from './ChargingStation';
+import type { ChargingStation } from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
-import BaseError from '../exception/BaseError';
-import PerformanceStatistics from '../performance/PerformanceStatistics';
-import {
-  type AutomaticTransactionGeneratorConfiguration,
-  IdTagDistribution,
-  type Status,
-} from '../types/AutomaticTransactionGenerator';
-import { RequestCommand } from '../types/ocpp/Requests';
+import { BaseError } from '../exception';
+import { PerformanceStatistics } from '../performance/PerformanceStatistics';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
   type AuthorizeResponse,
+  type AutomaticTransactionGeneratorConfiguration,
+  IdTagDistribution,
+  RequestCommand,
   type StartTransactionRequest,
   type StartTransactionResponse,
+  type Status,
   StopTransactionReason,
   type StopTransactionResponse,
-} from '../types/ocpp/Transaction';
-import Constants from '../utils/Constants';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
+} from '../types';
+import { Constants } from '../utils/Constants';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
 
 const moduleName = 'AutomaticTransactionGenerator';
 
-export default class AutomaticTransactionGenerator extends AsyncResource {
+export class AutomaticTransactionGenerator extends AsyncResource {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
     string,
     AutomaticTransactionGenerator

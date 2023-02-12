@@ -5,16 +5,20 @@ import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import { parentPort } from 'worker_threads';
 
 import { MessageChannelUtils } from '../charging-station/MessageChannelUtils';
-import { MessageType } from '../types/ocpp/MessageType';
-import type { IncomingRequestCommand, RequestCommand } from '../types/ocpp/Requests';
-import type { Statistics, TimeSeries } from '../types/Statistics';
+import {
+  type IncomingRequestCommand,
+  MessageType,
+  type RequestCommand,
+  type Statistics,
+  type TimeSeries,
+} from '../types';
 import { CircularArray } from '../utils/CircularArray';
-import Configuration from '../utils/Configuration';
-import Constants from '../utils/Constants';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
+import { Configuration } from '../utils/Configuration';
+import { Constants } from '../utils/Constants';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
 
-export default class PerformanceStatistics {
+export class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<
     string,
     PerformanceStatistics

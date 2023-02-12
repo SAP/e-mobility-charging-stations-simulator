@@ -1,17 +1,17 @@
 import { BroadcastChannel } from 'worker_threads';
 
-import type { JsonType } from '../types/JsonType';
 import type {
   BroadcastChannelRequest,
   BroadcastChannelResponse,
+  JsonType,
   MessageEvent,
-} from '../types/WorkerBroadcastChannel';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
+} from '../types';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
 
 const moduleName = 'WorkerBroadcastChannel';
 
-export default abstract class WorkerBroadcastChannel extends BroadcastChannel {
+export abstract class WorkerBroadcastChannel extends BroadcastChannel {
   protected constructor() {
     super('worker');
   }

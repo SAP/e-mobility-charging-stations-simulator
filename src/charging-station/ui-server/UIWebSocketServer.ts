@@ -6,15 +6,18 @@ import WebSocket, { type RawData, WebSocketServer } from 'ws';
 
 import { AbstractUIServer } from './AbstractUIServer';
 import { UIServerUtils } from './UIServerUtils';
-import type { UIServerConfiguration } from '../../types/ConfigurationData';
-import type { ProtocolRequest, ProtocolResponse } from '../../types/UIProtocol';
-import { WebSocketCloseEventStatusCode } from '../../types/WebSocket';
-import logger from '../../utils/Logger';
-import Utils from '../../utils/Utils';
+import {
+  type ProtocolRequest,
+  type ProtocolResponse,
+  type UIServerConfiguration,
+  WebSocketCloseEventStatusCode,
+} from '../../types';
+import { logger } from '../../utils/Logger';
+import { Utils } from '../../utils/Utils';
 
 const moduleName = 'UIWebSocketServer';
 
-export default class UIWebSocketServer extends AbstractUIServer {
+export class UIWebSocketServer extends AbstractUIServer {
   private readonly webSocketServer: WebSocketServer;
 
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {

@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 
-import WorkerConstants from './WorkerConstants';
-import type { WorkerData, WorkerOptions } from '../types/Worker';
+import { WorkerConstants } from './WorkerConstants';
+import type { WorkerData, WorkerOptions } from './WorkerTypes';
 
-export default abstract class WorkerAbstract<T extends WorkerData> {
+export abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;
   protected readonly workerOptions: WorkerOptions;
   public abstract readonly size: number;

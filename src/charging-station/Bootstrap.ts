@@ -8,9 +8,9 @@ import chalk from 'chalk';
 
 import { ChargingStationUtils } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
-import UIServerFactory from './ui-server/UIServerFactory';
+import { UIServerFactory } from './ui-server/UIServerFactory';
 import { version } from '../../package.json';
-import BaseError from '../exception/BaseError';
+import { BaseError } from '../exception';
 import type { Storage } from '../performance/storage/Storage';
 import { StorageFactory } from '../performance/storage/StorageFactory';
 import {
@@ -19,15 +19,13 @@ import {
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
-} from '../types/ChargingStationWorker';
-import type { StationTemplateUrl } from '../types/ConfigurationData';
-import type { Statistics } from '../types/Statistics';
-import type { MessageHandler } from '../types/Worker';
-import Configuration from '../utils/Configuration';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
-import type WorkerAbstract from '../worker/WorkerAbstract';
-import WorkerFactory from '../worker/WorkerFactory';
+  type StationTemplateUrl,
+  type Statistics,
+} from '../types';
+import { Configuration } from '../utils/Configuration';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
+import { type MessageHandler, type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
 

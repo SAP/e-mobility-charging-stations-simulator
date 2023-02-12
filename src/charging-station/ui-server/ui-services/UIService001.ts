@@ -1,12 +1,8 @@
-import AbstractUIService from './AbstractUIService';
-import {
-  ProcedureName,
-  type ProtocolRequestHandler,
-  ProtocolVersion,
-} from '../../../types/UIProtocol';
+import { AbstractUIService } from './AbstractUIService';
+import { type ProcedureName, type ProtocolRequestHandler, ProtocolVersion } from '../../../types';
 import type { AbstractUIServer } from '../AbstractUIServer';
 
-export default class UIService001 extends AbstractUIService {
+export class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {
     super(uiServer, ProtocolVersion['0.0.1']);
     for (const procedureName of Object.keys(

@@ -6,7 +6,7 @@ import type { ConnectorStatus } from './ConnectorStatus';
 import type { JsonObject } from './JsonType';
 import type { BootNotificationResponse } from './ocpp/Responses';
 import type { Statistics } from './Statistics';
-import { WorkerData, WorkerMessage, WorkerMessageEvents } from './Worker';
+import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
 export interface ChargingStationWorkerOptions extends JsonObject {
   elementStartDelay?: number;

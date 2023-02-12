@@ -3,64 +3,57 @@
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
-import OCPPError from '../../../exception/OCPPError';
-import type { JsonObject, JsonType } from '../../../types/JsonType';
-import { OCPP16ChargePointErrorCode } from '../../../types/ocpp/1.6/ChargePointErrorCode';
-import { OCPP16ChargePointStatus } from '../../../types/ocpp/1.6/ChargePointStatus';
-import { OCPP16StandardParametersKey } from '../../../types/ocpp/1.6/Configuration';
-import type {
-  OCPP16MeterValuesRequest,
-  OCPP16MeterValuesResponse,
-} from '../../../types/ocpp/1.6/MeterValues';
+import { OCPPError } from '../../../exception';
 import {
-  type OCPP16BootNotificationRequest,
-  OCPP16IncomingRequestCommand,
-  OCPP16RequestCommand,
-  type OCPP16StatusNotificationRequest,
-} from '../../../types/ocpp/1.6/Requests';
-import type {
-  ChangeAvailabilityResponse,
-  ChangeConfigurationResponse,
-  ClearChargingProfileResponse,
-  GetConfigurationResponse,
-  GetDiagnosticsResponse,
-  OCPP16BootNotificationResponse,
-  OCPP16DataTransferResponse,
-  OCPP16DiagnosticsStatusNotificationResponse,
-  OCPP16FirmwareStatusNotificationResponse,
-  OCPP16HeartbeatResponse,
-  OCPP16StatusNotificationResponse,
-  OCPP16TriggerMessageResponse,
-  OCPP16UpdateFirmwareResponse,
-  SetChargingProfileResponse,
-  UnlockConnectorResponse,
-} from '../../../types/ocpp/1.6/Responses';
-import {
+  type ChangeAvailabilityResponse,
+  type ChangeConfigurationResponse,
+  type ClearChargingProfileResponse,
+  ErrorType,
+  type GenericResponse,
+  type GetConfigurationResponse,
+  type GetDiagnosticsResponse,
+  type JsonObject,
+  type JsonType,
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
+  type OCPP16BootNotificationRequest,
+  type OCPP16BootNotificationResponse,
+  OCPP16ChargePointErrorCode,
+  OCPP16ChargePointStatus,
+  type OCPP16DataTransferResponse,
+  type OCPP16DiagnosticsStatusNotificationResponse,
+  type OCPP16FirmwareStatusNotificationResponse,
+  type OCPP16HeartbeatResponse,
+  OCPP16IncomingRequestCommand,
+  type OCPP16MeterValuesRequest,
+  type OCPP16MeterValuesResponse,
+  OCPP16RequestCommand,
+  OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
+  type OCPP16StatusNotificationRequest,
+  type OCPP16StatusNotificationResponse,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
-} from '../../../types/ocpp/1.6/Transaction';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
-import {
-  type GenericResponse,
+  type OCPP16TriggerMessageResponse,
+  type OCPP16UpdateFirmwareResponse,
+  OCPPVersion,
   RegistrationStatusEnumType,
   type ResponseHandler,
-} from '../../../types/ocpp/Responses';
-import Constants from '../../../utils/Constants';
-import logger from '../../../utils/Logger';
-import Utils from '../../../utils/Utils';
-import type ChargingStation from '../../ChargingStation';
+  type SetChargingProfileResponse,
+  type UnlockConnectorResponse,
+} from '../../../types';
+import { Constants } from '../../../utils/Constants';
+import { logger } from '../../../utils/Logger';
+import { Utils } from '../../../utils/Utils';
+import type { ChargingStation } from '../../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
-import OCPPResponseService from '../OCPPResponseService';
+import { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP16ResponseService';
 
-export default class OCPP16ResponseService extends OCPPResponseService {
+export class OCPP16ResponseService extends OCPPResponseService {
   public jsonIncomingRequestResponseSchemas: Map<
     OCPP16IncomingRequestCommand,
     JSONSchemaType<JsonObject>

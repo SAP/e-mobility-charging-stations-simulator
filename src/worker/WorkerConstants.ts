@@ -1,4 +1,4 @@
-export default class WorkerConstants {
+export class WorkerConstants {
   static readonly DEFAULT_ELEMENT_START_DELAY = 0;
   static readonly DEFAULT_WORKER_START_DELAY = 500;
   static readonly POOL_MAX_INACTIVE_TIME = 60000;

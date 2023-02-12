@@ -2,30 +2,32 @@ import fs from 'node:fs';
 
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 
-import BaseError from '../../exception/BaseError';
-import { FileType } from '../../types/FileType';
-import type { JsonObject, JsonType } from '../../types/JsonType';
-import type { SampledValueTemplate } from '../../types/MeasurandPerPhaseSampledValueTemplates';
-import type { OCPP16StatusNotificationRequest } from '../../types/ocpp/1.6/Requests';
-import type { OCPP20StatusNotificationRequest } from '../../types/ocpp/2.0/Requests';
-import { ChargePointErrorCode } from '../../types/ocpp/ChargePointErrorCode';
-import { StandardParametersKey } from '../../types/ocpp/Configuration';
-import type { ConnectorStatusEnum } from '../../types/ocpp/ConnectorStatusEnum';
-import { ErrorType } from '../../types/ocpp/ErrorType';
-import { MessageType } from '../../types/ocpp/MessageType';
-import { MeterValueMeasurand, type MeterValuePhase } from '../../types/ocpp/MeterValues';
-import { OCPPVersion } from '../../types/ocpp/OCPPVersion';
+import { BaseError } from '../../exception';
 import {
+  ChargePointErrorCode,
+  type ConnectorStatusEnum,
+  ErrorType,
+  FileType,
   IncomingRequestCommand,
+  type JsonObject,
+  type JsonType,
   MessageTrigger,
+  MessageType,
+  MeterValueMeasurand,
+  type MeterValuePhase,
+  type OCPP16StatusNotificationRequest,
+  type OCPP20StatusNotificationRequest,
+  OCPPVersion,
   RequestCommand,
+  type SampledValueTemplate,
+  StandardParametersKey,
   type StatusNotificationRequest,
-} from '../../types/ocpp/Requests';
-import Constants from '../../utils/Constants';
-import FileUtils from '../../utils/FileUtils';
-import logger from '../../utils/Logger';
-import Utils from '../../utils/Utils';
-import type ChargingStation from '../ChargingStation';
+} from '../../types';
+import { Constants } from '../../utils/Constants';
+import { FileUtils } from '../../utils/FileUtils';
+import { logger } from '../../utils/Logger';
+import { Utils } from '../../utils/Utils';
+import type { ChargingStation } from '../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../ChargingStationConfigurationUtils';
 
 export class OCPPServiceUtils {

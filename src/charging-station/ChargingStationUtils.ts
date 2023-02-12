@@ -4,31 +4,31 @@ import { fileURLToPath } from 'node:url';
 
 import moment from 'moment';
 
-import type ChargingStation from './ChargingStation';
-import BaseError from '../exception/BaseError';
-import type { ChargingStationInfo } from '../types/ChargingStationInfo';
+import type { ChargingStation } from './ChargingStation';
+import { BaseError } from '../exception';
 import {
   AmpereUnits,
-  type ChargingStationTemplate,
-  CurrentType,
-  Voltage,
-} from '../types/ChargingStationTemplate';
-import { ChargingProfileKindType, RecurrencyKindType } from '../types/ocpp/1.6/ChargingProfile';
-import type { OCPP16BootNotificationRequest } from '../types/ocpp/1.6/Requests';
-import { BootReasonEnumType, type OCPP20BootNotificationRequest } from '../types/ocpp/2.0/Requests';
-import {
+  type BootNotificationRequest,
+  BootReasonEnumType,
   type ChargingProfile,
+  ChargingProfileKindType,
   ChargingRateUnitType,
   type ChargingSchedulePeriod,
-} from '../types/ocpp/ChargingProfile';
-import { OCPPVersion } from '../types/ocpp/OCPPVersion';
-import type { BootNotificationRequest } from '../types/ocpp/Requests';
-import { WorkerProcessType } from '../types/Worker';
-import Configuration from '../utils/Configuration';
-import Constants from '../utils/Constants';
+  type ChargingStationInfo,
+  type ChargingStationTemplate,
+  CurrentType,
+  type OCPP16BootNotificationRequest,
+  type OCPP20BootNotificationRequest,
+  OCPPVersion,
+  RecurrencyKindType,
+  Voltage,
+} from '../types';
+import { Configuration } from '../utils/Configuration';
+import { Constants } from '../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
+import { WorkerProcessType } from '../worker';
 
 const moduleName = 'ChargingStationUtils';
 

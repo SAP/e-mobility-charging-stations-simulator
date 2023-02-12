@@ -1,34 +1,36 @@
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import type OCPPResponseService from './OCPPResponseService';
+import type { OCPPResponseService } from './OCPPResponseService';
 import { OCPPServiceUtils } from './OCPPServiceUtils';
-import OCPPError from '../../exception/OCPPError';
-import PerformanceStatistics from '../../performance/PerformanceStatistics';
-import type { EmptyObject } from '../../types/EmptyObject';
-import type { HandleErrorParams } from '../../types/Error';
-import type { JsonObject, JsonType } from '../../types/JsonType';
-import { ErrorType } from '../../types/ocpp/ErrorType';
-import { MessageType } from '../../types/ocpp/MessageType';
-import type { OCPPVersion } from '../../types/ocpp/OCPPVersion';
+import { OCPPError } from '../../exception';
+import { PerformanceStatistics } from '../../performance/PerformanceStatistics';
 import {
+  type EmptyObject,
   type ErrorCallback,
+  type ErrorResponse,
+  ErrorType,
+  type HandleErrorParams,
   type IncomingRequestCommand,
+  type JsonObject,
+  type JsonType,
+  MessageType,
+  type OCPPVersion,
   type OutgoingRequest,
   RequestCommand,
   type RequestParams,
+  type Response,
   type ResponseCallback,
   type ResponseType,
-} from '../../types/ocpp/Requests';
-import type { ErrorResponse, Response } from '../../types/ocpp/Responses';
-import Constants from '../../utils/Constants';
-import logger from '../../utils/Logger';
-import Utils from '../../utils/Utils';
-import type ChargingStation from '../ChargingStation';
+} from '../../types';
+import { Constants } from '../../utils/Constants';
+import { logger } from '../../utils/Logger';
+import { Utils } from '../../utils/Utils';
+import type { ChargingStation } from '../ChargingStation';
 
 const moduleName = 'OCPPRequestService';
 
-export default abstract class OCPPRequestService {
+export abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;

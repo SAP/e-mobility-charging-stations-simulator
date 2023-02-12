@@ -1,12 +1,13 @@
-import type AbstractUIService from './ui-server/ui-services/AbstractUIService';
-import WorkerBroadcastChannel from './WorkerBroadcastChannel';
-import { type ResponsePayload, ResponseStatus } from '../types/UIProtocol';
-import type {
-  BroadcastChannelResponse,
-  BroadcastChannelResponsePayload,
-  MessageEvent,
-} from '../types/WorkerBroadcastChannel';
-import logger from '../utils/Logger';
+import type { AbstractUIService } from './ui-server/ui-services/AbstractUIService';
+import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
+import {
+  type BroadcastChannelResponse,
+  type BroadcastChannelResponsePayload,
+  type MessageEvent,
+  type ResponsePayload,
+  ResponseStatus,
+} from '../types';
+import { logger } from '../utils/Logger';
 
 const moduleName = 'UIServiceWorkerBroadcastChannel';
 
@@ -16,7 +17,7 @@ type Responses = {
   responses: BroadcastChannelResponsePayload[];
 };
 
-export default class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
+export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly uiService: AbstractUIService;
   private readonly responses: Map<string, Responses>;
 

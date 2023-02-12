@@ -2,18 +2,17 @@
 
 import { Worker } from 'worker_threads';
 
-import WorkerAbstract from './WorkerAbstract';
-import { WorkerUtils } from './WorkerUtils';
+import { WorkerAbstract } from './WorkerAbstract';
 import {
   type MessageHandler,
   type WorkerData,
   WorkerMessageEvents,
   type WorkerOptions,
   type WorkerSetElement,
-} from '../types/Worker';
-import Utils from '../utils/Utils';
+} from './WorkerTypes';
+import { WorkerUtils } from './WorkerUtils';
 
-export default class WorkerSet extends WorkerAbstract<WorkerData> {
+export class WorkerSet extends WorkerAbstract<WorkerData> {
   private readonly workerSet: Set<WorkerSetElement>;
 
   /**
@@ -58,7 +57,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     this.getLastWorkerSetElement().numberOfWorkerElements++;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {
-      await Utils.sleep(this.workerOptions.elementStartDelay);
+      await WorkerUtils.sleep(this.workerOptions.elementStartDelay);
     }
   }
 
@@ -105,7 +104,7 @@ export default class WorkerSet extends WorkerAbstract<WorkerData> {
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });
     // Start worker sequentially to optimize memory at startup
     this.workerOptions.workerStartDelay > 0 &&
-      (await Utils.sleep(this.workerOptions.workerStartDelay));
+      (await WorkerUtils.sleep(this.workerOptions.workerStartDelay));
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {

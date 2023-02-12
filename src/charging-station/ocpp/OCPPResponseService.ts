@@ -2,16 +2,20 @@ import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
 import { OCPPServiceUtils } from './OCPPServiceUtils';
-import OCPPError from '../../exception/OCPPError';
-import type { JsonObject, JsonType } from '../../types/JsonType';
-import type { OCPPVersion } from '../../types/ocpp/OCPPVersion';
-import type { IncomingRequestCommand, RequestCommand } from '../../types/ocpp/Requests';
-import logger from '../../utils/Logger';
-import type ChargingStation from '../ChargingStation';
+import { OCPPError } from '../../exception';
+import type {
+  IncomingRequestCommand,
+  JsonObject,
+  JsonType,
+  OCPPVersion,
+  RequestCommand,
+} from '../../types';
+import { logger } from '../../utils/Logger';
+import type { ChargingStation } from '../ChargingStation';
 
 const moduleName = 'OCPPResponseService';
 
-export default abstract class OCPPResponseService {
+export abstract class OCPPResponseService {
   private static instance: OCPPResponseService | null = null;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;

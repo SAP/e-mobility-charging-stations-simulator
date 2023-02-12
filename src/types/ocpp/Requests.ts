@@ -20,8 +20,8 @@ import {
   type OCPP20StatusNotificationRequest,
 } from './2.0/Requests';
 import type { MessageType } from './MessageType';
-import type ChargingStation from '../../charging-station/ChargingStation';
-import type OCPPError from '../../exception/OCPPError';
+import type { ChargingStation } from '../../charging-station/ChargingStation';
+import type { OCPPError } from '../../exception';
 import type { JsonType } from '../JsonType';
 
 export const RequestCommand = {

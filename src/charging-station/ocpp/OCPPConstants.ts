@@ -7,9 +7,9 @@ import {
   GenericStatus,
   TriggerMessageStatus,
   UnlockStatus,
-} from '../../types/ocpp/Responses';
+} from '../../types';
 
-export default class OCPPConstants {
+export class OCPPConstants {
   static readonly OCPP_REQUEST_EMPTY = Object.freeze({});
   static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.ACCEPTED });

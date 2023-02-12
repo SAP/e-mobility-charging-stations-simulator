@@ -4,8 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { AbstractUIServer } from './AbstractUIServer';
 import { UIServerUtils } from './UIServerUtils';
-import BaseError from '../../exception/BaseError';
-import type { UIServerConfiguration } from '../../types/ConfigurationData';
+import { BaseError } from '../../exception';
 import {
   type ProcedureName,
   type Protocol,
@@ -14,13 +13,14 @@ import {
   type ProtocolVersion,
   type RequestPayload,
   ResponseStatus,
-} from '../../types/UIProtocol';
-import logger from '../../utils/Logger';
-import Utils from '../../utils/Utils';
+  type UIServerConfiguration,
+} from '../../types';
+import { logger } from '../../utils/Logger';
+import { Utils } from '../../utils/Utils';
 
 const moduleName = 'UIHttpServer';
 
-export default class UIHttpServer extends AbstractUIServer {
+export class UIHttpServer extends AbstractUIServer {
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration);
   }

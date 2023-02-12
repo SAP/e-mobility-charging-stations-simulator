@@ -1,7 +1,8 @@
-import BaseError from '../../../exception/BaseError';
-import type OCPPError from '../../../exception/OCPPError';
+import { BaseError, type OCPPError } from '../../../exception';
 import { Bootstrap } from '../../../internal';
 import {
+  BroadcastChannelProcedureName,
+  type BroadcastChannelRequestPayload,
   ProcedureName,
   type ProtocolRequest,
   type ProtocolRequestHandler,
@@ -9,19 +10,15 @@ import {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
-} from '../../../types/UIProtocol';
-import {
-  BroadcastChannelProcedureName,
-  type BroadcastChannelRequestPayload,
-} from '../../../types/WorkerBroadcastChannel';
-import logger from '../../../utils/Logger';
-import Utils from '../../../utils/Utils';
-import UIServiceWorkerBroadcastChannel from '../../UIServiceWorkerBroadcastChannel';
+} from '../../../types';
+import { logger } from '../../../utils/Logger';
+import { Utils } from '../../../utils/Utils';
+import { UIServiceWorkerBroadcastChannel } from '../../UIServiceWorkerBroadcastChannel';
 import type { AbstractUIServer } from '../AbstractUIServer';
 
 const moduleName = 'AbstractUIService';
 
-export default abstract class AbstractUIService {
+export abstract class AbstractUIService {
   protected static readonly ProcedureNameToBroadCastChannelProcedureNameMap: Omit<
     Record<ProcedureName, BroadcastChannelProcedureName>,
     | ProcedureName.START_SIMULATOR

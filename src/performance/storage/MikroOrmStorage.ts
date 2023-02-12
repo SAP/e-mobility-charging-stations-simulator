@@ -4,11 +4,14 @@ import { Configuration, Connection, IDatabaseDriver, MikroORM, Options } from '@
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 import { Storage } from './Storage';
-import { PerformanceData } from '../../types/orm/entities/PerformanceData';
-import { PerformanceRecord } from '../../types/orm/entities/PerformanceRecord';
-import type { Statistics } from '../../types/Statistics';
-import { MikroORMDBType, StorageType } from '../../types/Storage';
-import Constants from '../../utils/Constants';
+import {
+  type MikroORMDBType,
+  PerformanceData,
+  PerformanceRecord,
+  type Statistics,
+  StorageType,
+} from '../../types';
+import { Constants } from '../../utils/Constants';
 
 export class MikroOrmStorage extends Storage {
   private storageType: StorageType;

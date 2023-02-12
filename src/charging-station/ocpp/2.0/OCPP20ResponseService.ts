@@ -3,28 +3,30 @@
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import OCPPError from '../../../exception/OCPPError';
-import type { JsonObject, JsonType } from '../../../types/JsonType';
+import { OCPPError } from '../../../exception';
 import {
+  ErrorType,
+  type JsonObject,
+  type JsonType,
+  OCPP16StandardParametersKey,
+  type OCPP20BootNotificationResponse,
+  type OCPP20ClearCacheResponse,
+  type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
-} from '../../../types/ocpp/2.0/Requests';
-import type {
-  OCPP20BootNotificationResponse,
-  OCPP20ClearCacheResponse,
-  OCPP20HeartbeatResponse,
-  OCPP20StatusNotificationResponse,
-} from '../../../types/ocpp/2.0/Responses';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
-import { RegistrationStatusEnumType, ResponseHandler } from '../../../types/ocpp/Responses';
-import logger from '../../../utils/Logger';
-import type ChargingStation from '../../ChargingStation';
-import OCPPResponseService from '../OCPPResponseService';
+  type OCPP20StatusNotificationResponse,
+  OCPPVersion,
+  RegistrationStatusEnumType,
+  type ResponseHandler,
+} from '../../../types';
+import { logger } from '../../../utils/Logger';
+import type { ChargingStation } from '../../ChargingStation';
+import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
+import { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP20ResponseService';
 
-export default class OCPP20ResponseService extends OCPPResponseService {
+export class OCPP20ResponseService extends OCPPResponseService {
   public jsonIncomingRequestResponseSchemas: Map<
     OCPP20IncomingRequestCommand,
     JSONSchemaType<JsonObject>
@@ -157,20 +159,20 @@ export default class OCPP20ResponseService extends OCPPResponseService {
     payload: OCPP20BootNotificationResponse
   ): void {
     if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
-      // ChargingStationConfigurationUtils.addConfigurationKey(
-      //   chargingStation,
-      //   OCPP16StandardParametersKey.HeartbeatInterval,
-      //   payload.interval.toString(),
-      //   {},
-      //   { overwrite: true, save: true }
-      // );
-      // ChargingStationConfigurationUtils.addConfigurationKey(
-      //   chargingStation,
-      //   OCPP16StandardParametersKey.HeartBeatInterval,
-      //   payload.interval.toString(),
-      //   { visible: false },
-      //   { overwrite: true, save: true }
-      // );
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        chargingStation,
+        OCPP16StandardParametersKey.HeartbeatInterval,
+        payload.interval.toString(),
+        {},
+        { overwrite: true, save: true }
+      );
+      ChargingStationConfigurationUtils.addConfigurationKey(
+        chargingStation,
+        OCPP16StandardParametersKey.HeartBeatInterval,
+        payload.interval.toString(),
+        { visible: false },
+        { overwrite: true, save: true }
+      );
       chargingStation.heartbeatSetInterval
         ? chargingStation.restartHeartbeat()
         : chargingStation.startHeartbeat();

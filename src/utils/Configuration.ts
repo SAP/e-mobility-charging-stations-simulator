@@ -6,24 +6,23 @@ import chalk from 'chalk';
 import merge from 'just-merge';
 import { WorkerChoiceStrategies } from 'poolifier';
 
-import Constants from './Constants';
+import { Constants } from './Constants';
 import {
+  ApplicationProtocol,
   type ConfigurationData,
+  type EmptyObject,
+  FileType,
+  type HandleErrorParams,
   type StationTemplateUrl,
   type StorageConfiguration,
+  StorageType,
   SupervisionUrlDistribution,
   type UIServerConfiguration,
   type WorkerConfiguration,
-} from '../types/ConfigurationData';
-import type { EmptyObject } from '../types/EmptyObject';
-import type { HandleErrorParams } from '../types/Error';
-import { FileType } from '../types/FileType';
-import { StorageType } from '../types/Storage';
-import { ApplicationProtocol } from '../types/UIProtocol';
-import { WorkerProcessType } from '../types/Worker';
-import WorkerConstants from '../worker/WorkerConstants';
+} from '../types';
+import { WorkerConstants, WorkerProcessType } from '../worker';
 
-export default class Configuration {
+export class Configuration {
   private static configurationFile = path.join(
     path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
     'assets',

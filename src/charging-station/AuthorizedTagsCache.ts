@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 
-import { FileType } from '../types/FileType';
-import FileUtils from '../utils/FileUtils';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
+import { FileType } from '../types';
+import { FileUtils } from '../utils/FileUtils';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
 
-export default class AuthorizedTagsCache {
+export class AuthorizedTagsCache {
   private static instance: AuthorizedTagsCache | null = null;
   private readonly tagsCaches: Map<string, string[]>;
   private readonly FSWatchers: Map<string, fs.FSWatcher | undefined>;

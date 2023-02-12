@@ -3,36 +3,35 @@
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
-import OCPPError from '../../../exception/OCPPError';
-import type { JsonObject, JsonType } from '../../../types/JsonType';
-import type { OCPP16MeterValuesRequest } from '../../../types/ocpp/1.6/MeterValues';
+import { OCPPError } from '../../../exception';
 import {
+  ErrorType,
+  type JsonObject,
+  type JsonType,
+  type OCPP16AuthorizeRequest,
   type OCPP16BootNotificationRequest,
   type OCPP16DataTransferRequest,
   type OCPP16DiagnosticsStatusNotificationRequest,
   type OCPP16FirmwareStatusNotificationRequest,
   type OCPP16HeartbeatRequest,
+  type OCPP16MeterValuesRequest,
   OCPP16RequestCommand,
+  type OCPP16StartTransactionRequest,
   type OCPP16StatusNotificationRequest,
-} from '../../../types/ocpp/1.6/Requests';
-import type {
-  OCPP16AuthorizeRequest,
-  OCPP16StartTransactionRequest,
-  OCPP16StopTransactionRequest,
-} from '../../../types/ocpp/1.6/Transaction';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
-import type { RequestParams } from '../../../types/ocpp/Requests';
-import Constants from '../../../utils/Constants';
-import Utils from '../../../utils/Utils';
-import type ChargingStation from '../../ChargingStation';
-import OCPPConstants from '../OCPPConstants';
-import OCPPRequestService from '../OCPPRequestService';
-import type OCPPResponseService from '../OCPPResponseService';
+  type OCPP16StopTransactionRequest,
+  OCPPVersion,
+  type RequestParams,
+} from '../../../types';
+import { Constants } from '../../../utils/Constants';
+import { Utils } from '../../../utils/Utils';
+import type { ChargingStation } from '../../ChargingStation';
+import { OCPPConstants } from '../OCPPConstants';
+import { OCPPRequestService } from '../OCPPRequestService';
+import type { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP16RequestService';
 
-export default class OCPP16RequestService extends OCPPRequestService {
+export class OCPP16RequestService extends OCPPRequestService {
   protected jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor(ocppResponseService: OCPPResponseService) {

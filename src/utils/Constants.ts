@@ -1,6 +1,6 @@
-import { MeterValueMeasurand } from '../types/ocpp/MeterValues';
+import { MeterValueMeasurand } from '../types';
 
-export default class Constants {
+export class Constants {
   static readonly OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
   static readonly OCPP_WEBSOCKET_TIMEOUT = 60000; // Ms
   static readonly OCPP_TRIGGER_MESSAGE_DELAY = 500; // Ms

@@ -4,7 +4,7 @@ import type { WorkerChoiceStrategy } from 'poolifier';
 
 import type { StorageType } from './Storage';
 import type { ApplicationProtocol, AuthenticationType } from './UIProtocol';
-import type { WorkerProcessType } from './Worker';
+import type { WorkerProcessType } from '../worker';
 
 export type ServerOptions = ListenOptions;
 

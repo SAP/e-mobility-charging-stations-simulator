@@ -21,7 +21,7 @@ import type {
 } from './2.0/Responses';
 import type { ErrorType } from './ErrorType';
 import type { MessageType } from './MessageType';
-import type ChargingStation from '../../charging-station/ChargingStation';
+import type { ChargingStation } from '../../charging-station/ChargingStation';
 import type { JsonType } from '../JsonType';
 
 export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType];

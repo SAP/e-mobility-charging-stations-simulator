@@ -1,6 +1,6 @@
 import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
 
-import { PerformanceRecord } from './PerformanceRecord';
+import type { PerformanceRecord } from './PerformanceRecord';
 
 @Entity()
 export class PerformanceData {

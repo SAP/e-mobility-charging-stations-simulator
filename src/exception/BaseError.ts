@@ -1,4 +1,4 @@
-export default class BaseError extends Error {
+export class BaseError extends Error {
   public constructor(message?: string) {
     super(message);
     this.name = new.target.name;

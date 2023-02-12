@@ -2,12 +2,11 @@ import type { Worker } from 'worker_threads';
 
 import { DynamicThreadPool, type ErrorHandler, type ExitHandler } from 'poolifier';
 
-import WorkerAbstract from './WorkerAbstract';
+import { WorkerAbstract } from './WorkerAbstract';
+import type { WorkerData, WorkerOptions } from './WorkerTypes';
 import { WorkerUtils } from './WorkerUtils';
-import type { WorkerData, WorkerOptions } from '../types/Worker';
-import Utils from '../utils/Utils';
 
-export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
+export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   private readonly pool: DynamicThreadPool<WorkerData>;
 
   /**
@@ -69,6 +68,6 @@ export default class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup
     this.workerOptions.elementStartDelay > 0 &&
-      (await Utils.sleep(this.workerOptions.elementStartDelay));
+      (await WorkerUtils.sleep(this.workerOptions.elementStartDelay));
   }
 }

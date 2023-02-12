@@ -3,26 +3,27 @@
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import OCPPError from '../../../exception/OCPPError';
-import type { JsonObject, JsonType } from '../../../types/JsonType';
+import { OCPPError } from '../../../exception';
 import {
+  ErrorType,
+  type JsonObject,
+  type JsonType,
   type OCPP20BootNotificationRequest,
   type OCPP20HeartbeatRequest,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
-} from '../../../types/ocpp/2.0/Requests';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
-import type { RequestParams } from '../../../types/ocpp/Requests';
-import Utils from '../../../utils/Utils';
-import type ChargingStation from '../../ChargingStation';
-import OCPPConstants from '../OCPPConstants';
-import OCPPRequestService from '../OCPPRequestService';
-import type OCPPResponseService from '../OCPPResponseService';
+  OCPPVersion,
+  type RequestParams,
+} from '../../../types';
+import { Utils } from '../../../utils/Utils';
+import type { ChargingStation } from '../../ChargingStation';
+import { OCPPConstants } from '../OCPPConstants';
+import { OCPPRequestService } from '../OCPPRequestService';
+import type { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP20RequestService';
 
-export default class OCPP20RequestService extends OCPPRequestService {
+export class OCPP20RequestService extends OCPPRequestService {
   protected jsonSchemas: Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor(ocppResponseService: OCPPResponseService) {

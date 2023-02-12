@@ -9,92 +9,85 @@ import { parentPort } from 'worker_threads';
 import merge from 'just-merge';
 import WebSocket, { type RawData } from 'ws';
 
-import AuthorizedTagsCache from './AuthorizedTagsCache';
-import AutomaticTransactionGenerator from './AutomaticTransactionGenerator';
+import { AuthorizedTagsCache } from './AuthorizedTagsCache';
+import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import { ChargingStationUtils } from './ChargingStationUtils';
-import ChargingStationWorkerBroadcastChannel from './ChargingStationWorkerBroadcastChannel';
+import { ChargingStationWorkerBroadcastChannel } from './ChargingStationWorkerBroadcastChannel';
 import { MessageChannelUtils } from './MessageChannelUtils';
-import OCPP16IncomingRequestService from './ocpp/1.6/OCPP16IncomingRequestService';
-import OCPP16RequestService from './ocpp/1.6/OCPP16RequestService';
-import OCPP16ResponseService from './ocpp/1.6/OCPP16ResponseService';
+import { OCPP16IncomingRequestService } from './ocpp/1.6/OCPP16IncomingRequestService';
+import { OCPP16RequestService } from './ocpp/1.6/OCPP16RequestService';
+import { OCPP16ResponseService } from './ocpp/1.6/OCPP16ResponseService';
 import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
-import OCPP20IncomingRequestService from './ocpp/2.0/OCPP20IncomingRequestService';
-import OCPP20RequestService from './ocpp/2.0/OCPP20RequestService';
-import OCPP20ResponseService from './ocpp/2.0/OCPP20ResponseService';
-import type OCPPIncomingRequestService from './ocpp/OCPPIncomingRequestService';
-import type OCPPRequestService from './ocpp/OCPPRequestService';
+import { OCPP20IncomingRequestService } from './ocpp/2.0/OCPP20IncomingRequestService';
+import { OCPP20RequestService } from './ocpp/2.0/OCPP20RequestService';
+import { OCPP20ResponseService } from './ocpp/2.0/OCPP20ResponseService';
+import type { OCPPIncomingRequestService } from './ocpp/OCPPIncomingRequestService';
+import type { OCPPRequestService } from './ocpp/OCPPRequestService';
 import { OCPPServiceUtils } from './ocpp/OCPPServiceUtils';
-import SharedLRUCache from './SharedLRUCache';
-import BaseError from '../exception/BaseError';
-import OCPPError from '../exception/OCPPError';
-import PerformanceStatistics from '../performance/PerformanceStatistics';
-import type { AutomaticTransactionGeneratorConfiguration } from '../types/AutomaticTransactionGenerator';
-import type { ChargingStationConfiguration } from '../types/ChargingStationConfiguration';
-import type { ChargingStationInfo } from '../types/ChargingStationInfo';
-import type { ChargingStationOcppConfiguration } from '../types/ChargingStationOcppConfiguration';
+import { SharedLRUCache } from './SharedLRUCache';
+import { BaseError, OCPPError } from '../exception';
+import { PerformanceStatistics } from '../performance/PerformanceStatistics';
 import {
-  type ChargingStationTemplate,
-  CurrentType,
-  type FirmwareUpgrade,
-  PowerUnits,
-  type WsOptions,
-} from '../types/ChargingStationTemplate';
-import { SupervisionUrlDistribution } from '../types/ConfigurationData';
-import type { ConnectorStatus } from '../types/ConnectorStatus';
-import { FileType } from '../types/FileType';
-import type { JsonType } from '../types/JsonType';
-import {
-  ConnectorPhaseRotation,
-  StandardParametersKey,
-  SupportedFeatureProfiles,
-  VendorDefaultParametersKey,
-} from '../types/ocpp/Configuration';
-import { ConnectorStatusEnum } from '../types/ocpp/ConnectorStatusEnum';
-import { ErrorType } from '../types/ocpp/ErrorType';
-import { MessageType } from '../types/ocpp/MessageType';
-import { MeterValue, MeterValueMeasurand } from '../types/ocpp/MeterValues';
-import { OCPPVersion } from '../types/ocpp/OCPPVersion';
-import {
+  type AutomaticTransactionGeneratorConfiguration,
   AvailabilityType,
   type BootNotificationRequest,
+  type BootNotificationResponse,
   type CachedRequest,
+  type ChargingStationConfiguration,
+  type ChargingStationInfo,
+  type ChargingStationOcppConfiguration,
+  type ChargingStationTemplate,
+  ConnectorPhaseRotation,
+  ConnectorStatus,
+  ConnectorStatusEnum,
+  CurrentType,
   type ErrorCallback,
+  type ErrorResponse,
+  ErrorType,
+  FileType,
   FirmwareStatus,
   type FirmwareStatusNotificationRequest,
-  type HeartbeatRequest,
-  type IncomingRequest,
-  IncomingRequestCommand,
-  type MeterValuesRequest,
-  type OutgoingRequest,
-  RequestCommand,
-  type ResponseCallback,
-  type StatusNotificationRequest,
-} from '../types/ocpp/Requests';
-import {
-  type BootNotificationResponse,
-  type ErrorResponse,
   type FirmwareStatusNotificationResponse,
+  type FirmwareUpgrade,
+  type HeartbeatRequest,
   type HeartbeatResponse,
+  type IncomingRequest,
+  type IncomingRequestCommand,
+  type JsonType,
+  MessageType,
+  type MeterValue,
+  MeterValueMeasurand,
+  type MeterValuesRequest,
   type MeterValuesResponse,
+  OCPPVersion,
+  type OutgoingRequest,
+  PowerUnits,
   RegistrationStatusEnumType,
+  RequestCommand,
   type Response,
+  type ResponseCallback,
+  StandardParametersKey,
+  type StatusNotificationRequest,
   type StatusNotificationResponse,
-} from '../types/ocpp/Responses';
-import {
   StopTransactionReason,
   type StopTransactionRequest,
   type StopTransactionResponse,
-} from '../types/ocpp/Transaction';
-import { WSError, WebSocketCloseEventStatusCode } from '../types/WebSocket';
-import Configuration from '../utils/Configuration';
-import Constants from '../utils/Constants';
+  SupervisionUrlDistribution,
+  SupportedFeatureProfiles,
+  VendorDefaultParametersKey,
+  type WSError,
+  WebSocketCloseEventStatusCode,
+  type WsOptions,
+} from '../types';
+import { Configuration } from '../utils/Configuration';
+import { Constants } from '../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
-import FileUtils from '../utils/FileUtils';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
+import { FileUtils } from '../utils/FileUtils';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
 
-export default class ChargingStation {
+export class ChargingStation {
   public readonly index: number;
   public readonly templateFile: string;
   public stationInfo!: ChargingStationInfo;

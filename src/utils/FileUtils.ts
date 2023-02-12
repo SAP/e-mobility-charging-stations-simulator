@@ -2,14 +2,11 @@ import fs from 'node:fs';
 
 import chalk from 'chalk';
 
-import logger from './Logger';
-import Utils from './Utils';
-import type { EmptyObject } from '../types/EmptyObject';
-import type { HandleErrorParams } from '../types/Error';
-import type { FileType } from '../types/FileType';
-import type { JsonType } from '../types/JsonType';
+import { logger } from './Logger';
+import { Utils } from './Utils';
+import type { EmptyObject, FileType, HandleErrorParams, JsonType } from '../types';
 
-export default class FileUtils {
+export class FileUtils {
   private constructor() {
     // This is intentional
   }

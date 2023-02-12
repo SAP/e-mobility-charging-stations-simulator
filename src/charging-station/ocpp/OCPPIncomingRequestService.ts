@@ -3,21 +3,24 @@ import { AsyncResource } from 'async_hooks';
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import OCPPConstants from './OCPPConstants';
+import { OCPPConstants } from './OCPPConstants';
 import { OCPPServiceUtils } from './OCPPServiceUtils';
-import OCPPError from '../../exception/OCPPError';
-import type { HandleErrorParams } from '../../types/Error';
-import type { JsonObject, JsonType } from '../../types/JsonType';
-import type { OCPPVersion } from '../../types/ocpp/OCPPVersion';
-import type { IncomingRequestCommand } from '../../types/ocpp/Requests';
-import type { ClearCacheResponse } from '../../types/ocpp/Responses';
-import logger from '../../utils/Logger';
-import type ChargingStation from '../ChargingStation';
+import { OCPPError } from '../../exception';
+import type {
+  ClearCacheResponse,
+  HandleErrorParams,
+  IncomingRequestCommand,
+  JsonObject,
+  JsonType,
+  OCPPVersion,
+} from '../../types';
+import { logger } from '../../utils/Logger';
+import type { ChargingStation } from '../ChargingStation';
 import { ChargingStationUtils } from '../ChargingStationUtils';
 
 const moduleName = 'OCPPIncomingRequestService';
 
-export default abstract class OCPPIncomingRequestService extends AsyncResource {
+export abstract class OCPPIncomingRequestService extends AsyncResource {
   private static instance: OCPPIncomingRequestService | null = null;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;

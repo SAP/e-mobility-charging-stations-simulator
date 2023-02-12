@@ -4,7 +4,7 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 import { PerformanceData } from './src/types/orm/entities/PerformanceData';
 import { PerformanceRecord } from './src/types/orm/entities/PerformanceRecord';
-import Constants from './src/utils/Constants';
+import { Constants } from './src/utils/Constants';
 
 export default {
   metadataProvider: TsMorphMetadataProvider,

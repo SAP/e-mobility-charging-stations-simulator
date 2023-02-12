@@ -1,52 +1,45 @@
-import type ChargingStation from './ChargingStation';
+import type { ChargingStation } from './ChargingStation';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import { OCPP16ServiceUtils } from './ocpp/1.6/OCPP16ServiceUtils';
-import WorkerBroadcastChannel from './WorkerBroadcastChannel';
-import BaseError from '../exception/BaseError';
-import type OCPPError from '../exception/OCPPError';
-import { StandardParametersKey } from '../types/ocpp/Configuration';
-import {
-  type BootNotificationRequest,
-  type DataTransferRequest,
-  type DiagnosticsStatusNotificationRequest,
-  type FirmwareStatusNotificationRequest,
-  type HeartbeatRequest,
-  type MeterValuesRequest,
-  RequestCommand,
-  type RequestParams,
-  type StatusNotificationRequest,
-} from '../types/ocpp/Requests';
-import {
-  type BootNotificationResponse,
-  type DataTransferResponse,
-  DataTransferStatus,
-  type DiagnosticsStatusNotificationResponse,
-  type FirmwareStatusNotificationResponse,
-  type HeartbeatResponse,
-  type MeterValuesResponse,
-  RegistrationStatusEnumType,
-  type StatusNotificationResponse,
-} from '../types/ocpp/Responses';
+import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
+import { BaseError, type OCPPError } from '../exception';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
   type AuthorizeResponse,
-  type StartTransactionRequest,
-  type StartTransactionResponse,
-  type StopTransactionRequest,
-  type StopTransactionResponse,
-} from '../types/ocpp/Transaction';
-import { ResponseStatus } from '../types/UIProtocol';
-import {
+  type BootNotificationRequest,
+  type BootNotificationResponse,
   BroadcastChannelProcedureName,
   type BroadcastChannelRequest,
   type BroadcastChannelRequestPayload,
   type BroadcastChannelResponsePayload,
+  type DataTransferRequest,
+  type DataTransferResponse,
+  DataTransferStatus,
+  type DiagnosticsStatusNotificationRequest,
+  type DiagnosticsStatusNotificationResponse,
+  type FirmwareStatusNotificationRequest,
+  type FirmwareStatusNotificationResponse,
+  type HeartbeatRequest,
+  type HeartbeatResponse,
   type MessageEvent,
-} from '../types/WorkerBroadcastChannel';
-import Constants from '../utils/Constants';
-import logger from '../utils/Logger';
-import Utils from '../utils/Utils';
+  type MeterValuesRequest,
+  type MeterValuesResponse,
+  RegistrationStatusEnumType,
+  RequestCommand,
+  type RequestParams,
+  ResponseStatus,
+  StandardParametersKey,
+  type StartTransactionRequest,
+  type StartTransactionResponse,
+  type StatusNotificationRequest,
+  type StatusNotificationResponse,
+  type StopTransactionRequest,
+  type StopTransactionResponse,
+} from '../types';
+import { Constants } from '../utils/Constants';
+import { logger } from '../utils/Logger';
+import { Utils } from '../utils/Utils';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 
@@ -66,7 +59,7 @@ type CommandHandler = (
   requestPayload?: BroadcastChannelRequestPayload
 ) => Promise<CommandResponse | void> | void;
 
-export default class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
+export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly commandHandlers: Map<BroadcastChannelProcedureName, CommandHandler>;
   private readonly chargingStation: ChargingStation;
 

@@ -3,22 +3,23 @@
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import OCPPError from '../../../exception/OCPPError';
-import type { JsonObject, JsonType } from '../../../types/JsonType';
+import { OCPPError } from '../../../exception';
 import {
+  ErrorType,
+  type IncomingRequestHandler,
+  type JsonObject,
+  type JsonType,
   type OCPP20ClearCacheRequest,
   OCPP20IncomingRequestCommand,
-} from '../../../types/ocpp/2.0/Requests';
-import { ErrorType } from '../../../types/ocpp/ErrorType';
-import { OCPPVersion } from '../../../types/ocpp/OCPPVersion';
-import type { IncomingRequestHandler } from '../../../types/ocpp/Requests';
-import logger from '../../../utils/Logger';
-import type ChargingStation from '../../ChargingStation';
-import OCPPIncomingRequestService from '../OCPPIncomingRequestService';
+  OCPPVersion,
+} from '../../../types';
+import { logger } from '../../../utils/Logger';
+import type { ChargingStation } from '../../ChargingStation';
+import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
 
 const moduleName = 'OCPP20IncomingRequestService';
 
-export default class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
+export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>;
   private incomingRequestHandlers: Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>;
 
