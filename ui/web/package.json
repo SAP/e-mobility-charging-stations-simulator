@@ -15,7 +15,7 @@
     "got": "^11.8.5"
   },
   "dependencies": {
-    "core-js": "^3.27.2",
+    "core-js": "^3.28.0",
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "vue": "^3.2.47",
@@ -26,8 +26,8 @@
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.13.0",
-    "@typescript-eslint/eslint-plugin": "^5.51.0",
-    "@typescript-eslint/parser": "^5.51.0",
+    "@typescript-eslint/eslint-plugin": "^5.52.0",
+    "@typescript-eslint/parser": "^5.52.0",
     "@vue/cli": "~5.0.8",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-eslint": "~5.0.8",
