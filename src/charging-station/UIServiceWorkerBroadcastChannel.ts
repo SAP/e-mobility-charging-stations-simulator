@@ -70,31 +70,31 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       status: responsesStatus,
       hashIdsSucceeded: this.responses
         .get(uuid)
-        ?.responses.map(({ status, hashId }) => {
+        ?.responses.filter(({ hashId }) => hashId !== undefined)
+        .map(({ status, hashId }) => {
           if (status === ResponseStatus.SUCCESS) {
             return hashId;
           }
-        })
-        .filter((hashId) => hashId !== undefined),
+        }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: this.responses
           .get(uuid)
-          ?.responses.map(({ status, hashId }) => {
+          ?.responses.filter(({ hashId }) => hashId !== undefined)
+          .map(({ status, hashId }) => {
             if (status === ResponseStatus.FAILURE) {
               return hashId;
             }
-          })
-          .filter((hashId) => hashId !== undefined),
+          }),
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: this.responses
           .get(uuid)
-          ?.responses.map((response) => {
+          ?.responses.filter((response) => response !== undefined)
+          .map((response) => {
             if (response.status === ResponseStatus.FAILURE) {
               return response;
             }
-          })
-          .filter((response) => response !== undefined),
+          }),
       }),
     };
   }
