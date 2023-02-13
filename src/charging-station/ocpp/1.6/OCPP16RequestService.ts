@@ -22,8 +22,7 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../types';
-import { Constants } from '../../../utils/Constants';
-import { Utils } from '../../../utils/Utils';
+import { Constants, Utils } from '../../../utils';
 import {
   OCPP16ServiceUtils,
   OCPPConstants,

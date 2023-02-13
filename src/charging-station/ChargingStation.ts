@@ -89,12 +89,15 @@ import {
   WebSocketCloseEventStatusCode,
   type WsOptions,
 } from '../types';
-import { Configuration } from '../utils/Configuration';
-import { Constants } from '../utils/Constants';
-import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
-import { FileUtils } from '../utils/FileUtils';
-import { logger } from '../utils/Logger';
-import { Utils } from '../utils/Utils';
+import {
+  ACElectricUtils,
+  Configuration,
+  Constants,
+  DCElectricUtils,
+  FileUtils,
+  Utils,
+  logger,
+} from '../utils';
 
 export class ChargingStation {
   public readonly index: number;

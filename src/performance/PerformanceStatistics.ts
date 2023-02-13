@@ -12,11 +12,7 @@ import {
   type Statistics,
   type TimeSeries,
 } from '../types';
-import { CircularArray } from '../utils/CircularArray';
-import { Configuration } from '../utils/Configuration';
-import { Constants } from '../utils/Constants';
-import { logger } from '../utils/Logger';
-import { Utils } from '../utils/Utils';
+import { CircularArray, Configuration, Constants, Utils, logger } from '../utils';
 
 export class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<

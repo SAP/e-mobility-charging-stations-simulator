@@ -6,7 +6,7 @@ import { ThreadWorker } from 'poolifier';
 
 import { ChargingStation, ChargingStationUtils } from './internal';
 import type { ChargingStationWorkerData } from '../types';
-import { Utils } from '../utils/Utils';
+import { Utils } from '../utils';
 import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
 // Conditionally export ThreadWorker instance for pool usage

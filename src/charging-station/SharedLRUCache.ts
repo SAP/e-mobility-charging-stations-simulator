@@ -2,7 +2,7 @@ import LRUCache from 'mnemonist/lru-map-with-delete';
 
 import { Bootstrap } from './internal';
 import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types';
-import { Utils } from '../utils/Utils';
+import { Utils } from '../utils';
 
 enum CacheType {
   CHARGING_STATION_TEMPLATE = 'chargingStationTemplate',

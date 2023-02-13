@@ -2,9 +2,8 @@ import path from 'node:path';
 
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
-import { PerformanceData } from './src/types/orm/entities/PerformanceData';
-import { PerformanceRecord } from './src/types/orm/entities/PerformanceRecord';
-import { Constants } from './src/utils/Constants';
+import { PerformanceData, PerformanceRecord } from './src/types';
+import { Constants } from './src/utils';
 
 export default {
   metadataProvider: TsMorphMetadataProvider,

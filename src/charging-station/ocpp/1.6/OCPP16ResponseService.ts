@@ -44,9 +44,7 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
 } from '../../../types';
-import { Constants } from '../../../utils/Constants';
-import { logger } from '../../../utils/Logger';
-import { Utils } from '../../../utils/Utils';
+import { Constants, Utils, logger } from '../../../utils';
 import { OCPP16ServiceUtils, OCPPResponseService } from '../internal';
 
 const moduleName = 'OCPP16ResponseService';

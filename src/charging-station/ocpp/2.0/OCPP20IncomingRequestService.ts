@@ -13,7 +13,7 @@ import {
   OCPP20IncomingRequestCommand,
   OCPPVersion,
 } from '../../../types';
-import { logger } from '../../../utils/Logger';
+import { logger } from '../../../utils';
 import { OCPP20ServiceUtils, OCPPIncomingRequestService } from '../internal';
 
 const moduleName = 'OCPP20IncomingRequestService';

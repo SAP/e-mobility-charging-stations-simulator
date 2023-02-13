@@ -14,7 +14,7 @@ import type {
   JsonType,
   OCPPVersion,
 } from '../../types';
-import { logger } from '../../utils/Logger';
+import { logger } from '../../utils';
 
 const moduleName = 'OCPPIncomingRequestService';
 

@@ -10,8 +10,7 @@ import {
   type ResponsePayload,
   ResponseStatus,
 } from '../../../types';
-import { logger } from '../../../utils/Logger';
-import { Utils } from '../../../utils/Utils';
+import { Utils, logger } from '../../../utils';
 import { type AbstractUIServer, Bootstrap, UIServiceWorkerBroadcastChannel } from '../../internal';
 
 const moduleName = 'AbstractUIService';

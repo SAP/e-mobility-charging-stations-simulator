@@ -23,11 +23,14 @@ import {
   RecurrencyKindType,
   Voltage,
 } from '../types';
-import { Configuration } from '../utils/Configuration';
-import { Constants } from '../utils/Constants';
-import { ACElectricUtils, DCElectricUtils } from '../utils/ElectricUtils';
-import { logger } from '../utils/Logger';
-import { Utils } from '../utils/Utils';
+import {
+  ACElectricUtils,
+  Configuration,
+  Constants,
+  DCElectricUtils,
+  Utils,
+  logger,
+} from '../utils';
 import { WorkerProcessType } from '../worker';
 
 const moduleName = 'ChargingStationUtils';

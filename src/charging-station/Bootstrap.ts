@@ -19,9 +19,7 @@ import {
   type StationTemplateUrl,
   type Statistics,
 } from '../types';
-import { Configuration } from '../utils/Configuration';
-import { logger } from '../utils/Logger';
-import { Utils } from '../utils/Utils';
+import { Configuration, Utils, logger } from '../utils';
 import { type MessageHandler, type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';

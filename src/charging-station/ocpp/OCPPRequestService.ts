@@ -24,9 +24,7 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import { Constants } from '../../utils/Constants';
-import { logger } from '../../utils/Logger';
-import { Utils } from '../../utils/Utils';
+import { Constants, Utils, logger } from '../../utils';
 
 const moduleName = 'OCPPRequestService';
 

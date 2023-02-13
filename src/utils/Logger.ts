@@ -3,8 +3,7 @@ import { type Logger, createLogger, format, type transport } from 'winston';
 import TransportType from 'winston/lib/winston/transports';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
-import { Configuration } from './Configuration';
-import { Utils } from './Utils';
+import { Configuration, Utils } from './internal';
 
 let transports: transport[];
 if (Configuration.getLogRotate() === true) {

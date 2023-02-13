@@ -19,7 +19,7 @@ import {
   RegistrationStatusEnumType,
   type ResponseHandler,
 } from '../../../types';
-import { logger } from '../../../utils/Logger';
+import { logger } from '../../../utils';
 import { OCPP20ServiceUtils, OCPPResponseService } from '../internal';
 
 const moduleName = 'OCPP20ResponseService';

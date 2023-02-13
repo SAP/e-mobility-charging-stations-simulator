@@ -24,10 +24,7 @@ import {
   StandardParametersKey,
   type StatusNotificationRequest,
 } from '../../types';
-import { Constants } from '../../utils/Constants';
-import { FileUtils } from '../../utils/FileUtils';
-import { logger } from '../../utils/Logger';
-import { Utils } from '../../utils/Utils';
+import { Constants, FileUtils, Utils, logger } from '../../utils';
 
 export class OCPPServiceUtils {
   protected constructor() {

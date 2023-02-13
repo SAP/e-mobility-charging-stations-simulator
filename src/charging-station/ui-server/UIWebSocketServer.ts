@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type internal from 'stream';
+import type { Duplex } from 'stream';
 
 import { StatusCodes } from 'http-status-codes';
 import WebSocket, { type RawData, WebSocketServer } from 'ws';
@@ -10,8 +10,7 @@ import {
   type UIServerConfiguration,
   WebSocketCloseEventStatusCode,
 } from '../../types';
-import { logger } from '../../utils/Logger';
-import { Utils } from '../../utils/Utils';
+import { Utils, logger } from '../../utils';
 import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIWebSocketServer';
@@ -71,37 +70,34 @@ export class UIWebSocketServer extends AbstractUIServer {
       });
     });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.httpServer.on('connect', (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
+    this.httpServer.on('connect', (req: IncomingMessage, socket: Duplex, head: Buffer) => {
       if (req.headers?.connection !== 'Upgrade' || req.headers?.upgrade !== 'websocket') {
         socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST} Bad Request\r\n\r\n`);
         socket.destroy();
       }
     });
-    this.httpServer.on(
-      'upgrade',
-      (req: IncomingMessage, socket: internal.Duplex, head: Buffer): void => {
-        this.authenticate(req, (err) => {
-          if (err) {
-            socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`);
-            socket.destroy();
-            return;
-          }
-          try {
-            this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
-              this.webSocketServer.emit('connection', ws, req);
-            });
-          } catch (error) {
-            logger.error(
-              `${this.logPrefix(
-                moduleName,
-                'start.httpServer.on.upgrade'
-              )} Error at handling connection upgrade:`,
-              error
-            );
-          }
-        });
-      }
-    );
+    this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+      this.authenticate(req, (err) => {
+        if (err) {
+          socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`);
+          socket.destroy();
+          return;
+        }
+        try {
+          this.webSocketServer.handleUpgrade(req, socket, head, (ws: WebSocket) => {
+            this.webSocketServer.emit('connection', ws, req);
+          });
+        } catch (error) {
+          logger.error(
+            `${this.logPrefix(
+              moduleName,
+              'start.httpServer.on.upgrade'
+            )} Error at handling connection upgrade:`,
+            error
+          );
+        }
+      });
+    });
     this.startHttpServer();
   }
 

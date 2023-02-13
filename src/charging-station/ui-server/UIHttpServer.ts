@@ -13,8 +13,7 @@ import {
   ResponseStatus,
   type UIServerConfiguration,
 } from '../../types';
-import { logger } from '../../utils/Logger';
-import { Utils } from '../../utils/Utils';
+import { Utils, logger } from '../../utils';
 import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIHttpServer';

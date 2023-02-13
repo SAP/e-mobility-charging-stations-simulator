@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import merge from 'just-merge';
 import { WorkerChoiceStrategies } from 'poolifier';
 
-import { Constants } from './Constants';
+import { Constants } from './internal';
 import {
   ApplicationProtocol,
   type ConfigurationData,

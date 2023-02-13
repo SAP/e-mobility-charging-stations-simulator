@@ -77,9 +77,7 @@ import {
   type UnlockConnectorRequest,
   type UnlockConnectorResponse,
 } from '../../../types';
-import { Constants } from '../../../utils/Constants';
-import { logger } from '../../../utils/Logger';
-import { Utils } from '../../../utils/Utils';
+import { Constants, Utils, logger } from '../../../utils';
 import { OCPP16ServiceUtils, OCPPConstants, OCPPIncomingRequestService } from '../internal';
 
 const moduleName = 'OCPP16IncomingRequestService';

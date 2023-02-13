@@ -6,8 +6,7 @@ import type {
   JsonType,
   MessageEvent,
 } from '../types';
-import { logger } from '../utils/Logger';
-import { Utils } from '../utils/Utils';
+import { Utils, logger } from '../utils';
 
 const moduleName = 'WorkerBroadcastChannel';
 

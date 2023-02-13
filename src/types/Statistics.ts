@@ -1,5 +1,5 @@
 import type { IncomingRequestCommand, RequestCommand } from './internal';
-import type { CircularArray } from '../utils/CircularArray';
+import type { CircularArray } from '../utils';
 import type { WorkerData } from '../worker';
 
 export type TimeSeries = {

@@ -29,10 +29,7 @@ import {
   type SampledValueTemplate,
   Voltage,
 } from '../../../types';
-import { Constants } from '../../../utils/Constants';
-import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
-import { logger } from '../../../utils/Logger';
-import { Utils } from '../../../utils/Utils';
+import { ACElectricUtils, Constants, DCElectricUtils, Utils, logger } from '../../../utils';
 import { OCPPServiceUtils } from '../internal';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {

@@ -3,7 +3,7 @@
 import { MongoClient } from 'mongodb';
 
 import { type Statistics, StorageType } from '../../types';
-import { Constants } from '../../utils/Constants';
+import { Constants } from '../../utils';
 import { Storage } from '../internal';
 
 export class MongoDBStorage extends Storage {

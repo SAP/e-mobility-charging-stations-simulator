@@ -5,8 +5,7 @@ import fs from 'node:fs';
 import lockfile from 'proper-lockfile';
 
 import { FileType, type Statistics } from '../../types';
-import { FileUtils } from '../../utils/FileUtils';
-import { Utils } from '../../utils/Utils';
+import { FileUtils, Utils } from '../../utils';
 import { Storage } from '../internal';
 
 export class JsonFileStorage extends Storage {

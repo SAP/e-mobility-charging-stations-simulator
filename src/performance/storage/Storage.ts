@@ -9,8 +9,7 @@ import {
   type Statistics,
   StorageType,
 } from '../../types';
-import { logger } from '../../utils/Logger';
-import { Utils } from '../../utils/Utils';
+import { Utils, logger } from '../../utils';
 
 export abstract class Storage {
   protected readonly storageUri: URL;

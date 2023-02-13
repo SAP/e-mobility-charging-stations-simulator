@@ -2,8 +2,7 @@ import fs from 'node:fs';
 
 import chalk from 'chalk';
 
-import { logger } from './Logger';
-import { Utils } from './Utils';
+import { Utils, logger } from './internal';
 import type { EmptyObject, FileType, HandleErrorParams, JsonType } from '../types';
 
 export class FileUtils {

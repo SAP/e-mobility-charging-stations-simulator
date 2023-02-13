@@ -3,7 +3,7 @@ import util from 'node:util';
 
 import clone from 'just-clone';
 
-import { Constants } from './Constants';
+import { Constants } from './internal';
 import { WebSocketCloseEventStatusString } from '../types';
 
 export class Utils {

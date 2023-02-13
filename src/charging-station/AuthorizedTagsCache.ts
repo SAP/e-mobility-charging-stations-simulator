@@ -1,9 +1,7 @@
 import fs from 'node:fs';
 
 import { FileType } from '../types';
-import { FileUtils } from '../utils/FileUtils';
-import { logger } from '../utils/Logger';
-import { Utils } from '../utils/Utils';
+import { FileUtils, Utils, logger } from '../utils';
 
 export class AuthorizedTagsCache {
   private static instance: AuthorizedTagsCache | null = null;
