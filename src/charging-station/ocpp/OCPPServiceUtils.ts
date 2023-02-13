@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 
+import { type ChargingStation, ChargingStationConfigurationUtils } from '../../charging-station';
 import { BaseError } from '../../exception';
 import {
   ChargePointErrorCode,
@@ -27,8 +28,6 @@ import { Constants } from '../../utils/Constants';
 import { FileUtils } from '../../utils/FileUtils';
 import { logger } from '../../utils/Logger';
 import { Utils } from '../../utils/Utils';
-import type { ChargingStation } from '../ChargingStation';
-import { ChargingStationConfigurationUtils } from '../ChargingStationConfigurationUtils';
 
 export class OCPPServiceUtils {
   protected constructor() {

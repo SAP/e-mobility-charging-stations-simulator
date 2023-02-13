@@ -12,7 +12,7 @@ export default {
   output: [
     {
       dir: 'dist',
-      format: 'es',
+      format: 'esm',
       exports: 'auto',
       sourcemap: true,
       preserveModules: true,

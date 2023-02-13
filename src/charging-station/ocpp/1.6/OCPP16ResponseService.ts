@@ -2,7 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
+import { type ChargingStation, ChargingStationConfigurationUtils } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   type ChangeAvailabilityResponse,
@@ -47,9 +47,7 @@ import {
 import { Constants } from '../../../utils/Constants';
 import { logger } from '../../../utils/Logger';
 import { Utils } from '../../../utils/Utils';
-import type { ChargingStation } from '../../ChargingStation';
-import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
-import { OCPPResponseService } from '../OCPPResponseService';
+import { OCPP16ServiceUtils, OCPPResponseService } from '../internal';
 
 const moduleName = 'OCPP16ResponseService';
 

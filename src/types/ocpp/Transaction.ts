@@ -7,7 +7,7 @@ import {
   OCPP16StopTransactionReason,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
-} from './1.6/Transaction';
+} from '../internal';
 
 export const AuthorizationStatus = {
   ...OCPP16AuthorizationStatus,

@@ -1,10 +1,13 @@
-import type { OCPP16ChargePointErrorCode } from './ChargePointErrorCode';
-import type { OCPP16ChargePointStatus } from './ChargePointStatus';
-import type { ChargingProfilePurposeType, OCPP16ChargingProfile } from './ChargingProfile';
-import type { OCPP16StandardParametersKey } from './Configuration';
-import type { OCPP16DiagnosticsStatus } from './DiagnosticsStatus';
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
+import type {
+  ChargingProfilePurposeType,
+  EmptyObject,
+  JsonObject,
+  OCPP16ChargePointErrorCode,
+  OCPP16ChargePointStatus,
+  OCPP16ChargingProfile,
+  OCPP16DiagnosticsStatus,
+  OCPP16StandardParametersKey,
+} from '../../internal';
 
 export enum OCPP16RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',

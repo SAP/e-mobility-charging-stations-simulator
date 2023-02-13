@@ -6,8 +6,7 @@ import { type Worker, isMainThread } from 'worker_threads';
 
 import chalk from 'chalk';
 
-import { ChargingStationUtils } from './ChargingStationUtils';
-import { type AbstractUIServer, UIServerFactory } from './internal';
+import { type AbstractUIServer, ChargingStationUtils, UIServerFactory } from './internal';
 import { version } from '../../package.json';
 import { BaseError } from '../exception';
 import { type Storage, StorageFactory } from '../performance';

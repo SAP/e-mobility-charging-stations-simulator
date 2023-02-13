@@ -1,6 +1,9 @@
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
-import type { GenericStatus, RegistrationStatusEnumType } from '../Responses';
+import type {
+  EmptyObject,
+  GenericStatus,
+  JsonObject,
+  RegistrationStatusEnumType,
+} from '../../internal';
 
 export type StatusInfoType = {
   reasonCode: string;

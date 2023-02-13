@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import moment from 'moment';
 
-import type { ChargingStation } from './ChargingStation';
+import type { ChargingStation } from './internal';
 import { BaseError } from '../exception';
 import {
   AmpereUnits,

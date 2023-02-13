@@ -4,8 +4,7 @@ import { parentPort, workerData } from 'worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 
-import { ChargingStation } from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
+import { ChargingStation, ChargingStationUtils } from './internal';
 import type { ChargingStationWorkerData } from '../types';
 import { Utils } from '../utils/Utils';
 import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';

@@ -1,1 +1,7 @@
-export { Bootstrap } from './internal';
+export {
+  Bootstrap,
+  type ChargingStation,
+  ChargingStationConfigurationUtils,
+  ChargingStationUtils,
+  MessageChannelUtils,
+} from './internal';

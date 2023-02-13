@@ -1,4 +1,4 @@
-import { OCPP16ChargePointErrorCode } from './1.6/ChargePointErrorCode';
+import { OCPP16ChargePointErrorCode } from '../internal';
 
 export const ChargePointErrorCode = {
   ...OCPP16ChargePointErrorCode,

@@ -1,10 +1,10 @@
-export { WorkerAbstract } from './WorkerAbstract';
+export type { WorkerAbstract } from './WorkerAbstract';
 export { WorkerConstants } from './WorkerConstants';
 export { WorkerFactory } from './WorkerFactory';
 export {
   WorkerProcessType,
-  WorkerData,
-  WorkerMessage,
+  type WorkerData,
+  type WorkerMessage,
   WorkerMessageEvents,
-  MessageHandler,
+  type MessageHandler,
 } from './WorkerTypes';

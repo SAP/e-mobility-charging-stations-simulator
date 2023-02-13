@@ -1,4 +1,4 @@
-import type { ChargingStation } from './ChargingStation';
+import type { ChargingStation } from './internal';
 import {
   type ChargingStationData,
   type ChargingStationWorkerMessage,

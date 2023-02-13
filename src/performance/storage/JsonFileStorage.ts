@@ -4,10 +4,10 @@ import fs from 'node:fs';
 
 import lockfile from 'proper-lockfile';
 
-import { Storage } from './Storage';
 import { FileType, type Statistics } from '../../types';
 import { FileUtils } from '../../utils/FileUtils';
 import { Utils } from '../../utils/Utils';
+import { Storage } from '../internal';
 
 export class JsonFileStorage extends Storage {
   private fd: number | null = null;

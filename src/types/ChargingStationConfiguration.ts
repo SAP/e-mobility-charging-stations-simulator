@@ -1,6 +1,8 @@
-import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
-import type { ChargingStationInfoConfiguration } from './ChargingStationInfo';
-import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
+import type {
+  ChargingStationAutomaticTransactionGeneratorConfiguration,
+  ChargingStationInfoConfiguration,
+  ChargingStationOcppConfiguration,
+} from './internal';
 
 export type ChargingStationConfiguration = ChargingStationInfoConfiguration &
   ChargingStationOcppConfiguration &

@@ -2,8 +2,7 @@ import type { ListenOptions } from 'net';
 
 import type { WorkerChoiceStrategy } from 'poolifier';
 
-import type { StorageType } from './Storage';
-import type { ApplicationProtocol, AuthenticationType } from './UIProtocol';
+import type { ApplicationProtocol, AuthenticationType, StorageType } from './internal';
 import type { WorkerProcessType } from '../worker';
 
 export type ServerOptions = ListenOptions;

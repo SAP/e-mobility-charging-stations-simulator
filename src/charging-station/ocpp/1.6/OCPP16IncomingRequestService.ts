@@ -8,7 +8,11 @@ import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
 import tar from 'tar';
 
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
+import {
+  type ChargingStation,
+  ChargingStationConfigurationUtils,
+  ChargingStationUtils,
+} from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   type ChangeAvailabilityRequest,
@@ -76,11 +80,7 @@ import {
 import { Constants } from '../../../utils/Constants';
 import { logger } from '../../../utils/Logger';
 import { Utils } from '../../../utils/Utils';
-import type { ChargingStation } from '../../ChargingStation';
-import { ChargingStationConfigurationUtils } from '../../ChargingStationConfigurationUtils';
-import { ChargingStationUtils } from '../../ChargingStationUtils';
-import { OCPPConstants } from '../OCPPConstants';
-import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
+import { OCPP16ServiceUtils, OCPPConstants, OCPPIncomingRequestService } from '../internal';
 
 const moduleName = 'OCPP16IncomingRequestService';
 

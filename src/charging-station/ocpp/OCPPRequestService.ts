@@ -1,10 +1,11 @@
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import type { OCPPResponseService } from './OCPPResponseService';
-import { OCPPServiceUtils } from './OCPPServiceUtils';
+import { type OCPPResponseService, OCPPServiceUtils } from './internal';
+import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
-import { PerformanceStatistics } from '../../performance';
+// import { PerformanceStatistics } from '../../performance';
+import { PerformanceStatistics } from '../../performance/PerformanceStatistics';
 import {
   type EmptyObject,
   type ErrorCallback,
@@ -26,7 +27,6 @@ import {
 import { Constants } from '../../utils/Constants';
 import { logger } from '../../utils/Logger';
 import { Utils } from '../../utils/Utils';
-import type { ChargingStation } from '../ChargingStation';
 
 const moduleName = 'OCPPRequestService';
 

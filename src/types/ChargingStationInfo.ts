@@ -1,5 +1,4 @@
-import type { ChargingStationTemplate } from './ChargingStationTemplate';
-import type { FirmwareStatus } from './ocpp/Requests';
+import type { ChargingStationTemplate, FirmwareStatus } from './internal';
 
 export type ChargingStationInfo = Omit<
   ChargingStationTemplate,

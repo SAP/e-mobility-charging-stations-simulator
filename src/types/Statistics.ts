@@ -1,4 +1,4 @@
-import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
+import type { IncomingRequestCommand, RequestCommand } from './internal';
 import type { CircularArray } from '../utils/CircularArray';
 import type { WorkerData } from '../worker';
 

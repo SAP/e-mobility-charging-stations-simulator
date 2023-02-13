@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 
+import type { ChargingStation } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   CurrentType,
@@ -32,8 +33,7 @@ import { Constants } from '../../../utils/Constants';
 import { ACElectricUtils, DCElectricUtils } from '../../../utils/ElectricUtils';
 import { logger } from '../../../utils/Logger';
 import { Utils } from '../../../utils/Utils';
-import type { ChargingStation } from '../../ChargingStation';
-import { OCPPServiceUtils } from '../OCPPServiceUtils';
+import { OCPPServiceUtils } from '../internal';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static checkFeatureProfile(

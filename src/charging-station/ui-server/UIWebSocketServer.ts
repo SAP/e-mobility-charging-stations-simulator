@@ -4,7 +4,6 @@ import type internal from 'stream';
 import { StatusCodes } from 'http-status-codes';
 import WebSocket, { type RawData, WebSocketServer } from 'ws';
 
-import { UIServerUtils } from './UIServerUtils';
 import {
   type ProtocolRequest,
   type ProtocolResponse,
@@ -13,7 +12,7 @@ import {
 } from '../../types';
 import { logger } from '../../utils/Logger';
 import { Utils } from '../../utils/Utils';
-import { AbstractUIServer } from '../internal';
+import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIWebSocketServer';
 

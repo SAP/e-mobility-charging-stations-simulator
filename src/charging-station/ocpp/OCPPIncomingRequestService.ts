@@ -3,8 +3,8 @@ import { AsyncResource } from 'async_hooks';
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { OCPPConstants } from './OCPPConstants';
-import { OCPPServiceUtils } from './OCPPServiceUtils';
+import { OCPPConstants, OCPPServiceUtils } from './internal';
+import { type ChargingStation, ChargingStationUtils } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import type {
   ClearCacheResponse,
@@ -15,8 +15,6 @@ import type {
   OCPPVersion,
 } from '../../types';
 import { logger } from '../../utils/Logger';
-import type { ChargingStation } from '../ChargingStation';
-import { ChargingStationUtils } from '../ChargingStationUtils';
 
 const moduleName = 'OCPPIncomingRequestService';
 

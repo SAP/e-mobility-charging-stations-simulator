@@ -3,7 +3,6 @@
 import { Configuration, Connection, IDatabaseDriver, MikroORM, Options } from '@mikro-orm/core';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
-import { Storage } from './Storage';
 import {
   type MikroORMDBType,
   PerformanceData,
@@ -12,6 +11,7 @@ import {
   StorageType,
 } from '../../types';
 import { Constants } from '../../utils/Constants';
+import { Storage } from '../internal';
 
 export class MikroOrmStorage extends Storage {
   private storageType: StorageType;

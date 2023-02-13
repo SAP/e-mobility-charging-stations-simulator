@@ -2,7 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
+import type { ChargingStation } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   ErrorType,
@@ -16,10 +16,12 @@ import {
   type RequestParams,
 } from '../../../types';
 import { Utils } from '../../../utils/Utils';
-import type { ChargingStation } from '../../ChargingStation';
-import { OCPPConstants } from '../OCPPConstants';
-import { OCPPRequestService } from '../OCPPRequestService';
-import type { OCPPResponseService } from '../OCPPResponseService';
+import {
+  OCPP20ServiceUtils,
+  OCPPConstants,
+  OCPPRequestService,
+  type OCPPResponseService,
+} from '../internal';
 
 const moduleName = 'OCPP20RequestService';
 

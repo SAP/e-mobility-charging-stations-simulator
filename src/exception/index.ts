@@ -1,2 +1,1 @@
-export { BaseError } from './BaseError';
-export { OCPPError } from './OCPPError';
+export { BaseError, OCPPError } from './internal';

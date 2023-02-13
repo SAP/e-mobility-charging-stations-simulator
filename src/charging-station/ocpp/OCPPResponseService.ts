@@ -1,7 +1,8 @@
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { OCPPServiceUtils } from './OCPPServiceUtils';
+import { OCPPServiceUtils } from './internal';
+import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import type {
   IncomingRequestCommand,
@@ -11,7 +12,6 @@ import type {
   RequestCommand,
 } from '../../types';
 import { logger } from '../../utils/Logger';
-import type { ChargingStation } from '../ChargingStation';
 
 const moduleName = 'OCPPResponseService';
 

@@ -4,7 +4,7 @@ import type { URL } from 'node:url';
 import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
 import { parentPort } from 'worker_threads';
 
-import { MessageChannelUtils } from '../charging-station/MessageChannelUtils';
+import { MessageChannelUtils } from '../charging-station';
 import {
   type IncomingRequestCommand,
   MessageType,

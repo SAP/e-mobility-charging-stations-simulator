@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { JSONSchemaType } from 'ajv';
 
 import { type JsonType, OCPPVersion } from '../../../types';
-import { OCPPServiceUtils } from '../OCPPServiceUtils';
+import { OCPPServiceUtils } from '../internal';
 
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static parseJsonSchemaFile<T extends JsonType>(

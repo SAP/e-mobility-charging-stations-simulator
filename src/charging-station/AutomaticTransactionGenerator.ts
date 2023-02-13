@@ -2,10 +2,10 @@
 
 import { AsyncResource } from 'async_hooks';
 
-import type { ChargingStation } from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
+import { type ChargingStation, ChargingStationUtils } from './internal';
 import { BaseError } from '../exception';
-import { PerformanceStatistics } from '../performance';
+// import { PerformanceStatistics } from '../performance';
+import { PerformanceStatistics } from '../performance/PerformanceStatistics';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
