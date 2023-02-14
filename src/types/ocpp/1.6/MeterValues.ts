@@ -76,7 +76,7 @@ export enum OCPP16MeterValuePhase {
   L3_L1 = 'L3-L1',
 }
 
-export enum MeterValueFormat {
+enum MeterValueFormat {
   RAW = 'Raw',
   SIGNED_DATA = 'SignedData',
 }

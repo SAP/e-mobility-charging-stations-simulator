@@ -23,7 +23,7 @@ export enum OCPP16AuthorizationStatus {
   CONCURRENT_TX = 'ConcurrentTx',
 }
 
-export interface IdTagInfo extends JsonObject {
+interface IdTagInfo extends JsonObject {
   status: OCPP16AuthorizationStatus;
   parentIdTag?: string;
   expiryDate?: Date;

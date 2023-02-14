@@ -1,10 +1,10 @@
 import type {
-  ChargingProfilePurposeType,
   EmptyObject,
   JsonObject,
   OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   OCPP16ChargingProfile,
+  OCPP16ChargingProfilePurposeType,
   OCPP16DiagnosticsStatus,
   OCPP16StandardParametersKey,
 } from '../../internal';
@@ -88,7 +88,7 @@ export interface GetConfigurationRequest extends JsonObject {
   key?: (string | OCPP16StandardParametersKey)[];
 }
 
-export enum ResetType {
+enum ResetType {
   HARD = 'Hard',
   SOFT = 'Soft',
 }
@@ -115,7 +115,7 @@ export interface ChangeAvailabilityRequest extends JsonObject {
 export interface ClearChargingProfileRequest extends JsonObject {
   id?: number;
   connectorId?: number;
-  chargingProfilePurpose?: ChargingProfilePurposeType;
+  chargingProfilePurpose?: OCPP16ChargingProfilePurposeType;
   stackLevel?: number;
 }
 

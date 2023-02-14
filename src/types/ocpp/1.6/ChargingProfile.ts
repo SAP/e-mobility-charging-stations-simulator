@@ -4,15 +4,15 @@ export interface OCPP16ChargingProfile extends JsonObject {
   chargingProfileId: number;
   transactionId?: number;
   stackLevel: number;
-  chargingProfilePurpose: ChargingProfilePurposeType;
-  chargingProfileKind: ChargingProfileKindType;
-  recurrencyKind?: RecurrencyKindType;
+  chargingProfilePurpose: OCPP16ChargingProfilePurposeType;
+  chargingProfileKind: OCPP16ChargingProfileKindType;
+  recurrencyKind?: OCPP16RecurrencyKindType;
   validFrom?: Date;
   validTo?: Date;
   chargingSchedule: ChargingSchedule;
 }
 
-export interface ChargingSchedule extends JsonObject {
+interface ChargingSchedule extends JsonObject {
   duration?: number;
   startSchedule?: Date;
   chargingRateUnit: OCPP16ChargingRateUnitType;
@@ -31,19 +31,19 @@ export enum OCPP16ChargingRateUnitType {
   AMPERE = 'A',
 }
 
-export enum ChargingProfileKindType {
+export enum OCPP16ChargingProfileKindType {
   ABSOLUTE = 'Absolute',
   RECURRING = 'Recurring',
   RELATIVE = 'Relative',
 }
 
-export enum ChargingProfilePurposeType {
+export enum OCPP16ChargingProfilePurposeType {
   CHARGE_POINT_MAX_PROFILE = 'ChargePointMaxProfile',
   TX_DEFAULT_PROFILE = 'TxDefaultProfile',
   TX_PROFILE = 'TxProfile',
 }
 
-export enum RecurrencyKindType {
+export enum OCPP16RecurrencyKindType {
   DAILY = 'Daily',
   WEEKLY = 'Weekly',
   MONTHLY = 'Monthly',

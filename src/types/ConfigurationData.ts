@@ -5,7 +5,7 @@ import type { WorkerChoiceStrategy } from 'poolifier';
 import type { ApplicationProtocol, AuthenticationType, StorageType } from './internal';
 import type { WorkerProcessType } from '../worker';
 
-export type ServerOptions = ListenOptions;
+type ServerOptions = ListenOptions;
 
 export enum SupervisionUrlDistribution {
   ROUND_ROBIN = 'round-robin',

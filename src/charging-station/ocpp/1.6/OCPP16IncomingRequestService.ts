@@ -19,7 +19,6 @@ import {
   type ChangeAvailabilityResponse,
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
-  ChargingProfilePurposeType,
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
   ErrorType,
@@ -40,6 +39,7 @@ import {
   OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
+  OCPP16ChargingProfilePurposeType,
   type OCPP16ClearCacheRequest,
   type OCPP16DataTransferRequest,
   type OCPP16DataTransferResponse,
@@ -537,14 +537,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (
       commandPayload.csChargingProfiles.chargingProfilePurpose ===
-        ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE &&
+        OCPP16ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE &&
       commandPayload.connectorId !== 0
     ) {
       return OCPPConstants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
     if (
       commandPayload.csChargingProfiles.chargingProfilePurpose ===
-        ChargingProfilePurposeType.TX_PROFILE &&
+        OCPP16ChargingProfilePurposeType.TX_PROFILE &&
       (commandPayload.connectorId === 0 ||
         chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted ===
           false)
@@ -888,14 +888,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     connectorId: number,
     cp: OCPP16ChargingProfile
   ): boolean {
-    if (cp && cp.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE) {
+    if (cp && cp.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE) {
       OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, cp);
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) set at remote start transaction on connector id ${connectorId}: %j`,
         cp
       );
       return true;
-    } else if (cp && cp.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE) {
+    } else if (cp && cp.chargingProfilePurpose !== OCPP16ChargingProfilePurposeType.TX_PROFILE) {
       logger.warn(
         `${chargingStation.logPrefix()} Not allowed to set ${
           cp.chargingProfilePurpose

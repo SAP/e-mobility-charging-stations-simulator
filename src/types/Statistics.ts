@@ -7,7 +7,7 @@ export type TimeSeries = {
   value: number;
 };
 
-export type StatisticsData = {
+type StatisticsData = {
   countRequest: number;
   countResponse: number;
   countError: number;
