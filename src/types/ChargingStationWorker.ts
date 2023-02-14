@@ -10,7 +10,7 @@ import type {
 } from './internal';
 import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
-export interface ChargingStationWorkerOptions extends JsonObject {
+interface ChargingStationWorkerOptions extends JsonObject {
   elementStartDelay?: number;
 }
 

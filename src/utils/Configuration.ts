@@ -46,13 +46,13 @@ export class Configuration {
       "Use 'logStatisticsInterval' instead"
     );
     // Read conf
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logStatisticsInterval')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logStatisticsInterval')
       ? Configuration.getConfig()?.logStatisticsInterval
       : Constants.DEFAULT_LOG_STATISTICS_INTERVAL;
   }
 
   static getUIServer(): UIServerConfiguration {
-    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'uiWebSocketServer')) {
+    if (Utils.hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
       console.error(
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead}`
       );
@@ -65,7 +65,7 @@ export class Configuration {
         port: Constants.DEFAULT_UI_SERVER_PORT,
       },
     };
-    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'uiServer')) {
+    if (Utils.hasOwnProp(Configuration.getConfig(), 'uiServer')) {
       uiServerConfiguration = merge<UIServerConfiguration>(
         uiServerConfiguration,
         Configuration.getConfig()?.uiServer
@@ -85,7 +85,7 @@ export class Configuration {
       type: StorageType.JSON_FILE,
       uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
     };
-    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'performanceStorage')) {
+    if (Utils.hasOwnProp(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration = {
         ...storageConfiguration,
         ...Configuration.getConfig()?.performanceStorage,
@@ -111,7 +111,7 @@ export class Configuration {
       'Use it in charging station template instead'
     );
     // Read conf
-    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
+    if (Utils.hasOwnProp(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
       return Configuration.getConfig()?.autoReconnectMaxRetries;
     }
   }
@@ -186,31 +186,28 @@ export class Configuration {
       "Use 'worker' section to define the worker pool strategy instead"
     );
     let workerConfiguration: WorkerConfiguration = {
-      processType: Utils.objectHasOwnProperty(Configuration.getConfig(), 'workerProcess')
+      processType: Utils.hasOwnProp(Configuration.getConfig(), 'workerProcess')
         ? Configuration.getConfig()?.workerProcess
         : WorkerProcessType.WORKER_SET,
-      startDelay: Utils.objectHasOwnProperty(Configuration.getConfig(), 'workerStartDelay')
+      startDelay: Utils.hasOwnProp(Configuration.getConfig(), 'workerStartDelay')
         ? Configuration.getConfig()?.workerStartDelay
         : WorkerConstants.DEFAULT_WORKER_START_DELAY,
-      elementsPerWorker: Utils.objectHasOwnProperty(
-        Configuration.getConfig(),
-        'chargingStationsPerWorker'
-      )
+      elementsPerWorker: Utils.hasOwnProp(Configuration.getConfig(), 'chargingStationsPerWorker')
         ? Configuration.getConfig()?.chargingStationsPerWorker
         : WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
-      elementStartDelay: Utils.objectHasOwnProperty(Configuration.getConfig(), 'elementStartDelay')
+      elementStartDelay: Utils.hasOwnProp(Configuration.getConfig(), 'elementStartDelay')
         ? Configuration.getConfig()?.elementStartDelay
         : WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
-      poolMinSize: Utils.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMinSize')
+      poolMinSize: Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMinSize')
         ? Configuration.getConfig()?.workerPoolMinSize
         : WorkerConstants.DEFAULT_POOL_MIN_SIZE,
-      poolMaxSize: Utils.objectHasOwnProperty(Configuration.getConfig(), 'workerPoolMaxSize')
+      poolMaxSize: Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMaxSize')
         ? Configuration.getConfig()?.workerPoolMaxSize
         : WorkerConstants.DEFAULT_POOL_MAX_SIZE,
       poolStrategy:
         Configuration.getConfig()?.workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
     };
-    if (Utils.objectHasOwnProperty(Configuration.getConfig(), 'worker')) {
+    if (Utils.hasOwnProp(Configuration.getConfig(), 'worker')) {
       workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig()?.worker };
     }
     return workerConfiguration;
@@ -222,45 +219,45 @@ export class Configuration {
       undefined,
       "Use 'logConsole' instead"
     );
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logConsole')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logConsole')
       ? Configuration.getConfig()?.logConsole
       : false;
   }
 
   static getLogFormat(): string | undefined {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFormat')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logFormat')
       ? Configuration.getConfig()?.logFormat
       : 'simple';
   }
 
   static getLogRotate(): boolean | undefined {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logRotate')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logRotate')
       ? Configuration.getConfig()?.logRotate
       : true;
   }
 
   static getLogMaxFiles(): number | string | false | undefined {
     return (
-      Utils.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') &&
+      Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') &&
       Configuration.getConfig()?.logMaxFiles
     );
   }
 
   static getLogMaxSize(): number | string | false | undefined {
     return (
-      Utils.objectHasOwnProperty(Configuration.getConfig(), 'logMaxFiles') &&
+      Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') &&
       Configuration.getConfig()?.logMaxSize
     );
   }
 
   static getLogLevel(): string | undefined {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logLevel')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logLevel')
       ? Configuration.getConfig()?.logLevel?.toLowerCase()
       : 'info';
   }
 
   static getLogFile(): string | undefined {
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logFile')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logFile')
       ? Configuration.getConfig()?.logFile
       : 'combined.log';
   }
@@ -271,7 +268,7 @@ export class Configuration {
       undefined,
       "Use 'logErrorFile' instead"
     );
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'logErrorFile')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logErrorFile')
       ? Configuration.getConfig()?.logErrorFile
       : 'error.log';
   }
@@ -301,7 +298,7 @@ export class Configuration {
       undefined,
       "Use 'supervisionUrlDistribution' instead"
     );
-    return Utils.objectHasOwnProperty(Configuration.getConfig(), 'supervisionUrlDistribution')
+    return Utils.hasOwnProp(Configuration.getConfig(), 'supervisionUrlDistribution')
       ? Configuration.getConfig()?.supervisionUrlDistribution
       : SupervisionUrlDistribution.ROUND_ROBIN;
   }
