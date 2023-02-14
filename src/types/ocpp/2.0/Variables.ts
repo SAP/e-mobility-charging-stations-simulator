@@ -1,4 +1,6 @@
-export enum OCPP20ComponentName {
+import type { EVSEType, JsonObject, StatusInfoType } from '../../internal';
+
+enum OCPP20ComponentName {
   AlignedDataCtrlr = 'AlignedDataCtrlr',
   AuthCacheCtrlr = 'AuthCacheCtrlr',
   AuthCtrlr = 'AuthCtrlr',
@@ -58,3 +60,50 @@ export enum OCPP20OptionalVariableName {
 export enum OCPP20VendorVariableName {
   ConnectionUrl = 'ConnectionUrl',
 }
+
+enum AttributeEnumType {
+  Actual = 'Actual',
+  Target = 'Target',
+  MinSet = 'MinSet',
+  MaxSet = 'MaxSet',
+}
+
+type ComponentType = {
+  name: string | OCPP20ComponentName;
+  instance?: string;
+  evse?: EVSEType;
+} & JsonObject;
+
+type VariableType = {
+  name: string | OCPP20RequiredVariableName | OCPP20OptionalVariableName | OCPP20VendorVariableName;
+  instance?: string;
+} & JsonObject;
+
+export type OCPP20SetVariableDataType = {
+  attributeType?: AttributeEnumType;
+  attributeValue: string;
+  component: ComponentType;
+  variable: VariableType;
+} & JsonObject;
+
+enum SetVariableStatusEnumType {
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  UnknownComponent = 'UnknownComponent',
+  UnknownVariable = 'UnknownVariable',
+  NotSupportedAttributeType = 'NotSupportedAttributeType',
+  RebootRequired = 'RebootRequired',
+}
+
+export type OCPP20SetVariableResultType = {
+  attributeType?: AttributeEnumType;
+  attributeStatus: SetVariableStatusEnumType;
+  component: ComponentType;
+  variable: VariableType;
+  attributeStatusInfo?: StatusInfoType;
+} & JsonObject;
+
+type OCPP20ComponentVariableType = {
+  component: ComponentType;
+  variable?: VariableType;
+} & JsonObject;

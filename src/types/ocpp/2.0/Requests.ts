@@ -1,4 +1,10 @@
-import type { EmptyObject, JsonObject } from '../../internal';
+import type {
+  BootReasonEnumType,
+  EmptyObject,
+  JsonObject,
+  OCPP20ConnectorStatusEnumType,
+  OCPP20SetVariableDataType,
+} from '../../internal';
 
 export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
@@ -12,24 +18,12 @@ export enum OCPP20IncomingRequestCommand {
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
 }
 
-export enum BootReasonEnumType {
-  ApplicationReset = 'ApplicationReset',
-  FirmwareUpdate = 'FirmwareUpdate',
-  LocalReset = 'LocalReset',
-  PowerUp = 'PowerUp',
-  RemoteReset = 'RemoteReset',
-  ScheduledReset = 'ScheduledReset',
-  Triggered = 'Triggered',
-  Unknown = 'Unknown',
-  Watchdog = 'Watchdog',
-}
-
-export type ModemType = {
+type ModemType = {
   iccid?: string;
   imsi?: string;
 } & JsonObject;
 
-export type ChargingStationType = {
+type ChargingStationType = {
   serialNumber?: string;
   model: string;
   vendorName: string;
@@ -46,17 +40,13 @@ export type OCPP20HeartbeatRequest = EmptyObject;
 
 export type OCPP20ClearCacheRequest = EmptyObject;
 
-export enum OCPP20ConnectorStatusEnumType {
-  AVAILABLE = 'Available',
-  OCCUPIED = 'Occupied',
-  RESERVED = 'Reserved',
-  UNAVAILABLE = 'Unavailable',
-  FAULTED = 'Faulted',
-}
-
 export type OCPP20StatusNotificationRequest = {
   timestamp: Date;
   connectorStatus: OCPP20ConnectorStatusEnumType;
   evseId: number;
   connectorId: number;
+} & JsonObject;
+
+export type OCPP20SetVariablesRequest = {
+  setVariableData: OCPP20SetVariableDataType[];
 } & JsonObject;

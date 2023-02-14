@@ -7,6 +7,7 @@ export * from './ocpp/1.6/MeterValues';
 export * from './ocpp/1.6/Requests';
 export * from './ocpp/1.6/Responses';
 export * from './ocpp/1.6/Transaction';
+export * from './ocpp/2.0/Common';
 export * from './ocpp/2.0/Requests';
 export * from './ocpp/2.0/Responses';
 export * from './ocpp/2.0/Variables';

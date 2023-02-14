@@ -2,13 +2,10 @@ import type {
   EmptyObject,
   GenericStatus,
   JsonObject,
+  OCPP20SetVariableResultType,
   RegistrationStatusEnumType,
+  StatusInfoType,
 } from '../../internal';
-
-export type StatusInfoType = {
-  reasonCode: string;
-  additionalInfo?: string;
-} & JsonObject;
 
 export type OCPP20BootNotificationResponse = {
   currentTime: Date;
@@ -27,3 +24,7 @@ export type OCPP20ClearCacheResponse = {
 } & JsonObject;
 
 export type OCPP20StatusNotificationResponse = EmptyObject;
+
+export type OCPP20SetVariablesResponse = {
+  setVariableResult: OCPP20SetVariableResultType[];
+} & JsonObject;
