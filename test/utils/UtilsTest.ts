@@ -173,9 +173,13 @@ describe('Utils test suite', () => {
     expect(Utils.hasOwnProp([], '')).toBe(false);
     expect(Utils.hasOwnProp({}, '')).toBe(false);
     expect(Utils.hasOwnProp({ 1: 1 }, 1)).toBe(true);
+    expect(Utils.hasOwnProp({ 1: 1 }, '1')).toBe(true);
     expect(Utils.hasOwnProp({ 1: 1 }, 2)).toBe(false);
+    expect(Utils.hasOwnProp({ 1: 1 }, '2')).toBe(false);
     expect(Utils.hasOwnProp({ '1': '1' }, '1')).toBe(true);
+    expect(Utils.hasOwnProp({ '1': '1' }, 1)).toBe(true);
     expect(Utils.hasOwnProp({ '1': '1' }, '2')).toBe(false);
+    expect(Utils.hasOwnProp({ '1': '1' }, 2)).toBe(false);
   });
 
   it('Verify isIterable()', () => {
