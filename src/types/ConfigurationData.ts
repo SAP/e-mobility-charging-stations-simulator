@@ -1,4 +1,4 @@
-import type { ListenOptions } from 'net';
+import type { ListenOptions } from 'node:net';
 
 import type { WorkerChoiceStrategy } from 'poolifier';
 
