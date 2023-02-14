@@ -50,6 +50,7 @@ export default {
     'node:http',
     'node:path',
     'node:perf_hooks',
+    'node:stream',
     'node:url',
     'node:util',
     'node:worker_threads',
