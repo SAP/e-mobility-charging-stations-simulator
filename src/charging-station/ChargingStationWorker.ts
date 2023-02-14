@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { parentPort, workerData } from 'worker_threads';
+import { parentPort, workerData } from 'node:worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 

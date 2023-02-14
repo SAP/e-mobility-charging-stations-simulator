@@ -1,4 +1,4 @@
-import { AsyncResource } from 'async_hooks';
+import { AsyncResource } from 'node:async_hooks';
 
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';

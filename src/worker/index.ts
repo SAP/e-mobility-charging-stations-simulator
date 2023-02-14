@@ -2,9 +2,9 @@ export type { WorkerAbstract } from './WorkerAbstract';
 export { WorkerConstants } from './WorkerConstants';
 export { WorkerFactory } from './WorkerFactory';
 export {
-  WorkerProcessType,
+  type MessageHandler,
   type WorkerData,
   type WorkerMessage,
   WorkerMessageEvents,
-  type MessageHandler,
+  WorkerProcessType,
 } from './WorkerTypes';

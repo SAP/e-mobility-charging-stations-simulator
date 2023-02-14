@@ -1,4 +1,4 @@
-import { type IncomingMessage, Server, type ServerResponse } from 'http';
+import { type IncomingMessage, Server, type ServerResponse } from 'node:http';
 
 import type { WebSocket } from 'ws';
 

@@ -1,13 +1,13 @@
 export {
-  OCPP20ResponseService,
-  OCPP20RequestService,
   OCPP20IncomingRequestService,
+  OCPP20RequestService,
+  OCPP20ResponseService,
+  OCPP16IncomingRequestService,
+  OCPP16RequestService,
+  OCPP16ResponseService,
   // FIXME: shall not be exported
   OCPP16ServiceUtils,
   OCPPIncomingRequestService,
-  OCPP16ResponseService,
   OCPPRequestService,
   OCPPServiceUtils,
-  OCPP16IncomingRequestService,
-  OCPP16RequestService,
 } from './internal';

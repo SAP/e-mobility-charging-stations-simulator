@@ -1,4 +1,4 @@
-import { type Worker, isMainThread } from 'worker_threads';
+import { type Worker, isMainThread } from 'node:worker_threads';
 
 import type { PoolOptions } from 'poolifier';
 

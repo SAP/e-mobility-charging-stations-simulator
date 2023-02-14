@@ -1,8 +1,8 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import { type PerformanceEntry, PerformanceObserver, performance } from 'node:perf_hooks';
 import type { URL } from 'node:url';
-import { PerformanceEntry, PerformanceObserver, performance } from 'perf_hooks';
-import { parentPort } from 'worker_threads';
+import { parentPort } from 'node:worker_threads';
 
 import { MessageChannelUtils } from '../charging-station';
 import {

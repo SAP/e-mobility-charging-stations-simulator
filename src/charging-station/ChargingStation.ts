@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { URL } from 'node:url';
-import { parentPort } from 'worker_threads';
+import { parentPort } from 'node:worker_threads';
 
 import merge from 'just-merge';
 import WebSocket, { type RawData } from 'ws';

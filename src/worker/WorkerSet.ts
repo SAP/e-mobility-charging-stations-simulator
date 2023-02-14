@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { Worker } from 'worker_threads';
+import { Worker } from 'node:worker_threads';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import {

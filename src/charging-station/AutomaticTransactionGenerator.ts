@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { AsyncResource } from 'async_hooks';
+import { AsyncResource } from 'node:async_hooks';
 
 import { type ChargingStation, ChargingStationUtils } from './internal';
 import { BaseError } from '../exception';

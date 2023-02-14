@@ -1,4 +1,4 @@
-import { BroadcastChannel } from 'worker_threads';
+import { BroadcastChannel } from 'node:worker_threads';
 
 import type {
   BroadcastChannelRequest,

@@ -2,7 +2,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Worker, isMainThread } from 'worker_threads';
+import { type Worker, isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
 
