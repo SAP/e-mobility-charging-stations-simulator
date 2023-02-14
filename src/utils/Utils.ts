@@ -186,9 +186,7 @@ export class Utils {
   }
 
   public static objectHasOwnProperty(object: unknown, property: string): boolean {
-    return (
-      Utils.isObject(object) && (Object.prototype.hasOwnProperty.call(object, property) as boolean)
-    );
+    return Utils.isObject(object) && Object.hasOwn(object as object, property);
   }
 
   public static isCFEnvironment(): boolean {
