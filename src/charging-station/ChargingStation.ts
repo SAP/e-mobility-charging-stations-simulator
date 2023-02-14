@@ -35,8 +35,7 @@ import { OCPP16ResponseService } from './ocpp/1.6/OCPP16ResponseService';
 import { OCPP20ResponseService } from './ocpp/2.0/OCPP20ResponseService';
 import { OCPPServiceUtils } from './ocpp/OCPPServiceUtils';
 import { BaseError, OCPPError } from '../exception';
-// import { PerformanceStatistics } from '../performance';
-import { PerformanceStatistics } from '../performance/PerformanceStatistics';
+import { PerformanceStatistics } from '../performance';
 import {
   type AutomaticTransactionGeneratorConfiguration,
   AvailabilityType,

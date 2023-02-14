@@ -4,8 +4,7 @@ import ajvFormats from 'ajv-formats';
 import { type OCPPResponseService, OCPPServiceUtils } from './internal';
 import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
-// import { PerformanceStatistics } from '../../performance';
-import { PerformanceStatistics } from '../../performance/PerformanceStatistics';
+import { PerformanceStatistics } from '../../performance';
 import {
   type EmptyObject,
   type ErrorCallback,

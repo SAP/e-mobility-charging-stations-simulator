@@ -185,6 +185,16 @@ export class Utils {
     return clone<T>(object);
   }
 
+  public static objectHasOwnProperty(object: object, property: string): boolean {
+    return (
+      Utils.isObject(object) && (Object.prototype.hasOwnProperty.call(object, property) as boolean)
+    );
+  }
+
+  public static isCFEnvironment(): boolean {
+    return process.env.VCAP_APPLICATION !== undefined;
+  }
+
   public static isIterable<T>(obj: T): boolean {
     return !Utils.isNullOrUndefined(obj) ? typeof obj[Symbol.iterator] === 'function' : false;
   }

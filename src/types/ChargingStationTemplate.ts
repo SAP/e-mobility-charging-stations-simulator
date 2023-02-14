@@ -1,4 +1,4 @@
-import type { ClientRequestArgs } from 'http';
+import type { ClientRequestArgs } from 'node:http';
 
 import type { ClientOptions } from 'ws';
 
