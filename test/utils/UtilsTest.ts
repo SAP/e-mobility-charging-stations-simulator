@@ -1,4 +1,4 @@
-import expect from 'expect';
+import { expect } from 'expect';
 
 import { Constants } from '../../src/utils/Constants';
 import { Utils } from '../../src/utils/Utils';
