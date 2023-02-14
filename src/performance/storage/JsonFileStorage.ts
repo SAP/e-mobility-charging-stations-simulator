@@ -49,7 +49,7 @@ export class JsonFileStorage extends Storage {
 
   public open(): void {
     try {
-      if (this?.fd === undefined || this?.fd === null) {
+      if (Utils.isNullOrUndefined(this?.fd)) {
         this.fd = fs.openSync(this.dbName, 'a+');
       }
     } catch (error) {

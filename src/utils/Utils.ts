@@ -185,7 +185,7 @@ export class Utils {
     return clone<T>(object);
   }
 
-  public static objectHasOwnProperty(object: object, property: string): boolean {
+  public static objectHasOwnProperty(object: unknown, property: string): boolean {
     return (
       Utils.isObject(object) && (Object.prototype.hasOwnProperty.call(object, property) as boolean)
     );
