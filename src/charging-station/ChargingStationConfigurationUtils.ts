@@ -1,5 +1,5 @@
 import type { ChargingStation } from './internal';
-import type { ConfigurationKey, ConfigurationKeyType, StandardParametersKey } from '../types';
+import type { ConfigurationKey, ConfigurationKeyType } from '../types';
 import { logger } from '../utils';
 
 type ConfigurationKeyOptions = { readonly?: boolean; visible?: boolean; reboot?: boolean };
