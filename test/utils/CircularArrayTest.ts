@@ -27,8 +27,18 @@ describe('Circular array test suite', () => {
     expect(circularArray.length).toBe(4);
   });
 
-  it("Verify that circular array size can't be negative at instance creation", () => {
-    expect(() => new CircularArray(-1)).toThrowError(new RangeError('Invalid circular array size'));
+  it('Verify that circular array size is valid at instance creation', () => {
+    expect(() => new CircularArray(0.25)).toThrowError(
+      new TypeError('Invalid circular array size: 0.25 is not a safe integer')
+    );
+    expect(() => new CircularArray(-1)).toThrowError(
+      new RangeError('Invalid circular array size: -1 < 0')
+    );
+    expect(() => new CircularArray(Number.MAX_SAFE_INTEGER + 1)).toThrowError(
+      new TypeError(
+        `Invalid circular array size: ${Number.MAX_SAFE_INTEGER + 1} is not a safe integer`
+      )
+    );
   });
 
   it('Verify that circular array empty works as intended', () => {
@@ -102,8 +112,16 @@ describe('Circular array test suite', () => {
   });
 
   it('Verify that circular array resize works as intended', () => {
+    expect(() => new CircularArray().resize(0.25)).toThrowError(
+      new TypeError('Invalid circular array size: 0.25 is not a safe integer')
+    );
     expect(() => new CircularArray().resize(-1)).toThrowError(
-      new RangeError('Invalid circular array size')
+      new RangeError('Invalid circular array size: -1 < 0')
+    );
+    expect(() => new CircularArray().resize(Number.MAX_SAFE_INTEGER + 1)).toThrowError(
+      new TypeError(
+        `Invalid circular array size: ${Number.MAX_SAFE_INTEGER + 1} is not a safe integer`
+      )
     );
     let circularArray = new CircularArray(5, 1, 2, 3, 4, 5);
     circularArray.resize(0);

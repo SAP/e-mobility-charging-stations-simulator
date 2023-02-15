@@ -80,8 +80,11 @@ export class CircularArray<T> extends Array<T> {
   }
 
   private checkSize(size: number) {
+    if (!Number.isSafeInteger(size)) {
+      throw new TypeError(`Invalid circular array size: ${size} is not a safe integer`);
+    }
     if (size < 0) {
-      throw new RangeError('Invalid circular array size');
+      throw new RangeError(`Invalid circular array size: ${size} < 0`);
     }
   }
 }
