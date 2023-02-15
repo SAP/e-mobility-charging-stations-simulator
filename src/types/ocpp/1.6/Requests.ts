@@ -7,6 +7,7 @@ import type {
   OCPP16ChargingProfilePurposeType,
   OCPP16DiagnosticsStatus,
   OCPP16StandardParametersKey,
+  OCPP16VendorParametersKey,
 } from '../../internal';
 
 export enum OCPP16RequestCommand {
@@ -65,8 +66,10 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
 
 export type OCPP16ClearCacheRequest = EmptyObject;
 
+type OCPP16ConfigurationKey = string | OCPP16StandardParametersKey | OCPP16VendorParametersKey;
+
 export interface ChangeConfigurationRequest extends JsonObject {
-  key: string | OCPP16StandardParametersKey;
+  key: OCPP16ConfigurationKey;
   value: string;
 }
 
@@ -85,7 +88,7 @@ export interface UnlockConnectorRequest extends JsonObject {
 }
 
 export interface GetConfigurationRequest extends JsonObject {
-  key?: (string | OCPP16StandardParametersKey)[];
+  key?: OCPP16ConfigurationKey[];
 }
 
 enum ResetType {

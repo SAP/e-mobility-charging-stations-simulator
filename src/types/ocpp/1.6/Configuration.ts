@@ -54,6 +54,6 @@ export enum OCPP16StandardParametersKey {
   MaxChargingProfilesInstalled = 'MaxChargingProfilesInstalled',
 }
 
-export enum OCPP16VendorDefaultParametersKey {
+export enum OCPP16VendorParametersKey {
   ConnectionUrl = 'ConnectionUrl',
 }

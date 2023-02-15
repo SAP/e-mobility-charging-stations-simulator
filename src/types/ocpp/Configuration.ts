@@ -2,7 +2,7 @@ import {
   type JsonObject,
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
-  OCPP16VendorDefaultParametersKey,
+  OCPP16VendorParametersKey,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
@@ -15,11 +15,11 @@ export const StandardParametersKey = {
 } as const;
 export type StandardParametersKey = OCPP16StandardParametersKey;
 
-export const VendorDefaultParametersKey = {
-  ...OCPP16VendorDefaultParametersKey,
+export const VendorParametersKey = {
+  ...OCPP16VendorParametersKey,
   ...OCPP20VendorVariableName,
 } as const;
-export type VendorDefaultParametersKey = OCPP16VendorDefaultParametersKey;
+export type VendorParametersKey = OCPP16VendorParametersKey;
 
 export const SupportedFeatureProfiles = {
   ...OCPP16SupportedFeatureProfiles,
@@ -37,8 +37,10 @@ export enum ConnectorPhaseRotation {
   TSR = 'TSR',
 }
 
+export type ConfigurationKeyType = string | StandardParametersKey | VendorParametersKey;
+
 export type OCPPConfigurationKey = {
-  key: string | StandardParametersKey;
+  key: ConfigurationKeyType;
   readonly: boolean;
   value?: string;
 } & JsonObject;

@@ -1,5 +1,5 @@
 import type { ChargingStation } from './internal';
-import type { ConfigurationKey, StandardParametersKey } from '../types';
+import type { ConfigurationKey, ConfigurationKeyType, StandardParametersKey } from '../types';
 import { logger } from '../utils';
 
 type ConfigurationKeyOptions = { readonly?: boolean; visible?: boolean; reboot?: boolean };
@@ -13,7 +13,7 @@ export class ChargingStationConfigurationUtils {
 
   public static getConfigurationKey(
     chargingStation: ChargingStation,
-    key: string | StandardParametersKey,
+    key: ConfigurationKeyType,
     caseInsensitive = false
   ): ConfigurationKey | undefined {
     return chargingStation.ocppConfiguration?.configurationKey?.find((configElement) => {
@@ -26,7 +26,7 @@ export class ChargingStationConfigurationUtils {
 
   public static addConfigurationKey(
     chargingStation: ChargingStation,
-    key: string | StandardParametersKey,
+    key: ConfigurationKeyType,
     value: string,
     options: ConfigurationKeyOptions = {
       readonly: false,
@@ -65,7 +65,7 @@ export class ChargingStationConfigurationUtils {
 
   public static setConfigurationKeyValue(
     chargingStation: ChargingStation,
-    key: string | StandardParametersKey,
+    key: ConfigurationKeyType,
     value: string,
     caseInsensitive = false
   ): void {
@@ -89,7 +89,7 @@ export class ChargingStationConfigurationUtils {
 
   public static deleteConfigurationKey(
     chargingStation: ChargingStation,
-    key: string | StandardParametersKey,
+    key: ConfigurationKeyType,
     params: DeleteConfigurationKeyParams = { save: true, caseInsensitive: false }
   ): ConfigurationKey[] | undefined {
     const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(

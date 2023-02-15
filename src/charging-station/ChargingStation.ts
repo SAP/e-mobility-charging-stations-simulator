@@ -83,7 +83,7 @@ import {
   type StopTransactionResponse,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
-  VendorDefaultParametersKey,
+  VendorParametersKey,
   type WSError,
   WebSocketCloseEventStatusCode,
   type WsOptions,
@@ -803,7 +803,7 @@ export class ChargingStation {
   }
 
   private getSupervisionUrlOcppKey(): string {
-    return this.stationInfo.supervisionUrlOcppKey ?? VendorDefaultParametersKey.ConnectionUrl;
+    return this.stationInfo.supervisionUrlOcppKey ?? VendorParametersKey.ConnectionUrl;
   }
 
   private getTemplateFromFile(): ChargingStationTemplate | undefined {

@@ -74,8 +74,14 @@ type ComponentType = {
   evse?: EVSEType;
 } & JsonObject;
 
+type VariableName =
+  | string
+  | OCPP20RequiredVariableName
+  | OCPP20OptionalVariableName
+  | OCPP20VendorVariableName;
+
 type VariableType = {
-  name: string | OCPP20RequiredVariableName | OCPP20OptionalVariableName | OCPP20VendorVariableName;
+  name: VariableName;
   instance?: string;
 } & JsonObject;
 
