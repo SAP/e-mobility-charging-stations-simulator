@@ -74,10 +74,10 @@ export class PerformanceStatistics {
         ) {
           this.statistics.statisticsData.get(command).countRequest++;
         } else {
-          this.statistics.statisticsData.set(
-            command,
-            Object.assign({ countRequest: 1 }, this.statistics.statisticsData.get(command))
-          );
+          this.statistics.statisticsData.set(command, {
+            ...this.statistics.statisticsData.get(command),
+            countRequest: 1,
+          });
         }
         break;
       case MessageType.CALL_RESULT_MESSAGE:
@@ -87,10 +87,10 @@ export class PerformanceStatistics {
         ) {
           this.statistics.statisticsData.get(command).countResponse++;
         } else {
-          this.statistics.statisticsData.set(
-            command,
-            Object.assign({ countResponse: 1 }, this.statistics.statisticsData.get(command))
-          );
+          this.statistics.statisticsData.set(command, {
+            ...this.statistics.statisticsData.get(command),
+            countResponse: 1,
+          });
         }
         break;
       case MessageType.CALL_ERROR_MESSAGE:
@@ -100,10 +100,10 @@ export class PerformanceStatistics {
         ) {
           this.statistics.statisticsData.get(command).countError++;
         } else {
-          this.statistics.statisticsData.set(
-            command,
-            Object.assign({ countError: 1 }, this.statistics.statisticsData.get(command))
-          );
+          this.statistics.statisticsData.set(command, {
+            ...this.statistics.statisticsData.get(command),
+            countError: 1,
+          });
         }
         break;
       default:
