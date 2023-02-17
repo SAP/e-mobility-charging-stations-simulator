@@ -76,10 +76,10 @@
     "d3-color": "^3.1.0"
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.6.9",
-    "@mikro-orm/mariadb": "^5.6.9",
-    "@mikro-orm/reflection": "^5.6.9",
-    "@mikro-orm/sqlite": "^5.6.9",
+    "@mikro-orm/core": "^5.6.10",
+    "@mikro-orm/mariadb": "^5.6.10",
+    "@mikro-orm/reflection": "^5.6.10",
+    "@mikro-orm/sqlite": "^5.6.10",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.2",
@@ -105,10 +105,10 @@
     "utf-8-validate": "^6.0.2"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.4.3",
-    "@commitlint/config-conventional": "^17.4.3",
+    "@commitlint/cli": "^17.4.4",
+    "@commitlint/config-conventional": "^17.4.4",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@mikro-orm/cli": "^5.6.9",
+    "@mikro-orm/cli": "^5.6.10",
     "@release-it/bumper": "^4.0.2",
     "@rollup/plugin-json": "^6.0.0",
     "@types/mocha": "^10.0.1",
@@ -139,7 +139,7 @@
     "prettier": "^2.8.4",
     "release-it": "^15.6.0",
     "robohydra": "^0.6.9",
-    "rollup": "^3.15.0",
+    "rollup": "^3.16.0",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
