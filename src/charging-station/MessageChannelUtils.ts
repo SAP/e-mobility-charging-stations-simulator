@@ -51,14 +51,15 @@ export class MessageChannelUtils {
     chargingStation: ChargingStation
   ): ChargingStationData {
     return {
-      stationInfo: chargingStation.stationInfo,
       started: chargingStation.started,
-      wsState: chargingStation?.wsConnection?.readyState,
-      bootNotificationResponse: chargingStation.bootNotificationResponse,
+      stationInfo: chargingStation.stationInfo,
       connectors: [...chargingStation.connectors.values()].map(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
       ),
+      ocppConfiguration: chargingStation.ocppConfiguration,
+      wsState: chargingStation?.wsConnection?.readyState,
+      bootNotificationResponse: chargingStation.bootNotificationResponse,
       ...(chargingStation.automaticTransactionGenerator && {
         automaticTransactionGenerator: {
           automaticTransactionGenerator:

@@ -4,6 +4,7 @@ import type {
   BootNotificationResponse,
   ChargingStationAutomaticTransactionGeneratorConfiguration,
   ChargingStationInfo,
+  ChargingStationOcppConfiguration,
   ConnectorStatus,
   JsonObject,
   Statistics,
@@ -21,15 +22,16 @@ export interface ChargingStationWorkerData extends WorkerData {
 }
 
 export interface ChargingStationData extends WorkerData {
-  stationInfo: ChargingStationInfo;
   started: boolean;
+  stationInfo: ChargingStationInfo;
+  connectors: ConnectorStatus[];
+  ocppConfiguration: ChargingStationOcppConfiguration;
   wsState?:
     | typeof WebSocket.CONNECTING
     | typeof WebSocket.OPEN
     | typeof WebSocket.CLOSING
     | typeof WebSocket.CLOSED;
   bootNotificationResponse?: BootNotificationResponse;
-  connectors: ConnectorStatus[];
   automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration;
 }
 
