@@ -1362,7 +1362,7 @@ export class ChargingStation {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
         const configurationData: ChargingStationConfiguration =
-          this.getConfigurationFromFile() ?? {};
+          Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
         this.ocppConfiguration?.configurationKey &&
           (configurationData.configurationKey = this.ocppConfiguration.configurationKey);
         this.stationInfo && (configurationData.stationInfo = this.stationInfo);
@@ -1414,7 +1414,10 @@ export class ChargingStation {
       const configurationFromFile = this.getConfigurationFromFile();
       configuration = configurationFromFile?.configurationKey && configurationFromFile;
     }
-    configuration && delete configuration.stationInfo;
+    if (!Utils.isNullOrUndefined(configuration)) {
+      delete configuration.stationInfo;
+      delete configuration.configurationHash;
+    }
     return configuration;
   }
 
