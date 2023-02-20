@@ -18,6 +18,13 @@ import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIHttpServer';
 
+enum HttpMethods {
+  GET = 'GET',
+  PUT = 'PUT',
+  POST = 'POST',
+  PATCH = 'PATCH',
+}
+
 export class UIHttpServer extends AbstractUIServer {
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration);
@@ -100,7 +107,7 @@ export class UIHttpServer extends AbstractUIServer {
           error
         );
       });
-      if (req.method === 'POST') {
+      if (req.method === HttpMethods.POST) {
         const bodyBuffer = [];
         req
           .on('data', (chunk) => {
