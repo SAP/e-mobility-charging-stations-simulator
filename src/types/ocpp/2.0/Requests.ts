@@ -1,6 +1,7 @@
 import type {
   BootReasonEnumType,
   EmptyObject,
+  InstallCertificateUseEnumType,
   JsonObject,
   OCPP20ConnectorStatusEnumType,
   OCPP20SetVariableDataType,
@@ -49,4 +50,9 @@ export type OCPP20StatusNotificationRequest = {
 
 export type OCPP20SetVariablesRequest = {
   setVariableData: OCPP20SetVariableDataType[];
+} & JsonObject;
+
+export type OCPP20InstallCertificateRequest = {
+  certificateType: InstallCertificateUseEnumType;
+  certificate: string;
 } & JsonObject;

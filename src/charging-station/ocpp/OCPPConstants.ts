@@ -12,8 +12,8 @@ import {
 export class OCPPConstants {
   static readonly OCPP_REQUEST_EMPTY = Object.freeze({});
   static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
-  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.ACCEPTED });
-  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: GenericStatus.REJECTED });
+  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.Accepted });
+  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: GenericStatus.Rejected });
 
   static readonly OCPP_CONFIGURATION_RESPONSE_ACCEPTED = Object.freeze({
     status: ConfigurationStatus.ACCEPTED,

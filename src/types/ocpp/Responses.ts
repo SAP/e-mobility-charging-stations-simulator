@@ -53,8 +53,8 @@ export type DiagnosticsStatusNotificationResponse = OCPP16DiagnosticsStatusNotif
 export type FirmwareStatusNotificationResponse = OCPP16FirmwareStatusNotificationResponse;
 
 export enum GenericStatus {
-  ACCEPTED = 'Accepted',
-  REJECTED = 'Rejected',
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
 }
 
 export type GenericResponse = {

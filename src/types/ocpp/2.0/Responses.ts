@@ -1,6 +1,7 @@
 import type {
   EmptyObject,
   GenericStatus,
+  InstallCertificateStatusEnumType,
   JsonObject,
   OCPP20SetVariableResultType,
   RegistrationStatusEnumType,
@@ -27,4 +28,9 @@ export type OCPP20StatusNotificationResponse = EmptyObject;
 
 export type OCPP20SetVariablesResponse = {
   setVariableResult: OCPP20SetVariableResultType[];
+} & JsonObject;
+
+export type OCPP20InstallCertificateResponse = {
+  status: InstallCertificateStatusEnumType;
+  statusInfo?: StatusInfoType;
 } & JsonObject;
