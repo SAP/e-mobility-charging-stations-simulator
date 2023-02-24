@@ -223,17 +223,11 @@ export class Utils {
   }
 
   public static isEmptyArray(object: unknown | unknown[]): boolean {
-    if (Array.isArray(object) && object.length === 0) {
-      return true;
-    }
-    return false;
+    return Array.isArray(object) && object.length === 0;
   }
 
   public static isNotEmptyArray(object: unknown | unknown[]): boolean {
-    if (Array.isArray(object) && object.length > 0) {
-      return true;
-    }
-    return false;
+    return Array.isArray(object) && object.length > 0;
   }
 
   public static isEmptyObject(obj: object): boolean {
