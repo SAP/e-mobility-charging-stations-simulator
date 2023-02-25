@@ -101,9 +101,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         ) => Promise<void>,
         this,
         connectorId
-      ).catch(() => {
-        /* This is intentional */
-      });
+      ).catch(Constants.EMPTY_FUNCTION);
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(`${this.logPrefix(connectorId)} is already started on connector`);
     }

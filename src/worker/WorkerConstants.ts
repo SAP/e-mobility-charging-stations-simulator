@@ -1,4 +1,9 @@
 export class WorkerConstants {
+  public static EMPTY_OBJECT = {};
+  public static readonly EMPTY_FUNCTION = Object.freeze(() => {
+    /* This is intentional */
+  });
+
   static readonly DEFAULT_ELEMENT_START_DELAY = 0;
   static readonly DEFAULT_WORKER_START_DELAY = 500;
   static readonly POOL_MAX_INACTIVE_TIME = 60000;

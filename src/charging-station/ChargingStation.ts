@@ -625,7 +625,7 @@ export class ChargingStation {
   }
 
   public openWSConnection(
-    options: WsOptions = this.stationInfo?.wsOptions ?? {},
+    options: WsOptions = this.stationInfo?.wsOptions ?? Constants.EMPTY_OBJECT,
     params: { closeOpened?: boolean; terminateOpened?: boolean } = {
       closeOpened: false,
       terminateOpened: false,
@@ -902,7 +902,7 @@ export class ChargingStation {
         },
         reset: true,
       },
-      stationTemplate?.firmwareUpgrade ?? {}
+      stationTemplate?.firmwareUpgrade ?? Constants.EMPTY_OBJECT
     );
     stationInfo.resetTime = !Utils.isNullOrUndefined(stationTemplate?.resetTime)
       ? stationTemplate.resetTime * 1000
@@ -1362,7 +1362,7 @@ export class ChargingStation {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
         const configurationData: ChargingStationConfiguration =
-          Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
+          Utils.cloneObject(this.getConfigurationFromFile()) ?? Constants.EMPTY_OBJECT;
         this.ocppConfiguration?.configurationKey &&
           (configurationData.configurationKey = this.ocppConfiguration.configurationKey);
         this.stationInfo && (configurationData.stationInfo = this.stationInfo);
@@ -2043,7 +2043,10 @@ export class ChargingStation {
         `${this.logPrefix()} WebSocket connection retry #${this.autoReconnectRetryCount.toString()}`
       );
       this.openWSConnection(
-        { ...(this.stationInfo?.wsOptions ?? {}), handshakeTimeout: reconnectTimeout },
+        {
+          ...(this.stationInfo?.wsOptions ?? Constants.EMPTY_OBJECT),
+          handshakeTimeout: reconnectTimeout,
+        },
         { closeOpened: true }
       );
       this.wsConnectionRestarted = true;

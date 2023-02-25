@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import lockfile from 'proper-lockfile';
 
 import { FileType, type Statistics } from '../../types';
-import { FileUtils, Utils } from '../../utils';
+import { Constants, FileUtils, Utils } from '../../utils';
 import { Storage } from '../internal';
 
 export class JsonFileStorage extends Storage {
@@ -42,9 +42,7 @@ export class JsonFileStorage extends Storage {
         }
         await release();
       })
-      .catch(() => {
-        /* This is intentional */
-      });
+      .catch(Constants.EMPTY_FUNCTION);
   }
 
   public open(): void {

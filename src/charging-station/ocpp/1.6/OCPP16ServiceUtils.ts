@@ -196,7 +196,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       connectorId,
       OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT
     );
-    let powerPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
+    let powerPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates =
+      Constants.EMPTY_OBJECT;
     if (chargingStation.getNumberOfPhases() === 3) {
       powerPerPhaseSampledValueTemplates = {
         L1: OCPP16ServiceUtils.getSampledValueTemplate(
@@ -233,7 +234,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         powerSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       } measurand value`;
-      const powerMeasurandValues = {} as MeasurandValues;
+      const powerMeasurandValues = Constants.EMPTY_OBJECT as MeasurandValues;
       const unitDivider = powerSampledValueTemplate?.unit === MeterValueUnit.KILO_WATT ? 1000 : 1;
       const connectorMaximumAvailablePower =
         chargingStation.getConnectorMaximumAvailablePower(connectorId);
@@ -403,7 +404,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       connectorId,
       OCPP16MeterValueMeasurand.CURRENT_IMPORT
     );
-    let currentPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
+    let currentPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates =
+      Constants.EMPTY_OBJECT;
     if (chargingStation.getNumberOfPhases() === 3) {
       currentPerPhaseSampledValueTemplates = {
         L1: OCPP16ServiceUtils.getSampledValueTemplate(
@@ -440,7 +442,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         currentSampledValueTemplate.measurand ??
         OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       } measurand value`;
-      const currentMeasurandValues: MeasurandValues = {} as MeasurandValues;
+      const currentMeasurandValues: MeasurandValues = Constants.EMPTY_OBJECT as MeasurandValues;
       const connectorMaximumAvailablePower =
         chargingStation.getConnectorMaximumAvailablePower(connectorId);
       let connectorMaximumAmperage: number;

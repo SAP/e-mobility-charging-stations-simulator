@@ -275,7 +275,7 @@ export abstract class OCPPRequestService {
                 ErrorType.GENERIC_ERROR,
                 `WebSocket closed or errored for buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
-                (messagePayload as JsonObject)?.details ?? {}
+                (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT
               )
             );
           } else if (wsClosedOrErrored) {
@@ -283,7 +283,7 @@ export abstract class OCPPRequestService {
               ErrorType.GENERIC_ERROR,
               `WebSocket closed or errored for non buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
-              (messagePayload as JsonObject)?.details ?? {}
+              (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT
             );
             // Reject response
             if (messageType !== MessageType.CALL_MESSAGE) {
@@ -358,7 +358,7 @@ export abstract class OCPPRequestService {
           ErrorType.GENERIC_ERROR,
           `Timeout for message id '${messageId}'`,
           commandName,
-          (messagePayload as JsonObject)?.details ?? {}
+          (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT
         ),
         () => {
           messageType === MessageType.CALL_MESSAGE && chargingStation.requests.delete(messageId);

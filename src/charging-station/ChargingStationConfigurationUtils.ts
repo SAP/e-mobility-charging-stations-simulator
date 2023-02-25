@@ -1,6 +1,6 @@
 import type { ChargingStation } from './internal';
 import type { ConfigurationKey, ConfigurationKeyType } from '../types';
-import { logger } from '../utils';
+import { Constants, logger } from '../utils';
 
 type ConfigurationKeyOptions = { readonly?: boolean; visible?: boolean; reboot?: boolean };
 type DeleteConfigurationKeyParams = { save?: boolean; caseInsensitive?: boolean };
@@ -35,7 +35,7 @@ export class ChargingStationConfigurationUtils {
     },
     params: AddConfigurationKeyParams = { overwrite: false, save: false }
   ): void {
-    options = options ?? ({} as ConfigurationKeyOptions);
+    options = options ?? (Constants.EMPTY_OBJECT as ConfigurationKeyOptions);
     options.readonly = options?.readonly ?? false;
     options.visible = options?.visible ?? true;
     options.reboot = options?.reboot ?? false;

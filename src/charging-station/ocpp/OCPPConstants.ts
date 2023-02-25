@@ -8,10 +8,11 @@ import {
   TriggerMessageStatus,
   UnlockStatus,
 } from '../../types';
+import { Constants } from '../../utils';
 
 export class OCPPConstants {
-  static readonly OCPP_REQUEST_EMPTY = Object.freeze({});
-  static readonly OCPP_RESPONSE_EMPTY = Object.freeze({});
+  static readonly OCPP_REQUEST_EMPTY = Constants.EMPTY_FREEZED_OBJECT;
+  static readonly OCPP_RESPONSE_EMPTY = Constants.EMPTY_FREEZED_OBJECT;
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.Accepted });
   static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: GenericStatus.Rejected });
 

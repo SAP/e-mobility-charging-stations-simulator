@@ -19,7 +19,7 @@ import {
   RegistrationStatusEnumType,
   type ResponseHandler,
 } from '../../../types';
-import { logger } from '../../../utils';
+import { Constants, logger } from '../../../utils';
 import { OCPP20ServiceUtils, OCPPResponseService } from '../internal';
 
 const moduleName = 'OCPP20ResponseService';
@@ -161,7 +161,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         chargingStation,
         OCPP20OptionalVariableName.HeartbeatInterval,
         payload.interval.toString(),
-        {},
+        Constants.EMPTY_OBJECT,
         { overwrite: true, save: true }
       );
       chargingStation.heartbeatSetInterval

@@ -3,6 +3,7 @@
 import { Worker } from 'node:worker_threads';
 
 import { WorkerAbstract } from './WorkerAbstract';
+import { WorkerConstants } from './WorkerConstants';
 import {
   type MessageHandler,
   type WorkerData,
@@ -89,12 +90,9 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     const worker = new Worker(this.workerScript);
     worker.on(
       'message',
-      (
-        this.workerOptions?.messageHandler ??
-        (() => {
-          /* This is intentional */
-        })
-      ).bind(this) as MessageHandler<Worker>
+      (this.workerOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION).bind(
+        this
+      ) as MessageHandler<Worker>
     );
     worker.on('error', WorkerUtils.defaultErrorHandler.bind(this) as (err: Error) => void);
     worker.on('exit', (code) => {

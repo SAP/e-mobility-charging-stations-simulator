@@ -7,6 +7,7 @@ import {
   type JsonType,
   type RequestCommand,
 } from '../types';
+import { Constants } from '../utils';
 
 export class OCPPError extends BaseError {
   code: ErrorType;
@@ -23,6 +24,6 @@ export class OCPPError extends BaseError {
 
     this.code = code ?? ErrorType.GENERIC_ERROR;
     this.command = command;
-    this.details = details ?? {};
+    this.details = details ?? Constants.EMPTY_FREEZED_OBJECT;
   }
 }

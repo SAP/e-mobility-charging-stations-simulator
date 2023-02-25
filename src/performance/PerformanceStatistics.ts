@@ -226,7 +226,7 @@ export class PerformanceStatistics {
     const entryName = entry.name;
     // Initialize command statistics
     if (!this.statistics.statisticsData.has(entryName)) {
-      this.statistics.statisticsData.set(entryName, {});
+      this.statistics.statisticsData.set(entryName, Constants.EMPTY_OBJECT);
     }
     // Update current statistics
     this.statistics.updatedAt = new Date();

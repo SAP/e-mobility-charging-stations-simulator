@@ -22,12 +22,13 @@ export class WorkerFactory {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread');
     }
-    workerOptions = workerOptions ?? ({} as WorkerOptions);
+    workerOptions = workerOptions ?? (WorkerConstants.EMPTY_OBJECT as WorkerOptions);
     workerOptions.workerStartDelay =
       workerOptions?.workerStartDelay ?? WorkerConstants.DEFAULT_WORKER_START_DELAY;
     workerOptions.elementStartDelay =
       workerOptions?.elementStartDelay ?? WorkerConstants.DEFAULT_ELEMENT_START_DELAY;
-    workerOptions.poolOptions = workerOptions?.poolOptions ?? ({} as PoolOptions<Worker>);
+    workerOptions.poolOptions =
+      workerOptions?.poolOptions ?? (WorkerConstants.EMPTY_OBJECT as PoolOptions<Worker>);
     workerOptions?.messageHandler &&
       (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
     let workerImplementation: WorkerAbstract<T> | null = null;

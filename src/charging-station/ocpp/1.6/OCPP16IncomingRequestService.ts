@@ -358,9 +358,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ) => Promise<void>,
       chargingStation,
       `${commandPayload.type}Reset` as OCPP16StopTransactionReason
-    ).catch(() => {
-      /* This is intentional */
-    });
+    ).catch(Constants.EMPTY_FUNCTION);
     logger.info(
       `${chargingStation.logPrefix()} ${
         commandPayload.type
@@ -977,14 +975,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ) => Promise<void>,
         this,
         chargingStation
-      ).catch(() => {
-        /* This is intentional */
-      });
+      ).catch(Constants.EMPTY_FUNCTION);
     } else {
       setTimeout(() => {
-        this.updateFirmware(chargingStation).catch(() => {
-          /* Intentional */
-        });
+        this.updateFirmware(chargingStation).catch(Constants.EMPTY_FUNCTION);
       }, retrieveDate?.getTime() - now);
     }
     return OCPPConstants.OCPP_RESPONSE_EMPTY;
@@ -1218,9 +1212,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               .then((response) => {
                 chargingStation.bootNotificationResponse = response;
               })
-              .catch(() => {
-                /* This is intentional */
-              });
+              .catch(Constants.EMPTY_FUNCTION);
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return OCPPConstants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         case OCPP16MessageTrigger.Heartbeat:
@@ -1234,9 +1226,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   triggerMessage: true,
                 }
               )
-              .catch(() => {
-                /* This is intentional */
-              });
+              .catch(Constants.EMPTY_FUNCTION);
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);
           return OCPPConstants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         case OCPP16MessageTrigger.StatusNotification:
@@ -1255,9 +1245,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     triggerMessage: true,
                   }
                 )
-                .catch(() => {
-                  /* This is intentional */
-                });
+                .catch(Constants.EMPTY_FUNCTION);
             } else {
               for (const connectorId of chargingStation.connectors.keys()) {
                 chargingStation.ocppRequestService
@@ -1276,9 +1264,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                       triggerMessage: true,
                     }
                   )
-                  .catch(() => {
-                    /* This is intentional */
-                  });
+                  .catch(Constants.EMPTY_FUNCTION);
               }
             }
           }, Constants.OCPP_TRIGGER_MESSAGE_DELAY);

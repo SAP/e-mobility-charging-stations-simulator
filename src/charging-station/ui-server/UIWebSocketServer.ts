@@ -10,7 +10,7 @@ import {
   type UIServerConfiguration,
   WebSocketCloseEventStatusCode,
 } from '../../types';
-import { Utils, logger } from '../../utils';
+import { Constants, Utils, logger } from '../../utils';
 import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIWebSocketServer';
@@ -48,12 +48,7 @@ export class UIWebSocketServer extends AbstractUIServer {
         }
         const [requestId] = request as ProtocolRequest;
         this.responseHandlers.set(requestId, ws);
-        this.uiServices
-          .get(version)
-          ?.requestHandler(request)
-          .catch(() => {
-            /* Error caught by AbstractUIService */
-          });
+        this.uiServices.get(version)?.requestHandler(request).catch(Constants.EMPTY_FUNCTION);
       });
       ws.on('error', (error) => {
         logger.error(`${this.logPrefix(moduleName, 'start.ws.onerror')} WebSocket error:`, error);

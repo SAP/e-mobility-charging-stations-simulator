@@ -23,10 +23,8 @@ export abstract class WorkerAbstract<T extends WorkerData> {
       poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
       elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
-      poolOptions: {},
-      messageHandler: () => {
-        /* This is intentional */
-      },
+      poolOptions: WorkerConstants.EMPTY_OBJECT,
+      messageHandler: WorkerConstants.EMPTY_FUNCTION,
     }
   ) {
     if (!workerScript) {

@@ -13,7 +13,7 @@ import {
   ResponseStatus,
   type UIServerConfiguration,
 } from '../../types';
-import { Utils, logger } from '../../utils';
+import { Constants, Utils, logger } from '../../utils';
 import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIHttpServer';
@@ -117,10 +117,14 @@ export class UIHttpServer extends AbstractUIServer {
             const body = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload;
             this.uiServices
               .get(version)
-              ?.requestHandler(this.buildProtocolRequest(uuid, procedureName, body ?? {}))
-              .catch(() => {
-                /* Error caught by AbstractUIService */
-              });
+              ?.requestHandler(
+                this.buildProtocolRequest(
+                  uuid,
+                  procedureName,
+                  body ?? Constants.EMPTY_FREEZED_OBJECT
+                )
+              )
+              .catch(Constants.EMPTY_FUNCTION);
           });
       } else {
         throw new BaseError(`Unsupported HTTP method: '${req.method}'`);
