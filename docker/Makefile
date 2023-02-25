@@ -19,10 +19,10 @@ ifeq '$(SUBMODULES_INIT)' 'true'
 endif
 
 $(NAME): $(submodules-init)
-	docker-compose -p $(PROJECT_NAME) up -d
+	docker compose -p $(PROJECT_NAME) up -d
 
 $(NAME)-force: $(submodules-init)
-	docker-compose -p $(PROJECT_NAME) up -d --build --force-recreate
+	docker compose -p $(PROJECT_NAME) up -d --build --force-recreate
 
 all: $(NAME)
 
@@ -30,7 +30,7 @@ clean-images:
 	-docker rmi $(PROJECT_NAME)-$(NAME)
 
 clean-containers:
-	-docker-compose -p $(PROJECT_NAME) down
+	-docker compose -p $(PROJECT_NAME) down
 
 clean: clean-containers clean-images
 
