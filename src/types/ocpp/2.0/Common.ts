@@ -26,11 +26,11 @@ export enum BootReasonEnumType {
 }
 
 export enum OCPP20ConnectorStatusEnumType {
-  AVAILABLE = 'Available',
-  OCCUPIED = 'Occupied',
-  RESERVED = 'Reserved',
-  UNAVAILABLE = 'Unavailable',
-  FAULTED = 'Faulted',
+  Available = 'Available',
+  Occupied = 'Occupied',
+  Reserved = 'Reserved',
+  Unavailable = 'Unavailable',
+  Faulted = 'Faulted',
 }
 
 export type GenericStatusEnumType = GenericStatus;

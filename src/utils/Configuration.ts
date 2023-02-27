@@ -191,7 +191,7 @@ export class Configuration {
     let workerConfiguration: WorkerConfiguration = {
       processType: Utils.hasOwnProp(Configuration.getConfig(), 'workerProcess')
         ? Configuration.getConfig()?.workerProcess
-        : WorkerProcessType.WORKER_SET,
+        : WorkerProcessType.workerSet,
       startDelay: Utils.hasOwnProp(Configuration.getConfig(), 'workerStartDelay')
         ? Configuration.getConfig()?.workerStartDelay
         : WorkerConstants.DEFAULT_WORKER_START_DELAY,

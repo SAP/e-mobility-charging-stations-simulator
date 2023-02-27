@@ -401,10 +401,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       OCPP16StatusNotificationResponse
     >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
       connectorId,
-      status: OCPP16ChargePointStatus.AVAILABLE,
+      status: OCPP16ChargePointStatus.Available,
       errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
     });
-    chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
+    chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.Available;
     return OCPPConstants.OCPP_RESPONSE_UNLOCKED;
   }
 
@@ -664,8 +664,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     const chargePointStatus: OCPP16ChargePointStatus =
       commandPayload.type === OCPP16AvailabilityType.OPERATIVE
-        ? OCPP16ChargePointStatus.AVAILABLE
-        : OCPP16ChargePointStatus.UNAVAILABLE;
+        ? OCPP16ChargePointStatus.Available
+        : OCPP16ChargePointStatus.Unavailable;
     if (connectorId === 0) {
       let response: ChangeAvailabilityResponse = OCPPConstants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
       for (const id of chargingStation.connectors.keys()) {
@@ -725,11 +725,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16StatusNotificationResponse
       >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
         connectorId: transactionConnectorId,
-        status: OCPP16ChargePointStatus.PREPARING,
+        status: OCPP16ChargePointStatus.Preparing,
         errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
       });
       const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId);
-      connectorStatus.status = OCPP16ChargePointStatus.PREPARING;
+      connectorStatus.status = OCPP16ChargePointStatus.Preparing;
       if (chargingStation.isChargingStationAvailable() === true) {
         // Check if authorized
         if (chargingStation.getAuthorizeRemoteTxRequests() === true) {
@@ -861,17 +861,17 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     idTag: string
   ): Promise<GenericResponse> {
     if (
-      chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.AVAILABLE
+      chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.Available
     ) {
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16StatusNotificationRequest,
         OCPP16StatusNotificationResponse
       >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
         connectorId,
-        status: OCPP16ChargePointStatus.AVAILABLE,
+        status: OCPP16ChargePointStatus.Available,
         errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
       });
-      chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.AVAILABLE;
+      chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.Available;
     }
     logger.warn(
       `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector Id ${connectorId.toString()}, idTag '${idTag}', availability '${
@@ -920,10 +920,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           OCPP16StatusNotificationResponse
         >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
           connectorId,
-          status: OCPP16ChargePointStatus.FINISHING,
+          status: OCPP16ChargePointStatus.Finishing,
           errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
         });
-        chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.FINISHING;
+        chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.Finishing;
         const stopResponse = await chargingStation.stopTransactionOnConnector(
           connectorId,
           OCPP16StopTransactionReason.REMOTE
@@ -1000,11 +1000,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           OCPP16StatusNotificationResponse
         >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
           connectorId,
-          status: OCPP16ChargePointStatus.UNAVAILABLE,
+          status: OCPP16ChargePointStatus.Unavailable,
           errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
         });
         chargingStation.getConnectorStatus(connectorId).status =
-          OCPP16ChargePointStatus.UNAVAILABLE;
+          OCPP16ChargePointStatus.Unavailable;
       }
     }
     if (

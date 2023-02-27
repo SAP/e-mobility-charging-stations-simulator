@@ -15,7 +15,7 @@ export class MessageChannelUtils {
     chargingStation: ChargingStation
   ): ChargingStationWorkerMessage<ChargingStationData> {
     return {
-      id: ChargingStationWorkerMessageEvents.STARTED,
+      id: ChargingStationWorkerMessageEvents.started,
       data: MessageChannelUtils.buildChargingStationDataPayload(chargingStation),
     };
   }
@@ -24,7 +24,7 @@ export class MessageChannelUtils {
     chargingStation: ChargingStation
   ): ChargingStationWorkerMessage<ChargingStationData> {
     return {
-      id: ChargingStationWorkerMessageEvents.STOPPED,
+      id: ChargingStationWorkerMessageEvents.stopped,
       data: MessageChannelUtils.buildChargingStationDataPayload(chargingStation),
     };
   }
@@ -33,7 +33,7 @@ export class MessageChannelUtils {
     chargingStation: ChargingStation
   ): ChargingStationWorkerMessage<ChargingStationData> {
     return {
-      id: ChargingStationWorkerMessageEvents.UPDATED,
+      id: ChargingStationWorkerMessageEvents.updated,
       data: MessageChannelUtils.buildChargingStationDataPayload(chargingStation),
     };
   }
@@ -42,7 +42,7 @@ export class MessageChannelUtils {
     statistics: Statistics
   ): ChargingStationWorkerMessage<Statistics> {
     return {
-      id: ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS,
+      id: ChargingStationWorkerMessageEvents.performanceStatistics,
       data: statistics,
     };
   }

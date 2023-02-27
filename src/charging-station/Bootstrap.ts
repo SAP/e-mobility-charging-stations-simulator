@@ -170,16 +170,16 @@ export class Bootstrap {
     // );
     try {
       switch (msg.id) {
-        case ChargingStationWorkerMessageEvents.STARTED:
+        case ChargingStationWorkerMessageEvents.started:
           this.workerEventStarted(msg.data as ChargingStationData);
           break;
-        case ChargingStationWorkerMessageEvents.STOPPED:
+        case ChargingStationWorkerMessageEvents.stopped:
           this.workerEventStopped(msg.data as ChargingStationData);
           break;
-        case ChargingStationWorkerMessageEvents.UPDATED:
+        case ChargingStationWorkerMessageEvents.updated:
           this.workerEventUpdated(msg.data as ChargingStationData);
           break;
-        case ChargingStationWorkerMessageEvents.PERFORMANCE_STATISTICS:
+        case ChargingStationWorkerMessageEvents.performanceStatistics:
           this.workerEventPerformanceStatistics(msg.data as Statistics);
           break;
         default:

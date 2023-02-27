@@ -33,17 +33,17 @@ export class WorkerFactory {
       (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
     let workerImplementation: WorkerAbstract<T> | null = null;
     switch (workerProcessType) {
-      case WorkerProcessType.WORKER_SET:
+      case WorkerProcessType.workerSet:
         workerOptions.elementsPerWorker =
           workerOptions?.elementsPerWorker ?? WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER;
         workerImplementation = new WorkerSet(workerScript, workerOptions);
         break;
-      case WorkerProcessType.STATIC_POOL:
+      case WorkerProcessType.staticPool:
         workerOptions.poolMaxSize =
           workerOptions?.poolMaxSize ?? WorkerConstants.DEFAULT_POOL_MAX_SIZE;
         workerImplementation = new WorkerStaticPool(workerScript, workerOptions);
         break;
-      case WorkerProcessType.DYNAMIC_POOL:
+      case WorkerProcessType.dynamicPool:
         workerOptions.poolMinSize =
           workerOptions?.poolMinSize ?? WorkerConstants.DEFAULT_POOL_MIN_SIZE;
         workerOptions.poolMaxSize =

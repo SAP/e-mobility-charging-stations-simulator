@@ -29,7 +29,7 @@ if (ChargingStationUtils.workerPoolInUse()) {
  */
 function addMessageListener(): void {
   parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
-    if (message.id === WorkerMessageEvents.START_WORKER_ELEMENT) {
+    if (message.id === WorkerMessageEvents.startWorkerElement) {
       startChargingStation(message.data);
     }
   });

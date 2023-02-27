@@ -36,10 +36,10 @@ export interface ChargingStationData extends WorkerData {
 }
 
 enum ChargingStationMessageEvents {
-  STARTED = 'started',
-  STOPPED = 'stopped',
-  UPDATED = 'updated',
-  PERFORMANCE_STATISTICS = 'performanceStatistics',
+  started = 'started',
+  stopped = 'stopped',
+  updated = 'updated',
+  performanceStatistics = 'performanceStatistics',
 }
 
 export const ChargingStationWorkerMessageEvents = {

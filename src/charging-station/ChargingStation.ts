@@ -1814,7 +1814,7 @@ export class ChargingStation {
         (this.isChargingStationAvailable() === false ||
           this.isConnectorAvailable(connectorId) === false)
       ) {
-        connectorStatus = ConnectorStatusEnum.UNAVAILABLE;
+        connectorStatus = ConnectorStatusEnum.Unavailable;
       } else if (
         !this.getConnectorStatus(connectorId)?.status &&
         this.getConnectorStatus(connectorId)?.bootStatus
@@ -1826,7 +1826,7 @@ export class ChargingStation {
         connectorStatus = this.getConnectorStatus(connectorId)?.status;
       } else {
         // Set default status
-        connectorStatus = ConnectorStatusEnum.AVAILABLE;
+        connectorStatus = ConnectorStatusEnum.Available;
       }
       await this.ocppRequestService.requestHandler<
         StatusNotificationRequest,
@@ -1879,7 +1879,7 @@ export class ChargingStation {
           OCPPServiceUtils.buildStatusNotificationRequest(
             this,
             connectorId,
-            ConnectorStatusEnum.UNAVAILABLE
+            ConnectorStatusEnum.Unavailable
           )
         );
         this.getConnectorStatus(connectorId).status = undefined;

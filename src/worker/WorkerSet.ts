@@ -52,7 +52,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       await this.startWorker();
     }
     this.getLastWorker().postMessage({
-      id: WorkerMessageEvents.START_WORKER_ELEMENT,
+      id: WorkerMessageEvents.startWorkerElement,
       data: elementData,
     });
     this.getLastWorkerSetElement().numberOfWorkerElements++;

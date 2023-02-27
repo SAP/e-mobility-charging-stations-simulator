@@ -194,13 +194,13 @@ export class ChargingStationUtils {
   }
 
   public static workerPoolInUse(): boolean {
-    return [WorkerProcessType.DYNAMIC_POOL, WorkerProcessType.STATIC_POOL].includes(
+    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
       Configuration.getWorker().processType
     );
   }
 
   public static workerDynamicPoolInUse(): boolean {
-    return Configuration.getWorker().processType === WorkerProcessType.DYNAMIC_POOL;
+    return Configuration.getWorker().processType === WorkerProcessType.dynamicPool;
   }
 
   public static warnDeprecatedTemplateKey(
