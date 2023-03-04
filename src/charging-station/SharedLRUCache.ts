@@ -5,8 +5,8 @@ import type { ChargingStationConfiguration, ChargingStationTemplate } from '../t
 import { Utils } from '../utils';
 
 enum CacheType {
-  CHARGING_STATION_TEMPLATE = 'chargingStationTemplate',
-  CHARGING_STATION_CONFIGURATION = 'chargingStationConfiguration',
+  chargingStationTemplate = 'chargingStationTemplate',
+  chargingStationConfiguration = 'chargingStationConfiguration',
 }
 
 type CacheableType = ChargingStationTemplate | ChargingStationConfiguration;
@@ -82,11 +82,11 @@ export class SharedLRUCache {
   }
 
   private getChargingStationConfigurationKey(hash: string): string {
-    return `${CacheType.CHARGING_STATION_CONFIGURATION}${hash}`;
+    return `${CacheType.chargingStationConfiguration}${hash}`;
   }
 
   private getChargingStationTemplateKey(hash: string): string {
-    return `${CacheType.CHARGING_STATION_TEMPLATE}${hash}`;
+    return `${CacheType.chargingStationTemplate}${hash}`;
   }
 
   private has(key: string): boolean {
