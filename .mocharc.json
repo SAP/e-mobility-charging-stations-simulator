@@ -13,5 +13,5 @@
   "full-trace": true,
   "enable-source-maps": true,
   "exit": true,
-  "require": ["ts-node/register", "mochawesome/register"]
+  "require": ["ts-node/register/transpile-only", "mochawesome/register"]
 }
