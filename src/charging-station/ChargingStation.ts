@@ -1937,24 +1937,22 @@ export class ChargingStation {
     const supervisionUrls = this.stationInfo?.supervisionUrls ?? Configuration.getSupervisionUrls();
     if (Utils.isNotEmptyArray(supervisionUrls)) {
       switch (Configuration.getSupervisionUrlDistribution()) {
-        case SupervisionUrlDistribution.ROUND_ROBIN:
-          // FIXME
-          this.configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
-          break;
         case SupervisionUrlDistribution.RANDOM:
           this.configuredSupervisionUrlIndex = Math.floor(
             Utils.secureRandom() * supervisionUrls.length
           );
           break;
+        case SupervisionUrlDistribution.ROUND_ROBIN:
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
-          this.configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
-          break;
         default:
-          logger.error(
-            `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${
-              SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
-            }`
-          );
+          Object.values(SupervisionUrlDistribution).includes(
+            Configuration.getSupervisionUrlDistribution()
+          ) === false &&
+            logger.error(
+              `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${
+                SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
+              }`
+            );
           this.configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
           break;
       }
