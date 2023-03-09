@@ -652,18 +652,6 @@ export class ChargingStation {
     if (params?.terminateOpened) {
       this.terminateWSConnection();
     }
-    const ocppVersion = this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
-    let protocol: string;
-    switch (ocppVersion) {
-      case OCPPVersion.VERSION_16:
-      case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201:
-        protocol = `ocpp${ocppVersion}`;
-        break;
-      default:
-        this.handleUnsupportedVersion(ocppVersion);
-        break;
-    }
 
     if (this.isWebSocketConnectionOpened() === true) {
       logger.warn(
@@ -676,7 +664,11 @@ export class ChargingStation {
       `${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.toString()}`
     );
 
-    this.wsConnection = new WebSocket(this.wsConnectionUrl, protocol, options);
+    this.wsConnection = new WebSocket(
+      this.wsConnectionUrl,
+      `ocpp${this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16}`,
+      options
+    );
 
     // Handle WebSocket message
     this.wsConnection.on(
@@ -1011,27 +1003,7 @@ export class ChargingStation {
     // OCPP configuration
     this.ocppConfiguration = this.getOcppConfiguration();
     this.initializeOcppConfiguration();
-    const ocppVersion = this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
-    switch (ocppVersion) {
-      case OCPPVersion.VERSION_16:
-        this.ocppIncomingRequestService =
-          OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>();
-        this.ocppRequestService = OCPP16RequestService.getInstance<OCPP16RequestService>(
-          OCPP16ResponseService.getInstance<OCPP16ResponseService>()
-        );
-        break;
-      case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201:
-        this.ocppIncomingRequestService =
-          OCPP20IncomingRequestService.getInstance<OCPP20IncomingRequestService>();
-        this.ocppRequestService = OCPP20RequestService.getInstance<OCPP20RequestService>(
-          OCPP20ResponseService.getInstance<OCPP20ResponseService>()
-        );
-        break;
-      default:
-        this.handleUnsupportedVersion(ocppVersion);
-        break;
-    }
+    this.initializeOcppServices();
     if (this.stationInfo?.autoRegister === true) {
       this.bootNotificationResponse = {
         currentTime: new Date(),
@@ -1056,6 +1028,30 @@ export class ChargingStation {
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.step
       ).toString();
       this.stationInfo.firmwareVersion = match?.join('.');
+    }
+  }
+
+  private initializeOcppServices(): void {
+    const ocppVersion = this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
+    switch (ocppVersion) {
+      case OCPPVersion.VERSION_16:
+        this.ocppIncomingRequestService =
+          OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>();
+        this.ocppRequestService = OCPP16RequestService.getInstance<OCPP16RequestService>(
+          OCPP16ResponseService.getInstance<OCPP16ResponseService>()
+        );
+        break;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        this.ocppIncomingRequestService =
+          OCPP20IncomingRequestService.getInstance<OCPP20IncomingRequestService>();
+        this.ocppRequestService = OCPP20RequestService.getInstance<OCPP20RequestService>(
+          OCPP20ResponseService.getInstance<OCPP20ResponseService>()
+        );
+        break;
+      default:
+        this.handleUnsupportedVersion(ocppVersion);
+        break;
     }
   }
 
