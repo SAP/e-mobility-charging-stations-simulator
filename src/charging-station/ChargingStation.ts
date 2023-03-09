@@ -573,7 +573,7 @@ export class ChargingStation {
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
         this.templateFileWatcher?.close();
         this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
-        this.bootNotificationResponse = undefined;
+        delete this.bootNotificationResponse;
         this.started = false;
         parentPort?.postMessage(MessageChannelUtils.buildStoppedMessage(this));
         this.stopping = false;
@@ -987,7 +987,7 @@ export class ChargingStation {
     this.stationInfo = this.getStationInfo();
     this.saveStationInfo();
     // Avoid duplication of connectors related information in RAM
-    this.stationInfo?.Connectors && delete this.stationInfo.Connectors;
+    delete this.stationInfo?.Connectors;
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
     if (this.getEnableStatistics() === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
@@ -1317,7 +1317,7 @@ export class ChargingStation {
           this.templateFile
         } with connector ${connectorId} status configuration defined, undefine it`
       );
-      connectorStatus.status = undefined;
+      delete connectorStatus.status;
     }
   }
 
@@ -1878,7 +1878,7 @@ export class ChargingStation {
             ConnectorStatusEnum.Unavailable
           )
         );
-        this.getConnectorStatus(connectorId).status = undefined;
+        delete this.getConnectorStatus(connectorId)?.status;
       }
     }
   }
