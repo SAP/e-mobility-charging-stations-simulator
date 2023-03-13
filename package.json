@@ -112,7 +112,7 @@
     "@rollup/plugin-json": "^6.0.0",
     "@types/mocha": "^10.0.1",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^18.15.0",
+    "@types/node": "^18.15.1",
     "@types/proper-lockfile": "^4.1.2",
     "@types/tar": "^6.1.4",
     "@types/ws": "^8.5.4",
