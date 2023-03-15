@@ -1499,107 +1499,107 @@ export class ChargingStation {
     parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
+  private getCachedRequest(messageType: MessageType, messageId: string): CachedRequest | undefined {
+    const cachedRequest = this.requests.get(messageId);
+    if (Array.isArray(cachedRequest) === true) {
+      return cachedRequest;
+    }
+    throw new OCPPError(
+      ErrorType.PROTOCOL_ERROR,
+      `Cached request for message id ${messageId} ${OCPPServiceUtils.getMessageTypeString(
+        messageType
+      )} is not an array`,
+      undefined,
+      cachedRequest as unknown as JsonType
+    );
+  }
+
+  private async handleIncomingMessage(request: IncomingRequest): Promise<void> {
+    const [messageType, messageId, commandName, commandPayload] = request;
+    if (this.getEnableStatistics() === true) {
+      this.performanceStatistics?.addRequestStatistic(commandName, messageType);
+    }
+    logger.debug(
+      `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
+        request
+      )}`
+    );
+    // Process the message
+    await this.ocppIncomingRequestService.incomingRequestHandler(
+      this,
+      messageId,
+      commandName,
+      commandPayload
+    );
+  }
+
+  private handleResponseMessage(response: Response): void {
+    const [messageType, messageId, commandPayload] = response;
+    if (this.requests.has(messageId) === false) {
+      // Error
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Response for unknown message id ${messageId}`,
+        undefined,
+        commandPayload
+      );
+    }
+    // Respond
+    const [responseCallback, , requestCommandName, requestPayload] = this.getCachedRequest(
+      messageType,
+      messageId
+    );
+    logger.debug(
+      `${this.logPrefix()} << Command '${
+        requestCommandName ?? Constants.UNKNOWN_COMMAND
+      }' received response payload: ${JSON.stringify(response)}`
+    );
+    responseCallback(commandPayload, requestPayload);
+  }
+
+  private handleErrorMessage(errorResponse: ErrorResponse): void {
+    const [messageType, messageId, errorType, errorMessage, errorDetails] = errorResponse;
+    if (this.requests.has(messageId) === false) {
+      // Error
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        `Error response for unknown message id ${messageId}`,
+        undefined,
+        { errorType, errorMessage, errorDetails }
+      );
+    }
+    const [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId);
+    logger.debug(
+      `${this.logPrefix()} << Command '${
+        requestCommandName ?? Constants.UNKNOWN_COMMAND
+      }' received error response payload: ${JSON.stringify(errorResponse)}`
+    );
+    errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails));
+  }
+
   private async onMessage(data: RawData): Promise<void> {
+    let request: IncomingRequest | Response | ErrorResponse;
     let messageType: number;
-    let messageId: string;
-    let commandName: IncomingRequestCommand;
-    let commandPayload: JsonType;
-    let errorType: ErrorType;
-    let errorMessage: string;
-    let errorDetails: JsonType;
-    let responseCallback: ResponseCallback;
-    let errorCallback: ErrorCallback;
-    let requestCommandName: RequestCommand | IncomingRequestCommand;
-    let requestPayload: JsonType;
-    let cachedRequest: CachedRequest;
     let errMsg: string;
     try {
-      const request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
+      request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
       if (Array.isArray(request) === true) {
-        [messageType, messageId] = request;
+        [messageType] = request;
         // Check the type of message
         switch (messageType) {
           // Incoming Message
           case MessageType.CALL_MESSAGE:
-            [, , commandName, commandPayload] = request as IncomingRequest;
-            if (this.getEnableStatistics() === true) {
-              this.performanceStatistics?.addRequestStatistic(commandName, messageType);
-            }
-            logger.debug(
-              `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
-                request
-              )}`
-            );
-            // Process the message
-            await this.ocppIncomingRequestService.incomingRequestHandler(
-              this,
-              messageId,
-              commandName,
-              commandPayload
-            );
+            await this.handleIncomingMessage(request as IncomingRequest);
             break;
-          // Outcome Message
+          // Response Message
           case MessageType.CALL_RESULT_MESSAGE:
-            [, , commandPayload] = request as Response;
-            if (this.requests.has(messageId) === false) {
-              // Error
-              throw new OCPPError(
-                ErrorType.INTERNAL_ERROR,
-                `Response for unknown message id ${messageId}`,
-                undefined,
-                commandPayload
-              );
-            }
-            // Respond
-            cachedRequest = this.requests.get(messageId);
-            if (Array.isArray(cachedRequest) === true) {
-              [responseCallback, errorCallback, requestCommandName, requestPayload] = cachedRequest;
-            } else {
-              throw new OCPPError(
-                ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} response is not an array`,
-                undefined,
-                cachedRequest as unknown as JsonType
-              );
-            }
-            logger.debug(
-              `${this.logPrefix()} << Command '${
-                requestCommandName ?? Constants.UNKNOWN_COMMAND
-              }' received response payload: ${JSON.stringify(request)}`
-            );
-            responseCallback(commandPayload, requestPayload);
+            this.handleResponseMessage(request as Response);
             break;
           // Error Message
           case MessageType.CALL_ERROR_MESSAGE:
-            [, , errorType, errorMessage, errorDetails] = request as ErrorResponse;
-            if (this.requests.has(messageId) === false) {
-              // Error
-              throw new OCPPError(
-                ErrorType.INTERNAL_ERROR,
-                `Error response for unknown message id ${messageId}`,
-                undefined,
-                { errorType, errorMessage, errorDetails }
-              );
-            }
-            cachedRequest = this.requests.get(messageId);
-            if (Array.isArray(cachedRequest) === true) {
-              [, errorCallback, requestCommandName] = cachedRequest;
-            } else {
-              throw new OCPPError(
-                ErrorType.PROTOCOL_ERROR,
-                `Cached request for message id ${messageId} error response is not an array`,
-                undefined,
-                cachedRequest as unknown as JsonType
-              );
-            }
-            logger.debug(
-              `${this.logPrefix()} << Command '${
-                requestCommandName ?? Constants.UNKNOWN_COMMAND
-              }' received error response payload: ${JSON.stringify(request)}`
-            );
-            errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails));
+            this.handleErrorMessage(request as ErrorResponse);
             break;
-          // Error
+          // Unknown Message
           default:
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             errMsg = `Wrong message type ${messageType}`;
@@ -1613,7 +1613,36 @@ export class ChargingStation {
         });
       }
     } catch (error) {
-      // Log
+      let commandName: IncomingRequestCommand;
+      let requestCommandName: RequestCommand | IncomingRequestCommand;
+      let errorCallback: ErrorCallback;
+      const [, messageId] = request;
+      switch (messageType) {
+        case MessageType.CALL_MESSAGE:
+          [, , commandName] = request as IncomingRequest;
+          // Send error
+          await this.ocppRequestService.sendError(this, messageId, error as OCPPError, commandName);
+          break;
+        case MessageType.CALL_RESULT_MESSAGE:
+        case MessageType.CALL_ERROR_MESSAGE:
+          if (this.requests.has(messageId) === true) {
+            [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId);
+            // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
+            errorCallback(error as OCPPError, false);
+          } else {
+            // Remove the request from the cache in case of error at response handling
+            this.requests.delete(messageId);
+          }
+          break;
+      }
+      if (error instanceof OCPPError === false) {
+        logger.warn(
+          `${this.logPrefix()} Error thrown at incoming OCPP command '${
+            commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
+          }' message '${data.toString()}' handling is not an OCPPError:`,
+          error
+        );
+      }
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
           commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
@@ -1624,35 +1653,6 @@ export class ChargingStation {
         } processing error:`,
         error
       );
-      if (error instanceof OCPPError === false) {
-        logger.warn(
-          `${this.logPrefix()} Error thrown at incoming OCPP command '${
-            commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
-          }' message '${data.toString()}' handling is not an OCPPError:`,
-          error
-        );
-      }
-      switch (messageType) {
-        case MessageType.CALL_MESSAGE:
-          // Send error
-          await this.ocppRequestService.sendError(
-            this,
-            messageId,
-            error as OCPPError,
-            commandName ?? requestCommandName ?? null
-          );
-          break;
-        case MessageType.CALL_RESULT_MESSAGE:
-        case MessageType.CALL_ERROR_MESSAGE:
-          if (errorCallback) {
-            // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
-            errorCallback(error as OCPPError, false);
-          } else {
-            // Remove the request from the cache in case of error at response handling
-            this.requests.delete(messageId);
-          }
-          break;
-      }
     }
   }
 
