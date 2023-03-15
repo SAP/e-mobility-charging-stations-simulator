@@ -128,7 +128,7 @@ export class Configuration {
     !Utils.isUndefined(Configuration.getConfig()['stationTemplateURLs']) &&
       (Configuration.getConfig().stationTemplateUrls = Configuration.getConfig()[
         'stationTemplateURLs'
-      ] as unknown as StationTemplateUrl[]);
+      ] as StationTemplateUrl[]);
     Configuration.getConfig().stationTemplateUrls.forEach((stationUrl: StationTemplateUrl) => {
       if (!Utils.isUndefined(stationUrl['numberOfStation'])) {
         console.error(

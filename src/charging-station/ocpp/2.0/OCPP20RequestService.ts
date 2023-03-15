@@ -75,7 +75,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
         commandName,
         params
-      )) as unknown as ResponseType;
+      )) as ResponseType;
     }
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(

@@ -1510,7 +1510,7 @@ export class ChargingStation {
         messageType
       )} is not an array`,
       undefined,
-      cachedRequest as unknown as JsonType
+      cachedRequest as JsonType
     );
   }
 
