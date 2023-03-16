@@ -123,7 +123,6 @@ export class ChargingStation {
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
   private configuredSupervisionUrl!: URL;
-  private configuredSupervisionUrlIndex!: number;
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
   private templateFileWatcher!: fs.FSWatcher | undefined;
@@ -152,7 +151,8 @@ export class ChargingStation {
   private get wsConnectionUrl(): URL {
     return new URL(
       `${
-        this.getSupervisionUrlOcppConfiguration()
+        this.getSupervisionUrlOcppConfiguration() &&
+        Utils.isNotEmptyString(this.getSupervisionUrlOcppKey())
           ? ChargingStationConfigurationUtils.getConfigurationKey(
               this,
               this.getSupervisionUrlOcppKey()
@@ -385,6 +385,23 @@ export class ChargingStation {
       StandardParametersKey.LocalAuthListEnabled
     );
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
+  }
+
+  public setSupervisionUrl(url: string): void {
+    if (
+      this.getSupervisionUrlOcppConfiguration() &&
+      Utils.isNotEmptyString(this.getSupervisionUrlOcppKey())
+    ) {
+      ChargingStationConfigurationUtils.setConfigurationKeyValue(
+        this,
+        this.getSupervisionUrlOcppKey(),
+        url
+      );
+    } else {
+      this.stationInfo.supervisionUrls = url;
+      this.saveStationInfo();
+      this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
+    }
   }
 
   public startHeartbeat(): void {
@@ -1083,6 +1100,7 @@ export class ChargingStation {
     }
     if (
       this.getSupervisionUrlOcppConfiguration() &&
+      Utils.isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
       !ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
@@ -1093,6 +1111,7 @@ export class ChargingStation {
       );
     } else if (
       !this.getSupervisionUrlOcppConfiguration() &&
+      Utils.isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
       ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
       ChargingStationConfigurationUtils.deleteConfigurationKey(
@@ -1932,11 +1951,10 @@ export class ChargingStation {
   private getConfiguredSupervisionUrl(): URL {
     const supervisionUrls = this.stationInfo?.supervisionUrls ?? Configuration.getSupervisionUrls();
     if (Utils.isNotEmptyArray(supervisionUrls)) {
+      let configuredSupervisionUrlIndex: number;
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.RANDOM:
-          this.configuredSupervisionUrlIndex = Math.floor(
-            Utils.secureRandom() * supervisionUrls.length
-          );
+          configuredSupervisionUrlIndex = Math.floor(Utils.secureRandom() * supervisionUrls.length);
           break;
         case SupervisionUrlDistribution.ROUND_ROBIN:
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
@@ -1949,10 +1967,10 @@ export class ChargingStation {
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
               }`
             );
-          this.configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
+          configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
           break;
       }
-      return new URL(supervisionUrls[this.configuredSupervisionUrlIndex]);
+      return new URL(supervisionUrls[configuredSupervisionUrlIndex]);
     }
     return new URL(supervisionUrls as string);
   }

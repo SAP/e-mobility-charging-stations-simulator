@@ -93,6 +93,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           this.chargingStation.stopAutomaticTransactionGenerator(requestPayload?.connectorIds),
       ],
       [
+        BroadcastChannelProcedureName.SET_SUPERVISION_URL,
+        (requestPayload?: BroadcastChannelRequestPayload) =>
+          this.chargingStation.setSupervisionUrl(requestPayload?.url as string),
+      ],
+      [
         BroadcastChannelProcedureName.START_TRANSACTION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           this.chargingStation.ocppRequestService.requestHandler<

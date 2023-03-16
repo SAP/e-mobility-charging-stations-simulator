@@ -1,8 +1,8 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2022-12-18T12:12:07.146Z",
-  "__export_source": "insomnia.desktop.app:v2022.7.0",
+  "__export_date": "2023-03-16T18:41:32.224Z",
+  "__export_source": "insomnia.desktop.app:v2023.1.0",
   "resources": [
     {
       "_id": "ws-req_3168fa005f2f43efa8ab26d402d545e8",
@@ -294,6 +294,192 @@
       "_type": "websocket_request"
     },
     {
+      "_id": "ws-req_f41ad993a51244d08e45593c8fc52941",
+      "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
+      "modified": 1678991663549,
+      "created": 1678991663549,
+      "name": "setSupervisionUrl",
+      "url": "{{ _.baseUrl }}",
+      "metaSortKey": -1671191988655.75,
+      "headers": [
+        {
+          "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
+          "name": "Sec-WebSocket-Protocol",
+          "value": "{{ _.protocol }}{{ _.version }}",
+          "description": ""
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{ _.username }}",
+        "password": "{{ _.password }}"
+      },
+      "parameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global",
+      "description": "",
+      "_type": "websocket_request"
+    },
+    {
+      "_id": "ws-req_1cc4e3f1725748f190d27ec2e60e5092",
+      "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
+      "modified": 1674411529086,
+      "created": 1674411426300,
+      "name": "startTransaction",
+      "url": "{{ _.baseUrl }}",
+      "metaSortKey": -1671191988649.5,
+      "headers": [
+        {
+          "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
+          "name": "Sec-WebSocket-Protocol",
+          "value": "{{ _.protocol }}{{ _.version }}",
+          "description": ""
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{ _.username }}",
+        "password": "{{ _.password }}"
+      },
+      "parameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global",
+      "description": "",
+      "_type": "websocket_request"
+    },
+    {
+      "_id": "ws-req_1b7b1132e7bf456ea803d919a0080863",
+      "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
+      "modified": 1674411532607,
+      "created": 1674411483202,
+      "name": "stopTransaction",
+      "url": "{{ _.baseUrl }}",
+      "metaSortKey": -1671191988643.25,
+      "headers": [
+        {
+          "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
+          "name": "Sec-WebSocket-Protocol",
+          "value": "{{ _.protocol }}{{ _.version }}",
+          "description": ""
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{ _.username }}",
+        "password": "{{ _.password }}"
+      },
+      "parameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global",
+      "description": "",
+      "_type": "websocket_request"
+    },
+    {
+      "_id": "ws-req_8a5160beab854556abba7fdff3a43437",
+      "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
+      "modified": 1673728884271,
+      "created": 1673728879067,
+      "name": "statusNotification",
+      "url": "{{ _.baseUrl }}",
+      "metaSortKey": -1671191988637,
+      "headers": [
+        {
+          "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
+          "name": "Sec-WebSocket-Protocol",
+          "value": "{{ _.protocol }}{{ _.version }}",
+          "description": ""
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{ _.username }}",
+        "password": "{{ _.password }}"
+      },
+      "parameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global",
+      "description": "",
+      "_type": "websocket_request"
+    },
+    {
+      "_id": "ws-req_7a67d113c68d4b04b93e4bb54cb25cdf",
+      "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
+      "modified": 1673277254273,
+      "created": 1673277254273,
+      "name": "diagnosticsStatusNotification",
+      "url": "{{ _.baseUrl }}",
+      "metaSortKey": -1671191988612,
+      "headers": [
+        {
+          "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
+          "name": "Sec-WebSocket-Protocol",
+          "value": "{{ _.protocol }}{{ _.version }}",
+          "description": ""
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{ _.username }}",
+        "password": "{{ _.password }}"
+      },
+      "parameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global",
+      "description": "",
+      "_type": "websocket_request"
+    },
+    {
+      "_id": "ws-req_d301022b325d4daeaa7f76275665552f",
+      "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
+      "modified": 1673279189370,
+      "created": 1673279189370,
+      "name": "firmwareStatusNotification",
+      "url": "{{ _.baseUrl }}",
+      "metaSortKey": -1671191988562,
+      "headers": [
+        {
+          "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
+          "name": "Sec-WebSocket-Protocol",
+          "value": "{{ _.protocol }}{{ _.version }}",
+          "description": ""
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{ _.username }}",
+        "password": "{{ _.password }}"
+      },
+      "parameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global",
+      "description": "",
+      "_type": "websocket_request"
+    },
+    {
       "_id": "env_5e2b694e69a20eac33f0e6e21a40d99b05b8cfce",
       "parentId": "wrk_fbb459cb79214e12a46e03e02ebc621a",
       "modified": 1671183643092,
@@ -328,11 +514,11 @@
     {
       "_id": "env_bcef03da4e0542c3833bbd57f1254609",
       "parentId": "env_5e2b694e69a20eac33f0e6e21a40d99b05b8cfce",
-      "modified": 1671365398038,
+      "modified": 1678992030161,
       "created": 1671183662528,
       "name": "CSSimulatorUIWSProtocolEnvironment",
       "data": {
-        "baseUrl": "wss://e-mobility-charging-stations-simulator-plugncharge.cfapps.eu12.hana.ondemand.com",
+        "baseUrl": "ws://localhost:8080",
         "username": "admin",
         "password": "admin",
         "protocol": "ui",
@@ -347,7 +533,7 @@
     {
       "_id": "ws-payload_d5cd140e264a4f548c19fcc346e04e03",
       "parentId": "ws-req_5fa1bd2aa33741bd88bbed71574795cf",
-      "modified": 1671365050709,
+      "modified": 1678991609847,
       "created": 1671192074985,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopSimulator\",\n\t{}\n]",
@@ -357,7 +543,7 @@
     {
       "_id": "ws-payload_1c4a192739f2449998bb4782956483a3",
       "parentId": "ws-req_3168fa005f2f43efa8ab26d402d545e8",
-      "modified": 1671365507418,
+      "modified": 1678991609002,
       "created": 1671297215182,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startSimulator\",\n\t{}\n]",
@@ -367,7 +553,7 @@
     {
       "_id": "ws-payload_55e195cc589a454f9153a6cfd4280d79",
       "parentId": "ws-req_11d4fc7b15a7467585e9325ee1a9edfd",
-      "modified": 1671306748198,
+      "modified": 1678440795021,
       "created": 1671297360441,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"openConnection\",\n\t{}\n]",
@@ -377,7 +563,7 @@
     {
       "_id": "ws-payload_6a96def2049544a99fe0e805552a705a",
       "parentId": "ws-req_5fa3addc8717485f8eb60b03c3f9eb4a",
-      "modified": 1671365052350,
+      "modified": 1677097818552,
       "created": 1671297412505,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"closeConnection\",\n\t{}\n]",
@@ -387,7 +573,7 @@
     {
       "_id": "ws-payload_e90d242789294f2eb30439cd2cd2b4fd",
       "parentId": "ws-req_783183d5e32d434f877355aec7bf4f22",
-      "modified": 1671365474795,
+      "modified": 1678991611087,
       "created": 1671297544207,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"listChargingStations\",\n\t{}\n]",
@@ -397,27 +583,27 @@
     {
       "_id": "ws-payload_c0b6ca95bed746679365c97c3bcbaaff",
       "parentId": "ws-req_2d3c10b504454826ab4c257093272596",
-      "modified": 1671365055230,
+      "modified": 1678991640010,
       "created": 1671297697172,
       "name": "New Payload",
-      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startChargingStation\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t\t]\n\t}\n]",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startChargingStation\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"60e00f5fa04d3d4429e4efba81474e6ba3f299a30687d876a548af51f5a67534b31e07c3a0e0653aaf35657ecfb9b582\"\n\t\t]\n\t}\n]",
       "mode": "application/json",
       "_type": "websocket_payload"
     },
     {
       "_id": "ws-payload_5c1978f5d1f64a8aa6aa54362a2187ee",
       "parentId": "ws-req_7cd5c1734a454970af5ac18e89a59b5e",
-      "modified": 1671365505328,
+      "modified": 1677093092324,
       "created": 1671297731073,
       "name": "New Payload",
-      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopChargingStation\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t\t]\n\t}\n]",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopChargingStation\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"60e00f5fa04d3d4429e4efba81474e6ba3f299a30687d876a548af51f5a67534b31e07c3a0e0653aaf35657ecfb9b582\"\n\t\t]\n\t}\n]",
       "mode": "application/json",
       "_type": "websocket_payload"
     },
     {
       "_id": "ws-payload_def4ac84561f4a8da20591dadd25a3d4",
       "parentId": "ws-req_b15fd2f214da40f7a1a77204cf7863b7",
-      "modified": 1671365505873,
+      "modified": 1677014576770,
       "created": 1671298432039,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startAutomaticTransactionGenerator\",\n\t{}\n]",
@@ -427,10 +613,70 @@
     {
       "_id": "ws-payload_27584690150941ec90f83625fb666595",
       "parentId": "ws-req_71c26454a7cc4217b24dbf999334ad33",
-      "modified": 1671365506418,
+      "modified": 1678991647845,
       "created": 1671298535001,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopAutomaticTransactionGenerator\",\n\t{}\n]",
+      "mode": "application/json",
+      "_type": "websocket_payload"
+    },
+    {
+      "_id": "ws-payload_813e284fdf85450492023dfd6a6e5084",
+      "parentId": "ws-req_7a67d113c68d4b04b93e4bb54cb25cdf",
+      "modified": 1678991605850,
+      "created": 1673277254287,
+      "name": "New Payload",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"diagnosticsStatusNotification\",\n\t{\n\t\t\"status\": \"Uploaded\"\n\t}\n]",
+      "mode": "application/json",
+      "_type": "websocket_payload"
+    },
+    {
+      "_id": "ws-payload_e1db523fe1404db08557ebaa4a2d4db5",
+      "parentId": "ws-req_d301022b325d4daeaa7f76275665552f",
+      "modified": 1678991606416,
+      "created": 1673279189375,
+      "name": "New Payload",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"firmwareStatusNotification\",\n\t{\n\t\t\"status\": \"Downloading\"\n\t}\n]",
+      "mode": "application/json",
+      "_type": "websocket_payload"
+    },
+    {
+      "_id": "ws-payload_e5a73c0ef37a4384969da13973f5dc03",
+      "parentId": "ws-req_8a5160beab854556abba7fdff3a43437",
+      "modified": 1678991605298,
+      "created": 1673728879079,
+      "name": "New Payload",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"statusNotification\",\n\t{\n\t\t\"connectorId\": 1,\n\t\t\"status\": \"Available\",\n\t\t\"errorCode\": \"NoError\"\n\t}\n]",
+      "mode": "application/json",
+      "_type": "websocket_payload"
+    },
+    {
+      "_id": "ws-payload_49814a11218940578cb954572f5606d9",
+      "parentId": "ws-req_1cc4e3f1725748f190d27ec2e60e5092",
+      "modified": 1678991604581,
+      "created": 1674411426307,
+      "name": "New Payload",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startTransaction\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t\t],\n\t\t\"connectorId\": 1,\n\t\t\"idTag\": \"test\"\n\t}\n]",
+      "mode": "application/json",
+      "_type": "websocket_payload"
+    },
+    {
+      "_id": "ws-payload_f363ff6a5a38493e9e67ab79c4a5ea3b",
+      "parentId": "ws-req_1b7b1132e7bf456ea803d919a0080863",
+      "modified": 1678991603850,
+      "created": 1674411483206,
+      "name": "New Payload",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"stopTransaction\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t\t],\n\t\t\"transactionId\": 235051179\n\t}\n]",
+      "mode": "application/json",
+      "_type": "websocket_payload"
+    },
+    {
+      "_id": "ws-payload_d0997613809b452284e2ee1e95f29e13",
+      "parentId": "ws-req_f41ad993a51244d08e45593c8fc52941",
+      "modified": 1678992035807,
+      "created": 1678991663554,
+      "name": "New Payload",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"setSupervisionUrl\",\n\t{\n\t\t\"url\": \"http://domain.tld\"\n\t}\n]",
       "mode": "application/json",
       "_type": "websocket_payload"
     }

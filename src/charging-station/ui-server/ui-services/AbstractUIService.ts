@@ -30,6 +30,7 @@ export abstract class AbstractUIService {
       BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
     [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]:
       BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+    [ProcedureName.SET_SUPERVISION_URL]: BroadcastChannelProcedureName.SET_SUPERVISION_URL,
     [ProcedureName.START_TRANSACTION]: BroadcastChannelProcedureName.START_TRANSACTION,
     [ProcedureName.STOP_TRANSACTION]: BroadcastChannelProcedureName.STOP_TRANSACTION,
     [ProcedureName.AUTHORIZE]: BroadcastChannelProcedureName.AUTHORIZE,

@@ -36,6 +36,7 @@ export enum ProcedureName {
   CLOSE_CONNECTION = 'closeConnection',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  SET_SUPERVISION_URL = 'setSupervisionUrl',
   START_TRANSACTION = 'startTransaction',
   STOP_TRANSACTION = 'stopTransaction',
   AUTHORIZE = 'authorize',
