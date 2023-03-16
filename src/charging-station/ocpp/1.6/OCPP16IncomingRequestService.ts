@@ -1007,18 +1007,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           OCPP16ChargePointStatus.Unavailable;
       }
     }
-    if (
-      chargingStation.stationInfo?.firmwareUpgrade?.failureStatus &&
-      Utils.isNotEmptyString(chargingStation.stationInfo?.firmwareUpgrade?.failureStatus)
-    ) {
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP16FirmwareStatusNotificationRequest,
-        OCPP16FirmwareStatusNotificationResponse
-      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-        status: chargingStation.stationInfo?.firmwareUpgrade?.failureStatus,
-      });
-      return;
-    }
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1026,6 +1014,21 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       status: OCPP16FirmwareStatus.Downloading,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading;
+    if (
+      chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
+      OCPP16FirmwareStatus.DownloadFailed
+    ) {
+      await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16FirmwareStatusNotificationRequest,
+        OCPP16FirmwareStatusNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+        status: chargingStation.stationInfo?.firmwareUpgrade?.failureStatus,
+      });
+      chargingStation.stationInfo.firmwareStatus =
+        chargingStation.stationInfo?.firmwareUpgrade?.failureStatus;
+      return;
+    }
     await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
@@ -1042,6 +1045,21 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       status: OCPP16FirmwareStatus.Installing,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing;
+    if (
+      chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
+      OCPP16FirmwareStatus.InstallationFailed
+    ) {
+      await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16FirmwareStatusNotificationRequest,
+        OCPP16FirmwareStatusNotificationResponse
+      >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+        status: chargingStation.stationInfo?.firmwareUpgrade?.failureStatus,
+      });
+      chargingStation.stationInfo.firmwareStatus =
+        chargingStation.stationInfo?.firmwareUpgrade?.failureStatus;
+      return;
+    }
     if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
       await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
