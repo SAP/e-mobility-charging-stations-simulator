@@ -1,9 +1,9 @@
 import json from '@rollup/plugin-json';
+import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
 import analyze from 'rollup-plugin-analyzer';
 import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
-import { terser } from 'rollup-plugin-terser';
-import ts from 'rollup-plugin-ts';
 
 const isDevelopmentBuild = process.env.BUILD === 'development';
 
@@ -18,7 +18,7 @@ export default {
       preserveModules: true,
       preserveModulesRoot: 'src',
       entryFileNames: '[name].mjs',
-      ...(!isDevelopmentBuild && { plugins: [terser({ numWorkers: 2 })] }),
+      ...(!isDevelopmentBuild && { plugins: [terser({ maxWorkers: 2 })] }),
     },
     {
       dir: 'dist',
@@ -28,7 +28,7 @@ export default {
       preserveModules: true,
       preserveModulesRoot: 'src',
       entryFileNames: '[name].cjs',
-      ...(!isDevelopmentBuild && { plugins: [terser({ numWorkers: 2 })] }),
+      ...(!isDevelopmentBuild && { plugins: [terser({ maxWorkers: 2 })] }),
     },
   ],
   external: [
@@ -64,9 +64,8 @@ export default {
   ],
   plugins: [
     json(),
-    ts({
+    typescript({
       tsconfig: 'tsconfig.json',
-      browserslist: false,
     }),
     del({
       targets: [
