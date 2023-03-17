@@ -405,11 +405,7 @@ export class ChargingStation {
   }
 
   public startHeartbeat(): void {
-    if (
-      this.getHeartbeatInterval() &&
-      this.getHeartbeatInterval() > 0 &&
-      !this.heartbeatSetInterval
-    ) {
+    if (this.getHeartbeatInterval() > 0 && !this.heartbeatSetInterval) {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
