@@ -73,8 +73,9 @@ export default {
         'dist/*',
         '!dist/assets',
         'dist/assets/*.json',
-        'dist/assets/station-templates',
         'dist/assets/json-schemas',
+        'dist/assets/station-templates',
+        'dist/assets/ui-protocol',
       ],
     }),
     copy({
