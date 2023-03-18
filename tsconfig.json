@@ -71,7 +71,8 @@
   "exclude": ["ui/web/**/*.ts"],
   "ts-node": {
     "compilerOptions": {
-      "module": "commonjs"
+      "module": "commonjs",
+      "verbatimModuleSyntax": false,
     }
   }
 }
