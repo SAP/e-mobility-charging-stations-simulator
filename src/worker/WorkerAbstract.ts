@@ -23,7 +23,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
       poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
       elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
-      poolOptions: WorkerConstants.EMPTY_OBJECT,
+      poolOptions: {},
       messageHandler: WorkerConstants.EMPTY_FUNCTION,
     }
   ) {

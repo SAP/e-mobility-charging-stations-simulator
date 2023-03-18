@@ -47,7 +47,6 @@ export class Constants {
 
   static readonly MAX_RANDOM_INTEGER = 281474976710654;
 
-  static EMPTY_OBJECT = {};
   static readonly EMPTY_FREEZED_OBJECT = Object.freeze({});
   static readonly EMPTY_FUNCTION = Object.freeze(() => {
     /* This is intentional */

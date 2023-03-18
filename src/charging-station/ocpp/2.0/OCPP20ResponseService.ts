@@ -161,7 +161,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         chargingStation,
         OCPP20OptionalVariableName.HeartbeatInterval,
         payload.interval.toString(),
-        Constants.EMPTY_OBJECT,
+        {},
         { overwrite: true, save: true }
       );
       chargingStation.heartbeatSetInterval

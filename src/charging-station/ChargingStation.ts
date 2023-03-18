@@ -74,7 +74,6 @@ import {
   RegistrationStatusEnumType,
   RequestCommand,
   type Response,
-  type ResponseCallback,
   StandardParametersKey,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
@@ -638,7 +637,7 @@ export class ChargingStation {
   }
 
   public openWSConnection(
-    options: WsOptions = this.stationInfo?.wsOptions ?? Constants.EMPTY_OBJECT,
+    options: WsOptions = this.stationInfo?.wsOptions ?? {},
     params: { closeOpened?: boolean; terminateOpened?: boolean } = {
       closeOpened: false,
       terminateOpened: false,
@@ -907,7 +906,7 @@ export class ChargingStation {
         },
         reset: true,
       },
-      stationTemplate?.firmwareUpgrade ?? Constants.EMPTY_OBJECT
+      stationTemplate?.firmwareUpgrade ?? {}
     );
     stationInfo.resetTime = !Utils.isNullOrUndefined(stationTemplate?.resetTime)
       ? stationTemplate.resetTime * 1000
@@ -1373,7 +1372,7 @@ export class ChargingStation {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
         const configurationData: ChargingStationConfiguration =
-          Utils.cloneObject(this.getConfigurationFromFile()) ?? Constants.EMPTY_OBJECT;
+          Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
         this.ocppConfiguration?.configurationKey &&
           (configurationData.configurationKey = this.ocppConfiguration.configurationKey);
         this.stationInfo && (configurationData.stationInfo = this.stationInfo);
@@ -2052,7 +2051,7 @@ export class ChargingStation {
       );
       this.openWSConnection(
         {
-          ...(this.stationInfo?.wsOptions ?? Constants.EMPTY_OBJECT),
+          ...(this.stationInfo?.wsOptions ?? {}),
           handshakeTimeout: reconnectTimeout,
         },
         { closeOpened: true }

@@ -1,5 +1,4 @@
 export class WorkerConstants {
-  public static EMPTY_OBJECT = {};
   public static readonly EMPTY_FUNCTION = Object.freeze(() => {
     /* This is intentional */
   });

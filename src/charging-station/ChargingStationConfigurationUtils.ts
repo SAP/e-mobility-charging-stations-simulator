@@ -35,7 +35,7 @@ export class ChargingStationConfigurationUtils {
     },
     params: AddConfigurationKeyParams = { overwrite: false, save: false }
   ): void {
-    options = options ?? (Constants.EMPTY_OBJECT as ConfigurationKeyOptions);
+    options = options ?? ({} as ConfigurationKeyOptions);
     options.readonly = options?.readonly ?? false;
     options.visible = options?.visible ?? true;
     options.reboot = options?.reboot ?? false;

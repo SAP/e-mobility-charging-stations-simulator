@@ -263,7 +263,7 @@ export class ChargingStationUtils {
       randomSerialNumber: true,
     }
   ): void {
-    params = params ?? Constants.EMPTY_OBJECT;
+    params = params ?? {};
     params.randomSerialNumberUpperCase = params?.randomSerialNumberUpperCase ?? true;
     params.randomSerialNumber = params?.randomSerialNumber ?? true;
     const serialNumberSuffix = params?.randomSerialNumber

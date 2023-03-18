@@ -353,7 +353,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         chargingStation,
         OCPP16StandardParametersKey.HeartbeatInterval,
         payload.interval.toString(),
-        Constants.EMPTY_OBJECT,
+        {},
         { overwrite: true, save: true }
       );
       ChargingStationConfigurationUtils.addConfigurationKey(
