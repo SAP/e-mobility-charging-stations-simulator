@@ -1,6 +1,14 @@
 # Changelog
 
-## [v1.1.95](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.94...v1.1.95)
+## [v1.1.96](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.95...v1.1.96)
+
+- fix: brown paper bag issue at referencing the same literal object instance [`abe9e9d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/abe9e9dd3d72acc384fa2d3acd434f0053d8c61e)
+- fix: make ESM bundle work [`b768993`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b768993dd4636df8276b0ea47158dd9bdc9a997b)
+- build(deps): apply updates [`12f02af`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/12f02afa1671f651f9269343dd83f36a624d3812)
+- build(deps): apply updates [`f8397f6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f8397f656c73aca954b22f8f799c698f77e7d528)
+- build(simulator): fix assets directory cleanup [`0c995ea`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0c995ea6078b233350884f71f9c178e4d57150c6)
+
+## [v1.1.95](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.94...v1.1.95) (2023-03-18)
 
 - refactor(simulator): switch to named exports [`268a74b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/268a74bb051fcbbad532fd833f0d8fd2b33b6c64)
 - build(simulator): switch rollup plugins to core ones [`8b6da98`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8b6da9886c4ad2fd13120cd2c94b6995ff8eb221)
@@ -30,6 +38,7 @@
 - refactor(simulator): align casing on enums between key and value [`721646e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/721646e902fa12d165d4a1da06fb963fb30dc9f2)
 - feat(simulator): add more OCPP 2.x.x types definition [`28f1c57`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/28f1c5749ad4ee138c34c345a7bd812b40ccbcfa)
 - feat(simulator): add certificates related OCPP 2.x types [`6b63503`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6b635033ddf255392ded26fd03fe1f128b15ad69)
+- chore: version 1.1.95 [`6b632bf`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6b632bf34df0b4fbc1cb32db8cd1fab58487e9f7)
 - fix(simulator): make the modules export/import a bit less sensitive to [`17bc43d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/17bc43d765c22c8d8c132484f8dc9c3edd370d91)
 - feat(simulator): initial work on configuration components and variables [`857d8dd`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/857d8dd995425597a2bfb15d49e7ee6d69b055bd)
 - build(simulator): switch to TS 5.x.x [`c8aafe0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c8aafe0d6d0ccc1c9bbce5db003e3bb27be9044f)
