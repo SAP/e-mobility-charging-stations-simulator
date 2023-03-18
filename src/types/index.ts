@@ -45,7 +45,7 @@ export {
   type ConfigurationKeyType,
   ConfigurationStatus,
   ConnectorPhaseRotation,
-  ConnectorStatus,
+  type ConnectorStatus,
   ConnectorStatusEnum,
   CurrentType,
   DBName,

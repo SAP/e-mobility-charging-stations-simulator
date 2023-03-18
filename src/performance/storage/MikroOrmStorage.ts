@@ -1,6 +1,12 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { Configuration, Connection, IDatabaseDriver, MikroORM, Options } from '@mikro-orm/core';
+import {
+  Configuration,
+  Connection,
+  type IDatabaseDriver,
+  MikroORM,
+  type Options,
+} from '@mikro-orm/core';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 import {

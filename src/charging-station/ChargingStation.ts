@@ -47,7 +47,7 @@ import {
   type ChargingStationOcppConfiguration,
   type ChargingStationTemplate,
   ConnectorPhaseRotation,
-  ConnectorStatus,
+  type ConnectorStatus,
   ConnectorStatusEnum,
   CurrentType,
   type ErrorCallback,
