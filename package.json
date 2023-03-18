@@ -76,10 +76,10 @@
     "d3-color": "^3.1.0"
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.6.14",
-    "@mikro-orm/mariadb": "^5.6.14",
-    "@mikro-orm/reflection": "^5.6.14",
-    "@mikro-orm/sqlite": "^5.6.14",
+    "@mikro-orm/core": "^5.6.15",
+    "@mikro-orm/mariadb": "^5.6.15",
+    "@mikro-orm/reflection": "^5.6.15",
+    "@mikro-orm/sqlite": "^5.6.15",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.2",
@@ -91,7 +91,7 @@
     "mnemonist": "^0.39.5",
     "moment": "^2.29.4",
     "mongodb": "^5.1.0",
-    "poolifier": "^2.3.7",
+    "poolifier": "^2.3.8",
     "proper-lockfile": "^4.1.2",
     "source-map-support": "^0.5.21",
     "tar": "^6.1.13",
@@ -107,7 +107,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.4.4",
     "@commitlint/config-conventional": "^17.4.4",
-    "@mikro-orm/cli": "^5.6.14",
+    "@mikro-orm/cli": "^5.6.15",
     "@release-it/bumper": "^4.0.2",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^0.4.0",
