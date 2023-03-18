@@ -34,9 +34,9 @@ export class OCPP20ResponseService extends OCPPResponseService {
   private jsonSchemas: Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor() {
-    if (new.target?.name === moduleName) {
-      throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
-    }
+    // if (new.target?.name === moduleName) {
+    //   throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
+    // }
     super(OCPPVersion.VERSION_20);
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
       [OCPP20RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],

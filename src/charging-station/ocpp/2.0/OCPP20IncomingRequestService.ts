@@ -23,9 +23,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>;
 
   public constructor() {
-    if (new.target?.name === moduleName) {
-      throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
-    }
+    // if (new.target?.name === moduleName) {
+    //   throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
+    // }
     super(OCPPVersion.VERSION_20);
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],

@@ -9,6 +9,7 @@ const isDevelopmentBuild = process.env.BUILD === 'development';
 
 export default {
   input: ['src/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
+  strictDeprecations: true,
   output: [
     {
       dir: 'dist',
@@ -41,7 +42,7 @@ export default {
     'http-status-codes',
     'just-clone',
     'just-merge',
-    'mnemonist/lru-map-with-delete',
+    'mnemonist/lru-map-with-delete.js',
     'moment',
     'mongodb',
     'node:async_hooks',
@@ -59,7 +60,7 @@ export default {
     'tar',
     'winston',
     'winston-daily-rotate-file',
-    'winston/lib/winston/transports',
+    'winston/lib/winston/transports/index.js',
     'ws',
   ],
   plugins: [

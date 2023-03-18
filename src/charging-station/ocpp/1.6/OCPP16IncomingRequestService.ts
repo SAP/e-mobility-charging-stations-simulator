@@ -87,9 +87,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
 
   public constructor() {
-    if (new.target?.name === moduleName) {
-      throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
-    }
+    // if (new.target?.name === moduleName) {
+    //   throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
+    // }
     super(OCPPVersion.VERSION_16);
     this.incomingRequestHandlers = new Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>([
       [OCPP16IncomingRequestCommand.RESET, this.handleRequestReset.bind(this)],

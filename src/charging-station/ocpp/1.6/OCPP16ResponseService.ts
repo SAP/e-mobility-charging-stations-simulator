@@ -59,9 +59,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
   private jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
 
   public constructor() {
-    if (new.target?.name === moduleName) {
-      throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
-    }
+    // if (new.target?.name === moduleName) {
+    //   throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
+    // }
     super(OCPPVersion.VERSION_16);
     this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
       [OCPP16RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],
