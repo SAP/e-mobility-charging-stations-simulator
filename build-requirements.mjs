@@ -1,14 +1,14 @@
-const chalk = require('chalk');
-// eslint-disable-next-line n/no-unpublished-require
-const SemVer = require('semver');
+import chalk from 'chalk';
+import semVer from 'semver';
+import packageJson from './package.json' assert { type: 'json' };
 
-const enginesNodeVersion = require('./package.json').engines.node;
+const enginesNodeVersion = packageJson.engines.node;
 
 /**
  * Check if the current node version match the required engines version.
  */
-function checkNodeVersion() {
-  if (SemVer.satisfies(process.version, enginesNodeVersion) === false) {
+export function checkNodeVersion() {
+  if (semVer.satisfies(process.version, enginesNodeVersion) === false) {
     console.error(
       chalk.red(
         `Required node version ${enginesNodeVersion} not satisfied with current version ${process.version}.`
@@ -20,5 +20,3 @@ function checkNodeVersion() {
 }
 
 checkNodeVersion();
-
-module.exports = { checkNodeVersion };

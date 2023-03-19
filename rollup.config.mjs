@@ -1,3 +1,4 @@
+/* eslint-disable n/no-unpublished-import */
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
@@ -19,16 +20,6 @@ export default {
       preserveModules: true,
       preserveModulesRoot: 'src',
       entryFileNames: '[name].mjs',
-      ...(!isDevelopmentBuild && { plugins: [terser({ maxWorkers: 2 })] }),
-    },
-    {
-      dir: 'dist',
-      format: 'cjs',
-      exports: 'auto',
-      sourcemap: true,
-      preserveModules: true,
-      preserveModulesRoot: 'src',
-      entryFileNames: '[name].cjs',
       ...(!isDevelopmentBuild && { plugins: [terser({ maxWorkers: 2 })] }),
     },
   ],

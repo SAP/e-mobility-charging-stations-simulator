@@ -26,7 +26,6 @@
     }
   ],
   "exports": [
-    "./dist/start.cjs",
     "./dist/start.mjs"
   ],
   "auto-changelog": {
@@ -41,14 +40,11 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "build-requirements": "node build-requirements.js",
+    "build-requirements": "node --no-warnings build-requirements.mjs",
     "start": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/start.mjs",
-    "start:cjs": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/start.cjs",
     "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.mjs",
     "start:dev:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.mjs",
-    "start:dev:cjs": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.cjs",
-    "start:dev:cjs:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.cjs",
-    "start:prof": "cross-env NODE_ENV=production node -r source-map-support/register --prof dist/start.cjs",
+    "start:prof": "cross-env NODE_ENV=production node -r source-map-support/register --prof dist/start.mjs",
     "start:doctorprof": "cross-env NODE_ENV=production clinic doctor -- node -r source-map-support/register dist/start.mjs",
     "start:flameprof": "cross-env NODE_ENV=production clinic flame -- node -r source-map-support/register dist/start.mjs",
     "start:bubbleprof": "cross-env NODE_ENV=production clinic bubbleprof -- node -r source-map-support/register dist/start.mjs",
@@ -57,8 +53,8 @@
     "build": "npm run rollup",
     "build:dev": "npm run rollup -- --environment BUILD:development",
     "build:dev:watch": "npm run rollup -- --environment BUILD:development --watch",
-    "lint": "cross-env TIMING=1 eslint --cache --ext .js,.ts src",
-    "lint:fix": "cross-env TIMING=1 eslint --cache --fix --ext .js,.ts src",
+    "lint": "cross-env TIMING=1 eslint --cache --ext .js,.mjs,.ts src",
+    "lint:fix": "cross-env TIMING=1 eslint --cache --fix --ext .js,.mjs,.ts src",
     "format": "prettier --cache --write .",
     "test": "c8 mocha test/**/*Test.ts",
     "test:debug": "mocha --no-parallel --inspect test/**/*Test.ts",
@@ -84,7 +80,7 @@
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.2",
-    "chalk": "^4.1.2",
+    "chalk": "^5.2.0",
     "http-status-codes": "^2.2.0",
     "just-clone": "^6.2.0",
     "just-merge": "^3.2.0",
