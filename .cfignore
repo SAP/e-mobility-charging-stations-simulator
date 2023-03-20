@@ -7,7 +7,10 @@
 .prettierignore
 .jshintrc
 .eslintrc.json
+.eslintignore
 .eslintcache
+.lintstagedrc.json
+.lintstagedrc.js
 .husky
 .editorconfig
 .vscode
@@ -51,6 +54,7 @@ manifest-*.yml
 *.tar.gz
 *.mta
 commitlint.config.js
+commitlint.config.cjs
 rollup.config.js
 rollup.config.mjs
 mikro-orm.config.ts
