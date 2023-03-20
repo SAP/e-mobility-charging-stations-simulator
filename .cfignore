@@ -15,6 +15,7 @@
 .clinic
 *.clinic-*
 .tscache
+.c8rc.json
 .nycrc.json
 .nyc_output
 .reuse
