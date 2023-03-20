@@ -13,5 +13,6 @@
   "full-trace": true,
   "enable-source-maps": true,
   "exit": true,
-  "require": ["ts-node/register/transpile-only", "mochawesome/register"]
+  "node-option": ["experimental-specifier-resolution=node", "loader=ts-node/esm"],
+  "require": ["mochawesome/register"]
 }

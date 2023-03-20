@@ -167,7 +167,7 @@
       }
     },
     {
-      "files": ["**/*.js", "**/*.mjs"],
+      "files": ["**/*.js", "**/*.cjs", "**/*.mjs"],
       "plugins": ["jsdoc"],
       "extends": ["plugin:jsdoc/recommended", "plugin:n/recommended"],
       "rules": {

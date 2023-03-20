@@ -25,6 +25,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
+  "type": "module",
   "exports": [
     "./dist/start.mjs"
   ],
@@ -39,7 +40,7 @@
     "useTsNode": true
   },
   "scripts": {
-    "prepare": "node prepare.js",
+    "prepare": "node prepare.cjs",
     "build-requirements": "node --no-warnings build-requirements.mjs",
     "start": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/start.mjs",
     "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.mjs",
@@ -53,8 +54,8 @@
     "build": "npm run rollup",
     "build:dev": "npm run rollup -- --environment BUILD:development",
     "build:dev:watch": "npm run rollup -- --environment BUILD:development --watch",
-    "lint": "cross-env TIMING=1 eslint --cache --ext .js,.mjs,.ts src",
-    "lint:fix": "cross-env TIMING=1 eslint --cache --fix --ext .js,.mjs,.ts src",
+    "lint": "cross-env TIMING=1 eslint --cache --ext .js,.cjs,.mjs,.ts src",
+    "lint:fix": "cross-env TIMING=1 eslint --cache --fix --ext .js,.cjs,.mjs,.ts src",
     "format": "prettier --cache --write .",
     "test": "c8 mocha test/**/*Test.ts",
     "test:debug": "mocha --no-parallel --inspect test/**/*Test.ts",
