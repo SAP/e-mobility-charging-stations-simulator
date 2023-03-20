@@ -1940,6 +1940,7 @@ export class ChargingStation {
   private stopWebSocketPing(): void {
     if (this.webSocketPingSetInterval) {
       clearInterval(this.webSocketPingSetInterval);
+      delete this.webSocketPingSetInterval;
     }
   }
 
@@ -1997,6 +1998,7 @@ export class ChargingStation {
   private stopHeartbeat(): void {
     if (this.heartbeatSetInterval) {
       clearInterval(this.heartbeatSetInterval);
+      delete this.heartbeatSetInterval;
     }
   }
 

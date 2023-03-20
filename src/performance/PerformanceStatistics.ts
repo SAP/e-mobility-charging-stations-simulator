@@ -127,6 +127,7 @@ export class PerformanceStatistics {
   public stop(): void {
     if (this.displayInterval) {
       clearInterval(this.displayInterval);
+      delete this.displayInterval;
     }
     performance.clearMarks();
     performance.clearMeasures();
@@ -158,12 +159,18 @@ export class PerformanceStatistics {
   }
 
   private startLogStatisticsInterval(): void {
-    if (Configuration.getLogStatisticsInterval() > 0) {
+    if (Configuration.getLogStatisticsInterval() > 0 && !this.displayInterval) {
       this.displayInterval = setInterval(() => {
         this.logStatistics();
       }, Configuration.getLogStatisticsInterval() * 1000);
       logger.info(
         `${this.logPrefix()} logged every ${Utils.formatDurationSeconds(
+          Configuration.getLogStatisticsInterval()
+        )}`
+      );
+    } else if (this.displayInterval) {
+      logger.info(
+        `${this.logPrefix()} already logged every ${Utils.formatDurationSeconds(
           Configuration.getLogStatisticsInterval()
         )}`
       );
