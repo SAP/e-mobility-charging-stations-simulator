@@ -131,6 +131,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     commandParams?: JsonType,
     params?: RequestParams
   ): Promise<ResponseType> {
+    // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName) === true) {
       return (await this.sendMessage(
         chargingStation,

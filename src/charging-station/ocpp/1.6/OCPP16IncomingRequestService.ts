@@ -730,7 +730,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       });
       const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId);
       connectorStatus.status = OCPP16ChargePointStatus.Preparing;
-      if (chargingStation.isChargingStationAvailable() === true) {
+      if (
+        chargingStation.isChargingStationAvailable() === true &&
+        chargingStation.isConnectorAvailable(transactionConnectorId) === true
+      ) {
         // Check if authorized
         if (chargingStation.getAuthorizeRemoteTxRequests() === true) {
           let authorized = false;
@@ -969,7 +972,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const now = Date.now();
     if (retrieveDate?.getTime() <= now) {
       this.runInAsyncScope(
-        this.updateFirmware.bind(this) as (
+        this.updateFirmwareSimulation.bind(this) as (
           this: OCPP16IncomingRequestService,
           ...args: any[]
         ) => Promise<void>,
@@ -978,13 +981,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ).catch(Constants.EMPTY_FUNCTION);
     } else {
       setTimeout(() => {
-        this.updateFirmware(chargingStation).catch(Constants.EMPTY_FUNCTION);
+        this.updateFirmwareSimulation(chargingStation).catch(Constants.EMPTY_FUNCTION);
       }, retrieveDate?.getTime() - now);
     }
     return OCPPConstants.OCPP_RESPONSE_EMPTY;
   }
 
-  private async updateFirmware(
+  private async updateFirmwareSimulation(
     chargingStation: ChargingStation,
     maxDelay = 30,
     minDelay = 15
@@ -1037,6 +1040,48 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       status: OCPP16FirmwareStatus.Downloaded,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloaded;
+    let transactionsStarted: boolean;
+    do {
+      let trxCount = 0;
+      for (const connectorId of chargingStation.connectors.keys()) {
+        if (
+          connectorId > 0 &&
+          chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true
+        ) {
+          trxCount++;
+        }
+      }
+      if (trxCount > 0) {
+        const waitTime = 15 * 1000;
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: ${trxCount} transaction(s) in progress, waiting ${
+            waitTime / 1000
+          } seconds before continuing firmware update simulation`
+        );
+        await Utils.sleep(waitTime);
+        transactionsStarted = true;
+      } else {
+        for (const connectorId of chargingStation.connectors.keys()) {
+          if (
+            connectorId > 0 &&
+            chargingStation.getConnectorStatus(connectorId)?.status !==
+              OCPP16ChargePointStatus.Unavailable
+          ) {
+            await chargingStation.ocppRequestService.requestHandler<
+              OCPP16StatusNotificationRequest,
+              OCPP16StatusNotificationResponse
+            >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
+              connectorId,
+              status: OCPP16ChargePointStatus.Unavailable,
+              errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+            });
+            chargingStation.getConnectorStatus(connectorId).status =
+              OCPP16ChargePointStatus.Unavailable;
+          }
+        }
+        transactionsStarted = false;
+      }
+    } while (transactionsStarted);
     await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
