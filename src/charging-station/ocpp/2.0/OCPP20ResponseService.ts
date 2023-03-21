@@ -19,7 +19,7 @@ import {
   RegistrationStatusEnumType,
   type ResponseHandler,
 } from '../../../types';
-import { Constants, logger } from '../../../utils';
+import { logger } from '../../../utils';
 import { OCPP20ServiceUtils, OCPPResponseService } from '../internal';
 
 const moduleName = 'OCPP20ResponseService';
@@ -164,9 +164,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         {},
         { overwrite: true, save: true }
       );
-      chargingStation.heartbeatSetInterval
-        ? chargingStation.restartHeartbeat()
-        : chargingStation.startHeartbeat();
+      OCPP20ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval);
     }
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
       const logMsg = `${chargingStation.logPrefix()} Charging station in '${

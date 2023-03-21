@@ -363,9 +363,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         { visible: false },
         { overwrite: true, save: true }
       );
-      chargingStation.heartbeatSetInterval
-        ? chargingStation.restartHeartbeat()
-        : chargingStation.startHeartbeat();
+      OCPP16ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval);
     }
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
       const logMsg = `${chargingStation.logPrefix()} Charging station in '${

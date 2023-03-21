@@ -125,10 +125,7 @@ export class PerformanceStatistics {
   }
 
   public stop(): void {
-    if (this.displayInterval) {
-      clearInterval(this.displayInterval);
-      delete this.displayInterval;
-    }
+    this.stopLogStatisticsInterval();
     performance.clearMarks();
     performance.clearMeasures();
     this.performanceObserver?.disconnect();
@@ -159,25 +156,31 @@ export class PerformanceStatistics {
   }
 
   private startLogStatisticsInterval(): void {
-    if (Configuration.getLogStatisticsInterval() > 0 && !this.displayInterval) {
+    const logStatisticsInterval = Configuration.getLogStatisticsInterval();
+    if (logStatisticsInterval > 0 && !this.displayInterval) {
       this.displayInterval = setInterval(() => {
         this.logStatistics();
-      }, Configuration.getLogStatisticsInterval() * 1000);
+      }, logStatisticsInterval * 1000);
       logger.info(
-        `${this.logPrefix()} logged every ${Utils.formatDurationSeconds(
-          Configuration.getLogStatisticsInterval()
-        )}`
+        `${this.logPrefix()} logged every ${Utils.formatDurationSeconds(logStatisticsInterval)}`
       );
     } else if (this.displayInterval) {
       logger.info(
         `${this.logPrefix()} already logged every ${Utils.formatDurationSeconds(
-          Configuration.getLogStatisticsInterval()
+          logStatisticsInterval
         )}`
       );
     } else {
       logger.info(
-        `${this.logPrefix()} log interval is set to ${Configuration.getLogStatisticsInterval()?.toString()}. Not logging statistics`
+        `${this.logPrefix()} log interval is set to ${logStatisticsInterval?.toString()}. Not logging statistics`
       );
+    }
+  }
+
+  private stopLogStatisticsInterval(): void {
+    if (this.displayInterval) {
+      clearInterval(this.displayInterval);
+      delete this.displayInterval;
     }
   }
 

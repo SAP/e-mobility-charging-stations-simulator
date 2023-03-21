@@ -386,6 +386,30 @@ export class ChargingStation {
     return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
   }
 
+  public getHeartbeatInterval(): number {
+    const HeartbeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
+      StandardParametersKey.HeartbeatInterval
+    );
+    if (HeartbeatInterval) {
+      return Utils.convertToInt(HeartbeatInterval.value) * 1000;
+    }
+    const HeartBeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
+      StandardParametersKey.HeartBeatInterval
+    );
+    if (HeartBeatInterval) {
+      return Utils.convertToInt(HeartBeatInterval.value) * 1000;
+    }
+    this.stationInfo?.autoRegister === false &&
+      logger.warn(
+        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${
+          Constants.DEFAULT_HEARTBEAT_INTERVAL
+        }`
+      );
+    return Constants.DEFAULT_HEARTBEAT_INTERVAL;
+  }
+
   public setSupervisionUrl(url: string): void {
     if (
       this.getSupervisionUrlOcppConfiguration() &&
@@ -428,11 +452,7 @@ export class ChargingStation {
       );
     } else {
       logger.error(
-        `${this.logPrefix()} Heartbeat interval set to ${
-          this.getHeartbeatInterval()
-            ? Utils.formatDurationMilliSeconds(this.getHeartbeatInterval())
-            : this.getHeartbeatInterval()
-        }, not starting the heartbeat`
+        `${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval()}, not starting the heartbeat`
       );
     }
   }
@@ -1928,11 +1948,7 @@ export class ChargingStation {
       );
     } else {
       logger.error(
-        `${this.logPrefix()} WebSocket ping interval set to ${
-          webSocketPingInterval
-            ? Utils.formatDurationSeconds(webSocketPingInterval)
-            : webSocketPingInterval
-        }, not starting the WebSocket ping`
+        `${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval}, not starting the WebSocket ping`
       );
     }
   }
@@ -1969,30 +1985,6 @@ export class ChargingStation {
       return new URL(supervisionUrls[configuredSupervisionUrlIndex]);
     }
     return new URL(supervisionUrls as string);
-  }
-
-  private getHeartbeatInterval(): number {
-    const HeartbeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
-      this,
-      StandardParametersKey.HeartbeatInterval
-    );
-    if (HeartbeatInterval) {
-      return Utils.convertToInt(HeartbeatInterval.value) * 1000;
-    }
-    const HeartBeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
-      this,
-      StandardParametersKey.HeartBeatInterval
-    );
-    if (HeartBeatInterval) {
-      return Utils.convertToInt(HeartBeatInterval.value) * 1000;
-    }
-    this.stationInfo?.autoRegister === false &&
-      logger.warn(
-        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${
-          Constants.DEFAULT_HEARTBEAT_INTERVAL
-        }`
-      );
-    return Constants.DEFAULT_HEARTBEAT_INTERVAL;
   }
 
   private stopHeartbeat(): void {
