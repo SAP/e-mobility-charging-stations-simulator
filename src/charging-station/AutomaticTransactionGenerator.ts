@@ -11,6 +11,7 @@ import {
   type AuthorizeRequest,
   type AuthorizeResponse,
   type AutomaticTransactionGeneratorConfiguration,
+  ConnectorStatusEnum,
   IdTagDistribution,
   RequestCommand,
   type StartTransactionRequest,
@@ -180,6 +181,18 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           `${this.logPrefix(
             connectorId
           )} entered in transaction loop while the connector ${connectorId} is unavailable`
+        );
+        this.stopConnector(connectorId);
+        break;
+      }
+      if (
+        this.chargingStation.getConnectorStatus(connectorId)?.status ===
+        ConnectorStatusEnum.Unavailable
+      ) {
+        logger.info(
+          `${this.logPrefix(
+            connectorId
+          )} entered in transaction loop while the connector ${connectorId} status is unavailable`
         );
         this.stopConnector(connectorId);
         break;
