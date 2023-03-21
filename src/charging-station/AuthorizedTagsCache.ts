@@ -3,14 +3,17 @@ import fs from 'node:fs';
 import { FileType } from '../types';
 import { FileUtils, Utils, logger } from '../utils';
 
+type TagsCacheValueType = {
+  tags: string[];
+  tagsFileWatcher: fs.FSWatcher | undefined;
+};
+
 export class AuthorizedTagsCache {
   private static instance: AuthorizedTagsCache | null = null;
-  private readonly tagsCaches: Map<string, string[]>;
-  private readonly FSWatchers: Map<string, fs.FSWatcher | undefined>;
+  private readonly tagsCaches: Map<string, TagsCacheValueType>;
 
   private constructor() {
-    this.tagsCaches = new Map<string, string[]>();
-    this.FSWatchers = new Map<string, fs.FSWatcher | undefined>();
+    this.tagsCaches = new Map<string, TagsCacheValueType>();
   }
 
   public static getInstance(): AuthorizedTagsCache {
@@ -23,38 +26,6 @@ export class AuthorizedTagsCache {
   public getAuthorizedTags(file: string): string[] | undefined {
     if (this.hasTags(file) === false) {
       this.setTags(file, this.getAuthorizedTagsFromFile(file));
-      // Monitor authorization file
-      this.FSWatchers.has(file) === false &&
-        this.FSWatchers.set(
-          file,
-          FileUtils.watchJsonFile(
-            file,
-            FileType.Authorization,
-            this.logPrefix(file),
-            undefined,
-            (event, filename) => {
-              if (Utils.isNotEmptyString(filename) && event === 'change') {
-                try {
-                  logger.debug(
-                    `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`
-                  );
-                  this.deleteTags(file);
-                  this.deleteFSWatcher(file);
-                } catch (error) {
-                  FileUtils.handleFileException(
-                    file,
-                    FileType.Authorization,
-                    error as NodeJS.ErrnoException,
-                    this.logPrefix(file),
-                    {
-                      throwError: false,
-                    }
-                  );
-                }
-              }
-            }
-          )
-        );
     }
     return this.getTags(file);
   }
@@ -68,20 +39,44 @@ export class AuthorizedTagsCache {
   }
 
   private setTags(file: string, tags: string[]) {
-    return this.tagsCaches.set(file, tags);
+    return this.tagsCaches.set(file, {
+      tags,
+      tagsFileWatcher: FileUtils.watchJsonFile(
+        file,
+        FileType.Authorization,
+        this.logPrefix(file),
+        undefined,
+        (event, filename) => {
+          if (Utils.isNotEmptyString(filename) && event === 'change') {
+            try {
+              logger.debug(
+                `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`
+              );
+              this.deleteTags(file);
+            } catch (error) {
+              FileUtils.handleFileException(
+                file,
+                FileType.Authorization,
+                error as NodeJS.ErrnoException,
+                this.logPrefix(file),
+                {
+                  throwError: false,
+                }
+              );
+            }
+          }
+        }
+      ),
+    });
   }
 
   private getTags(file: string): string[] | undefined {
-    return this.tagsCaches.get(file);
+    return this.tagsCaches.get(file)?.tags;
   }
 
   private deleteTags(file: string): boolean {
+    this.tagsCaches.get(file)?.tagsFileWatcher?.close();
     return this.tagsCaches.delete(file);
-  }
-
-  private deleteFSWatcher(file: string): boolean {
-    this.FSWatchers.get(file)?.close();
-    return this.FSWatchers.delete(file);
   }
 
   private getAuthorizedTagsFromFile(file: string): string[] {
