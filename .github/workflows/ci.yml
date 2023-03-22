@@ -24,7 +24,7 @@ jobs:
       - name: corepack enable
         run: corepack enable
       - name: pnpm install
-        run: pnpm ci
+        run: pnpm install
       - name: pnpm run lint
         run: pnpm run lint
       - name: pnpm run build
@@ -57,7 +57,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - name: npm install
+      - name: npm clean-install
         run: npm ci
       - name: npm run lint
         run: npm run lint
