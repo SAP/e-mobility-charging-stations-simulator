@@ -2,17 +2,17 @@ FROM node:lts-alpine as builder
 
 # Build simulator
 WORKDIR /usr/builder
-COPY .npmrc package.json package-lock.json tsconfig.json rollup.config.mjs prepare.cjs build-requirements.mjs ./
+COPY .npmrc package.json pnpm-lock.yaml tsconfig.json rollup.config.mjs prepare.cjs build-requirements.mjs ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 COPY docker/authorization-tags.json ./src/assets/authorization-tags.json
 RUN set -ex \
   && apk add --no-cache --virtual .gyp build-base python3 \
-  && npm set progress=false \
-  && npm config set depth 0 \
-  && npm cache clean --force \
-  && npm clean-install \
-  && npm run build \
+  && corepack enable \
+  && pnpm set progress=false \
+  && pnpm config set depth 0 \
+  && pnpm install \
+  && pnpm run build \
   && apk del .gyp
 
 # Build simulator dashboard

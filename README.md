@@ -37,7 +37,7 @@ brew install node@16
 In the repository root, run the following command:
 
 ```shell
-npm install
+pnpm install
 ```
 
 ## Initial configuration
@@ -49,7 +49,7 @@ Tweak them to your needs by following the section [configuration files syntax](R
 
 ## Start
 
-To start the program, run: `npm start`.
+To start the program, run: `pnpm start`.
 
 ## Start Web UI
 

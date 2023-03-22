@@ -2,8 +2,7 @@
   "name": "e-mobility-charging-stations-simulator",
   "version": "1.1.96",
   "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.3.0"
+    "node": ">=16.0.0"
   },
   "repository": {
     "type": "git",
@@ -40,20 +39,21 @@
     "useTsNode": true
   },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "prepare": "node prepare.cjs",
     "build-requirements": "node --no-warnings build-requirements.mjs",
-    "start": "npm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/start.mjs",
-    "start:dev": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.mjs",
-    "start:dev:debug": "npm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.mjs",
+    "start": "pnpm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/start.mjs",
+    "start:dev": "pnpm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register dist/start.mjs",
+    "start:dev:debug": "pnpm run build:dev && cross-env NODE_ENV=development node -r source-map-support/register --inspect dist/start.mjs",
     "start:prof": "cross-env NODE_ENV=production node -r source-map-support/register --prof dist/start.mjs",
     "start:doctorprof": "cross-env NODE_ENV=production clinic doctor -- node -r source-map-support/register dist/start.mjs",
     "start:flameprof": "cross-env NODE_ENV=production clinic flame -- node -r source-map-support/register dist/start.mjs",
     "start:bubbleprof": "cross-env NODE_ENV=production clinic bubbleprof -- node -r source-map-support/register dist/start.mjs",
     "start:heapprofiler": "cross-env NODE_ENV=production clinic heapprofiler -- node -r source-map-support/register dist/start.mjs",
-    "rollup": "npm run build-requirements && rollup --config",
-    "build": "npm run rollup",
-    "build:dev": "npm run rollup -- --environment BUILD:development",
-    "build:dev:watch": "npm run rollup -- --environment BUILD:development --watch",
+    "rollup": "pnpm run build-requirements && rollup --config",
+    "build": "pnpm run rollup",
+    "build:dev": "pnpm run rollup -- --environment BUILD:development",
+    "build:dev:watch": "pnpm run rollup -- --environment BUILD:development --watch",
     "lint": "cross-env TIMING=1 eslint --cache --ext .js,.cjs,.mjs,.ts src",
     "lint:fix": "cross-env TIMING=1 eslint --cache --fix --ext .js,.cjs,.mjs,.ts src",
     "format": "prettier --cache --write .",

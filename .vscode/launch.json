@@ -7,10 +7,10 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug Simulator Development Build via npm",
+      "name": "Debug Simulator Development Build via pnpm",
       "cwd": "${workspaceFolder}",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run-script", "start:dev:debug"],
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "start:dev:debug"],
       "skipFiles": ["<node_internals>/**"],
       "stopOnEntry": true
     },
