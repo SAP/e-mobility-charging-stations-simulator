@@ -1015,17 +1015,6 @@ export class ChargingStation {
       `${ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile())}.json`
     );
     this.stationInfo = this.getStationInfo();
-    this.saveStationInfo();
-    // Avoid duplication of connectors related information in RAM
-    delete this.stationInfo?.Connectors;
-    this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
-    if (this.getEnableStatistics() === true) {
-      this.performanceStatistics = PerformanceStatistics.getInstance(
-        this.stationInfo.hashId,
-        this.stationInfo.chargingStationId,
-        this.configuredSupervisionUrl
-      );
-    }
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       Utils.isNotEmptyString(this.stationInfo.firmwareVersion) &&
@@ -1043,6 +1032,17 @@ export class ChargingStation {
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.step
       ).toString();
       this.stationInfo.firmwareVersion = match?.join('.');
+    }
+    this.saveStationInfo();
+    // Avoid duplication of connectors related information in RAM
+    delete this.stationInfo?.Connectors;
+    this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
+    if (this.getEnableStatistics() === true) {
+      this.performanceStatistics = PerformanceStatistics.getInstance(
+        this.stationInfo.hashId,
+        this.stationInfo.chargingStationId,
+        this.configuredSupervisionUrl
+      );
     }
     this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
       this.stationInfo
