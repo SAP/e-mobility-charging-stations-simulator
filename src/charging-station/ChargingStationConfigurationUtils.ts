@@ -1,6 +1,6 @@
 import type { ChargingStation } from './internal';
 import type { ConfigurationKey, ConfigurationKeyType } from '../types';
-import { Constants, logger } from '../utils';
+import { logger } from '../utils';
 
 type ConfigurationKeyOptions = { readonly?: boolean; visible?: boolean; reboot?: boolean };
 type DeleteConfigurationKeyParams = { save?: boolean; caseInsensitive?: boolean };

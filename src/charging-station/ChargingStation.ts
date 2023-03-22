@@ -1026,21 +1026,6 @@ export class ChargingStation {
         this.configuredSupervisionUrl
       );
     }
-    this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
-      this.stationInfo
-    );
-    this.powerDivider = this.getPowerDivider();
-    // OCPP configuration
-    this.ocppConfiguration = this.getOcppConfiguration();
-    this.initializeOcppConfiguration();
-    this.initializeOcppServices();
-    if (this.stationInfo?.autoRegister === true) {
-      this.bootNotificationResponse = {
-        currentTime: new Date(),
-        interval: this.getHeartbeatInterval() / 1000,
-        status: RegistrationStatusEnumType.ACCEPTED,
-      };
-    }
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       Utils.isNotEmptyString(this.stationInfo.firmwareVersion) &&
@@ -1058,6 +1043,21 @@ export class ChargingStation {
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.step
       ).toString();
       this.stationInfo.firmwareVersion = match?.join('.');
+    }
+    this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
+      this.stationInfo
+    );
+    this.powerDivider = this.getPowerDivider();
+    // OCPP configuration
+    this.ocppConfiguration = this.getOcppConfiguration();
+    this.initializeOcppConfiguration();
+    this.initializeOcppServices();
+    if (this.stationInfo?.autoRegister === true) {
+      this.bootNotificationResponse = {
+        currentTime: new Date(),
+        interval: this.getHeartbeatInterval() / 1000,
+        status: RegistrationStatusEnumType.ACCEPTED,
+      };
     }
   }
 
