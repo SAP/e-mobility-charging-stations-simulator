@@ -9,14 +9,14 @@ enum CacheType {
   chargingStationConfiguration = 'chargingStationConfiguration',
 }
 
-type CacheableType = ChargingStationTemplate | ChargingStationConfiguration;
+type CacheValueType = ChargingStationTemplate | ChargingStationConfiguration;
 
 export class SharedLRUCache {
   private static instance: SharedLRUCache | null = null;
-  private readonly lruCache: LRUCache<string, CacheableType>;
+  private readonly lruCache: LRUCache<string, CacheValueType>;
 
   private constructor() {
-    this.lruCache = new LRUCache<string, CacheableType>(
+    this.lruCache = new LRUCache<string, CacheValueType>(
       Bootstrap.getInstance().numberOfChargingStationTemplates +
         Bootstrap.getInstance().numberOfChargingStations
     );
@@ -93,11 +93,11 @@ export class SharedLRUCache {
     return this.lruCache.has(key);
   }
 
-  private get(key: string): CacheableType | undefined {
+  private get(key: string): CacheValueType | undefined {
     return this.lruCache.get(key);
   }
 
-  private set(key: string, value: CacheableType): void {
+  private set(key: string, value: CacheValueType): void {
     this.lruCache.set(key, value);
   }
 
