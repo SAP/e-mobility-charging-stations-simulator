@@ -528,9 +528,7 @@ export class ChargingStation {
       logger.error(
         `${this.logPrefix()} Charging station ${
           StandardParametersKey.MeterValueSampleInterval
-        } configuration set to ${
-          interval ? Utils.formatDurationMilliSeconds(interval) : interval
-        }, not sending MeterValues`
+        } configuration set to ${interval}, not sending MeterValues`
       );
     }
   }
