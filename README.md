@@ -10,14 +10,14 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
 
 ## Prerequisites
 
-Install the [node.js](https://nodejs.org/) LTS runtime environment:
+Install the [node.js](https://nodejs.org/) current LTS or superior version runtime environment:
 
 ### Windows
 
 - [Chocolatey](https://chocolatey.org/):
 
 ```powershell
-choco install -y nodejs-lts
+choco install -y nodejs
 ```
 
 ### MacOSX
@@ -25,7 +25,7 @@ choco install -y nodejs-lts
 - [Homebrew](https://brew.sh/):
 
 ```shell
-brew install node@16
+brew install node
 ```
 
 ### GNU/Linux
@@ -33,6 +33,12 @@ brew install node@16
 - [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version >= 16.X
 
 ## Installation
+
+Enable corepack if not already done:
+
+```shell
+corepack enable
+```
 
 In the repository root, run the following command:
 
