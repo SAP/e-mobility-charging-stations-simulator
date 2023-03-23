@@ -992,7 +992,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     maxDelay = 30,
     minDelay = 15
   ): Promise<void> {
-    chargingStation.stopAutomaticTransactionGenerator();
+    if (
+      ChargingStationUtils.checkChargingStation(chargingStation, chargingStation.logPrefix()) ===
+      false
+    ) {
+      return;
+    }
     for (const connectorId of chargingStation.connectors.keys()) {
       if (
         connectorId > 0 &&
@@ -1083,6 +1088,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     } while (transactionsStarted);
     await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+    if (
+      ChargingStationUtils.checkChargingStation(chargingStation, chargingStation.logPrefix()) ===
+      false
+    ) {
+      return;
+    }
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse

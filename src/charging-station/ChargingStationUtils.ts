@@ -89,6 +89,14 @@ export class ChargingStationUtils {
       .digest('hex');
   }
 
+  public static checkChargingStation(chargingStation: ChargingStation, logPrefix: string): boolean {
+    if (chargingStation.started === false && chargingStation.starting === false) {
+      logger.warn(`${logPrefix} charging station is stopped, cannot proceed`);
+      return false;
+    }
+    return true;
+  }
+
   public static getTemplateMaxNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
     const templateConnectors = stationTemplate?.Connectors;
     if (!templateConnectors) {

@@ -66,7 +66,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   public start(): void {
-    if (this.checkChargingStation() === false) {
+    if (
+      ChargingStationUtils.checkChargingStation(this.chargingStation, this.logPrefix()) === false
+    ) {
       return;
     }
     if (this.started === true) {
@@ -87,7 +89,12 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   public startConnector(connectorId: number): void {
-    if (this.checkChargingStation(connectorId) === false) {
+    if (
+      ChargingStationUtils.checkChargingStation(
+        this.chargingStation,
+        this.logPrefix(connectorId)
+      ) === false
+    ) {
       return;
     }
     if (this.connectorsStatus.has(connectorId) === false) {
@@ -460,13 +467,5 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       logger.warn(`${this.logPrefix(connectorId)} start transaction rejected`);
       this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
     }
-  }
-
-  private checkChargingStation(connectorId?: number): boolean {
-    if (this.chargingStation.started === false && this.chargingStation.starting === false) {
-      logger.warn(`${this.logPrefix(connectorId)} charging station is stopped, cannot proceed`);
-      return false;
-    }
-    return true;
   }
 }
