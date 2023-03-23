@@ -52,7 +52,7 @@
     "start:heapprofiler": "cross-env NODE_ENV=production clinic heapprofiler -- node -r source-map-support/register dist/start.mjs",
     "rollup": "pnpm run build-requirements && rollup --config",
     "build": "pnpm run rollup",
-    "build:cf": "rimraf node_modules && npx cross-env SKIP_PREINSTALL=1 npm install && npm run rollup",
+    "build:cf": "npx rimraf node_modules && npx cross-env SKIP_PREINSTALL=1 npm install && pnpm run rollup",
     "build:dev": "pnpm run rollup -- --environment BUILD:development",
     "build:dev:watch": "pnpm run rollup -- --environment BUILD:development --watch",
     "lint": "cross-env TIMING=1 eslint --cache --ext .js,.cjs,.mjs,.ts src",
