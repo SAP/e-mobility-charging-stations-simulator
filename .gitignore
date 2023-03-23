@@ -109,6 +109,9 @@ Thumbs.db
 *.mta
 mta_archives/
 
+# pnpm
+package-lock.json
+
 *.bak
 .eslintcache
 temp/
