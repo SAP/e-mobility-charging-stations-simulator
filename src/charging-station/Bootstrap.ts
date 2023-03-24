@@ -7,7 +7,7 @@ import { type Worker, isMainThread } from 'node:worker_threads';
 import chalk from 'chalk';
 
 import { type AbstractUIServer, ChargingStationUtils, UIServerFactory } from './internal';
-import { version } from '../../package.json';
+import packageJson from '../../package.json' assert { type: 'json' };
 import { BaseError } from '../exception';
 import { type Storage, StorageFactory } from '../performance';
 import {
@@ -37,7 +37,7 @@ export class Bootstrap {
   private readonly uiServer!: AbstractUIServer | null;
   private readonly storage!: Storage;
   private numberOfStartedChargingStations!: number;
-  private readonly version: string = version;
+  private readonly version: string = packageJson.version;
   private initializedCounters: boolean;
   private started: boolean;
   private readonly workerScript: string;
