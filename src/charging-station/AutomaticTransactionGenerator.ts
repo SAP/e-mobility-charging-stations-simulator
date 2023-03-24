@@ -2,7 +2,7 @@
 
 import { AsyncResource } from 'node:async_hooks';
 
-import { type ChargingStation, ChargingStationUtils } from './internal';
+import { AuthorizedTagsCache, type ChargingStation, ChargingStationUtils } from './internal';
 import { BaseError } from '../exception';
 // import { PerformanceStatistics } from '../performance';
 import { PerformanceStatistics } from '../performance/PerformanceStatistics';
@@ -12,7 +12,6 @@ import {
   type AuthorizeResponse,
   type AutomaticTransactionGeneratorConfiguration,
   ConnectorStatusEnum,
-  IdTagDistribution,
   RequestCommand,
   type StartTransactionRequest,
   type StartTransactionResponse,
@@ -325,7 +324,11 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let startResponse: StartTransactionResponse;
     if (this.chargingStation.hasAuthorizedTags()) {
-      const idTag = this.getIdTag(connectorId);
+      const idTag = AuthorizedTagsCache.getInstance().getIdTag(
+        this.configuration?.idTagDistribution,
+        this.chargingStation,
+        connectorId
+      );
       const startTransactionLogMsg = `${this.logPrefix(
         connectorId
       )} start transaction with an idTag '${idTag}'`;
@@ -411,41 +414,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
 
   private getRequireAuthorize(): boolean {
     return this.configuration?.requireAuthorize ?? true;
-  }
-
-  private getRandomIdTag(authorizationFile: string): string {
-    const tags = this.chargingStation.authorizedTagsCache.getAuthorizedTags(authorizationFile);
-    this.idTagIndex = Math.floor(Utils.secureRandom() * tags.length);
-    return tags[this.idTagIndex];
-  }
-
-  private getRoundRobinIdTag(authorizationFile: string): string {
-    const tags = this.chargingStation.authorizedTagsCache.getAuthorizedTags(authorizationFile);
-    const idTag = tags[this.idTagIndex];
-    this.idTagIndex = this.idTagIndex === tags.length - 1 ? 0 : this.idTagIndex + 1;
-    return idTag;
-  }
-
-  private getConnectorAffinityIdTag(authorizationFile: string, connectorId: number): string {
-    const tags = this.chargingStation.authorizedTagsCache.getAuthorizedTags(authorizationFile);
-    this.idTagIndex = (this.chargingStation.index - 1 + (connectorId - 1)) % tags.length;
-    return tags[this.idTagIndex];
-  }
-
-  private getIdTag(connectorId: number): string {
-    const authorizationFile = ChargingStationUtils.getAuthorizationFile(
-      this.chargingStation.stationInfo
-    );
-    switch (this.configuration?.idTagDistribution) {
-      case IdTagDistribution.RANDOM:
-        return this.getRandomIdTag(authorizationFile);
-      case IdTagDistribution.ROUND_ROBIN:
-        return this.getRoundRobinIdTag(authorizationFile);
-      case IdTagDistribution.CONNECTOR_AFFINITY:
-        return this.getConnectorAffinityIdTag(authorizationFile, connectorId);
-      default:
-        return this.getRoundRobinIdTag(authorizationFile);
-    }
   }
 
   private logPrefix = (connectorId?: number): string => {
