@@ -3,7 +3,8 @@
   "version": "0.1.1",
   "readme": "README.md",
   "scripts": {
-    "start": "npm run build && node start.js",
+    "preinstall": "npx only-allow pnpm",
+    "start": "pnpm run build && node start.js",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
@@ -19,7 +20,7 @@
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "vue": "^3.2.47",
-    "vue-class-component": "^8.0.0-rc.1",
+    "vue-class-component": "8.0.0-rc.1",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {

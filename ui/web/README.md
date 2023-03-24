@@ -3,7 +3,8 @@
 ## Project setup
 
 ```shell
-npm install
+corepack enable
+pnpm install
 ```
 
 The simulator UI server must be enabled, use WebSocket and disable authentication. The simulator main configuration file should have a `uiServer` section like this:
@@ -28,13 +29,13 @@ See [here](../../README.md#charging-stations-simulator-configuration) for more d
 #### Compiles and run for production
 
 ```shell
-npm start
+pnpm start
 ```
 
 #### Compiles and run for development
 
 ```shell
-npm run serve
+pnpm run serve
 ```
 
 #### Try it out
@@ -49,11 +50,11 @@ For both options above you can then follow the link displayed in the terminal at
 ### Compiles and minifies for production
 
 ```shell
-npm run build
+pnpm run build
 ```
 
 ### Lints files
 
 ```shell
-npm run lint
+pnpm run lint
 ```

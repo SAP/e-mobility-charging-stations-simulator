@@ -2,7 +2,7 @@ FROM node:lts-alpine as builder
 
 # Build simulator
 WORKDIR /usr/builder
-COPY .npmrc package.json pnpm-lock.yaml tsconfig.json rollup.config.mjs prepare.cjs build-requirements.mjs ./
+COPY .npmrc package.json pnpm-lock.yaml tsconfig.json rollup.config.mjs build-requirements.mjs skip-preinstall.cjs prepare.cjs ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 COPY docker/authorization-tags.json ./src/assets/authorization-tags.json
@@ -19,11 +19,11 @@ RUN set -ex \
 WORKDIR /usr/builder/webui
 COPY ui/web ./
 RUN set -ex \
-  && npm set progress=false \
-  && npm config set depth 0 \
-  && npm cache clean --force \
-  && npm clean-install \
-  && npm run build
+  && corepack enable \
+  && pnpm set progress=false \
+  && pnpm config set depth 0 \
+  && pnpm install \
+  && pnpm run build
 
 FROM node:lts-alpine
 

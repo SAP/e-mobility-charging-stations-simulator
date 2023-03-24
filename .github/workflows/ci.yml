@@ -57,17 +57,19 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - name: npm clean-install
-        run: npm ci
-      - name: npm run lint
-        run: npm run lint
-      - name: npm run build
-        run: npm run build --if-present
-      - name: npm test
-        run: npm test
-      # - name: npm run coverage
+      - name: corepack enable
+        run: corepack enable
+      - name: pnpm install
+        run: pnpm install
+      - name: pnpm run lint
+        run: pnpm run lint
+      - name: pnpm run build
+        run: pnpm run build --if-present
+      - name: pnpm test
+        run: pnpm test
+      # - name: pnpm run coverage
       #   if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x'"
-      #   run: npm run coverage
+      #   run: pnpm run coverage
       # - name: SonarCloud Scan
       #   if: "github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x'"
       #   uses: sonarsource/sonarcloud-github-action@master
