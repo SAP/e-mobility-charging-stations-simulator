@@ -60,19 +60,21 @@ export class AuthorizedTagsCache {
 
   private getRandomIdTag(hashId: string, file: string): string {
     const tags = this.getAuthorizedTags(file);
+    const addressableKey = file + hashId;
     this.tagsCachesAddressableIndexes.set(
-      file + hashId,
+      addressableKey,
       Math.floor(Utils.secureRandom() * tags.length)
     );
-    return tags[this.tagsCachesAddressableIndexes.get(file + hashId)];
+    return tags[this.tagsCachesAddressableIndexes.get(addressableKey)];
   }
 
   private getRoundRobinIdTag(hashId: string, file: string): string {
     const tags = this.getAuthorizedTags(file);
-    const idTagIndex = this.tagsCachesAddressableIndexes.get(file + hashId) ?? 0;
+    const addressableKey = file + hashId;
+    const idTagIndex = this.tagsCachesAddressableIndexes.get(addressableKey) ?? 0;
     const idTag = tags[idTagIndex];
     this.tagsCachesAddressableIndexes.set(
-      file + hashId,
+      addressableKey,
       idTagIndex === tags.length - 1 ? 0 : idTagIndex + 1
     );
     return idTag;
@@ -82,11 +84,12 @@ export class AuthorizedTagsCache {
     const file = ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo);
     const tags = this.getAuthorizedTags(file);
     const hashId = chargingStation.stationInfo.hashId;
+    const addressableKey = file + hashId;
     this.tagsCachesAddressableIndexes.set(
-      file + hashId,
+      addressableKey,
       (chargingStation.index - 1 + (connectorId - 1)) % tags.length
     );
-    return tags[this.tagsCachesAddressableIndexes.get(file + hashId)];
+    return tags[this.tagsCachesAddressableIndexes.get(addressableKey)];
   }
 
   private hasTags(file: string): boolean {
