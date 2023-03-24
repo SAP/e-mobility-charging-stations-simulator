@@ -28,7 +28,7 @@ jobs:
       - name: pnpm run lint
         run: pnpm run lint
       - name: pnpm run build
-        run: pnpm run build --if-present
+        run: pnpm run build
       - name: pnpm test
         run: pnpm test
       - name: pnpm run coverage
@@ -64,7 +64,7 @@ jobs:
       - name: pnpm run lint
         run: pnpm run lint
       - name: pnpm run build
-        run: pnpm run build --if-present
+        run: pnpm run build
       - name: pnpm test
         run: pnpm test
       # - name: pnpm run coverage
