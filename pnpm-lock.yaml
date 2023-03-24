@@ -53,7 +53,7 @@ specifiers:
   poolifier: ^2.3.10
   prettier: ^2.8.7
   proper-lockfile: ^4.1.2
-  release-it: ^15.9.1
+  release-it: ^15.9.3
   rimraf: ^4.4.1
   robohydra: ^0.6.9
   rollup: ^3.20.2
@@ -105,7 +105,7 @@ devDependencies:
   '@commitlint/cli': 17.5.0
   '@commitlint/config-conventional': 17.4.4
   '@mikro-orm/cli': 5.6.15_hfmibbejdzoxw2nz6hv7mjcn4a
-  '@release-it/bumper': 4.0.2_release-it@15.9.1
+  '@release-it/bumper': 4.0.2_release-it@15.9.3
   '@rollup/plugin-json': 6.0.0_rollup@3.20.2
   '@rollup/plugin-terser': 0.4.0_rollup@3.20.2
   '@rollup/plugin-typescript': 11.0.0_b72j35qsjh4lu3mgicjyqmc4ve
@@ -136,7 +136,7 @@ devDependencies:
   mocha: 10.2.0
   mochawesome: 7.1.3_mocha@10.2.0
   prettier: 2.8.7
-  release-it: 15.9.1
+  release-it: 15.9.3
   rimraf: 4.4.1
   robohydra: 0.6.9_2adebc2xdjqbcvbjxkodkhadp4
   rollup: 3.20.2
@@ -1172,7 +1172,7 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/bumper/4.0.2_release-it@15.9.1:
+  /@release-it/bumper/4.0.2_release-it@15.9.3:
     resolution: {integrity: sha512-HjiFIBNvb67cLTbzdm6EqiSRwpB4MJY4TGJFY/ac5qnIxERWK5gx1zBnwbJZffDSoS46hJMugoXrDbITEfX4gA==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -1186,7 +1186,7 @@ packages:
       lodash.castarray: 4.4.0
       lodash.get: 4.4.2
       lodash.set: 4.3.2
-      release-it: 15.9.1
+      release-it: 15.9.3
       semver: 7.3.8
     dev: true
 
@@ -1215,7 +1215,7 @@ packages:
       rollup: 3.20.2
       serialize-javascript: 6.0.1
       smob: 0.0.6
-      terser: 5.16.6
+      terser: 5.16.8
     dev: true
 
   /@rollup/plugin-typescript/11.0.0_b72j35qsjh4lu3mgicjyqmc4ve:
@@ -5380,7 +5380,7 @@ packages:
       figures: 5.0.0
       lodash: 4.17.21
       mute-stream: 1.0.0
-      ora: 6.2.0
+      ora: 6.3.0
       run-async: 2.4.1
       rxjs: 7.8.0
       string-width: 5.1.2
@@ -7457,8 +7457,8 @@ packages:
       wcwidth: 1.0.1
     dev: true
 
-  /ora/6.2.0:
-    resolution: {integrity: sha512-c1qb/1rdE+EFDYiLXh10VY459uMh7DN9zlgd8mZJLoeiPpYllN8eAOiih2Rkah5ywxRm5tHN5C9zPheDq8d1MA==}
+  /ora/6.3.0:
+    resolution: {integrity: sha512-1/D8uRFY0ay2kgBpmAwmSA404w4OoPVhHMqRqtjvrcK/dnzcEZxMJ+V4DUbyICu8IIVRclHcOf5wlD1tMY4GUQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dependencies:
       chalk: 5.2.0
@@ -8257,8 +8257,8 @@ packages:
     resolution: {integrity: sha512-QIRet3SYrGp0HUHO88jVskiG6seqUGC5iAG7AwI/BV4ypGcuqk9Du6YQBUOUqm9c8pw1eyLoIaONifRua1lsEQ==}
     dev: true
 
-  /release-it/15.9.1:
-    resolution: {integrity: sha512-qTAjTkaBZDRJM0j/je2MzNASuwhBXFn0GTqHB7MfLEe9rIdVk+xEwUphbhNemp+wuC7PuZucBulUbH2m3EokHg==}
+  /release-it/15.9.3:
+    resolution: {integrity: sha512-yFZTGJ9lH075zEAiVB4w58GgQ+bFR4by+eNClN3sdLtTLwbEm9VXrISt+8vO1fHDH83557Fns5ub1FuhAY/a3A==}
     engines: {node: '>=14.9'}
     hasBin: true
     dependencies:
@@ -8278,7 +8278,7 @@ packages:
       new-github-release-url: 2.0.0
       node-fetch: 3.3.1
       open: 9.0.0
-      ora: 6.2.0
+      ora: 6.3.0
       os-name: 5.1.0
       promise.allsettled: 1.0.6
       proxy-agent: 5.0.0
@@ -9286,8 +9286,8 @@ packages:
       source-map-support: 0.5.21
     dev: true
 
-  /terser/5.16.6:
-    resolution: {integrity: sha512-IBZ+ZQIA9sMaXmRZCUMDjNH0D5AQQfdn4WUjHL0+1lF4TP1IHRJbrhb6fNaXWikrYQTSkb7SLxkeXAiy1p7mbg==}
+  /terser/5.16.8:
+    resolution: {integrity: sha512-QI5g1E/ef7d+PsDifb+a6nnVgC4F22Bg6T0xrBrz6iloVB4PUkkunp6V8nzoOOZJIzjWVdAGqCdlKlhLq/TbIA==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
