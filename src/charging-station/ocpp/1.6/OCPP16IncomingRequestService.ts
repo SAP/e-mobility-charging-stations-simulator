@@ -1045,6 +1045,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       status: OCPP16FirmwareStatus.Downloaded,
     });
     chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloaded;
+    let wasTransactionsStarted = false;
     let transactionsStarted: boolean;
     do {
       let trxCount = 0;
@@ -1065,6 +1066,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         );
         await Utils.sleep(waitTime);
         transactionsStarted = true;
+        wasTransactionsStarted = true;
       } else {
         for (const connectorId of chargingStation.connectors.keys()) {
           if (
@@ -1087,7 +1089,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionsStarted = false;
       }
     } while (transactionsStarted);
-    await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+    !wasTransactionsStarted &&
+      (await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000));
     if (
       ChargingStationUtils.checkChargingStation(chargingStation, chargingStation.logPrefix()) ===
       false
