@@ -1,5 +1,5 @@
 {
-  "authorizationFile": "authorization-tags.json",
+  "idTagsFile": "idtags.json",
   "baseName": "CS-SIMU",
   "chargePointModel": "Simulator connectors",
   "chargePointVendor": "Ovomaltin",

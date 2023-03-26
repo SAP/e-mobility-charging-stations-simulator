@@ -1,7 +1,7 @@
 {
   "supervisionUrlOcppConfiguration": true,
   "supervisionUrlOcppKey": "ocppcentraladdress",
-  "authorizationFile": "authorization-tags.json",
+  "idTagsFile": "idtags.json",
   "baseName": "CS-EVLINK",
   "chargePointModel": "MONOBLOCK",
   "chargePointVendor": "Schneider Electric",

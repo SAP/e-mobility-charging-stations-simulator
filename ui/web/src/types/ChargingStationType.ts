@@ -39,7 +39,7 @@ export type ChargingStationInfo = {
   ocppStrictCompliance?: boolean;
   ocppPersistentConfiguration?: boolean;
   stationInfoPersistentConfiguration?: boolean;
-  authorizationFile?: string;
+  idTagsFile?: string;
   nameSuffix?: string;
   fixedName?: boolean;
   iccid?: string;

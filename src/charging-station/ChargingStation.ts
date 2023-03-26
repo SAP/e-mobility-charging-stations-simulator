@@ -164,16 +164,16 @@ export class ChargingStation {
   public logPrefix = (): string => {
     return Utils.logPrefix(
       ` ${
-        (Utils.isNotEmptyString(this?.stationInfo?.chargingStationId) &&
-          this?.stationInfo?.chargingStationId) ??
-        ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile()) ??
-        ''
+        (Utils.isNotEmptyString(this?.stationInfo?.chargingStationId)
+          ? this?.stationInfo?.chargingStationId
+          : ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())) ??
+        'Error at building log prefix'
       } |`
     );
   };
 
   public hasIdTags(): boolean {
-    const idTagsFile = ChargingStationUtils.getAuthorizationFile(this.stationInfo);
+    const idTagsFile = ChargingStationUtils.getIdTagsFile(this.stationInfo);
     return Utils.isNotEmptyArray(this.idTagsCache.getIdTags(idTagsFile));
   }
 
@@ -878,6 +878,18 @@ export class ChargingStation {
       stationTemplate,
       'supervisionUrl',
       'supervisionUrls'
+    );
+    ChargingStationUtils.warnDeprecatedTemplateKey(
+      stationTemplate,
+      'authorizationFile',
+      this.templateFile,
+      this.logPrefix(),
+      "Use 'idTagsFile' instead"
+    );
+    ChargingStationUtils.convertDeprecatedTemplateKey(
+      stationTemplate,
+      'authorizationFile',
+      'idTagsFile'
     );
     const stationInfo: ChargingStationInfo =
       ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);

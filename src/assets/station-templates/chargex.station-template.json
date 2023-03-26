@@ -1,5 +1,5 @@
 {
-  "authorizationFile": "authorization-tags.json",
+  "idTagsFile": "idtags.json",
   "baseName": "CS-CHARGEX",
   "chargePointModel": "Aqueduct 1.0",
   "chargePointVendor": "ChargeX GmbH",

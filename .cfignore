@@ -47,7 +47,7 @@
 *_REMOTE_*.txt
 *.md
 *.db
-*tags-template.*
+*idtags-template.*
 *config-template.*
 *cf-template.*
 manifest-*.yml

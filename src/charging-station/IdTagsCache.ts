@@ -32,7 +32,7 @@ export class IdTagsCache {
     connectorId: number
   ): string {
     const hashId = chargingStation.stationInfo.hashId;
-    const idTagsFile = ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo);
+    const idTagsFile = ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo);
     switch (distribution) {
       case IdTagDistribution.RANDOM:
         return this.getRandomIdTag(hashId, idTagsFile);
@@ -79,7 +79,7 @@ export class IdTagsCache {
   }
 
   private getConnectorAffinityIdTag(chargingStation: ChargingStation, connectorId: number): string {
-    const file = ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo);
+    const file = ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo);
     const idTags = this.getIdTags(file);
     const hashId = chargingStation.stationInfo.hashId;
     const addressableKey = file + hashId;

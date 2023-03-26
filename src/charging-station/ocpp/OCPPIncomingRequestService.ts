@@ -91,7 +91,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
 
   protected handleRequestClearCache(chargingStation: ChargingStation): ClearCacheResponse {
     chargingStation.idTagsCache.deleteIdTags(
-      ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
+      ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo)
     );
     return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
   }

@@ -322,13 +322,13 @@ export class Configuration {
     ) {
       console.error(
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key '${key}' usage in section '${sectionName}'${
-          logMsgToAppend.trim().length > 0 && `. ${logMsgToAppend}`
+          logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
         }}`
       );
     } else if (!Utils.isUndefined(Configuration.getConfig()[key])) {
       console.error(
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key '${key}' usage${
-          logMsgToAppend.trim().length > 0 && `. ${logMsgToAppend}`
+          logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
         }}`
       );
     }

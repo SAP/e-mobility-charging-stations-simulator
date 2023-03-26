@@ -742,7 +742,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             chargingStation.hasIdTags() === true &&
             Utils.isNotEmptyString(
               chargingStation.idTagsCache
-                .getIdTags(ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo))
+                .getIdTags(ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo))
                 ?.find((idTag) => idTag === commandPayload.idTag)
             )
           ) {

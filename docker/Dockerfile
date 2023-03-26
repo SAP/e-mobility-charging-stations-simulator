@@ -5,7 +5,7 @@ WORKDIR /usr/builder
 COPY .npmrc package.json pnpm-lock.yaml tsconfig.json rollup.config.mjs build-requirements.mjs skip-preinstall.cjs prepare.cjs ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
-COPY docker/authorization-tags.json ./src/assets/authorization-tags.json
+COPY docker/idtags.json ./src/assets/idtags.json
 RUN set -ex \
   && apk add --no-cache --virtual .gyp build-base python3 \
   && corepack enable \

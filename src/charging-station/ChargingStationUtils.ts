@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import chalk from 'chalk';
 import moment from 'moment';
 
 import type { ChargingStation } from './internal';
@@ -219,11 +220,11 @@ export class ChargingStationUtils {
     logMsgToAppend = ''
   ): void {
     if (!Utils.isUndefined(template[key])) {
-      logger.warn(
-        `${logPrefix} Deprecated template key '${key}' usage in file '${templateFile}'${
-          Utils.isNotEmptyString(logMsgToAppend) && `. ${logMsgToAppend}`
-        }`
-      );
+      const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
+        Utils.isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
+      }`;
+      logger.warn(`${logPrefix} ${logMsg}`);
+      console.warn(chalk.yellow(`${logMsg}`));
     }
   }
 
@@ -413,13 +414,13 @@ export class ChargingStationUtils {
     return defaultVoltageOut;
   }
 
-  public static getAuthorizationFile(stationInfo: ChargingStationInfo): string | undefined {
+  public static getIdTagsFile(stationInfo: ChargingStationInfo): string | undefined {
     return (
-      stationInfo.authorizationFile &&
+      stationInfo.idTagsFile &&
       path.join(
         path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
         'assets',
-        path.basename(stationInfo.authorizationFile)
+        path.basename(stationInfo.idTagsFile)
       )
     );
   }

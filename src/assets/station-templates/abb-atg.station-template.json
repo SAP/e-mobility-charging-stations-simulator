@@ -1,5 +1,5 @@
 {
-  "authorizationFile": "authorization-tags.json",
+  "idTagsFile": "idtags.json",
   "baseName": "CS-ABB",
   "chargePointModel": "MD_TERRA_53",
   "chargePointVendor": "ABB",

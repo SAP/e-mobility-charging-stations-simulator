@@ -67,8 +67,7 @@ export type ChargingStationTemplate = {
   ocppPersistentConfiguration?: boolean;
   stationInfoPersistentConfiguration?: boolean;
   wsOptions?: WsOptions;
-  // FIXME: rename to idTagFile
-  authorizationFile?: string;
+  idTagsFile?: string;
   baseName: string;
   nameSuffix?: string;
   fixedName?: boolean;
