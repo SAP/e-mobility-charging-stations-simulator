@@ -739,12 +739,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           let authorized = false;
           if (
             chargingStation.getLocalAuthListEnabled() === true &&
-            chargingStation.hasAuthorizedTags() === true &&
+            chargingStation.hasIdTags() === true &&
             Utils.isNotEmptyString(
-              chargingStation.authorizedTagsCache
-                .getAuthorizedTags(
-                  ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo)
-                )
+              chargingStation.idTagsCache
+                .getIdTags(ChargingStationUtils.getAuthorizationFile(chargingStation.stationInfo))
                 ?.find((idTag) => idTag === commandPayload.idTag)
             )
           ) {

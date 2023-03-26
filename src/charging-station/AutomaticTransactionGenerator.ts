@@ -2,7 +2,7 @@
 
 import { AsyncResource } from 'node:async_hooks';
 
-import { AuthorizedTagsCache, type ChargingStation, ChargingStationUtils } from './internal';
+import { type ChargingStation, ChargingStationUtils, IdTagsCache } from './internal';
 import { BaseError } from '../exception';
 // import { PerformanceStatistics } from '../performance';
 import { PerformanceStatistics } from '../performance/PerformanceStatistics';
@@ -33,7 +33,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   public readonly configuration: AutomaticTransactionGeneratorConfiguration;
   public started: boolean;
   private readonly chargingStation: ChargingStation;
-  private idTagIndex: number;
 
   private constructor(
     automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
@@ -43,7 +42,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     this.started = false;
     this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
-    this.idTagIndex = 0;
     this.connectorsStatus = new Map<number, Status>();
     this.initializeConnectorsStatus();
   }
@@ -323,8 +321,8 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     const measureId = 'StartTransaction with ATG';
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let startResponse: StartTransactionResponse;
-    if (this.chargingStation.hasAuthorizedTags()) {
-      const idTag = AuthorizedTagsCache.getInstance().getIdTag(
+    if (this.chargingStation.hasIdTags()) {
+      const idTag = IdTagsCache.getInstance().getIdTag(
         this.configuration?.idTagDistribution,
         this.chargingStation,
         connectorId

@@ -1,4 +1,4 @@
-export * from './AuthorizedTagsCache';
+export * from './IdTagsCache';
 export * from './AutomaticTransactionGenerator';
 export * from './Bootstrap';
 export * from './ChargingStation';

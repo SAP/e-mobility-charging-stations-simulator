@@ -10,11 +10,11 @@ import merge from 'just-merge';
 import WebSocket, { type RawData } from 'ws';
 
 import {
-  AuthorizedTagsCache,
   AutomaticTransactionGenerator,
   ChargingStationConfigurationUtils,
   ChargingStationUtils,
   ChargingStationWorkerBroadcastChannel,
+  IdTagsCache,
   MessageChannelUtils,
   SharedLRUCache,
 } from './internal';
@@ -103,7 +103,7 @@ export class ChargingStation {
   public stationInfo!: ChargingStationInfo;
   public started: boolean;
   public starting: boolean;
-  public authorizedTagsCache: AuthorizedTagsCache;
+  public idTagsCache: IdTagsCache;
   public automaticTransactionGenerator!: AutomaticTransactionGenerator | undefined;
   public ocppConfiguration!: ChargingStationOcppConfiguration | undefined;
   public wsConnection!: WebSocket | null;
@@ -141,7 +141,7 @@ export class ChargingStation {
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
     this.sharedLRUCache = SharedLRUCache.getInstance();
-    this.authorizedTagsCache = AuthorizedTagsCache.getInstance();
+    this.idTagsCache = IdTagsCache.getInstance();
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this);
 
     this.initialize();
@@ -172,12 +172,9 @@ export class ChargingStation {
     );
   };
 
-  public hasAuthorizedTags(): boolean {
-    return Utils.isNotEmptyArray(
-      this.authorizedTagsCache.getAuthorizedTags(
-        ChargingStationUtils.getAuthorizationFile(this.stationInfo)
-      )
-    );
+  public hasIdTags(): boolean {
+    const idTagsFile = ChargingStationUtils.getAuthorizationFile(this.stationInfo);
+    return Utils.isNotEmptyArray(this.idTagsCache.getIdTags(idTagsFile));
   }
 
   public getEnableStatistics(): boolean {

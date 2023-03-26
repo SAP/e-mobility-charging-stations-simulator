@@ -441,7 +441,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.getConnectorStatus(connectorId)?.transactionRemoteStarted === true &&
       chargingStation.getAuthorizeRemoteTxRequests() === true &&
       chargingStation.getLocalAuthListEnabled() === true &&
-      chargingStation.hasAuthorizedTags() &&
+      chargingStation.hasIdTags() &&
       chargingStation.getConnectorStatus(connectorId)?.idTagLocalAuthorized === false
     ) {
       logger.error(
