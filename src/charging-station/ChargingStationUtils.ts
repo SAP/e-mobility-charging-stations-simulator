@@ -66,12 +66,6 @@ export class ChargingStationUtils {
       ...(!Utils.isUndefined(stationTemplate.chargePointSerialNumberPrefix) && {
         chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix,
       }),
-      // FIXME?: Should a firmware version change always reference a new configuration file?
-      ...(!Utils.isUndefined(stationTemplate.firmwareVersion) && {
-        firmwareVersion: stationTemplate.firmwareVersion,
-      }),
-      ...(!Utils.isUndefined(stationTemplate.iccid) && { iccid: stationTemplate.iccid }),
-      ...(!Utils.isUndefined(stationTemplate.imsi) && { imsi: stationTemplate.imsi }),
       ...(!Utils.isUndefined(stationTemplate.meterSerialNumberPrefix) && {
         meterSerialNumber: stationTemplate.meterSerialNumberPrefix,
       }),
