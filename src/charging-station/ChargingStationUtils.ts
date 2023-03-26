@@ -212,30 +212,28 @@ export class ChargingStationUtils {
     return Configuration.getWorker().processType === WorkerProcessType.dynamicPool;
   }
 
-  public static warnDeprecatedTemplateKey(
-    template: ChargingStationTemplate,
-    key: string,
+  public static warnTemplateKeysDeprecation(
     templateFile: string,
-    logPrefix: string,
-    logMsgToAppend = ''
-  ): void {
-    if (!Utils.isUndefined(template[key])) {
-      const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
-        Utils.isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
-      }`;
-      logger.warn(`${logPrefix} ${logMsg}`);
-      console.warn(chalk.yellow(`${logMsg}`));
-    }
-  }
-
-  public static convertDeprecatedTemplateKey(
-    template: ChargingStationTemplate,
-    deprecatedKey: string,
-    key: string
-  ): void {
-    if (!Utils.isUndefined(template[deprecatedKey])) {
-      template[key] = template[deprecatedKey] as unknown;
-      delete template[deprecatedKey];
+    stationTemplate: ChargingStationTemplate,
+    logPrefix: string
+  ) {
+    const templateKeys: { key: string; deprecatedKey: string }[] = [
+      { key: 'supervisionUrls', deprecatedKey: 'supervisionUrl' },
+      { key: 'idTagsFile', deprecatedKey: 'authorizationFile' },
+    ];
+    for (const templateKey of templateKeys) {
+      ChargingStationUtils.warnDeprecatedTemplateKey(
+        stationTemplate,
+        templateKey.deprecatedKey,
+        templateFile,
+        logPrefix,
+        `Use '${templateKey.key}' instead`
+      );
+      ChargingStationUtils.convertDeprecatedTemplateKey(
+        stationTemplate,
+        templateKey.deprecatedKey,
+        templateKey.key
+      );
     }
   }
 
@@ -423,6 +421,33 @@ export class ChargingStationUtils {
         path.basename(stationInfo.idTagsFile)
       )
     );
+  }
+
+  private static warnDeprecatedTemplateKey(
+    template: ChargingStationTemplate,
+    key: string,
+    templateFile: string,
+    logPrefix: string,
+    logMsgToAppend = ''
+  ): void {
+    if (!Utils.isUndefined(template[key])) {
+      const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
+        Utils.isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
+      }`;
+      logger.warn(`${logPrefix} ${logMsg}`);
+      console.warn(chalk.yellow(`${logMsg}`));
+    }
+  }
+
+  private static convertDeprecatedTemplateKey(
+    template: ChargingStationTemplate,
+    deprecatedKey: string,
+    key: string
+  ): void {
+    if (!Utils.isUndefined(template[deprecatedKey])) {
+      template[key] = template[deprecatedKey] as unknown;
+      delete template[deprecatedKey];
+    }
   }
 
   /**

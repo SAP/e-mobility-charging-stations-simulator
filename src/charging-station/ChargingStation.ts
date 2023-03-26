@@ -854,27 +854,6 @@ export class ChargingStation {
     return template;
   }
 
-  private warnTemplateKeysDeprecation(stationTemplate: ChargingStationTemplate) {
-    const templateKeys: { key: string; deprecatedKey: string }[] = [
-      { key: 'supervisionUrls', deprecatedKey: 'supervisionUrl' },
-      { key: 'idTagsFile', deprecatedKey: 'authorizationFile' },
-    ];
-    for (const templateKey of templateKeys) {
-      ChargingStationUtils.warnDeprecatedTemplateKey(
-        stationTemplate,
-        templateKey.deprecatedKey,
-        this.templateFile,
-        this.logPrefix(),
-        `Use '${templateKey.key}' instead`
-      );
-      ChargingStationUtils.convertDeprecatedTemplateKey(
-        stationTemplate,
-        templateKey.deprecatedKey,
-        templateKey.key
-      );
-    }
-  }
-
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate | undefined = this.getTemplateFromFile();
     if (Utils.isNullOrUndefined(stationTemplate)) {
@@ -887,7 +866,11 @@ export class ChargingStation {
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    this.warnTemplateKeysDeprecation(stationTemplate);
+    ChargingStationUtils.warnTemplateKeysDeprecation(
+      this.templateFile,
+      stationTemplate,
+      this.logPrefix()
+    );
     const stationInfo: ChargingStationInfo =
       ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);
     stationInfo.hashId = ChargingStationUtils.getHashId(this.index, stationTemplate);
