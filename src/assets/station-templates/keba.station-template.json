@@ -1,4 +1,6 @@
 {
+  "supervisionUrlOcppConfiguration": true,
+  "supervisionUrlOcppKey": "CentralSystemAddress",
   "idTagsFile": "idtags.json",
   "baseName": "CS-KEBA",
   "chargePointModel": "KC-P30-ESS400C2-E0R",
