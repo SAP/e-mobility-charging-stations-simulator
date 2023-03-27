@@ -7,6 +7,8 @@
     "start": "pnpm run build && node start.js",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "clean:dist": "npx rimraf dist",
+    "clean:node_modules": "npx rimraf node_modules",
     "lint": "vue-cli-service lint",
     "lint:fix": "vue-cli-service lint --fix",
     "test": "vue-cli-service test:unit"
