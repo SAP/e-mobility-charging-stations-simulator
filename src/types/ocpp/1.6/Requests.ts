@@ -5,6 +5,7 @@ import type {
   OCPP16ChargePointStatus,
   OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
+  OCPP16ChargingRateUnitType,
   OCPP16DiagnosticsStatus,
   OCPP16StandardParametersKey,
   OCPP16VendorParametersKey,
@@ -30,6 +31,7 @@ export enum OCPP16IncomingRequestCommand {
   UNLOCK_CONNECTOR = 'UnlockConnector',
   GET_CONFIGURATION = 'GetConfiguration',
   CHANGE_CONFIGURATION = 'ChangeConfiguration',
+  GET_COMPOSITE_SCHEDULE = 'GetCompositeSchedule',
   SET_CHARGING_PROFILE = 'SetChargingProfile',
   CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
@@ -98,6 +100,12 @@ enum ResetType {
 
 export interface ResetRequest extends JsonObject {
   type: ResetType;
+}
+
+export interface OCPP16GetCompositeScheduleRequest extends JsonObject {
+  connectorId: number;
+  duration: number;
+  chargingRateUnit?: OCPP16ChargingRateUnitType;
 }
 
 export interface SetChargingProfileRequest extends JsonObject {

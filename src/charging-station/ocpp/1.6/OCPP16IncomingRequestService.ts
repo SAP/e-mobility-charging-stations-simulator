@@ -23,6 +23,7 @@ import {
   type ClearChargingProfileResponse,
   ErrorType,
   type GenericResponse,
+  GenericStatus,
   type GetConfigurationRequest,
   type GetConfigurationResponse,
   type GetDiagnosticsRequest,
@@ -40,6 +41,7 @@ import {
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
+  type OCPP16ChargingSchedule,
   type OCPP16ClearCacheRequest,
   type OCPP16DataTransferRequest,
   type OCPP16DataTransferResponse,
@@ -51,6 +53,8 @@ import {
   OCPP16FirmwareStatus,
   type OCPP16FirmwareStatusNotificationRequest,
   type OCPP16FirmwareStatusNotificationResponse,
+  type OCPP16GetCompositeScheduleRequest,
+  type OCPP16GetCompositeScheduleResponse,
   type OCPP16HeartbeatRequest,
   type OCPP16HeartbeatResponse,
   OCPP16IncomingRequestCommand,
@@ -102,6 +106,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
         this.handleRequestChangeConfiguration.bind(this),
+      ],
+      [
+        OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
+        this.handleRequestGetCompositeSchedule.bind(this),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
@@ -173,6 +181,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
         OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsRequest>(
           '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16GetCompositeScheduleRequest>(
+          '../../../assets/json-schemas/ocpp/1.6/GetCompositeSchedule.json',
           moduleName,
           'constructor'
         ),
@@ -566,6 +582,56 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       commandPayload.csChargingProfiles
     );
     return OCPPConstants.OCPP_SET_CHARGING_PROFILE_RESPONSE_ACCEPTED;
+  }
+
+  private handleRequestGetCompositeSchedule(
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16GetCompositeScheduleRequest
+  ): OCPP16GetCompositeScheduleResponse {
+    if (
+      OCPP16ServiceUtils.checkFeatureProfile(
+        chargingStation,
+        OCPP16SupportedFeatureProfiles.SmartCharging,
+        OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE
+      ) === false
+    ) {
+      return OCPPConstants.OCPP_RESPONSE_REJECTED;
+    }
+    if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to get composite schedule to a non existing connector Id ${
+          commandPayload.connectorId
+        }`
+      );
+      return OCPPConstants.OCPP_RESPONSE_REJECTED;
+    }
+    if (
+      Utils.isEmptyArray(
+        chargingStation.getConnectorStatus(commandPayload.connectorId)?.chargingProfiles
+      )
+    ) {
+      return OCPPConstants.OCPP_RESPONSE_REJECTED;
+    }
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + commandPayload.duration * 1000);
+    let compositeSchedule: OCPP16ChargingSchedule;
+    for (const chargingProfile of chargingStation.getConnectorStatus(commandPayload.connectorId)
+      .chargingProfiles) {
+      // FIXME: build the composite schedule including the local power limit, the stack level, the charging rate unit, etc.
+      if (
+        chargingProfile.chargingSchedule?.startSchedule >= startDate &&
+        chargingProfile.chargingSchedule?.startSchedule <= endDate
+      ) {
+        compositeSchedule = chargingProfile.chargingSchedule;
+        break;
+      }
+    }
+    return {
+      status: GenericStatus.Accepted,
+      scheduleStart: compositeSchedule?.startSchedule,
+      connectorId: commandPayload.connectorId,
+      chargingSchedule: compositeSchedule,
+    };
   }
 
   private handleRequestClearChargingProfile(

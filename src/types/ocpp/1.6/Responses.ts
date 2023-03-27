@@ -1,6 +1,8 @@
 import type {
   EmptyObject,
+  GenericStatus,
   JsonObject,
+  OCPP16ChargingSchedule,
   OCPPConfigurationKey,
   RegistrationStatusEnumType,
 } from '../../internal';
@@ -47,6 +49,13 @@ export enum OCPP16ChargingProfileStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   NOT_SUPPORTED = 'NotSupported',
+}
+
+export interface OCPP16GetCompositeScheduleResponse extends JsonObject {
+  status: GenericStatus;
+  connectorId?: number;
+  scheduleStart?: Date;
+  chargingSchedule?: OCPP16ChargingSchedule;
 }
 
 export interface SetChargingProfileResponse extends JsonObject {

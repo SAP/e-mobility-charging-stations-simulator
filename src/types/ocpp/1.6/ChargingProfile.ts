@@ -9,10 +9,10 @@ export interface OCPP16ChargingProfile extends JsonObject {
   recurrencyKind?: OCPP16RecurrencyKindType;
   validFrom?: Date;
   validTo?: Date;
-  chargingSchedule: ChargingSchedule;
+  chargingSchedule: OCPP16ChargingSchedule;
 }
 
-interface ChargingSchedule extends JsonObject {
+export interface OCPP16ChargingSchedule extends JsonObject {
   duration?: number;
   startSchedule?: Date;
   chargingRateUnit: OCPP16ChargingRateUnitType;

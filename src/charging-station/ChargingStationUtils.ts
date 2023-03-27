@@ -329,11 +329,12 @@ export class ChargingStationUtils {
     connectorId: number
   ): number | undefined {
     let limit: number, matchingChargingProfile: ChargingProfile;
-    let chargingProfiles: ChargingProfile[] = [];
     // Get charging profiles for connector and sort by stack level
-    chargingProfiles = chargingStation
-      .getConnectorStatus(connectorId)
-      ?.chargingProfiles?.sort((a, b) => b.stackLevel - a.stackLevel);
+    const chargingProfiles = Utils.cloneObject(
+      chargingStation
+        .getConnectorStatus(connectorId)
+        ?.chargingProfiles?.sort((a, b) => b.stackLevel - a.stackLevel) ?? []
+    );
     // Get profiles on connector 0
     if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
       chargingProfiles.push(
@@ -459,10 +460,16 @@ export class ChargingStationUtils {
     matchingChargingProfile: ChargingProfile;
   } | null {
     const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
+    const currentMoment = moment();
+    const currentDate = new Date();
     for (const chargingProfile of chargingProfiles) {
       // Set helpers
-      const currentMoment = moment();
       const chargingSchedule = chargingProfile.chargingSchedule;
+      if (!chargingSchedule?.startSchedule) {
+        logger.warn(
+          `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}`
+        );
+      }
       // Check type (recurring) and if it is already active
       // Adjust the daily recurring schedule to today
       if (
@@ -470,8 +477,12 @@ export class ChargingStationUtils {
         chargingProfile.recurrencyKind === RecurrencyKindType.DAILY &&
         currentMoment.isAfter(chargingSchedule.startSchedule)
       ) {
-        const currentDate = new Date();
-        chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule);
+        if (!(chargingSchedule?.startSchedule instanceof Date)) {
+          logger.warn(
+            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`
+          );
+          chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule);
+        }
         chargingSchedule.startSchedule.setFullYear(
           currentDate.getFullYear(),
           currentDate.getMonth(),

@@ -24,6 +24,7 @@ import {
   type OCPP16DataTransferResponse,
   type OCPP16DiagnosticsStatusNotificationResponse,
   type OCPP16FirmwareStatusNotificationResponse,
+  type OCPP16GetCompositeScheduleResponse,
   type OCPP16HeartbeatResponse,
   OCPP16IncomingRequestCommand,
   type OCPP16MeterValuesRequest,
@@ -202,6 +203,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationResponse>(
           '../../../assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16GetCompositeScheduleResponse>(
+          '../../../assets/json-schemas/ocpp/1.6/GetCompositeScheduleResponse.json',
           moduleName,
           'constructor'
         ),
