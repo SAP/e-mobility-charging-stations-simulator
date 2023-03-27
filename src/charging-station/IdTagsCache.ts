@@ -58,7 +58,7 @@ export class IdTagsCache {
 
   private getRandomIdTag(hashId: string, file: string): string {
     const idTags = this.getIdTags(file);
-    const addressableKey = this.getIdTagsCacheAddressableKey(file, hashId);
+    const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
       Math.floor(Utils.secureRandom() * idTags.length)
@@ -68,7 +68,7 @@ export class IdTagsCache {
 
   private getRoundRobinIdTag(hashId: string, file: string): string {
     const idTags = this.getIdTags(file);
-    const addressableKey = this.getIdTagsCacheAddressableKey(file, hashId);
+    const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
     const idTagIndex = this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0;
     const idTag = idTags[idTagIndex];
     this.idTagsCachesAddressableIndexes.set(
@@ -82,7 +82,7 @@ export class IdTagsCache {
     const file = ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo);
     const idTags = this.getIdTags(file);
     const hashId = chargingStation.stationInfo.hashId;
-    const addressableKey = this.getIdTagsCacheAddressableKey(file, hashId);
+    const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
       (chargingStation.index - 1 + (connectorId - 1)) % idTags.length
@@ -144,7 +144,7 @@ export class IdTagsCache {
     }
   }
 
-  private getIdTagsCacheAddressableKey(prefix: string, uid: string): string {
+  private getIdTagsCacheIndexesAddressableKey(prefix: string, uid: string): string {
     return `${prefix}${uid}`;
   }
 
