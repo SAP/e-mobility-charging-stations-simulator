@@ -81,8 +81,10 @@ export class IdTagsCache {
   private getConnectorAffinityIdTag(chargingStation: ChargingStation, connectorId: number): string {
     const file = ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo);
     const idTags = this.getIdTags(file);
-    const hashId = chargingStation.stationInfo.hashId;
-    const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
+    const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
+      file,
+      chargingStation.stationInfo.hashId
+    );
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
       (chargingStation.index - 1 + (connectorId - 1)) % idTags.length
