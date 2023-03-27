@@ -330,17 +330,16 @@ export class ChargingStationUtils {
   ): number | undefined {
     let limit: number, matchingChargingProfile: ChargingProfile;
     // Get charging profiles for connector and sort by stack level
-    const chargingProfiles = Utils.cloneObject(
-      chargingStation
-        .getConnectorStatus(connectorId)
-        ?.chargingProfiles?.sort((a, b) => b.stackLevel - a.stackLevel) ?? []
-    );
+    const chargingProfiles =
+      Utils.cloneObject(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)?.sort(
+        (a, b) => b.stackLevel - a.stackLevel
+      ) ?? [];
     // Get profiles on connector 0
     if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
       chargingProfiles.push(
-        ...chargingStation
-          .getConnectorStatus(0)
-          .chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel)
+        ...Utils.cloneObject(chargingStation.getConnectorStatus(0).chargingProfiles).sort(
+          (a, b) => b.stackLevel - a.stackLevel
+        )
       );
     }
     if (Utils.isNotEmptyArray(chargingProfiles)) {
