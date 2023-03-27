@@ -1,6 +1,16 @@
 # Changelog
 
-## [v1.2.0-0](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.96...v1.2.0-0)
+## [v1.2.0-1](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-0...v1.2.0-1)
+
+- feat: add initial support get composite schedule OCPP 1.6 command [`4118945`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/411894569d4a0333a4e38e911a178520a69448cd)
+- build(deps-dev): apply updates [`8481844`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/848184439a9a043977e0ccc07e9d28b97e0d7fc1)
+- refactor: rename an id tags cache method [`32e8c8a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/32e8c8a50f321cf046fc162f24421cd1d5589200)
+- refactor: remove unneeded intermediate variable in id tags cache code [`728e01f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/728e01f09f2b43946aab50eb2ed9673bf2d2daa3)
+- build(simulator): add some scripts to clean build artefacts [`e592ba1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e592ba1d134faa93bf2dd0261fdee0654fe26e2a)
+- build(ui): add some scripts to clean build artefacts [`a39e3a3`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a39e3a3d30ea9079b9e8b985ece56e1fa2ed8338)
+- feat: add supervision url configuration to Keba template [`6a37362`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6a37362a5465e593343e15a1df7657cb3b89c3d3)
+
+## [v1.2.0-0](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.1.96...v1.2.0-0) (2023-03-26)
 
 - build(ui): switch to pnpm [`603f101`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/603f1011d2931b5a5fa3214bb754e611d184ca99)
 - build(simulator): switch to pnpm [`881f450`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/881f450cfd904e73bb5953e4057f6d071bdf60f7)
@@ -21,6 +31,7 @@
 - refactor: rename a template key to a more sensible name [`e302df1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e302df1d4573ef07df7c44a210a34e429f571814)
 - test: setup to allow unit tests with stubbing [`21ece8a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/21ece8a16be20d8512c42ba36b24a9241a927e7b)
 - perf(simulator): optimize tags cache [`d6a62ad`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d6a62ad9d0be1d1f29530dc9bae59272d40efee7)
+- chore: version 1.2.0-0 [`6e2b000`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6e2b000669bd333572afd9a580e72b85a84e42a0)
 - build(deps-dev): apply updates [`31c3e59`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/31c3e5974bac277f9870a7a09f9dfa17c3ebd35e)
 - build(deps): apply updates [`b539dea`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b539deac3b86dc7683c6147ee54430e90f0c4564)
 - refactor(simulator): factor out template key deprecation handling [`d21c49d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d21c49d6524dd8c4cb29da3d0925a5994ac6feb1)
