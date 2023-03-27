@@ -136,7 +136,7 @@ export class OCPPServiceUtils {
       if (obj[key] instanceof Date) {
         (obj as JsonObject)[key] = (obj[key] as Date).toISOString();
       } else if (obj[key] !== null && typeof obj[key] === 'object') {
-        this.convertDateToISOString<T>(obj[key] as T);
+        OCPPServiceUtils.convertDateToISOString<T>(obj[key] as T);
       }
     }
   }
