@@ -58,8 +58,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - name: corepack enable
-        run: corepack enable
       - name: pnpm install
         run: |
           corepack enable
