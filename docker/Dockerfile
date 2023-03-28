@@ -9,6 +9,7 @@ COPY docker/idtags.json ./src/assets/idtags.json
 RUN set -ex \
   && apk add --no-cache --virtual .gyp build-base python3 \
   && corepack enable \
+  && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
   && pnpm install \
@@ -20,6 +21,7 @@ WORKDIR /usr/builder/webui
 COPY ui/web ./
 RUN set -ex \
   && corepack enable \
+  && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
   && pnpm install \

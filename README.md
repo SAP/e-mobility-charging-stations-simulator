@@ -34,10 +34,11 @@ brew install node
 
 ## Installation
 
-Enable corepack if not already done:
+Enable corepack if not already done and install latest pnpm version:
 
 ```shell
 corepack enable
+corepack prepare pnpm@latest --activate
 ```
 
 In the repository root, run the following command:
