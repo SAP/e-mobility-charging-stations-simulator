@@ -1,9 +1,20 @@
 # Changelog
 
-## [v1.2.0-1](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-0...v1.2.0-1)
+## [v1.2.0-2](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-1...v1.2.0-2)
+
+- build: switch to latest pnpm version with related formats [`1a662d2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1a662d2902d8ba4c41e55febda8a77f52d155a90)
+- build(deps-dev): apply updates [`6e3a781`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6e3a7811cb12b9854bbba11b1d94aad09db7da68)
+- build(deps-dev): apply update [`9a9aa23`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9a9aa23ab38a65181127ff552a1fb3711c754ce5)
+- fix: ensure charging profiles are deeply cloned before doing any [`66a62ea`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/66a62eacdeb0698d62a881ab41ca2d380b9a14f9)
+- chore: update copyright notice to 2023 [`a6609c8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a6609c86ed6ac21d51f1b1657d3c17dcdd55af85)
+- build: remove unneded step in CI [`513409f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/513409fa387e9f77dc7fe75698a09eb09484267e)
+- fix: avoid unscoped 'this' in static method [`b30ea3f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b30ea3f0e52c291362c3b0fc5dfa13c2696b9912)
+
+## [v1.2.0-1](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-0...v1.2.0-1) (2023-03-27)
 
 - feat: add initial support get composite schedule OCPP 1.6 command [`4118945`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/411894569d4a0333a4e38e911a178520a69448cd)
 - build(deps-dev): apply updates [`8481844`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/848184439a9a043977e0ccc07e9d28b97e0d7fc1)
+- chore: version 1.2.0-1 [`bdcf324`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/bdcf32422da3272d382d818de39dd768ec301358)
 - refactor: rename an id tags cache method [`32e8c8a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/32e8c8a50f321cf046fc162f24421cd1d5589200)
 - refactor: remove unneeded intermediate variable in id tags cache code [`728e01f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/728e01f09f2b43946aab50eb2ed9673bf2d2daa3)
 - build(simulator): add some scripts to clean build artefacts [`e592ba1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e592ba1d134faa93bf2dd0261fdee0654fe26e2a)
