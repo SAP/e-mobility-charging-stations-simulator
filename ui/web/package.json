@@ -2,6 +2,9 @@
   "name": "webui",
   "version": "0.1.1",
   "readme": "README.md",
+  "engines": {
+    "node": ">=16.9.0"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "start": "pnpm run build && node start.js",
