@@ -128,7 +128,7 @@
     "cross-env": "^7.0.3",
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-import-resolver-typescript": "^3.5.3",
+    "eslint-import-resolver-typescript": "^3.5.4",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-jsdoc": "^40.1.0",
     "eslint-plugin-n": "^15.7.0",
