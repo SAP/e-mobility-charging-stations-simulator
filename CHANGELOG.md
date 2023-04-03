@@ -1,10 +1,22 @@
 # Changelog
 
-## [v1.2.0-2](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-1...v1.2.0-2)
+## [v1.2.0-3](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-2...v1.2.0-3)
+
+- build(deps-dev): apply updates [`846008b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/846008bb7a42a48e65fb78ec3bf2ac27dda214fd)
+- build(deps-dev): apply updates [`11e56c5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/11e56c595bbdc088535bbb463f081d62428258f1)
+- build(deps-dev): apply updates [`1169786`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1169786c818a96621a189d42f950939785b34d7d)
+- build(deps-dev): apply updates [`bd7ebfa`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/bd7ebfa2a1ab5a5cf7970c4d860f46a16487bb16)
+- build(deps-dev): apply updates [`a1684ca`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a1684ca19d70bf948dd7a0a9b236f52e8f0a52fd)
+- build(deps-dev): apply updates [`7b0b6f5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7b0b6f5d307d0e3b14db403c349cc88ae5ca3f41)
+- build: ensure the mininum node version includes corepack [`43d5dd0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/43d5dd05e100aeb4a2b6b002cf7f97e6fe3fb38f)
+- refactor(simulator): simplify skip preinstall test [`cb3617b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/cb3617b088f3ab53f363f38782fe2ea35548d7d4)
+
+## [v1.2.0-2](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-1...v1.2.0-2) (2023-03-28)
 
 - build: switch to latest pnpm version with related formats [`1a662d2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1a662d2902d8ba4c41e55febda8a77f52d155a90)
 - build(deps-dev): apply updates [`6e3a781`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6e3a7811cb12b9854bbba11b1d94aad09db7da68)
 - build(deps-dev): apply update [`9a9aa23`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9a9aa23ab38a65181127ff552a1fb3711c754ce5)
+- chore: version 1.2.0-2 [`1c224d1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1c224d13cf2e6b7efa4eaaa360e7a4c8654fccb7)
 - fix: ensure charging profiles are deeply cloned before doing any [`66a62ea`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/66a62eacdeb0698d62a881ab41ca2d380b9a14f9)
 - chore: update copyright notice to 2023 [`a6609c8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a6609c86ed6ac21d51f1b1657d3c17dcdd55af85)
 - build: remove unneded step in CI [`513409f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/513409fa387e9f77dc7fe75698a09eb09484267e)
