@@ -2,8 +2,8 @@ lockfileVersion: '6.0'
 
 dependencies:
   core-js:
-    specifier: ^3.29.1
-    version: 3.29.1
+    specifier: ^3.30.0
+    version: 3.30.0
   finalhandler:
     specifier: ^1.2.0
     version: 1.2.0
@@ -41,7 +41,7 @@ devDependencies:
     version: 5.0.8
   '@vue/cli-plugin-babel':
     specifier: ~5.0.8
-    version: 5.0.8(@vue/cli-service@5.0.8)(core-js@3.29.1)(vue@3.2.47)
+    version: 5.0.8(@vue/cli-service@5.0.8)(core-js@3.30.0)(vue@3.2.47)
   '@vue/cli-plugin-eslint':
     specifier: ~5.0.8
     version: 5.0.8(@vue/cli-service@5.0.8)(eslint@8.37.0)
@@ -1419,7 +1419,7 @@ packages:
       babel-plugin-polyfill-corejs2: 0.3.3(@babel/core@7.21.4)
       babel-plugin-polyfill-corejs3: 0.6.0(@babel/core@7.21.4)
       babel-plugin-polyfill-regenerator: 0.4.1(@babel/core@7.21.4)
-      core-js-compat: 3.29.1
+      core-js-compat: 3.30.0
       semver: 6.3.0
     transitivePeerDependencies:
       - supports-color
@@ -2270,7 +2270,7 @@ packages:
       svg-tags: 1.0.0
     dev: true
 
-  /@vue/babel-preset-app@5.0.8(@babel/core@7.21.4)(core-js@3.29.1)(vue@3.2.47):
+  /@vue/babel-preset-app@5.0.8(@babel/core@7.21.4)(core-js@3.30.0)(vue@3.2.47):
     resolution: {integrity: sha512-yl+5qhpjd8e1G4cMXfORkkBlvtPCIgmRf3IYCWYDKIQ7m+PPa5iTm4feiNmCMD6yGqQWMhhK/7M3oWGL9boKwg==}
     peerDependencies:
       '@babel/core': '*'
@@ -2295,8 +2295,8 @@ packages:
       '@vue/babel-plugin-jsx': 1.1.1(@babel/core@7.21.4)
       '@vue/babel-preset-jsx': 1.4.0(@babel/core@7.21.4)(vue@3.2.47)
       babel-plugin-dynamic-import-node: 2.3.3
-      core-js: 3.29.1
-      core-js-compat: 3.29.1
+      core-js: 3.30.0
+      core-js-compat: 3.30.0
       semver: 7.3.8
       vue: 3.2.47
     transitivePeerDependencies:
@@ -2389,13 +2389,13 @@ packages:
     resolution: {integrity: sha512-KmtievE/B4kcXp6SuM2gzsnSd8WebkQpg3XaB6GmFh1BJGRqa1UiW9up7L/Q67uOdTigHxr5Ar2lZms4RcDjwQ==}
     dev: true
 
-  /@vue/cli-plugin-babel@5.0.8(@vue/cli-service@5.0.8)(core-js@3.29.1)(vue@3.2.47):
+  /@vue/cli-plugin-babel@5.0.8(@vue/cli-service@5.0.8)(core-js@3.30.0)(vue@3.2.47):
     resolution: {integrity: sha512-a4qqkml3FAJ3auqB2kN2EMPocb/iu0ykeELwed+9B1c1nQ1HKgslKMHMPavYx3Cd/QAx2mBD4hwKBqZXEI/CsQ==}
     peerDependencies:
       '@vue/cli-service': ^3.0.0 || ^4.0.0 || ^5.0.0-0
     dependencies:
       '@babel/core': 7.21.4
-      '@vue/babel-preset-app': 5.0.8(@babel/core@7.21.4)(core-js@3.29.1)(vue@3.2.47)
+      '@vue/babel-preset-app': 5.0.8(@babel/core@7.21.4)(core-js@3.30.0)(vue@3.2.47)
       '@vue/cli-service': 5.0.8(@babel/core@7.21.4)(vue@3.2.47)
       '@vue/cli-shared-utils': 5.0.8
       babel-loader: 8.3.0(@babel/core@7.21.4)(webpack@5.77.0)
@@ -3609,7 +3609,7 @@ packages:
     dependencies:
       '@babel/core': 7.21.4
       '@babel/helper-define-polyfill-provider': 0.3.3(@babel/core@7.21.4)
-      core-js-compat: 3.29.1
+      core-js-compat: 3.30.0
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4460,8 +4460,8 @@ packages:
       webpack: 5.77.0
     dev: true
 
-  /core-js-compat@3.29.1:
-    resolution: {integrity: sha512-QmchCua884D8wWskMX8tW5ydINzd8oSJVx38lx/pVkFGqztxt73GYre3pm/hyYq8bPf+MW5In4I/uRShFDsbrA==}
+  /core-js-compat@3.30.0:
+    resolution: {integrity: sha512-P5A2h/9mRYZFIAP+5Ab8ns6083IyVpSclU74UNvbGVQ8VM7n3n3/g2yF3AkKQ9NXz2O+ioxLbEWKnDtgsFamhg==}
     dependencies:
       browserslist: 4.21.5
     dev: true
@@ -4472,8 +4472,8 @@ packages:
     requiresBuild: true
     dev: true
 
-  /core-js@3.29.1:
-    resolution: {integrity: sha512-+jwgnhg6cQxKYIIjGtAHq2nwUOolo9eoFZ4sHfUH09BLXBgxnH4gA0zEd+t+BO2cNB8idaBtZFcFTRjQJRJmAw==}
+  /core-js@3.30.0:
+    resolution: {integrity: sha512-hQotSSARoNh1mYPi9O2YaWeiq/cEB95kOrFb4NCrO4RIFt1qqNpKsaE+vy/L3oiqvND5cThqXzUU3r9F7Efztg==}
     requiresBuild: true
 
   /core-util-is@1.0.3:
@@ -10713,6 +10713,11 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
+  /yargs-parser@20.2.9:
+    resolution: {integrity: sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w==}
+    engines: {node: '>=10'}
+    dev: true
+
   /yargs-unparser@2.0.0:
     resolution: {integrity: sha512-7pRTIA9Qc1caZ0bZ6RYRGbHJthJWuakf+WmHK0rVeLkNrrGhfoabBNdue6kdINI6r4if7ocq9aD/n7xwKOdzOA==}
     engines: {node: '>=10'}
@@ -10749,7 +10754,7 @@ packages:
       require-directory: 2.1.1
       string-width: 4.2.3
       y18n: 5.0.8
-      yargs-parser: 20.2.4
+      yargs-parser: 20.2.9
     dev: true
 
   /yauzl@2.10.0:
