@@ -47,8 +47,8 @@ dependencies:
     specifier: ^5.1.0
     version: 5.1.0
   poolifier:
-    specifier: 2.4.0-2
-    version: 2.4.0-2
+    specifier: ^2.4.0-3
+    version: 2.4.0-3
   proper-lockfile:
     specifier: ^4.1.2
     version: 4.1.2
@@ -3470,8 +3470,8 @@ packages:
     resolution: {integrity: sha512-hsBd2qSVCRE+5PmNdHt1uzyrFu5d3RwmFDKzyNZMFq/EwDNJF7Ee5+D5oEKF0hU6LhtoUF1macFvOe4AskQC1Q==}
     dev: true
 
-  /degenerator@3.0.2:
-    resolution: {integrity: sha512-c0mef3SNQo56t6urUU6tdQAs+ThoD0o9B9MJ8HEt7NQcGEILCRFqQb7ZbP9JAv+QF1Ky5plydhMR/IrqWDm+TQ==}
+  /degenerator@3.0.3:
+    resolution: {integrity: sha512-FTq/qYMeBJACu1gHcXJvzsRBTK6aw5zWCYbEnIOyamOt5UJufWJRQ5XfDb6OuayfJWvmWAHgcZyt43vm/hbj7g==}
     engines: {node: '>= 6'}
     dependencies:
       ast-types: 0.13.4
@@ -7541,7 +7541,7 @@ packages:
     resolution: {integrity: sha512-cy7u00ko2KVgBAjuhevqpPeHIkCIqPe1v24cydhWjmeuzaBfmUWFCZJ1iAh5TuVzVZoUzXIW7K8sMYOZ84uZ9Q==}
     engines: {node: '>= 8'}
     dependencies:
-      degenerator: 3.0.2
+      degenerator: 3.0.3
       ip: 1.1.8
       netmask: 2.0.2
     dev: true
@@ -7728,8 +7728,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.4.0-2:
-    resolution: {integrity: sha512-IxzGRyQQId5hUlvyyntPzXbtuQpDo9qgYEoytb3AZX9v5HGwRfne69V8uEQu2Ftlx6JM94ge0W5DSb7//k1nMA==}
+  /poolifier@2.4.0-3:
+    resolution: {integrity: sha512-dEgoBsaBfk8iDR2Oit27yQWEvAh3yh0pw7+uodv0oYk68J8yTebH13ACsj2A9OpQJTuWTL75Ptz0OfOmxetnaw==}
     engines: {node: '>=16.0.0'}
     requiresBuild: true
     dev: false
