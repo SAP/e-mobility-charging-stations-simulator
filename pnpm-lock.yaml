@@ -47,8 +47,8 @@ dependencies:
     specifier: ^5.1.0
     version: 5.1.0
   poolifier:
-    specifier: ^2.4.0-3
-    version: 2.4.0-3
+    specifier: ^2.4.0
+    version: 2.4.0
   proper-lockfile:
     specifier: ^4.1.2
     version: 4.1.2
@@ -99,8 +99,8 @@ devDependencies:
     specifier: ^0.4.0
     version: 0.4.0(rollup@3.20.2)
   '@rollup/plugin-typescript':
-    specifier: ^11.0.0
-    version: 11.0.0(rollup@3.20.2)(tslib@2.5.0)(typescript@5.0.3)
+    specifier: ^11.1.0
+    version: 11.1.0(rollup@3.20.2)(tslib@2.5.0)(typescript@5.0.3)
   '@types/mocha':
     specifier: ^10.0.1
     version: 10.0.1
@@ -891,7 +891,7 @@ packages:
       dotenv: 16.0.3
       fs-extra: 11.1.0
       globby: 11.1.0
-      mikro-orm: 5.6.15
+      mikro-orm: 5.6.16
       reflect-metadata: 0.1.13
 
   /@mikro-orm/knex@5.6.15(@mikro-orm/core@5.6.15)(sqlite3@5.1.6):
@@ -1246,8 +1246,8 @@ packages:
       terser: 5.16.8
     dev: true
 
-  /@rollup/plugin-typescript@11.0.0(rollup@3.20.2)(tslib@2.5.0)(typescript@5.0.3):
-    resolution: {integrity: sha512-goPyCWBiimk1iJgSTgsehFD5OOFHiAknrRJjqFCudcW8JtWiBlK284Xnn4flqMqg6YAjVG/EE+3aVzrL5qNSzQ==}
+  /@rollup/plugin-typescript@11.1.0(rollup@3.20.2)(tslib@2.5.0)(typescript@5.0.3):
+    resolution: {integrity: sha512-86flrfE+bSHB69znnTV6kVjkncs2LBMhcTCyxWgRxLyfXfQrxg4UwlAqENnjrrxnSNS/XKCDJCl8EkdFJVHOxw==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.14.0||^3.0.0
@@ -2393,8 +2393,8 @@ packages:
       xtend: 4.0.2
     dev: true
 
-  /bson@5.1.0:
-    resolution: {integrity: sha512-FEecNHkhYRBe7X9KDkdG12xNuz5VHGeH6mCE0B5sBmYtiR/Ux/9vUH/v4NUoBCDr6NuEhvahjoLiiRogptVW0A==}
+  /bson@5.2.0:
+    resolution: {integrity: sha512-HevkSpDbpUfsrHWmWiAsNavANKYIErV2ePXllp1bwq5CDreAaFVj6RVlZpJnxK4WWDCJ/5jMUpaY6G526q3Hjg==}
     engines: {node: '>=14.20.1'}
     dev: false
 
@@ -6556,8 +6556,8 @@ packages:
       braces: 3.0.2
       picomatch: 2.3.1
 
-  /mikro-orm@5.6.15:
-    resolution: {integrity: sha512-DlErpPXJ1gOqbDWgRXq5yEuhuOZP5QXC9EoP8n0OL8klB/Nm/qNRN0ATe0+9TyYdQHNe8BdpPMTwDee56VzdVA==}
+  /mikro-orm@5.6.16:
+    resolution: {integrity: sha512-HgG079qA5hWgGWlq9u3BjgE3ynGnDFsGRtvFhgo6W3Itkz46SsQ4oeQxRcAetd8mj/qM4SOLuy0k71pI6h0PkQ==}
     engines: {node: '>= 14.0.0'}
 
   /miller-rabin@4.0.1:
@@ -6927,7 +6927,7 @@ packages:
       snappy:
         optional: true
     dependencies:
-      bson: 5.1.0
+      bson: 5.2.0
       mongodb-connection-string-url: 2.6.0
       socks: 2.7.1
     optionalDependencies:
@@ -7728,8 +7728,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.4.0-3:
-    resolution: {integrity: sha512-dEgoBsaBfk8iDR2Oit27yQWEvAh3yh0pw7+uodv0oYk68J8yTebH13ACsj2A9OpQJTuWTL75Ptz0OfOmxetnaw==}
+  /poolifier@2.4.0:
+    resolution: {integrity: sha512-XKnm9aW9ld4KMveTwtz32sOZUwo2Q1htgyIs8vcptrvM46C0zvwuJbeARK8JaYXV8RDprG0auRMyz0HPoM9pRw==}
     engines: {node: '>=16.0.0'}
     requiresBuild: true
     dev: false
