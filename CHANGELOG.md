@@ -1,6 +1,12 @@
 # Changelog
 
-## [v1.2.0-3](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-2...v1.2.0-3)
+## [v1.2.0](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-3...v1.2.0)
+
+- build(deps): apply updates [`956c1ea`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/956c1ea3bbb788cb09579e72e120db20a2fbbfec)
+- build(deps-dev): apply updates [`ab8e7b9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ab8e7b973211ca783f06b74fa7bdc5f5ec2e0d30)
+- build: refine release-it configuration [`f268f49`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f268f496c31ac32077021c98a2a22232f8d77b29)
+
+## [v1.2.0-3](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-2...v1.2.0-3) (2023-04-03)
 
 - build(deps-dev): apply updates [`846008b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/846008bb7a42a48e65fb78ec3bf2ac27dda214fd)
 - build(deps-dev): apply updates [`11e56c5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/11e56c595bbdc088535bbb463f081d62428258f1)
@@ -8,6 +14,7 @@
 - build(deps-dev): apply updates [`bd7ebfa`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/bd7ebfa2a1ab5a5cf7970c4d860f46a16487bb16)
 - build(deps-dev): apply updates [`a1684ca`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a1684ca19d70bf948dd7a0a9b236f52e8f0a52fd)
 - build(deps-dev): apply updates [`7b0b6f5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7b0b6f5d307d0e3b14db403c349cc88ae5ca3f41)
+- chore: version 1.2.0-3 [`48e450a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/48e450aa21d6d08f632f70996bcb24b0be5078c6)
 - build: ensure the mininum node version includes corepack [`43d5dd0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/43d5dd05e100aeb4a2b6b002cf7f97e6fe3fb38f)
 - refactor(simulator): simplify skip preinstall test [`cb3617b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/cb3617b088f3ab53f363f38782fe2ea35548d7d4)
 
