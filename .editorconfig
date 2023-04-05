@@ -9,7 +9,7 @@ insert_final_newline = true
 end_of_line = lf
 max_line_length = 100
 
-[*.ts{,x}]
+[*.{ts{,x},js{,x},cjs,mjs}]
 quote_type = single
 
 [*.md]
