@@ -1,11 +1,16 @@
 # Changelog
 
-## [v1.2.1](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0...v1.2.1)
+## [v1.2.2](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.1...v1.2.2)
+
+- build(deps): apply updates [`1ec93f5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1ec93f5cf771fbc548cdfdc0ef64c3f378d07c89)
+
+## [v1.2.1](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0...v1.2.1) (2023-04-07)
 
 - build(deps-dev): apply updates [`e88cc46`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e88cc460a4a2f66b9b1276413cb1d20463b672e2)
 - build(deps): apply updates [`89787c9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/89787c9952082d0f86ce0ac4207dde4f67b42752)
 - build(deps): apply updates [`62e69a6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/62e69a6bd0e8386d9a0264621af7f9ed7d2abc28)
 - refactor(simulator): use helper for undefined or null checks [`9bb1159`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9bb1159e3a17ace0e8502e7c4e727219a2b033f2)
+- chore: version 1.2.1 [`09ae1fb`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/09ae1fb2ee859a4ab47f742962b0403416c70672)
 - build(deps): apply updates [`9d46a35`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9d46a358811e3b3b8da407a045ea733cf70e04dd)
 - build: refine editorconfig [`a05aac0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a05aac035bd2d168b634fdd3246faa3f3be3dd7f)
 
