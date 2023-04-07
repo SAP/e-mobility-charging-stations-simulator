@@ -1,9 +1,19 @@
 # Changelog
 
-## [v1.2.0](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-3...v1.2.0)
+## [v1.2.1](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0...v1.2.1)
+
+- build(deps-dev): apply updates [`e88cc46`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e88cc460a4a2f66b9b1276413cb1d20463b672e2)
+- build(deps): apply updates [`89787c9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/89787c9952082d0f86ce0ac4207dde4f67b42752)
+- build(deps): apply updates [`62e69a6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/62e69a6bd0e8386d9a0264621af7f9ed7d2abc28)
+- refactor(simulator): use helper for undefined or null checks [`9bb1159`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9bb1159e3a17ace0e8502e7c4e727219a2b033f2)
+- build(deps): apply updates [`9d46a35`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9d46a358811e3b3b8da407a045ea733cf70e04dd)
+- build: refine editorconfig [`a05aac0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a05aac035bd2d168b634fdd3246faa3f3be3dd7f)
+
+## [v1.2.0](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-3...v1.2.0) (2023-04-04)
 
 - build(deps): apply updates [`956c1ea`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/956c1ea3bbb788cb09579e72e120db20a2fbbfec)
 - build(deps-dev): apply updates [`ab8e7b9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ab8e7b973211ca783f06b74fa7bdc5f5ec2e0d30)
+- chore: version 1.2.0 [`9648ade`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9648adece19479aaa00c81990dbc66ca817403a4)
 - build: refine release-it configuration [`f268f49`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f268f496c31ac32077021c98a2a22232f8d77b29)
 
 ## [v1.2.0-3](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.0-2...v1.2.0-3) (2023-04-03)
