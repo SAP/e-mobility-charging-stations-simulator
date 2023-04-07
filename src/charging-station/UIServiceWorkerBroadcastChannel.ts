@@ -6,7 +6,7 @@ import {
   type ResponsePayload,
   ResponseStatus,
 } from '../types';
-import { logger } from '../utils';
+import { Utils, logger } from '../utils';
 
 const moduleName = 'UIServiceWorkerBroadcastChannel';
 
@@ -69,7 +69,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       status: responsesStatus,
       hashIdsSucceeded: this.responses
         .get(uuid)
-        ?.responses.filter(({ hashId }) => hashId !== undefined)
+        ?.responses.filter(({ hashId }) => !Utils.isNullOrUndefined(hashId))
         .map(({ status, hashId }) => {
           if (status === ResponseStatus.SUCCESS) {
             return hashId;
@@ -78,7 +78,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: this.responses
           .get(uuid)
-          ?.responses.filter(({ hashId }) => hashId !== undefined)
+          ?.responses.filter(({ hashId }) => !Utils.isNullOrUndefined(hashId))
           .map(({ status, hashId }) => {
             if (status === ResponseStatus.FAILURE) {
               return hashId;
@@ -88,7 +88,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: this.responses
           .get(uuid)
-          ?.responses.filter((response) => response !== undefined)
+          ?.responses.filter((response) => !Utils.isNullOrUndefined(response))
           .map((response) => {
             if (response.status === ResponseStatus.FAILURE) {
               return response;

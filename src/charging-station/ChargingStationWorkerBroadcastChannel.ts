@@ -258,12 +258,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
     const [uuid, command, requestPayload] = validatedMessageEvent.data as BroadcastChannelRequest;
     if (
-      requestPayload?.hashIds !== undefined &&
+      !Utils.isNullOrUndefined(requestPayload?.hashIds) &&
       requestPayload?.hashIds?.includes(this.chargingStation.stationInfo.hashId) === false
     ) {
       return;
     }
-    if (requestPayload?.hashId !== undefined) {
+    if (!Utils.isNullOrUndefined(requestPayload?.hashId)) {
       logger.error(
         `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' array instead`
       );
@@ -274,8 +274,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     try {
       commandResponse = await this.commandHandler(command, requestPayload);
       if (
-        commandResponse === undefined ||
-        commandResponse === null ||
+        Utils.isNullOrUndefined(commandResponse) ||
         Utils.isEmptyObject(commandResponse as CommandResponse)
       ) {
         responsePayload = {

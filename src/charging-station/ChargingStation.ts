@@ -1320,8 +1320,7 @@ export class ChargingStation {
       }
       if (
         connectorId > 0 &&
-        (this.getConnectorStatus(connectorId)?.transactionStarted === undefined ||
-          this.getConnectorStatus(connectorId)?.transactionStarted === null)
+        Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionStarted)
       ) {
         this.initializeConnectorStatus(connectorId);
       }

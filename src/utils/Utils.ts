@@ -191,7 +191,7 @@ export class Utils {
   }
 
   public static isCFEnvironment(): boolean {
-    return process.env.VCAP_APPLICATION !== undefined;
+    return !Utils.isNullOrUndefined(process.env.VCAP_APPLICATION);
   }
 
   public static isIterable<T>(obj: T): boolean {

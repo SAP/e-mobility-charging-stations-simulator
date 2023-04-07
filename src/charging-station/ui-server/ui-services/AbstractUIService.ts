@@ -98,7 +98,7 @@ export abstract class AbstractUIService {
       };
     } finally {
       // Send response for payload not forwarded to broadcast channel
-      if (responsePayload !== undefined) {
+      if (!Utils.isNullOrUndefined(responsePayload)) {
         this.sendResponse(messageId, responsePayload);
       }
     }
@@ -151,7 +151,7 @@ export abstract class AbstractUIService {
   ): void {
     if (Utils.isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
-        .filter((hashId) => hashId !== undefined)
+        .filter((hashId) => !Utils.isNullOrUndefined(hashId))
         .map((hashId) => {
           if (this.uiServer.chargingStations.has(hashId) === true) {
             return hashId;
