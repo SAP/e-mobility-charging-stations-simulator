@@ -33,7 +33,7 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   }
 
   get size(): number {
-    return this.pool.workers.length;
+    return this.pool.workerNodes.length;
   }
 
   get maxElementsPerWorker(): number | undefined {
