@@ -1,9 +1,14 @@
 # Changelog
 
-## [v1.2.3](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.2...v1.2.3)
+## [v1.2.4](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.3...v1.2.4)
+
+- fix: reference poolifier pool property [`4597fdc`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4597fdc580a3a20384ecef821fe781a1099d733f)
+
+## [v1.2.3](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.2...v1.2.3) (2023-04-09)
 
 - build(deps-dev): apply updates [`a7bb184`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a7bb184512dd064b5da4dc125d652b6b40ceffee)
 - build(deps): apply updates [`2beeb6d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2beeb6d98a5749ce94666482783a6034b7b5430d)
+- chore: version 1.2.3 [`9d8360d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9d8360d85d76f2b36c08bb0e554cd46d26bd253c)
 - fix: strict number check [`260f9dc`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/260f9dcc04f0680f7ef3f01d859a1f2fa748c07c)
 
 ## [v1.2.2](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.1...v1.2.2) (2023-04-07)
