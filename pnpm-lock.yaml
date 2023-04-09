@@ -47,8 +47,8 @@ dependencies:
     specifier: ^5.2.0
     version: 5.2.0
   poolifier:
-    specifier: ^2.4.4
-    version: 2.4.4
+    specifier: ^2.4.5
+    version: 2.4.5
   proper-lockfile:
     specifier: ^4.1.2
     version: 4.1.2
@@ -153,8 +153,8 @@ devDependencies:
     specifier: ^2.27.5
     version: 2.27.5(@typescript-eslint/parser@5.57.1)(eslint-import-resolver-typescript@3.5.5)(eslint@8.38.0)
   eslint-plugin-jsdoc:
-    specifier: ^40.1.1
-    version: 40.1.1(eslint@8.38.0)
+    specifier: ^40.1.2
+    version: 40.1.2(eslint@8.38.0)
   eslint-plugin-n:
     specifier: ^15.7.0
     version: 15.7.0(eslint@8.38.0)
@@ -687,7 +687,7 @@ packages:
     resolution: {integrity: sha512-zBp2myVvBHp1UaJsNTyS6q4UDKT7eRiqTS4oNTS6VQMd6mpxYOdbeK4pY279cDCdakGy6hG0J3ejoXZVsPwHqw==}
     dependencies:
       chalk: 4.1.2
-      figlet: 1.5.2
+      figlet: 1.6.0
       parent-require: 1.0.0
     dev: true
 
@@ -4048,8 +4048,8 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-jsdoc@40.1.1(eslint@8.38.0):
-    resolution: {integrity: sha512-KxrQCq9pPt7LNeDBlLlnuJMpDFZnEQTs4e25NrT4u5cWmPw2P7F03F2qwPz0GMdlRZTyMOofuPAdiWytvPubvA==}
+  /eslint-plugin-jsdoc@40.1.2(eslint@8.38.0):
+    resolution: {integrity: sha512-U4Kt42OVjF0EXOWPEc8pjanT8O1ULvILwgA5k87CnhrCKG4xaJ8Sjsb6CWgDtaemOywN06u86duKU1yMaBp7IQ==}
     engines: {node: ^14 || ^16 || ^17 || ^18 || ^19}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
@@ -4420,9 +4420,10 @@ packages:
       web-streams-polyfill: 3.2.1
     dev: true
 
-  /figlet@1.5.2:
-    resolution: {integrity: sha512-WOn21V8AhyE1QqVfPIVxe3tupJacq1xGkPTB4iagT6o+P2cAgEOOwIxMftr4+ZCTI6d551ij9j61DFr0nsP2uQ==}
+  /figlet@1.6.0:
+    resolution: {integrity: sha512-31EQGhCEITv6+hi2ORRPyn3bulaV9Fl4xOdR169cBzH/n1UqcxsiSB/noo6SJdD7Kfb1Ljit+IgR1USvF/XbdA==}
     engines: {node: '>= 0.4.0'}
+    hasBin: true
     dev: true
 
   /figures@2.0.0:
@@ -7746,8 +7747,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.4.4:
-    resolution: {integrity: sha512-kPzCuva//h+gW9pdpGzdqG5Y8WoueXxQkJ0J1YiIuAKRljCjuMJ/XCYpLOyp0rHTKvXT5mrA5m+fEuVlT2EESg==}
+  /poolifier@2.4.5:
+    resolution: {integrity: sha512-SPpsYF6aXNJm3LHM26HaEwmE64uMSUlsqAeGxLLsGec5STaRRm0Su0mwsF57llLEI8EpM7f4AmrkbGosrc7ikA==}
     engines: {node: '>=16.0.0'}
     requiresBuild: true
     dev: false
