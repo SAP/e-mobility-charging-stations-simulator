@@ -2,6 +2,7 @@ import type { SampledValue } from './internal';
 
 export type SampledValueTemplate = SampledValue & {
   fluctuationPercent?: number;
+  minimumValue?: number;
 };
 
 export type MeasurandPerPhaseSampledValueTemplates = {

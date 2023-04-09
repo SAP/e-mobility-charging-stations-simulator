@@ -68,24 +68,32 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       OCPP16MeterValueMeasurand.STATE_OF_CHARGE
     );
     if (socSampledValueTemplate) {
+      const socMaximumValue = 100;
+      const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0;
       const socSampledValueTemplateValue = socSampledValueTemplate.value
         ? Utils.getRandomFloatFluctuatedRounded(
             parseInt(socSampledValueTemplate.value),
             socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
-        : Utils.getRandomInteger(100);
+        : Utils.getRandomInteger(socMaximumValue, socMinimumValue);
       meterValue.sampledValue.push(
         OCPP16ServiceUtils.buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue)
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
-      if (Utils.convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > 100 || debug) {
+      if (
+        Utils.convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > socMaximumValue ||
+        Utils.convertToInt(meterValue.sampledValue[sampledValuesIndex].value) < socMinimumValue ||
+        debug
+      ) {
         logger.error(
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
+          }: connectorId ${connectorId}, transaction ${
+            connector?.transactionId
+          }, value: ${socMinimumValue}/${
             meterValue.sampledValue[sampledValuesIndex].value
-          }/100`
+          }/${socMaximumValue}}`
         );
       }
     }
@@ -241,6 +249,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       const connectorMaximumPowerPerPhase = Math.round(
         connectorMaximumAvailablePower / chargingStation.getNumberOfPhases()
       );
+      const connectorMinimumPower = Math.round(powerSampledValueTemplate.minimumValue) ?? 0;
+      const connectorMinimumPowerPerPhase = Math.round(
+        connectorMinimumPower / chargingStation.getNumberOfPhases()
+      );
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
           if (chargingStation.getNumberOfPhases() === 3) {
@@ -291,15 +303,24 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             powerMeasurandValues.L1 =
               phase1FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
-              Utils.getRandomFloatRounded(connectorMaximumPowerPerPhase / unitDivider);
+              Utils.getRandomFloatRounded(
+                connectorMaximumPowerPerPhase / unitDivider,
+                connectorMinimumPowerPerPhase / unitDivider
+              );
             powerMeasurandValues.L2 =
               phase2FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
-              Utils.getRandomFloatRounded(connectorMaximumPowerPerPhase / unitDivider);
+              Utils.getRandomFloatRounded(
+                connectorMaximumPowerPerPhase / unitDivider,
+                connectorMinimumPowerPerPhase / unitDivider
+              );
             powerMeasurandValues.L3 =
               phase3FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
-              Utils.getRandomFloatRounded(connectorMaximumPowerPerPhase / unitDivider);
+              Utils.getRandomFloatRounded(
+                connectorMaximumPowerPerPhase / unitDivider,
+                connectorMinimumPowerPerPhase / unitDivider
+              );
           } else {
             powerMeasurandValues.L1 = powerSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(
@@ -311,7 +332,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   powerSampledValueTemplate.fluctuationPercent ??
                     Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
-              : Utils.getRandomFloatRounded(connectorMaximumPower / unitDivider);
+              : Utils.getRandomFloatRounded(
+                  connectorMaximumPower / unitDivider,
+                  connectorMinimumPower / unitDivider
+                );
             powerMeasurandValues.L2 = 0;
             powerMeasurandValues.L3 = 0;
           }
@@ -331,7 +355,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 powerSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               )
-            : Utils.getRandomFloatRounded(connectorMaximumPower / unitDivider);
+            : Utils.getRandomFloatRounded(
+                connectorMaximumPower / unitDivider,
+                connectorMinimumPower / unitDivider
+              );
           break;
         default:
           logger.error(`${chargingStation.logPrefix()} ${errMsg}`);
@@ -345,16 +372,21 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
       const connectorMaximumPowerRounded = Utils.roundTo(connectorMaximumPower / unitDivider, 2);
+      const connectorMinimumPowerRounded = Utils.roundTo(connectorMinimumPower / unitDivider, 2);
       if (
         Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) >
           connectorMaximumPowerRounded ||
+        Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) <
+          connectorMinimumPowerRounded ||
         debug
       ) {
         logger.error(
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
+          }: connectorId ${connectorId}, transaction ${
+            connector?.transactionId
+          }, value: ${connectorMinimumPowerRounded}/${
             meterValue.sampledValue[sampledValuesIndex].value
           }/${connectorMaximumPowerRounded}`
         );
@@ -379,9 +411,15 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           connectorMaximumPowerPerPhase / unitDivider,
           2
         );
+        const connectorMinimumPowerPerPhaseRounded = Utils.roundTo(
+          connectorMinimumPowerPerPhase / unitDivider,
+          2
+        );
         if (
           Utils.convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) >
             connectorMaximumPowerPerPhaseRounded ||
+          Utils.convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) <
+            connectorMinimumPowerPerPhaseRounded ||
           debug
         ) {
           logger.error(
@@ -390,7 +428,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
+            }, connectorId ${connectorId}, transaction ${
+              connector?.transactionId
+            }, value: ${connectorMinimumPowerPerPhaseRounded}/${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
             }/${connectorMaximumPowerPerPhaseRounded}`
           );
@@ -443,6 +483,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       const currentMeasurandValues: MeasurandValues = {} as MeasurandValues;
       const connectorMaximumAvailablePower =
         chargingStation.getConnectorMaximumAvailablePower(connectorId);
+      const connectorMinimumAmperage = currentSampledValueTemplate.minimumValue ?? 0;
       let connectorMaximumAmperage: number;
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
@@ -499,15 +540,15 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             currentMeasurandValues.L1 =
               phase1FluctuatedValue ??
               defaultFluctuatedAmperagePerPhase ??
-              Utils.getRandomFloatRounded(connectorMaximumAmperage);
+              Utils.getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
             currentMeasurandValues.L2 =
               phase2FluctuatedValue ??
               defaultFluctuatedAmperagePerPhase ??
-              Utils.getRandomFloatRounded(connectorMaximumAmperage);
+              Utils.getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
             currentMeasurandValues.L3 =
               phase3FluctuatedValue ??
               defaultFluctuatedAmperagePerPhase ??
-              Utils.getRandomFloatRounded(connectorMaximumAmperage);
+              Utils.getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
           } else {
             currentMeasurandValues.L1 = currentSampledValueTemplate.value
               ? Utils.getRandomFloatFluctuatedRounded(
@@ -519,7 +560,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   currentSampledValueTemplate.fluctuationPercent ??
                     Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
-              : Utils.getRandomFloatRounded(connectorMaximumAmperage);
+              : Utils.getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
             currentMeasurandValues.L2 = 0;
             currentMeasurandValues.L3 = 0;
           }
@@ -544,7 +585,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 currentSampledValueTemplate.fluctuationPercent ??
                   Constants.DEFAULT_FLUCTUATION_PERCENT
               )
-            : Utils.getRandomFloatRounded(connectorMaximumAmperage);
+            : Utils.getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
           break;
         default:
           logger.error(`${chargingStation.logPrefix()} ${errMsg}`);
@@ -560,13 +601,17 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       if (
         Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) >
           connectorMaximumAmperage ||
+        Utils.convertToFloat(meterValue.sampledValue[sampledValuesIndex].value) <
+          connectorMinimumAmperage ||
         debug
       ) {
         logger.error(
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
+          }: connectorId ${connectorId}, transaction ${
+            connector?.transactionId
+          }, value: ${connectorMinimumAmperage}/${
             meterValue.sampledValue[sampledValuesIndex].value
           }/${connectorMaximumAmperage}`
         );
@@ -590,6 +635,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         if (
           Utils.convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) >
             connectorMaximumAmperage ||
+          Utils.convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) <
+            connectorMinimumAmperage ||
           debug
         ) {
           logger.error(
@@ -598,7 +645,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connectorId ${connectorId}, transaction ${connector?.transactionId}, value: ${
+            }, connectorId ${connectorId}, transaction ${
+              connector?.transactionId
+            }, value: ${connectorMinimumAmperage}/${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
             }/${connectorMaximumAmperage}`
           );

@@ -267,7 +267,8 @@ Section example:
         ...
         {
           "unit": "A",
-          "measurand": "Current.Import"
+          "measurand": "Current.Import",
+          "minimum": "0.5"
         },
         ...
         {
