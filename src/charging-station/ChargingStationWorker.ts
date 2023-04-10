@@ -9,6 +9,27 @@ import type { ChargingStationWorkerData } from '../types';
 import { Utils } from '../utils';
 import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
+/**
+ * Create and start a charging station instance
+ *
+ * @param data - workerData
+ */
+const startChargingStation = (data: ChargingStationWorkerData): void => {
+  const station = new ChargingStation(data.index, data.templateFile);
+  station.start();
+};
+
+/**
+ * Listen messages send by the main thread
+ */
+const addMessageListener = (): void => {
+  parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
+    if (message.id === WorkerMessageEvents.startWorkerElement) {
+      startChargingStation(message.data);
+    }
+  });
+};
+
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
 if (ChargingStationUtils.workerPoolInUse()) {
@@ -22,25 +43,4 @@ if (ChargingStationUtils.workerPoolInUse()) {
   if (Utils.isUndefined(workerData) === false) {
     startChargingStation(workerData as ChargingStationWorkerData);
   }
-}
-
-/**
- * Listen messages send by the main thread
- */
-function addMessageListener(): void {
-  parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
-    if (message.id === WorkerMessageEvents.startWorkerElement) {
-      startChargingStation(message.data);
-    }
-  });
-}
-
-/**
- * Create and start a charging station instance
- *
- * @param data - workerData
- */
-function startChargingStation(data: ChargingStationWorkerData): void {
-  const station = new ChargingStation(data.index, data.templateFile);
-  station.start();
 }

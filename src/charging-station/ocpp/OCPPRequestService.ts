@@ -230,6 +230,62 @@ export abstract class OCPPRequestService {
       // Send a message through wsConnection
       return Utils.promiseWithTimeout(
         new Promise((resolve, reject) => {
+          /**
+           * Function that will receive the request's response
+           *
+           * @param payload -
+           * @param requestPayload -
+           */
+          const responseCallback = (payload: JsonType, requestPayload: JsonType): void => {
+            if (chargingStation.getEnableStatistics() === true) {
+              chargingStation.performanceStatistics?.addRequestStatistic(
+                commandName,
+                MessageType.CALL_RESULT_MESSAGE
+              );
+            }
+            // Handle the request's response
+            self.ocppResponseService
+              .responseHandler(
+                chargingStation,
+                commandName as RequestCommand,
+                payload,
+                requestPayload
+              )
+              .then(() => {
+                resolve(payload);
+              })
+              .catch((error) => {
+                reject(error);
+              })
+              .finally(() => {
+                chargingStation.requests.delete(messageId);
+              });
+          };
+
+          /**
+           * Function that will receive the request's error response
+           *
+           * @param error -
+           * @param requestStatistic -
+           */
+          const errorCallback = (error: OCPPError, requestStatistic = true): void => {
+            if (requestStatistic === true && chargingStation.getEnableStatistics() === true) {
+              chargingStation.performanceStatistics?.addRequestStatistic(
+                commandName,
+                MessageType.CALL_ERROR_MESSAGE
+              );
+            }
+            logger.error(
+              `${chargingStation.logPrefix()} Error occurred at ${OCPPServiceUtils.getMessageTypeString(
+                messageType
+              )} command ${commandName} with PDU %j:`,
+              messagePayload,
+              error
+            );
+            chargingStation.requests.delete(messageId);
+            reject(error);
+          };
+
           if (chargingStation.getEnableStatistics() === true) {
             chargingStation.performanceStatistics?.addRequestStatistic(commandName, messageType);
           }
@@ -295,62 +351,6 @@ export abstract class OCPPRequestService {
           // Resolve response
           if (messageType !== MessageType.CALL_MESSAGE) {
             return resolve(messagePayload);
-          }
-
-          /**
-           * Function that will receive the request's response
-           *
-           * @param payload -
-           * @param requestPayload -
-           */
-          function responseCallback(payload: JsonType, requestPayload: JsonType): void {
-            if (chargingStation.getEnableStatistics() === true) {
-              chargingStation.performanceStatistics?.addRequestStatistic(
-                commandName,
-                MessageType.CALL_RESULT_MESSAGE
-              );
-            }
-            // Handle the request's response
-            self.ocppResponseService
-              .responseHandler(
-                chargingStation,
-                commandName as RequestCommand,
-                payload,
-                requestPayload
-              )
-              .then(() => {
-                resolve(payload);
-              })
-              .catch((error) => {
-                reject(error);
-              })
-              .finally(() => {
-                chargingStation.requests.delete(messageId);
-              });
-          }
-
-          /**
-           * Function that will receive the request's error response
-           *
-           * @param error -
-           * @param requestStatistic -
-           */
-          function errorCallback(error: OCPPError, requestStatistic = true): void {
-            if (requestStatistic === true && chargingStation.getEnableStatistics() === true) {
-              chargingStation.performanceStatistics?.addRequestStatistic(
-                commandName,
-                MessageType.CALL_ERROR_MESSAGE
-              );
-            }
-            logger.error(
-              `${chargingStation.logPrefix()} Error occurred at ${OCPPServiceUtils.getMessageTypeString(
-                messageType
-              )} command ${commandName} with PDU %j:`,
-              messagePayload,
-              error
-            );
-            chargingStation.requests.delete(messageId);
-            reject(error);
           }
         }),
         Constants.OCPP_WEBSOCKET_TIMEOUT,
