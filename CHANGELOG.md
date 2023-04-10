@@ -1,7 +1,13 @@
 # Changelog
 
-## [v1.2.4](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.3...v1.2.4)
+## [v1.2.5](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.4...v1.2.5)
 
+- feat: add mininum value support to meterValues generation [`860ef18`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/860ef183ca94c501749d508ea70d7447ecd90f05)
+- build(deps): apply updates [`825c7c4`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/825c7c420e3dd1db3952f54156c7565aee42f664)
+
+## [v1.2.4](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.3...v1.2.4) (2023-04-09)
+
+- chore: version 1.2.4 [`c51bc43`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c51bc43e325e355ce6a600b0a46854d12da8a6df)
 - fix: reference poolifier pool property [`4597fdc`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4597fdc580a3a20384ecef821fe781a1099d733f)
 
 ## [v1.2.3](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.2...v1.2.3) (2023-04-09)
