@@ -249,9 +249,9 @@ export class Utils {
    * @param retryNumber - the number of retries that have already been attempted
    * @returns delay in milliseconds
    */
-  public static exponentialDelay(retryNumber = 0): number {
+  public static exponentialDelay(retryNumber = 0, maxDelayRatio = 0.2): number {
     const delay = Math.pow(2, retryNumber) * 100;
-    const randomSum = delay * 0.2 * Utils.secureRandom(); // 0-20% of the delay
+    const randomSum = delay * maxDelayRatio * Utils.secureRandom(); // 0-20% of the delay
     return delay + randomSum;
   }
 
