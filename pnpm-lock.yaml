@@ -47,8 +47,8 @@ dependencies:
     specifier: ^5.2.0
     version: 5.2.0
   poolifier:
-    specifier: ^2.4.6
-    version: 2.4.6
+    specifier: ^2.4.7
+    version: 2.4.7
   proper-lockfile:
     specifier: ^4.1.2
     version: 4.1.2
@@ -153,8 +153,8 @@ devDependencies:
     specifier: ^2.27.5
     version: 2.27.5(@typescript-eslint/parser@5.58.0)(eslint-import-resolver-typescript@3.5.5)(eslint@8.38.0)
   eslint-plugin-jsdoc:
-    specifier: ^41.1.0
-    version: 41.1.0(eslint@8.38.0)
+    specifier: ^41.1.1
+    version: 41.1.1(eslint@8.38.0)
   eslint-plugin-n:
     specifier: ^15.7.0
     version: 15.7.0(eslint@8.38.0)
@@ -1919,9 +1919,9 @@ packages:
   /aproba@2.0.0:
     resolution: {integrity: sha512-lYe4Gx7QT+MKGbDsA+Z+he/Wtef0BiwDOlK/XkBrdfsh9J/jPPXbX0tE9x9cl27Tmu5gg3QUbUrQYa/y+KOHPQ==}
 
-  /are-docs-informative@0.0.1:
-    resolution: {integrity: sha512-iBN6NxFQTEH0au0K8EOz6BoXXs9Pz6bGOPOgQpstabUHlX7fFx72TXB/wy7hSGZ8QcMI+XalPeM3p8IG5ncGIA==}
-    engines: {node: '>=18'}
+  /are-docs-informative@0.0.2:
+    resolution: {integrity: sha512-ixiS0nLNNG5jNQzgZJNoUpBKdo9yTYZMGJ+QgT2jmjR7G7+QHRCc4v6LQ3NgE7EBJq+o0ams3waJwkrlBom8Ig==}
+    engines: {node: '>=14'}
     dev: true
 
   /are-we-there-yet@2.0.0:
@@ -4053,14 +4053,14 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-jsdoc@41.1.0(eslint@8.38.0):
-    resolution: {integrity: sha512-7nE0soOQfVhRNeV0pXTUz9IhdpBiAFNbRgs1W7TcPIOx+c4Qvy3vgI4848O9UmHrbrVUaYwpVHZvaXDeP0SBeg==}
+  /eslint-plugin-jsdoc@41.1.1(eslint@8.38.0):
+    resolution: {integrity: sha512-dfH97DKLGtQ5dgEMzd+GSUuY+xX/yyAfjML3O0pEWmMMpylsG6Ro65s4ziYXKmixiENYK9CTQxCVRGqZUFN2Mw==}
     engines: {node: ^14 || ^16 || ^17 || ^18 || ^19}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
     dependencies:
       '@es-joy/jsdoccomment': 0.37.0
-      are-docs-informative: 0.0.1
+      are-docs-informative: 0.0.2
       comment-parser: 1.3.1
       debug: 4.3.4(supports-color@8.1.1)
       escape-string-regexp: 4.0.0
@@ -7769,8 +7769,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.4.6:
-    resolution: {integrity: sha512-Rh3pXMG9lTdirBBFYBKNDxZ6M2Ro0EkwPppgQyFrgFlMsTXchBirrvI+H4Qy1S4h6kXAbIyH5C9vtXT3rojncQ==}
+  /poolifier@2.4.7:
+    resolution: {integrity: sha512-rX/PnMAXSOiN0XWHqP3QswcaeI3P7g1tRqt6FwYlvWEWbSvUuZNVkV2w2UlAgUwdkR1f1a4eoj3+D/TJj1dfpw==}
     engines: {node: '>=16.0.0'}
     requiresBuild: true
     dev: false
