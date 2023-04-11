@@ -147,7 +147,7 @@
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
-    "semver": "^7.3.8",
+    "semver": "^7.4.0",
     "sinon": "^15.0.3",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
