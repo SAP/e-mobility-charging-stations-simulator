@@ -1,9 +1,18 @@
 # Changelog
 
-## [v1.2.5](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.4...v1.2.5)
+## [v1.2.6](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.5...v1.2.6)
+
+- build(deps-dev): apply updates [`118a211`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/118a2117d5c800a3c7b4a4e0c1ba318f1d300e05)
+- perf: use arrow functions in hot code paths [`e8a92d5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e8a92d57004dcddba34fa4a510226b56e11a8cdb)
+- build(deps-dev): apply updates [`75f84cb`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/75f84cb1927588a1261a1fe6140e6d96b86fa74b)
+- build(deps-dev): apply updates [`db59d71`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/db59d71ee08527ee544ce78b1a947c4713b6beea)
+- refactor: make the exponential backoff implementation for tunable [`517ffa5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/517ffa58b673e8ece31c6520d0f2331848fc05ed)
+
+## [v1.2.5](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.4...v1.2.5) (2023-04-10)
 
 - feat: add mininum value support to meterValues generation [`860ef18`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/860ef183ca94c501749d508ea70d7447ecd90f05)
 - build(deps): apply updates [`825c7c4`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/825c7c420e3dd1db3952f54156c7565aee42f664)
+- chore: version 1.2.5 [`7544b25`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7544b25e44245784850adca768b516cb318c4108)
 
 ## [v1.2.4](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.3...v1.2.4) (2023-04-09)
 
