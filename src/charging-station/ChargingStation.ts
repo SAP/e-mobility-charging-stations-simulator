@@ -962,7 +962,10 @@ export class ChargingStation {
   private getStationInfo(): ChargingStationInfo {
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
     const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile();
-    // Priority: charging station info from template > charging station info from configuration file > charging station info attribute
+    // Priority:
+    // 1. charging station info from template
+    // 2. charging station info from configuration file
+    // 3. charging station info attribute
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
       if (this.stationInfo?.infoHash === stationInfoFromFile?.infoHash) {
         return this.stationInfo;
