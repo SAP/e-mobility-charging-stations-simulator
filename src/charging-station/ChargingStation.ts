@@ -796,7 +796,7 @@ export class ChargingStation {
 
   private flushMessageBuffer(): void {
     if (this.messageBuffer.size > 0) {
-      this.messageBuffer.forEach((message) => {
+      for (const message of this.messageBuffer.values()) {
         let beginId: string;
         let commandName: RequestCommand;
         const [messageType] = JSON.parse(message) as OutgoingRequest | Response | ErrorResponse;
@@ -813,7 +813,7 @@ export class ChargingStation {
           )} payload sent: ${message}`
         );
         this.messageBuffer.delete(message);
-      });
+      }
     }
   }
 
