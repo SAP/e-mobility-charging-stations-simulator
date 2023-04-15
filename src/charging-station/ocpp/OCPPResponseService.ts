@@ -31,8 +31,18 @@ export abstract class OCPPResponseService {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.responseHandler.bind(this);
-    this.validateResponsePayload.bind(this);
+    this.responseHandler = this.responseHandler.bind(this) as (
+      chargingStation: ChargingStation,
+      commandName: RequestCommand,
+      payload: JsonType,
+      requestPayload: JsonType
+    ) => Promise<void>;
+    this.validateResponsePayload = this.validateResponsePayload.bind(this) as <T extends JsonType>(
+      chargingStation: ChargingStation,
+      commandName: RequestCommand,
+      schema: JSONSchemaType<T>,
+      payload: T
+    ) => boolean;
   }
 
   public static getInstance<T extends OCPPResponseService>(this: new () => T): T {

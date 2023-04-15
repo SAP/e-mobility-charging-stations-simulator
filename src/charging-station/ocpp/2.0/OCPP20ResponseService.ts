@@ -79,7 +79,11 @@ export class OCPP20ResponseService extends OCPPResponseService {
         ),
       ],
     ]);
-    this.validatePayload.bind(this);
+    this.validatePayload = this.validatePayload.bind(this) as (
+      chargingStation: ChargingStation,
+      commandName: OCPP20RequestCommand,
+      payload: JsonType
+    ) => boolean;
   }
 
   public async responseHandler(

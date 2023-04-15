@@ -280,7 +280,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
         ),
       ],
     ]);
-    this.validatePayload.bind(this);
+    this.validatePayload = this.validatePayload.bind(this) as (
+      chargingStation: ChargingStation,
+      commandName: OCPP16RequestCommand,
+      payload: JsonType
+    ) => boolean;
   }
 
   public async responseHandler(

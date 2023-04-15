@@ -32,8 +32,20 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.incomingRequestHandler.bind(this);
-    this.validateIncomingRequestPayload.bind(this);
+    this.incomingRequestHandler = this.incomingRequestHandler.bind(this) as (
+      chargingStation: ChargingStation,
+      messageId: string,
+      commandName: IncomingRequestCommand,
+      commandPayload: JsonType
+    ) => Promise<void>;
+    this.validateIncomingRequestPayload = this.validateIncomingRequestPayload.bind(this) as <
+      T extends JsonType
+    >(
+      chargingStation: ChargingStation,
+      commandName: IncomingRequestCommand,
+      schema: JSONSchemaType<T>,
+      payload: T
+    ) => boolean;
   }
 
   public static getInstance<T extends OCPPIncomingRequestService>(this: new () => T): T {

@@ -40,7 +40,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         ),
       ],
     ]);
-    this.validatePayload.bind(this);
+    this.validatePayload = this.validatePayload.bind(this) as (
+      chargingStation: ChargingStation,
+      commandName: OCPP20IncomingRequestCommand,
+      commandPayload: JsonType
+    ) => boolean;
   }
 
   public async incomingRequestHandler(
