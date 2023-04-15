@@ -47,8 +47,8 @@ dependencies:
     specifier: ^5.2.0
     version: 5.2.0
   poolifier:
-    specifier: ^2.4.9
-    version: 2.4.9
+    specifier: ^2.4.10
+    version: 2.4.10
   proper-lockfile:
     specifier: ^4.1.2
     version: 4.1.2
@@ -7769,8 +7769,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.4.9:
-    resolution: {integrity: sha512-RT6h2mwBl83nWhciJI5irT66IvHz1SvMSYkCdoTYENv9A8VD8TUY16bszA86emh5L7K6gwVW5TQDYGm8/nXMaw==}
+  /poolifier@2.4.10:
+    resolution: {integrity: sha512-N7iQzzAl5TwOvAK76LOG2GJeE0AVdAnkgjwZj6+aed1I/TGzQYzmK17jgycvv/oA3kIuDNScwN+GISry779hqA==}
     engines: {node: '>=16.0.0'}
     requiresBuild: true
     dev: false
