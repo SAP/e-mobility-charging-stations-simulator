@@ -62,7 +62,7 @@ devDependencies:
     version: 7.1.0(eslint@8.38.0)(prettier@2.8.7)
   '@vue/eslint-config-typescript':
     specifier: ^11.0.2
-    version: 11.0.2(eslint-plugin-vue@9.10.0)(eslint@8.38.0)(typescript@4.9.5)
+    version: 11.0.2(eslint-plugin-vue@9.11.0)(eslint@8.38.0)(typescript@4.9.5)
   '@vue/test-utils':
     specifier: ^2.3.2
     version: 2.3.2(vue@3.2.47)
@@ -76,8 +76,8 @@ devDependencies:
     specifier: ^8.38.0
     version: 8.38.0
   eslint-plugin-vue:
-    specifier: ^9.10.0
-    version: 9.10.0(eslint@8.38.0)
+    specifier: ^9.11.0
+    version: 9.11.0(eslint@8.38.0)
   prettier:
     specifier: ^2.8.7
     version: 2.8.7
@@ -357,7 +357,7 @@ packages:
       '@babel/helper-plugin-utils': 7.20.2
       debug: 4.3.4
       lodash.debounce: 4.0.8
-      resolve: 1.22.2
+      resolve: 1.22.3
       semver: 6.3.0
     transitivePeerDependencies:
       - supports-color
@@ -2755,7 +2755,7 @@ packages:
       minimist: 1.2.8
       pkg-dir: 5.0.0
       recast: 0.20.5
-      resolve: 1.22.2
+      resolve: 1.22.3
       shortid: 2.2.16
       slash: 3.0.0
       strip-ansi: 6.0.1
@@ -2897,7 +2897,7 @@ packages:
       prettier: 2.8.7
     dev: true
 
-  /@vue/eslint-config-typescript@11.0.2(eslint-plugin-vue@9.10.0)(eslint@8.38.0)(typescript@4.9.5):
+  /@vue/eslint-config-typescript@11.0.2(eslint-plugin-vue@9.11.0)(eslint@8.38.0)(typescript@4.9.5):
     resolution: {integrity: sha512-EiKud1NqlWmSapBFkeSrE994qpKx7/27uCGnhdqzllYDpQZroyX/O6bwjEpeuyKamvLbsGdO6PMR2faIf+zFnw==}
     engines: {node: ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -2911,7 +2911,7 @@ packages:
       '@typescript-eslint/eslint-plugin': 5.58.0(@typescript-eslint/parser@5.58.0)(eslint@8.38.0)(typescript@4.9.5)
       '@typescript-eslint/parser': 5.58.0(eslint@8.38.0)(typescript@4.9.5)
       eslint: 8.38.0
-      eslint-plugin-vue: 9.10.0(eslint@8.38.0)
+      eslint-plugin-vue: 9.11.0(eslint@8.38.0)
       typescript: 4.9.5
       vue-eslint-parser: 9.1.1(eslint@8.38.0)
     transitivePeerDependencies:
@@ -3793,7 +3793,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001478
-      electron-to-chromium: 1.4.363
+      electron-to-chromium: 1.4.365
       node-releases: 2.0.10
       update-browserslist-db: 1.0.10(browserslist@4.21.5)
     dev: true
@@ -5076,8 +5076,8 @@ packages:
       jake: 10.8.5
     dev: true
 
-  /electron-to-chromium@1.4.363:
-    resolution: {integrity: sha512-ReX5qgmSU7ybhzMuMdlJAdYnRhT90UB3k9M05O5nF5WH3wR5wgdJjXw0uDeFyKNhmglmQiOxkAbzrP0hMKM59g==}
+  /electron-to-chromium@1.4.365:
+    resolution: {integrity: sha512-FRHZO+1tUNO4TOPXmlxetkoaIY8uwHzd1kKopK/Gx2SKn1L47wJXWD44wxP5CGRyyP98z/c8e1eBzJrgPeiBOg==}
     dev: true
 
   /emoji-regex@7.0.3:
@@ -5201,8 +5201,8 @@ packages:
       prettier-linter-helpers: 1.0.0
     dev: true
 
-  /eslint-plugin-vue@9.10.0(eslint@8.38.0):
-    resolution: {integrity: sha512-2MgP31OBf8YilUvtakdVMc8xVbcMp7z7/iQj8LHVpXrSXHPXSJRUIGSPFI6b6pyCx/buKaFJ45ycqfHvQRiW2g==}
+  /eslint-plugin-vue@9.11.0(eslint@8.38.0):
+    resolution: {integrity: sha512-bBCJAZnkBV7ATH4Z1E7CvN3nmtS4H7QUU3UBxPdo8WohRU+yHjnQRALpTbxMVcz0e4Mx3IyxIdP5HYODMxK9cQ==}
     engines: {node: ^14.17.0 || >=16.0.0}
     peerDependencies:
       eslint: ^6.2.0 || ^7.0.0 || ^8.0.0
@@ -5758,8 +5758,8 @@ packages:
     resolution: {integrity: sha512-5nqDSxl8nn5BSNxyR3n4I6eDmbolI6WT+QqR547RwxQapgjQBmtktdP+HTBb/a/zLsbzERTONyUB5pefh5TtjQ==}
     dev: true
 
-  /flow-parser@0.203.1:
-    resolution: {integrity: sha512-Nw2M8MPP/Zb+yhvmPDEjzkCXLtgyWGKXZjAYOVftm+wIf3xd4FKa7nRI9v67rODs0WzxMbPc8IPs/7o/dyxo/Q==}
+  /flow-parser@0.204.0:
+    resolution: {integrity: sha512-cQhNPLOk5NFyDXBC8WE8dy2Gls+YqKI3FNqQbJ7UrbFyd30IdEX3t27u3VsnoVK22I872+PWeb1KhHxDgu7kAg==}
     engines: {node: '>=0.4.0'}
     dev: true
 
@@ -6892,7 +6892,7 @@ packages:
       '@babel/register': 7.21.0(@babel/core@7.21.4)
       babel-core: 7.0.0-bridge.0(@babel/core@7.21.4)
       colors: 1.4.0
-      flow-parser: 0.203.1
+      flow-parser: 0.204.0
       graceful-fs: 4.2.11
       micromatch: 3.1.10
       neo-async: 2.6.2
@@ -7691,7 +7691,7 @@ packages:
     resolution: {integrity: sha512-/5CMN3T0R4XTj4DcGaexo+roZSdSFW/0AOOTROrjxzCG1wrWXEsGbRKevjlIL+ZDE4sZlJr5ED4YW0yqmkK+eA==}
     dependencies:
       hosted-git-info: 2.8.9
-      resolve: 1.22.2
+      resolve: 1.22.3
       semver: 5.7.1
       validate-npm-package-license: 3.0.4
     dev: true
@@ -8888,8 +8888,8 @@ packages:
     deprecated: https://github.com/lydell/resolve-url#deprecated
     dev: true
 
-  /resolve@1.22.2:
-    resolution: {integrity: sha512-Sb+mjNHOULsBv818T40qSPeRiuWLyaGMa5ewydRLFimneixmVy2zdivRl+AF6jaYPC8ERxGDmFSiqui6SfPd+g==}
+  /resolve@1.22.3:
+    resolution: {integrity: sha512-P8ur/gp/AmbEzjr729bZnLjXK5Z+4P0zhIJgBgzqRih7hL7BOukHGtSTA3ACMY467GRFz3duQsi0bDZdR7DKdw==}
     hasBin: true
     dependencies:
       is-core-module: 2.12.0
