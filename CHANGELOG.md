@@ -1,9 +1,15 @@
 # Changelog
 
-## [v1.2.8](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.7...v1.2.8)
+## [v1.2.9](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.8...v1.2.9)
+
+- perf: properly bound methods in hot paths [`31f59c6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/31f59c6d2def2ab2b53240c1d3d35333ac00933b)
+- build(deps): apply updates [`14f7192`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/14f71926025d0b646f5dd3a6b40478c019b8030c)
+
+## [v1.2.8](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.7...v1.2.8) (2023-04-15)
 
 - build(deps): apply updates [`761684e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/761684ec171cf2b700f23b28833c40409f3cef51)
 - build(deps-dev): apply updates [`100d237`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/100d2375df64a53c42cada02cecc815c833a44a8)
+- chore: version 1.2.8 [`9255768`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9255768d8252814cd794b7c7167b88ead912e990)
 - docs: enhance code documentation [`6b90dcc`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6b90dccaf87a8ed910e0435d1572580416e57e70)
 - refactor: forEach -&gt; for ... of [`7d3b0f6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7d3b0f64262e8ffe47e2e8b5b091dfcdb6b67339)
 
