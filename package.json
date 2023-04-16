@@ -143,7 +143,7 @@
     "release-it": "^15.10.1",
     "rimraf": "^5.0.0",
     "robohydra": "^0.6.9",
-    "rollup": "^3.20.2",
+    "rollup": "^3.20.3",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
