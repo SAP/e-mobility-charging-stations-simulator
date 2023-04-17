@@ -866,7 +866,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number,
     status: OCPP16ChargePointStatus
-  ): void {
+  ): boolean {
     if (
       connectorId === 0 &&
       !OCPP16Constants.OCPP16ChargePointStatusChargingStationTransition.has([
@@ -879,6 +879,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           chargingStation.getConnectorStatus(connectorId).status
         } to ${status} is not allowed`
       );
+      return false;
     } else if (
       !OCPP16Constants.OCPP16ChargePointStatusConnectorTransition.has([
         chargingStation.getConnectorStatus(connectorId).status as OCPP16ChargePointStatus,
@@ -890,7 +891,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           chargingStation.getConnectorStatus(connectorId).status
         } to ${status} is not allowed`
       );
+      return false;
     }
+    return true;
   }
 
   private static buildSampledValue(
