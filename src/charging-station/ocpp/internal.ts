@@ -1,3 +1,4 @@
+export * from './1.6/OCPP16Constants';
 export * from './1.6/OCPP16IncomingRequestService';
 export * from './1.6/OCPP16RequestService';
 export * from './1.6/OCPP16ResponseService';

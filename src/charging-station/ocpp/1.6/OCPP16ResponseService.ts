@@ -17,9 +17,7 @@ import {
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
-  type OCPP16BootNotificationRequest,
   type OCPP16BootNotificationResponse,
-  OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   type OCPP16DataTransferResponse,
   type OCPP16DiagnosticsStatusNotificationResponse,
@@ -33,7 +31,6 @@ import {
   OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
-  type OCPP16StatusNotificationRequest,
   type OCPP16StatusNotificationResponse,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
@@ -558,15 +555,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
           transactionId: payload.transactionId,
           meterValue: [chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue],
         }));
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP16StatusNotificationRequest,
-        OCPP16StatusNotificationResponse
-      >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+        chargingStation,
         connectorId,
-        status: OCPP16ChargePointStatus.Charging,
-        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-      });
-      chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.Charging;
+        OCPP16ChargePointStatus.Charging
+      );
       logger.info(
         `${chargingStation.logPrefix()} Transaction ${payload.transactionId.toString()} STARTED on ${
           chargingStation.stationInfo.chargingStationId
@@ -604,15 +597,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
     if (
       chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.Available
     ) {
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP16StatusNotificationRequest,
-        OCPP16StatusNotificationResponse
-      >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+        chargingStation,
         connectorId,
-        status: OCPP16ChargePointStatus.Available,
-        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-      });
-      chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.Available;
+        OCPP16ChargePointStatus.Available
+      );
     }
   }
 
@@ -651,27 +640,17 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.isChargingStationAvailable() === false ||
       chargingStation.isConnectorAvailable(transactionConnectorId) === false
     ) {
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP16StatusNotificationRequest,
-        OCPP16StatusNotificationResponse
-      >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
-        connectorId: transactionConnectorId,
-        status: OCPP16ChargePointStatus.Unavailable,
-        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-      });
-      chargingStation.getConnectorStatus(transactionConnectorId).status =
-        OCPP16ChargePointStatus.Unavailable;
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+        chargingStation,
+        transactionConnectorId,
+        OCPP16ChargePointStatus.Unavailable
+      );
     } else {
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP16BootNotificationRequest,
-        OCPP16BootNotificationResponse
-      >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
-        connectorId: transactionConnectorId,
-        status: OCPP16ChargePointStatus.Available,
-        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-      });
-      chargingStation.getConnectorStatus(transactionConnectorId).status =
-        OCPP16ChargePointStatus.Available;
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+        chargingStation,
+        transactionConnectorId,
+        OCPP16ChargePointStatus.Available
+      );
     }
     if (chargingStation.stationInfo.powerSharedByConnectors) {
       chargingStation.powerDivider--;

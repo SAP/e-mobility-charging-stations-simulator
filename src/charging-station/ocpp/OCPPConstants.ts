@@ -89,7 +89,7 @@ export class OCPPConstants {
     status: DataTransferStatus.REJECTED,
   });
 
-  private constructor() {
+  protected constructor() {
     // This is intentional
   }
 }
