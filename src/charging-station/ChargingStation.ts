@@ -1847,15 +1847,7 @@ export class ChargingStation {
         // Set default status
         connectorStatus = ConnectorStatusEnum.Available;
       }
-      await this.ocppRequestService.requestHandler<
-        StatusNotificationRequest,
-        StatusNotificationResponse
-      >(
-        this,
-        RequestCommand.STATUS_NOTIFICATION,
-        OCPPServiceUtils.buildStatusNotificationRequest(this, connectorId, connectorStatus)
-      );
-      this.getConnectorStatus(connectorId).status = connectorStatus;
+      await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorStatus);
     }
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<

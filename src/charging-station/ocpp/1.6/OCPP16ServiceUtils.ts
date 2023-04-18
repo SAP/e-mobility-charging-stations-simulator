@@ -16,8 +16,6 @@ import {
   MeterValueContext,
   MeterValueLocation,
   MeterValueUnit,
-  OCPP16ChargePointErrorCode,
-  type OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
   type OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
@@ -26,15 +24,13 @@ import {
   OCPP16RequestCommand,
   type OCPP16SampledValue,
   OCPP16StandardParametersKey,
-  type OCPP16StatusNotificationRequest,
-  type OCPP16StatusNotificationResponse,
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
   type SampledValueTemplate,
   Voltage,
 } from '../../../types';
 import { ACElectricUtils, Constants, DCElectricUtils, Utils, logger } from '../../../utils';
-import { OCPP16Constants, OCPPServiceUtils } from '../internal';
+import { OCPPServiceUtils } from '../internal';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static checkFeatureProfile(
@@ -842,58 +838,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       moduleName,
       methodName
     );
-  }
-
-  public static async sendAndSetConnectorStatus(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    status: OCPP16ChargePointStatus,
-    errorCode: OCPP16ChargePointErrorCode = OCPP16ChargePointErrorCode.NO_ERROR
-  ) {
-    OCPP16ServiceUtils.checkConnectorStatusTransition(chargingStation, connectorId, status);
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP16StatusNotificationRequest,
-      OCPP16StatusNotificationResponse
-    >(chargingStation, OCPP16RequestCommand.STATUS_NOTIFICATION, {
-      connectorId,
-      status,
-      errorCode,
-    });
-    chargingStation.getConnectorStatus(connectorId).status = status;
-  }
-
-  private static checkConnectorStatusTransition(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    status: OCPP16ChargePointStatus
-  ): boolean {
-    if (
-      connectorId === 0 &&
-      !OCPP16Constants.OCPP16ChargePointStatusChargingStationTransition.has([
-        chargingStation.getConnectorStatus(connectorId).status as OCPP16ChargePointStatus,
-        status,
-      ])
-    ) {
-      logger.warn(
-        `${chargingStation.logPrefix()} Connector ${connectorId} status transition from ${
-          chargingStation.getConnectorStatus(connectorId).status
-        } to ${status} is not allowed`
-      );
-      return false;
-    } else if (
-      !OCPP16Constants.OCPP16ChargePointStatusConnectorTransition.has([
-        chargingStation.getConnectorStatus(connectorId).status as OCPP16ChargePointStatus,
-        status,
-      ])
-    ) {
-      logger.warn(
-        `${chargingStation.logPrefix()} Connector ${connectorId} status transition from ${
-          chargingStation.getConnectorStatus(connectorId).status
-        } to ${status} is not allowed`
-      );
-      return false;
-    }
-    return true;
   }
 
   private static buildSampledValue(

@@ -144,6 +144,7 @@ export {
   type OCPP20BootNotificationResponse,
   type OCPP20ClearCacheRequest,
   type OCPP20ClearCacheResponse,
+  OCPP20ConnectorStatusEnumType,
   type OCPP20HeartbeatRequest,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,

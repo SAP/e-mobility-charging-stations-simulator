@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 
+import { OCPP16Constants, OCPP20Constants } from './internal';
 import { type ChargingStation, ChargingStationConfigurationUtils } from '../../charging-station';
 import { BaseError } from '../../exception';
 import {
@@ -23,6 +24,7 @@ import {
   type SampledValueTemplate,
   StandardParametersKey,
   type StatusNotificationRequest,
+  type StatusNotificationResponse,
 } from '../../types';
 import { Constants, FileUtils, Utils, logger } from '../../utils';
 
@@ -172,6 +174,82 @@ export class OCPPServiceUtils {
     } else if (chargingStation.getHeartbeatInterval() !== interval) {
       chargingStation.restartHeartbeat();
     }
+  }
+
+  public static async sendAndSetConnectorStatus(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    status: ConnectorStatusEnum
+  ) {
+    OCPPServiceUtils.checkConnectorStatusTransition(chargingStation, connectorId, status);
+    await chargingStation.ocppRequestService.requestHandler<
+      StatusNotificationRequest,
+      StatusNotificationResponse
+    >(
+      chargingStation,
+      RequestCommand.STATUS_NOTIFICATION,
+      OCPPServiceUtils.buildStatusNotificationRequest(chargingStation, connectorId, status)
+    );
+    chargingStation.getConnectorStatus(connectorId).status = status;
+  }
+
+  protected static checkConnectorStatusTransition(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    status: ConnectorStatusEnum
+  ): boolean {
+    const fromStatus = chargingStation.getConnectorStatus(connectorId).status;
+    let transitionAllowed = false;
+    switch (chargingStation.stationInfo.ocppVersion) {
+      case OCPPVersion.VERSION_16:
+        if (
+          connectorId === 0 &&
+          OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status
+          ) !== -1
+        ) {
+          transitionAllowed = true;
+        } else if (
+          OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status
+          ) !== -1
+        ) {
+          transitionAllowed = true;
+        }
+        break;
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201:
+        if (
+          connectorId === 0 &&
+          OCPP20Constants.ChargingStationStatusTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status
+          ) !== -1
+        ) {
+          transitionAllowed = true;
+        } else if (
+          OCPP20Constants.ConnectorStatusTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status
+          ) !== -1
+        ) {
+          transitionAllowed = true;
+        }
+        break;
+      default:
+        throw new BaseError(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo.ocppVersion} not supported`
+        );
+    }
+    if (transitionAllowed === false) {
+      logger.warn(
+        `${chargingStation.logPrefix()} OCPP ${
+          chargingStation.stationInfo.ocppVersion
+        } connector ${connectorId} status transition from '${
+          chargingStation.getConnectorStatus(connectorId).status
+        }' to '${status}' is not allowed`
+      );
+    }
+    return transitionAllowed;
   }
 
   protected static parseJsonSchemaFile<T extends JsonType>(
