@@ -1,10 +1,13 @@
 import { OCPP20ConnectorStatusEnumType } from '../../../types';
 import { OCPPConstants } from '../internal';
 
-type Transition = { from?: OCPP20ConnectorStatusEnumType; to: OCPP20ConnectorStatusEnumType };
+type Transition = Readonly<{
+  from?: OCPP20ConnectorStatusEnumType;
+  to: OCPP20ConnectorStatusEnumType;
+}>;
 
 export class OCPP20Constants extends OCPPConstants {
-  static readonly ChargingStationStatusTransitions: Transition[] = [
+  static readonly ChargingStationStatusTransitions: Readonly<Transition[]> = Object.freeze([
     { to: OCPP20ConnectorStatusEnumType.Available },
     // { from: OCPP20ConnectorStatusEnumType.Available, to: OCPP20ConnectorStatusEnumType.Available },
     {
@@ -26,9 +29,9 @@ export class OCPP20Constants extends OCPPConstants {
     { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Available },
     { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Unavailable },
     // { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Faulted },
-  ];
+  ]);
 
-  static readonly ConnectorStatusTransitions: Transition[] = [
+  static readonly ConnectorStatusTransitions: Readonly<Transition[]> = Object.freeze([
     { to: OCPP20ConnectorStatusEnumType.Available },
     // { from: OCPP20ConnectorStatusEnumType.Available, to: OCPP20ConnectorStatusEnumType.Available },
     { from: OCPP20ConnectorStatusEnumType.Available, to: OCPP20ConnectorStatusEnumType.Occupied },
@@ -65,5 +68,5 @@ export class OCPP20Constants extends OCPPConstants {
     { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Reserved },
     { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Unavailable },
     // { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Faulted },
-  ];
+  ]);
 }
