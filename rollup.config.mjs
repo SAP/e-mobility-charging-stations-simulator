@@ -57,7 +57,7 @@ export default {
   plugins: [
     json(),
     typescript({
-      tsconfig: 'tsconfig.json',
+      tsconfig: 'tsconfig-base.json',
     }),
     del({
       targets: [
