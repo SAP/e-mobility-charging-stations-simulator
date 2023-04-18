@@ -1,9 +1,23 @@
 # Changelog
 
-## [v1.2.9](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.8...v1.2.9)
+## [v1.2.10](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.9...v1.2.10)
+
+- feat: add status notification transition check to OCPP 2.x.x code [`48b7507`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/48b750721134de072049b7d2d7ea94e69428721f)
+- feat: check status notification transition in OCPP 1.6 stack [`4ecff7c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4ecff7ce6e87af51f1ff04e95641aee2270fbdb0)
+- build(deps-dev): apply updates [`a56fa4a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a56fa4a3536cff572de570c6641c8cd7cc492da4)
+- build(deps-dev): apply updates [`b26c659`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b26c6593222953b83ecf6186b895b776bd32548d)
+- build(deps-dev): apply updates [`89bf789`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/89bf789a5a24076f254b8c68b1cdf4cd7c8fd571)
+- fix: ensure constants are readonly data structures [`4cf856f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4cf856f0ff988b709da7b9185913266146e82add)
+- build(deps-dev): apply updates [`da31fab`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/da31fabf3cbb0a52f707914f37fb23e18a1348a7)
+- build(simulator): apply updates [`481c380`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/481c3802ecbdb0ae3cf75e028c7236f6b9b12671)
+- fix: fix sonarcloud analysis [`0f113d6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0f113d68a22dd919877279d32d8d12058ec06cee)
+- refactor(simulator): permit to check if connector status transition is [`0ce9bab`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0ce9babe5c83eced0e773109d4393c1ab487039f)
+
+## [v1.2.9](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.8...v1.2.9) (2023-04-16)
 
 - perf: properly bound methods in hot paths [`31f59c6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/31f59c6d2def2ab2b53240c1d3d35333ac00933b)
 - build(deps): apply updates [`14f7192`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/14f71926025d0b646f5dd3a6b40478c019b8030c)
+- chore: version 1.2.9 [`f16b00d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f16b00d85c33984f6eadc4edfb8db66f0a99adfe)
 
 ## [v1.2.8](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.7...v1.2.8) (2023-04-15)
 
