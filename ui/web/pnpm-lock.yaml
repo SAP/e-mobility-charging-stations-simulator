@@ -3793,7 +3793,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001480
-      electron-to-chromium: 1.4.367
+      electron-to-chromium: 1.4.368
       node-releases: 2.0.10
       update-browserslist-db: 1.0.11(browserslist@4.21.5)
     dev: true
@@ -5076,8 +5076,8 @@ packages:
       jake: 10.8.5
     dev: true
 
-  /electron-to-chromium@1.4.367:
-    resolution: {integrity: sha512-mNuDxb+HpLhPGUKrg0hSxbTjHWw8EziwkwlJNkFUj3W60ypigLDRVz04vU+VRsJPi8Gub+FDhYUpuTm9xiEwRQ==}
+  /electron-to-chromium@1.4.368:
+    resolution: {integrity: sha512-e2aeCAixCj9M7nJxdB/wDjO6mbYX+lJJxSJCXDzlr5YPGYVofuJwGN9nKg2o6wWInjX6XmxRinn3AeJMK81ltw==}
     dev: true
 
   /emoji-regex@7.0.3:
