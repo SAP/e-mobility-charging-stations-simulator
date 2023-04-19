@@ -4,6 +4,9 @@
   "engines": {
     "node": ">=16.9.0"
   },
+  "volta": {
+    "node": "20.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"

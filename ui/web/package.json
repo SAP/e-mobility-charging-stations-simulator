@@ -5,6 +5,9 @@
   "engines": {
     "node": ">=16.9.0"
   },
+  "volta": {
+    "node": "20.0.0"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "start": "pnpm run build && node start.js",
