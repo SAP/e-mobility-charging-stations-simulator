@@ -42,7 +42,7 @@
     "useTsNode": true
   },
   "scripts": {
-    "preinstall": "node skip-preinstall.cjs || npx only-allow pnpm",
+    "preinstall": "node skip-preinstall.cjs || npx --yes only-allow pnpm",
     "prepare": "node prepare.cjs",
     "build-requirements": "node --no-warnings build-requirements.mjs",
     "start": "pnpm run build && cross-env NODE_ENV=production node -r source-map-support/register dist/start.mjs",

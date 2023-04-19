@@ -30,7 +30,7 @@ body:
   - type: textarea
     attributes:
       label: System
-      description: Output of `npx envinfo --system`.
+      description: Output of `npx --yes envinfo --system`.
   - type: textarea
     attributes:
       label: Expected result
