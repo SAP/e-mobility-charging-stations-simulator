@@ -118,7 +118,7 @@
     "@rollup/plugin-typescript": "^11.1.0",
     "@types/mocha": "^10.0.1",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^18.15.11",
+    "@types/node": "^18.15.12",
     "@types/proper-lockfile": "^4.1.2",
     "@types/sinon": "^10.0.14",
     "@types/tar": "^6.1.4",
@@ -133,7 +133,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jsdoc": "^43.0.6",
+    "eslint-plugin-jsdoc": "^43.0.7",
     "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-tsdoc": "^0.2.17",
@@ -151,7 +151,7 @@
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.5.0",
-    "sinon": "^15.0.3",
+    "sinon": "^15.0.4",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   }
