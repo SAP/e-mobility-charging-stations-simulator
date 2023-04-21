@@ -118,7 +118,7 @@
     "@rollup/plugin-typescript": "^11.1.0",
     "@types/mocha": "^10.0.1",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^18.15.12",
+    "@types/node": "^18.15.13",
     "@types/proper-lockfile": "^4.1.2",
     "@types/sinon": "^10.0.14",
     "@types/tar": "^6.1.4",
