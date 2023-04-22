@@ -1,4 +1,4 @@
-import { ConnectorStatusTransition, OCPP20ConnectorStatusEnumType } from '../../../types';
+import { type ConnectorStatusTransition, OCPP20ConnectorStatusEnumType } from '../../../types';
 import { OCPPConstants } from '../internal';
 
 export class OCPP20Constants extends OCPPConstants {

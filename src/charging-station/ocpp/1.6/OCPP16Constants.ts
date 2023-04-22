@@ -1,4 +1,4 @@
-import { ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../../types';
+import { type ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../../types';
 import { OCPPConstants } from '../internal';
 
 export class OCPP16Constants extends OCPPConstants {
