@@ -10,7 +10,7 @@
   },
   "scripts": {
     "preinstall": "npx --yes only-allow pnpm",
-    "start": "pnpm run build && node start.js",
+    "start": "pnpm build && node start.js",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "clean:dist": "npx rimraf dist",

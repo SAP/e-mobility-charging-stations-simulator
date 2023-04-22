@@ -13,7 +13,7 @@ RUN set -ex \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
   && pnpm install \
-  && pnpm run build \
+  && pnpm build \
   && apk del .gyp
 
 # Build simulator dashboard
@@ -25,7 +25,7 @@ RUN set -ex \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
   && pnpm install \
-  && pnpm run build
+  && pnpm build
 
 FROM node:lts-alpine
 

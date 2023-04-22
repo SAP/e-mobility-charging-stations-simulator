@@ -36,7 +36,7 @@ pnpm start
 #### Compiles and run for development
 
 ```shell
-pnpm run serve
+pnpm serve
 ```
 
 #### Try it out
@@ -51,11 +51,11 @@ For both options above you can then follow the link displayed in the terminal at
 ### Compiles and minifies for production
 
 ```shell
-pnpm run build
+pnpm build
 ```
 
 ### Lints files
 
 ```shell
-pnpm run lint
+pnpm lint
 ```
