@@ -3,7 +3,8 @@
   "version": "0.1.1",
   "readme": "README.md",
   "engines": {
-    "node": ">=16.9.0"
+    "node": ">=16.9.0",
+    "pnpm": ">= 8.0.0"
   },
   "volta": {
     "node": "20.0.0"
