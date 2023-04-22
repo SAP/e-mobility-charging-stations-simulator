@@ -17,8 +17,8 @@ import {
 } from '../../../types';
 import { Utils } from '../../../utils';
 import {
+  OCPP20Constants,
   OCPP20ServiceUtils,
-  OCPPConstants,
   OCPPRequestService,
   type OCPPResponseService,
 } from '../internal';
@@ -101,7 +101,7 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.BOOT_NOTIFICATION:
         return commandParams as unknown as Request;
       case OCPP20RequestCommand.HEARTBEAT:
-        return OCPPConstants.OCPP_RESPONSE_EMPTY as unknown as Request;
+        return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request;
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return {
           timestamp: new Date(),

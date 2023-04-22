@@ -2,8 +2,6 @@ import { MeterValueMeasurand } from '../types';
 
 export class Constants {
   static readonly OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
-  static readonly OCPP_WEBSOCKET_TIMEOUT = 60000; // Ms
-  static readonly OCPP_TRIGGER_MESSAGE_DELAY = 500; // Ms
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms

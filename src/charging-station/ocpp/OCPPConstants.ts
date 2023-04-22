@@ -11,6 +11,9 @@ import {
 import { Constants } from '../../utils';
 
 export class OCPPConstants {
+  static readonly OCPP_WEBSOCKET_TIMEOUT = 60000; // Ms
+  static readonly OCPP_TRIGGER_MESSAGE_DELAY = 500; // Ms
+
   static readonly OCPP_REQUEST_EMPTY = Constants.EMPTY_FREEZED_OBJECT;
   static readonly OCPP_RESPONSE_EMPTY = Constants.EMPTY_FREEZED_OBJECT;
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.Accepted });

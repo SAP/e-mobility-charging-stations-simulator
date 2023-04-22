@@ -24,8 +24,8 @@ import {
 } from '../../../types';
 import { Constants, Utils } from '../../../utils';
 import {
+  OCPP16Constants,
   OCPP16ServiceUtils,
-  OCPPConstants,
   OCPPRequestService,
   type OCPPResponseService,
 } from '../internal';
@@ -176,7 +176,7 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...commandParams,
         } as unknown as Request;
       case OCPP16RequestCommand.HEARTBEAT:
-        return OCPPConstants.OCPP_REQUEST_EMPTY as unknown as Request;
+        return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request;
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
           idTag: Constants.DEFAULT_IDTAG,

@@ -1,7 +1,7 @@
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { type OCPPResponseService, OCPPServiceUtils } from './internal';
+import { OCPPConstants, type OCPPResponseService, OCPPServiceUtils } from './internal';
 import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import { PerformanceStatistics } from '../../performance';
@@ -402,7 +402,7 @@ export abstract class OCPPRequestService {
             return resolve(messagePayload);
           }
         }),
-        Constants.OCPP_WEBSOCKET_TIMEOUT,
+        OCPPConstants.OCPP_WEBSOCKET_TIMEOUT,
         new OCPPError(
           ErrorType.GENERIC_ERROR,
           `Timeout for message id '${messageId}'`,
