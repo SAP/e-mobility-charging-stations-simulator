@@ -21,6 +21,9 @@ dependencies:
     version: 4.1.6(vue@3.2.47)
 
 devDependencies:
+  '@tsconfig/node20':
+    specifier: ^1.0.0
+    version: 1.0.0
   '@types/chai':
     specifier: ^4.3.4
     version: 4.3.4
@@ -1867,6 +1870,10 @@ packages:
   /@trysound/sax@0.2.0:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
+    dev: true
+
+  /@tsconfig/node20@1.0.0:
+    resolution: {integrity: sha512-AwbXtpWEaRUjbGVwdlusNqwet+jeSk3Nnqf/8+77WJ1/9d6xnqs2QpE9Pdwv8RCoXxtMedWEtlmWY+/irBPcUw==}
     dev: true
 
   /@types/accepts@1.3.5:
