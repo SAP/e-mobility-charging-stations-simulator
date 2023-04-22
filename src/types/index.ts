@@ -47,6 +47,7 @@ export {
   ConnectorPhaseRotation,
   type ConnectorStatus,
   ConnectorStatusEnum,
+  type ConnectorStatusTransition,
   CurrentType,
   DBName,
   type DataTransferRequest,

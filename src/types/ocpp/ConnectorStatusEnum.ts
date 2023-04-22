@@ -5,3 +5,8 @@ export const ConnectorStatusEnum = {
   ...OCPP20ConnectorStatusEnumType,
 } as const;
 export type ConnectorStatusEnum = OCPP16ChargePointStatus | OCPP20ConnectorStatusEnumType;
+
+export type ConnectorStatusTransition = Readonly<{
+  from?: ConnectorStatusEnum;
+  to: ConnectorStatusEnum;
+}>;
