@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 
