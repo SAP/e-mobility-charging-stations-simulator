@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json.schemastore.org/eslintrc",
+  "$schema": "https://json.schemastore.org/eslintrc",
   "root": true,
   "env": {
     "es2022": true,
