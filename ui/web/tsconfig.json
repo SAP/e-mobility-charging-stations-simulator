@@ -4,7 +4,6 @@
     "@vue/tsconfig/tsconfig.json"
   ],
   "compilerOptions": {
-    "allowImportingTsExtensions": false,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
