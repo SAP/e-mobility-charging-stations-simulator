@@ -1,6 +1,28 @@
 # Changelog
 
-## [v1.2.10](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.9...v1.2.10)
+## [v1.2.11](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.10...v1.2.11)
+
+- build: avoid npx prompt at pnpm i [`a90bec5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a90bec52fe3a72ddb90784df8eb542aadf326531)
+- build(ci): use a working sonar-scanner version [`858018e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/858018ebd6024bbd94f78e3056420238f9363431)
+- refactor(simulator): consolidate connector status transition [`0a37644`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0a376442c47f8e1c89cff78e822a936f3d4c783a)
+- build(deps-dev): apply updates [`3742487`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3742487d8b6fec069911a94a496aa1211f24b711)
+- build(deps-dev): apply updates [`6a739b3`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6a739b351acdf96e9314d40212da8a41e62020a7)
+- refactor(simulator): cleanup constants definition in OCPP code [`d8b1fab`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d8b1fab113850cb6c18747bd39d482d39a611b3f)
+- build(deps-dev): apply updates [`03682e2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/03682e2e36e2236174a6dc7052494345165798c9)
+- build(simulator): apply updates [`686e06d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/686e06d6959312ec6b1ea85c73aa5c0eec253abb)
+- build(ci): enable dependencies caching with pnpm [`e387442`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e387442190140204cdbb9d1716fcf9db4c069a61)
+- build: cleanup scripts usage with pnpm [`c7f157d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c7f157db9c6c0a2f18739959d0626c2eb09cf8c1)
+- build(deps-dev): apply updates [`cb137ce`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/cb137ce10ef7efd3843cc23ab06c94b6bb4e3ec9)
+- build(deps-dev): apply updates [`655fe36`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/655fe36856905ffc1255bef5a6ad65d5220c6481)
+- build(deps-dev): refine vue.js dashboard tsconfig.json [`062f83f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/062f83f9f42274d115b666c04357f4b10e10e400)
+- build: add pnpm minimum version to engines [`d509fd2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d509fd24247299013f4f25f190d5ba9beb120b48)
+- build: pin volta node version [`8f074eb`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8f074ebf502ac8738ce2e91291c2295b0488a9de)
+- test: use monotonic timer [`f204e9b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f204e9b4dcd8d329d5cd6bd44f957f4f74449d0d)
+- build(simulator): fix type import [`c6045c8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c6045c84b3075954739be904d3454fede196ef8d)
+- build(ci): switch to node 20.x [`4fc9b19`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4fc9b19e041c7f1bb2de23b15c89c1bef9bbd738)
+- build(ui): fix test [`6644d2b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6644d2b07e885db614c42034285970e95b1a271e)
+
+## [v1.2.10](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.9...v1.2.10) (2023-04-19)
 
 - feat: add status notification transition check to OCPP 2.x.x code [`48b7507`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/48b750721134de072049b7d2d7ea94e69428721f)
 - feat: check status notification transition in OCPP 1.6 stack [`4ecff7c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4ecff7ce6e87af51f1ff04e95641aee2270fbdb0)
@@ -10,6 +32,7 @@
 - fix: ensure constants are readonly data structures [`4cf856f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4cf856f0ff988b709da7b9185913266146e82add)
 - build(deps-dev): apply updates [`da31fab`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/da31fabf3cbb0a52f707914f37fb23e18a1348a7)
 - build(simulator): apply updates [`481c380`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/481c3802ecbdb0ae3cf75e028c7236f6b9b12671)
+- chore: version 1.2.10 [`6cee68c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6cee68ccc74c33c9001b99481a02d5b8c3b9e7fc)
 - fix: fix sonarcloud analysis [`0f113d6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0f113d68a22dd919877279d32d8d12058ec06cee)
 - refactor(simulator): permit to check if connector status transition is [`0ce9bab`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0ce9babe5c83eced0e773109d4393c1ab487039f)
 
