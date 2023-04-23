@@ -17,9 +17,9 @@ describe('Utils test suite', () => {
   });
 
   it('Verify sleep()', async () => {
-    const start = Date.now();
+    const start = performance.now();
     await Utils.sleep(1000);
-    const end = Date.now();
+    const end = performance.now();
     expect(end - start).toBeGreaterThanOrEqual(1000);
   });
 
