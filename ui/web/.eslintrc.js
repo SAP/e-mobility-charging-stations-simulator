@@ -16,9 +16,6 @@ module.exports = defineConfig({
 
   parserOptions: {
     ecmaVersion: 'latest',
-    ecmaFeatures: {
-      jsx: true,
-    },
   },
 
   rules: {
