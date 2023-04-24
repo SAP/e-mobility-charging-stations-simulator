@@ -70,8 +70,8 @@ devDependencies:
     specifier: ^2.3.2
     version: 2.3.2(vue@3.2.47)
   '@vue/tsconfig':
-    specifier: ^0.3.1
-    version: 0.3.1
+    specifier: ^0.3.2
+    version: 0.3.2
   chai:
     specifier: ^4.3.7
     version: 4.3.7
@@ -2989,8 +2989,8 @@ packages:
       '@vue/server-renderer': 3.2.47(vue@3.2.47)
     dev: true
 
-  /@vue/tsconfig@0.3.1:
-    resolution: {integrity: sha512-tRsFw+xU6/bzWZT2U7RCG7/avCNIk7qMBONfzJzQBxoi4Ni6C7WpTifCVLNkLn0IDqxhtEETNAPsBtz36uNIxA==}
+  /@vue/tsconfig@0.3.2:
+    resolution: {integrity: sha512-jWzZbGyrZAEbHYGn0kPzJ+MMtIkIxb0+hL5+RghBowyOxMRs9jMdp5XvpXz3wgCzjRZiUucy29042HBe9cxoYA==}
     dev: true
 
   /@vue/web-component-wrapper@1.3.0:
