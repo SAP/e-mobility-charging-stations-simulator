@@ -13,51 +13,42 @@
   "scripts": {
     "preinstall": "npx --yes only-allow pnpm",
     "start": "pnpm build && node start.js",
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
+    "dev": "vite",
+    "serve": "vite preview",
+    "build": "vite build",
     "clean:dist": "npx rimraf dist",
     "clean:node_modules": "npx rimraf node_modules",
-    "lint": "vue-cli-service lint",
-    "lint:fix": "vue-cli-service lint --fix",
-    "test": "vue-cli-service test:unit"
-  },
-  "overrides": {
-    "cacheable-request": "^10.2.7",
-    "got": "^11.8.5"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore",
+    "lint:fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "test": "vitest"
   },
   "dependencies": {
-    "core-js": "^3.30.1",
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "vue": "^3.2.47",
-    "vue-class-component": "8.0.0-rc.1",
     "vue-router": "^4.1.6"
   },
   "devDependencies": {
     "@tsconfig/node20": "^1.0.0",
-    "@types/chai": "^4.3.4",
-    "@types/mocha": "^10.0.1",
+    "@types/jsdom": "^21.1.1",
     "@types/node": "^18.16.0",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",
-    "@vue/cli": "~5.0.8",
-    "@vue/cli-plugin-babel": "~5.0.8",
-    "@vue/cli-plugin-eslint": "~5.0.8",
-    "@vue/cli-plugin-router": "~5.0.8",
-    "@vue/cli-plugin-typescript": "~5.0.8",
-    "@vue/cli-plugin-unit-mocha": "~5.0.8",
-    "@vue/cli-service": "~5.0.8",
+    "@vitejs/plugin-vue": "^4.1.0",
+    "@vitejs/plugin-vue-jsx": "^3.0.1",
     "@vue/eslint-config-prettier": "^7.1.0",
     "@vue/eslint-config-typescript": "^11.0.2",
     "@vue/test-utils": "^2.3.2",
     "@vue/tsconfig": "^0.3.2",
-    "chai": "^4.3.7",
     "eslint": "^8.39.0",
     "eslint-define-config": "^1.19.0",
     "eslint-plugin-vue": "^9.11.0",
+    "jsdom": "^21.1.1",
     "prettier": "^2.8.8",
     "rimraf": "^5.0.0",
-    "typescript": "~5.0.4"
+    "typescript": "~5.0.4",
+    "vite": "^4.3.1",
+    "vitest": "^0.30.1"
   },
   "_id": "webui@0.1.1"
 }

@@ -1,6 +1,6 @@
 <template>
   <teleport to="body">
-    <div id="backdrop" v-if="props.visibility" @click.self="close()">
+    <div v-if="props.visibility" id="backdrop" @click.self="close()">
       <slot></slot>
     </div>
   </teleport>

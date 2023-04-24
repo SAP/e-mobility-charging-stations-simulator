@@ -2,7 +2,7 @@
   <Modal :visibility="props.visibility">
     <label for="idTag">IdTag</label>
     <!-- eslint-disable-next-line vue/no-mutating-props -->
-    <input type="text" name="idTag" v-model="props.idTag" @keypress.enter="done()" />
+    <input v-model="props.idTag" type="text" name="idTag" @keypress.enter="done()" />
     <Button @click="done()">
       <slot></slot>
     </Button>

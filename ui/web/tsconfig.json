@@ -5,8 +5,9 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
+    "composite": true,
     "baseUrl": ".",
-    "types": ["node", "mocha", "chai"],
+    "types": ["node", "jsdom"],
     "paths": {
       "@/*": ["src/*"]
     }

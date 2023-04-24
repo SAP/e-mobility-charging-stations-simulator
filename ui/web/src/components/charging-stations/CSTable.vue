@@ -20,7 +20,7 @@
         v-for="chargingStation in props.chargingStations"
         :key="chargingStation.stationInfo?.hashId"
         :charging-station="chargingStation"
-        :idTag="props.idTag"
+        :id-tag="props.idTag"
       />
     </tbody>
   </table>

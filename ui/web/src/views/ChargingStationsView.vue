@@ -5,14 +5,14 @@
     <Container id="inputs-container">
       <input
         id="idtag-field"
+        v-model="state.idTag"
         type="text"
         name="idtag-field"
         placeholder="RFID tag"
-        v-model="state.idTag"
       />
       <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
     </Container>
-    <CSTable :chargingStations="state.chargingStations" :idTag="state.idTag" />
+    <CSTable :charging-stations="state.chargingStations" :id-tag="state.idTag" />
   </Container>
 </template>
 

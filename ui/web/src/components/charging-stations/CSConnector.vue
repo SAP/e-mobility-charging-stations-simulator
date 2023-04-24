@@ -7,7 +7,7 @@
     <Button @click="startTransaction()">Start Transaction</Button>
     <!-- <IdTagInputModal
       :visibility="state.isIdTagModalVisible"
-      :idTag="state.idTag"
+      :id-tag="state.idTag"
       @close="hideIdTagModal()"
       @done="Utils.compose(state.transaction, hideIdTagModal)()"
     >

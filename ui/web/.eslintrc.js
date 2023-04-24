@@ -8,14 +8,17 @@ module.exports = defineConfig({
   },
 
   extends: [
-    'plugin:vue/vue3-essential',
     'eslint:recommended',
+    'plugin:vue/vue3-recommended',
     '@vue/eslint-config-typescript/recommended',
     '@vue/eslint-config-prettier',
   ],
 
   parserOptions: {
     ecmaVersion: 'latest',
+    ecmaFeatures: {
+      jsx: true,
+    },
   },
 
   rules: {
@@ -24,13 +27,4 @@ module.exports = defineConfig({
     'vue/require-v-for-key': 'off',
     'vue/multi-word-component-names': 'off',
   },
-
-  overrides: [
-    {
-      files: ['**/__tests__/*.{j,t}s?(x)', '**/tests/unit/**/*.spec.{j,t}s?(x)'],
-      env: {
-        mocha: true,
-      },
-    },
-  ],
 });
