@@ -1,37 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends":  [
-       "@tsconfig/node20/tsconfig.json",
-        "@vue/tsconfig/tsconfig.json"
-      ],
+  "extends": ["@tsconfig/node20/tsconfig.json", "@vue/tsconfig/tsconfig.json"],
   "compilerOptions": {
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "types": [
-      "node",
-      "mocha",
-      "chai"
-    ],
+    "types": ["node", "mocha", "chai"],
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
-    "lib": [
-      "esnext",
-      "dom"
-    ]
+    "lib": ["esnext", "dom"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "tests/**/*.ts",
-    "tests/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "tests/**/*.ts", "tests/**/*.tsx"],
+  "exclude": ["node_modules"]
 }
