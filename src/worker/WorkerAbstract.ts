@@ -27,8 +27,11 @@ export abstract class WorkerAbstract<T extends WorkerData> {
       messageHandler: WorkerConstants.EMPTY_FUNCTION,
     }
   ) {
-    if (!workerScript) {
+    if (workerScript === null || workerScript === undefined) {
       throw new Error('Worker script is not defined');
+    }
+    if (typeof workerScript === 'string' && workerScript.trim().length === 0) {
+      throw new Error('Worker script is empty');
     }
     if (!fs.existsSync(workerScript)) {
       throw new Error('Worker script file does not exist');

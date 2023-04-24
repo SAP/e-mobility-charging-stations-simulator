@@ -1,6 +1,6 @@
 import type { Configuration } from '@mikro-orm/core';
 
-export type MikroORMDBType = keyof typeof Configuration.PLATFORMS;
+export type MikroOrmDbType = keyof typeof Configuration.PLATFORMS;
 
 export enum StorageType {
   JSON_FILE = 'jsonfile',
