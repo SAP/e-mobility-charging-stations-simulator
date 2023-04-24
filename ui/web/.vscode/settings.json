@@ -1,5 +1,13 @@
 {
   "editor.codeActionsOnSave": {
     "source.fixAll": true
-  }
+  },
+  "cSpell.words": [
+    "composables",
+    "iccid",
+    "idtag",
+    "imsi",
+    "ocpp",
+    "RFID"
+  ]
 }
