@@ -10,7 +10,7 @@ import {
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 import {
-  type MikroORMDBType,
+  type MikroOrmDbType,
   PerformanceData,
   PerformanceRecord,
   type Statistics,
@@ -75,7 +75,7 @@ export class MikroOrmStorage extends Storage {
     return {
       metadataProvider: TsMorphMetadataProvider,
       entities: [PerformanceRecord, PerformanceData],
-      type: this.storageType as MikroORMDBType,
+      type: this.storageType as MikroOrmDbType,
       clientUrl: this.getClientUrl(),
     };
   }

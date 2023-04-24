@@ -92,7 +92,7 @@ export {
   MeterValueUnit,
   type MeterValuesRequest,
   type MeterValuesResponse,
-  type MikroOrmDbType as MikroORMDBType,
+  type MikroOrmDbType,
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
