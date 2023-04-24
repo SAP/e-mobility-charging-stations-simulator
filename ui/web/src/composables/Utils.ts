@@ -1,3 +1,5 @@
+import util from 'node:util';
+
 export default class Utils {
   // STATE
   public static isUndefined(value: unknown): boolean {
@@ -20,6 +22,10 @@ export default class Utils {
   //   if (this.isIterable(obj) === false) cb();
   // }
 
+  public static isPromisePending(promise: Promise<unknown>): boolean {
+    return util.inspect(promise).includes('pending');
+  }
+
   public static async promiseWithTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
@@ -31,7 +37,10 @@ export default class Utils {
     // Create a timeout promise that rejects in timeout milliseconds
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        timeoutCallback();
+        if (Utils.isPromisePending(promise)) {
+          timeoutCallback();
+          // FIXME: The original promise shall be canceled
+        }
         reject(timeoutError);
       }, timeoutMs);
     });
