@@ -2,7 +2,7 @@ coverage
 dist
 outputs
 .nyc_output
-tsconfig.json
+tsconfig-base.json
 pnpm-lock.yaml
 package-lock.json
 performanceRecords.json
