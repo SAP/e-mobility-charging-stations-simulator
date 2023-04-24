@@ -5,5 +5,5 @@
   "testExplorer.useNativeTesting": true,
   "mochaExplorer.files": ["test/**/*Test.ts"],
   "mochaExplorer.debuggerConfig": "Debug Simulator Unit Tests",
-  "cSpell.words": ["CSMS", "iccid", "imsi", "Measurand", "Mikro", "ocpp", "poolifier"]
+  "cSpell.words": ["CSMS", "iccid", "imsi", "Measurand", "Mikro", "ocpp", "poolifier", "Recurrency"]
 }
