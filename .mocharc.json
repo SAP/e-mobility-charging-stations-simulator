@@ -13,6 +13,10 @@
   "full-trace": true,
   "enable-source-maps": true,
   "exit": true,
-  "node-option": ["experimental-specifier-resolution=node", "loader=ts-node/esm"],
+  "node-option": [
+    "loader=ts-node/esm",
+    "no-warnings=ExperimentalWarning",
+    "experimental-specifier-resolution=node"
+  ],
   "require": ["mochawesome/register"]
 }
