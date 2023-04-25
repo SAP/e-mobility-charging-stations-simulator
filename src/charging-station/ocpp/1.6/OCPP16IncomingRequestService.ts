@@ -396,13 +396,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const connectorId = commandPayload.connectorId;
     if (chargingStation.connectors.has(connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to unlock a non existing connector Id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} Trying to unlock a non existing connector id ${connectorId.toString()}`
       );
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
     if (connectorId === 0) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to unlock connector Id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} Trying to unlock connector id ${connectorId.toString()}`
       );
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
@@ -543,7 +543,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set charging profile(s) to a non existing connector Id ${
+        `${chargingStation.logPrefix()} Trying to set charging profile(s) to a non existing connector id ${
           commandPayload.connectorId
         }`
       );
@@ -599,7 +599,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to get composite schedule to a non existing connector Id ${
+        `${chargingStation.logPrefix()} Trying to get composite schedule to a non existing connector id ${
           commandPayload.connectorId
         }`
       );
@@ -649,7 +649,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector Id ${
+        `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector id ${
           commandPayload.connectorId
         }`
       );
@@ -724,7 +724,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const connectorId: number = commandPayload.connectorId;
     if (chargingStation.connectors.has(connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to change the availability of a non existing connector Id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} Trying to change the availability of a non existing connector id ${connectorId.toString()}`
       );
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
     }
@@ -926,7 +926,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector Id ${connectorId.toString()}, idTag '${idTag}', availability '${
+      `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector id ${connectorId.toString()}, idTag '${idTag}', availability '${
         chargingStation.getConnectorStatus(connectorId)?.availability
       }', status '${chargingStation.getConnectorStatus(connectorId)?.status}'`
     );

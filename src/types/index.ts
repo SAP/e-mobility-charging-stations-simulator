@@ -59,6 +59,7 @@ export {
   type ErrorCallback,
   type ErrorResponse,
   ErrorType,
+  type EvseStatus,
   FileType,
   FirmwareStatus,
   type FirmwareStatusNotificationRequest,

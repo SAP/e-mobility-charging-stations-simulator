@@ -20,6 +20,7 @@ import {
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
+  OperationalStatusEnumType,
 } from '../internal';
 
 export const RequestCommand = {
@@ -83,8 +84,9 @@ export type IncomingRequestHandler = (
 
 export const AvailabilityType = {
   ...OCPP16AvailabilityType,
+  ...OperationalStatusEnumType,
 } as const;
-export type AvailabilityType = OCPP16AvailabilityType;
+export type AvailabilityType = OCPP16AvailabilityType | OperationalStatusEnumType;
 
 export const DiagnosticsStatus = {
   ...OCPP16DiagnosticsStatus,

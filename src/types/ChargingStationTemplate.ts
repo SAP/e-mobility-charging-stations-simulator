@@ -6,6 +6,7 @@ import type {
   AutomaticTransactionGeneratorConfiguration,
   ChargingStationOcppConfiguration,
   ConnectorStatus,
+  EvseStatus,
   FirmwareStatus,
   IncomingRequestCommand,
   MessageTrigger,
@@ -112,5 +113,6 @@ export type ChargingStationTemplate = {
   messageTriggerSupport?: Record<MessageTrigger, boolean>;
   Configuration?: ChargingStationOcppConfiguration;
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
+  Evses?: Record<string, EvseStatus>;
   Connectors: Record<string, ConnectorStatus>;
 };

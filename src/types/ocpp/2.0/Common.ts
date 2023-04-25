@@ -25,6 +25,11 @@ export enum BootReasonEnumType {
   Watchdog = 'Watchdog',
 }
 
+export enum OperationalStatusEnumType {
+  Operative = 'Operative',
+  Inoperative = 'Inoperative',
+}
+
 export enum OCPP20ConnectorStatusEnumType {
   Available = 'Available',
   Occupied = 'Occupied',

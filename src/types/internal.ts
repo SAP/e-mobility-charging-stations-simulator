@@ -37,6 +37,7 @@ export * from './ChargingStationOcppConfiguration';
 export * from './ChargingStationTemplate';
 export * from './ChargingStationWorker';
 export * from './ConfigurationData';
+export type { EvseStatus } from './EvseStatus';
 export type { ConnectorStatus } from './ConnectorStatus';
 export type { EmptyObject } from './EmptyObject';
 export type { HandleErrorParams } from './Error';

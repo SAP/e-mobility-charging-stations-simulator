@@ -16,6 +16,8 @@
     "cacheable",
     "commitlint",
     "CSMS",
+    "evse",
+    "evses",
     "iccid",
     "imsi",
     "lcov",

@@ -126,7 +126,7 @@ export class OCPPServiceUtils {
   ): boolean {
     if (connectorId < 0) {
       logger.error(
-        `${chargingStation.logPrefix()} ${ocppCommand} incoming request received with invalid connector Id ${connectorId}`
+        `${chargingStation.logPrefix()} ${ocppCommand} incoming request received with invalid connector id ${connectorId}`
       );
       return false;
     }

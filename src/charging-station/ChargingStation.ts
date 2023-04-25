@@ -53,6 +53,7 @@ import {
   type ErrorCallback,
   type ErrorResponse,
   ErrorType,
+  type EvseStatus,
   FileType,
   FirmwareStatus,
   type FirmwareStatusNotificationRequest,
@@ -108,6 +109,7 @@ export class ChargingStation {
   public ocppConfiguration!: ChargingStationOcppConfiguration | undefined;
   public wsConnection!: WebSocket | null;
   public readonly connectors: Map<number, ConnectorStatus>;
+  public readonly evses: Map<number, EvseStatus>;
   public readonly requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics | undefined;
   public heartbeatSetInterval!: NodeJS.Timeout;
@@ -119,6 +121,7 @@ export class ChargingStation {
   private configurationFile!: string;
   private configurationFileHash!: string;
   private connectorsConfigurationHash!: string;
+  private evsesConfigurationHash!: string;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
   private configuredSupervisionUrl!: URL;
@@ -138,6 +141,7 @@ export class ChargingStation {
     this.index = index;
     this.templateFile = templateFile;
     this.connectors = new Map<number, ConnectorStatus>();
+    this.evses = new Map<number, EvseStatus>();
     this.requests = new Map<string, CachedRequest>();
     this.messageBuffer = new Set<string>();
     this.sharedLRUCache = SharedLRUCache.getInstance();
@@ -471,19 +475,19 @@ export class ChargingStation {
   public startMeterValues(connectorId: number, interval: number): void {
     if (connectorId === 0) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId.toString()}`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
       );
       return;
     }
     if (!this.getConnectorStatus(connectorId)) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on non existing connector Id ${connectorId.toString()}`
+        `${this.logPrefix()} Trying to start MeterValues on non existing connector id ${connectorId.toString()}`
       );
       return;
     }
     if (this.getConnectorStatus(connectorId)?.transactionStarted === false) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction started`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction started`
       );
       return;
     } else if (
@@ -491,7 +495,7 @@ export class ChargingStation {
       Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionId)
     ) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector Id ${connectorId} with no transaction id`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction id`
       );
       return;
     }
@@ -946,6 +950,7 @@ export class ChargingStation {
     }
     // Build connectors if needed (FIXME: should be factored out)
     this.initializeConnectors(stationInfo, configuredMaxConnectors, templateMaxConnectors);
+    this.initializeEvses(stationInfo);
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
     ChargingStationUtils.createStationInfoHash(stationInfo);
     return stationInfo;
@@ -1255,7 +1260,7 @@ export class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
-        } with no connector Id 0 configuration`
+        } with no connector id 0 configuration`
       );
     }
     if (stationInfo?.Connectors) {
@@ -1268,7 +1273,7 @@ export class ChargingStation {
       if (this.connectors?.size === 0 || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear();
         this.connectorsConfigurationHash = connectorsConfigHash;
-        // Add connector Id 0
+        // Add connector id 0
         let lastConnector = '0';
         for (lastConnector in stationInfo?.Connectors) {
           const connectorStatus = stationInfo?.Connectors[lastConnector];
@@ -1326,6 +1331,55 @@ export class ChargingStation {
         Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionStarted)
       ) {
         this.initializeConnectorStatus(connectorId);
+      }
+    }
+  }
+
+  private initializeEvses(stationInfo: ChargingStationInfo): void {
+    if (!stationInfo?.Evses && this.evses.size === 0) {
+      const logMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`;
+      logger.warn(`${this.logPrefix()} ${logMsg}`);
+      return;
+    }
+    if (!stationInfo?.Evses[0]) {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with no evse id 0 configuration`
+      );
+    }
+    if (stationInfo?.Evses) {
+      const evsesConfigHash = crypto
+        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+        .update(`${JSON.stringify(stationInfo?.Evses)}`)
+        .digest('hex');
+      const evsesConfigChanged =
+        this.evses?.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash;
+      if (this.evses?.size === 0 || evsesConfigChanged) {
+        evsesConfigChanged && this.evses.clear();
+        this.evsesConfigurationHash = evsesConfigHash;
+        for (const evse in stationInfo?.Evses) {
+          const evseId = Utils.convertToInt(evse);
+          this.evses.set(evseId, Utils.cloneObject<EvseStatus>(stationInfo?.Evses[evse]));
+          this.evses.get(evseId).availability = AvailabilityType.OPERATIVE;
+        }
+      }
+    } else {
+      if (this.connectors.size === 0) {
+        const logMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no evses configuration defined`;
+        logger.error(`${this.logPrefix()} ${logMsg}`);
+        throw new BaseError(logMsg);
+      }
+      logger.info(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with no evses configuration defined, mapping one connector to one evse`
+      );
+      for (const [connectorId, connectorStatus] of this.connectors) {
+        this.evses.set(connectorId, {
+          connectorIds: [connectorId],
+          availability: connectorStatus.availability,
+        });
       }
     }
   }
