@@ -10,6 +10,7 @@
     "idtag",
     "imsi",
     "ocpp",
-    "RFID"
+    "RFID",
+    "webui"
   ]
 }
