@@ -237,11 +237,11 @@ export class ChargingStation {
   }
 
   public isChargingStationAvailable(): boolean {
-    return this.getConnectorStatus(0)?.availability === AvailabilityType.OPERATIVE;
+    return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative;
   }
 
   public isConnectorAvailable(id: number): boolean {
-    return id > 0 && this.getConnectorStatus(id)?.availability === AvailabilityType.OPERATIVE;
+    return id > 0 && this.getConnectorStatus(id)?.availability === AvailabilityType.Operative;
   }
 
   public getNumberOfConnectors(): number {
@@ -1288,7 +1288,7 @@ export class ChargingStation {
               lastConnectorId,
               Utils.cloneObject<ConnectorStatus>(connectorStatus)
             );
-            this.getConnectorStatus(lastConnectorId).availability = AvailabilityType.OPERATIVE;
+            this.getConnectorStatus(lastConnectorId).availability = AvailabilityType.Operative;
             if (Utils.isUndefined(this.getConnectorStatus(lastConnectorId)?.chargingProfiles)) {
               this.getConnectorStatus(lastConnectorId).chargingProfiles = [];
             }
@@ -1303,7 +1303,7 @@ export class ChargingStation {
             const connectorStatus = stationInfo?.Connectors[randConnectorId.toString()];
             this.checkStationInfoConnectorStatus(randConnectorId, connectorStatus);
             this.connectors.set(index, Utils.cloneObject<ConnectorStatus>(connectorStatus));
-            this.getConnectorStatus(index).availability = AvailabilityType.OPERATIVE;
+            this.getConnectorStatus(index).availability = AvailabilityType.Operative;
             if (Utils.isUndefined(this.getConnectorStatus(index)?.chargingProfiles)) {
               this.getConnectorStatus(index).chargingProfiles = [];
             }
@@ -1361,7 +1361,7 @@ export class ChargingStation {
         for (const evse in stationInfo?.Evses) {
           const evseId = Utils.convertToInt(evse);
           this.evses.set(evseId, Utils.cloneObject<EvseStatus>(stationInfo?.Evses[evse]));
-          this.evses.get(evseId).availability = AvailabilityType.OPERATIVE;
+          this.evses.get(evseId).availability = AvailabilityType.Operative;
         }
       }
     } else {

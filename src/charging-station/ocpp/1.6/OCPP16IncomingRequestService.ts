@@ -729,7 +729,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
     }
     const chargePointStatus: OCPP16ChargePointStatus =
-      commandPayload.type === OCPP16AvailabilityType.OPERATIVE
+      commandPayload.type === OCPP16AvailabilityType.Operative
         ? OCPP16ChargePointStatus.Available
         : OCPP16ChargePointStatus.Unavailable;
     if (connectorId === 0) {
@@ -753,7 +753,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       connectorId > 0 &&
       (chargingStation.isChargingStationAvailable() === true ||
         (chargingStation.isChargingStationAvailable() === false &&
-          commandPayload.type === OCPP16AvailabilityType.INOPERATIVE))
+          commandPayload.type === OCPP16AvailabilityType.Inoperative))
     ) {
       if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
         chargingStation.getConnectorStatus(connectorId).availability = commandPayload.type;

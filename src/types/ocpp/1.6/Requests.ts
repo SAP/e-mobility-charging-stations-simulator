@@ -114,8 +114,8 @@ export interface SetChargingProfileRequest extends JsonObject {
 }
 
 export enum OCPP16AvailabilityType {
-  INOPERATIVE = 'Inoperative',
-  OPERATIVE = 'Operative',
+  Inoperative = 'Inoperative',
+  Operative = 'Operative',
 }
 
 export interface ChangeAvailabilityRequest extends JsonObject {
