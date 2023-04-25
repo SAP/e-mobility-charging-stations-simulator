@@ -2,5 +2,14 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": true
   },
-  "cSpell.words": ["composables", "finalhandler", "iccid", "idtag", "imsi", "ocpp", "RFID"]
+  "cSpell.words": [
+    "Avenir",
+    "composables",
+    "finalhandler",
+    "iccid",
+    "idtag",
+    "imsi",
+    "ocpp",
+    "RFID"
+  ]
 }

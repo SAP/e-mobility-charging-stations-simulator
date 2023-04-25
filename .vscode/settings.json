@@ -6,15 +6,23 @@
   "mochaExplorer.files": ["test/**/*Test.ts"],
   "mochaExplorer.debuggerConfig": "Debug Simulator Unit Tests",
   "cSpell.words": [
+    "bufferutil",
+    "cacheable",
     "commitlint",
     "CSMS",
     "iccid",
     "imsi",
+    "lcov",
+    "logform",
     "Measurand",
     "Mikro",
     "mnemonist",
+    "mochawesome",
     "ocpp",
     "poolifier",
-    "Recurrency"
+    "preinstall",
+    "Recurrency",
+    "robohydra",
+    "tsdoc"
   ]
 }
