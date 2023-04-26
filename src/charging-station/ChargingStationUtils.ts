@@ -17,6 +17,7 @@ import {
   type ChargingSchedulePeriod,
   type ChargingStationInfo,
   type ChargingStationTemplate,
+  type ConnectorStatus,
   CurrentType,
   type OCPP16BootNotificationRequest,
   type OCPP20BootNotificationRequest,
@@ -92,12 +93,11 @@ export class ChargingStationUtils {
     return true;
   }
 
-  public static getTemplateMaxNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
-    const templateConnectors = stationTemplate?.Connectors;
-    if (!templateConnectors) {
+  public static getMaxNumberOfConnectors(connectors: Record<string, ConnectorStatus>): number {
+    if (!connectors) {
       return -1;
     }
-    return Object.keys(templateConnectors).length;
+    return Object.keys(connectors).length;
   }
 
   public static checkTemplateMaxConnectors(
@@ -124,10 +124,20 @@ export class ChargingStationUtils {
         numberOfConnectors[Math.floor(Utils.secureRandom() * numberOfConnectors.length)];
     } else if (Utils.isUndefined(stationTemplate.numberOfConnectors) === false) {
       configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
-    } else {
+    } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
       configuredMaxConnectors = stationTemplate?.Connectors[0]
-        ? ChargingStationUtils.getTemplateMaxNumberOfConnectors(stationTemplate) - 1
-        : ChargingStationUtils.getTemplateMaxNumberOfConnectors(stationTemplate);
+        ? ChargingStationUtils.getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
+        : ChargingStationUtils.getMaxNumberOfConnectors(stationTemplate.Connectors);
+    } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
+      configuredMaxConnectors = 0;
+      for (const evse in stationTemplate.Evses) {
+        if (evse === '0') {
+          continue;
+        }
+        configuredMaxConnectors += ChargingStationUtils.getMaxNumberOfConnectors(
+          stationTemplate.Evses[evse].Connectors
+        );
+      }
     }
     return configuredMaxConnectors;
   }

@@ -929,28 +929,40 @@ export class ChargingStation {
       this.templateFile,
       this.logPrefix()
     );
-    const templateMaxConnectors =
-      ChargingStationUtils.getTemplateMaxNumberOfConnectors(stationTemplate);
-    ChargingStationUtils.checkTemplateMaxConnectors(
-      templateMaxConnectors,
-      this.templateFile,
-      this.logPrefix()
-    );
-    if (
-      configuredMaxConnectors >
-        (stationTemplate?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
-      !stationTemplate?.randomConnectors
-    ) {
-      logger.warn(
-        `${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${
-          this.templateFile
-        }, forcing random connector configurations affectation`
+    // Build evses or connectors if needed (FIXME: should be factored out)
+    if (stationInfo?.Connectors && !stationInfo?.Evses) {
+      const templateMaxConnectors = ChargingStationUtils.getMaxNumberOfConnectors(
+        stationTemplate.Connectors
       );
-      stationInfo.randomConnectors = true;
+      ChargingStationUtils.checkTemplateMaxConnectors(
+        templateMaxConnectors,
+        this.templateFile,
+        this.logPrefix()
+      );
+      if (
+        configuredMaxConnectors >
+          (stationTemplate?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
+        !stationTemplate?.randomConnectors
+      ) {
+        logger.warn(
+          `${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${
+            this.templateFile
+          }, forcing random connector configurations affectation`
+        );
+        stationInfo.randomConnectors = true;
+      }
+      this.initializeConnectors(stationInfo, configuredMaxConnectors);
+    } else if (stationInfo?.Evses && !stationInfo?.Connectors) {
+      this.initializeEvses(stationInfo);
+    } else if (stationInfo?.Evses && stationInfo?.Connectors) {
+      const errorMsg = `Connectors and evses defined at the same time in template file ${this.templateFile}`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    } else {
+      const errorMsg = `No connectors or evses defined in template file ${this.templateFile}`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
     }
-    // Build connectors if needed (FIXME: should be factored out)
-    this.initializeConnectors(stationInfo, configuredMaxConnectors, templateMaxConnectors);
-    this.initializeEvses(stationInfo);
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
     ChargingStationUtils.createStationInfoHash(stationInfo);
     return stationInfo;
@@ -1248,8 +1260,7 @@ export class ChargingStation {
 
   private initializeConnectors(
     stationInfo: ChargingStationInfo,
-    configuredMaxConnectors: number,
-    templateMaxConnectors: number
+    configuredMaxConnectors: number
   ): void {
     if (!stationInfo?.Connectors && this.connectors.size === 0) {
       const logMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`;
@@ -1295,6 +1306,9 @@ export class ChargingStation {
           }
         }
         // Generate all connectors
+        const templateMaxConnectors = ChargingStationUtils.getMaxNumberOfConnectors(
+          stationInfo?.Connectors
+        );
         if ((stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) > 0) {
           for (let index = 1; index <= configuredMaxConnectors; index++) {
             const randConnectorId = stationInfo?.randomConnectors
@@ -1317,7 +1331,7 @@ export class ChargingStation {
         } with no connectors configuration defined, using already defined connectors`
       );
     }
-    // Initialize transaction attributes on connectors
+    // Initialize connectors status
     for (const connectorId of this.connectors.keys()) {
       if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
         logger.warn(
@@ -1330,7 +1344,42 @@ export class ChargingStation {
         connectorId > 0 &&
         Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionStarted)
       ) {
-        this.initializeConnectorStatus(connectorId);
+        this.initializeConnectorStatus(this.getConnectorStatus(connectorId));
+      }
+    }
+  }
+
+  private buildConnectorsMap(
+    connectors: Record<string, ConnectorStatus>
+  ): Map<number, ConnectorStatus> {
+    const connectorsMap = new Map<number, ConnectorStatus>();
+    for (const connector in connectors) {
+      const connectorStatus = connectors[connector];
+      const connectorId = Utils.convertToInt(connector);
+      this.checkStationInfoConnectorStatus(connectorId, connectorStatus);
+      connectorsMap.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
+      connectorsMap.get(connectorId).availability = AvailabilityType.Operative;
+      if (Utils.isUndefined(connectorsMap.get(connectorId)?.chargingProfiles)) {
+        connectorsMap.get(connectorId).chargingProfiles = [];
+      }
+    }
+    return connectorsMap;
+  }
+
+  private initializeConnectorsMapStatus(connectors: Map<number, ConnectorStatus>): void {
+    for (const connectorId of connectors.keys()) {
+      if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
+        logger.warn(
+          `${this.logPrefix()} Connector ${connectorId} at initialization has a transaction started: ${
+            connectors.get(connectorId)?.transactionId
+          }`
+        );
+      }
+      if (
+        connectorId > 0 &&
+        Utils.isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
+      ) {
+        this.initializeConnectorStatus(connectors.get(connectorId));
       }
     }
   }
@@ -1359,28 +1408,19 @@ export class ChargingStation {
         evsesConfigChanged && this.evses.clear();
         this.evsesConfigurationHash = evsesConfigHash;
         for (const evse in stationInfo?.Evses) {
-          const evseId = Utils.convertToInt(evse);
-          this.evses.set(evseId, Utils.cloneObject<EvseStatus>(stationInfo?.Evses[evse]));
-          this.evses.get(evseId).availability = AvailabilityType.Operative;
+          this.evses.set(Utils.convertToInt(evse), {
+            connectors: this.buildConnectorsMap(stationInfo?.Evses[evse]?.Connectors),
+            availability: AvailabilityType.Operative,
+          });
+          this.initializeConnectorsMapStatus(this.evses.get(Utils.convertToInt(evse))?.connectors);
         }
       }
     } else {
-      if (this.connectors.size === 0) {
-        const logMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no evses configuration defined`;
-        logger.error(`${this.logPrefix()} ${logMsg}`);
-        throw new BaseError(logMsg);
-      }
-      logger.info(
+      logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
-        } with no evses configuration defined, mapping one connector to one evse`
+        } with no evses configuration defined, using already defined evses`
       );
-      for (const [connectorId, connectorStatus] of this.connectors) {
-        this.evses.set(connectorId, {
-          connectorIds: [connectorId],
-          availability: connectorStatus.availability,
-        });
-      }
     }
   }
 
@@ -2101,12 +2141,12 @@ export class ChargingStation {
     return this.getTemplateFromFile()?.AutomaticTransactionGenerator;
   }
 
-  private initializeConnectorStatus(connectorId: number): void {
-    this.getConnectorStatus(connectorId).idTagLocalAuthorized = false;
-    this.getConnectorStatus(connectorId).idTagAuthorized = false;
-    this.getConnectorStatus(connectorId).transactionRemoteStarted = false;
-    this.getConnectorStatus(connectorId).transactionStarted = false;
-    this.getConnectorStatus(connectorId).energyActiveImportRegisterValue = 0;
-    this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
+  private initializeConnectorStatus(connectorStatus: ConnectorStatus): void {
+    connectorStatus.idTagLocalAuthorized = false;
+    connectorStatus.idTagAuthorized = false;
+    connectorStatus.transactionRemoteStarted = false;
+    connectorStatus.transactionStarted = false;
+    connectorStatus.energyActiveImportRegisterValue = 0;
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
   }
 }
