@@ -534,6 +534,12 @@ export class ChargingStation {
     }
   }
 
+  public stopMeterValues(connectorId: number) {
+    if (this.getConnectorStatus(connectorId)?.transactionSetInterval) {
+      clearInterval(this.getConnectorStatus(connectorId)?.transactionSetInterval);
+    }
+  }
+
   public start(): void {
     if (this.started === false) {
       if (this.starting === false) {
@@ -627,21 +633,6 @@ export class ChargingStation {
     if (this.getOcppPersistentConfiguration()) {
       this.saveConfiguration();
     }
-  }
-
-  public resetConnectorStatus(connectorId: number): void {
-    this.getConnectorStatus(connectorId).idTagLocalAuthorized = false;
-    this.getConnectorStatus(connectorId).idTagAuthorized = false;
-    this.getConnectorStatus(connectorId).transactionRemoteStarted = false;
-    this.getConnectorStatus(connectorId).transactionStarted = false;
-    delete this.getConnectorStatus(connectorId)?.localAuthorizeIdTag;
-    delete this.getConnectorStatus(connectorId)?.authorizeIdTag;
-    delete this.getConnectorStatus(connectorId)?.transactionId;
-    delete this.getConnectorStatus(connectorId)?.transactionIdTag;
-    this.getConnectorStatus(connectorId).transactionEnergyActiveImportRegisterValue = 0;
-    delete this.getConnectorStatus(connectorId)?.transactionBeginMeterValue;
-    this.stopMeterValues(connectorId);
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
   public hasFeatureProfile(featureProfile: SupportedFeatureProfiles): boolean | undefined {
@@ -1294,7 +1285,12 @@ export class ChargingStation {
             this.getUseConnectorId0(stationInfo) === true &&
             connectorStatus
           ) {
-            this.checkStationInfoConnectorStatus(lastConnectorId, connectorStatus);
+            ChargingStationUtils.checkStationInfoConnectorStatus(
+              lastConnectorId,
+              connectorStatus,
+              this.logPrefix(),
+              this.templateFile
+            );
             this.connectors.set(
               lastConnectorId,
               Utils.cloneObject<ConnectorStatus>(connectorStatus)
@@ -1315,7 +1311,12 @@ export class ChargingStation {
               ? Utils.getRandomInteger(Utils.convertToInt(lastConnector), 1)
               : index;
             const connectorStatus = stationInfo?.Connectors[randConnectorId.toString()];
-            this.checkStationInfoConnectorStatus(randConnectorId, connectorStatus);
+            ChargingStationUtils.checkStationInfoConnectorStatus(
+              randConnectorId,
+              connectorStatus,
+              this.logPrefix(),
+              this.templateFile
+            );
             this.connectors.set(index, Utils.cloneObject<ConnectorStatus>(connectorStatus));
             this.getConnectorStatus(index).availability = AvailabilityType.Operative;
             if (Utils.isUndefined(this.getConnectorStatus(index)?.chargingProfiles)) {
@@ -1344,42 +1345,7 @@ export class ChargingStation {
         connectorId > 0 &&
         Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionStarted)
       ) {
-        this.initializeConnectorStatus(this.getConnectorStatus(connectorId));
-      }
-    }
-  }
-
-  private buildConnectorsMap(
-    connectors: Record<string, ConnectorStatus>
-  ): Map<number, ConnectorStatus> {
-    const connectorsMap = new Map<number, ConnectorStatus>();
-    for (const connector in connectors) {
-      const connectorStatus = connectors[connector];
-      const connectorId = Utils.convertToInt(connector);
-      this.checkStationInfoConnectorStatus(connectorId, connectorStatus);
-      connectorsMap.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
-      connectorsMap.get(connectorId).availability = AvailabilityType.Operative;
-      if (Utils.isUndefined(connectorsMap.get(connectorId)?.chargingProfiles)) {
-        connectorsMap.get(connectorId).chargingProfiles = [];
-      }
-    }
-    return connectorsMap;
-  }
-
-  private initializeConnectorsMapStatus(connectors: Map<number, ConnectorStatus>): void {
-    for (const connectorId of connectors.keys()) {
-      if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
-        logger.warn(
-          `${this.logPrefix()} Connector ${connectorId} at initialization has a transaction started: ${
-            connectors.get(connectorId)?.transactionId
-          }`
-        );
-      }
-      if (
-        connectorId > 0 &&
-        Utils.isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
-      ) {
-        this.initializeConnectorStatus(connectors.get(connectorId));
+        ChargingStationUtils.initializeConnectorStatus(this.getConnectorStatus(connectorId));
       }
     }
   }
@@ -1409,10 +1375,17 @@ export class ChargingStation {
         this.evsesConfigurationHash = evsesConfigHash;
         for (const evse in stationInfo?.Evses) {
           this.evses.set(Utils.convertToInt(evse), {
-            connectors: this.buildConnectorsMap(stationInfo?.Evses[evse]?.Connectors),
+            connectors: ChargingStationUtils.buildConnectorsMap(
+              stationInfo?.Evses[evse]?.Connectors,
+              this.logPrefix(),
+              this.templateFile
+            ),
             availability: AvailabilityType.Operative,
           });
-          this.initializeConnectorsMapStatus(this.evses.get(Utils.convertToInt(evse))?.connectors);
+          ChargingStationUtils.initializeConnectorsMapStatus(
+            this.evses.get(Utils.convertToInt(evse))?.connectors,
+            this.logPrefix()
+          );
         }
       }
     } else {
@@ -1421,20 +1394,6 @@ export class ChargingStation {
           this.templateFile
         } with no evses configuration defined, using already defined evses`
       );
-    }
-  }
-
-  private checkStationInfoConnectorStatus(
-    connectorId: number,
-    connectorStatus: ConnectorStatus
-  ): void {
-    if (!Utils.isNullOrUndefined(connectorStatus?.status)) {
-      logger.warn(
-        `${this.logPrefix()} Charging station information from template ${
-          this.templateFile
-        } with connector ${connectorId} status configuration defined, undefine it`
-      );
-      delete connectorStatus.status;
     }
   }
 
@@ -2076,12 +2035,6 @@ export class ChargingStation {
     }
   }
 
-  private stopMeterValues(connectorId: number) {
-    if (this.getConnectorStatus(connectorId)?.transactionSetInterval) {
-      clearInterval(this.getConnectorStatus(connectorId)?.transactionSetInterval);
-    }
-  }
-
   private getReconnectExponentialDelay(): boolean {
     return this.stationInfo?.reconnectExponentialDelay ?? false;
   }
@@ -2139,14 +2092,5 @@ export class ChargingStation {
     | AutomaticTransactionGeneratorConfiguration
     | undefined {
     return this.getTemplateFromFile()?.AutomaticTransactionGenerator;
-  }
-
-  private initializeConnectorStatus(connectorStatus: ConnectorStatus): void {
-    connectorStatus.idTagLocalAuthorized = false;
-    connectorStatus.idTagAuthorized = false;
-    connectorStatus.transactionRemoteStarted = false;
-    connectorStatus.transactionStarted = false;
-    connectorStatus.energyActiveImportRegisterValue = 0;
-    connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
   }
 }

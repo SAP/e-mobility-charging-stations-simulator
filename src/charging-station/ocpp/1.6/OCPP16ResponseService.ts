@@ -1,8 +1,15 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import { parentPort } from 'node:worker_threads';
+
 import type { JSONSchemaType } from 'ajv';
 
-import { type ChargingStation, ChargingStationConfigurationUtils } from '../../../charging-station';
+import {
+  type ChargingStation,
+  ChargingStationConfigurationUtils,
+  ChargingStationUtils,
+  MessageChannelUtils,
+} from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   type ChangeAvailabilityResponse,
@@ -593,7 +600,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {
-    chargingStation.resetConnectorStatus(connectorId);
+    ChargingStationUtils.resetConnectorStatus(chargingStation.getConnectorStatus(connectorId));
+    chargingStation.stopMeterValues(connectorId);
+    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(chargingStation));
     if (
       chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.Available
     ) {
@@ -655,7 +664,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
     if (chargingStation.stationInfo.powerSharedByConnectors) {
       chargingStation.powerDivider--;
     }
-    chargingStation.resetConnectorStatus(transactionConnectorId);
+    ChargingStationUtils.resetConnectorStatus(
+      chargingStation.getConnectorStatus(transactionConnectorId)
+    );
+    chargingStation.stopMeterValues(transactionConnectorId);
+    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(chargingStation));
     const logMsg = `${chargingStation.logPrefix()} Transaction ${requestPayload.transactionId.toString()} STOPPED on ${
       chargingStation.stationInfo.chargingStationId
     }#${transactionConnectorId?.toString()} with status '${

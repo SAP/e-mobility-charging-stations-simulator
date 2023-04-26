@@ -9,6 +9,7 @@ import type { ChargingStation } from './internal';
 import { BaseError } from '../exception';
 import {
   AmpereUnits,
+  AvailabilityType,
   type BootNotificationRequest,
   BootReasonEnumType,
   type ChargingProfile,
@@ -152,6 +153,87 @@ export class ChargingStationUtils {
         `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`
       );
     }
+  }
+
+  public static checkStationInfoConnectorStatus(
+    connectorId: number,
+    connectorStatus: ConnectorStatus,
+    logPrefix: string,
+    templateFile: string
+  ): void {
+    if (!Utils.isNullOrUndefined(connectorStatus?.status)) {
+      logger.warn(
+        `${logPrefix} Charging station information from template ${templateFile} with connector ${connectorId} status configuration defined, undefine it`
+      );
+      delete connectorStatus.status;
+    }
+  }
+
+  public static buildConnectorsMap(
+    connectors: Record<string, ConnectorStatus>,
+    logPrefix: string,
+    templateFile: string
+  ): Map<number, ConnectorStatus> {
+    const connectorsMap = new Map<number, ConnectorStatus>();
+    for (const connector in connectors) {
+      const connectorStatus = connectors[connector];
+      const connectorId = Utils.convertToInt(connector);
+      ChargingStationUtils.checkStationInfoConnectorStatus(
+        connectorId,
+        connectorStatus,
+        logPrefix,
+        templateFile
+      );
+      connectorsMap.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
+      connectorsMap.get(connectorId).availability = AvailabilityType.Operative;
+      if (Utils.isUndefined(connectorsMap.get(connectorId)?.chargingProfiles)) {
+        connectorsMap.get(connectorId).chargingProfiles = [];
+      }
+    }
+    return connectorsMap;
+  }
+
+  public static initializeConnectorsMapStatus(
+    connectors: Map<number, ConnectorStatus>,
+    logPrefix: string
+  ): void {
+    for (const connectorId of connectors.keys()) {
+      if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
+        logger.warn(
+          `${logPrefix} Connector ${connectorId} at initialization has a transaction started: ${
+            connectors.get(connectorId)?.transactionId
+          }`
+        );
+      }
+      if (
+        connectorId > 0 &&
+        Utils.isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
+      ) {
+        ChargingStationUtils.initializeConnectorStatus(connectors.get(connectorId));
+      }
+    }
+  }
+
+  public static initializeConnectorStatus(connectorStatus: ConnectorStatus): void {
+    connectorStatus.idTagLocalAuthorized = false;
+    connectorStatus.idTagAuthorized = false;
+    connectorStatus.transactionRemoteStarted = false;
+    connectorStatus.transactionStarted = false;
+    connectorStatus.energyActiveImportRegisterValue = 0;
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
+  }
+
+  public static resetConnectorStatus(connectorStatus: ConnectorStatus): void {
+    connectorStatus.idTagLocalAuthorized = false;
+    connectorStatus.idTagAuthorized = false;
+    connectorStatus.transactionRemoteStarted = false;
+    connectorStatus.transactionStarted = false;
+    delete connectorStatus?.localAuthorizeIdTag;
+    delete connectorStatus?.authorizeIdTag;
+    delete connectorStatus?.transactionId;
+    delete connectorStatus?.transactionIdTag;
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
+    delete connectorStatus?.transactionBeginMeterValue;
   }
 
   public static createBootNotificationRequest(
