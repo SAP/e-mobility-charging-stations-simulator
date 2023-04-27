@@ -441,14 +441,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
   ): Promise<void> {
     const connectorId = requestPayload.connectorId;
 
-    let transactionConnectorId: number;
-    for (const id of chargingStation.connectors.keys()) {
-      if (id > 0 && id === connectorId) {
-        transactionConnectorId = id;
-        break;
-      }
-    }
-    if (Utils.isNullOrUndefined(transactionConnectorId)) {
+    if (connectorId === 0 || !chargingStation.connectors.has(connectorId)) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to start a transaction on a non existing connector id ${connectorId.toString()}`
       );

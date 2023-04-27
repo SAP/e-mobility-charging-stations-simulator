@@ -59,7 +59,11 @@
     "idTagDistribution": "round-robin"
   },
   "Evses": {
-    "0": {},
+    "0": {
+      "Connectors": {
+        "0": {}
+      }
+    },
     "1": {
       "Connectors": {
         "1": {

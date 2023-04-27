@@ -165,6 +165,10 @@ export class ChargingStation {
     );
   }
 
+  private get hasEvses(): boolean {
+    return this.connectors.size === 0 && this.evses.size > 0;
+  }
+
   public logPrefix = (): string => {
     return Utils.logPrefix(
       ` ${
@@ -240,16 +244,40 @@ export class ChargingStation {
     return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative;
   }
 
-  public isConnectorAvailable(id: number): boolean {
-    return id > 0 && this.getConnectorStatus(id)?.availability === AvailabilityType.Operative;
+  public isConnectorAvailable(connectorId: number): boolean {
+    return (
+      connectorId > 0 &&
+      this.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
+    );
   }
 
   public getNumberOfConnectors(): number {
+    if (this.hasEvses) {
+      let numberOfConnectors = 0;
+      for (const [evseId, evseStatus] of this.evses) {
+        if (evseId === 0) {
+          continue;
+        }
+        numberOfConnectors += evseStatus.connectors.size;
+      }
+      return numberOfConnectors;
+    }
     return this.connectors.get(0) ? this.connectors.size - 1 : this.connectors.size;
   }
 
-  public getConnectorStatus(id: number): ConnectorStatus | undefined {
-    return this.connectors.get(id);
+  public getNumberOfEvses(): number {
+    return this.evses.size;
+  }
+
+  public getConnectorStatus(connectorId: number): ConnectorStatus | undefined {
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        if (evseStatus.connectors.has(connectorId)) {
+          return evseStatus.connectors.get(connectorId);
+        }
+      }
+    }
+    return this.connectors.get(connectorId);
   }
 
   public getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
@@ -306,12 +334,22 @@ export class ChargingStation {
   }
 
   public getTransactionIdTag(transactionId: number): string | undefined {
-    for (const connectorId of this.connectors.keys()) {
-      if (
-        connectorId > 0 &&
-        this.getConnectorStatus(connectorId)?.transactionId === transactionId
-      ) {
-        return this.getConnectorStatus(connectorId)?.transactionIdTag;
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.transactionId === transactionId) {
+            return connectorStatus.transactionIdTag;
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (
+          connectorId > 0 &&
+          this.getConnectorStatus(connectorId)?.transactionId === transactionId
+        ) {
+          return this.getConnectorStatus(connectorId)?.transactionIdTag;
+        }
       }
     }
   }
@@ -345,12 +383,22 @@ export class ChargingStation {
   }
 
   public getConnectorIdByTransactionId(transactionId: number): number | undefined {
-    for (const connectorId of this.connectors.keys()) {
-      if (
-        connectorId > 0 &&
-        this.getConnectorStatus(connectorId)?.transactionId === transactionId
-      ) {
-        return connectorId;
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+          if (connectorStatus.transactionId === transactionId) {
+            return connectorId;
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (
+          connectorId > 0 &&
+          this.getConnectorStatus(connectorId)?.transactionId === transactionId
+        ) {
+          return connectorId;
+        }
       }
     }
   }
@@ -1149,17 +1197,35 @@ export class ChargingStation {
       )
     ) {
       const connectorPhaseRotation = [];
-      for (const connectorId of this.connectors.keys()) {
-        // AC/DC
-        if (connectorId === 0 && this.getNumberOfPhases() === 0) {
-          connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
-        } else if (connectorId > 0 && this.getNumberOfPhases() === 0) {
-          connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
-          // AC
-        } else if (connectorId > 0 && this.getNumberOfPhases() === 1) {
-          connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
-        } else if (connectorId > 0 && this.getNumberOfPhases() === 3) {
-          connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
+      if (this.hasEvses) {
+        for (const evseStatus of this.evses.values()) {
+          for (const connectorId of evseStatus.connectors.keys()) {
+            // AC/DC
+            if (connectorId === 0 && this.getNumberOfPhases() === 0) {
+              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
+            } else if (connectorId > 0 && this.getNumberOfPhases() === 0) {
+              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
+              // AC
+            } else if (connectorId > 0 && this.getNumberOfPhases() === 1) {
+              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
+            } else if (connectorId > 0 && this.getNumberOfPhases() === 3) {
+              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
+            }
+          }
+        }
+      } else {
+        for (const connectorId of this.connectors.keys()) {
+          // AC/DC
+          if (connectorId === 0 && this.getNumberOfPhases() === 0) {
+            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
+          } else if (connectorId > 0 && this.getNumberOfPhases() === 0) {
+            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
+            // AC
+          } else if (connectorId > 0 && this.getNumberOfPhases() === 1) {
+            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
+          } else if (connectorId > 0 && this.getNumberOfPhases() === 3) {
+            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
+          }
         }
       }
       ChargingStationConfigurationUtils.addConfigurationKey(
@@ -1758,18 +1824,38 @@ export class ChargingStation {
 
   private getNumberOfRunningTransactions(): number {
     let trxCount = 0;
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-        trxCount++;
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.transactionStarted === true) {
+            trxCount++;
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+          trxCount++;
+        }
       }
     }
     return trxCount;
   }
 
   private async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-        await this.stopTransactionOnConnector(connectorId, reason);
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+          if (connectorStatus.transactionStarted === true) {
+            await this.stopTransactionOnConnector(connectorId, reason);
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+          await this.stopTransactionOnConnector(connectorId, reason);
+        }
       }
     }
   }
