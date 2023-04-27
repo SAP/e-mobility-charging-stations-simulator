@@ -1444,13 +1444,13 @@ export class ChargingStation {
             } with no evses configuration defined, cannot create evses`
           );
         }
-      } else {
-        logger.warn(
-          `${this.logPrefix()} Charging station information from template ${
-            this.templateFile
-          } with no evses configuration defined, using already defined evses`
-        );
       }
+    } else {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with no evses configuration defined, using already defined evses`
+      );
     }
   }
 
