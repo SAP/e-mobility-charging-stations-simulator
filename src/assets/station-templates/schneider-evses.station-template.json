@@ -1,0 +1,102 @@
+{
+  "supervisionUrlOcppConfiguration": true,
+  "supervisionUrlOcppKey": "ocppcentraladdress",
+  "idTagsFile": "idtags.json",
+  "baseName": "CS-SCHNEIDER-EVSES",
+  "chargePointModel": "MONOBLOCK",
+  "chargePointVendor": "Schneider Electric",
+  "chargeBoxSerialNumberPrefix": "EV.2S22P44",
+  "firmwareVersionPattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
+  "firmwareVersion": "3.3.0.10",
+  "power": 44160,
+  "powerUnit": "W",
+  "voltageOut": 231,
+  "amperageLimitationOcppKey": "maxintensitysocket",
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register,Current.Import,Voltage"
+      },
+      {
+        "key": "MeterValueSampleInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "SupportedFeatureProfiles",
+        "readonly": true,
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger"
+      },
+      {
+        "key": "LocalAuthListEnabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "AuthorizeRemoteTxRequests",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": true,
+    "minDuration": 60,
+    "maxDuration": 80,
+    "minDelayBetweenTwoTransactions": 15,
+    "maxDelayBetweenTwoTransactions": 30,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "stopOnConnectionFailure": false,
+    "requireAuthorize": true,
+    "idTagDistribution": "round-robin"
+  },
+  "Evses": {
+    "0": {},
+    "1": {
+      "Connectors": {
+        "1": {
+          "MeterValues": [
+            {
+              "unit": "V",
+              "measurand": "Voltage"
+            },
+            {
+              "unit": "A",
+              "measurand": "Current.Import"
+            },
+            {
+              "unit": "Wh"
+            }
+          ]
+        }
+      }
+    },
+    "2": {
+      "Connectors": {
+        "2": {
+          "MeterValues": [
+            {
+              "unit": "V",
+              "measurand": "Voltage"
+            },
+            {
+              "unit": "A",
+              "measurand": "Current.Import"
+            },
+            {
+              "unit": "Wh"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
