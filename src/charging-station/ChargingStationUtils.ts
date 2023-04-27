@@ -20,6 +20,7 @@ import {
   type ChargingStationTemplate,
   type ConnectorStatus,
   CurrentType,
+  type EvseTemplate,
   type OCPP16BootNotificationRequest,
   type OCPP20BootNotificationRequest,
   OCPPVersion,
@@ -94,6 +95,13 @@ export class ChargingStationUtils {
     return true;
   }
 
+  public static getMaxNumberOfEvses(evses: Record<string, EvseTemplate>): number {
+    if (!evses) {
+      return -1;
+    }
+    return Object.keys(evses).length;
+  }
+
   public static getMaxNumberOfConnectors(connectors: Record<string, ConnectorStatus>): number {
     if (!connectors) {
       return -1;
@@ -117,26 +125,26 @@ export class ChargingStationUtils {
     }
   }
 
-  public static getConfiguredNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
+  public static getConfiguredNumberOfConnectors(stationInfo: ChargingStationInfo): number {
     let configuredMaxConnectors: number;
-    if (Utils.isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
-      const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
+    if (Utils.isNotEmptyArray(stationInfo.numberOfConnectors) === true) {
+      const numberOfConnectors = stationInfo.numberOfConnectors as number[];
       configuredMaxConnectors =
         numberOfConnectors[Math.floor(Utils.secureRandom() * numberOfConnectors.length)];
-    } else if (Utils.isUndefined(stationTemplate.numberOfConnectors) === false) {
-      configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
-    } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
-      configuredMaxConnectors = stationTemplate?.Connectors[0]
-        ? ChargingStationUtils.getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
-        : ChargingStationUtils.getMaxNumberOfConnectors(stationTemplate.Connectors);
-    } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
+    } else if (Utils.isUndefined(stationInfo.numberOfConnectors) === false) {
+      configuredMaxConnectors = stationInfo.numberOfConnectors as number;
+    } else if (stationInfo.Connectors && !stationInfo.Evses) {
+      configuredMaxConnectors = stationInfo?.Connectors[0]
+        ? ChargingStationUtils.getMaxNumberOfConnectors(stationInfo.Connectors) - 1
+        : ChargingStationUtils.getMaxNumberOfConnectors(stationInfo.Connectors);
+    } else if (stationInfo.Evses && !stationInfo.Connectors) {
       configuredMaxConnectors = 0;
-      for (const evse in stationTemplate.Evses) {
+      for (const evse in stationInfo.Evses) {
         if (evse === '0') {
           continue;
         }
         configuredMaxConnectors += ChargingStationUtils.getMaxNumberOfConnectors(
-          stationTemplate.Evses[evse].Connectors
+          stationInfo.Evses[evse].Connectors
         );
       }
     }
@@ -175,20 +183,26 @@ export class ChargingStationUtils {
     templateFile: string
   ): Map<number, ConnectorStatus> {
     const connectorsMap = new Map<number, ConnectorStatus>();
-    for (const connector in connectors) {
-      const connectorStatus = connectors[connector];
-      const connectorId = Utils.convertToInt(connector);
-      ChargingStationUtils.checkStationInfoConnectorStatus(
-        connectorId,
-        connectorStatus,
-        logPrefix,
-        templateFile
-      );
-      connectorsMap.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
-      connectorsMap.get(connectorId).availability = AvailabilityType.Operative;
-      if (Utils.isUndefined(connectorsMap.get(connectorId)?.chargingProfiles)) {
-        connectorsMap.get(connectorId).chargingProfiles = [];
+    if (ChargingStationUtils.getMaxNumberOfConnectors(connectors) > 0) {
+      for (const connector in connectors) {
+        const connectorStatus = connectors[connector];
+        const connectorId = Utils.convertToInt(connector);
+        ChargingStationUtils.checkStationInfoConnectorStatus(
+          connectorId,
+          connectorStatus,
+          logPrefix,
+          templateFile
+        );
+        connectorsMap.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
+        connectorsMap.get(connectorId).availability = AvailabilityType.Operative;
+        if (Utils.isUndefined(connectorsMap.get(connectorId)?.chargingProfiles)) {
+          connectorsMap.get(connectorId).chargingProfiles = [];
+        }
       }
+    } else {
+      logger.warn(
+        `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
+      );
     }
     return connectorsMap;
   }

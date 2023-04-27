@@ -60,6 +60,7 @@ export {
   type ErrorResponse,
   ErrorType,
   type EvseStatus,
+  type EvseTemplate,
   FileType,
   FirmwareStatus,
   type FirmwareStatusNotificationRequest,
