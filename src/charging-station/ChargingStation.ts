@@ -1411,6 +1411,13 @@ export class ChargingStation {
         } with no evse id 0 configuration`
       );
     }
+    if (!stationInfo?.Evses[0]?.Connectors[0]) {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with evse id 0 with no connector id 0 configuration`
+      );
+    }
     if (stationInfo?.Evses) {
       const evsesConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
