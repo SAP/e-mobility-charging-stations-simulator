@@ -2054,21 +2054,43 @@ export class ChargingStation {
     } else {
       await this.stopRunningTransactions(reason);
     }
-    for (const connectorId of this.connectors.keys()) {
-      if (connectorId > 0) {
-        await this.ocppRequestService.requestHandler<
-          StatusNotificationRequest,
-          StatusNotificationResponse
-        >(
-          this,
-          RequestCommand.STATUS_NOTIFICATION,
-          OCPPServiceUtils.buildStatusNotificationRequest(
+    if (this.hasEvses) {
+      for (const [evseId, evseStatus] of this.evses) {
+        if (evseId > 0) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            await this.ocppRequestService.requestHandler<
+              StatusNotificationRequest,
+              StatusNotificationResponse
+            >(
+              this,
+              RequestCommand.STATUS_NOTIFICATION,
+              OCPPServiceUtils.buildStatusNotificationRequest(
+                this,
+                connectorId,
+                ConnectorStatusEnum.Unavailable
+              )
+            );
+            delete connectorStatus?.status;
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (connectorId > 0) {
+          await this.ocppRequestService.requestHandler<
+            StatusNotificationRequest,
+            StatusNotificationResponse
+          >(
             this,
-            connectorId,
-            ConnectorStatusEnum.Unavailable
-          )
-        );
-        delete this.getConnectorStatus(connectorId)?.status;
+            RequestCommand.STATUS_NOTIFICATION,
+            OCPPServiceUtils.buildStatusNotificationRequest(
+              this,
+              connectorId,
+              ConnectorStatusEnum.Unavailable
+            )
+          );
+          delete this.getConnectorStatus(connectorId)?.status;
+        }
       }
     }
   }
