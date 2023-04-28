@@ -97,7 +97,10 @@ export class ChargingStationUtils {
     return true;
   }
 
-  public static getPhaseRotationValue(connectorId: number, numberOfPhases: number): string {
+  public static getPhaseRotationValue(
+    connectorId: number,
+    numberOfPhases: number
+  ): string | undefined {
     // AC/DC
     if (connectorId === 0 && numberOfPhases === 0) {
       return `${connectorId}.${ConnectorPhaseRotation.RST}`;
