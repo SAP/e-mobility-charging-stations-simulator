@@ -746,17 +746,28 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (connectorId === 0) {
       let response: ChangeAvailabilityResponse =
         OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
-      for (const id of chargingStation.connectors.keys()) {
-        if (chargingStation.getConnectorStatus(id)?.transactionStarted === true) {
+      const changeAvailability = async (id: number, connectorStatus: ConnectorStatus) => {
+        if (connectorStatus?.transactionStarted === true) {
           response = OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
         }
-        chargingStation.getConnectorStatus(id).availability = commandPayload.type;
+        connectorStatus.availability = commandPayload.type;
         if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
           await OCPP16ServiceUtils.sendAndSetConnectorStatus(
             chargingStation,
             id,
             chargePointStatus
           );
+        }
+      };
+      if (chargingStation.hasEvses) {
+        for (const evseStatus of chargingStation.evses.values()) {
+          for (const [id, connectorStatus] of evseStatus.connectors) {
+            await changeAvailability(id, connectorStatus);
+          }
+        }
+      } else {
+        for (const id of chargingStation.connectors.keys()) {
+          await changeAvailability(id, chargingStation.getConnectorStatus(id));
         }
       }
       return response;
@@ -973,24 +984,39 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: RemoteStopTransactionRequest
   ): Promise<GenericResponse> {
     const transactionId = commandPayload.transactionId;
-    for (const connectorId of chargingStation.connectors.keys()) {
-      if (
-        connectorId > 0 &&
-        chargingStation.getConnectorStatus(connectorId)?.transactionId === transactionId
-      ) {
-        await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-          chargingStation,
-          connectorId,
-          OCPP16ChargePointStatus.Finishing
-        );
-        const stopResponse = await chargingStation.stopTransactionOnConnector(
-          connectorId,
-          OCPP16StopTransactionReason.REMOTE
-        );
-        if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-          return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
+    const remoteStopTransaction = async (connectorId: number): Promise<GenericResponse> => {
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+        chargingStation,
+        connectorId,
+        OCPP16ChargePointStatus.Finishing
+      );
+      const stopResponse = await chargingStation.stopTransactionOnConnector(
+        connectorId,
+        OCPP16StopTransactionReason.REMOTE
+      );
+      if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+        return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
+      }
+      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
+    };
+    if (chargingStation.hasEvses) {
+      for (const [evseId, evseStatus] of chargingStation.evses) {
+        if (evseId > 0) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if (connectorStatus.transactionId === transactionId) {
+              return remoteStopTransaction(connectorId);
+            }
+          }
         }
-        return OCPP16Constants.OCPP_RESPONSE_REJECTED;
+      }
+    } else {
+      for (const connectorId of chargingStation.connectors.keys()) {
+        if (
+          connectorId > 0 &&
+          chargingStation.getConnectorStatus(connectorId)?.transactionId === transactionId
+        ) {
+          return remoteStopTransaction(connectorId);
+        }
       }
     }
     logger.warn(
@@ -1054,16 +1080,32 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return;
     }
-    for (const connectorId of chargingStation.connectors.keys()) {
-      if (
-        connectorId > 0 &&
-        chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false
-      ) {
-        await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-          chargingStation,
-          connectorId,
-          OCPP16ChargePointStatus.Unavailable
-        );
+    if (chargingStation.hasEvses) {
+      for (const [evseId, evseStatus] of chargingStation.evses) {
+        if (evseId > 0) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if (connectorStatus?.transactionStarted === false) {
+              await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+                chargingStation,
+                connectorId,
+                OCPP16ChargePointStatus.Unavailable
+              );
+            }
+          }
+        }
+      }
+    } else {
+      for (const connectorId of chargingStation.connectors.keys()) {
+        if (
+          connectorId > 0 &&
+          chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false
+        ) {
+          await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+            chargingStation,
+            connectorId,
+            OCPP16ChargePointStatus.Unavailable
+          );
+        }
       }
     }
     await chargingStation.ocppRequestService.requestHandler<
@@ -1099,19 +1141,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     let wasTransactionsStarted = false;
     let transactionsStarted: boolean;
     do {
-      let trxCount = 0;
-      for (const connectorId of chargingStation.connectors.keys()) {
-        if (
-          connectorId > 0 &&
-          chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true
-        ) {
-          trxCount++;
-        }
-      }
-      if (trxCount > 0) {
+      const runningTransactions = chargingStation.getNumberOfRunningTransactions();
+      if (runningTransactions > 0) {
         const waitTime = 15 * 1000;
         logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: ${trxCount} transaction(s) in progress, waiting ${
+          `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: ${runningTransactions} transaction(s) in progress, waiting ${
             waitTime / 1000
           } seconds before continuing firmware update simulation`
         );
@@ -1119,17 +1153,33 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionsStarted = true;
         wasTransactionsStarted = true;
       } else {
-        for (const connectorId of chargingStation.connectors.keys()) {
-          if (
-            connectorId > 0 &&
-            chargingStation.getConnectorStatus(connectorId)?.status !==
-              OCPP16ChargePointStatus.Unavailable
-          ) {
-            await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-              chargingStation,
-              connectorId,
-              OCPP16ChargePointStatus.Unavailable
-            );
+        if (chargingStation.hasEvses) {
+          for (const [evseId, evseStatus] of chargingStation.evses) {
+            if (evseId > 0) {
+              for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+                if (connectorStatus?.status !== OCPP16ChargePointStatus.Unavailable) {
+                  await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+                    chargingStation,
+                    connectorId,
+                    OCPP16ChargePointStatus.Unavailable
+                  );
+                }
+              }
+            }
+          }
+        } else {
+          for (const connectorId of chargingStation.connectors.keys()) {
+            if (
+              connectorId > 0 &&
+              chargingStation.getConnectorStatus(connectorId)?.status !==
+                OCPP16ChargePointStatus.Unavailable
+            ) {
+              await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+                chargingStation,
+                connectorId,
+                OCPP16ChargePointStatus.Unavailable
+              );
+            }
           }
         }
         transactionsStarted = false;
@@ -1370,24 +1420,49 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 )
                 .catch(Constants.EMPTY_FUNCTION);
             } else {
-              for (const connectorId of chargingStation.connectors.keys()) {
-                chargingStation.ocppRequestService
-                  .requestHandler<
-                    OCPP16StatusNotificationRequest,
-                    OCPP16StatusNotificationResponse
-                  >(
-                    chargingStation,
-                    OCPP16RequestCommand.STATUS_NOTIFICATION,
-                    {
-                      connectorId,
-                      errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                      status: chargingStation.getConnectorStatus(connectorId)?.status,
-                    },
-                    {
-                      triggerMessage: true,
-                    }
-                  )
-                  .catch(Constants.EMPTY_FUNCTION);
+              // eslint-disable-next-line no-lonely-if
+              if (chargingStation.hasEvses) {
+                for (const evseStatus of chargingStation.evses.values()) {
+                  for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+                    chargingStation.ocppRequestService
+                      .requestHandler<
+                        OCPP16StatusNotificationRequest,
+                        OCPP16StatusNotificationResponse
+                      >(
+                        chargingStation,
+                        OCPP16RequestCommand.STATUS_NOTIFICATION,
+                        {
+                          connectorId,
+                          errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                          status: connectorStatus.status,
+                        },
+                        {
+                          triggerMessage: true,
+                        }
+                      )
+                      .catch(Constants.EMPTY_FUNCTION);
+                  }
+                }
+              } else {
+                for (const connectorId of chargingStation.connectors.keys()) {
+                  chargingStation.ocppRequestService
+                    .requestHandler<
+                      OCPP16StatusNotificationRequest,
+                      OCPP16StatusNotificationResponse
+                    >(
+                      chargingStation,
+                      OCPP16RequestCommand.STATUS_NOTIFICATION,
+                      {
+                        connectorId,
+                        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                        status: chargingStation.getConnectorStatus(connectorId)?.status,
+                      },
+                      {
+                        triggerMessage: true,
+                      }
+                    )
+                    .catch(Constants.EMPTY_FUNCTION);
+                }
               }
             }
           }, OCPP16Constants.OCPP_TRIGGER_MESSAGE_DELAY);

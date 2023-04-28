@@ -532,7 +532,7 @@ export class ChargingStationUtils {
     templateFile: string,
     logPrefix: string
   ): Voltage {
-    const errMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
+    const errorMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
     let defaultVoltageOut: number;
     switch (currentType) {
       case CurrentType.AC:
@@ -542,8 +542,8 @@ export class ChargingStationUtils {
         defaultVoltageOut = Voltage.VOLTAGE_400;
         break;
       default:
-        logger.error(`${logPrefix} ${errMsg}`);
-        throw new BaseError(errMsg);
+        logger.error(`${logPrefix} ${errorMsg}`);
+        throw new BaseError(errorMsg);
     }
     return defaultVoltageOut;
   }

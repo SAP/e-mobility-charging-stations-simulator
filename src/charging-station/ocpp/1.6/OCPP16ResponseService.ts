@@ -403,13 +403,26 @@ export class OCPP16ResponseService extends OCPPResponseService {
     requestPayload: OCPP16AuthorizeRequest
   ): void {
     let authorizeConnectorId: number;
-    for (const connectorId of chargingStation.connectors.keys()) {
-      if (
-        connectorId > 0 &&
-        chargingStation.getConnectorStatus(connectorId)?.authorizeIdTag === requestPayload.idTag
-      ) {
-        authorizeConnectorId = connectorId;
-        break;
+    if (chargingStation.hasEvses) {
+      for (const [evseId, evseStatus] of chargingStation.evses) {
+        if (evseId > 0) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if (connectorStatus?.authorizeIdTag === requestPayload.idTag) {
+              authorizeConnectorId = connectorId;
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      for (const connectorId of chargingStation.connectors.keys()) {
+        if (
+          connectorId > 0 &&
+          chargingStation.getConnectorStatus(connectorId)?.authorizeIdTag === requestPayload.idTag
+        ) {
+          authorizeConnectorId = connectorId;
+          break;
+        }
       }
     }
     const authorizeConnectorIdDefined = !Utils.isNullOrUndefined(authorizeConnectorId);

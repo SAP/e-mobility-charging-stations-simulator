@@ -366,6 +366,26 @@ export class ChargingStation {
     }
   }
 
+  public getNumberOfRunningTransactions(): number {
+    let trxCount = 0;
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.transactionStarted === true) {
+            ++trxCount;
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+          ++trxCount;
+        }
+      }
+    }
+    return trxCount;
+  }
+
   public getOutOfOrderEndMeterValues(): boolean {
     return this.stationInfo?.outOfOrderEndMeterValues ?? false;
   }
@@ -1025,9 +1045,9 @@ export class ChargingStation {
   }
 
   private handleUnsupportedVersion(version: OCPPVersion) {
-    const errMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`;
-    logger.error(`${this.logPrefix()} ${errMsg}`);
-    throw new BaseError(errMsg);
+    const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`;
+    logger.error(`${this.logPrefix()} ${errorMsg}`);
+    throw new BaseError(errorMsg);
   }
 
   private initialize(): void {
@@ -1291,9 +1311,9 @@ export class ChargingStation {
 
   private initializeConnectors(stationInfo: ChargingStationInfo): void {
     if (!stationInfo?.Connectors && this.connectors.size === 0) {
-      const logMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`;
-      logger.error(`${this.logPrefix()} ${logMsg}`);
-      throw new BaseError(logMsg);
+      const errorMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
     }
     if (!stationInfo?.Connectors[0]) {
       logger.warn(
@@ -1384,9 +1404,9 @@ export class ChargingStation {
 
   private initializeEvses(stationInfo: ChargingStationInfo): void {
     if (!stationInfo?.Evses && this.evses.size === 0) {
-      const logMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`;
-      logger.error(`${this.logPrefix()} ${logMsg}`);
-      throw new BaseError(logMsg);
+      const errorMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
     }
     if (!stationInfo?.Evses[0]) {
       logger.warn(
@@ -1751,7 +1771,7 @@ export class ChargingStation {
   private async onMessage(data: RawData): Promise<void> {
     let request: IncomingRequest | Response | ErrorResponse;
     let messageType: number;
-    let errMsg: string;
+    let errorMsg: string;
     try {
       request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
       if (Array.isArray(request) === true) {
@@ -1773,9 +1793,9 @@ export class ChargingStation {
           // Unknown Message
           default:
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            errMsg = `Wrong message type ${messageType}`;
-            logger.error(`${this.logPrefix()} ${errMsg}`);
-            throw new OCPPError(ErrorType.PROTOCOL_ERROR, errMsg);
+            errorMsg = `Wrong message type ${messageType}`;
+            logger.error(`${this.logPrefix()} ${errorMsg}`);
+            throw new OCPPError(ErrorType.PROTOCOL_ERROR, errorMsg);
         }
         parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
       } else {
@@ -1858,26 +1878,6 @@ export class ChargingStation {
   private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean {
     const localStationInfo = stationInfo ?? this.stationInfo;
     return localStationInfo?.useConnectorId0 ?? true;
-  }
-
-  private getNumberOfRunningTransactions(): number {
-    let trxCount = 0;
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.transactionStarted === true) {
-            trxCount++;
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-          trxCount++;
-        }
-      }
-    }
-    return trxCount;
   }
 
   private async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
