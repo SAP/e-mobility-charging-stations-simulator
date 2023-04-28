@@ -263,11 +263,11 @@ export class ChargingStation {
       }
       return numberOfConnectors;
     }
-    return this.connectors.get(0) ? this.connectors.size - 1 : this.connectors.size;
+    return this.connectors.has(0) ? this.connectors.size - 1 : this.connectors.size;
   }
 
   public getNumberOfEvses(): number {
-    return this.evses.size;
+    return this.evses.has(0) ? this.evses.size - 1 : this.evses.size;
   }
 
   public getConnectorStatus(connectorId: number): ConnectorStatus | undefined {
