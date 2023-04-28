@@ -35,10 +35,15 @@ export class ChargingStationConfigurationUtils {
     },
     params: AddConfigurationKeyParams = { overwrite: false, save: false }
   ): void {
-    options = options ?? ({} as ConfigurationKeyOptions);
-    options.readonly = options?.readonly ?? false;
-    options.visible = options?.visible ?? true;
-    options.reboot = options?.reboot ?? false;
+    options = {
+      ...{
+        readonly: false,
+        visible: true,
+        reboot: false,
+      },
+      ...options,
+    };
+    params = { ...{ overwrite: false, save: false }, ...params };
     let keyFound = ChargingStationConfigurationUtils.getConfigurationKey(chargingStation, key);
     if (keyFound && params?.overwrite) {
       ChargingStationConfigurationUtils.deleteConfigurationKey(chargingStation, keyFound.key, {

@@ -328,7 +328,8 @@ export class ChargingStation {
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
               this.getVoltageOut(),
-              this.getAmperageLimitation() * this.getNumberOfConnectors()
+              this.getAmperageLimitation() *
+                (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
             )
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation())) /
         this.powerDivider;
@@ -711,7 +712,7 @@ export class ChargingStation {
 
   public saveOcppConfiguration(): void {
     if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration({ stationInfo: false, connectors: false, evses: false });
+      this.saveConfiguration();
     }
   }
 
@@ -734,8 +735,7 @@ export class ChargingStation {
     }
   ): void {
     options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
-    params.closeOpened = params?.closeOpened ?? false;
-    params.terminateOpened = params?.terminateOpened ?? false;
+    params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
     if (this.started === false && this.starting === false) {
       logger.warn(
         `${this.logPrefix()} Cannot open OCPP connection to URL ${this.wsConnectionUrl.toString()} on stopped charging station`
@@ -1032,7 +1032,7 @@ export class ChargingStation {
 
   private saveStationInfo(): void {
     if (this.getStationInfoPersistentConfiguration()) {
-      this.saveConfiguration({ ocppConfiguration: false, connectors: false, evses: false });
+      this.saveConfiguration();
     }
   }
 
@@ -1499,48 +1499,37 @@ export class ChargingStation {
 
   private saveConnectorsStatus() {
     if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration({ stationInfo: false, ocppConfiguration: false, evses: false });
+      this.saveConfiguration();
     }
   }
 
   private saveEvsesStatus() {
     if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration({ stationInfo: false, ocppConfiguration: false, connectors: false });
+      this.saveConfiguration();
     }
   }
 
-  private saveConfiguration(
-    params: {
-      stationInfo?: boolean;
-      ocppConfiguration?: boolean;
-      connectors?: boolean;
-      evses?: boolean;
-    } = { stationInfo: true, ocppConfiguration: true, connectors: true, evses: true }
-  ): void {
+  private saveConfiguration(): void {
     if (this.configurationFile) {
-      params = {
-        ...params,
-        ...{ stationInfo: true, ocppConfiguration: true, connectors: true, evses: true },
-      };
       try {
         if (!fs.existsSync(path.dirname(this.configurationFile))) {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
         const configurationData: ChargingStationConfiguration =
           Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
-        if (params.stationInfo && this.stationInfo) {
+        if (this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         }
-        if (params.ocppConfiguration && this.ocppConfiguration?.configurationKey) {
+        if (this.ocppConfiguration?.configurationKey) {
           configurationData.configurationKey = this.ocppConfiguration.configurationKey;
         }
-        if (params.connectors && this.connectors.size > 0) {
+        if (this.connectors.size > 0) {
           configurationData.connectorsStatus = [...this.connectors.values()].map(
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
           );
         }
-        if (params.evses && this.evses.size > 0) {
+        if (this.evses.size > 0) {
           configurationData.evsesStatus = [...this.evses.values()].map((evseStatus) => {
             const status = {
               ...evseStatus,
@@ -1876,8 +1865,7 @@ export class ChargingStation {
   }
 
   private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean {
-    const localStationInfo = stationInfo ?? this.stationInfo;
-    return localStationInfo?.useConnectorId0 ?? true;
+    return (stationInfo ?? this.stationInfo)?.useConnectorId0 ?? true;
   }
 
   private async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
@@ -1920,25 +1908,18 @@ export class ChargingStation {
 
   // -1 for unlimited, 0 for disabling
   private getAutoReconnectMaxRetries(): number | undefined {
-    if (!Utils.isUndefined(this.stationInfo.autoReconnectMaxRetries)) {
-      return this.stationInfo.autoReconnectMaxRetries;
-    }
-    if (!Utils.isUndefined(Configuration.getAutoReconnectMaxRetries())) {
-      return Configuration.getAutoReconnectMaxRetries();
-    }
-    return -1;
+    return (
+      this.stationInfo.autoReconnectMaxRetries ?? Configuration.getAutoReconnectMaxRetries() ?? -1
+    );
   }
 
   // 0 for disabling
   private getRegistrationMaxRetries(): number | undefined {
-    if (!Utils.isUndefined(this.stationInfo.registrationMaxRetries)) {
-      return this.stationInfo.registrationMaxRetries;
-    }
-    return -1;
+    return this.stationInfo.registrationMaxRetries ?? -1;
   }
 
   private getPowerDivider(): number {
-    let powerDivider = this.getNumberOfConnectors();
+    let powerDivider = this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors();
     if (this.stationInfo?.powerSharedByConnectors) {
       powerDivider = this.getNumberOfRunningTransactions();
     }
@@ -1951,7 +1932,7 @@ export class ChargingStation {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
           this.getNumberOfPhases(stationInfo),
-          maximumPower / this.getNumberOfConnectors(),
+          maximumPower / (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()),
           this.getVoltageOut(stationInfo)
         );
       case CurrentType.DC:
