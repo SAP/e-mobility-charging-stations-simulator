@@ -993,18 +993,22 @@ export class ChargingStation {
     stationInfo.resetTime = !Utils.isNullOrUndefined(stationTemplate?.resetTime)
       ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
-    // Initialize evses or connectors if needed (FIXME: should be factored out)
+    // Initialize evses or connectors if needed (FIXME: should be factored out but connectors and evses configuration are only available in templates)
     this.initializeConnectorsOrEvses(stationInfo);
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
-    ChargingStationUtils.createStationInfoHash(stationInfo);
+    delete stationInfo?.Connectors;
+    delete stationInfo?.Evses;
     return stationInfo;
   }
 
   private getStationInfoFromFile(): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined;
-    this.getStationInfoPersistentConfiguration() &&
-      (stationInfo = this.getConfigurationFromFile()?.stationInfo);
-    stationInfo && ChargingStationUtils.createStationInfoHash(stationInfo);
+    if (this.getStationInfoPersistentConfiguration()) {
+      stationInfo = this.getConfigurationFromFile()?.stationInfo;
+      if (stationInfo) {
+        delete stationInfo?.infoHash;
+      }
+    }
     return stationInfo;
   }
 
@@ -1014,11 +1018,7 @@ export class ChargingStation {
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
-    // 3. charging station info attribute
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
-      if (this.stationInfo?.infoHash === stationInfoFromFile?.infoHash) {
-        return this.stationInfo;
-      }
       return stationInfoFromFile;
     }
     stationInfoFromFile &&
@@ -1075,9 +1075,6 @@ export class ChargingStation {
       this.stationInfo.firmwareVersion = match?.join('.');
     }
     this.saveStationInfo();
-    // Avoid duplication of connectors or evses related information in RAM
-    delete this.stationInfo?.Connectors;
-    delete this.stationInfo?.Evses;
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
     if (this.getEnableStatistics() === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(

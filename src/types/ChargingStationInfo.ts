@@ -20,6 +20,7 @@ export type ChargingStationInfo = Omit<
   | 'meterSerialNumberPrefix'
 > & {
   hashId: string;
+  /** @deprecated Use hashId instead */
   infoHash?: string;
   chargingStationId?: string;
   chargeBoxSerialNumber?: string;

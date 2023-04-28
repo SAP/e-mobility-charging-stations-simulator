@@ -23,7 +23,6 @@ export type ChargingStationInfo = {
   firmwareVersion?: string;
   numberOfConnectors?: number | number[];
   baseName: string;
-  infoHash?: string;
   templateHash?: string;
   chargeBoxSerialNumber?: string;
   chargePointSerialNumber?: string;

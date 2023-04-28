@@ -387,14 +387,6 @@ export class ChargingStationUtils {
     return stationTemplate as unknown as ChargingStationInfo;
   }
 
-  public static createStationInfoHash(stationInfo: ChargingStationInfo): void {
-    delete stationInfo.infoHash;
-    stationInfo.infoHash = crypto
-      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-      .update(JSON.stringify(stationInfo))
-      .digest('hex');
-  }
-
   public static createSerialNumber(
     stationTemplate: ChargingStationTemplate,
     stationInfo: ChargingStationInfo,
@@ -406,27 +398,18 @@ export class ChargingStationUtils {
       randomSerialNumber: true,
     }
   ): void {
-    params = params ?? {};
-    params.randomSerialNumberUpperCase = params?.randomSerialNumberUpperCase ?? true;
-    params.randomSerialNumber = params?.randomSerialNumber ?? true;
+    params = { ...{ randomSerialNumberUpperCase: true, randomSerialNumber: true }, ...params };
     const serialNumberSuffix = params?.randomSerialNumber
       ? ChargingStationUtils.getRandomSerialNumberSuffix({
           upperCase: params.randomSerialNumberUpperCase,
         })
       : '';
-    stationInfo.chargePointSerialNumber = Utils.isNotEmptyString(
-      stationTemplate?.chargePointSerialNumberPrefix
-    )
-      ? `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`
-      : undefined;
-    stationInfo.chargeBoxSerialNumber = Utils.isNotEmptyString(
-      stationTemplate?.chargeBoxSerialNumberPrefix
-    )
-      ? `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`
-      : undefined;
-    stationInfo.meterSerialNumber = Utils.isNotEmptyString(stationTemplate?.meterSerialNumberPrefix)
-      ? `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`
-      : undefined;
+    Utils.isNotEmptyString(stationTemplate?.chargePointSerialNumberPrefix) &&
+      (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`);
+    Utils.isNotEmptyString(stationTemplate?.chargeBoxSerialNumberPrefix) &&
+      (stationInfo.chargeBoxSerialNumber = `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`);
+    Utils.isNotEmptyString(stationTemplate?.meterSerialNumberPrefix) &&
+      (stationInfo.meterSerialNumber = `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`);
   }
 
   public static propagateSerialNumber(
