@@ -215,10 +215,7 @@ export class ChargingStationUtils {
           }`
         );
       }
-      if (
-        connectorId === 0 &&
-        Utils.isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
-      ) {
+      if (connectorId === 0) {
         connectors.get(connectorId).availability = AvailabilityType.Operative;
         if (Utils.isUndefined(connectors.get(connectorId)?.chargingProfiles)) {
           connectors.get(connectorId).chargingProfiles = [];
