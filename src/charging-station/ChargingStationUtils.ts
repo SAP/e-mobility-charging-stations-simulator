@@ -194,10 +194,6 @@ export class ChargingStationUtils {
           templateFile
         );
         connectorsMap.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
-        connectorsMap.get(connectorId).availability = AvailabilityType.Operative;
-        if (Utils.isUndefined(connectorsMap.get(connectorId)?.chargingProfiles)) {
-          connectorsMap.get(connectorId).chargingProfiles = [];
-        }
       }
     } else {
       logger.warn(
@@ -220,21 +216,20 @@ export class ChargingStationUtils {
         );
       }
       if (
+        connectorId === 0 &&
+        Utils.isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
+      ) {
+        connectors.get(connectorId).availability = AvailabilityType.Operative;
+        if (Utils.isUndefined(connectors.get(connectorId)?.chargingProfiles)) {
+          connectors.get(connectorId).chargingProfiles = [];
+        }
+      } else if (
         connectorId > 0 &&
         Utils.isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
       ) {
         ChargingStationUtils.initializeConnectorStatus(connectors.get(connectorId));
       }
     }
-  }
-
-  public static initializeConnectorStatus(connectorStatus: ConnectorStatus): void {
-    connectorStatus.idTagLocalAuthorized = false;
-    connectorStatus.idTagAuthorized = false;
-    connectorStatus.transactionRemoteStarted = false;
-    connectorStatus.transactionStarted = false;
-    connectorStatus.energyActiveImportRegisterValue = 0;
-    connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
   }
 
   public static resetConnectorStatus(connectorStatus: ConnectorStatus): void {
@@ -521,6 +516,19 @@ export class ChargingStationUtils {
         path.basename(stationInfo.idTagsFile)
       )
     );
+  }
+
+  private static initializeConnectorStatus(connectorStatus: ConnectorStatus): void {
+    connectorStatus.availability = AvailabilityType.Operative;
+    connectorStatus.idTagLocalAuthorized = false;
+    connectorStatus.idTagAuthorized = false;
+    connectorStatus.transactionRemoteStarted = false;
+    connectorStatus.transactionStarted = false;
+    connectorStatus.energyActiveImportRegisterValue = 0;
+    connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
+    if (Utils.isUndefined(connectorStatus.chargingProfiles)) {
+      connectorStatus.chargingProfiles = [];
+    }
   }
 
   private static warnDeprecatedTemplateKey(

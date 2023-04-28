@@ -1,16 +1,17 @@
 import type { JsonObject } from './JsonType';
 
 export type ChargingStationData = {
-  stationInfo: ChargingStationInfo;
   started: boolean;
+  stationInfo: ChargingStationInfo;
+  connectors: ConnectorStatus[];
+  evses: EvseStatus[];
   wsState?:
     | typeof WebSocket.CONNECTING
     | typeof WebSocket.OPEN
     | typeof WebSocket.CLOSING
     | typeof WebSocket.CLOSED;
-  bootNotificationResponse: BootNotificationResponse;
-  connectors: ConnectorStatus[];
-  automaticTransactionGeneratorStatuses?: Status[];
+  bootNotificationResponse?: BootNotificationResponse;
+  automaticTransactionGenerator?: Status[];
 };
 
 export type ChargingStationInfo = {
@@ -182,6 +183,11 @@ export type ConnectorStatus = {
   transactionIdTag?: string;
   energyActiveImportRegisterValue?: number; // In Wh
   transactionEnergyActiveImportRegisterValue?: number; // In Wh
+};
+
+export type EvseStatus = {
+  availability: AvailabilityType;
+  connectors?: ConnectorStatus[];
 };
 
 export type AvailabilityType = OCPP16AvailabilityType;

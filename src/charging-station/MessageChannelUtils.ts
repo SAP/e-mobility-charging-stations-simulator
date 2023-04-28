@@ -57,6 +57,15 @@ export class MessageChannelUtils {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
       ),
+      evses: [...chargingStation.evses.values()].map((evseStatus) => {
+        return {
+          ...evseStatus,
+          connectors: [...evseStatus.connectors.values()].map(
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
+          ),
+        };
+      }),
       ocppConfiguration: chargingStation.ocppConfiguration,
       wsState: chargingStation?.wsConnection?.readyState,
       bootNotificationResponse: chargingStation.bootNotificationResponse,

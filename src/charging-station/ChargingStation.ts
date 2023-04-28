@@ -54,6 +54,7 @@ import {
   type ErrorResponse,
   ErrorType,
   type EvseStatus,
+  type EvseStatusConfiguration,
   FileType,
   FirmwareStatus,
   type FirmwareStatusNotificationRequest,
@@ -679,7 +680,7 @@ export class ChargingStation {
 
   public saveOcppConfiguration(): void {
     if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration();
+      this.saveConfiguration({ stationInfo: false, connectors: false, evses: false });
     }
   }
 
@@ -1000,7 +1001,7 @@ export class ChargingStation {
 
   private saveStationInfo(): void {
     if (this.getStationInfoPersistentConfiguration()) {
-      this.saveConfiguration();
+      this.saveConfiguration({ ocppConfiguration: false, connectors: false, evses: false });
     }
   }
 
@@ -1375,12 +1376,9 @@ export class ChargingStation {
               this.templateFile
             );
             this.connectors.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
-            this.getConnectorStatus(connectorId).availability = AvailabilityType.Operative;
-            if (Utils.isUndefined(this.getConnectorStatus(connectorId)?.chargingProfiles)) {
-              this.getConnectorStatus(connectorId).chargingProfiles = [];
-            }
-            ChargingStationUtils.initializeConnectorsMapStatus(this.connectors, this.logPrefix());
           }
+          ChargingStationUtils.initializeConnectorsMapStatus(this.connectors, this.logPrefix());
+          this.saveConnectorsStatus();
         } else {
           logger.warn(
             `${this.logPrefix()} Charging station information from template ${
@@ -1431,7 +1429,8 @@ export class ChargingStation {
         const templateMaxEvses = ChargingStationUtils.getMaxNumberOfEvses(stationInfo?.Evses);
         if (templateMaxEvses > 0) {
           for (const evse in stationInfo.Evses) {
-            this.evses.set(Utils.convertToInt(evse), {
+            const evseId = Utils.convertToInt(evse);
+            this.evses.set(evseId, {
               connectors: ChargingStationUtils.buildConnectorsMap(
                 stationInfo?.Evses[evse]?.Connectors,
                 this.logPrefix(),
@@ -1440,10 +1439,11 @@ export class ChargingStation {
               availability: AvailabilityType.Operative,
             });
             ChargingStationUtils.initializeConnectorsMapStatus(
-              this.evses.get(Utils.convertToInt(evse))?.connectors,
+              this.evses.get(evseId)?.connectors,
               this.logPrefix()
             );
           }
+          this.saveEvsesStatus();
         } else {
           logger.warn(
             `${this.logPrefix()} Charging station information from template ${
@@ -1491,17 +1491,62 @@ export class ChargingStation {
     return configuration;
   }
 
-  private saveConfiguration(): void {
+  private saveConnectorsStatus() {
+    if (this.getOcppPersistentConfiguration()) {
+      this.saveConfiguration({ stationInfo: false, ocppConfiguration: false, evses: false });
+    }
+  }
+
+  private saveEvsesStatus() {
+    if (this.getOcppPersistentConfiguration()) {
+      this.saveConfiguration({ stationInfo: false, ocppConfiguration: false, connectors: false });
+    }
+  }
+
+  private saveConfiguration(
+    params: {
+      stationInfo?: boolean;
+      ocppConfiguration?: boolean;
+      connectors?: boolean;
+      evses?: boolean;
+    } = { stationInfo: true, ocppConfiguration: true, connectors: true, evses: true }
+  ): void {
     if (this.configurationFile) {
+      params = {
+        ...params,
+        ...{ stationInfo: true, ocppConfiguration: true, connectors: true, evses: true },
+      };
       try {
         if (!fs.existsSync(path.dirname(this.configurationFile))) {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
         const configurationData: ChargingStationConfiguration =
           Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
-        this.ocppConfiguration?.configurationKey &&
-          (configurationData.configurationKey = this.ocppConfiguration.configurationKey);
-        this.stationInfo && (configurationData.stationInfo = this.stationInfo);
+        if (params.stationInfo && this.stationInfo) {
+          configurationData.stationInfo = this.stationInfo;
+        }
+        if (params.ocppConfiguration && this.ocppConfiguration?.configurationKey) {
+          configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+        }
+        if (params.connectors && this.connectors.size > 0) {
+          configurationData.connectorsStatus = [...this.connectors.values()].map(
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
+          );
+        }
+        if (params.evses && this.evses.size > 0) {
+          configurationData.evsesStatus = [...this.evses.values()].map((evseStatus) => {
+            const status = {
+              ...evseStatus,
+              connectorsStatus: [...evseStatus.connectors.values()].map(
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
+              ),
+            };
+            delete status.connectors;
+            return status as EvseStatusConfiguration;
+          });
+        }
         delete configurationData.configurationHash;
         const configurationHash = crypto
           .createHash(Constants.DEFAULT_HASH_ALGORITHM)
