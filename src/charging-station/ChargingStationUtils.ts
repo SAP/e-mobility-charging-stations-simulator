@@ -19,6 +19,7 @@ import {
   type ChargingStationInfo,
   type ChargingStationTemplate,
   type ConnectorStatus,
+  ConnectorStatusEnum,
   CurrentType,
   type EvseTemplate,
   type OCPP16BootNotificationRequest,
@@ -123,6 +124,31 @@ export class ChargingStationUtils {
         `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`
       );
     }
+  }
+
+  public static getBootConnectorStatus(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    connectorStatus: ConnectorStatus
+  ): ConnectorStatusEnum {
+    let connectorBootStatus: ConnectorStatusEnum;
+    if (
+      !connectorStatus?.status &&
+      (chargingStation.isChargingStationAvailable() === false ||
+        chargingStation.isConnectorAvailable(connectorId) === false)
+    ) {
+      connectorBootStatus = ConnectorStatusEnum.Unavailable;
+    } else if (!connectorStatus?.status && connectorStatus?.bootStatus) {
+      // Set boot status in template at startup
+      connectorBootStatus = connectorStatus?.bootStatus;
+    } else if (connectorStatus?.status) {
+      // Set previous status at startup
+      connectorBootStatus = connectorStatus?.status;
+    } else {
+      // Set default status
+      connectorBootStatus = ConnectorStatusEnum.Available;
+    }
+    return connectorBootStatus;
   }
 
   public static getConfiguredNumberOfConnectors(stationInfo: ChargingStationInfo): number {
