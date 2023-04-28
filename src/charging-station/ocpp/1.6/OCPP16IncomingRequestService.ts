@@ -983,7 +983,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
     logger.warn(
-      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction ${transactionId.toString()}`
+      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction with id: ${transactionId.toString()}`
     );
     return OCPP16Constants.OCPP_RESPONSE_REJECTED;
   }

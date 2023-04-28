@@ -244,7 +244,7 @@ export class OCPPServiceUtils {
       logger.warn(
         `${chargingStation.logPrefix()} OCPP ${
           chargingStation.stationInfo.ocppVersion
-        } connector ${connectorId} status transition from '${
+        } connector id ${connectorId} status transition from '${
           chargingStation.getConnectorStatus(connectorId).status
         }' to '${status}' is not allowed`
       );
@@ -280,7 +280,7 @@ export class OCPPServiceUtils {
     const onPhaseStr = phase ? `on phase ${phase} ` : '';
     if (Constants.SUPPORTED_MEASURANDS.includes(measurand) === false) {
       logger.warn(
-        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`
       );
       return;
     }
@@ -292,7 +292,7 @@ export class OCPPServiceUtils {
       )?.value?.includes(measurand) === false
     ) {
       logger.debug(
-        `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId} not found in '${
+        `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId} not found in '${
           StandardParametersKey.MeterValuesSampledData
         }' OCPP parameter`
       );
@@ -312,7 +312,7 @@ export class OCPPServiceUtils {
         ) === false
       ) {
         logger.warn(
-          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`
         );
       } else if (
         phase &&
@@ -343,12 +343,12 @@ export class OCPPServiceUtils {
       }
     }
     if (measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER) {
-      const errorMsg = `Missing MeterValues for default measurand '${measurand}' in template on connectorId ${connectorId}`;
+      const errorMsg = `Missing MeterValues for default measurand '${measurand}' in template on connector id ${connectorId}`;
       logger.error(`${chargingStation.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
     logger.debug(
-      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connectorId ${connectorId}`
+      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`
     );
   }
 

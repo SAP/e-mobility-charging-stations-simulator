@@ -89,7 +89,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${
+          }: connector id ${connectorId}, transaction id ${
             connector?.transactionId
           }, value: ${socMinimumValue}/${
             meterValue.sampledValue[sampledValuesIndex].value
@@ -384,7 +384,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${
+          }: connector id ${connectorId}, transaction ${
             connector?.transactionId
           }, value: ${connectorMinimumPowerRounded}/${
             meterValue.sampledValue[sampledValuesIndex].value
@@ -428,7 +428,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connectorId ${connectorId}, transaction ${
+            }, connector id ${connectorId}, transaction id ${
               connector?.transactionId
             }, value: ${connectorMinimumPowerPerPhaseRounded}/${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
@@ -609,7 +609,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${
+          }: connector id ${connectorId}, transaction id ${
             connector?.transactionId
           }, value: ${connectorMinimumAmperage}/${
             meterValue.sampledValue[sampledValuesIndex].value
@@ -645,7 +645,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connectorId ${connectorId}, transaction ${
+            }, connector id ${connectorId}, transaction id ${
               connector?.transactionId
             }, value: ${connectorMinimumAmperage}/${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
@@ -716,7 +716,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connectorId ${connectorId}, transaction ${
+          }: connector id ${connectorId}, transaction id ${
             connector?.transactionId
           }, value: ${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${Utils.roundTo(
             interval / (3600 * 1000),
@@ -797,7 +797,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       Utils.isNullOrUndefined(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
       );
       chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
     }
@@ -805,7 +805,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles) === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connectorId ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
       );
       chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
     }

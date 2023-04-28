@@ -231,16 +231,16 @@ export class AutomaticTransactionGenerator extends AsyncResource {
             Utils.getRandomInteger(this.configuration.maxDuration, this.configuration.minDuration) *
             1000;
           logger.info(
-            `${this.logPrefix(connectorId)} transaction ${this.chargingStation
+            `${this.logPrefix(connectorId)} transaction started with id ${this.chargingStation
               .getConnectorStatus(connectorId)
-              ?.transactionId?.toString()} started and will stop in ${Utils.formatDurationMilliSeconds(
+              ?.transactionId?.toString()} and will stop in ${Utils.formatDurationMilliSeconds(
               waitTrxEnd
             )}`
           );
           await Utils.sleep(waitTrxEnd);
           // Stop transaction
           logger.info(
-            `${this.logPrefix(connectorId)} stop transaction ${this.chargingStation
+            `${this.logPrefix(connectorId)} stop transaction with id ${this.chargingStation
               .getConnectorStatus(connectorId)
               ?.transactionId?.toString()}`
           );
@@ -402,7 +402,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId;
       logger.warn(
         `${this.logPrefix(connectorId)} stopping a not started transaction${
-          !Utils.isNullOrUndefined(transactionId) ? ` ${transactionId?.toString()}` : ''
+          !Utils.isNullOrUndefined(transactionId) ? ` with id ${transactionId?.toString()}` : ''
         }`
       );
     }

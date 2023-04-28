@@ -171,7 +171,7 @@ export class ChargingStationUtils {
   ): void {
     if (!Utils.isNullOrUndefined(connectorStatus?.status)) {
       logger.warn(
-        `${logPrefix} Charging station information from template ${templateFile} with connector ${connectorId} status configuration defined, undefine it`
+        `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId} status configuration defined, undefine it`
       );
       delete connectorStatus.status;
     }
@@ -210,7 +210,7 @@ export class ChargingStationUtils {
     for (const connectorId of connectors.keys()) {
       if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
         logger.warn(
-          `${logPrefix} Connector id ${connectorId} at initialization has a transaction started: ${
+          `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${
             connectors.get(connectorId)?.transactionId
           }`
         );
@@ -556,7 +556,7 @@ export class ChargingStationUtils {
   }
 
   /**
-   * Charging profiles should already be sorted by connectorId and stack level (highest stack level has priority)
+   * Charging profiles should already be sorted by connector id and stack level (highest stack level has priority)
    *
    * @param chargingProfiles -
    * @param logPrefix -
