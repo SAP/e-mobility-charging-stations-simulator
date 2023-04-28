@@ -1197,42 +1197,26 @@ export class ChargingStation {
         StandardParametersKey.ConnectorPhaseRotation
       )
     ) {
-      const connectorPhaseRotation = [];
+      const connectorsPhaseRotation: string[] = [];
       if (this.hasEvses) {
         for (const evseStatus of this.evses.values()) {
           for (const connectorId of evseStatus.connectors.keys()) {
-            // AC/DC
-            if (connectorId === 0 && this.getNumberOfPhases() === 0) {
-              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
-            } else if (connectorId > 0 && this.getNumberOfPhases() === 0) {
-              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
-              // AC
-            } else if (connectorId > 0 && this.getNumberOfPhases() === 1) {
-              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
-            } else if (connectorId > 0 && this.getNumberOfPhases() === 3) {
-              connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
-            }
+            connectorsPhaseRotation.push(
+              ChargingStationUtils.getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+            );
           }
         }
       } else {
         for (const connectorId of this.connectors.keys()) {
-          // AC/DC
-          if (connectorId === 0 && this.getNumberOfPhases() === 0) {
-            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
-          } else if (connectorId > 0 && this.getNumberOfPhases() === 0) {
-            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
-            // AC
-          } else if (connectorId > 0 && this.getNumberOfPhases() === 1) {
-            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.NotApplicable}`);
-          } else if (connectorId > 0 && this.getNumberOfPhases() === 3) {
-            connectorPhaseRotation.push(`${connectorId}.${ConnectorPhaseRotation.RST}`);
-          }
+          connectorsPhaseRotation.push(
+            ChargingStationUtils.getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+          );
         }
       }
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.ConnectorPhaseRotation,
-        connectorPhaseRotation.toString()
+        connectorsPhaseRotation.toString()
       );
     }
     if (

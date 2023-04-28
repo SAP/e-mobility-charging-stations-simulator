@@ -18,6 +18,7 @@ import {
   type ChargingSchedulePeriod,
   type ChargingStationInfo,
   type ChargingStationTemplate,
+  ConnectorPhaseRotation,
   type ConnectorStatus,
   ConnectorStatusEnum,
   CurrentType,
@@ -94,6 +95,20 @@ export class ChargingStationUtils {
       return false;
     }
     return true;
+  }
+
+  public static getPhaseRotationValue(connectorId: number, numberOfPhases: number): string {
+    // AC/DC
+    if (connectorId === 0 && numberOfPhases === 0) {
+      return `${connectorId}.${ConnectorPhaseRotation.RST}`;
+    } else if (connectorId > 0 && numberOfPhases === 0) {
+      return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`;
+      // AC
+    } else if (connectorId > 0 && numberOfPhases === 1) {
+      return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`;
+    } else if (connectorId > 0 && numberOfPhases === 3) {
+      return `${connectorId}.${ConnectorPhaseRotation.RST}`;
+    }
   }
 
   public static getMaxNumberOfEvses(evses: Record<string, EvseTemplate>): number {
