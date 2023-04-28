@@ -287,6 +287,7 @@ export class ChargingStation {
           return evseStatus.connectors.get(connectorId);
         }
       }
+      return undefined;
     }
     return this.connectors.get(connectorId);
   }
