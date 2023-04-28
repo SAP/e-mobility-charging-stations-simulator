@@ -210,7 +210,7 @@ export class ChargingStationUtils {
     for (const connectorId of connectors.keys()) {
       if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
         logger.warn(
-          `${logPrefix} Connector ${connectorId} at initialization has a transaction started: ${
+          `${logPrefix} Connector id ${connectorId} at initialization has a transaction started: ${
             connectors.get(connectorId)?.transactionId
           }`
         );

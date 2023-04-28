@@ -1324,22 +1324,6 @@ export class ChargingStation {
       if (this.connectors?.size === 0 || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear();
         this.connectorsConfigurationHash = connectorsConfigHash;
-        const connectorZeroStatus = stationInfo?.Connectors[0];
-        // Add connector id 0
-        if (connectorZeroStatus && this.getUseConnectorId0(stationInfo) === true) {
-          ChargingStationUtils.checkStationInfoConnectorStatus(
-            0,
-            connectorZeroStatus,
-            this.logPrefix(),
-            this.templateFile
-          );
-          this.connectors.set(0, Utils.cloneObject<ConnectorStatus>(connectorZeroStatus));
-          this.getConnectorStatus(0).availability = AvailabilityType.Operative;
-          if (Utils.isUndefined(this.getConnectorStatus(0)?.chargingProfiles)) {
-            this.getConnectorStatus(0).chargingProfiles = [];
-          }
-        }
-        // Add remaining connectors
         const templateMaxConnectors = ChargingStationUtils.getMaxNumberOfConnectors(
           stationInfo.Connectors
         );
@@ -1348,9 +1332,11 @@ export class ChargingStation {
           this.templateFile,
           this.logPrefix()
         );
+        const templateMaxAvailableConnectors = stationInfo?.Connectors[0]
+          ? templateMaxConnectors - 1
+          : templateMaxConnectors;
         if (
-          configuredMaxConnectors >
-            (stationInfo?.Connectors[0] ? templateMaxConnectors - 1 : templateMaxConnectors) &&
+          configuredMaxConnectors > templateMaxAvailableConnectors &&
           !stationInfo?.randomConnectors
         ) {
           logger.warn(
@@ -1360,14 +1346,19 @@ export class ChargingStation {
           );
           stationInfo.randomConnectors = true;
         }
-        const templateMaxAvailableConnectors = stationInfo?.Connectors[0]
-          ? templateMaxConnectors - 1
-          : templateMaxConnectors;
-        if (templateMaxAvailableConnectors > 0) {
-          for (let connectorId = 1; connectorId <= configuredMaxConnectors; connectorId++) {
-            const templateConnectorId = stationInfo?.randomConnectors
-              ? Utils.getRandomInteger(templateMaxAvailableConnectors, 1)
-              : connectorId;
+        if (templateMaxConnectors > 0) {
+          for (let connectorId = 0; connectorId <= configuredMaxConnectors; connectorId++) {
+            if (
+              connectorId === 0 &&
+              (!stationInfo?.Connectors[connectorId] ||
+                this.getUseConnectorId0(stationInfo) === false)
+            ) {
+              continue;
+            }
+            const templateConnectorId =
+              connectorId > 0 && stationInfo?.randomConnectors
+                ? Utils.getRandomInteger(templateMaxAvailableConnectors, 1)
+                : connectorId;
             const connectorStatus = stationInfo?.Connectors[templateConnectorId];
             ChargingStationUtils.checkStationInfoConnectorStatus(
               templateConnectorId,
