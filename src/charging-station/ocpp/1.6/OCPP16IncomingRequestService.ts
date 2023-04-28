@@ -394,7 +394,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: UnlockConnectorRequest
   ): Promise<UnlockConnectorResponse> {
     const connectorId = commandPayload.connectorId;
-    if (chargingStation.connectors.has(connectorId) === false) {
+    if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to unlock a non existing connector id ${connectorId.toString()}`
       );
@@ -541,7 +541,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_NOT_SUPPORTED;
     }
-    if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
+    if (chargingStation.hasConnector(commandPayload.connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set charging profile(s) to a non existing connector id ${
           commandPayload.connectorId
@@ -597,7 +597,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
-    if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
+    if (chargingStation.hasConnector(commandPayload.connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to get composite schedule to a non existing connector id ${
           commandPayload.connectorId
@@ -647,7 +647,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
-    if (chargingStation.connectors.has(commandPayload.connectorId) === false) {
+    if (chargingStation.hasConnector(commandPayload.connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector id ${
           commandPayload.connectorId
@@ -722,7 +722,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: ChangeAvailabilityRequest
   ): Promise<ChangeAvailabilityResponse> {
     const connectorId: number = commandPayload.connectorId;
-    if (chargingStation.connectors.has(connectorId) === false) {
+    if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to change the availability of a non existing connector id ${connectorId.toString()}`
       );
@@ -775,7 +775,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: RemoteStartTransactionRequest
   ): Promise<GenericResponse> {
     const transactionConnectorId = commandPayload.connectorId;
-    if (chargingStation.connectors.has(transactionConnectorId) === true) {
+    if (chargingStation.hasConnector(transactionConnectorId) === true) {
       const remoteStartTransactionLogMsg = `${chargingStation.logPrefix()} Transaction remotely STARTED on ${
         chargingStation.stationInfo.chargingStationId
       }#${transactionConnectorId.toString()} for idTag '${commandPayload.idTag}'`;

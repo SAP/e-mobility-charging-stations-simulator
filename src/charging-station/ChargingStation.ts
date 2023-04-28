@@ -46,7 +46,6 @@ import {
   type ChargingStationInfo,
   type ChargingStationOcppConfiguration,
   type ChargingStationTemplate,
-  ConnectorPhaseRotation,
   type ConnectorStatus,
   ConnectorStatusEnum,
   CurrentType,
@@ -152,6 +151,10 @@ export class ChargingStation {
     this.initialize();
   }
 
+  public get hasEvses(): boolean {
+    return this.connectors.size === 0 && this.evses.size > 0;
+  }
+
   private get wsConnectionUrl(): URL {
     return new URL(
       `${
@@ -164,10 +167,6 @@ export class ChargingStation {
           : this.configuredSupervisionUrl.href
       }/${this.stationInfo.chargingStationId}`
     );
-  }
-
-  private get hasEvses(): boolean {
-    return this.connectors.size === 0 && this.evses.size > 0;
   }
 
   public logPrefix = (): string => {
@@ -243,6 +242,18 @@ export class ChargingStation {
 
   public isChargingStationAvailable(): boolean {
     return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative;
+  }
+
+  public hasConnector(connectorId: number): boolean {
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        if (evseStatus.connectors.has(connectorId)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return this.connectors.has(connectorId);
   }
 
   public isConnectorAvailable(connectorId: number): boolean {
