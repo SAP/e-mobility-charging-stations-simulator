@@ -267,10 +267,9 @@ export class ChargingStation {
     if (this.hasEvses) {
       let numberOfConnectors = 0;
       for (const [evseId, evseStatus] of this.evses) {
-        if (evseId === 0) {
-          continue;
+        if (evseId > 0) {
+          numberOfConnectors += evseStatus.connectors.size;
         }
-        numberOfConnectors += evseStatus.connectors.size;
       }
       return numberOfConnectors;
     }
@@ -1994,29 +1993,31 @@ export class ChargingStation {
     // Initialize connectors status
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
-        if (evseId === 0) {
-          continue;
-        }
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          const connectorBootStatus = ChargingStationUtils.getBootConnectorStatus(
-            this,
-            connectorId,
-            connectorStatus
-          );
-          await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
+        if (evseId > 0) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            const connectorBootStatus = ChargingStationUtils.getBootConnectorStatus(
+              this,
+              connectorId,
+              connectorStatus
+            );
+            await OCPPServiceUtils.sendAndSetConnectorStatus(
+              this,
+              connectorId,
+              connectorBootStatus
+            );
+          }
         }
       }
     } else {
       for (const connectorId of this.connectors.keys()) {
-        if (connectorId === 0) {
-          continue;
+        if (connectorId > 0) {
+          const connectorBootStatus = ChargingStationUtils.getBootConnectorStatus(
+            this,
+            connectorId,
+            this.getConnectorStatus(connectorId)
+          );
+          await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
         }
-        const connectorBootStatus = ChargingStationUtils.getBootConnectorStatus(
-          this,
-          connectorId,
-          this.getConnectorStatus(connectorId)
-        );
-        await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
       }
     }
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {

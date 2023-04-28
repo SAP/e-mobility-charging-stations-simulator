@@ -132,17 +132,37 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       this.connectorsStatus.clear();
       this.initializeConnectorsStatus();
     }
-    for (const connectorId of this.chargingStation.connectors.keys()) {
-      if (connectorId > 0) {
-        this.startConnector(connectorId);
+    if (this.chargingStation.hasEvses) {
+      for (const [evseId, evseStatus] of this.chargingStation.evses) {
+        if (evseId > 0) {
+          for (const connectorId of evseStatus.connectors.keys()) {
+            this.startConnector(connectorId);
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.chargingStation.connectors.keys()) {
+        if (connectorId > 0) {
+          this.startConnector(connectorId);
+        }
       }
     }
   }
 
   private stopConnectors(): void {
-    for (const connectorId of this.chargingStation.connectors.keys()) {
-      if (connectorId > 0) {
-        this.stopConnector(connectorId);
+    if (this.chargingStation.hasEvses) {
+      for (const [evseId, evseStatus] of this.chargingStation.evses) {
+        if (evseId > 0) {
+          for (const connectorId of evseStatus.connectors.keys()) {
+            this.stopConnector(connectorId);
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.chargingStation.connectors.keys()) {
+        if (connectorId > 0) {
+          this.stopConnector(connectorId);
+        }
       }
     }
   }
@@ -295,22 +315,45 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private initializeConnectorsStatus(): void {
-    for (const connectorId of this.chargingStation.connectors.keys()) {
-      if (connectorId > 0) {
-        this.connectorsStatus.set(connectorId, {
-          start: false,
-          authorizeRequests: 0,
-          acceptedAuthorizeRequests: 0,
-          rejectedAuthorizeRequests: 0,
-          startTransactionRequests: 0,
-          acceptedStartTransactionRequests: 0,
-          rejectedStartTransactionRequests: 0,
-          stopTransactionRequests: 0,
-          acceptedStopTransactionRequests: 0,
-          rejectedStopTransactionRequests: 0,
-          skippedConsecutiveTransactions: 0,
-          skippedTransactions: 0,
-        });
+    if (this.chargingStation.hasEvses) {
+      for (const [evseId, evseStatus] of this.chargingStation.evses) {
+        if (evseId > 0) {
+          for (const connectorId of evseStatus.connectors.keys()) {
+            this.connectorsStatus.set(connectorId, {
+              start: false,
+              authorizeRequests: 0,
+              acceptedAuthorizeRequests: 0,
+              rejectedAuthorizeRequests: 0,
+              startTransactionRequests: 0,
+              acceptedStartTransactionRequests: 0,
+              rejectedStartTransactionRequests: 0,
+              stopTransactionRequests: 0,
+              acceptedStopTransactionRequests: 0,
+              rejectedStopTransactionRequests: 0,
+              skippedConsecutiveTransactions: 0,
+              skippedTransactions: 0,
+            });
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.chargingStation.connectors.keys()) {
+        if (connectorId > 0) {
+          this.connectorsStatus.set(connectorId, {
+            start: false,
+            authorizeRequests: 0,
+            acceptedAuthorizeRequests: 0,
+            rejectedAuthorizeRequests: 0,
+            startTransactionRequests: 0,
+            acceptedStartTransactionRequests: 0,
+            rejectedStartTransactionRequests: 0,
+            stopTransactionRequests: 0,
+            acceptedStopTransactionRequests: 0,
+            rejectedStopTransactionRequests: 0,
+            skippedConsecutiveTransactions: 0,
+            skippedTransactions: 0,
+          });
+        }
       }
     }
   }

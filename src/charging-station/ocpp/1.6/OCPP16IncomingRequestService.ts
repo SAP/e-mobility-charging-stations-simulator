@@ -21,6 +21,7 @@ import {
   type ChangeConfigurationResponse,
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
+  type ConnectorStatus,
   ErrorType,
   type GenericResponse,
   GenericStatus,
@@ -655,12 +656,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
-    const connectorStatus = chargingStation.getConnectorStatus(commandPayload.connectorId);
     if (
       !Utils.isNullOrUndefined(commandPayload.connectorId) &&
-      Utils.isNotEmptyArray(connectorStatus?.chargingProfiles)
+      Utils.isNotEmptyArray(
+        chargingStation.getConnectorStatus(commandPayload.connectorId)?.chargingProfiles
+      )
     ) {
-      connectorStatus.chargingProfiles = [];
+      chargingStation.getConnectorStatus(commandPayload.connectorId).chargingProfiles = [];
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${
           commandPayload.connectorId
@@ -670,13 +672,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (Utils.isNullOrUndefined(commandPayload.connectorId)) {
       let clearedCP = false;
-      for (const connectorId of chargingStation.connectors.keys()) {
-        if (
-          Utils.isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)
-        ) {
-          chargingStation
-            .getConnectorStatus(connectorId)
-            ?.chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
+      const clearChargingProfiles = (connectorStatus: ConnectorStatus) => {
+        if (Utils.isNotEmptyArray(connectorStatus?.chargingProfiles)) {
+          connectorStatus?.chargingProfiles?.forEach(
+            (chargingProfile: OCPP16ChargingProfile, index: number) => {
               let clearCurrentCP = false;
               if (chargingProfile.chargingProfileId === commandPayload.id) {
                 clearCurrentCP = true;
@@ -707,7 +706,19 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 );
                 clearedCP = true;
               }
-            });
+            }
+          );
+        }
+      };
+      if (chargingStation.hasEvses) {
+        for (const evseStatus of chargingStation.evses.values()) {
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            clearChargingProfiles(connectorStatus);
+          }
+        }
+      } else {
+        for (const connectorId of chargingStation.connectors.keys()) {
+          clearChargingProfiles(chargingStation.getConnectorStatus(connectorId));
         }
       }
       if (clearedCP) {
