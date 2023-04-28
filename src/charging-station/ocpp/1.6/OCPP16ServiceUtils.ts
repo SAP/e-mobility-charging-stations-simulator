@@ -384,7 +384,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connector id ${connectorId}, transaction ${
+          }: connector id ${connectorId}, transaction id ${
             connector?.transactionId
           }, value: ${connectorMinimumPowerRounded}/${
             meterValue.sampledValue[sampledValuesIndex].value
