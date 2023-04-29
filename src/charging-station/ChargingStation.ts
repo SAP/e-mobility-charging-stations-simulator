@@ -1482,15 +1482,11 @@ export class ChargingStation {
   }
 
   private saveConnectorsStatus() {
-    if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration();
-    }
+    this.saveConfiguration();
   }
 
   private saveEvsesStatus() {
-    if (this.getOcppPersistentConfiguration()) {
-      this.saveConfiguration();
-    }
+    this.saveConfiguration();
   }
 
   private saveConfiguration(): void {
