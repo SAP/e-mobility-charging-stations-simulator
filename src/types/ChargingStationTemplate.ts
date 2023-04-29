@@ -114,5 +114,5 @@ export type ChargingStationTemplate = {
   Configuration?: ChargingStationOcppConfiguration;
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   Evses?: Record<string, EvseTemplate>;
-  Connectors: Record<string, ConnectorStatus>;
+  Connectors?: Record<string, ConnectorStatus>;
 };

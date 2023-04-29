@@ -153,10 +153,27 @@ export class ChargingStationUtils {
     return connectorBootStatus;
   }
 
+  public static checkTemplateFile(
+    stationTemplate: ChargingStationTemplate,
+    logPrefix: string,
+    templateFile: string
+  ) {
+    if (Utils.isNullOrUndefined(stationTemplate)) {
+      const errorMsg = `Failed to read charging station template file ${templateFile}`;
+      logger.error(`${logPrefix} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    }
+    if (Utils.isEmptyObject(stationTemplate)) {
+      const errorMsg = `Empty charging station information from template file ${templateFile}`;
+      logger.error(`${logPrefix} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    }
+  }
+
   public static checkConnectorsConfiguration(
-    stationTemplate: ChargingStationTemplate | ChargingStationInfo,
-    templateFile: string,
-    logPrefix: string
+    stationTemplate: ChargingStationTemplate,
+    logPrefix: string,
+    templateFile: string
   ): {
     configuredMaxConnectors: number;
     templateMaxConnectors: number;
@@ -166,13 +183,13 @@ export class ChargingStationUtils {
       ChargingStationUtils.getConfiguredNumberOfConnectors(stationTemplate);
     ChargingStationUtils.checkConfiguredMaxConnectors(
       configuredMaxConnectors,
-      templateFile,
-      logPrefix
+      logPrefix,
+      templateFile
     );
     const templateMaxConnectors = ChargingStationUtils.getMaxNumberOfConnectors(
       stationTemplate.Connectors
     );
-    ChargingStationUtils.checkTemplateMaxConnectors(templateMaxConnectors, templateFile, logPrefix);
+    ChargingStationUtils.checkTemplateMaxConnectors(templateMaxConnectors, logPrefix, templateFile);
     const templateMaxAvailableConnectors = stationTemplate?.Connectors[0]
       ? templateMaxConnectors - 1
       : templateMaxConnectors;
@@ -330,9 +347,9 @@ export class ChargingStationUtils {
   }
 
   public static warnTemplateKeysDeprecation(
-    templateFile: string,
     stationTemplate: ChargingStationTemplate,
-    logPrefix: string
+    logPrefix: string,
+    templateFile: string
   ) {
     const templateKeys: { key: string; deprecatedKey: string }[] = [
       { key: 'supervisionUrls', deprecatedKey: 'supervisionUrl' },
@@ -342,8 +359,8 @@ export class ChargingStationUtils {
       ChargingStationUtils.warnDeprecatedTemplateKey(
         stationTemplate,
         templateKey.deprecatedKey,
-        templateFile,
         logPrefix,
+        templateFile,
         `Use '${templateKey.key}' instead`
       );
       ChargingStationUtils.convertDeprecatedTemplateKey(
@@ -360,6 +377,8 @@ export class ChargingStationUtils {
     stationTemplate = Utils.cloneObject(stationTemplate);
     delete stationTemplate.power;
     delete stationTemplate.powerUnit;
+    delete stationTemplate?.Connectors;
+    delete stationTemplate?.Evses;
     delete stationTemplate.Configuration;
     delete stationTemplate.AutomaticTransactionGenerator;
     delete stationTemplate.chargeBoxSerialNumberPrefix;
@@ -493,8 +512,8 @@ export class ChargingStationUtils {
 
   public static getDefaultVoltageOut(
     currentType: CurrentType,
-    templateFile: string,
-    logPrefix: string
+    logPrefix: string,
+    templateFile: string
   ): Voltage {
     const errorMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
     let defaultVoltageOut: number;
@@ -523,9 +542,7 @@ export class ChargingStationUtils {
     );
   }
 
-  private static getConfiguredNumberOfConnectors(
-    stationTemplate: ChargingStationTemplate | ChargingStationInfo
-  ): number {
+  private static getConfiguredNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
     let configuredMaxConnectors: number;
     if (Utils.isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
       const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
@@ -553,8 +570,8 @@ export class ChargingStationUtils {
 
   private static checkConfiguredMaxConnectors(
     configuredMaxConnectors: number,
-    templateFile: string,
-    logPrefix: string
+    logPrefix: string,
+    templateFile: string
   ): void {
     if (configuredMaxConnectors <= 0) {
       logger.warn(
@@ -565,8 +582,8 @@ export class ChargingStationUtils {
 
   private static checkTemplateMaxConnectors(
     templateMaxConnectors: number,
-    templateFile: string,
-    logPrefix: string
+    logPrefix: string,
+    templateFile: string
   ): void {
     if (templateMaxConnectors === 0) {
       logger.warn(
@@ -595,8 +612,8 @@ export class ChargingStationUtils {
   private static warnDeprecatedTemplateKey(
     template: ChargingStationTemplate,
     key: string,
-    templateFile: string,
     logPrefix: string,
+    templateFile: string,
     logMsgToAppend = ''
   ): void {
     if (!Utils.isUndefined(template[key])) {

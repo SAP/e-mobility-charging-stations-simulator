@@ -313,8 +313,8 @@ export class ChargingStation {
   public getVoltageOut(stationInfo?: ChargingStationInfo): number | undefined {
     const defaultVoltageOut = ChargingStationUtils.getDefaultVoltageOut(
       this.getCurrentOutType(stationInfo),
-      this.templateFile,
-      this.logPrefix()
+      this.logPrefix(),
+      this.templateFile
     );
     const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
     return !Utils.isUndefined(localStationInfo.voltageOut)
@@ -942,21 +942,19 @@ export class ChargingStation {
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate | undefined = this.getTemplateFromFile();
-    if (Utils.isNullOrUndefined(stationTemplate)) {
-      const errorMsg = `Failed to read charging station template file ${this.templateFile}`;
-      logger.error(`${this.logPrefix()} ${errorMsg}`);
-      throw new BaseError(errorMsg);
-    }
-    if (Utils.isEmptyObject(stationTemplate)) {
-      const errorMsg = `Empty charging station information from template file ${this.templateFile}`;
-      logger.error(`${this.logPrefix()} ${errorMsg}`);
-      throw new BaseError(errorMsg);
-    }
+    ChargingStationUtils.checkTemplateFile(stationTemplate, this.logPrefix(), this.templateFile);
     ChargingStationUtils.warnTemplateKeysDeprecation(
-      this.templateFile,
       stationTemplate,
-      this.logPrefix()
+      this.logPrefix(),
+      this.templateFile
     );
+    if (stationTemplate?.Connectors) {
+      ChargingStationUtils.checkConnectorsConfiguration(
+        stationTemplate,
+        this.logPrefix(),
+        this.templateFile
+      );
+    }
     const stationInfo: ChargingStationInfo =
       ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);
     stationInfo.hashId = ChargingStationUtils.getHashId(this.index, stationTemplate);
@@ -1005,15 +1003,6 @@ export class ChargingStation {
       ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
-    if (stationInfo?.Connectors) {
-      ChargingStationUtils.checkConnectorsConfiguration(
-        stationInfo,
-        this.templateFile,
-        this.logPrefix()
-      );
-    }
-    delete stationInfo?.Connectors;
-    delete stationInfo?.Evses;
     return stationInfo;
   }
 
@@ -1068,11 +1057,7 @@ export class ChargingStation {
 
   private initialize(): void {
     const stationTemplate = this.getTemplateFromFile();
-    if (Utils.isNullOrUndefined(stationTemplate)) {
-      const errorMsg = `Failed to read charging station template file ${this.templateFile}`;
-      logger.error(`${this.logPrefix()} ${errorMsg}`);
-      throw new BaseError(errorMsg);
-    }
+    ChargingStationUtils.checkTemplateFile(stationTemplate, this.logPrefix(), this.templateFile);
     this.configurationFile = path.join(
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
@@ -1346,8 +1331,8 @@ export class ChargingStation {
       const { configuredMaxConnectors, templateMaxConnectors, templateMaxAvailableConnectors } =
         ChargingStationUtils.checkConnectorsConfiguration(
           stationTemplate,
-          this.templateFile,
-          this.logPrefix()
+          this.logPrefix(),
+          this.templateFile
         );
       const connectorsConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
