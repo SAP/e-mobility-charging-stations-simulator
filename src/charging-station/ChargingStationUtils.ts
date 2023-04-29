@@ -128,22 +128,6 @@ export class ChargingStationUtils {
     return Object.keys(connectors).length;
   }
 
-  public static checkTemplateMaxConnectors(
-    templateMaxConnectors: number,
-    templateFile: string,
-    logPrefix: string
-  ): void {
-    if (templateMaxConnectors === 0) {
-      logger.warn(
-        `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`
-      );
-    } else if (templateMaxConnectors < 0) {
-      logger.error(
-        `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`
-      );
-    }
-  }
-
   public static getBootConnectorStatus(
     chargingStation: ChargingStation,
     connectorId: number,
@@ -169,42 +153,39 @@ export class ChargingStationUtils {
     return connectorBootStatus;
   }
 
-  public static getConfiguredNumberOfConnectors(stationInfo: ChargingStationInfo): number {
-    let configuredMaxConnectors: number;
-    if (Utils.isNotEmptyArray(stationInfo.numberOfConnectors) === true) {
-      const numberOfConnectors = stationInfo.numberOfConnectors as number[];
-      configuredMaxConnectors =
-        numberOfConnectors[Math.floor(Utils.secureRandom() * numberOfConnectors.length)];
-    } else if (Utils.isUndefined(stationInfo.numberOfConnectors) === false) {
-      configuredMaxConnectors = stationInfo.numberOfConnectors as number;
-    } else if (stationInfo.Connectors && !stationInfo.Evses) {
-      configuredMaxConnectors = stationInfo?.Connectors[0]
-        ? ChargingStationUtils.getMaxNumberOfConnectors(stationInfo.Connectors) - 1
-        : ChargingStationUtils.getMaxNumberOfConnectors(stationInfo.Connectors);
-    } else if (stationInfo.Evses && !stationInfo.Connectors) {
-      configuredMaxConnectors = 0;
-      for (const evse in stationInfo.Evses) {
-        if (evse === '0') {
-          continue;
-        }
-        configuredMaxConnectors += ChargingStationUtils.getMaxNumberOfConnectors(
-          stationInfo.Evses[evse].Connectors
-        );
-      }
-    }
-    return configuredMaxConnectors;
-  }
-
-  public static checkConfiguredMaxConnectors(
-    configuredMaxConnectors: number,
+  public static checkConnectorsConfiguration(
+    stationTemplate: ChargingStationTemplate | ChargingStationInfo,
     templateFile: string,
     logPrefix: string
-  ): void {
-    if (configuredMaxConnectors <= 0) {
+  ): {
+    configuredMaxConnectors: number;
+    templateMaxConnectors: number;
+    templateMaxAvailableConnectors: number;
+  } {
+    const configuredMaxConnectors =
+      ChargingStationUtils.getConfiguredNumberOfConnectors(stationTemplate);
+    ChargingStationUtils.checkConfiguredMaxConnectors(
+      configuredMaxConnectors,
+      templateFile,
+      logPrefix
+    );
+    const templateMaxConnectors = ChargingStationUtils.getMaxNumberOfConnectors(
+      stationTemplate.Connectors
+    );
+    ChargingStationUtils.checkTemplateMaxConnectors(templateMaxConnectors, templateFile, logPrefix);
+    const templateMaxAvailableConnectors = stationTemplate?.Connectors[0]
+      ? templateMaxConnectors - 1
+      : templateMaxConnectors;
+    if (
+      configuredMaxConnectors > templateMaxAvailableConnectors &&
+      !stationTemplate?.randomConnectors
+    ) {
       logger.warn(
-        `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`
+        `${logPrefix} Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`
       );
+      stationTemplate.randomConnectors = true;
     }
+    return { configuredMaxConnectors, templateMaxConnectors, templateMaxAvailableConnectors };
   }
 
   public static checkStationInfoConnectorStatus(
@@ -540,6 +521,62 @@ export class ChargingStationUtils {
         path.basename(stationInfo.idTagsFile)
       )
     );
+  }
+
+  private static getConfiguredNumberOfConnectors(
+    stationTemplate: ChargingStationTemplate | ChargingStationInfo
+  ): number {
+    let configuredMaxConnectors: number;
+    if (Utils.isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
+      const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
+      configuredMaxConnectors =
+        numberOfConnectors[Math.floor(Utils.secureRandom() * numberOfConnectors.length)];
+    } else if (Utils.isUndefined(stationTemplate.numberOfConnectors) === false) {
+      configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
+    } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
+      configuredMaxConnectors = stationTemplate?.Connectors[0]
+        ? ChargingStationUtils.getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
+        : ChargingStationUtils.getMaxNumberOfConnectors(stationTemplate.Connectors);
+    } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
+      configuredMaxConnectors = 0;
+      for (const evse in stationTemplate.Evses) {
+        if (evse === '0') {
+          continue;
+        }
+        configuredMaxConnectors += ChargingStationUtils.getMaxNumberOfConnectors(
+          stationTemplate.Evses[evse].Connectors
+        );
+      }
+    }
+    return configuredMaxConnectors;
+  }
+
+  private static checkConfiguredMaxConnectors(
+    configuredMaxConnectors: number,
+    templateFile: string,
+    logPrefix: string
+  ): void {
+    if (configuredMaxConnectors <= 0) {
+      logger.warn(
+        `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`
+      );
+    }
+  }
+
+  private static checkTemplateMaxConnectors(
+    templateMaxConnectors: number,
+    templateFile: string,
+    logPrefix: string
+  ): void {
+    if (templateMaxConnectors === 0) {
+      logger.warn(
+        `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`
+      );
+    } else if (templateMaxConnectors < 0) {
+      logger.error(
+        `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`
+      );
+    }
   }
 
   private static initializeConnectorStatus(connectorStatus: ConnectorStatus): void {

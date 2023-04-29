@@ -128,6 +128,7 @@ export class ChargingStation {
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
   private templateFileWatcher!: fs.FSWatcher | undefined;
+  private templateFileHash!: string;
   private readonly sharedLRUCache: SharedLRUCache;
   private webSocketPingSetInterval!: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
@@ -265,6 +266,9 @@ export class ChargingStation {
 
   public getNumberOfConnectors(): number {
     if (this.hasEvses) {
+      if (this.evses.size === 0) {
+        throw new BaseError('Evses not initialized, cannot get number of connectors');
+      }
       let numberOfConnectors = 0;
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
@@ -273,10 +277,16 @@ export class ChargingStation {
       }
       return numberOfConnectors;
     }
+    if (this.connectors.size === 0) {
+      throw new BaseError('Connectors not initialized, cannot get number of connectors');
+    }
     return this.connectors.has(0) ? this.connectors.size - 1 : this.connectors.size;
   }
 
   public getNumberOfEvses(): number {
+    if (this.evses.size === 0) {
+      throw new BaseError('Evses not initialized, cannot get number of evses');
+    }
     return this.evses.has(0) ? this.evses.size - 1 : this.evses.size;
   }
 
@@ -643,7 +653,7 @@ export class ChargingStation {
                     this.templateFile
                   } file have changed, reload`
                 );
-                this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
+                this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
                 // Initialize
                 this.initialize();
                 // Restart the ATG
@@ -690,7 +700,7 @@ export class ChargingStation {
         }
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
         this.templateFileWatcher?.close();
-        this.sharedLRUCache.deleteChargingStationTemplate(this.stationInfo?.templateHash);
+        this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
         delete this.bootNotificationResponse;
         this.started = false;
         parentPort?.postMessage(MessageChannelUtils.buildStoppedMessage(this));
@@ -903,8 +913,8 @@ export class ChargingStation {
   private getTemplateFromFile(): ChargingStationTemplate | undefined {
     let template: ChargingStationTemplate;
     try {
-      if (this.sharedLRUCache.hasChargingStationTemplate(this.stationInfo?.templateHash)) {
-        template = this.sharedLRUCache.getChargingStationTemplate(this.stationInfo.templateHash);
+      if (this.sharedLRUCache.hasChargingStationTemplate(this.templateFileHash)) {
+        template = this.sharedLRUCache.getChargingStationTemplate(this.templateFileHash);
       } else {
         const measureId = `${FileType.ChargingStationTemplate} read`;
         const beginId = PerformanceStatistics.beginMeasure(measureId);
@@ -917,6 +927,7 @@ export class ChargingStation {
           .update(JSON.stringify(template))
           .digest('hex');
         this.sharedLRUCache.setChargingStationTemplate(template);
+        this.templateFileHash = template.templateHash;
       }
     } catch (error) {
       FileUtils.handleFileException(
@@ -993,9 +1004,14 @@ export class ChargingStation {
     stationInfo.resetTime = !Utils.isNullOrUndefined(stationTemplate?.resetTime)
       ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
-    // Initialize evses or connectors if needed (FIXME: should be factored out but connectors and evses configuration are only available in templates)
-    this.initializeConnectorsOrEvses(stationInfo);
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
+    if (stationInfo?.Connectors) {
+      ChargingStationUtils.checkConnectorsConfiguration(
+        stationInfo,
+        this.templateFile,
+        this.logPrefix()
+      );
+    }
     delete stationInfo?.Connectors;
     delete stationInfo?.Evses;
     return stationInfo;
@@ -1051,10 +1067,17 @@ export class ChargingStation {
   }
 
   private initialize(): void {
+    const stationTemplate = this.getTemplateFromFile();
+    if (Utils.isNullOrUndefined(stationTemplate)) {
+      const errorMsg = `Failed to read charging station template file ${this.templateFile}`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    }
     this.configurationFile = path.join(
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),
-      `${ChargingStationUtils.getHashId(this.index, this.getTemplateFromFile())}.json`
+      `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
     );
+    this.initializeConnectorsOrEvses(stationTemplate);
     this.stationInfo = this.getStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
@@ -1290,12 +1313,12 @@ export class ChargingStation {
     this.saveOcppConfiguration();
   }
 
-  private initializeConnectorsOrEvses(stationInfo: ChargingStationInfo) {
-    if (stationInfo?.Connectors && !stationInfo?.Evses) {
-      this.initializeConnectors(stationInfo);
-    } else if (stationInfo?.Evses && !stationInfo?.Connectors) {
-      this.initializeEvses(stationInfo);
-    } else if (stationInfo?.Evses && stationInfo?.Connectors) {
+  private initializeConnectorsOrEvses(stationTemplate: ChargingStationTemplate) {
+    if (stationTemplate?.Connectors && !stationTemplate?.Evses) {
+      this.initializeConnectors(stationTemplate);
+    } else if (stationTemplate?.Evses && !stationTemplate?.Connectors) {
+      this.initializeEvses(stationTemplate);
+    } else if (stationTemplate?.Evses && stationTemplate?.Connectors) {
       const errorMsg = `Connectors and evses defined at the same time in template file ${this.templateFile}`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
@@ -1306,72 +1329,51 @@ export class ChargingStation {
     }
   }
 
-  private initializeConnectors(stationInfo: ChargingStationInfo): void {
-    if (!stationInfo?.Connectors && this.connectors.size === 0) {
+  private initializeConnectors(stationTemplate: ChargingStationTemplate): void {
+    if (!stationTemplate?.Connectors && this.connectors.size === 0) {
       const errorMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    if (!stationInfo?.Connectors[0]) {
+    if (!stationTemplate?.Connectors[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
         } with no connector id 0 configuration`
       );
     }
-    if (stationInfo?.Connectors) {
-      const configuredMaxConnectors =
-        ChargingStationUtils.getConfiguredNumberOfConnectors(stationInfo);
-      ChargingStationUtils.checkConfiguredMaxConnectors(
-        configuredMaxConnectors,
-        this.templateFile,
-        this.logPrefix()
-      );
+    if (stationTemplate?.Connectors) {
+      const { configuredMaxConnectors, templateMaxConnectors, templateMaxAvailableConnectors } =
+        ChargingStationUtils.checkConnectorsConfiguration(
+          stationTemplate,
+          this.templateFile,
+          this.logPrefix()
+        );
       const connectorsConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(`${JSON.stringify(stationInfo?.Connectors)}${configuredMaxConnectors.toString()}`)
+        .update(
+          `${JSON.stringify(stationTemplate?.Connectors)}${configuredMaxConnectors.toString()}`
+        )
         .digest('hex');
       const connectorsConfigChanged =
         this.connectors?.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash;
       if (this.connectors?.size === 0 || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear();
         this.connectorsConfigurationHash = connectorsConfigHash;
-        const templateMaxConnectors = ChargingStationUtils.getMaxNumberOfConnectors(
-          stationInfo.Connectors
-        );
-        ChargingStationUtils.checkTemplateMaxConnectors(
-          templateMaxConnectors,
-          this.templateFile,
-          this.logPrefix()
-        );
-        const templateMaxAvailableConnectors = stationInfo?.Connectors[0]
-          ? templateMaxConnectors - 1
-          : templateMaxConnectors;
-        if (
-          configuredMaxConnectors > templateMaxAvailableConnectors &&
-          !stationInfo?.randomConnectors
-        ) {
-          logger.warn(
-            `${this.logPrefix()} Number of connectors exceeds the number of connector configurations in template ${
-              this.templateFile
-            }, forcing random connector configurations affectation`
-          );
-          stationInfo.randomConnectors = true;
-        }
         if (templateMaxConnectors > 0) {
           for (let connectorId = 0; connectorId <= configuredMaxConnectors; connectorId++) {
             if (
               connectorId === 0 &&
-              (!stationInfo?.Connectors[connectorId] ||
-                this.getUseConnectorId0(stationInfo) === false)
+              (!stationTemplate?.Connectors[connectorId] ||
+                this.getUseConnectorId0(stationTemplate) === false)
             ) {
               continue;
             }
             const templateConnectorId =
-              connectorId > 0 && stationInfo?.randomConnectors
+              connectorId > 0 && stationTemplate?.randomConnectors
                 ? Utils.getRandomInteger(templateMaxAvailableConnectors, 1)
                 : connectorId;
-            const connectorStatus = stationInfo?.Connectors[templateConnectorId];
+            const connectorStatus = stationTemplate?.Connectors[templateConnectorId];
             ChargingStationUtils.checkStationInfoConnectorStatus(
               templateConnectorId,
               connectorStatus,
@@ -1399,43 +1401,43 @@ export class ChargingStation {
     }
   }
 
-  private initializeEvses(stationInfo: ChargingStationInfo): void {
-    if (!stationInfo?.Evses && this.evses.size === 0) {
+  private initializeEvses(stationTemplate: ChargingStationTemplate): void {
+    if (!stationTemplate?.Evses && this.evses.size === 0) {
       const errorMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    if (!stationInfo?.Evses[0]) {
+    if (!stationTemplate?.Evses[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
         } with no evse id 0 configuration`
       );
     }
-    if (!stationInfo?.Evses[0]?.Connectors[0]) {
+    if (!stationTemplate?.Evses[0]?.Connectors[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
         } with evse id 0 with no connector id 0 configuration`
       );
     }
-    if (stationInfo?.Evses) {
+    if (stationTemplate?.Evses) {
       const evsesConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(`${JSON.stringify(stationInfo?.Evses)}`)
+        .update(`${JSON.stringify(stationTemplate?.Evses)}`)
         .digest('hex');
       const evsesConfigChanged =
         this.evses?.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash;
       if (this.evses?.size === 0 || evsesConfigChanged) {
         evsesConfigChanged && this.evses.clear();
         this.evsesConfigurationHash = evsesConfigHash;
-        const templateMaxEvses = ChargingStationUtils.getMaxNumberOfEvses(stationInfo?.Evses);
+        const templateMaxEvses = ChargingStationUtils.getMaxNumberOfEvses(stationTemplate?.Evses);
         if (templateMaxEvses > 0) {
-          for (const evse in stationInfo.Evses) {
+          for (const evse in stationTemplate.Evses) {
             const evseId = Utils.convertToInt(evse);
             this.evses.set(evseId, {
               connectors: ChargingStationUtils.buildConnectorsMap(
-                stationInfo?.Evses[evse]?.Connectors,
+                stationTemplate?.Evses[evse]?.Connectors,
                 this.logPrefix(),
                 this.templateFile
               ),
@@ -1479,8 +1481,8 @@ export class ChargingStation {
             fs.readFileSync(this.configurationFile, 'utf8')
           ) as ChargingStationConfiguration;
           PerformanceStatistics.endMeasure(measureId, beginId);
-          this.configurationFileHash = configuration.configurationHash;
           this.sharedLRUCache.setChargingStationConfiguration(configuration);
+          this.configurationFileHash = configuration.configurationHash;
         }
       } catch (error) {
         FileUtils.handleFileException(
@@ -1553,8 +1555,8 @@ export class ChargingStation {
           fs.closeSync(fileDescriptor);
           PerformanceStatistics.endMeasure(measureId, beginId);
           this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
-          this.configurationFileHash = configurationHash;
           this.sharedLRUCache.setChargingStationConfiguration(configurationData);
+          this.configurationFileHash = configurationHash;
         } else {
           logger.debug(
             `${this.logPrefix()} Not saving unchanged charging station configuration file ${
@@ -1861,8 +1863,8 @@ export class ChargingStation {
     );
   }
 
-  private getUseConnectorId0(stationInfo?: ChargingStationInfo): boolean {
-    return (stationInfo ?? this.stationInfo)?.useConnectorId0 ?? true;
+  private getUseConnectorId0(stationTemplate?: ChargingStationTemplate): boolean {
+    return stationTemplate?.useConnectorId0 ?? true;
   }
 
   private async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
