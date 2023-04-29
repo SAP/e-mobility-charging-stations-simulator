@@ -108,7 +108,7 @@ export class ChargingStation {
   public automaticTransactionGenerator!: AutomaticTransactionGenerator | undefined;
   public ocppConfiguration!: ChargingStationOcppConfiguration | undefined;
   public wsConnection!: WebSocket | null;
-  public readonly connectors: Map<number, ConnectorStatus>;
+  public connectors: Map<number, ConnectorStatus>;
   public readonly evses: Map<number, EvseStatus>;
   public readonly requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics | undefined;
@@ -1062,7 +1062,16 @@ export class ChargingStation {
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
     );
-    this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
+    const chargingStationConfiguration = this.getConfigurationFromFile();
+    const featureFlag = false;
+    if (
+      featureFlag &&
+      (chargingStationConfiguration?.connectorsStatus || chargingStationConfiguration?.evsesStatus)
+    ) {
+      this.initializeConnectorsOrEvsesFromFile(chargingStationConfiguration);
+    } else {
+      this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
+    }
     this.stationInfo = this.getStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
@@ -1296,6 +1305,39 @@ export class ChargingStation {
       );
     }
     this.saveOcppConfiguration();
+  }
+
+  private initializeConnectorsOrEvsesFromFile(configuration: ChargingStationConfiguration): void {
+    if (configuration?.connectorsStatus && !configuration?.evsesStatus) {
+      this.connectors = new Map<number, ConnectorStatus>(
+        configuration?.connectorsStatus.map((connectorStatus, connectorId) => [
+          connectorId,
+          connectorStatus,
+        ])
+      );
+    } else if (configuration?.evsesStatus && !configuration?.connectorsStatus) {
+      for (const [evseId, evseStatusConfiguration] of configuration.evsesStatus.entries()) {
+        const evseStatus = Utils.cloneObject(evseStatusConfiguration);
+        delete evseStatus.connectorsStatus;
+        this.evses.set(evseId, {
+          ...evseStatus,
+          connectors: new Map<number, ConnectorStatus>(
+            evseStatusConfiguration.connectorsStatus.map((connectorStatus, connectorId) => [
+              connectorId,
+              connectorStatus,
+            ])
+          ),
+        });
+      }
+    } else if (configuration?.evsesStatus && configuration?.connectorsStatus) {
+      const errorMsg = `Connectors and evses defined at the same time in configuration file ${this.configurationFile}`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    } else {
+      const errorMsg = `No connectors or evses defined in configuration file ${this.configurationFile}`;
+      logger.error(`${this.logPrefix()} ${errorMsg}`);
+      throw new BaseError(errorMsg);
+    }
   }
 
   private initializeConnectorsOrEvsesFromTemplate(stationTemplate: ChargingStationTemplate) {
@@ -1572,6 +1614,8 @@ export class ChargingStation {
     }
     if (!Utils.isNullOrUndefined(configuration)) {
       delete configuration.stationInfo;
+      delete configuration.connectorsStatus;
+      delete configuration.evsesStatus;
       delete configuration.configurationHash;
     }
     return configuration;
