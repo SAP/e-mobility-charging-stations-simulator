@@ -13,6 +13,8 @@ export type ChargingStationInfo = Omit<
   ChargingStationTemplate,
   | 'AutomaticTransactionGenerator'
   | 'Configuration'
+  | 'Connectors'
+  | 'Evses'
   | 'power'
   | 'powerUnit'
   | 'chargeBoxSerialNumberPrefix'
