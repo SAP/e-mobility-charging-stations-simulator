@@ -1062,7 +1062,7 @@ export class ChargingStation {
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
     );
-    this.initializeConnectorsOrEvses(stationTemplate);
+    this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
     this.stationInfo = this.getStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
@@ -1298,11 +1298,11 @@ export class ChargingStation {
     this.saveOcppConfiguration();
   }
 
-  private initializeConnectorsOrEvses(stationTemplate: ChargingStationTemplate) {
+  private initializeConnectorsOrEvsesFromTemplate(stationTemplate: ChargingStationTemplate) {
     if (stationTemplate?.Connectors && !stationTemplate?.Evses) {
-      this.initializeConnectors(stationTemplate);
+      this.initializeConnectorsFromTemplate(stationTemplate);
     } else if (stationTemplate?.Evses && !stationTemplate?.Connectors) {
-      this.initializeEvses(stationTemplate);
+      this.initializeEvsesFromTemplate(stationTemplate);
     } else if (stationTemplate?.Evses && stationTemplate?.Connectors) {
       const errorMsg = `Connectors and evses defined at the same time in template file ${this.templateFile}`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
@@ -1314,7 +1314,7 @@ export class ChargingStation {
     }
   }
 
-  private initializeConnectors(stationTemplate: ChargingStationTemplate): void {
+  private initializeConnectorsFromTemplate(stationTemplate: ChargingStationTemplate): void {
     if (!stationTemplate?.Connectors && this.connectors.size === 0) {
       const errorMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
@@ -1386,7 +1386,7 @@ export class ChargingStation {
     }
   }
 
-  private initializeEvses(stationTemplate: ChargingStationTemplate): void {
+  private initializeEvsesFromTemplate(stationTemplate: ChargingStationTemplate): void {
     if (!stationTemplate?.Evses && this.evses.size === 0) {
       const errorMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`;
       logger.error(`${this.logPrefix()} ${errorMsg}`);
@@ -1497,10 +1497,10 @@ export class ChargingStation {
         }
         const configurationData: ChargingStationConfiguration =
           Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
-        if (this.stationInfo) {
+        if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         }
-        if (this.ocppConfiguration?.configurationKey) {
+        if (this.getOcppPersistentConfiguration() && this.ocppConfiguration?.configurationKey) {
           configurationData.configurationKey = this.ocppConfiguration.configurationKey;
         }
         if (this.connectors.size > 0) {
