@@ -91,6 +91,8 @@ import {
 } from '../types';
 import {
   ACElectricUtils,
+  AsyncLock,
+  AsyncLockType,
   Configuration,
   Constants,
   DCElectricUtils,
@@ -1592,16 +1594,32 @@ export class ChargingStation {
           .update(JSON.stringify(configurationData))
           .digest('hex');
         if (this.configurationFileHash !== configurationHash) {
-          configurationData.configurationHash = configurationHash;
-          const measureId = `${FileType.ChargingStationConfiguration} write`;
-          const beginId = PerformanceStatistics.beginMeasure(measureId);
-          const fileDescriptor = fs.openSync(this.configurationFile, 'w');
-          fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
-          fs.closeSync(fileDescriptor);
-          PerformanceStatistics.endMeasure(measureId, beginId);
-          this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
-          this.sharedLRUCache.setChargingStationConfiguration(configurationData);
-          this.configurationFileHash = configurationHash;
+          const asyncLock = AsyncLock.getInstance(AsyncLockType.configuration);
+          asyncLock
+            .acquire()
+            .then(() => {
+              configurationData.configurationHash = configurationHash;
+              const measureId = `${FileType.ChargingStationConfiguration} write`;
+              const beginId = PerformanceStatistics.beginMeasure(measureId);
+              const fileDescriptor = fs.openSync(this.configurationFile, 'w');
+              fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
+              fs.closeSync(fileDescriptor);
+              PerformanceStatistics.endMeasure(measureId, beginId);
+              this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
+              this.sharedLRUCache.setChargingStationConfiguration(configurationData);
+              this.configurationFileHash = configurationHash;
+            })
+            .catch((error) => {
+              FileUtils.handleFileException(
+                this.configurationFile,
+                FileType.ChargingStationConfiguration,
+                error as NodeJS.ErrnoException,
+                this.logPrefix()
+              );
+            })
+            .finally(() => {
+              asyncLock.release().catch(Constants.EMPTY_FUNCTION);
+            });
         } else {
           logger.debug(
             `${this.logPrefix()} Not saving unchanged charging station configuration file ${

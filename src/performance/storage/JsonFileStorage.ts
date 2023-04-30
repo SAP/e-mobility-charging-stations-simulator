@@ -2,10 +2,8 @@
 
 import fs from 'node:fs';
 
-import lockfile from 'proper-lockfile';
-
 import { FileType, type Statistics } from '../../types';
-import { Constants, FileUtils, Utils } from '../../utils';
+import { AsyncLock, AsyncLockType, Constants, FileUtils, Utils } from '../../utils';
 import { Storage } from '../internal';
 
 export class JsonFileStorage extends Storage {
@@ -18,31 +16,32 @@ export class JsonFileStorage extends Storage {
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.checkPerformanceRecordsFile();
-    lockfile
-      .lock(this.dbName, { stale: 5000, retries: 3 })
-      .then(async (release) => {
-        try {
-          const fileData = fs.readFileSync(this.dbName, 'utf8');
-          const performanceRecords: Statistics[] = fileData
-            ? (JSON.parse(fileData) as Statistics[])
-            : [];
-          performanceRecords.push(performanceStatistics);
-          fs.writeFileSync(
-            this.dbName,
-            Utils.JSONStringifyWithMapSupport(performanceRecords, 2),
-            'utf8'
-          );
-        } catch (error) {
-          FileUtils.handleFileException(
-            this.dbName,
-            FileType.PerformanceRecords,
-            error as NodeJS.ErrnoException,
-            this.logPrefix
-          );
-        }
-        await release();
+    const asyncLock = AsyncLock.getInstance(AsyncLockType.performance);
+    asyncLock
+      .acquire()
+      .then(() => {
+        const fileData = fs.readFileSync(this.dbName, 'utf8');
+        const performanceRecords: Statistics[] = fileData
+          ? (JSON.parse(fileData) as Statistics[])
+          : [];
+        performanceRecords.push(performanceStatistics);
+        fs.writeFileSync(
+          this.dbName,
+          Utils.JSONStringifyWithMapSupport(performanceRecords, 2),
+          'utf8'
+        );
       })
-      .catch(Constants.EMPTY_FUNCTION);
+      .catch((error) => {
+        FileUtils.handleFileException(
+          this.dbName,
+          FileType.PerformanceRecords,
+          error as NodeJS.ErrnoException,
+          this.logPrefix
+        );
+      })
+      .finally(() => {
+        asyncLock.release().catch(Constants.EMPTY_FUNCTION);
+      });
   }
 
   public open(): void {

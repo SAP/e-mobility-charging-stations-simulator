@@ -1,5 +1,7 @@
 export {
   ACElectricUtils,
+  AsyncLock,
+  AsyncLockType,
   CircularArray,
   Configuration,
   Constants,

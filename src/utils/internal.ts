@@ -1,3 +1,4 @@
+export * from './AsyncLock';
 export * from './CircularArray';
 export * from './Constants';
 export * from './ElectricUtils';

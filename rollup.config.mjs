@@ -47,7 +47,6 @@ export default {
     'node:util',
     'node:worker_threads',
     'poolifier',
-    'proper-lockfile',
     'tar',
     'winston',
     'winston-daily-rotate-file',
