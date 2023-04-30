@@ -10,7 +10,6 @@ import {
   AuthorizationStatus,
   type AuthorizeRequest,
   type AuthorizeResponse,
-  type AutomaticTransactionGeneratorConfiguration,
   ConnectorStatusEnum,
   RequestCommand,
   type StartTransactionRequest,
@@ -30,33 +29,24 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   >();
 
   public readonly connectorsStatus: Map<number, Status>;
-  public readonly configuration: AutomaticTransactionGeneratorConfiguration;
   public started: boolean;
   private readonly chargingStation: ChargingStation;
 
-  private constructor(
-    automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
-    chargingStation: ChargingStation
-  ) {
+  private constructor(chargingStation: ChargingStation) {
     super(moduleName);
     this.started = false;
-    this.configuration = automaticTransactionGeneratorConfiguration;
     this.chargingStation = chargingStation;
     this.connectorsStatus = new Map<number, Status>();
     this.initializeConnectorsStatus();
   }
 
   public static getInstance(
-    automaticTransactionGeneratorConfiguration: AutomaticTransactionGeneratorConfiguration,
     chargingStation: ChargingStation
   ): AutomaticTransactionGenerator | undefined {
     if (AutomaticTransactionGenerator.instances.has(chargingStation.stationInfo.hashId) === false) {
       AutomaticTransactionGenerator.instances.set(
         chargingStation.stationInfo.hashId,
-        new AutomaticTransactionGenerator(
-          automaticTransactionGeneratorConfiguration,
-          chargingStation
-        )
+        new AutomaticTransactionGenerator(chargingStation)
       );
     }
     return AutomaticTransactionGenerator.instances.get(chargingStation.stationInfo.hashId);
@@ -233,23 +223,30 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       }
       const wait =
         Utils.getRandomInteger(
-          this.configuration.maxDelayBetweenTwoTransactions,
-          this.configuration.minDelayBetweenTwoTransactions
+          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+            .maxDelayBetweenTwoTransactions,
+          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+            .minDelayBetweenTwoTransactions
         ) * 1000;
       logger.info(
         `${this.logPrefix(connectorId)} waiting for ${Utils.formatDurationMilliSeconds(wait)}`
       );
       await Utils.sleep(wait);
       const start = Utils.secureRandom();
-      if (start < this.configuration.probabilityOfStart) {
+      if (
+        start <
+        this.chargingStation.getAutomaticTransactionGeneratorConfiguration().probabilityOfStart
+      ) {
         this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions = 0;
         // Start transaction
         const startResponse = await this.startTransaction(connectorId);
         if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           // Wait until end of transaction
           const waitTrxEnd =
-            Utils.getRandomInteger(this.configuration.maxDuration, this.configuration.minDuration) *
-            1000;
+            Utils.getRandomInteger(
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().maxDuration,
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().minDuration
+            ) * 1000;
           logger.info(
             `${this.logPrefix(connectorId)} transaction started with id ${this.chargingStation
               .getConnectorStatus(connectorId)
@@ -305,7 +302,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     this.connectorsStatus.get(connectorId).startDate = new Date();
     this.connectorsStatus.get(connectorId).stopDate = new Date(
       this.connectorsStatus.get(connectorId).startDate.getTime() +
-        (this.configuration.stopAfterHours ??
+        (this.chargingStation.getAutomaticTransactionGeneratorConfiguration().stopAfterHours ??
           Constants.CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS) *
           3600 *
           1000 -
@@ -366,7 +363,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     let startResponse: StartTransactionResponse;
     if (this.chargingStation.hasIdTags()) {
       const idTag = IdTagsCache.getInstance().getIdTag(
-        this.configuration?.idTagDistribution,
+        this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.idTagDistribution,
         this.chargingStation,
         connectorId
       );
@@ -454,7 +451,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private getRequireAuthorize(): boolean {
-    return this.configuration?.requireAuthorize ?? true;
+    return (
+      this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.requireAuthorize ?? true
+    );
   }
 
   private logPrefix = (connectorId?: number): string => {

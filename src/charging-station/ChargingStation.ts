@@ -42,6 +42,7 @@ import {
   type BootNotificationRequest,
   type BootNotificationResponse,
   type CachedRequest,
+  type ChargingStationAutomaticTransactionGeneratorConfiguration,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationOcppConfiguration,
@@ -316,10 +317,7 @@ export class ChargingStation {
       this.logPrefix(),
       this.templateFile
     );
-    const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
-    return !Utils.isUndefined(localStationInfo.voltageOut)
-      ? localStationInfo.voltageOut
-      : defaultVoltageOut;
+    return (stationInfo ?? this.stationInfo).voltageOut ?? defaultVoltageOut;
   }
 
   public getMaximumPower(stationInfo?: ChargingStationInfo): number {
@@ -658,9 +656,7 @@ export class ChargingStation {
                 this.initialize();
                 // Restart the ATG
                 this.stopAutomaticTransactionGenerator();
-                if (
-                  this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true
-                ) {
+                if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
                   this.startAutomaticTransactionGenerator();
                 }
                 if (this.getEnableStatistics() === true) {
@@ -703,6 +699,7 @@ export class ChargingStation {
         this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
         delete this.bootNotificationResponse;
         this.started = false;
+        this.saveConfiguration();
         parentPort?.postMessage(MessageChannelUtils.buildStoppedMessage(this));
         this.stopping = false;
       } else {
@@ -812,15 +809,19 @@ export class ChargingStation {
     }
   }
 
-  public startAutomaticTransactionGenerator(
-    connectorIds?: number[],
-    automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
-  ): void {
-    this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(
-      automaticTransactionGeneratorConfiguration ??
-        this.getAutomaticTransactionGeneratorConfigurationFromTemplate(),
-      this
-    );
+  public getAutomaticTransactionGeneratorConfiguration():
+    | AutomaticTransactionGeneratorConfiguration
+    | undefined {
+    const automaticTransactionGeneratorConfigurationFromFile =
+      this.getConfigurationFromFile()?.automaticTransactionGenerator;
+    if (automaticTransactionGeneratorConfigurationFromFile) {
+      return automaticTransactionGeneratorConfigurationFromFile;
+    }
+    return this.getTemplateFromFile()?.AutomaticTransactionGenerator;
+  }
+
+  public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
+    this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this);
     if (Utils.isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.startConnector(connectorId);
@@ -828,6 +829,7 @@ export class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.start();
     }
+    this.saveChargingStationAutomaticTransactionGeneratorConfiguration();
     parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
@@ -839,6 +841,7 @@ export class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.stop();
     }
+    this.saveChargingStationAutomaticTransactionGeneratorConfiguration();
     parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
@@ -1523,6 +1526,20 @@ export class ChargingStation {
     return configuration;
   }
 
+  private saveChargingStationAutomaticTransactionGeneratorConfiguration(
+    stationTemplate?: ChargingStationTemplate
+  ): void {
+    this.saveConfiguration({
+      automaticTransactionGenerator: (stationTemplate ?? this.getTemplateFromFile())
+        .AutomaticTransactionGenerator,
+      ...(!Utils.isNullOrUndefined(this.automaticTransactionGenerator?.connectorsStatus) && {
+        automaticTransactionGeneratorStatuses: [
+          ...this.automaticTransactionGenerator.connectorsStatus.values(),
+        ],
+      }),
+    });
+  }
+
   private saveConnectorsStatus() {
     this.saveConfiguration();
   }
@@ -1531,19 +1548,27 @@ export class ChargingStation {
     this.saveConfiguration();
   }
 
-  private saveConfiguration(): void {
+  private saveConfiguration(
+    chargingStationAutomaticTransactionGeneratorConfiguration?: ChargingStationAutomaticTransactionGeneratorConfiguration
+  ): void {
     if (this.configurationFile) {
       try {
         if (!fs.existsSync(path.dirname(this.configurationFile))) {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
-        const configurationData: ChargingStationConfiguration =
+        let configurationData: ChargingStationConfiguration =
           Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
         if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         }
         if (this.getOcppPersistentConfiguration() && this.ocppConfiguration?.configurationKey) {
           configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+        }
+        if (chargingStationAutomaticTransactionGeneratorConfiguration) {
+          configurationData = merge<ChargingStationConfiguration>(
+            configurationData,
+            chargingStationAutomaticTransactionGeneratorConfiguration
+          );
         }
         if (this.connectors.size > 0) {
           configurationData.connectorsStatus = [...this.connectors.values()].map(
@@ -1616,6 +1641,8 @@ export class ChargingStation {
       delete configuration.stationInfo;
       delete configuration.connectorsStatus;
       delete configuration.evsesStatus;
+      delete configuration.automaticTransactionGenerator;
+      delete configuration.automaticTransactionGeneratorStatuses;
       delete configuration.configurationHash;
     }
     return configuration;
@@ -2037,7 +2064,7 @@ export class ChargingStation {
     }
 
     // Start the ATG
-    if (this.getAutomaticTransactionGeneratorConfigurationFromTemplate()?.enable === true) {
+    if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
       this.startAutomaticTransactionGenerator();
     }
     this.wsConnectionRestarted === true && this.flushMessageBuffer();
@@ -2191,7 +2218,7 @@ export class ChargingStation {
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop the ATG if needed
-    if (this.automaticTransactionGenerator?.configuration?.stopOnConnectionFailure === true) {
+    if (this.getAutomaticTransactionGeneratorConfiguration().stopOnConnectionFailure === true) {
       this.stopAutomaticTransactionGenerator();
     }
     if (
@@ -2232,11 +2259,5 @@ export class ChargingStation {
         }) or retries disabled (${this.getAutoReconnectMaxRetries()})`
       );
     }
-  }
-
-  private getAutomaticTransactionGeneratorConfigurationFromTemplate():
-    | AutomaticTransactionGeneratorConfiguration
-    | undefined {
-    return this.getTemplateFromFile()?.AutomaticTransactionGenerator;
   }
 }

@@ -72,7 +72,7 @@ export class MessageChannelUtils {
       ...(chargingStation.automaticTransactionGenerator && {
         automaticTransactionGenerator: {
           automaticTransactionGenerator:
-            chargingStation.automaticTransactionGenerator.configuration,
+            chargingStation.getAutomaticTransactionGeneratorConfiguration(),
           automaticTransactionGeneratorStatuses: [
             ...chargingStation.automaticTransactionGenerator.connectorsStatus.values(),
           ],

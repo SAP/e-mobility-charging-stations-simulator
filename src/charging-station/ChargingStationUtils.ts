@@ -168,6 +168,21 @@ export class ChargingStationUtils {
       logger.error(`${logPrefix} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
+    if (Utils.isEmptyObject(stationTemplate.AutomaticTransactionGenerator)) {
+      stationTemplate.AutomaticTransactionGenerator = {
+        enable: false,
+        minDuration: 60,
+        maxDuration: 120,
+        minDelayBetweenTwoTransactions: 15,
+        maxDelayBetweenTwoTransactions: 30,
+        probabilityOfStart: 1,
+        stopAfterHours: 0.3,
+        stopOnConnectionFailure: true,
+      };
+      logger.warn(
+        `${logPrefix} Empty automatic transaction generator configuration from template file ${templateFile}, set to default values`
+      );
+    }
   }
 
   public static checkConnectorsConfiguration(

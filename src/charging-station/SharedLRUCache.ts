@@ -111,9 +111,12 @@ export class SharedLRUCache {
     return (
       Utils.isNullOrUndefined(chargingStationConfiguration?.configurationKey) === false &&
       Utils.isNullOrUndefined(chargingStationConfiguration?.stationInfo) === false &&
+      Utils.isNullOrUndefined(chargingStationConfiguration?.automaticTransactionGenerator) ===
+        false &&
       Utils.isNullOrUndefined(chargingStationConfiguration?.configurationHash) === false &&
       Utils.isNotEmptyArray(chargingStationConfiguration?.configurationKey) === true &&
       Utils.isEmptyObject(chargingStationConfiguration?.stationInfo) === false &&
+      Utils.isEmptyObject(chargingStationConfiguration?.automaticTransactionGenerator) === false &&
       Utils.isNotEmptyString(chargingStationConfiguration?.configurationHash) === true
     );
   }

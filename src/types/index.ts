@@ -27,6 +27,7 @@ export {
   ChargingProfileStatus,
   ChargingRateUnitType,
   type ChargingSchedulePeriod,
+  type ChargingStationAutomaticTransactionGeneratorConfiguration,
   type ChargingStationConfiguration,
   type ChargingStationData,
   type ChargingStationInfo,
