@@ -182,11 +182,13 @@ But the modifications to test have to be done to the files in the build target d
 | firmwareUpgrade                    |               | {<br />"versionUpgrade": {<br />"step": 1<br />},<br />"reset": true<br />}                                                         | {<br />versionUpgrade: {<br />patternGroup: number;<br />step: number;<br />};<br />reset: boolean;<br />failureStatus: 'DownloadFailed' \| 'InstallationFailed';<br />} | Configuration section for simulating firmware upgrade support.                                                                                                                                                                      |
 | commandsSupport                    |               | {<br />"incomingCommands": {},<br />"outgoingCommands": {}<br />}                                                                   | {<br /> incomingCommands: Record<IncomingRequestCommand, boolean>;<br />outgoingCommands?: Record<RequestCommand, boolean>;<br />}                                       | Configuration section for OCPP commands support. Empty section or subsections means all implemented OCPP commands are supported                                                                                                     |
 | messageTriggerSupport              |               | {}                                                                                                                                  | Record<MessageTrigger, boolean>                                                                                                                                          | Configuration section for OCPP commands trigger support. Empty section means all implemented OCPP trigger commands are supported                                                                                                    |
-| Configuration                      |               |                                                                                                                                     | ChargingStationConfiguration                                                                                                                                             | charging stations OCPP parameters configuration section                                                                                                                                                                             |
-| AutomaticTransactionGenerator      |               |                                                                                                                                     | AutomaticTransactionGenerator                                                                                                                                            | charging stations ATG configuration section                                                                                                                                                                                         |
-| Connectors                         |               |                                                                                                                                     | Connectors                                                                                                                                                               | charging stations connectors configuration section                                                                                                                                                                                  |
+| Configuration                      |               |                                                                                                                                     | ChargingStationOcppConfiguration                                                                                                                                         | charging stations OCPP parameters configuration section                                                                                                                                                                             |
+| AutomaticTransactionGenerator      |               |                                                                                                                                     | AutomaticTransactionGeneratorConfiguration                                                                                                                               | charging stations ATG configuration section                                                                                                                                                                                         |
+| Connectors                         |               |                                                                                                                                     | Record<string, ConnectorStatus>                                                                                                                                          | charging stations connectors configuration section                                                                                                                                                                                  |
+| Evses                              |               |                                                                                                                                     | Record<string, EvseTemplate>                                                                                                                                             | charging stations EVSEs configuration section                                                                                                                                                                                       |
+|                                    |
 
-#### Configuration section
+#### Configuration section syntax example
 
 ```json
   "Configuration": {
@@ -212,7 +214,7 @@ But the modifications to test have to be done to the files in the build target d
   }
 ```
 
-#### AutomaticTransactionGenerator section
+#### AutomaticTransactionGenerator section syntax example
 
 Section type definition:
 
@@ -248,7 +250,7 @@ Section example:
   }
 ```
 
-#### Connectors section
+#### Connectors section syntax example
 
 ```json
   "Connectors": {
@@ -276,6 +278,46 @@ Section example:
         },
         ...
       ]
+    }
+  },
+```
+
+#### Evses section syntax example
+
+```json
+  "Evses": {
+    "0": {
+      "Connectors": {
+        "0": {}
+      }
+    },
+    "1": {
+      "Connectors": {
+        "1": {
+          "bootStatus": "Available",
+          "MeterValues": [
+            ...
+            {
+              "unit": "W",
+              "measurand": "Power.Active.Import",
+              "phase": "L1-N",
+              "value": "5000",
+              "fluctuationPercent": "10"
+            },
+            ...
+            {
+              "unit": "A",
+              "measurand": "Current.Import",
+              "minimum": "0.5"
+            },
+            ...
+            {
+              "unit": "Wh"
+            },
+            ...
+          ]
+        }
+      }
     }
   },
 ```
