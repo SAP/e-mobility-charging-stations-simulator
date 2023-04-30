@@ -186,7 +186,6 @@ But the modifications to test have to be done to the files in the build target d
 | AutomaticTransactionGenerator      |               |                                                                                                                                     | AutomaticTransactionGeneratorConfiguration                                                                                                                               | charging stations ATG configuration section                                                                                                                                                                                         |
 | Connectors                         |               |                                                                                                                                     | Record<string, ConnectorStatus>                                                                                                                                          | charging stations connectors configuration section                                                                                                                                                                                  |
 | Evses                              |               |                                                                                                                                     | Record<string, EvseTemplate>                                                                                                                                             | charging stations EVSEs configuration section                                                                                                                                                                                       |
-|                                    |
 
 #### Configuration section syntax example
 
@@ -216,7 +215,7 @@ But the modifications to test have to be done to the files in the build target d
 
 #### AutomaticTransactionGenerator section syntax example
 
-Section type definition:
+##### Type definition:
 
 ```ts
 type AutomaticTransactionGeneratorConfiguration = {
@@ -233,7 +232,7 @@ type AutomaticTransactionGeneratorConfiguration = {
 };
 ```
 
-Section example:
+##### Example:
 
 ```json
   "AutomaticTransactionGenerator": {
