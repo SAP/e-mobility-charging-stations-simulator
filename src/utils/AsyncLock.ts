@@ -5,7 +5,7 @@ export enum AsyncLockType {
 
 export class AsyncLock {
   private static readonly instances = new Map<AsyncLockType, AsyncLock>();
-  private acquired = false;
+  private acquired: boolean;
   private readonly resolveQueue: ((value: void | PromiseLike<void>) => void)[];
 
   private constructor(private readonly type: AsyncLockType) {
