@@ -109,7 +109,7 @@ export class ChargingStation {
   public automaticTransactionGenerator!: AutomaticTransactionGenerator | undefined;
   public ocppConfiguration!: ChargingStationOcppConfiguration | undefined;
   public wsConnection!: WebSocket | null;
-  public connectors: Map<number, ConnectorStatus>;
+  public readonly connectors: Map<number, ConnectorStatus>;
   public readonly evses: Map<number, EvseStatus>;
   public readonly requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics | undefined;
@@ -1312,18 +1312,15 @@ export class ChargingStation {
 
   private initializeConnectorsOrEvsesFromFile(configuration: ChargingStationConfiguration): void {
     if (configuration?.connectorsStatus && !configuration?.evsesStatus) {
-      this.connectors = new Map<number, ConnectorStatus>(
-        configuration?.connectorsStatus.map((connectorStatus, connectorId) => [
-          connectorId,
-          connectorStatus,
-        ])
-      );
+      for (const [connectorId, connectorStatus] of configuration.connectorsStatus.entries()) {
+        this.connectors.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
+      }
     } else if (configuration?.evsesStatus && !configuration?.connectorsStatus) {
       for (const [evseId, evseStatusConfiguration] of configuration.evsesStatus.entries()) {
-        const evseStatus = Utils.cloneObject(evseStatusConfiguration);
+        const evseStatus = Utils.cloneObject<EvseStatusConfiguration>(evseStatusConfiguration);
         delete evseStatus.connectorsStatus;
         this.evses.set(evseId, {
-          ...evseStatus,
+          ...(evseStatus as EvseStatus),
           connectors: new Map<number, ConnectorStatus>(
             evseStatusConfiguration.connectorsStatus.map((connectorStatus, connectorId) => [
               connectorId,
@@ -1557,7 +1554,7 @@ export class ChargingStation {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
         }
         let configurationData: ChargingStationConfiguration =
-          Utils.cloneObject(this.getConfigurationFromFile()) ?? {};
+          Utils.cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()) ?? {};
         if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         }
@@ -1632,20 +1629,9 @@ export class ChargingStation {
   }
 
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | undefined {
-    let configuration: ChargingStationConfiguration | undefined;
     if (this.getOcppPersistentConfiguration() === true) {
-      const configurationFromFile = this.getConfigurationFromFile();
-      configuration = configurationFromFile?.configurationKey && configurationFromFile;
+      return { configurationKey: this.getConfigurationFromFile()?.configurationKey };
     }
-    if (!Utils.isNullOrUndefined(configuration)) {
-      delete configuration.stationInfo;
-      delete configuration.connectorsStatus;
-      delete configuration.evsesStatus;
-      delete configuration.automaticTransactionGenerator;
-      delete configuration.automaticTransactionGeneratorStatuses;
-      delete configuration.configurationHash;
-    }
-    return configuration;
   }
 
   private getOcppConfiguration(): ChargingStationOcppConfiguration | undefined {
