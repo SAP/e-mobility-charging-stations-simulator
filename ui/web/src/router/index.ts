@@ -1,5 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import type { RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import ChargingStationsView from '@/views/ChargingStationsView.vue';
 
 const routes: RouteRecordRaw[] = [

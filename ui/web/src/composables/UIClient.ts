@@ -1,5 +1,10 @@
-import { ProcedureName, ResponseStatus, type RequestPayload } from '@/types/UIProtocol';
-import type { ProtocolResponse, ResponsePayload } from '@/types/UIProtocol';
+import {
+  ProcedureName,
+  type RequestPayload,
+  type ResponsePayload,
+  type ProtocolResponse,
+  ResponseStatus,
+} from '@/types/UIProtocol';
 
 import Utils from './Utils';
 import config from '@/assets/config';
