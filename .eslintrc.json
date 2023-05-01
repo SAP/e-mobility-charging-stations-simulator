@@ -91,7 +91,7 @@
     "no-var": "error",
     "prefer-const": "error",
     "sort-imports": [
-      "warn",
+      "error",
       {
         "ignoreCase": false,
         "ignoreDeclarationSort": true,

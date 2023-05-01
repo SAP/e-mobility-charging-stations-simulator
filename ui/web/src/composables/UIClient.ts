@@ -1,8 +1,8 @@
 import {
   ProcedureName,
+  type ProtocolResponse,
   type RequestPayload,
   type ResponsePayload,
-  type ProtocolResponse,
   ResponseStatus,
 } from '@/types/UIProtocol';
 
