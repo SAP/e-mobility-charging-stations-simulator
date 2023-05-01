@@ -2,6 +2,7 @@ coverage
 dist
 outputs
 .nyc_output
+ui/web
 tsconfig-base.json
 pnpm-lock.yaml
 package-lock.json
