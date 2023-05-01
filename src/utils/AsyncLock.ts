@@ -1,3 +1,5 @@
+// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+
 export enum AsyncLockType {
   configuration = 'configuration',
   performance = 'performance',
