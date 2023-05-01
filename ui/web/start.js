@@ -1,6 +1,6 @@
-const finalhandler = require('finalhandler'),
-  http = require('http'),
+const http = require('http'),
   path = require('path'),
+  finalhandler = require('finalhandler'),
   serveStatic = require('serve-static');
 
 const isCFEnvironment = process.env.VCAP_APPLICATION !== undefined,

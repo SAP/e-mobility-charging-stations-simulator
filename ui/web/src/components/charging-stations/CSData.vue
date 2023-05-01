@@ -18,15 +18,14 @@
 </template>
 
 <script setup lang="ts">
-import CSConnector from './CSConnector.vue';
-
 // import { reactive } from 'vue';
-import Utils from '@/composables/Utils';
+import CSConnector from './CSConnector.vue';
 import type {
   ChargingStationData,
   ChargingStationInfo,
   ConnectorStatus,
 } from '@/types/ChargingStationType';
+import Utils from '@/composables/Utils';
 
 const props = defineProps<{
   chargingStation: ChargingStationData;

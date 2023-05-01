@@ -7,12 +7,23 @@ module.exports = defineConfig({
     node: true,
   },
 
+  plugins: ['import'],
+
   extends: [
     'eslint:recommended',
     'plugin:vue/vue3-recommended',
     '@vue/eslint-config-typescript/recommended',
     '@vue/eslint-config-prettier',
+    'plugin:import/recommended',
   ],
+
+  settings: {
+    'import/resolver': {
+      typescript: {
+        project: './tsconfig.json',
+      },
+    },
+  },
 
   parserOptions: {
     ecmaVersion: 'latest',
@@ -23,5 +34,12 @@ module.exports = defineConfig({
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'vue/require-v-for-key': 'off',
     'vue/multi-word-component-names': 'off',
+    'sort-imports': [
+      'error',
+      {
+        ignoreDeclarationSort: true,
+      },
+    ],
+    'import/order': 'error',
   },
 });

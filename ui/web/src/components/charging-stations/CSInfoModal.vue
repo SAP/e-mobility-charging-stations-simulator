@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import Modal from '@/components/Modal.vue';
 import type { ChargingStationInfo } from '@/types/ChargingStationType';
+import Modal from '@/components/Modal.vue';
 
 const props = defineProps<{
   stationInfo: ChargingStationInfo;

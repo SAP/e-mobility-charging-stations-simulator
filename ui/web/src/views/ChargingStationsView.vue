@@ -17,13 +17,12 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, reactive } from 'vue';
+import CSTable from '@/components/charging-stations/CSTable.vue';
+import type { ChargingStationData } from '@/types/ChargingStationType';
 import Container from '@/components/Container.vue';
 import ReloadButton from '@/components/buttons/ReloadButton.vue';
-import CSTable from '@/components/charging-stations/CSTable.vue';
-
-import { onMounted, reactive } from 'vue';
 import UIClient from '@/composables/UIClient';
-import type { ChargingStationData } from '@/types/ChargingStationType';
 
 const UIClientInstance = UIClient.getInstance();
 

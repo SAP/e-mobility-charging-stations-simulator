@@ -23,12 +23,11 @@
 </template>
 
 <script setup lang="ts">
-// import IdTagInputModal from './IdTagInputModal.vue';
-import Button from '../buttons/Button.vue';
-
 // import { reactive } from 'vue';
-import UIClient from '@/composables/UIClient';
+import Button from '../buttons/Button.vue';
+// import IdTagInputModal from './IdTagInputModal.vue';
 import type { ConnectorStatus } from '@/types/ChargingStationType';
+import UIClient from '@/composables/UIClient';
 // import Utils from '@/composables/Utils';
 
 const props = defineProps<{
