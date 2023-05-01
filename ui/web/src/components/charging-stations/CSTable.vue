@@ -1,5 +1,8 @@
 <template>
   <table id="cs-table">
+    <caption>
+      Charging stations
+    </caption>
     <thead id="cs-table__head">
       <tr class="cs-table__row">
         <th scope="col" class="cs-table__action-col">Action</th>
