@@ -15,5 +15,9 @@
     "preinstall",
     "RFID",
     "webui"
-  ]
+  ],
+  "sonarlint.connectedMode.project": {
+    "connectionId": "sap-1",
+    "projectKey": "e-mobility-charging-stations-simulator-webui"
+  }
 }
