@@ -16,9 +16,7 @@ export class JsonFileStorage extends Storage {
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.checkPerformanceRecordsFile();
-    const asyncLock = AsyncLock.getInstance(AsyncLockType.performance);
-    asyncLock
-      .acquire()
+    AsyncLock.acquire(AsyncLockType.performance)
       .then(() => {
         const fileData = fs.readFileSync(this.dbName, 'utf8');
         const performanceRecords: Statistics[] = fileData
@@ -40,7 +38,7 @@ export class JsonFileStorage extends Storage {
         );
       })
       .finally(() => {
-        asyncLock.release().catch(Constants.EMPTY_FUNCTION);
+        AsyncLock.release(AsyncLockType.performance).catch(Constants.EMPTY_FUNCTION);
       });
   }
 

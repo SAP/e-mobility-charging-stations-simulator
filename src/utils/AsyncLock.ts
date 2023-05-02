@@ -6,7 +6,7 @@ export enum AsyncLockType {
 }
 
 export class AsyncLock {
-  private static readonly instances = new Map<AsyncLockType, AsyncLock>();
+  private static readonly asyncLocks = new Map<AsyncLockType, AsyncLock>();
   private acquired: boolean;
   private readonly resolveQueue: ((value: void | PromiseLike<void>) => void)[];
 
@@ -15,32 +15,34 @@ export class AsyncLock {
     this.resolveQueue = [];
   }
 
-  public static getInstance(type: AsyncLockType): AsyncLock {
-    if (!AsyncLock.instances.has(type)) {
-      AsyncLock.instances.set(type, new AsyncLock(type));
-    }
-    return AsyncLock.instances.get(type);
-  }
-
-  public async acquire(): Promise<void> {
-    if (!this.acquired) {
-      this.acquired = true;
+  public static async acquire(type: AsyncLockType): Promise<void> {
+    const asyncLock = AsyncLock.getAsyncLock(type);
+    if (!asyncLock.acquired) {
+      asyncLock.acquired = true;
     } else {
       return new Promise((resolve) => {
-        this.resolveQueue.push(resolve);
+        asyncLock.resolveQueue.push(resolve);
       });
     }
   }
 
-  public async release(): Promise<void> {
-    if (this.resolveQueue.length === 0 && this.acquired) {
-      this.acquired = false;
+  public static async release(type: AsyncLockType): Promise<void> {
+    const asyncLock = AsyncLock.getAsyncLock(type);
+    if (asyncLock.resolveQueue.length === 0 && asyncLock.acquired) {
+      asyncLock.acquired = false;
       return;
     }
-    const queuedResolve = this.resolveQueue.shift();
+    const queuedResolve = asyncLock.resolveQueue.shift();
     return new Promise((resolve) => {
       queuedResolve();
       resolve();
     });
+  }
+
+  private static getAsyncLock(type: AsyncLockType): AsyncLock {
+    if (!AsyncLock.asyncLocks.has(type)) {
+      AsyncLock.asyncLocks.set(type, new AsyncLock(type));
+    }
+    return AsyncLock.asyncLocks.get(type);
   }
 }

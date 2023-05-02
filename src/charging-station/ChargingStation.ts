@@ -1594,9 +1594,7 @@ export class ChargingStation {
           .update(JSON.stringify(configurationData))
           .digest('hex');
         if (this.configurationFileHash !== configurationHash) {
-          const asyncLock = AsyncLock.getInstance(AsyncLockType.configuration);
-          asyncLock
-            .acquire()
+          AsyncLock.acquire(AsyncLockType.configuration)
             .then(() => {
               configurationData.configurationHash = configurationHash;
               const measureId = `${FileType.ChargingStationConfiguration} write`;
@@ -1618,7 +1616,7 @@ export class ChargingStation {
               );
             })
             .finally(() => {
-              asyncLock.release().catch(Constants.EMPTY_FUNCTION);
+              AsyncLock.release(AsyncLockType.configuration).catch(Constants.EMPTY_FUNCTION);
             });
         } else {
           logger.debug(
