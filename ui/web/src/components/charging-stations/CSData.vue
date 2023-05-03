@@ -47,8 +47,8 @@ function getConnectors(): ConnectorStatus[] {
     const connectorsStatus: ConnectorStatus[] = [];
     for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
       if (evseId > 0 && Array.isArray(evseStatus.connectors) && evseStatus.connectors.length > 0) {
-        for (const connector of evseStatus.connectors) {
-          connectorsStatus.push(connector);
+        for (const connectorStatus of evseStatus.connectors) {
+          connectorsStatus.push(connectorStatus);
         }
       }
     }
