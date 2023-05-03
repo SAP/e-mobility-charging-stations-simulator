@@ -17,12 +17,12 @@ type ResponseHandler = {
 export default class UIClient {
   private static _instance: UIClient | null = null;
 
-  private _ws!: WebSocket;
-  private _responseHandlers: Map<string, ResponseHandler>;
+  private ws!: WebSocket;
+  private responseHandlers: Map<string, ResponseHandler>;
 
   private constructor() {
     this.openWS();
-    this._responseHandlers = new Map<string, ResponseHandler>();
+    this.responseHandlers = new Map<string, ResponseHandler>();
   }
 
   public static getInstance() {
@@ -33,7 +33,7 @@ export default class UIClient {
   }
 
   public registerWSonOpenListener(listener: (event: Event) => void) {
-    this._ws.addEventListener('open', listener);
+    this.ws.addEventListener('open', listener);
   }
 
   public async startSimulator(): Promise<ResponsePayload> {
@@ -111,15 +111,15 @@ export default class UIClient {
   }
 
   private openWS(): void {
-    this._ws = new WebSocket(
+    this.ws = new WebSocket(
       `ws://${config.uiServer.host}:${config.uiServer.port}`,
       config.uiServer.protocol
     );
-    this._ws.onmessage = this.responseHandler.bind(this);
-    this._ws.onerror = (errorEvent) => {
+    this.ws.onmessage = this.responseHandler.bind(this);
+    this.ws.onerror = (errorEvent) => {
       console.error('WebSocket error: ', errorEvent);
     };
-    this._ws.onclose = (closeEvent) => {
+    this.ws.onclose = (closeEvent) => {
       console.info('WebSocket closed: ', closeEvent);
     };
   }
@@ -130,15 +130,15 @@ export default class UIClient {
     resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void,
     reject: (reason?: any) => void
   ): void {
-    this._responseHandlers.set(id, { procedureName, resolve, reject });
+    this.responseHandlers.set(id, { procedureName, resolve, reject });
   }
 
   private getResponseHandler(id: string): ResponseHandler | undefined {
-    return this._responseHandlers.get(id);
+    return this.responseHandlers.get(id);
   }
 
   private deleteResponseHandler(id: string): boolean {
-    return this._responseHandlers.delete(id);
+    return this.responseHandlers.delete(id);
   }
 
   private async sendRequest(
@@ -151,11 +151,11 @@ export default class UIClient {
         uuid = crypto.randomUUID();
         const msg = JSON.stringify([uuid, command, data]);
 
-        if (this._ws.readyState !== WebSocket.OPEN) {
+        if (this.ws.readyState !== WebSocket.OPEN) {
           this.openWS();
         }
-        if (this._ws.readyState === WebSocket.OPEN) {
-          this._ws.send(msg);
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(msg);
         } else {
           throw new Error(`Send request '${command}' message: connection not opened`);
         }
@@ -165,7 +165,7 @@ export default class UIClient {
       120 * 1000,
       Error(`Send request '${command}' message timeout`),
       () => {
-        this._responseHandlers.delete(uuid);
+        this.responseHandlers.delete(uuid);
       }
     );
   }
@@ -179,7 +179,7 @@ export default class UIClient {
 
     const [uuid, responsePayload] = response;
 
-    if (this._responseHandlers.has(uuid) === true) {
+    if (this.responseHandlers.has(uuid) === true) {
       switch (responsePayload.status) {
         case ResponseStatus.SUCCESS:
           this.getResponseHandler(uuid)?.resolve(responsePayload);

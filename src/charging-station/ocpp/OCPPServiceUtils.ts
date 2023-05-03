@@ -146,7 +146,8 @@ export class OCPPServiceUtils {
   public static buildStatusNotificationRequest(
     chargingStation: ChargingStation,
     connectorId: number,
-    status: ConnectorStatusEnum
+    status: ConnectorStatusEnum,
+    evseId?: number
   ): StatusNotificationRequest {
     switch (chargingStation.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16) {
       case OCPPVersion.VERSION_16:
@@ -161,7 +162,7 @@ export class OCPPServiceUtils {
           timestamp: new Date(),
           connectorStatus: status,
           connectorId,
-          evseId: connectorId,
+          evseId,
         } as OCPP20StatusNotificationRequest;
       default:
         throw new BaseError('Cannot build status notification payload: OCPP version not supported');
@@ -179,7 +180,8 @@ export class OCPPServiceUtils {
   public static async sendAndSetConnectorStatus(
     chargingStation: ChargingStation,
     connectorId: number,
-    status: ConnectorStatusEnum
+    status: ConnectorStatusEnum,
+    evseId?: number
   ) {
     OCPPServiceUtils.checkConnectorStatusTransition(chargingStation, connectorId, status);
     await chargingStation.ocppRequestService.requestHandler<
@@ -188,7 +190,7 @@ export class OCPPServiceUtils {
     >(
       chargingStation,
       RequestCommand.STATUS_NOTIFICATION,
-      OCPPServiceUtils.buildStatusNotificationRequest(chargingStation, connectorId, status)
+      OCPPServiceUtils.buildStatusNotificationRequest(chargingStation, connectorId, status, evseId)
     );
     chargingStation.getConnectorStatus(connectorId).status = status;
   }

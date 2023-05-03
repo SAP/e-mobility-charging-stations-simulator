@@ -43,6 +43,17 @@ const props = defineProps<{
 // });
 
 function getConnectors(): ConnectorStatus[] {
+  if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
+    const connectorsStatus: ConnectorStatus[] = [];
+    for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
+      if (evseId > 0 && Array.isArray(evseStatus.connectors) && evseStatus.connectors.length > 0) {
+        for (const connector of evseStatus.connectors) {
+          connectorsStatus.push(connector);
+        }
+      }
+    }
+    return connectorsStatus;
+  }
   return props.chargingStation.connectors?.slice(1);
 }
 function getInfo(): ChargingStationInfo {

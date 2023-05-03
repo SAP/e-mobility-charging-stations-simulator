@@ -2038,7 +2038,8 @@ export class ChargingStation {
             await OCPPServiceUtils.sendAndSetConnectorStatus(
               this,
               connectorId,
-              connectorBootStatus
+              connectorBootStatus,
+              evseId
             );
           }
         }
@@ -2098,7 +2099,8 @@ export class ChargingStation {
               OCPPServiceUtils.buildStatusNotificationRequest(
                 this,
                 connectorId,
-                ConnectorStatusEnum.Unavailable
+                ConnectorStatusEnum.Unavailable,
+                evseId
               )
             );
             delete connectorStatus?.status;
