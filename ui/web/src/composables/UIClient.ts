@@ -15,7 +15,7 @@ type ResponseHandler = {
 };
 
 export default class UIClient {
-  private static _instance: UIClient | null = null;
+  private static instance: UIClient | null = null;
 
   private ws!: WebSocket;
   private responseHandlers: Map<string, ResponseHandler>;
@@ -26,10 +26,10 @@ export default class UIClient {
   }
 
   public static getInstance() {
-    if (UIClient._instance === null) {
-      UIClient._instance = new UIClient();
+    if (UIClient.instance === null) {
+      UIClient.instance = new UIClient();
     }
-    return UIClient._instance;
+    return UIClient.instance;
   }
 
   public registerWSonOpenListener(listener: (event: Event) => void) {
