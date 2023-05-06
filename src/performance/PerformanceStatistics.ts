@@ -191,7 +191,7 @@ export class PerformanceStatistics {
     const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
     const middleIndex = Math.floor(sortedDataSet.length / 2);
     if (sortedDataSet.length % 2 === 0) {
-      return sortedDataSet[middleIndex / 2];
+      return sortedDataSet[middleIndex];
     }
     return (sortedDataSet[middleIndex - 1] + sortedDataSet[middleIndex]) / 2;
   }
@@ -215,7 +215,7 @@ export class PerformanceStatistics {
     if (Number.isInteger(percentileIndex)) {
       return (sortedDataSet[percentileIndex] + sortedDataSet[percentileIndex + 1]) / 2;
     }
-    return sortedDataSet[Math.round(percentileIndex)];
+    return sortedDataSet[Math.floor(percentileIndex)];
   }
 
   private stdDeviation(dataSet: number[]): number {
