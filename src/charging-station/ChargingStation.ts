@@ -185,8 +185,9 @@ export class ChargingStation {
   };
 
   public hasIdTags(): boolean {
-    const idTagsFile = ChargingStationUtils.getIdTagsFile(this.stationInfo);
-    return Utils.isNotEmptyArray(this.idTagsCache.getIdTags(idTagsFile));
+    return Utils.isNotEmptyArray(
+      this.idTagsCache.getIdTags(ChargingStationUtils.getIdTagsFile(this.stationInfo))
+    );
   }
 
   public getEnableStatistics(): boolean {
