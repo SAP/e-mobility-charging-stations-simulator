@@ -184,54 +184,6 @@ export class PerformanceStatistics {
     }
   }
 
-  private median(dataSet: number[]): number {
-    if (Array.isArray(dataSet) === true && dataSet.length === 1) {
-      return dataSet[0];
-    }
-    const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
-    const middleIndex = Math.floor(sortedDataSet.length / 2);
-    if (sortedDataSet.length % 2 === 0) {
-      return sortedDataSet[middleIndex];
-    }
-    return (sortedDataSet[middleIndex - 1] + sortedDataSet[middleIndex]) / 2;
-  }
-
-  // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
-  private percentile(dataSet: number[], percentile: number): number {
-    if (percentile < 0 && percentile > 100) {
-      throw new RangeError('Percentile is not between 0 and 100');
-    }
-    if (Utils.isEmptyArray(dataSet)) {
-      return 0;
-    }
-    const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
-    if (percentile === 0) {
-      return sortedDataSet[0];
-    }
-    if (percentile === 100) {
-      return sortedDataSet[sortedDataSet.length - 1];
-    }
-    const percentileIndex = (percentile / 100) * sortedDataSet.length - 1;
-    if (Number.isInteger(percentileIndex)) {
-      return (sortedDataSet[percentileIndex] + sortedDataSet[percentileIndex + 1]) / 2;
-    }
-    return sortedDataSet[Math.floor(percentileIndex)];
-  }
-
-  private stdDeviation(dataSet: number[]): number {
-    let totalDataSet = 0;
-    for (const data of dataSet) {
-      totalDataSet += data;
-    }
-    const dataSetMean = totalDataSet / dataSet.length;
-    let totalGeometricDeviation = 0;
-    for (const data of dataSet) {
-      const deviation = data - dataSetMean;
-      totalGeometricDeviation += deviation * deviation;
-    }
-    return Math.sqrt(totalGeometricDeviation / dataSet.length);
-  }
-
   private addPerformanceEntryToStatistics(entry: PerformanceEntry): void {
     const entryName = entry.name;
     // Initialize command statistics
@@ -273,19 +225,19 @@ export class PerformanceStatistics {
             timestamp: entry.startTime,
             value: entry.duration,
           }));
-    this.statistics.statisticsData.get(entryName).medTimeMeasurement = this.median(
+    this.statistics.statisticsData.get(entryName).medTimeMeasurement = Utils.median(
       this.extractTimeSeriesValues(
         this.statistics.statisticsData.get(entryName).timeMeasurementSeries
       )
     );
     this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement =
-      this.percentile(
+      Utils.percentile(
         this.extractTimeSeriesValues(
           this.statistics.statisticsData.get(entryName).timeMeasurementSeries
         ),
         95
       );
-    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = this.stdDeviation(
+    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = Utils.stdDeviation(
       this.extractTimeSeriesValues(
         this.statistics.statisticsData.get(entryName).timeMeasurementSeries
       )

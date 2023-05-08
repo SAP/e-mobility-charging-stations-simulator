@@ -329,4 +329,30 @@ describe('Utils test suite', () => {
     expect(Utils.isEmptyObject(new WeakMap())).toBe(false);
     expect(Utils.isEmptyObject(new WeakSet())).toBe(false);
   });
+
+  it('Verify median()', () => {
+    const array0 = [0.08];
+    expect(Utils.median(array0)).toBe(0.08);
+    const array1 = [0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03];
+    expect(Utils.median(array1)).toBe(3.05);
+  });
+
+  it('Verify percentile()', () => {
+    expect(Utils.percentile([], 25)).toBe(undefined);
+    const array0 = [0.08];
+    expect(Utils.percentile(array0, 50)).toBe(0.08);
+    const array1 = [0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03];
+    expect(Utils.percentile(array1, 0)).toBe(0.25);
+    expect(Utils.percentile(array1, 50)).toBe(3.05);
+    expect(Utils.percentile(array1, 80)).toBe(4.974);
+    expect(Utils.percentile(array1, 85)).toBe(5.131);
+    expect(Utils.percentile(array1, 90)).toBe(5.434);
+    expect(Utils.percentile(array1, 95)).toBe(5.736999999999999);
+    expect(Utils.percentile(array1, 100)).toBe(6.04);
+  });
+
+  it('Verify stdDeviation()', () => {
+    const array1 = [0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03];
+    expect(Utils.stdDeviation(array1)).toBe(2.0256064851429216);
+  });
 });

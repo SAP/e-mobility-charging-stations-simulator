@@ -335,4 +335,53 @@ export class Utils {
     }
     return '(Unknown)';
   }
+
+  public static median(dataSet: number[]): number {
+    if (Array.isArray(dataSet) === true && dataSet.length === 1) {
+      return dataSet[0];
+    }
+    dataSet = dataSet.slice().sort((a, b) => a - b);
+    return (dataSet[(dataSet.length - 1) >> 1] + dataSet[dataSet.length >> 1]) / 2;
+  }
+
+  // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
+  public static percentile(dataSet: number[], percentile: number): number | undefined {
+    if (percentile < 0 && percentile > 100) {
+      throw new RangeError('Percentile is not between 0 and 100');
+    }
+    if (Utils.isEmptyArray(dataSet)) {
+      return undefined;
+    }
+    const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
+    if (percentile === 0 || sortedDataSet.length === 1) {
+      return sortedDataSet[0];
+    }
+    if (percentile === 100) {
+      return sortedDataSet[sortedDataSet.length - 1];
+    }
+    const percentileIndexBase = (percentile / 100) * (sortedDataSet.length - 1);
+    const percentileIntegerIndex = Math.floor(percentileIndexBase);
+    if (!Utils.isNullOrUndefined(sortedDataSet[percentileIntegerIndex + 1])) {
+      return (
+        sortedDataSet[percentileIntegerIndex] +
+        (percentileIndexBase - percentileIntegerIndex) *
+          (sortedDataSet[percentileIntegerIndex + 1] - sortedDataSet[percentileIntegerIndex])
+      );
+    }
+    return sortedDataSet[percentileIntegerIndex];
+  }
+
+  public static stdDeviation(dataSet: number[]): number {
+    let totalDataSet = 0;
+    for (const data of dataSet) {
+      totalDataSet += data;
+    }
+    const dataSetMean = totalDataSet / dataSet.length;
+    let totalGeometricDeviation = 0;
+    for (const data of dataSet) {
+      const deviation = data - dataSetMean;
+      totalGeometricDeviation += deviation * deviation;
+    }
+    return Math.sqrt(totalGeometricDeviation / dataSet.length);
+  }
 }
