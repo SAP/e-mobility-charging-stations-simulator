@@ -366,15 +366,15 @@ export class Utils {
       return sortedDataSet[sortedDataSet.length - 1];
     }
     const percentileIndexBase = (percentile / 100) * (sortedDataSet.length - 1);
-    const percentileIntegerIndex = Math.floor(percentileIndexBase);
-    if (!Utils.isNullOrUndefined(sortedDataSet[percentileIntegerIndex + 1])) {
+    const percentileIndexInteger = Math.floor(percentileIndexBase);
+    if (!Utils.isNullOrUndefined(sortedDataSet[percentileIndexInteger + 1])) {
       return (
-        sortedDataSet[percentileIntegerIndex] +
-        (percentileIndexBase - percentileIntegerIndex) *
-          (sortedDataSet[percentileIntegerIndex + 1] - sortedDataSet[percentileIntegerIndex])
+        sortedDataSet[percentileIndexInteger] +
+        (percentileIndexBase - percentileIndexInteger) *
+          (sortedDataSet[percentileIndexInteger + 1] - sortedDataSet[percentileIndexInteger])
       );
     }
-    return sortedDataSet[percentileIntegerIndex];
+    return sortedDataSet[percentileIndexInteger];
   }
 
   public static stdDeviation(dataSet: number[]): number {
