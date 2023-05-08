@@ -331,6 +331,7 @@ describe('Utils test suite', () => {
   });
 
   it('Verify median()', () => {
+    expect(Utils.median([])).toBe(0);
     const array0 = [0.08];
     expect(Utils.median(array0)).toBe(0.08);
     const array1 = [0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03];
@@ -338,7 +339,7 @@ describe('Utils test suite', () => {
   });
 
   it('Verify percentile()', () => {
-    expect(Utils.percentile([], 25)).toBe(undefined);
+    expect(Utils.percentile([], 25)).toBe(0);
     const array0 = [0.08];
     expect(Utils.percentile(array0, 50)).toBe(0.08);
     const array1 = [0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03];

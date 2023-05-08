@@ -337,6 +337,9 @@ export class Utils {
   }
 
   public static median(dataSet: number[]): number {
+    if (Utils.isEmptyArray(dataSet)) {
+      return 0;
+    }
     if (Array.isArray(dataSet) === true && dataSet.length === 1) {
       return dataSet[0];
     }
@@ -345,12 +348,12 @@ export class Utils {
   }
 
   // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
-  public static percentile(dataSet: number[], percentile: number): number | undefined {
+  public static percentile(dataSet: number[], percentile: number): number {
     if (percentile < 0 && percentile > 100) {
       throw new RangeError('Percentile is not between 0 and 100');
     }
     if (Utils.isEmptyArray(dataSet)) {
-      return undefined;
+      return 0;
     }
     const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
     if (percentile === 0 || sortedDataSet.length === 1) {
