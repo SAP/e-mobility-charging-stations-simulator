@@ -343,8 +343,11 @@ export class Utils {
     if (Array.isArray(dataSet) === true && dataSet.length === 1) {
       return dataSet[0];
     }
-    dataSet = dataSet.slice().sort((a, b) => a - b);
-    return (dataSet[(dataSet.length - 1) >> 1] + dataSet[dataSet.length >> 1]) / 2;
+    const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
+    return (
+      (sortedDataSet[(sortedDataSet.length - 1) >> 1] + sortedDataSet[sortedDataSet.length >> 1]) /
+      2
+    );
   }
 
   // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
