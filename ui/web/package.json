@@ -48,7 +48,7 @@
     "eslint-define-config": "^1.20.0",
     "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-vue": "^9.11.0",
+    "eslint-plugin-vue": "^9.11.1",
     "jsdom": "^22.0.0",
     "prettier": "^2.8.8",
     "rimraf": "^5.0.0",

@@ -44,7 +44,7 @@ devDependencies:
     version: 7.1.0(eslint@8.40.0)(prettier@2.8.8)
   '@vue/eslint-config-typescript':
     specifier: ^11.0.3
-    version: 11.0.3(eslint-plugin-vue@9.11.0)(eslint@8.40.0)(typescript@5.0.4)
+    version: 11.0.3(eslint-plugin-vue@9.11.1)(eslint@8.40.0)(typescript@5.0.4)
   '@vue/test-utils':
     specifier: ^2.3.2
     version: 2.3.2(vue@3.2.47)
@@ -67,8 +67,8 @@ devDependencies:
     specifier: ^2.27.5
     version: 2.27.5(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.5)(eslint@8.40.0)
   eslint-plugin-vue:
-    specifier: ^9.11.0
-    version: 9.11.0(eslint@8.40.0)
+    specifier: ^9.11.1
+    version: 9.11.1(eslint@8.40.0)
   jsdom:
     specifier: ^22.0.0
     version: 22.0.0
@@ -1072,7 +1072,7 @@ packages:
       prettier: 2.8.8
     dev: true
 
-  /@vue/eslint-config-typescript@11.0.3(eslint-plugin-vue@9.11.0)(eslint@8.40.0)(typescript@5.0.4):
+  /@vue/eslint-config-typescript@11.0.3(eslint-plugin-vue@9.11.1)(eslint@8.40.0)(typescript@5.0.4):
     resolution: {integrity: sha512-dkt6W0PX6H/4Xuxg/BlFj5xHvksjpSlVjtkQCpaYJBIEuKj2hOVU7r+TIe+ysCwRYFz/lGqvklntRkCAibsbPw==}
     engines: {node: ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -1086,7 +1086,7 @@ packages:
       '@typescript-eslint/eslint-plugin': 5.59.2(@typescript-eslint/parser@5.59.2)(eslint@8.40.0)(typescript@5.0.4)
       '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@5.0.4)
       eslint: 8.40.0
-      eslint-plugin-vue: 9.11.0(eslint@8.40.0)
+      eslint-plugin-vue: 9.11.1(eslint@8.40.0)
       typescript: 5.0.4
       vue-eslint-parser: 9.2.1(eslint@8.40.0)
     transitivePeerDependencies:
@@ -1958,8 +1958,8 @@ packages:
       prettier-linter-helpers: 1.0.0
     dev: true
 
-  /eslint-plugin-vue@9.11.0(eslint@8.40.0):
-    resolution: {integrity: sha512-bBCJAZnkBV7ATH4Z1E7CvN3nmtS4H7QUU3UBxPdo8WohRU+yHjnQRALpTbxMVcz0e4Mx3IyxIdP5HYODMxK9cQ==}
+  /eslint-plugin-vue@9.11.1(eslint@8.40.0):
+    resolution: {integrity: sha512-SNtBGDrRkPUFsREswPceqdvZ7YVdWY+iCYiDC+RoxwVieeQ7GJU1FLDlkcaYTOD2os/YuVgI1Fdu8YGM7fmoow==}
     engines: {node: ^14.17.0 || >=16.0.0}
     peerDependencies:
       eslint: ^6.2.0 || ^7.0.0 || ^8.0.0
