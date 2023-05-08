@@ -2,6 +2,7 @@
 
 # [e-mobility charging stations simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
 
+[![CI worklow](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml)
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator)
 
 ## Summary
