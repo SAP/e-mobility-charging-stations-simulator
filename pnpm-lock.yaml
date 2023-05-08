@@ -147,8 +147,8 @@ devDependencies:
     specifier: ^2.27.5
     version: 2.27.5(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.5)(eslint@8.40.0)
   eslint-plugin-jsdoc:
-    specifier: ^43.2.0
-    version: 43.2.0(eslint@8.40.0)
+    specifier: ^44.0.0
+    version: 44.0.0(eslint@8.40.0)
   eslint-plugin-n:
     specifier: ^15.7.0
     version: 15.7.0(eslint@8.40.0)
@@ -1265,7 +1265,7 @@ packages:
       rollup: 3.21.5
       serialize-javascript: 6.0.1
       smob: 0.0.6
-      terser: 5.17.1
+      terser: 5.17.2
     dev: true
 
   /@rollup/plugin-typescript@11.1.0(rollup@3.21.5)(tslib@2.5.0)(typescript@5.0.4):
@@ -4049,8 +4049,8 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-jsdoc@43.2.0(eslint@8.40.0):
-    resolution: {integrity: sha512-Hst7XUfqh28UmPD52oTXmjaRN3d0KrmOZdgtp4h9/VHUJD3Evoo82ZGXi1TtRDWgWhvqDIRI63O49H0eH7NrZQ==}
+  /eslint-plugin-jsdoc@44.0.0(eslint@8.40.0):
+    resolution: {integrity: sha512-UZ07io4GFaD4awLJPuo0b1Q96ll5kJjwo74SYo9pprUww4BVeVn7EVslU5G6FcfGIfV+kgDLfYQQFODZgicWfQ==}
     engines: {node: '>=16'}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
@@ -9262,8 +9262,8 @@ packages:
       source-map-support: 0.5.21
     dev: true
 
-  /terser@5.17.1:
-    resolution: {integrity: sha512-hVl35zClmpisy6oaoKALOpS0rDYLxRFLHhRuDlEGTKey9qHjS1w9GMORjuwIMt70Wan4lwsLYyWDVnWgF+KUEw==}
+  /terser@5.17.2:
+    resolution: {integrity: sha512-1D1aGbOF1Mnayq5PvfMc0amAR1y5Z1nrZaGCvI5xsdEfZEVte8okonk02OiaK5fw5hG1GWuuVsakOnpZW8y25A==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:

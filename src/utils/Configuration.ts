@@ -129,15 +129,17 @@ export class Configuration {
       (Configuration.getConfig().stationTemplateUrls = Configuration.getConfig()[
         'stationTemplateURLs'
       ] as StationTemplateUrl[]);
-    Configuration.getConfig().stationTemplateUrls.forEach((stationUrl: StationTemplateUrl) => {
-      if (!Utils.isUndefined(stationUrl['numberOfStation'])) {
-        console.error(
-          chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key 'numberOfStation' usage for template file '${
-            stationUrl.file
-          }' in 'stationTemplateUrls'. Use 'numberOfStations' instead}`
-        );
+    Configuration.getConfig().stationTemplateUrls.forEach(
+      (stationTemplateUrl: StationTemplateUrl) => {
+        if (!Utils.isUndefined(stationTemplateUrl['numberOfStation'])) {
+          console.error(
+            chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key 'numberOfStation' usage for template file '${
+              stationTemplateUrl.file
+            }' in 'stationTemplateUrls'. Use 'numberOfStations' instead}`
+          );
+        }
       }
-    });
+    );
     // Read conf
     return Configuration.getConfig()?.stationTemplateUrls;
   }

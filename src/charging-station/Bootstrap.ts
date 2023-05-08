@@ -236,9 +236,9 @@ export class Bootstrap {
       const stationTemplateUrls = Configuration.getStationTemplateUrls();
       if (Utils.isNotEmptyArray(stationTemplateUrls)) {
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
-        stationTemplateUrls.forEach((stationTemplateUrl) => {
+        for (const stationTemplateUrl of stationTemplateUrls) {
           this.numberOfChargingStations += stationTemplateUrl.numberOfStations ?? 0;
-        });
+        }
       } else {
         console.warn(
           chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
