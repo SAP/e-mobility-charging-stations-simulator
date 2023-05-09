@@ -1,6 +1,18 @@
 # Changelog
 
-## [v1.2.12](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.11...v1.2.12)
+## [v1.2.13](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.12...v1.2.13)
+
+- build(deps-dev): apply updates [`0ba5eb0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0ba5eb067fbfa32d452aa2822c09796ab715b0aa)
+- build(deps-dev): apply updates [`5c683c7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/5c683c7aa53c2ec006ac6da87066354590648eb0)
+- fix: move and fix statistic related helpers implementation [`d4c3e68`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d4c3e68a1a6321f2f43ef0521e121e827f3eb29b)
+- test: improve statistic helpers tests [`806fe29`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/806fe296b3050d3b70adf95b8ac837568efd2d13)
+- refactor: cleanup variables namespace [`791cd51`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/791cd51356f38b482d8289e2ab50603aaaadb0af)
+- refactor: align statistic helpers return for empty data set [`6606a6f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6606a6f04d159ccd068b05db0e0ef6bf48523517)
+- refactor: cleanup statistic helpers code [`637942e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/637942ee11115a833f48e24634d0014ebe5b9a8c)
+- perf: optimize median computation [`efc4c68`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/efc4c685062073ac9eddecabb10910fa6d09b438)
+- docs: add GitHub CI badge to README.md [`0934374`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0934374b997cc93f85fec9c3ebffcfe165a11ebe)
+
+## [v1.2.12](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.11...v1.2.12) (2023-05-08)
 
 - build(ui): switch to vite [`01ff423`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/01ff4231d1a1640acdf12c0f2819f0c49456b218)
 - build(deps): apply updates [`aa8ac1b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/aa8ac1ba7512816fa5aa7f4c1fca830e1d6efb83)
@@ -28,6 +40,7 @@
 - build(deps-dev): apply updates [`10cfbb7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/10cfbb75fff77dc38f3c221c01a41a0465226f86)
 - build(deps-dev): apply updates [`e0b511d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e0b511d96c6faffb08fb9c44365693a0ea3134af)
 - build(deps-dev): apply updates [`d1ba84b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d1ba84bfdc7838f63773fb4d6531f8dbb878ee77)
+- chore: version 1.2.12 [`af16bc7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/af16bc71cae1d064eb8e3bcf0271df2f3518d48d)
 - feat: add initial support for evse definition in template [`2585c6e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2585c6e94e3d900bf7ecca428299df1e649252db)
 - build: untangle ui and simulator code linting and formatting [`69fec74`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/69fec746d21d456e81e553d0a90de9892fcd02fc)
 - refactor: factor out template file check [`8a133cc`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8a133cc8eea914f56bb8e00aecd9d9954414cce6)
