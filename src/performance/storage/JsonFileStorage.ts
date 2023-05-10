@@ -1,6 +1,7 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import fs from 'node:fs';
+import path from 'node:path';
 
 import { FileType, type Statistics } from '../../types';
 import { AsyncLock, AsyncLockType, Constants, FileUtils, Utils } from '../../utils';
@@ -45,6 +46,9 @@ export class JsonFileStorage extends Storage {
   public open(): void {
     try {
       if (Utils.isNullOrUndefined(this?.fd)) {
+        if (!fs.existsSync(path.dirname(this.dbName))) {
+          fs.mkdirSync(path.dirname(this.dbName), { recursive: true });
+        }
         this.fd = fs.openSync(this.dbName, 'a+');
       }
     } catch (error) {

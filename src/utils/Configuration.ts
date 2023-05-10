@@ -92,6 +92,13 @@ export class Configuration {
       storageConfiguration = {
         ...storageConfiguration,
         ...Configuration.getConfig()?.performanceStorage,
+        ...(Configuration.getConfig()?.performanceStorage?.type === StorageType.JSON_FILE &&
+          Configuration.getConfig()?.performanceStorage?.uri && {
+            uri: `file://${path.join(
+              path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
+              new URL(Configuration.getConfig()?.performanceStorage?.uri).pathname
+            )}`,
+          }),
       };
     }
     return storageConfiguration;
