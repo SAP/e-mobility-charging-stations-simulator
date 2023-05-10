@@ -222,11 +222,11 @@ export class Utils {
     return value == null;
   }
 
-  public static isEmptyArray(object: unknown | unknown[]): boolean {
+  public static isEmptyArray(object: unknown): boolean {
     return Array.isArray(object) && object.length === 0;
   }
 
-  public static isNotEmptyArray(object: unknown | unknown[]): boolean {
+  public static isNotEmptyArray(object: unknown): boolean {
     return Array.isArray(object) && object.length > 0;
   }
 

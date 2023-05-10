@@ -486,9 +486,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     );
     if (!keyToChange) {
       return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED;
-    } else if (keyToChange && keyToChange.readonly) {
+    } else if (keyToChange?.readonly === true) {
       return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED;
-    } else if (keyToChange && !keyToChange.readonly) {
+    } else if (keyToChange?.readonly === false) {
       let valueChanged = false;
       if (keyToChange.value !== commandPayload.value) {
         ChargingStationConfigurationUtils.setConfigurationKeyValue(
