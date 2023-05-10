@@ -205,16 +205,14 @@ export class OCPPServiceUtils {
     switch (chargingStation.stationInfo.ocppVersion) {
       case OCPPVersion.VERSION_16:
         if (
-          connectorId === 0 &&
-          OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
-          ) !== -1
-        ) {
-          transitionAllowed = true;
-        } else if (
-          OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
-          ) !== -1
+          (connectorId === 0 &&
+            OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
+              (transition) => transition.from === fromStatus && transition.to === status
+            ) !== -1) ||
+          (connectorId > 0 &&
+            OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
+              (transition) => transition.from === fromStatus && transition.to === status
+            ) !== -1)
         ) {
           transitionAllowed = true;
         }
@@ -222,16 +220,14 @@ export class OCPPServiceUtils {
       case OCPPVersion.VERSION_20:
       case OCPPVersion.VERSION_201:
         if (
-          connectorId === 0 &&
-          OCPP20Constants.ChargingStationStatusTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
-          ) !== -1
-        ) {
-          transitionAllowed = true;
-        } else if (
-          OCPP20Constants.ConnectorStatusTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
-          ) !== -1
+          (connectorId === 0 &&
+            OCPP20Constants.ChargingStationStatusTransitions.findIndex(
+              (transition) => transition.from === fromStatus && transition.to === status
+            ) !== -1) ||
+          (connectorId > 0 &&
+            OCPP20Constants.ConnectorStatusTransitions.findIndex(
+              (transition) => transition.from === fromStatus && transition.to === status
+            ) !== -1)
         ) {
           transitionAllowed = true;
         }
