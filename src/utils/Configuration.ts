@@ -94,10 +94,9 @@ export class Configuration {
         ...Configuration.getConfig()?.performanceStorage,
         ...(Configuration.getConfig()?.performanceStorage?.type === StorageType.JSON_FILE &&
           Configuration.getConfig()?.performanceStorage?.uri && {
-            uri: `file://${path.join(
-              path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
+            uri: Configuration.buildPerformanceUriFilePath(
               new URL(Configuration.getConfig()?.performanceStorage?.uri).pathname
-            )}`,
+            ),
           }),
       };
     }
@@ -393,17 +392,22 @@ export class Configuration {
   private static getDefaultPerformanceStorageUri(storageType: StorageType) {
     switch (storageType) {
       case StorageType.JSON_FILE:
-        return `file://${path.join(
-          path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
+        return Configuration.buildPerformanceUriFilePath(
           Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME
-        )}`;
+        );
       case StorageType.SQLITE:
-        return `file://${path.join(
-          path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
+        return Configuration.buildPerformanceUriFilePath(
           `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
-        )}`;
+        );
       default:
         throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);
     }
+  }
+
+  private static buildPerformanceUriFilePath(file: string) {
+    return `file://${path.join(
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
+      file
+    )}`;
   }
 }
