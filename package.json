@@ -116,7 +116,7 @@
     "@release-it/bumper": "^4.0.2",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^0.4.1",
-    "@rollup/plugin-typescript": "^11.1.0",
+    "@rollup/plugin-typescript": "^11.1.1",
     "@types/mocha": "^10.0.1",
     "@types/mochawesome": "^6.2.1",
     "@types/node": "^20.1.3",
