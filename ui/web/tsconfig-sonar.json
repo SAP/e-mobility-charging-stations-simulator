@@ -16,6 +16,7 @@
     "sourceMap": true,
     "composite": true,
     "jsx": "preserve",
+    "jsxImportSource": "vue",
     "isolatedModules": true,
     "useDefineForClassFields": true,
     "baseUrl": ".",
