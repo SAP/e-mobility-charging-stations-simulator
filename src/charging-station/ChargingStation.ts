@@ -222,26 +222,26 @@ export class ChargingStation {
     return this?.bootNotificationResponse?.status;
   }
 
-  public isInUnknownState(): boolean {
+  public inUnknownState(): boolean {
     return Utils.isNullOrUndefined(this?.bootNotificationResponse?.status);
   }
 
-  public isInPendingState(): boolean {
+  public inPendingState(): boolean {
     return this?.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING;
   }
 
-  public isInAcceptedState(): boolean {
+  public inAcceptedState(): boolean {
     return this?.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED;
   }
 
-  public isInRejectedState(): boolean {
+  public inRejectedState(): boolean {
     return this?.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED;
   }
 
   public isRegistered(): boolean {
     return (
-      this.isInUnknownState() === false &&
-      (this.isInAcceptedState() === true || this.isInPendingState() === true)
+      this.inUnknownState() === false &&
+      (this.inAcceptedState() === true || this.inPendingState() === true)
     );
   }
 
@@ -1690,7 +1690,7 @@ export class ChargingStation {
         );
       }
       if (this.isRegistered() === true) {
-        if (this.isInAcceptedState() === true) {
+        if (this.inAcceptedState() === true) {
           await this.startMessageSequence();
         }
       } else {

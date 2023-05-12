@@ -275,7 +275,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     let response: JsonType;
     if (
       chargingStation.getOcppStrictCompliance() === true &&
-      chargingStation.isInPendingState() === true &&
+      chargingStation.inPendingState() === true &&
       (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION ||
         commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)
     ) {
@@ -293,7 +293,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (
       chargingStation.isRegistered() === true ||
       (chargingStation.getOcppStrictCompliance() === false &&
-        chargingStation.isInUnknownState() === true)
+        chargingStation.inUnknownState() === true)
     ) {
       if (
         this.incomingRequestHandlers.has(commandName) === true &&

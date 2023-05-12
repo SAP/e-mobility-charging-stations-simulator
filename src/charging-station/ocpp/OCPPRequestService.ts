@@ -266,12 +266,12 @@ export abstract class OCPPRequestService {
     }
   ): Promise<ResponseType> {
     if (
-      (chargingStation.isInUnknownState() === true &&
+      (chargingStation.inUnknownState() === true &&
         commandName === RequestCommand.BOOT_NOTIFICATION) ||
       (chargingStation.getOcppStrictCompliance() === false &&
-        chargingStation.isInUnknownState() === true) ||
-      chargingStation.isInAcceptedState() === true ||
-      (chargingStation.isInPendingState() === true &&
+        chargingStation.inUnknownState() === true) ||
+      chargingStation.inAcceptedState() === true ||
+      (chargingStation.inPendingState() === true &&
         (params.triggerMessage === true || messageType === MessageType.CALL_RESULT_MESSAGE))
     ) {
       // eslint-disable-next-line @typescript-eslint/no-this-alias

@@ -172,7 +172,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         this.stopConnector(connectorId);
         break;
       }
-      if (this.chargingStation.isInAcceptedState() === false) {
+      if (this.chargingStation.inAcceptedState() === false) {
         logger.error(
           `${this.logPrefix(
             connectorId
