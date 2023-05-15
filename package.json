@@ -82,7 +82,7 @@
     "d3-color": "^3.1.0"
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.7.6",
+    "@mikro-orm/core": "^5.7.7",
     "@mikro-orm/mariadb": "^5.7.6",
     "@mikro-orm/reflection": "^5.7.6",
     "@mikro-orm/sqlite": "^5.7.6",
