@@ -99,7 +99,7 @@
     "mongodb": "^5.5.0",
     "poolifier": "^2.4.14",
     "source-map-support": "^0.5.21",
-    "tar": "^6.1.14",
+    "tar": "^6.1.15",
     "tslib": "^2.5.0",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1",
