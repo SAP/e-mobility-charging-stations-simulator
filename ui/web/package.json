@@ -8,7 +8,7 @@
   },
   "volta": {
     "node": "20.2.0",
-    "pnpm": "8.5.0"
+    "pnpm": "8.5.1"
   },
   "scripts": {
     "preinstall": "npx --yes only-allow pnpm",
