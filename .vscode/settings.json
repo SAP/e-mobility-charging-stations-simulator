@@ -33,7 +33,8 @@
     "Recurrency",
     "robohydra",
     "sonarlint",
-    "tsdoc"
+    "tsdoc",
+    "webui"
   ],
   "sonarlint.connectedMode.project": {
     "connectionId": "sap-1",
