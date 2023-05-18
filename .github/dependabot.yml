@@ -16,6 +16,7 @@ updates:
       interval: 'daily'
     labels:
       - 'dependencies'
+      - 'simulator'
     reviewers:
       - 'jerome-benoit'
       - 'olivierbagot'
@@ -26,6 +27,7 @@ updates:
       interval: 'daily'
     labels:
       - 'dependencies'
+      - 'webui'
     reviewers:
       - 'jerome-benoit'
       - 'olivierbagot'
