@@ -65,8 +65,7 @@ export class FileUtils {
         logMsg = `${fileType} file ${file} error:`;
     }
     if (params?.consoleOut) {
-      logMsg = `${logMsg} `;
-      console.warn(`${chalk.green(prefix)}${chalk.yellow(logMsg)}`, error);
+      console.warn(`${chalk.green(prefix)}${chalk.yellow(`${logMsg} `)}`, error);
     } else {
       logger.warn(`${prefix}${logMsg}`, error);
     }

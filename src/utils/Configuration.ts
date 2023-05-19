@@ -7,7 +7,6 @@ import merge from 'just-merge';
 import { WorkerChoiceStrategies } from 'poolifier';
 
 import { Constants } from './Constants';
-import { FileUtils } from './FileUtils';
 import { Utils } from './Utils';
 import {
   ApplicationProtocol,
@@ -349,12 +348,11 @@ export class Configuration {
           fs.readFileSync(Configuration.configurationFile, 'utf8')
         ) as ConfigurationData;
       } catch (error) {
-        FileUtils.handleFileException(
+        Configuration.handleFileException(
           Configuration.configurationFile,
           FileType.Configuration,
           error as NodeJS.ErrnoException,
-          Configuration.logPrefix(),
-          { consoleOut: true }
+          Configuration.logPrefix()
         );
       }
       if (!Configuration.configurationFileWatcher) {
@@ -378,14 +376,37 @@ export class Configuration {
         }
       });
     } catch (error) {
-      FileUtils.handleFileException(
+      Configuration.handleFileException(
         Configuration.configurationFile,
         FileType.Configuration,
         error as NodeJS.ErrnoException,
-        Configuration.logPrefix(),
-        { consoleOut: true }
+        Configuration.logPrefix()
       );
     }
+  }
+
+  private static handleFileException(
+    file: string,
+    fileType: FileType,
+    error: NodeJS.ErrnoException,
+    logPrefix: string
+  ): void {
+    const prefix = Utils.isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
+    let logMsg: string;
+    switch (error.code) {
+      case 'ENOENT':
+        logMsg = `${fileType} file ${file} not found:`;
+        break;
+      case 'EEXIST':
+        logMsg = `${fileType} file ${file} already exists:`;
+        break;
+      case 'EACCES':
+        logMsg = `${fileType} file ${file} access denied:`;
+        break;
+      default:
+        logMsg = `${fileType} file ${file} error:`;
+    }
+    console.warn(`${chalk.green(prefix)}${chalk.yellow(`${logMsg} `)}`, error);
   }
 
   private static getDefaultPerformanceStorageUri(storageType: StorageType) {

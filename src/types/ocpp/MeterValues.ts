@@ -3,7 +3,7 @@ import {
   OCPP16MeterValueMeasurand,
   OCPP16MeterValuePhase,
   type OCPP16SampledValue,
-} from '../internal';
+} from './1.6/MeterValues';
 
 export const MeterValueMeasurand = {
   ...OCPP16MeterValueMeasurand,

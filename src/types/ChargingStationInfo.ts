@@ -1,4 +1,5 @@
-import type { ChargingStationTemplate, FirmwareStatus } from './internal';
+import type { ChargingStationTemplate } from './ChargingStationTemplate';
+import type { FirmwareStatus } from './ocpp/Requests';
 
 enum x509CertificateType {
   V2GRootCertificate = 'V2GRootCertificate',

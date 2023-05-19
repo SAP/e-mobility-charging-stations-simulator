@@ -1,4 +1,5 @@
-import type { EVSEType, JsonObject, StatusInfoType } from '../../internal';
+import type { EVSEType, StatusInfoType } from './Common';
+import type { JsonObject } from '../../JsonType';
 
 enum OCPP20ComponentName {
   AlignedDataCtrlr = 'AlignedDataCtrlr',

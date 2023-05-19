@@ -1,15 +1,13 @@
 import type { WebSocket } from 'ws';
 
-import type {
-  BootNotificationResponse,
-  ChargingStationAutomaticTransactionGeneratorConfiguration,
-  ChargingStationInfo,
-  ChargingStationOcppConfiguration,
-  ConnectorStatus,
-  EvseStatus,
-  JsonObject,
-  Statistics,
-} from './internal';
+import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
+import type { ChargingStationInfo } from './ChargingStationInfo';
+import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
+import type { ConnectorStatus } from './ConnectorStatus';
+import type { EvseStatus } from './Evse';
+import type { JsonObject } from './JsonType';
+import type { BootNotificationResponse } from './ocpp/Responses';
+import type { Statistics } from './Statistics';
 import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
 interface ChargingStationWorkerOptions extends JsonObject {

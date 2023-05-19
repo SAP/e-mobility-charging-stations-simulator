@@ -1,10 +1,8 @@
-import type {
-  ChargingStationAutomaticTransactionGeneratorConfiguration,
-  ChargingStationInfoConfiguration,
-  ChargingStationOcppConfiguration,
-  ConnectorStatus,
-  EvseStatus,
-} from './internal';
+import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
+import type { ChargingStationInfoConfiguration } from './ChargingStationInfo';
+import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
+import type { ConnectorStatus } from './ConnectorStatus';
+import type { EvseStatus } from './Evse';
 
 type ConnectorsConfiguration = {
   connectorsStatus?: ConnectorStatus[];

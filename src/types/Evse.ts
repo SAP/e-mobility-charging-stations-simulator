@@ -1,4 +1,5 @@
-import type { AvailabilityType, ConnectorStatus } from './internal';
+import type { ConnectorStatus } from './ConnectorStatus';
+import type { AvailabilityType } from './ocpp/Requests';
 
 export type EvseTemplate = {
   Connectors: Record<string, ConnectorStatus>;

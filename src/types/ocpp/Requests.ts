@@ -1,27 +1,29 @@
-import type { ChargingStation } from '../../charging-station';
-import type { OCPPError } from '../../exception';
+import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
+import type { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import {
-  type JsonType,
-  type MessageType,
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
   type OCPP16DataTransferRequest,
-  OCPP16DiagnosticsStatus,
   type OCPP16DiagnosticsStatusNotificationRequest,
   OCPP16FirmwareStatus,
   type OCPP16FirmwareStatusNotificationRequest,
   type OCPP16HeartbeatRequest,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
-  type OCPP16MeterValuesRequest,
   OCPP16RequestCommand,
   type OCPP16StatusNotificationRequest,
+} from './1.6/Requests';
+import { OperationalStatusEnumType } from './2.0/Common';
+import {
   type OCPP20BootNotificationRequest,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
-  OperationalStatusEnumType,
-} from '../internal';
+} from './2.0/Requests';
+import type { MessageType } from './MessageType';
+import type { ChargingStation } from '../../charging-station';
+import type { OCPPError } from '../../exception';
+import type { JsonType } from '../JsonType';
 
 export const RequestCommand = {
   ...OCPP16RequestCommand,

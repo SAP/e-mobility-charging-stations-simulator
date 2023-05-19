@@ -1,10 +1,8 @@
-import type {
-  AvailabilityType,
-  ChargingProfile,
-  ConnectorStatusEnum,
-  MeterValue,
-  SampledValueTemplate,
-} from './internal';
+import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates';
+import type { ChargingProfile } from './ocpp/ChargingProfile';
+import type { ConnectorStatusEnum } from './ocpp/ConnectorStatusEnum';
+import type { MeterValue } from './ocpp/MeterValues';
+import type { AvailabilityType } from './ocpp/Requests';
 
 export type ConnectorStatus = {
   availability: AvailabilityType;

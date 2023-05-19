@@ -1,12 +1,14 @@
 import {
-  type JsonObject,
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
   OCPP16VendorParametersKey,
+} from './1.6/Configuration';
+import {
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
-} from '../internal';
+} from './2.0/Variables';
+import type { JsonObject } from '../JsonType';
 
 export const StandardParametersKey = {
   ...OCPP16StandardParametersKey,

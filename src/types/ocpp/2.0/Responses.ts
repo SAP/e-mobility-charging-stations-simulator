@@ -1,12 +1,12 @@
 import type {
-  EmptyObject,
-  GenericStatus,
+  GenericStatusEnumType,
   InstallCertificateStatusEnumType,
-  JsonObject,
-  OCPP20SetVariableResultType,
-  RegistrationStatusEnumType,
   StatusInfoType,
-} from '../../internal';
+} from './Common';
+import type { OCPP20SetVariableResultType } from './Variables';
+import type { EmptyObject } from '../../EmptyObject';
+import type { JsonObject } from '../../JsonType';
+import type { RegistrationStatusEnumType } from '../Responses';
 
 export type OCPP20BootNotificationResponse = {
   currentTime: Date;
@@ -20,7 +20,7 @@ export type OCPP20HeartbeatResponse = {
 } & JsonObject;
 
 export type OCPP20ClearCacheResponse = {
-  status: GenericStatus;
+  status: GenericStatusEnumType;
   statusInfo?: StatusInfoType;
 } & JsonObject;
 

@@ -1,4 +1,5 @@
-import { OCPP16ChargePointStatus, OCPP20ConnectorStatusEnumType } from '../internal';
+import { OCPP16ChargePointStatus } from './1.6/ChargePointStatus';
+import { OCPP20ConnectorStatusEnumType } from './2.0/Common';
 
 export const ConnectorStatusEnum = {
   ...OCPP16ChargePointStatus,

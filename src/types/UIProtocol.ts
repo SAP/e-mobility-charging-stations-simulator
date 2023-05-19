@@ -1,4 +1,5 @@
-import type { BroadcastChannelResponsePayload, JsonObject } from './internal';
+import type { JsonObject } from './JsonType';
+import type { BroadcastChannelResponsePayload } from './WorkerBroadcastChannel';
 
 export enum Protocol {
   UI = 'ui',

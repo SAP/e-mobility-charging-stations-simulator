@@ -1,4 +1,5 @@
-import type { GenericStatus, JsonObject } from '../../internal';
+import type { JsonObject } from '../../JsonType';
+import type { GenericStatus } from '../Responses';
 
 export enum DataEnumType {
   // eslint-disable-next-line id-blacklist
@@ -93,7 +94,7 @@ export enum CertificateSigningUseEnumType {
   V2GCertificate = 'V2GCertificate',
 }
 
-export type CertificateSignedStatusEnumType = GenericStatus;
+export type CertificateSignedStatusEnumType = GenericStatusEnumType;
 
 export type CertificateHashDataType = {
   hashAlgorithm: HashAlgorithmEnumType;

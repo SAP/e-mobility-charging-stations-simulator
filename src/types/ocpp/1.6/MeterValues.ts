@@ -1,4 +1,5 @@
-import type { EmptyObject, JsonObject } from '../../internal';
+import type { EmptyObject } from '../../EmptyObject';
+import type { JsonObject } from '../../JsonType';
 
 export enum MeterValueUnit {
   WATT_HOUR = 'Wh',

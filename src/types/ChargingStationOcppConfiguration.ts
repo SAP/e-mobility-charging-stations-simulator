@@ -1,4 +1,4 @@
-import type { OCPPConfigurationKey } from './internal';
+import type { OCPPConfigurationKey } from './ocpp/Configuration';
 
 export type ConfigurationKey = OCPPConfigurationKey & {
   visible?: boolean;
