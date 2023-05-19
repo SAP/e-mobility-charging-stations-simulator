@@ -3,9 +3,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { Storage } from './Storage';
 import { FileType, type Statistics } from '../../types';
 import { AsyncLock, AsyncLockType, Constants, FileUtils, Utils } from '../../utils';
-import { Storage } from '../internal';
 
 export class JsonFileStorage extends Storage {
   private fd: number | null = null;

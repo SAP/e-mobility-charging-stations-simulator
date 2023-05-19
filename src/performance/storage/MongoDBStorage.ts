@@ -2,9 +2,9 @@
 
 import { MongoClient } from 'mongodb';
 
+import { Storage } from './Storage';
 import { type Statistics, StorageType } from '../../types';
 import { Constants } from '../../utils';
-import { Storage } from '../internal';
 
 export class MongoDBStorage extends Storage {
   private readonly client: MongoClient | null;

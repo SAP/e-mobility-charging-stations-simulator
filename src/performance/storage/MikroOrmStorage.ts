@@ -9,6 +9,7 @@ import {
 } from '@mikro-orm/core';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
+import { Storage } from './Storage';
 import {
   type MikroOrmDbType,
   PerformanceData,
@@ -17,7 +18,6 @@ import {
   StorageType,
 } from '../../types';
 import { Constants } from '../../utils';
-import { Storage } from '../internal';
 
 export class MikroOrmStorage extends Storage {
   private storageType: StorageType;

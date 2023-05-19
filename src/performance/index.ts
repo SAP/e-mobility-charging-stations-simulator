@@ -1,1 +1,3 @@
-export { PerformanceStatistics, type Storage, StorageFactory } from './internal';
+export { PerformanceStatistics } from './PerformanceStatistics';
+export { type Storage } from './storage/Storage';
+export { StorageFactory } from './storage/StorageFactory';
