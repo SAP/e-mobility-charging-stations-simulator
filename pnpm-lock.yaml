@@ -56,8 +56,8 @@ dependencies:
     specifier: ^6.1.15
     version: 6.1.15
   tslib:
-    specifier: ^2.5.1
-    version: 2.5.1
+    specifier: ^2.5.2
+    version: 2.5.2
   winston:
     specifier: ^3.8.2
     version: 3.8.2
@@ -97,7 +97,7 @@ devDependencies:
     version: 0.4.3(rollup@3.22.0)
   '@rollup/plugin-typescript':
     specifier: ^11.1.1
-    version: 11.1.1(rollup@3.22.0)(tslib@2.5.1)(typescript@5.0.4)
+    version: 11.1.1(rollup@3.22.0)(tslib@2.5.2)(typescript@5.0.4)
   '@types/mocha':
     specifier: ^10.0.1
     version: 10.0.1
@@ -201,8 +201,8 @@ devDependencies:
     specifier: ^7.5.1
     version: 7.5.1
   sinon:
-    specifier: ^15.0.4
-    version: 15.0.4
+    specifier: ^15.1.0
+    version: 15.1.0
   ts-node:
     specifier: ^10.9.1
     version: 10.9.1(@types/node@20.2.1)(typescript@5.0.4)
@@ -1198,7 +1198,7 @@ packages:
       is-glob: 4.0.3
       open: 9.1.0
       picocolors: 1.0.0
-      tslib: 2.5.1
+      tslib: 2.5.2
     dev: true
 
   /@pnpm/config.env-replace@1.1.0:
@@ -1268,7 +1268,7 @@ packages:
       terser: 5.17.4
     dev: true
 
-  /@rollup/plugin-typescript@11.1.1(rollup@3.22.0)(tslib@2.5.1)(typescript@5.0.4):
+  /@rollup/plugin-typescript@11.1.1(rollup@3.22.0)(tslib@2.5.2)(typescript@5.0.4):
     resolution: {integrity: sha512-Ioir+x5Bejv72Lx2Zbz3/qGg7tvGbxQZALCLoJaGrkNXak/19+vKgKYJYM3i/fJxvsb23I9FuFQ8CUBEfsmBRg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1284,7 +1284,7 @@ packages:
       '@rollup/pluginutils': 5.0.2(rollup@3.22.0)
       resolve: 1.22.2
       rollup: 3.22.0
-      tslib: 2.5.1
+      tslib: 2.5.2
       typescript: 5.0.4
     dev: true
 
@@ -2053,7 +2053,7 @@ packages:
     resolution: {integrity: sha512-x1FCFnFifvYDDzTaLII71vG5uvDwgtmDTEVWAxrgeiR8VjMONcCXJx7E+USjDtHlwFmt9MysbqgF9b9Vjr6w+w==}
     engines: {node: '>=4'}
     dependencies:
-      tslib: 2.5.1
+      tslib: 2.5.2
     dev: true
 
   /astral-regex@2.0.0:
@@ -4352,8 +4352,8 @@ packages:
   /fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
-  /fast-diff@1.2.0:
-    resolution: {integrity: sha512-xJuoT5+L99XlZ8twedaRf6Ax2TgQVxvgZOYoPKqZufmJib0tL2tegPBOZb1pVNgIhlqDlA0eO0c3wBvQcmzx4w==}
+  /fast-diff@1.3.0:
+    resolution: {integrity: sha512-VxPP4NqbUjj6MaAOafWeUn2cXWLcCtljklUtZf0Ind4XQ+QPtmA0b18zZy0jIQx+ExRVCR/ZQpBmik5lXshNsw==}
     dev: true
 
   /fast-glob@3.2.12:
@@ -7787,7 +7787,7 @@ packages:
     resolution: {integrity: sha512-GbK2cP9nraSSUF9N2XwUwqfzlAFlMNYYl+ShE/V+H8a9uNl/oUqB1w2EL54Jh0OlyRSd8RfWYJ3coVS4TROP2w==}
     engines: {node: '>=6.0.0'}
     dependencies:
-      fast-diff: 1.2.0
+      fast-diff: 1.3.0
     dev: true
 
   /prettier@2.8.8:
@@ -8475,7 +8475,7 @@ packages:
   /rxjs@7.8.1:
     resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
-      tslib: 2.5.1
+      tslib: 2.5.2
     dev: true
 
   /safe-buffer@5.1.2:
@@ -8675,8 +8675,8 @@ packages:
       string-width: 1.0.2
     dev: true
 
-  /sinon@15.0.4:
-    resolution: {integrity: sha512-uzmfN6zx3GQaria1kwgWGeKiXSSbShBbue6Dcj0SI8fiCNFbiUDqKl57WFlY5lyhxZVUKmXvzgG2pilRQCBwWg==}
+  /sinon@15.1.0:
+    resolution: {integrity: sha512-cS5FgpDdE9/zx7no8bxROHymSlPLZzq0ChbbLk1DrxBfc+eTeBK3y8nIL+nu/0QeYydhhbLIr7ecHJpywjQaoQ==}
     dependencies:
       '@sinonjs/commons': 3.0.0
       '@sinonjs/fake-timers': 10.2.0
@@ -9190,7 +9190,7 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     dependencies:
       '@pkgr/utils': 2.4.0
-      tslib: 2.5.1
+      tslib: 2.5.2
     dev: true
 
   /syntax-error@1.4.0:
@@ -9458,8 +9458,8 @@ packages:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
     dev: true
 
-  /tslib@2.5.1:
-    resolution: {integrity: sha512-KaI6gPil5m9vF7DKaoXxx1ia9fxS4qG5YveErRRVknPDXXriu5M8h48YRjB6h5ZUOKuAKlSJYb0GaDe8I39fRw==}
+  /tslib@2.5.2:
+    resolution: {integrity: sha512-5svOrSA2w3iGFDs1HibEVBGbDrAY82bFQ3HZ3ixB+88nsbsWQoKqDRb5UBYAUPEzbBn6dAp5gRNXglySbx1MlA==}
 
   /tsutils@3.21.0(typescript@5.0.4):
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
