@@ -3,7 +3,6 @@ import { type Logger, createLogger, format, type transport } from 'winston';
 import TransportType from 'winston/lib/winston/transports/index.js';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
-// import { Configuration, Utils } from './internal';
 import { Configuration } from './Configuration';
 import { Utils } from './Utils';
 

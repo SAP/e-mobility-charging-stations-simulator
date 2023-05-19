@@ -6,7 +6,6 @@ import chalk from 'chalk';
 import merge from 'just-merge';
 import { WorkerChoiceStrategies } from 'poolifier';
 
-// import { Constants, FileUtils, Utils } from './internal';
 import { Constants } from './Constants';
 import { FileUtils } from './FileUtils';
 import { Utils } from './Utils';
