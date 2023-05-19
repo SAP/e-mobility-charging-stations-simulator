@@ -2,6 +2,8 @@ import { type IncomingMessage, Server, type ServerResponse } from 'node:http';
 
 import type { WebSocket } from 'ws';
 
+import type { AbstractUIService } from './ui-services/AbstractUIService';
+import { UIServiceFactory } from './ui-services/UIServiceFactory';
 import {
   AuthenticationType,
   type ChargingStationData,
@@ -13,7 +15,6 @@ import {
   type ResponsePayload,
   type UIServerConfiguration,
 } from '../../types';
-import { type AbstractUIService, UIServiceFactory } from '../internal';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;

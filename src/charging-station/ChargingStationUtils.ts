@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import moment from 'moment';
 
-import type { ChargingStation } from './internal';
+import type { ChargingStation } from './ChargingStation';
 import { BaseError } from '../exception';
 import {
   AmpereUnits,

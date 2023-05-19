@@ -6,7 +6,9 @@ import { type Worker, isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
 
-import { type AbstractUIServer, ChargingStationUtils, UIServerFactory } from './internal';
+import { ChargingStationUtils } from './ChargingStationUtils';
+import type { AbstractUIServer } from './ui-server/AbstractUIServer';
+import { UIServerFactory } from './ui-server/UIServerFactory';
 import packageJson from '../../package.json' assert { type: 'json' };
 import { BaseError } from '../exception';
 import { type Storage, StorageFactory } from '../performance';

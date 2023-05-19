@@ -1,5 +1,6 @@
+import { AbstractUIService } from './AbstractUIService';
 import { type ProcedureName, type ProtocolRequestHandler, ProtocolVersion } from '../../../types';
-import { type AbstractUIServer, AbstractUIService } from '../../internal';
+import type { AbstractUIServer } from '../AbstractUIServer';
 
 export class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {

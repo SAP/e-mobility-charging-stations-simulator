@@ -1,5 +1,5 @@
 import { type ConnectorStatusTransition, OCPP20ConnectorStatusEnumType } from '../../../types';
-import { OCPPConstants } from '../internal';
+import { OCPPConstants } from '../OCPPConstants';
 
 export class OCPP20Constants extends OCPPConstants {
   static readonly ChargingStationStatusTransitions: Readonly<ConnectorStatusTransition[]> =

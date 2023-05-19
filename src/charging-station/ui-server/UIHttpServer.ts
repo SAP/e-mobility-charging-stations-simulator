@@ -2,6 +2,8 @@ import type { IncomingMessage, RequestListener, ServerResponse } from 'node:http
 
 import { StatusCodes } from 'http-status-codes';
 
+import { AbstractUIServer } from './AbstractUIServer';
+import { UIServerUtils } from './UIServerUtils';
 import { BaseError } from '../../exception';
 import {
   type ProcedureName,
@@ -14,7 +16,6 @@ import {
   type UIServerConfiguration,
 } from '../../types';
 import { Constants, Utils, logger } from '../../utils';
-import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIHttpServer';
 

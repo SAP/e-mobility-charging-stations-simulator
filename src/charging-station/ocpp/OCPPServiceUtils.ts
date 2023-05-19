@@ -2,7 +2,8 @@ import fs from 'node:fs';
 
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 
-import { OCPP16Constants, OCPP20Constants } from './internal';
+import { OCPP16Constants } from './1.6/OCPP16Constants';
+import { OCPP20Constants } from './2.0/OCPP20Constants';
 import { type ChargingStation, ChargingStationConfigurationUtils } from '../../charging-station';
 import { BaseError } from '../../exception';
 import {

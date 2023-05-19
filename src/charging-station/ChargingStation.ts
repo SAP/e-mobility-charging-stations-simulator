@@ -9,33 +9,28 @@ import { parentPort } from 'node:worker_threads';
 import merge from 'just-merge';
 import WebSocket, { type RawData } from 'ws';
 
+import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator';
+import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
+import { ChargingStationUtils } from './ChargingStationUtils';
+import { ChargingStationWorkerBroadcastChannel } from './ChargingStationWorkerBroadcastChannel';
+import { IdTagsCache } from './IdTagsCache';
+import { MessageChannelUtils } from './MessageChannelUtils';
 import {
-  AutomaticTransactionGenerator,
-  ChargingStationConfigurationUtils,
-  ChargingStationUtils,
-  ChargingStationWorkerBroadcastChannel,
-  IdTagsCache,
-  MessageChannelUtils,
-  SharedLRUCache,
-} from './internal';
-import {
-  // OCPP16IncomingRequestService,
+  OCPP16IncomingRequestService,
   OCPP16RequestService,
-  // OCPP16ResponseService,
+  OCPP16ResponseService,
   OCPP16ServiceUtils,
   OCPP20IncomingRequestService,
   OCPP20RequestService,
-  // OCPP20ResponseService,
+  OCPP20ResponseService,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
-  // OCPPServiceUtils,
+  OCPPServiceUtils,
 } from './ocpp';
-import { OCPP16IncomingRequestService } from './ocpp/1.6/OCPP16IncomingRequestService';
-import { OCPP16ResponseService } from './ocpp/1.6/OCPP16ResponseService';
-import { OCPP20ResponseService } from './ocpp/2.0/OCPP20ResponseService';
-import { OCPPServiceUtils } from './ocpp/OCPPServiceUtils';
+import { SharedLRUCache } from './SharedLRUCache';
 import { BaseError, OCPPError } from '../exception';
-import { PerformanceStatistics } from '../performance';
+// import { PerformanceStatistics } from '../performance';
+import { PerformanceStatistics } from '../performance/PerformanceStatistics';
 import {
   type AutomaticTransactionGeneratorConfiguration,
   AvailabilityType,

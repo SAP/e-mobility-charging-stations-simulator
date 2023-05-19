@@ -4,6 +4,8 @@ import type { Duplex } from 'node:stream';
 import { StatusCodes } from 'http-status-codes';
 import WebSocket, { type RawData, WebSocketServer } from 'ws';
 
+import { AbstractUIServer } from './AbstractUIServer';
+import { UIServerUtils } from './UIServerUtils';
 import {
   type ProtocolRequest,
   type ProtocolResponse,
@@ -11,7 +13,6 @@ import {
   WebSocketCloseEventStatusCode,
 } from '../../types';
 import { Constants, Utils, logger } from '../../utils';
-import { AbstractUIServer, UIServerUtils } from '../internal';
 
 const moduleName = 'UIWebSocketServer';
 

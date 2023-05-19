@@ -1,7 +1,7 @@
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { OCPPServiceUtils } from './internal';
+import { OCPPServiceUtils } from './OCPPServiceUtils';
 import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import type {

@@ -2,7 +2,9 @@
 
 import { AsyncResource } from 'node:async_hooks';
 
-import { type ChargingStation, ChargingStationUtils, IdTagsCache } from './internal';
+import type { ChargingStation } from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
+import { IdTagsCache } from './IdTagsCache';
 import { BaseError } from '../exception';
 // import { PerformanceStatistics } from '../performance';
 import { PerformanceStatistics } from '../performance/PerformanceStatistics';

@@ -4,6 +4,7 @@ import { parentPort } from 'node:worker_threads';
 
 import type { JSONSchemaType } from 'ajv';
 
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
   type ChargingStation,
   ChargingStationConfigurationUtils,
@@ -50,7 +51,7 @@ import {
   type UnlockConnectorResponse,
 } from '../../../types';
 import { Constants, Utils, logger } from '../../../utils';
-import { OCPP16ServiceUtils, OCPPResponseService } from '../internal';
+import { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP16ResponseService';
 

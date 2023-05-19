@@ -1,4 +1,5 @@
-import { type AbstractUIService, WorkerBroadcastChannel } from './internal';
+import type { AbstractUIService } from './ui-server/ui-services/AbstractUIService';
+import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
 import {
   type BroadcastChannelResponse,
   type BroadcastChannelResponsePayload,

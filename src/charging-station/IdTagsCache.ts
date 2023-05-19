@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
-import { type ChargingStation, ChargingStationUtils } from './internal';
+import type { ChargingStation } from './ChargingStation';
+import { ChargingStationUtils } from './ChargingStationUtils';
 import { FileType, IdTagDistribution } from '../types';
 import { FileUtils, Utils, logger } from '../utils';
 

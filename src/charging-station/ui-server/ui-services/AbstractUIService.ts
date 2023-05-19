@@ -11,7 +11,9 @@ import {
   ResponseStatus,
 } from '../../../types';
 import { Utils, logger } from '../../../utils';
-import { type AbstractUIServer, Bootstrap, UIServiceWorkerBroadcastChannel } from '../../internal';
+import { Bootstrap } from '../../Bootstrap';
+import { UIServiceWorkerBroadcastChannel } from '../../UIServiceWorkerBroadcastChannel';
+import type { AbstractUIServer } from '../AbstractUIServer';
 
 const moduleName = 'AbstractUIService';
 

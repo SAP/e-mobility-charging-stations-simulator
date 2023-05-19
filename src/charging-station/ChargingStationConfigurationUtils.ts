@@ -1,4 +1,4 @@
-import type { ChargingStation } from './internal';
+import type { ChargingStation } from './ChargingStation';
 import type { ConfigurationKey, ConfigurationKeyType } from '../types';
 import { logger } from '../utils';
 

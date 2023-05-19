@@ -3,7 +3,8 @@ import { AsyncResource } from 'node:async_hooks';
 import Ajv, { type JSONSchemaType } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { OCPPConstants, OCPPServiceUtils } from './internal';
+import { OCPPConstants } from './OCPPConstants';
+import { OCPPServiceUtils } from './OCPPServiceUtils';
 import { type ChargingStation, ChargingStationUtils } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import type {

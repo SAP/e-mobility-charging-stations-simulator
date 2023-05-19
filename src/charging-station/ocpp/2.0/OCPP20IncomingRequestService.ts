@@ -2,6 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
 import type { ChargingStation } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
@@ -14,7 +15,7 @@ import {
   OCPPVersion,
 } from '../../../types';
 import { logger } from '../../../utils';
-import { OCPP20ServiceUtils, OCPPIncomingRequestService } from '../internal';
+import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
 
 const moduleName = 'OCPP20IncomingRequestService';
 

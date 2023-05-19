@@ -30,7 +30,7 @@ import {
   Voltage,
 } from '../../../types';
 import { ACElectricUtils, Constants, DCElectricUtils, Utils, logger } from '../../../utils';
-import { OCPPServiceUtils } from '../internal';
+import { OCPPServiceUtils } from '../OCPPServiceUtils';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static checkFeatureProfile(
