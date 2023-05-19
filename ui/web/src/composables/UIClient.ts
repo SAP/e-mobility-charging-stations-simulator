@@ -5,13 +5,13 @@ import {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
-} from '@/types/UIProtocol';
+} from '@/types';
 import config from '@/assets/config';
 
 type ResponseHandler = {
   procedureName: ProcedureName;
   resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
 };
 
 export default class UIClient {

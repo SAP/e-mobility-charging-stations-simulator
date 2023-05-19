@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { shallowMount } from '@vue/test-utils';
 import CSTable from '@/components/charging-stations/CSTable.vue';
-import type { ChargingStationData } from '@/types/ChargingStationType';
+import type { ChargingStationData } from '@/types';
 
 test('renders CS table columns name', () => {
   const chargingStations: ChargingStationData[] = [];

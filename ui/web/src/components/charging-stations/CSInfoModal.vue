@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ChargingStationInfo } from '@/types/ChargingStationType';
+import type { ChargingStationInfo } from '@/types';
 import Modal from '@/components/Modal.vue';
 
 const props = defineProps<{

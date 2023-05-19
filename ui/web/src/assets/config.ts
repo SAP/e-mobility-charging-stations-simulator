@@ -1,4 +1,4 @@
-import type { BaseConfig } from '@/types/ConfigurationType';
+import type { BaseConfig } from '@/types';
 
 const config: BaseConfig = {
   uiServer: {
