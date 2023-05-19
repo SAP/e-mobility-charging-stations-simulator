@@ -3,6 +3,7 @@ export type {
   ChargingStationInfo,
   ConnectorStatus,
 } from './ChargingStationType';
+export type { BaseConfig } from './ConfigurationType';
 export {
   ProcedureName,
   type ProtocolResponse,
@@ -10,4 +11,3 @@ export {
   type ResponsePayload,
   ResponseStatus,
 } from './UIProtocol';
-export type { BaseConfig } from './ConfigurationType';
