@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { BaseError } from './internal';
+import { BaseError } from './BaseError';
 import {
   ErrorType,
   type IncomingRequestCommand,
