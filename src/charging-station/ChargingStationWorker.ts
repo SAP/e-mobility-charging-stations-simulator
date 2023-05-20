@@ -6,7 +6,7 @@ import { ThreadWorker } from 'poolifier';
 
 import { ChargingStation } from './ChargingStation';
 import type { ChargingStationWorkerData } from '../types';
-import { Configuration, Utils } from '../utils';
+import { Configuration } from '../utils';
 import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
 /**
@@ -40,7 +40,7 @@ if (Configuration.workerPoolInUse()) {
 } else {
   // Add message listener to start charging station from main thread
   addMessageListener();
-  if (Utils.isUndefined(workerData) === false) {
+  if (workerData !== undefined) {
     startChargingStation(workerData as ChargingStationWorkerData);
   }
 }
