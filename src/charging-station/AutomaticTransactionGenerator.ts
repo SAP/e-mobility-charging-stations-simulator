@@ -6,8 +6,7 @@ import type { ChargingStation } from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import { IdTagsCache } from './IdTagsCache';
 import { BaseError } from '../exception';
-// import { PerformanceStatistics } from '../performance';
-import { PerformanceStatistics } from '../performance/PerformanceStatistics';
+import { PerformanceStatistics } from '../performance';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,

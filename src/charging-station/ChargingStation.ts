@@ -29,8 +29,7 @@ import {
 } from './ocpp';
 import { SharedLRUCache } from './SharedLRUCache';
 import { BaseError, OCPPError } from '../exception';
-// import { PerformanceStatistics } from '../performance';
-import { PerformanceStatistics } from '../performance/PerformanceStatistics';
+import { PerformanceStatistics } from '../performance';
 import {
   type AutomaticTransactionGeneratorConfiguration,
   AvailabilityType,
