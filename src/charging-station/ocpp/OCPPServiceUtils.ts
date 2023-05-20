@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 
@@ -27,7 +29,7 @@ import {
   type StatusNotificationRequest,
   type StatusNotificationResponse,
 } from '../../types';
-import { Constants, FileUtils, Utils, logger } from '../../utils';
+import { Constants, ErrorUtils, Utils, logger } from '../../utils';
 
 export class OCPPServiceUtils {
   protected constructor() {
@@ -252,15 +254,16 @@ export class OCPPServiceUtils {
   }
 
   protected static parseJsonSchemaFile<T extends JsonType>(
-    filePath: string,
+    relativePath: string,
     ocppVersion: OCPPVersion,
     moduleName?: string,
     methodName?: string
   ): JSONSchemaType<T> {
+    const filePath = path.join(path.dirname(fileURLToPath(import.meta.url)), relativePath);
     try {
       return JSON.parse(fs.readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
     } catch (error) {
-      FileUtils.handleFileException(
+      ErrorUtils.handleFileException(
         filePath,
         FileType.JsonSchema,
         error as NodeJS.ErrnoException,

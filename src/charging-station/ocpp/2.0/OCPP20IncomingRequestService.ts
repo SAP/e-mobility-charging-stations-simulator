@@ -35,7 +35,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
-          '../../../assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
+          'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
           moduleName,
           'constructor'
         ),

@@ -143,7 +143,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.RESET,
         OCPP16ServiceUtils.parseJsonSchemaFile<ResetRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/Reset.json',
+          'assets/json-schemas/ocpp/1.6/Reset.json',
           moduleName,
           'constructor'
         ),
@@ -151,7 +151,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearCacheRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/ClearCache.json',
+          'assets/json-schemas/ocpp/1.6/ClearCache.json',
           moduleName,
           'constructor'
         ),
@@ -159,7 +159,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
         OCPP16ServiceUtils.parseJsonSchemaFile<UnlockConnectorRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/UnlockConnector.json',
+          'assets/json-schemas/ocpp/1.6/UnlockConnector.json',
           moduleName,
           'constructor'
         ),
@@ -167,7 +167,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<GetConfigurationRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/GetConfiguration.json',
+          'assets/json-schemas/ocpp/1.6/GetConfiguration.json',
           moduleName,
           'constructor'
         ),
@@ -175,7 +175,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/ChangeConfiguration.json',
+          'assets/json-schemas/ocpp/1.6/ChangeConfiguration.json',
           moduleName,
           'constructor'
         ),
@@ -183,7 +183,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
         OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/GetDiagnostics.json',
+          'assets/json-schemas/ocpp/1.6/GetDiagnostics.json',
           moduleName,
           'constructor'
         ),
@@ -191,7 +191,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16GetCompositeScheduleRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/GetCompositeSchedule.json',
+          'assets/json-schemas/ocpp/1.6/GetCompositeSchedule.json',
           moduleName,
           'constructor'
         ),
@@ -199,7 +199,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
         OCPP16ServiceUtils.parseJsonSchemaFile<SetChargingProfileRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/SetChargingProfile.json',
+          'assets/json-schemas/ocpp/1.6/SetChargingProfile.json',
           moduleName,
           'constructor'
         ),
@@ -207,7 +207,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
         OCPP16ServiceUtils.parseJsonSchemaFile<ClearChargingProfileRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/ClearChargingProfile.json',
+          'assets/json-schemas/ocpp/1.6/ClearChargingProfile.json',
           moduleName,
           'constructor'
         ),
@@ -215,7 +215,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
         OCPP16ServiceUtils.parseJsonSchemaFile<ChangeAvailabilityRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/ChangeAvailability.json',
+          'assets/json-schemas/ocpp/1.6/ChangeAvailability.json',
           moduleName,
           'constructor'
         ),
@@ -223,7 +223,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<RemoteStartTransactionRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json',
+          'assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json',
           moduleName,
           'constructor'
         ),
@@ -231,7 +231,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
         OCPP16ServiceUtils.parseJsonSchemaFile<RemoteStopTransactionRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json',
+          'assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json',
           moduleName,
           'constructor'
         ),
@@ -239,7 +239,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16TriggerMessageRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/TriggerMessage.json',
+          'assets/json-schemas/ocpp/1.6/TriggerMessage.json',
           moduleName,
           'constructor'
         ),
@@ -247,7 +247,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/DataTransfer.json',
+          'assets/json-schemas/ocpp/1.6/DataTransfer.json',
           moduleName,
           'constructor'
         ),
@@ -255,7 +255,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareRequest>(
-          '../../../assets/json-schemas/ocpp/1.6/UpdateFirmware.json',
+          'assets/json-schemas/ocpp/1.6/UpdateFirmware.json',
           moduleName,
           'constructor'
         ),
@@ -1244,7 +1244,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       let ftpClient: Client;
       try {
         const logFiles = fs
-          .readdirSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'))
+          .readdirSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'))
           .filter((file) => file.endsWith('.log'))
           .map((file) => path.join('./', file));
         const diagnosticsArchive = `${chargingStation.stationInfo.chargingStationId}_logs.tar.gz`;
@@ -1282,7 +1282,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           });
           uploadResponse = await ftpClient.uploadFrom(
             path.join(
-              path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../'),
+              path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
               diagnosticsArchive
             ),
             `${uri.pathname}${diagnosticsArchive}`

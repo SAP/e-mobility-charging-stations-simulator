@@ -23,7 +23,7 @@ import { WorkerConstants, WorkerProcessType } from '../worker';
 
 export class Configuration {
   private static configurationFile = path.join(
-    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
+    path.dirname(fileURLToPath(import.meta.url)),
     'assets',
     'config.json'
   );
@@ -426,7 +426,7 @@ export class Configuration {
 
   private static buildPerformanceUriFilePath(file: string) {
     return `file://${path.join(
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
       file
     )}`;
   }

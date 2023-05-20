@@ -7,6 +7,7 @@ import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
 
 const isDevelopmentBuild = process.env.BUILD === 'development';
+const isAnalyzeBuild = process.env.ANALYZE;
 
 export default {
   input: ['src/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
@@ -16,10 +17,7 @@ export default {
       dir: 'dist',
       format: 'esm',
       exports: 'auto',
-      sourcemap: true,
-      preserveModules: true,
-      preserveModulesRoot: 'src',
-      entryFileNames: '[name].mjs',
+      ...(isDevelopmentBuild && { sourcemap: true }),
       ...(!isDevelopmentBuild && { plugins: [terser({ maxWorkers: 2 })] }),
     },
   ],
@@ -71,6 +69,6 @@ export default {
     copy({
       targets: [{ src: 'src/assets', dest: 'dist/' }],
     }),
-    isDevelopmentBuild && analyze(),
+    isAnalyzeBuild && analyze(),
   ],
 };

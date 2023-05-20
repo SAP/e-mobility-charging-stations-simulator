@@ -53,8 +53,7 @@ export class Bootstrap {
     this.initializeCounters();
     this.workerImplementation = null;
     this.workerScript = path.join(
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
-      'charging-station',
+      path.dirname(fileURLToPath(import.meta.url)),
       `ChargingStationWorker${path.extname(fileURLToPath(import.meta.url))}`
     );
     Configuration.getUIServer().enabled === true &&
@@ -277,7 +276,7 @@ export class Bootstrap {
     await this.workerImplementation?.addElement({
       index,
       templateFile: path.join(
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
+        path.dirname(fileURLToPath(import.meta.url)),
         'assets',
         'station-templates',
         stationTemplateUrl.file

@@ -1,8 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import type { JSONSchemaType } from 'ajv';
 
 import { type JsonType, OCPPVersion } from '../../../types';
@@ -15,7 +12,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     methodName?: string
   ): JSONSchemaType<T> {
     return super.parseJsonSchemaFile<T>(
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+      relativePath,
       OCPPVersion.VERSION_20,
       moduleName,
       methodName

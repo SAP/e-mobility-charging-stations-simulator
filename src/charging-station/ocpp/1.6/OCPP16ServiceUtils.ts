@@ -1,8 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import type { JSONSchemaType } from 'ajv';
 
 import type { ChargingStation } from '../../../charging-station';
@@ -833,7 +830,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     methodName?: string
   ): JSONSchemaType<T> {
     return super.parseJsonSchemaFile<T>(
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), relativePath),
+      relativePath,
       OCPPVersion.VERSION_16,
       moduleName,
       methodName

@@ -550,7 +550,7 @@ export class ChargingStationUtils {
     return (
       stationInfo.idTagsFile &&
       path.join(
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
+        path.dirname(fileURLToPath(import.meta.url)),
         'assets',
         path.basename(stationInfo.idTagsFile)
       )

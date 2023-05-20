@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import type { ChargingStation } from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import { FileType, IdTagDistribution } from '../types';
-import { FileUtils, Utils, logger } from '../utils';
+import { ErrorUtils, FileUtils, Utils, logger } from '../utils';
 
 type IdTagsCacheValueType = {
   idTags: string[];
@@ -114,7 +114,7 @@ export class IdTagsCache {
               this.deleteIdTagsCache(file);
               this.deleteIdTagsCacheIndexes(file);
             } catch (error) {
-              FileUtils.handleFileException(
+              ErrorUtils.handleFileException(
                 file,
                 FileType.Authorization,
                 error as NodeJS.ErrnoException,
@@ -158,7 +158,7 @@ export class IdTagsCache {
         // Load id tags file
         idTags = JSON.parse(fs.readFileSync(file, 'utf8')) as string[];
       } catch (error) {
-        FileUtils.handleFileException(
+        ErrorUtils.handleFileException(
           file,
           FileType.Authorization,
           error as NodeJS.ErrnoException,

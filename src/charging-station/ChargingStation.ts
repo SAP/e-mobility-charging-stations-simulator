@@ -91,6 +91,7 @@ import {
   Configuration,
   Constants,
   DCElectricUtils,
+  ErrorUtils,
   FileUtils,
   Utils,
   logger,
@@ -931,7 +932,7 @@ export class ChargingStation {
         this.templateFileHash = template.templateHash;
       }
     } catch (error) {
-      FileUtils.handleFileException(
+      ErrorUtils.handleFileException(
         this.templateFile,
         FileType.ChargingStationTemplate,
         error as NodeJS.ErrnoException,
@@ -1510,7 +1511,7 @@ export class ChargingStation {
           this.configurationFileHash = configuration.configurationHash;
         }
       } catch (error) {
-        FileUtils.handleFileException(
+        ErrorUtils.handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,
@@ -1604,7 +1605,7 @@ export class ChargingStation {
               this.configurationFileHash = configurationHash;
             })
             .catch((error) => {
-              FileUtils.handleFileException(
+              ErrorUtils.handleFileException(
                 this.configurationFile,
                 FileType.ChargingStationConfiguration,
                 error as NodeJS.ErrnoException,
@@ -1622,7 +1623,7 @@ export class ChargingStation {
           );
         }
       } catch (error) {
-        FileUtils.handleFileException(
+        ErrorUtils.handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,
