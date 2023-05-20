@@ -9,7 +9,6 @@ import {
   type ChargingStation,
   ChargingStationConfigurationUtils,
   ChargingStationUtils,
-  MessageChannelUtils,
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
@@ -50,7 +49,7 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
 } from '../../../types';
-import { Constants, Utils, logger } from '../../../utils';
+import { Constants, MessageChannelUtils, Utils, logger } from '../../../utils';
 import { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP16ResponseService';

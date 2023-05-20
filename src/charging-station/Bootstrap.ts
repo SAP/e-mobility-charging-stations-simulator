@@ -21,7 +21,7 @@ import {
   type StationTemplateUrl,
   type Statistics,
 } from '../types';
-import { Configuration, Utils, logger } from '../utils';
+import { Configuration, ErrorUtils, Utils, logger } from '../utils';
 import { type MessageHandler, type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
@@ -46,8 +46,8 @@ export class Bootstrap {
 
   private constructor() {
     // Enable unconditionally for now
-    this.logUnhandledRejection();
-    this.logUncaughtException();
+    ErrorUtils.handleUnhandledRejection();
+    ErrorUtils.handleUncaughtException();
     this.initializedCounters = false;
     this.started = false;
     this.initializeCounters();
@@ -255,18 +255,6 @@ export class Bootstrap {
       this.numberOfStartedChargingStations = 0;
       this.initializedCounters = true;
     }
-  }
-
-  private logUncaughtException(): void {
-    process.on('uncaughtException', (error: Error) => {
-      console.error(chalk.red('Uncaught exception: '), error);
-    });
-  }
-
-  private logUnhandledRejection(): void {
-    process.on('unhandledRejection', (reason: unknown) => {
-      console.error(chalk.red('Unhandled rejection: '), reason);
-    });
   }
 
   private async startChargingStation(

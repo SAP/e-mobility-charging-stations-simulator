@@ -5,8 +5,8 @@ import type {
   BroadcastChannelResponse,
   JsonType,
   MessageEvent,
-} from '../types';
-import { Utils, logger } from '../utils';
+} from '../../types';
+import { Utils, logger } from '../../utils';
 
 const moduleName = 'WorkerBroadcastChannel';
 

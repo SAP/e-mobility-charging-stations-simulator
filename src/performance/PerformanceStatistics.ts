@@ -4,7 +4,6 @@ import { type PerformanceEntry, PerformanceObserver, performance } from 'node:pe
 import type { URL } from 'node:url';
 import { parentPort } from 'node:worker_threads';
 
-import { MessageChannelUtils } from '../charging-station';
 import {
   type IncomingRequestCommand,
   MessageType,
@@ -12,7 +11,14 @@ import {
   type Statistics,
   type TimeSeries,
 } from '../types';
-import { CircularArray, Configuration, Constants, Utils, logger } from '../utils';
+import {
+  CircularArray,
+  Configuration,
+  Constants,
+  MessageChannelUtils,
+  Utils,
+  logger,
+} from '../utils';
 
 export class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<

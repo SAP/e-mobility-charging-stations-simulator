@@ -35,6 +35,7 @@
     "robohydra",
     "sonarlint",
     "tsdoc",
+    "VCAP",
     "webui"
   ],
   "sonarlint.connectedMode.project": {

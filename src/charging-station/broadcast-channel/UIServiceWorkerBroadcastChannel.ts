@@ -1,4 +1,3 @@
-import type { AbstractUIService } from './ui-server/ui-services/AbstractUIService';
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
 import {
   type BroadcastChannelResponse,
@@ -6,8 +5,9 @@ import {
   type MessageEvent,
   type ResponsePayload,
   ResponseStatus,
-} from '../types';
-import { Utils, logger } from '../utils';
+} from '../../types';
+import { Utils, logger } from '../../utils';
+import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIService';
 
 const moduleName = 'UIServiceWorkerBroadcastChannel';
 

@@ -12,7 +12,7 @@ import {
 } from '../../../types';
 import { Utils, logger } from '../../../utils';
 import { Bootstrap } from '../../Bootstrap';
-import { UIServiceWorkerBroadcastChannel } from '../../UIServiceWorkerBroadcastChannel';
+import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel';
 import type { AbstractUIServer } from '../AbstractUIServer';
 
 const moduleName = 'AbstractUIService';

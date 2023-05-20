@@ -1,8 +1,5 @@
-import type { ChargingStation } from './ChargingStation';
-import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
-import { OCPP16ServiceUtils } from './ocpp';
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
-import { BaseError, type OCPPError } from '../exception';
+import { BaseError, type OCPPError } from '../../exception';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
@@ -36,8 +33,11 @@ import {
   type StatusNotificationResponse,
   type StopTransactionRequest,
   type StopTransactionResponse,
-} from '../types';
-import { Constants, Utils, logger } from '../utils';
+} from '../../types';
+import { Constants, Utils, logger } from '../../utils';
+import type { ChargingStation } from '../ChargingStation';
+import { ChargingStationConfigurationUtils } from '../ChargingStationConfigurationUtils';
+import { OCPP16ServiceUtils } from '../ocpp';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 

@@ -5,5 +5,6 @@ export { Configuration } from './Configuration';
 export { Constants } from './Constants';
 export { ErrorUtils } from './ErrorUtils';
 export { FileUtils } from './FileUtils';
+export { MessageChannelUtils } from './MessageChannelUtils';
 export { Utils } from './Utils';
 export { logger } from './Logger';

@@ -8,11 +8,9 @@ import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import { PerformanceStatistics } from '../../performance';
 import {
-  type EmptyObject,
   type ErrorCallback,
   type ErrorResponse,
   ErrorType,
-  type HandleErrorParams,
   type IncomingRequestCommand,
   type JsonObject,
   type JsonType,
@@ -25,7 +23,7 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import { Constants, Utils, logger } from '../../utils';
+import { Constants, ErrorUtils, Utils, logger } from '../../utils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -129,7 +127,7 @@ export abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      this.handleSendMessageError(chargingStation, commandName, error as Error, {
+      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: true,
       });
     }
@@ -151,7 +149,7 @@ export abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      this.handleSendMessageError(chargingStation, commandName, error as Error);
+      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error);
     }
   }
 
@@ -176,7 +174,7 @@ export abstract class OCPPRequestService {
         params
       );
     } catch (error) {
-      this.handleSendMessageError(chargingStation, commandName, error as Error, {
+      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: params.throwError,
       });
     }
@@ -475,18 +473,6 @@ export abstract class OCPPRequestService {
         break;
     }
     return messageToSend;
-  }
-
-  private handleSendMessageError(
-    chargingStation: ChargingStation,
-    commandName: RequestCommand | IncomingRequestCommand,
-    error: Error,
-    params: HandleErrorParams<EmptyObject> = { throwError: false }
-  ): void {
-    logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error);
-    if (params?.throwError === true) {
-      throw error;
-    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -10,11 +10,10 @@ import merge from 'just-merge';
 import WebSocket, { type RawData } from 'ws';
 
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator';
+import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
 import { ChargingStationUtils } from './ChargingStationUtils';
-import { ChargingStationWorkerBroadcastChannel } from './ChargingStationWorkerBroadcastChannel';
 import { IdTagsCache } from './IdTagsCache';
-import { MessageChannelUtils } from './MessageChannelUtils';
 import {
   OCPP16IncomingRequestService,
   OCPP16RequestService,
@@ -92,6 +91,7 @@ import {
   DCElectricUtils,
   ErrorUtils,
   FileUtils,
+  MessageChannelUtils,
   Utils,
   logger,
 } from '../utils';
