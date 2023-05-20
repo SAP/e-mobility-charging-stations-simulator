@@ -10,7 +10,7 @@ export class AsyncLock {
   private acquired: boolean;
   private readonly resolveQueue: ((value: void | PromiseLike<void>) => void)[];
 
-  private constructor(private readonly type: AsyncLockType) {
+  private constructor() {
     this.acquired = false;
     this.resolveQueue = [];
   }
@@ -41,7 +41,7 @@ export class AsyncLock {
 
   private static getAsyncLock(type: AsyncLockType): AsyncLock {
     if (!AsyncLock.asyncLocks.has(type)) {
-      AsyncLock.asyncLocks.set(type, new AsyncLock(type));
+      AsyncLock.asyncLocks.set(type, new AsyncLock());
     }
     return AsyncLock.asyncLocks.get(type);
   }
