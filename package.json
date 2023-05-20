@@ -80,10 +80,10 @@
   },
   "pnpm": {
     "overrides": {
-      "cacheable-request": "^10.2.7",
+      "cacheable-request": "^10.2.10",
       "d3-color": "^3.1.0",
-      "ejs": "^3.1.7",
-      "got": "^11.8.5"
+      "ejs": "^3.1.9",
+      "got": "^11.8.6"
     }
   },
   "dependencies": {
