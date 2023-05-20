@@ -5,9 +5,8 @@ import { parentPort, workerData } from 'node:worker_threads';
 import { ThreadWorker } from 'poolifier';
 
 import { ChargingStation } from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
 import type { ChargingStationWorkerData } from '../types';
-import { Utils } from '../utils';
+import { Configuration, Utils } from '../utils';
 import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
 /**
@@ -33,7 +32,7 @@ const addMessageListener = (): void => {
 
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
-if (ChargingStationUtils.workerPoolInUse()) {
+if (Configuration.workerPoolInUse()) {
   threadWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
     maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
     async: false,

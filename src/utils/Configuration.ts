@@ -36,11 +36,11 @@ export class Configuration {
     // This is intentional
   }
 
-  static setConfigurationChangeCallback(cb: () => Promise<void>): void {
+  public static setConfigurationChangeCallback(cb: () => Promise<void>): void {
     Configuration.configurationChangeCallback = cb;
   }
 
-  static getLogStatisticsInterval(): number | undefined {
+  public static getLogStatisticsInterval(): number | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'statisticsDisplayInterval',
       undefined,
@@ -52,7 +52,7 @@ export class Configuration {
       : Constants.DEFAULT_LOG_STATISTICS_INTERVAL;
   }
 
-  static getUIServer(): UIServerConfiguration {
+  public static getUIServer(): UIServerConfiguration {
     if (Utils.hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
       console.error(
         chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead}`
@@ -79,7 +79,7 @@ export class Configuration {
     return uiServerConfiguration;
   }
 
-  static getPerformanceStorage(): StorageConfiguration {
+  public static getPerformanceStorage(): StorageConfiguration {
     Configuration.warnDeprecatedConfigurationKey('URI', 'performanceStorage', "Use 'uri' instead");
     let storageConfiguration: StorageConfiguration = {
       enabled: false,
@@ -101,7 +101,7 @@ export class Configuration {
     return storageConfiguration;
   }
 
-  static getAutoReconnectMaxRetries(): number | undefined {
+  public static getAutoReconnectMaxRetries(): number | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'autoReconnectTimeout',
       undefined,
@@ -123,7 +123,7 @@ export class Configuration {
     }
   }
 
-  static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
+  public static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'stationTemplateURLs',
       undefined,
@@ -148,7 +148,7 @@ export class Configuration {
     return Configuration.getConfig()?.stationTemplateUrls;
   }
 
-  static getWorker(): WorkerConfiguration {
+  public static getWorker(): WorkerConfiguration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
       undefined,
@@ -222,7 +222,17 @@ export class Configuration {
     return workerConfiguration;
   }
 
-  static getLogConsole(): boolean | undefined {
+  public static workerPoolInUse(): boolean {
+    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
+      Configuration.getWorker().processType
+    );
+  }
+
+  public static workerDynamicPoolInUse(): boolean {
+    return Configuration.getWorker().processType === WorkerProcessType.dynamicPool;
+  }
+
+  public static getLogConsole(): boolean | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'consoleLog',
       undefined,
@@ -233,45 +243,45 @@ export class Configuration {
       : false;
   }
 
-  static getLogFormat(): string | undefined {
+  public static getLogFormat(): string | undefined {
     return Utils.hasOwnProp(Configuration.getConfig(), 'logFormat')
       ? Configuration.getConfig()?.logFormat
       : 'simple';
   }
 
-  static getLogRotate(): boolean | undefined {
+  public static getLogRotate(): boolean | undefined {
     return Utils.hasOwnProp(Configuration.getConfig(), 'logRotate')
       ? Configuration.getConfig()?.logRotate
       : true;
   }
 
-  static getLogMaxFiles(): number | string | false | undefined {
+  public static getLogMaxFiles(): number | string | false | undefined {
     return (
       Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') &&
       Configuration.getConfig()?.logMaxFiles
     );
   }
 
-  static getLogMaxSize(): number | string | false | undefined {
+  public static getLogMaxSize(): number | string | false | undefined {
     return (
       Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') &&
       Configuration.getConfig()?.logMaxSize
     );
   }
 
-  static getLogLevel(): string | undefined {
+  public static getLogLevel(): string | undefined {
     return Utils.hasOwnProp(Configuration.getConfig(), 'logLevel')
       ? Configuration.getConfig()?.logLevel?.toLowerCase()
       : 'info';
   }
 
-  static getLogFile(): string | undefined {
+  public static getLogFile(): string | undefined {
     return Utils.hasOwnProp(Configuration.getConfig(), 'logFile')
       ? Configuration.getConfig()?.logFile
       : 'combined.log';
   }
 
-  static getLogErrorFile(): string | undefined {
+  public static getLogErrorFile(): string | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'errorFile',
       undefined,
@@ -282,7 +292,7 @@ export class Configuration {
       : 'error.log';
   }
 
-  static getSupervisionUrls(): string | string[] | undefined {
+  public static getSupervisionUrls(): string | string[] | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'supervisionURLs',
       undefined,
@@ -296,7 +306,7 @@ export class Configuration {
     return Configuration.getConfig()?.supervisionUrls;
   }
 
-  static getSupervisionUrlDistribution(): SupervisionUrlDistribution | undefined {
+  public static getSupervisionUrlDistribution(): SupervisionUrlDistribution | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'distributeStationToTenantEqually',
       undefined,

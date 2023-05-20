@@ -29,15 +29,7 @@ import {
   RecurrencyKindType,
   Voltage,
 } from '../types';
-import {
-  ACElectricUtils,
-  Configuration,
-  Constants,
-  DCElectricUtils,
-  Utils,
-  logger,
-} from '../utils';
-import { WorkerProcessType } from '../worker';
+import { ACElectricUtils, Constants, DCElectricUtils, Utils, logger } from '../utils';
 
 const moduleName = 'ChargingStationUtils';
 
@@ -349,16 +341,6 @@ export class ChargingStationUtils {
           },
         } as OCPP20BootNotificationRequest;
     }
-  }
-
-  public static workerPoolInUse(): boolean {
-    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
-      Configuration.getWorker().processType
-    );
-  }
-
-  public static workerDynamicPoolInUse(): boolean {
-    return Configuration.getWorker().processType === WorkerProcessType.dynamicPool;
   }
 
   public static warnTemplateKeysDeprecation(

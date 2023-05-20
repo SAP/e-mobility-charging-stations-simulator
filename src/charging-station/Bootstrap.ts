@@ -6,7 +6,6 @@ import { type Worker, isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
 
-import { ChargingStationUtils } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServerFactory } from './ui-server/UIServerFactory';
 import packageJson from '../../package.json' assert { type: 'json' };
@@ -102,11 +101,11 @@ export class Bootstrap {
           `Charging stations simulator ${
             this.version
           } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
-            ChargingStationUtils.workerDynamicPoolInUse()
+            Configuration.workerDynamicPoolInUse()
               ? `${Configuration.getWorker().poolMinSize?.toString()}/`
               : ''
           }${this.workerImplementation?.size}${
-            ChargingStationUtils.workerPoolInUse()
+            Configuration.workerPoolInUse()
               ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
               : ''
           } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
