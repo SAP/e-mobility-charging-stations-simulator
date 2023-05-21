@@ -83,7 +83,7 @@
       "cacheable-request": "^10.2.10",
       "d3-color": "^3.1.0",
       "ejs": "^3.1.9",
-      "got": "^11.8.6"
+      "got": "^12.6.0"
     }
   },
   "dependencies": {
