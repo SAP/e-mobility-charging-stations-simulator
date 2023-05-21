@@ -408,7 +408,7 @@ make SUBMODULES_INIT=true
 
 - :white_check_mark: BootNotification
 
-### Authorization
+#### Authorization
 
 - :white_check_mark: ClearCache
 
