@@ -402,6 +402,21 @@ make SUBMODULES_INIT=true
 
 - :white_check_mark: TriggerMessage
 
+### Version 2.x.x
+
+#### Provisioning
+
+- :white_check_mark: BootNotification
+
+### Authorization
+
+- :white_check_mark: ClearCache
+
+#### Availability
+
+- :white_check_mark: StatusNotification
+- :white_check_mark: Heartbeat
+
 ## OCPP-J standard parameters supported
 
 All kind of OCPP parameters are supported in a charging station configuration or a charging station configuration template file. The list here mention the standard ones also handled automatically in the simulator.
@@ -457,6 +472,8 @@ All kind of OCPP parameters are supported in a charging station configuration or
 #### Remote Trigger Profile
 
 - _none_
+
+### Version 2.x.x
 
 ## UI protocol
 
