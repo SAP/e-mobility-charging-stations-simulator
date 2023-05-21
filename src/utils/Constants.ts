@@ -1,7 +1,7 @@
-import { MeterValueMeasurand } from '../types';
-
 export class Constants {
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
+  static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms
+  static readonly DEFAULT_METER_VALUES_INTERVAL = 60000; // Ms
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
@@ -20,17 +20,6 @@ export class Constants {
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30;
 
   static readonly DEFAULT_LOG_STATISTICS_INTERVAL = 60; // Seconds
-
-  static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms
-  static readonly DEFAULT_METER_VALUES_INTERVAL = 60000; // Ms
-
-  static readonly SUPPORTED_MEASURANDS = Object.freeze([
-    MeterValueMeasurand.STATE_OF_CHARGE,
-    MeterValueMeasurand.VOLTAGE,
-    MeterValueMeasurand.POWER_ACTIVE_IMPORT,
-    MeterValueMeasurand.CURRENT_IMPORT,
-    MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-  ]);
 
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5;
 

@@ -5,6 +5,7 @@ import {
   ConfigurationStatus,
   DataTransferStatus,
   GenericStatus,
+  MeterValueMeasurand,
   TriggerMessageStatus,
   UnlockStatus,
 } from '../../types';
@@ -13,6 +14,14 @@ import { Constants } from '../../utils';
 export class OCPPConstants {
   static readonly OCPP_WEBSOCKET_TIMEOUT = 60000; // Ms
   static readonly OCPP_TRIGGER_MESSAGE_DELAY = 500; // Ms
+
+  static readonly OCPP_MEASURANDS_SUPPORTED = Object.freeze([
+    MeterValueMeasurand.STATE_OF_CHARGE,
+    MeterValueMeasurand.VOLTAGE,
+    MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+    MeterValueMeasurand.CURRENT_IMPORT,
+    MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+  ]);
 
   static readonly OCPP_REQUEST_EMPTY = Constants.EMPTY_FREEZED_OBJECT;
   static readonly OCPP_RESPONSE_EMPTY = Constants.EMPTY_FREEZED_OBJECT;

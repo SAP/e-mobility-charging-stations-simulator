@@ -6,6 +6,7 @@ import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 
 import { OCPP16Constants } from './1.6/OCPP16Constants';
 import { OCPP20Constants } from './2.0/OCPP20Constants';
+import { OCPPConstants } from './OCPPConstants';
 import { type ChargingStation, ChargingStationConfigurationUtils } from '../../charging-station';
 import { BaseError } from '../../exception';
 import {
@@ -280,7 +281,7 @@ export class OCPPServiceUtils {
     phase?: MeterValuePhase
   ): SampledValueTemplate | undefined {
     const onPhaseStr = phase ? `on phase ${phase} ` : '';
-    if (Constants.SUPPORTED_MEASURANDS.includes(measurand) === false) {
+    if (OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(measurand) === false) {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`
       );
@@ -308,7 +309,7 @@ export class OCPPServiceUtils {
       index++
     ) {
       if (
-        Constants.SUPPORTED_MEASURANDS.includes(
+        OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(
           sampledValueTemplates[index]?.measurand ??
             MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         ) === false
