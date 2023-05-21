@@ -1675,7 +1675,7 @@ export class ChargingStation {
             await Utils.sleep(
               this?.bootNotificationResponse?.interval
                 ? this.bootNotificationResponse.interval * 1000
-                : Constants.OCPP_DEFAULT_BOOT_NOTIFICATION_INTERVAL
+                : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
             );
           }
         } while (
