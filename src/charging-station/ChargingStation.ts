@@ -158,11 +158,17 @@ export class ChargingStation {
     return new URL(
       `${
         this.getSupervisionUrlOcppConfiguration() &&
-        Utils.isNotEmptyString(this.getSupervisionUrlOcppKey())
+        Utils.isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
+        Utils.isNotEmptyString(
+          ChargingStationConfigurationUtils.getConfigurationKey(
+            this,
+            this.getSupervisionUrlOcppKey()
+          )?.value
+        )
           ? ChargingStationConfigurationUtils.getConfigurationKey(
               this,
               this.getSupervisionUrlOcppKey()
-            )?.value
+            ).value
           : this.configuredSupervisionUrl.href
       }/${this.stationInfo.chargingStationId}`
     );
@@ -2168,6 +2174,7 @@ export class ChargingStation {
   }
 
   private getConfiguredSupervisionUrl(): URL {
+    let configuredSupervisionUrl: string;
     const supervisionUrls = this.stationInfo?.supervisionUrls ?? Configuration.getSupervisionUrls();
     if (Utils.isNotEmptyArray(supervisionUrls)) {
       let configuredSupervisionUrlIndex: number;
@@ -2189,9 +2196,14 @@ export class ChargingStation {
           configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
           break;
       }
-      return new URL(supervisionUrls[configuredSupervisionUrlIndex]);
+      configuredSupervisionUrl = supervisionUrls[configuredSupervisionUrlIndex];
+    } else {
+      configuredSupervisionUrl = supervisionUrls as string;
     }
-    return new URL(supervisionUrls as string);
+    if (Utils.isNotEmptyString(configuredSupervisionUrl)) {
+      return new URL(configuredSupervisionUrl);
+    }
+    throw new BaseError('No supervision urls configured');
   }
 
   private stopHeartbeat(): void {
