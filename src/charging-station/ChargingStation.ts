@@ -1647,9 +1647,11 @@ export class ChargingStation {
   }
 
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | undefined {
-    if (this.getOcppPersistentConfiguration() === true) {
-      return { configurationKey: this.getConfigurationFromFile()?.configurationKey };
+    const configurationKey = this.getConfigurationFromFile()?.configurationKey;
+    if (this.getOcppPersistentConfiguration() === true && configurationKey) {
+      return { configurationKey };
     }
+    return undefined;
   }
 
   private getOcppConfiguration(): ChargingStationOcppConfiguration | undefined {
