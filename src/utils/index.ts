@@ -1,5 +1,11 @@
 export { ACElectricUtils, DCElectricUtils } from './ElectricUtils';
 export { AsyncLock, AsyncLockType } from './AsyncLock';
+export {
+  OutputFormat,
+  buildChargingStationAutomaticTransactionGeneratorConfiguration,
+  buildConnectorsStatus,
+  buildEvsesStatus,
+} from './ChargingStationConfigurationUtils';
 export { CircularArray } from './CircularArray';
 export { Configuration } from './Configuration';
 export { Constants } from './Constants';

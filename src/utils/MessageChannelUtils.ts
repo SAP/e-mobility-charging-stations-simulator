@@ -1,3 +1,9 @@
+import {
+  OutputFormat,
+  buildChargingStationAutomaticTransactionGeneratorConfiguration,
+  buildConnectorsStatus,
+  buildEvsesStatus,
+} from './ChargingStationConfigurationUtils';
 import type { ChargingStation } from '../charging-station';
 import {
   type ChargingStationData,
@@ -53,30 +59,14 @@ export class MessageChannelUtils {
     return {
       started: chargingStation.started,
       stationInfo: chargingStation.stationInfo,
-      connectors: [...chargingStation.connectors.values()].map(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
-      ),
-      evses: [...chargingStation.evses.values()].map((evseStatus) => {
-        return {
-          ...evseStatus,
-          connectors: [...evseStatus.connectors.values()].map(
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
-          ),
-        };
-      }),
+      connectors: buildConnectorsStatus(chargingStation),
+      evses: buildEvsesStatus(chargingStation, OutputFormat.ipc),
       ocppConfiguration: chargingStation.ocppConfiguration,
       wsState: chargingStation?.wsConnection?.readyState,
       bootNotificationResponse: chargingStation.bootNotificationResponse,
       ...(chargingStation.automaticTransactionGenerator && {
-        automaticTransactionGenerator: {
-          automaticTransactionGenerator:
-            chargingStation.getAutomaticTransactionGeneratorConfiguration(),
-          automaticTransactionGeneratorStatuses: [
-            ...chargingStation.automaticTransactionGenerator.connectorsStatus.values(),
-          ],
-        },
+        automaticTransactionGenerator:
+          buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation),
       }),
     };
   }

@@ -35,7 +35,6 @@ import {
   type BootNotificationRequest,
   type BootNotificationResponse,
   type CachedRequest,
-  type ChargingStationAutomaticTransactionGeneratorConfiguration,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationOcppConfiguration,
@@ -93,6 +92,9 @@ import {
   FileUtils,
   MessageChannelUtils,
   Utils,
+  buildChargingStationAutomaticTransactionGeneratorConfiguration,
+  buildConnectorsStatus,
+  buildEvsesStatus,
   logger,
 } from '../utils';
 
@@ -1527,18 +1529,8 @@ export class ChargingStation {
     return configuration;
   }
 
-  private saveChargingStationAutomaticTransactionGeneratorConfiguration(
-    stationTemplate?: ChargingStationTemplate
-  ): void {
-    this.saveConfiguration({
-      automaticTransactionGenerator: (stationTemplate ?? this.getTemplateFromFile())
-        .AutomaticTransactionGenerator,
-      ...(!Utils.isNullOrUndefined(this.automaticTransactionGenerator?.connectorsStatus) && {
-        automaticTransactionGeneratorStatuses: [
-          ...this.automaticTransactionGenerator.connectorsStatus.values(),
-        ],
-      }),
-    });
+  private saveChargingStationAutomaticTransactionGeneratorConfiguration(): void {
+    this.saveConfiguration();
   }
 
   private saveConnectorsStatus() {
@@ -1549,9 +1541,7 @@ export class ChargingStation {
     this.saveConfiguration();
   }
 
-  private saveConfiguration(
-    chargingStationAutomaticTransactionGeneratorConfiguration?: ChargingStationAutomaticTransactionGeneratorConfiguration
-  ): void {
+  private saveConfiguration(): void {
     if (Utils.isNotEmptyString(this.configurationFile)) {
       try {
         if (!fs.existsSync(path.dirname(this.configurationFile))) {
@@ -1565,30 +1555,15 @@ export class ChargingStation {
         if (this.getOcppPersistentConfiguration() && this.ocppConfiguration?.configurationKey) {
           configurationData.configurationKey = this.ocppConfiguration.configurationKey;
         }
-        if (chargingStationAutomaticTransactionGeneratorConfiguration) {
-          configurationData = merge<ChargingStationConfiguration>(
-            configurationData,
-            chargingStationAutomaticTransactionGeneratorConfiguration
-          );
-        }
+        configurationData = merge<ChargingStationConfiguration>(
+          configurationData,
+          buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
+        );
         if (this.connectors.size > 0) {
-          configurationData.connectorsStatus = [...this.connectors.values()].map(
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
-          );
+          configurationData.connectorsStatus = buildConnectorsStatus(this);
         }
         if (this.evses.size > 0) {
-          configurationData.evsesStatus = [...this.evses.values()].map((evseStatus) => {
-            const status = {
-              ...evseStatus,
-              connectorsStatus: [...evseStatus.connectors.values()].map(
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
-              ),
-            };
-            delete status.connectors;
-            return status as EvseStatusConfiguration;
-          });
+          configurationData.evsesStatus = buildEvsesStatus(this);
         }
         delete configurationData.configurationHash;
         const configurationHash = crypto
