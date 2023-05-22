@@ -21,6 +21,7 @@
     "evses",
     "iccid",
     "idtag",
+    "idtags",
     "imsi",
     "lcov",
     "logform",

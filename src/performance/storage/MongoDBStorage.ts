@@ -3,6 +3,7 @@
 import { MongoClient } from 'mongodb';
 
 import { Storage } from './Storage';
+import { BaseError } from '../../exception';
 import { type Statistics, StorageType } from '../../types';
 import { Constants } from '../../utils';
 
@@ -55,14 +56,14 @@ export class MongoDBStorage extends Storage {
 
   private checkDBConnection() {
     if (!this?.client) {
-      throw new Error(
+      throw new BaseError(
         `${this.logPrefix} ${this.getDBNameFromStorageType(
           StorageType.MONGO_DB
         )} client initialization failed while trying to issue a request`
       );
     }
     if (!this.connected) {
-      throw new Error(
+      throw new BaseError(
         `${this.logPrefix} ${this.getDBNameFromStorageType(
           StorageType.MONGO_DB
         )} connection not opened while trying to issue a request`

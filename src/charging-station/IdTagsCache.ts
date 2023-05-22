@@ -27,6 +27,15 @@ export class IdTagsCache {
     return IdTagsCache.instance;
   }
 
+  /**
+   * Get one idtag from the cache given the distribution
+   * Must be called after checking the cache is not an empty array
+   *
+   * @param distribution
+   * @param chargingStation
+   * @param connectorId
+   * @returns
+   */
   public getIdTag(
     distribution: IdTagDistribution,
     chargingStation: ChargingStation,
@@ -46,9 +55,19 @@ export class IdTagsCache {
     }
   }
 
+  /**
+   * Get all idtags from the cache
+   * Must be called after checking the cache is not an empty array
+   *
+   * @param file
+   * @returns
+   */
   public getIdTags(file: string): string[] | undefined {
     if (this.hasIdTagsCache(file) === false) {
-      this.setIdTagsCache(file, this.getIdTagsFromFile(file));
+      this.setIdTagsCache(
+        Utils.isNotEmptyString(file) ? file : 'empty',
+        this.getIdTagsFromFile(file)
+      );
     }
     return this.getIdTagsCache(file);
   }
@@ -152,11 +171,9 @@ export class IdTagsCache {
   }
 
   private getIdTagsFromFile(file: string): string[] {
-    let idTags: string[] = [];
-    if (file) {
+    if (Utils.isNotEmptyString(file)) {
       try {
-        // Load id tags file
-        idTags = JSON.parse(fs.readFileSync(file, 'utf8')) as string[];
+        return JSON.parse(fs.readFileSync(file, 'utf8')) as string[];
       } catch (error) {
         ErrorUtils.handleFileException(
           file,
@@ -165,10 +182,9 @@ export class IdTagsCache {
           this.logPrefix(file)
         );
       }
-    } else {
-      logger.info(`${this.logPrefix(file)} No id tags file given`);
     }
-    return idTags;
+    logger.info(`${this.logPrefix(file)} No id tags file given in configuration`);
+    return [];
   }
 
   private logPrefix = (file: string): string => {

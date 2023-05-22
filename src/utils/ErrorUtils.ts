@@ -8,6 +8,7 @@ import type {
   FileType,
   HandleErrorParams,
   IncomingRequestCommand,
+  JsonType,
   RequestCommand,
 } from '../types';
 
@@ -35,6 +36,7 @@ export class ErrorUtils {
     logPrefix: string,
     params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }
   ): void {
+    ErrorUtils.handleErrorParams(params);
     const prefix = Utils.isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
     let logMsg: string;
     switch (error.code) {
@@ -47,13 +49,24 @@ export class ErrorUtils {
       case 'EACCES':
         logMsg = `${fileType} file ${file} access denied:`;
         break;
+      case 'EPERM':
+        logMsg = `${fileType} file ${file} permission denied:`;
+        break;
       default:
         logMsg = `${fileType} file ${file} error:`;
     }
-    if (params?.consoleOut) {
-      console.warn(`${chalk.green(prefix)}${chalk.yellow(`${logMsg} `)}`, error);
-    } else {
-      logger.warn(`${prefix}${logMsg}`, error);
+    if (params?.consoleOut === true) {
+      if (params?.throwError) {
+        console.error(`${chalk.green(prefix)}${chalk.red(`${logMsg} `)}`, error);
+      } else {
+        console.warn(`${chalk.green(prefix)}${chalk.yellow(`${logMsg} `)}`, error);
+      }
+    } else if (params?.consoleOut === false) {
+      if (params?.throwError) {
+        logger.error(`${prefix}${logMsg}`, error);
+      } else {
+        logger.warn(`${prefix}${logMsg}`, error);
+      }
     }
     if (params?.throwError) {
       throw error;
@@ -64,11 +77,19 @@ export class ErrorUtils {
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     error: Error,
-    params: HandleErrorParams<EmptyObject> = { throwError: false }
+    params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
   ): void {
+    ErrorUtils.handleErrorParams(params, { throwError: false, consoleOut: false });
     logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error);
     if (params?.throwError === true) {
       throw error;
     }
+  }
+
+  public static handleErrorParams<T extends JsonType>(
+    params: HandleErrorParams<T>,
+    defaultParams: HandleErrorParams<T> = { throwError: true, consoleOut: false }
+  ): HandleErrorParams<T> {
+    return { ...defaultParams, ...params };
   }
 }

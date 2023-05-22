@@ -413,10 +413,14 @@ export class Configuration {
       case 'EACCES':
         logMsg = `${fileType} file ${file} access denied:`;
         break;
+      case 'EPERM':
+        logMsg = `${fileType} file ${file} permission denied:`;
+        break;
       default:
         logMsg = `${fileType} file ${file} error:`;
     }
-    console.warn(`${chalk.green(prefix)}${chalk.yellow(`${logMsg} `)}`, error);
+    console.error(`${chalk.green(prefix)}${chalk.red(`${logMsg} `)}`, error);
+    throw error;
   }
 
   private static getDefaultPerformanceStorageUri(storageType: StorageType) {

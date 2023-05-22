@@ -1493,7 +1493,7 @@ export class ChargingStation {
 
   private getConfigurationFromFile(): ChargingStationConfiguration | undefined {
     let configuration: ChargingStationConfiguration | undefined;
-    if (this.configurationFile && fs.existsSync(this.configurationFile)) {
+    if (Utils.isNotEmptyString(this.configurationFile) && fs.existsSync(this.configurationFile)) {
       try {
         if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
           configuration = this.sharedLRUCache.getChargingStationConfiguration(
@@ -1546,7 +1546,7 @@ export class ChargingStation {
   private saveConfiguration(
     chargingStationAutomaticTransactionGeneratorConfiguration?: ChargingStationAutomaticTransactionGeneratorConfiguration
   ): void {
-    if (this.configurationFile) {
+    if (Utils.isNotEmptyString(this.configurationFile)) {
       try {
         if (!fs.existsSync(path.dirname(this.configurationFile))) {
           fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });

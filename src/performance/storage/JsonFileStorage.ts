@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { Storage } from './Storage';
+import { BaseError } from '../../exception';
 import { FileType, type Statistics } from '../../types';
 import { AsyncLock, AsyncLockType, Constants, ErrorUtils, Utils } from '../../utils';
 
@@ -79,7 +80,7 @@ export class JsonFileStorage extends Storage {
 
   private checkPerformanceRecordsFile(): void {
     if (!this?.fd) {
-      throw new Error(
+      throw new BaseError(
         `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
       );
     }

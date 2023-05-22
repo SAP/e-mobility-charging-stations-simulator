@@ -164,6 +164,10 @@ export abstract class OCPPRequestService {
       throwError: false,
     }
   ): Promise<ResponseType> {
+    params = {
+      ...{ skipBufferingOnError: false, triggerMessage: false, throwError: false },
+      ...params,
+    };
     try {
       return await this.internalSendMessage(
         chargingStation,
@@ -263,8 +267,13 @@ export abstract class OCPPRequestService {
     params: RequestParams = {
       skipBufferingOnError: false,
       triggerMessage: false,
+      throwError: false,
     }
   ): Promise<ResponseType> {
+    params = {
+      ...{ skipBufferingOnError: false, triggerMessage: false, throwError: false },
+      ...params,
+    };
     if (
       (chargingStation.inUnknownState() === true &&
         commandName === RequestCommand.BOOT_NOTIFICATION) ||

@@ -97,6 +97,7 @@ export class ChargingStationConfigurationUtils {
     key: ConfigurationKeyType,
     params: DeleteConfigurationKeyParams = { save: true, caseInsensitive: false }
   ): ConfigurationKey[] | undefined {
+    params = { ...{ save: true, caseInsensitive: false }, ...params };
     const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
       key,

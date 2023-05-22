@@ -9,7 +9,7 @@ import {
   type Statistics,
   StorageType,
 } from '../../types';
-import { Utils, logger } from '../../utils';
+import { ErrorUtils, Utils, logger } from '../../utils';
 
 export abstract class Storage {
   protected readonly storageUri: URL;
@@ -25,8 +25,9 @@ export abstract class Storage {
     type: StorageType,
     error: Error,
     table?: string,
-    params: HandleErrorParams<EmptyObject> = { throwError: false }
+    params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
   ): void {
+    ErrorUtils.handleErrorParams(params, { throwError: false, consoleOut: false });
     const inTableOrCollectionStr =
       (!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`;
     logger.error(

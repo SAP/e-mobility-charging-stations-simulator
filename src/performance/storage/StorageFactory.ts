@@ -4,6 +4,7 @@ import { JsonFileStorage } from './JsonFileStorage';
 import { MikroOrmStorage } from './MikroOrmStorage';
 import { MongoDBStorage } from './MongoDBStorage';
 import type { Storage } from './Storage';
+import { BaseError } from '../../exception';
 import { StorageType } from '../../types';
 
 export class StorageFactory {
@@ -26,7 +27,7 @@ export class StorageFactory {
       //   storageInstance = new MikroOrmStorage(connectionUri, logPrefix, type);
       //   break;
       default:
-        throw new Error(`${logPrefix} Unknown storage type: ${type}`);
+        throw new BaseError(`${logPrefix} Unknown storage type: ${type}`);
     }
     return storageInstance;
   }
