@@ -2180,7 +2180,9 @@ export class ChargingStation {
     if (Utils.isNotEmptyString(configuredSupervisionUrl)) {
       return new URL(configuredSupervisionUrl);
     }
-    throw new BaseError('No supervision urls configured');
+    const errorMsg = 'No supervision url configured';
+    logger.error(`${this.logPrefix()} ${errorMsg}`);
+    throw new BaseError(`${errorMsg}`);
   }
 
   private stopHeartbeat(): void {
