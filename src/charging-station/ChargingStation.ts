@@ -2180,7 +2180,7 @@ export class ChargingStation {
     if (Utils.isNotEmptyString(configuredSupervisionUrl)) {
       return new URL(configuredSupervisionUrl);
     }
-    const errorMsg = 'No supervision url configured';
+    const errorMsg = 'No supervision url(s) configured';
     logger.error(`${this.logPrefix()} ${errorMsg}`);
     throw new BaseError(`${errorMsg}`);
   }
