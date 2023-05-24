@@ -831,8 +831,8 @@ export class ChargingStation {
         this.getTemplateFromFile()?.AutomaticTransactionGenerator;
     }
     return {
-      ...automaticTransactionGeneratorConfiguration,
       ...Constants.DEFAULT_ATG_CONFIGURATION,
+      ...automaticTransactionGeneratorConfiguration,
     };
   }
 
