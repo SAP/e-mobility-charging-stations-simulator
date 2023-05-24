@@ -8,14 +8,18 @@ export class Constants {
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
 
+  static readonly DEFAULT_ATG_MIN_DURATION = 60;
+  static readonly DEFAULT_ATG_MAX_DURATION = 120;
+  static readonly DEFAULT_ATG_MIN_DELAY_BETWEEN_TWO_TRANSACTIONS = 15;
+  static readonly DEFAULT_ATG_MAX_DELAY_BETWEEN_TWO_TRANSACTIONS = 30;
   static readonly DEFAULT_ATG_STOP_AFTER_HOURS = 0.25; // Hours
   static readonly DEFAULT_ATG_CONFIGURATION: AutomaticTransactionGeneratorConfiguration =
     Object.freeze({
       enable: false,
-      minDuration: 60,
-      maxDuration: 120,
-      minDelayBetweenTwoTransactions: 15,
-      maxDelayBetweenTwoTransactions: 30,
+      minDuration: Constants.DEFAULT_ATG_MIN_DURATION,
+      maxDuration: Constants.DEFAULT_ATG_MAX_DURATION,
+      minDelayBetweenTwoTransactions: Constants.DEFAULT_ATG_MIN_DELAY_BETWEEN_TWO_TRANSACTIONS,
+      maxDelayBetweenTwoTransactions: Constants.DEFAULT_ATG_MAX_DELAY_BETWEEN_TWO_TRANSACTIONS,
       probabilityOfStart: 1,
       stopAfterHours: Constants.DEFAULT_ATG_STOP_AFTER_HOURS,
       stopOnConnectionFailure: true,

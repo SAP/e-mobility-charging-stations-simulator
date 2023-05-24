@@ -225,9 +225,11 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       const wait =
         Utils.getRandomInteger(
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            .maxDelayBetweenTwoTransactions,
+            .maxDelayBetweenTwoTransactions ??
+            Constants.DEFAULT_ATG_MAX_DELAY_BETWEEN_TWO_TRANSACTIONS,
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            .minDelayBetweenTwoTransactions
+            .minDelayBetweenTwoTransactions ??
+            Constants.DEFAULT_ATG_MIN_DELAY_BETWEEN_TWO_TRANSACTIONS
         ) * 1000;
       logger.info(
         `${this.logPrefix(connectorId)} waiting for ${Utils.formatDurationMilliSeconds(wait)}`
@@ -245,8 +247,10 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           // Wait until end of transaction
           const waitTrxEnd =
             Utils.getRandomInteger(
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().maxDuration,
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().minDuration
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().maxDuration ??
+                Constants.DEFAULT_ATG_MAX_DURATION,
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().minDuration ??
+                Constants.DEFAULT_ATG_MIN_DURATION
             ) * 1000;
           logger.info(
             `${this.logPrefix(connectorId)} transaction started with id ${this.chargingStation
