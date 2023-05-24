@@ -818,12 +818,22 @@ export class ChargingStation {
   public getAutomaticTransactionGeneratorConfiguration():
     | AutomaticTransactionGeneratorConfiguration
     | undefined {
+    let automaticTransactionGeneratorConfiguration:
+      | AutomaticTransactionGeneratorConfiguration
+      | undefined;
     const automaticTransactionGeneratorConfigurationFromFile =
       this.getConfigurationFromFile()?.automaticTransactionGenerator;
     if (automaticTransactionGeneratorConfigurationFromFile) {
-      return automaticTransactionGeneratorConfigurationFromFile;
+      automaticTransactionGeneratorConfiguration =
+        automaticTransactionGeneratorConfigurationFromFile;
+    } else {
+      automaticTransactionGeneratorConfiguration =
+        this.getTemplateFromFile()?.AutomaticTransactionGenerator;
     }
-    return this.getTemplateFromFile()?.AutomaticTransactionGenerator;
+    return {
+      ...automaticTransactionGeneratorConfiguration,
+      ...Constants.DEFAULT_ATG_CONFIGURATION,
+    };
   }
 
   public startAutomaticTransactionGenerator(connectorIds?: number[]): void {

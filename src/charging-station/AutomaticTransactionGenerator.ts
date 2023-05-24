@@ -225,11 +225,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       const wait =
         Utils.getRandomInteger(
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            .maxDelayBetweenTwoTransactions ??
-            Constants.DEFAULT_ATG_MAX_DELAY_BETWEEN_TWO_TRANSACTIONS,
+            .maxDelayBetweenTwoTransactions,
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            .minDelayBetweenTwoTransactions ??
-            Constants.DEFAULT_ATG_MIN_DELAY_BETWEEN_TWO_TRANSACTIONS
+            .minDelayBetweenTwoTransactions
         ) * 1000;
       logger.info(
         `${this.logPrefix(connectorId)} waiting for ${Utils.formatDurationMilliSeconds(wait)}`
@@ -247,10 +245,8 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           // Wait until end of transaction
           const waitTrxEnd =
             Utils.getRandomInteger(
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().maxDuration ??
-                Constants.DEFAULT_ATG_MAX_DURATION,
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().minDuration ??
-                Constants.DEFAULT_ATG_MIN_DURATION
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().maxDuration,
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration().minDuration
             ) * 1000;
           logger.info(
             `${this.logPrefix(connectorId)} transaction started with id ${this.chargingStation
@@ -307,8 +303,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     this.connectorsStatus.get(connectorId).startDate = new Date();
     this.connectorsStatus.get(connectorId).stopDate = new Date(
       this.connectorsStatus.get(connectorId).startDate.getTime() +
-        (this.chargingStation.getAutomaticTransactionGeneratorConfiguration().stopAfterHours ??
-          Constants.DEFAULT_ATG_STOP_AFTER_HOURS) *
+        this.chargingStation.getAutomaticTransactionGeneratorConfiguration().stopAfterHours *
           3600 *
           1000 -
         previousRunDuration
