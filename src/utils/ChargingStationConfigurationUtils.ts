@@ -4,6 +4,7 @@ import type {
   ChargingStationAutomaticTransactionGeneratorConfiguration,
   ConnectorStatus,
   EvseStatusConfiguration,
+  EvseStatusWorkerType,
 } from '../types';
 
 export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
@@ -30,30 +31,32 @@ export const buildConnectorsStatus = (chargingStation: ChargingStation): Connect
 
 export const enum OutputFormat {
   configuration = 'configuration',
-  ipc = 'ipc',
+  worker = 'worker',
 }
 
 export const buildEvsesStatus = (
   chargingStation: ChargingStation,
   outputFormat: OutputFormat = OutputFormat.configuration
-): EvseStatusConfiguration[] => {
+): (EvseStatusWorkerType | EvseStatusConfiguration)[] => {
   return [...chargingStation.evses.values()].map((evseStatus) => {
     const connectorsStatus = [...evseStatus.connectors.values()].map(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
     );
-    if (outputFormat === OutputFormat.ipc) {
-      return {
-        ...evseStatus,
-        connectors: connectorsStatus,
-      };
-    } else if (outputFormat === OutputFormat.configuration) {
-      const status = {
-        ...evseStatus,
-        connectorsStatus,
-      };
-      delete status.connectors;
-      return status;
+    let status: EvseStatusConfiguration;
+    switch (outputFormat) {
+      case OutputFormat.worker:
+        return {
+          ...evseStatus,
+          connectors: connectorsStatus,
+        };
+      case OutputFormat.configuration:
+        status = {
+          ...evseStatus,
+          connectorsStatus,
+        };
+        delete (status as EvseStatusWorkerType).connectors;
+        return status;
     }
   });
 };

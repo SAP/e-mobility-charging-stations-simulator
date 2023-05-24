@@ -60,7 +60,7 @@ export class MessageChannelUtils {
       started: chargingStation.started,
       stationInfo: chargingStation.stationInfo,
       connectors: buildConnectorsStatus(chargingStation),
-      evses: buildEvsesStatus(chargingStation, OutputFormat.ipc),
+      evses: buildEvsesStatus(chargingStation, OutputFormat.worker),
       ocppConfiguration: chargingStation.ocppConfiguration,
       wsState: chargingStation?.wsConnection?.readyState,
       bootNotificationResponse: chargingStation.bootNotificationResponse,

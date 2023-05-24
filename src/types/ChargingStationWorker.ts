@@ -20,7 +20,7 @@ export interface ChargingStationWorkerData extends WorkerData {
   chargingStationWorkerOptions?: ChargingStationWorkerOptions;
 }
 
-type EvseStatusType = Omit<EvseStatus, 'connectors'> & {
+export type EvseStatusWorkerType = Omit<EvseStatus, 'connectors'> & {
   connectors?: ConnectorStatus[];
 };
 
@@ -28,7 +28,7 @@ export interface ChargingStationData extends WorkerData {
   started: boolean;
   stationInfo: ChargingStationInfo;
   connectors: ConnectorStatus[];
-  evses: EvseStatusType[];
+  evses: EvseStatusWorkerType[];
   ocppConfiguration: ChargingStationOcppConfiguration;
   wsState?:
     | typeof WebSocket.CONNECTING

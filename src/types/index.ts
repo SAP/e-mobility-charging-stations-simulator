@@ -146,6 +146,7 @@ export {
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
+  type EvseStatusWorkerType,
 } from './ChargingStationWorker';
 export type { ChargingStationInfo } from './ChargingStationInfo';
 export type {
