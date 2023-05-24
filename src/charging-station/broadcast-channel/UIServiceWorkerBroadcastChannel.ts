@@ -47,7 +47,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     } else if (
       this.responses.get(uuid)?.responsesReceived <= this.responses.get(uuid)?.responsesExpected
     ) {
-      this.responses.get(uuid).responsesReceived++;
+      ++this.responses.get(uuid).responsesReceived;
       this.responses.get(uuid)?.responses.push(responsePayload);
     }
     if (

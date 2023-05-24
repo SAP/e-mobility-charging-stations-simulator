@@ -265,8 +265,8 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           await this.stopTransaction(connectorId);
         }
       } else {
-        this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions++;
-        this.connectorsStatus.get(connectorId).skippedTransactions++;
+        ++this.connectorsStatus.get(connectorId).skippedConsecutiveTransactions;
+        ++this.connectorsStatus.get(connectorId).skippedTransactions;
         logger.info(
           `${this.logPrefix(connectorId)} skipped consecutively ${this.connectorsStatus
             .get(connectorId)
@@ -304,7 +304,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     this.connectorsStatus.get(connectorId).stopDate = new Date(
       this.connectorsStatus.get(connectorId).startDate.getTime() +
         (this.chargingStation.getAutomaticTransactionGeneratorConfiguration().stopAfterHours ??
-          Constants.CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS) *
+          Constants.DEFAULT_ATG_STOP_AFTER_HOURS) *
           3600 *
           1000 -
         previousRunDuration
@@ -381,9 +381,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           >(this.chargingStation, RequestCommand.AUTHORIZE, {
             idTag,
           });
-        this.connectorsStatus.get(connectorId).authorizeRequests++;
+        ++this.connectorsStatus.get(connectorId).authorizeRequests;
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-          this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests++;
+          ++this.connectorsStatus.get(connectorId).acceptedAuthorizeRequests;
           logger.info(startTransactionLogMsg);
           // Start transaction
           startResponse = await this.chargingStation.ocppRequestService.requestHandler<
@@ -397,7 +397,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           PerformanceStatistics.endMeasure(measureId, beginId);
           return startResponse;
         }
-        this.connectorsStatus.get(connectorId).rejectedAuthorizeRequests++;
+        ++this.connectorsStatus.get(connectorId).rejectedAuthorizeRequests;
         PerformanceStatistics.endMeasure(measureId, beginId);
         return startResponse;
       }
@@ -433,11 +433,11 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     let stopResponse: StopTransactionResponse;
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
       stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason);
-      this.connectorsStatus.get(connectorId).stopTransactionRequests++;
+      ++this.connectorsStatus.get(connectorId).stopTransactionRequests;
       if (stopResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-        this.connectorsStatus.get(connectorId).acceptedStopTransactionRequests++;
+        ++this.connectorsStatus.get(connectorId).acceptedStopTransactionRequests;
       } else {
-        this.connectorsStatus.get(connectorId).rejectedStopTransactionRequests++;
+        ++this.connectorsStatus.get(connectorId).rejectedStopTransactionRequests;
       }
     } else {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId;
@@ -469,12 +469,12 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     connectorId: number,
     startResponse: StartTransactionResponse
   ): void {
-    this.connectorsStatus.get(connectorId).startTransactionRequests++;
+    ++this.connectorsStatus.get(connectorId).startTransactionRequests;
     if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-      this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests++;
+      ++this.connectorsStatus.get(connectorId).acceptedStartTransactionRequests;
     } else {
       logger.warn(`${this.logPrefix(connectorId)} start transaction rejected`);
-      this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests++;
+      ++this.connectorsStatus.get(connectorId).rejectedStartTransactionRequests;
     }
   }
 }

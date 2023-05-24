@@ -1654,7 +1654,7 @@ export class ChargingStation {
             skipBufferingOnError: true,
           });
           if (this.isRegistered() === false) {
-            this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
+            this.getRegistrationMaxRetries() !== -1 && ++registrationRetryCount;
             await Utils.sleep(
               this?.bootNotificationResponse?.interval
                 ? this.bootNotificationResponse.interval * 1000
@@ -2216,7 +2216,7 @@ export class ChargingStation {
       this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() ||
       this.getAutoReconnectMaxRetries() === -1
     ) {
-      this.autoReconnectRetryCount++;
+      ++this.autoReconnectRetryCount;
       const reconnectDelay = this.getReconnectExponentialDelay()
         ? Utils.exponentialDelay(this.autoReconnectRetryCount)
         : this.getConnectionTimeout() * 1000;

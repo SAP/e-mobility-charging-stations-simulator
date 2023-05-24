@@ -1,3 +1,5 @@
+import type { AutomaticTransactionGeneratorConfiguration } from '../types';
+
 export class Constants {
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms
@@ -5,7 +7,19 @@ export class Constants {
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
-  static readonly CHARGING_STATION_ATG_DEFAULT_STOP_AFTER_HOURS = 0.25; // Hours
+
+  static readonly DEFAULT_ATG_STOP_AFTER_HOURS = 0.25; // Hours
+  static readonly DEFAULT_ATG_CONFIGURATION: AutomaticTransactionGeneratorConfiguration =
+    Object.freeze({
+      enable: false,
+      minDuration: 60,
+      maxDuration: 120,
+      minDelayBetweenTwoTransactions: 15,
+      maxDelayBetweenTwoTransactions: 30,
+      probabilityOfStart: 1,
+      stopAfterHours: Constants.DEFAULT_ATG_STOP_AFTER_HOURS,
+      stopOnConnectionFailure: true,
+    });
 
   // See https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
   static readonly SEMVER_PATTERN =

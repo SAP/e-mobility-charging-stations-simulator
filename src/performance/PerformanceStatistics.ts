@@ -78,7 +78,7 @@ export class PerformanceStatistics {
           this.statistics.statisticsData.has(command) &&
           this.statistics.statisticsData.get(command)?.countRequest
         ) {
-          this.statistics.statisticsData.get(command).countRequest++;
+          ++this.statistics.statisticsData.get(command).countRequest;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
@@ -91,7 +91,7 @@ export class PerformanceStatistics {
           this.statistics.statisticsData.has(command) &&
           this.statistics.statisticsData.get(command)?.countResponse
         ) {
-          this.statistics.statisticsData.get(command).countResponse++;
+          ++this.statistics.statisticsData.get(command).countResponse;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
@@ -104,7 +104,7 @@ export class PerformanceStatistics {
           this.statistics.statisticsData.has(command) &&
           this.statistics.statisticsData.get(command)?.countError
         ) {
-          this.statistics.statisticsData.get(command).countError++;
+          ++this.statistics.statisticsData.get(command).countError;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
