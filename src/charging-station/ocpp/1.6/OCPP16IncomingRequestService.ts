@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import fs from 'node:fs';
@@ -24,6 +25,7 @@ import {
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
   type ConnectorStatus,
+  ConnectorStatusEnum,
   ErrorType,
   type GenericResponse,
   GenericStatus,
@@ -84,7 +86,16 @@ import {
   type UnlockConnectorRequest,
   type UnlockConnectorResponse,
 } from '../../../types';
+import type {
+  OCPP16CancelReservationRequest,
+  OCPP16ReserveNowRequest,
+} from '../../../types/ocpp/1.6/Requests';
+import type {
+  OCPP16CancelReservationResponse,
+  OCPP16ReserveNowResponse,
+} from '../../../types/ocpp/1.6/Responses';
 import { Constants, Utils, logger } from '../../../utils';
+import { OCPPConstants } from '../OCPPConstants';
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
 
 const moduleName = 'OCPP16IncomingRequestService';
@@ -799,6 +810,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: RemoteStartTransactionRequest
   ): Promise<GenericResponse> {
     const transactionConnectorId = commandPayload.connectorId;
+    const reserved: boolean =
+      chargingStation.getConnectorStatus(transactionConnectorId).status ===
+      OCPP16ChargePointStatus.Reserved;
     if (chargingStation.hasConnector(transactionConnectorId) === false) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -808,7 +822,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (
       chargingStation.isChargingStationAvailable() === false ||
-      chargingStation.isConnectorAvailable(transactionConnectorId) === false
+      chargingStation.isConnectorAvailable(transactionConnectorId) === false ||
+      reserved
     ) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -827,36 +842,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId);
     // Check if authorized
     if (chargingStation.getAuthorizeRemoteTxRequests() === true) {
-      let authorized = false;
-      if (
-        chargingStation.getLocalAuthListEnabled() === true &&
-        chargingStation.hasIdTags() === true &&
-        Utils.isNotEmptyString(
-          chargingStation.idTagsCache
-            .getIdTags(ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo))
-            ?.find((idTag) => idTag === commandPayload.idTag)
-        )
-      ) {
-        connectorStatus.localAuthorizeIdTag = commandPayload.idTag;
-        connectorStatus.idTagLocalAuthorized = true;
-        authorized = true;
-      } else if (chargingStation.getMustAuthorizeAtRemoteStart() === true) {
-        connectorStatus.authorizeIdTag = commandPayload.idTag;
-        const authorizeResponse: OCPP16AuthorizeResponse =
-          await chargingStation.ocppRequestService.requestHandler<
-            OCPP16AuthorizeRequest,
-            OCPP16AuthorizeResponse
-          >(chargingStation, OCPP16RequestCommand.AUTHORIZE, {
-            idTag: commandPayload.idTag,
-          });
-        if (authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-          authorized = true;
-        }
-      } else {
-        logger.warn(
-          `${chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction but local authorization or authorize isn't enabled`
-        );
-      }
+      const authorized = await this.isAuthorized(
+        chargingStation,
+        transactionConnectorId,
+        commandPayload.idTag
+      );
       if (authorized === true) {
         // Authorization successful, start transaction
         if (
@@ -867,15 +857,20 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           ) === true
         ) {
           connectorStatus.transactionRemoteStarted = true;
+          const startTransactionData: JsonType = {
+            connectorId: transactionConnectorId,
+            idTag: commandPayload.idTag,
+          };
+          if (reserved) {
+            startTransactionData['reservationId'] =
+              chargingStation.getReservationByConnectorId(transactionConnectorId).reservationId;
+          }
           if (
             (
               await chargingStation.ocppRequestService.requestHandler<
                 OCPP16StartTransactionRequest,
                 OCPP16StartTransactionResponse
-              >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
-                connectorId: transactionConnectorId,
-                idTag: commandPayload.idTag,
-              })
+              >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, startTransactionData)
             ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
           ) {
             logger.debug(remoteStartTransactionLogMsg);
@@ -897,6 +892,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation,
         transactionConnectorId,
         commandPayload.idTag
+      );
+    }
+    if (reserved) {
+      await this.handleReservedRemoteStartTransaction(
+        chargingStation,
+        transactionConnectorId,
+        commandPayload
       );
     }
     // No authorization check required, start transaction
@@ -1502,6 +1504,213 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         error as Error,
         { errorResponse: OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
       );
+    }
+  }
+
+  private async handleRequestReserveNow(
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16ReserveNowRequest
+  ): Promise<OCPP16ReserveNowResponse> {
+    const { reservationId, idTag, connectorId } = commandPayload;
+    let connector: Map<number, ConnectorStatus>;
+    let response: OCPP16ReserveNowResponse;
+    try {
+      if (
+        !chargingStation.supportsReservations() &&
+        chargingStation.isConnectorAvailable(connectorId)
+      ) {
+        return OCPPConstants.OCPP_RESERVATION_RESPONSE_REJECTED;
+      }
+      if (connectorId === 0 && !chargingStation.supportsReservationsOnConnectorId0()) {
+        return OCPPConstants.OCPP_RESERVATION_RESPONSE_REJECTED;
+      }
+      if (!(await this.isAuthorized(chargingStation, connectorId, commandPayload.idTag))) {
+        return OCPPConstants.OCPP_RESERVATION_RESPONSE_REJECTED;
+      }
+      switch (chargingStation.getConnectorStatus(connectorId).status) {
+        case ConnectorStatusEnum.Faulted:
+          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_FAULTED;
+          break;
+        case ConnectorStatusEnum.Occupied:
+          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
+          break;
+        case ConnectorStatusEnum.Unavailable:
+          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_UNAVAILABLE;
+          break;
+        case ConnectorStatusEnum.Reserved:
+          if (Utils.isUndefined(chargingStation.getReservation(commandPayload.reservationId))) {
+            response = OCPPConstants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
+            break;
+          }
+        // eslint-disable-next-line no-fallthrough
+        default:
+          logger.info(
+            `${chargingStation.logPrefix()} on connector ${connectorId} is now reserved for ${
+              commandPayload.idTag
+            }`
+          );
+          chargingStation.getConnectorStatus(connectorId).status = ConnectorStatusEnum.Reserved;
+          chargingStation.addReservation({ ...commandPayload });
+          await chargingStation.ocppRequestService
+            .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+              chargingStation,
+              OCPP16RequestCommand.STATUS_NOTIFICATION,
+              {
+                connectorId,
+                errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                status: chargingStation.getConnectorStatus(connectorId).status,
+              },
+              {
+                triggerMessage: true,
+              }
+            )
+            .catch(Constants.EMPTY_FUNCTION);
+          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_ACCEPTED;
+          break;
+      }
+      return response;
+    } catch (error) {
+      return this.handleIncomingRequestError(
+        chargingStation,
+        OCPP16IncomingRequestCommand.RESERVE_NOW,
+        error as Error,
+        { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED }
+      );
+    }
+  }
+
+  private async handleRequestCancelReservation(
+    chargingStation: ChargingStation,
+    commandPayload: OCPP16CancelReservationRequest
+  ): Promise<OCPP16CancelReservationResponse> {
+    try {
+      const reservationId = commandPayload.reservationId;
+      const [exists, reservation] = chargingStation.doesReservationExist(reservationId);
+      if (!exists) {
+        logger.error(
+          `${chargingStation.logPrefix()} Reservation with ID ${reservationId} does not exist on charging station`
+        );
+        return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;
+      }
+      chargingStation.getConnectorStatus(reservation.connectorId).status =
+        ConnectorStatusEnum.Available;
+      chargingStation.removeReservation(reservation.reservationId);
+      await chargingStation.ocppRequestService
+        .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+          chargingStation,
+          OCPP16RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId: reservation.connectorId,
+            errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+            status: chargingStation.getConnectorStatus(reservation.connectorId).status,
+          },
+          {
+            triggerMessage: true,
+          }
+        )
+        .catch(Constants.EMPTY_FUNCTION);
+      return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED;
+    } catch (error) {
+      return this.handleIncomingRequestError(
+        chargingStation,
+        OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
+        error as Error,
+        { errorResponse: OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED }
+      );
+    }
+  }
+
+  /**
+   * Check for authorized access on a connector with given ConnectorId and idTag for the user
+   * @param {ChargingStation} chargingStation - Charging Station working on incoming request
+   * @param {number} ConnectorId - Identifier of the connector at the charging station
+   * @param {string} idTag - Identifier of the user
+   * @param {string} parentIdTag - Identifier for a group of idTags, which is optional
+   * @returns {Promise<boolean>} - 'true' if user is authorized, 'false' otherwise
+   */
+  private async isAuthorized(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag: string,
+    parentIdTag?: string
+  ): Promise<boolean> {
+    let authorized = false;
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+    if (
+      chargingStation.getLocalAuthListEnabled() === true &&
+      chargingStation.hasIdTags() === true &&
+      Utils.isNotEmptyString(
+        chargingStation.idTagsCache
+          .getIdTags(ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo))
+          ?.find((tag) => tag === idTag)
+      )
+    ) {
+      connectorStatus.localAuthorizeIdTag = idTag;
+      connectorStatus.idTagLocalAuthorized = true;
+      authorized = true;
+    } else if (chargingStation.getMustAuthorizeAtRemoteStart() === true) {
+      connectorStatus.authorizeIdTag = idTag;
+      const authorizeResponse: OCPP16AuthorizeResponse =
+        await chargingStation.ocppRequestService.requestHandler<
+          OCPP16AuthorizeRequest,
+          OCPP16AuthorizeResponse
+        >(chargingStation, OCPP16RequestCommand.AUTHORIZE, {
+          idTag: idTag,
+        });
+      if (authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+        authorized = true;
+      }
+    } else {
+      logger.warn(
+        `${chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction but local authorization or authorize isn't enabled`
+      );
+    }
+    return authorized;
+  }
+
+  private async handleReservedRemoteStartTransaction(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    commandPayload: RemoteStartTransactionRequest
+  ): Promise<GenericResponse> {
+    const reservation = chargingStation.getReservationByConnectorId(connectorId);
+    if (
+      !Utils.isUndefined(reservation) &&
+      (await this.isAuthorized(chargingStation, connectorId, commandPayload.idTag)) &&
+      reservation.idTag === commandPayload.idTag
+    ) {
+      const remoteStartTransactionLogMsg = `${chargingStation.logPrefix()} Transaction remotely STARTED on ${
+        chargingStation.stationInfo.chargingStationId
+      }#${connectorId.toString()} for idTag '${commandPayload.idTag}'`;
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+        chargingStation,
+        connectorId,
+        OCPP16ChargePointStatus.Preparing
+      );
+      if (
+        this.setRemoteStartTransactionChargingProfile(
+          chargingStation,
+          connectorId,
+          commandPayload.chargingProfile
+        ) === true
+      ) {
+        chargingStation.getConnectorStatus(connectorId).transactionRemoteStarted = true;
+        if (
+          (
+            await chargingStation.ocppRequestService.requestHandler<
+              OCPP16StartTransactionRequest,
+              OCPP16StartTransactionResponse
+            >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
+              connectorId: connectorId,
+              idTag: commandPayload.idTag,
+              reservationId: reservation.reservationId,
+            })
+          ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
+        ) {
+          logger.debug(remoteStartTransactionLogMsg);
+          return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
+        }
+      }
     }
   }
 }

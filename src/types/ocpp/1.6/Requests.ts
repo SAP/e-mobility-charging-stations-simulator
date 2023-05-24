@@ -21,6 +21,8 @@ export enum OCPP16RequestCommand {
   DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
   FIRMWARE_STATUS_NOTIFICATION = 'FirmwareStatusNotification',
   DATA_TRANSFER = 'DataTransfer',
+  RESERVE_NOW = 'ReserveNow',
+  CANCEL_RESERVATION = 'CancelReservation',
 }
 
 export enum OCPP16IncomingRequestCommand {
@@ -39,6 +41,8 @@ export enum OCPP16IncomingRequestCommand {
   TRIGGER_MESSAGE = 'TriggerMessage',
   DATA_TRANSFER = 'DataTransfer',
   UPDATE_FIRMWARE = 'UpdateFirmware',
+  RESERVE_NOW = 'ReserveNow',
+  CANCEL_RESERVATION = 'CancelReservation',
 }
 
 export type OCPP16HeartbeatRequest = EmptyObject;
@@ -185,7 +189,7 @@ export interface OCPP16DataTransferRequest extends JsonObject {
 }
 
 export interface OCPP16ReserveNowRequest {
-  connectorId: string;
+  connectorId: number;
   expiryDate: Date;
   idTag: string;
   parentIdTag?: string;

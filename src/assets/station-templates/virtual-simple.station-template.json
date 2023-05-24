@@ -24,7 +24,7 @@
       {
         "key": "SupportedFeatureProfiles",
         "readonly": true,
-        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger"
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger,Reservation"
       },
       {
         "key": "LocalAuthListEnabled",
@@ -40,6 +40,11 @@
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
+      },
+      {
+        "key": "ReserveConnectorZeroSupported",
+        "readonly": false,
+        "value": "true"
       }
     ]
   },

@@ -26,6 +26,7 @@ import {
   type OCPPRequestService,
   OCPPServiceUtils,
 } from './ocpp';
+import { OCPPConstants } from './ocpp/OCPPConstants';
 import { SharedLRUCache } from './SharedLRUCache';
 import { BaseError, OCPPError } from '../exception';
 import { PerformanceStatistics } from '../performance';
@@ -62,6 +63,8 @@ import {
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
+  OCPP16SupportedFeatureProfiles,
+  OCPP20ConnectorStatusEnumType,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -81,6 +84,7 @@ import {
   WebSocketCloseEventStatusCode,
   type WsOptions,
 } from '../types';
+import type { Reservation } from '../types/ocpp/Reservation';
 import {
   ACElectricUtils,
   AsyncLock,
@@ -132,6 +136,7 @@ export class ChargingStation {
   private readonly sharedLRUCache: SharedLRUCache;
   private webSocketPingSetInterval!: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
+  private reservations?: Reservation[];
 
   constructor(index: number, templateFile: string) {
     this.started = false;
@@ -888,6 +893,80 @@ export class ChargingStation {
     );
   }
 
+  public supportsReservations(): boolean {
+    logger.info(`${this.logPrefix()} Check for reservation support in charging station`);
+    return ChargingStationConfigurationUtils.getConfigurationKey(
+      this,
+      StandardParametersKey.SupportedFeatureProfiles
+    ).value.includes(OCPP16SupportedFeatureProfiles.Reservation);
+  }
+
+  public supportsReservationsOnConnectorId0(): boolean {
+    logger.info(
+      `Check for reservation support on connector 0 in charging station (CS): ${this.logPrefix()}`
+    );
+    return (
+      this.supportsReservations() &&
+      ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        OCPPConstants.OCPP_RESERVE_CONNECTOR_ZERO_SUPPORTED
+      ).value === 'true'
+    );
+  }
+
+  public addReservation(newReservation: Reservation): void {
+    if (Utils.isNullOrUndefined(this.reservations)) {
+      this.reservations = [];
+    }
+    const [exists, foundReservation] = this.doesReservationExist(newReservation.reservationId);
+    if (exists) {
+      this.replaceExistingReservation(foundReservation, newReservation);
+    } else {
+      this.reservations.push(newReservation);
+    }
+  }
+
+  public removeReservation(existingReservationId: number): void {
+    const index = this.reservations.findIndex((res) => res.reservationId === existingReservationId);
+    this.reservations.splice(index, 1);
+  }
+
+  public getReservation(reservationId: number, reservationIndex?: number): Reservation {
+    if (!Utils.isNullOrUndefined(reservationIndex)) {
+      return this.reservations[reservationIndex];
+    }
+    return this.reservations.find((r) => r.reservationId === reservationId);
+  }
+
+  public doesReservationExist(
+    reservationId: number,
+    reservation?: Reservation
+  ): [boolean, Reservation] {
+    const foundReservation = this.reservations.find(
+      (r) => r.reservationId === reservationId || r.reservationId === reservation.reservationId
+    );
+    return Utils.isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
+  }
+
+  public getReservationByConnectorId(connectorId: number): Reservation {
+    return this.reservations.find((r) => r.connectorId === connectorId);
+  }
+
+  public getAvailableConnector(): Map<number, ConnectorStatus> {
+    for (const connectorId in this.connectors) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const connector = this.connectors[Utils.convertToInt(connectorId)];
+      if (
+        this.isConnectorAvailable(Utils.convertToInt(connectorId)) &&
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        connector.status === OCPP20ConnectorStatusEnumType.Available
+      ) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return connector;
+      }
+    }
+  }
+
   private flushMessageBuffer(): void {
     if (this.messageBuffer.size > 0) {
       for (const message of this.messageBuffer.values()) {
@@ -913,6 +992,16 @@ export class ChargingStation {
 
   private getSupervisionUrlOcppConfiguration(): boolean {
     return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
+  }
+
+  private replaceExistingReservation(
+    existingReservation: Reservation,
+    newReservation: Reservation
+  ): void {
+    const existingReservationIndex = this.reservations.findIndex(
+      (r) => r.reservationId === existingReservation.reservationId
+    );
+    this.reservations.splice(existingReservationIndex, 1, newReservation);
   }
 
   private getSupervisionUrlOcppKey(): string {

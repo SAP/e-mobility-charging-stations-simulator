@@ -110,6 +110,15 @@ export interface OCPP16DataTransferResponse extends JsonObject {
   data?: string;
 }
 
+export enum OCPP16CancelReservationStatus {
+  ACCEPTED = 'Accepted',
+  REJECTED = 'Rejected',
+}
+
+export interface OCPP16CancelReservationResponse {
+  status: OCPP16CancelReservationStatus;
+}
+
 export enum OCPP16ReservationStatus {
   ACCEPTED = 'Accepted',
   FAULTED = 'Faulted',
@@ -120,13 +129,4 @@ export enum OCPP16ReservationStatus {
 
 export interface OCPP16ReserveNowResponse {
   status: OCPP16ReservationStatus;
-}
-
-export enum OCPP16CancelReservationStatus {
-  ACCEPTED = 'Accepted',
-  REJECTED = 'Rejected',
-}
-
-export interface OCPP16CancelReservationResponse {
-  status: OCPP16CancelReservationStatus;
 }

@@ -30,7 +30,7 @@
       {
         "key": "SupportedFeatureProfiles",
         "readonly": true,
-        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger"
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger,Reservation"
       },
       {
         "key": "LocalAuthListEnabled",
@@ -40,12 +40,17 @@
       {
         "key": "AuthorizeRemoteTxRequests",
         "readonly": false,
-        "value": "false"
+        "value": "true"
       },
       {
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
+      },
+      {
+        "key": "ReserveConnectorZeroSupported",
+        "readonly": false,
+        "value": "true"
       }
     ]
   },

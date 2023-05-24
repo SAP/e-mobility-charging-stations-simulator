@@ -389,8 +389,8 @@ make SUBMODULES_INIT=true
 
 #### Reservation Profile
 
-- :x: CancelReservation
-- :x: ReserveNow
+- :white_check_mark: CancelReservation
+- :white_check_mark: ReserveNow
 
 #### Smart Charging Profile
 
