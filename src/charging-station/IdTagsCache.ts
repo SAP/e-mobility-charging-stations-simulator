@@ -180,7 +180,6 @@ export class IdTagsCache {
         );
       }
     }
-    logger.info(`${this.logPrefix(file)} No id tags file given in configuration`);
     return [];
   }
 

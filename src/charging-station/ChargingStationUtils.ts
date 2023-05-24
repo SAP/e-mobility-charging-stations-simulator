@@ -175,6 +175,14 @@ export class ChargingStationUtils {
         `${logPrefix} Empty automatic transaction generator configuration from template file ${templateFile}, set to default values`
       );
     }
+    if (
+      Utils.isNullOrUndefined(stationTemplate.idTagsFile) ||
+      Utils.isEmptyString(stationTemplate.idTagsFile)
+    ) {
+      logger.warn(
+        `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
+      );
+    }
   }
 
   public static checkConnectorsConfiguration(
