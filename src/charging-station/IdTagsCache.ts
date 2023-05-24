@@ -64,10 +64,7 @@ export class IdTagsCache {
    */
   public getIdTags(file: string): string[] | undefined {
     if (this.hasIdTagsCache(file) === false) {
-      this.setIdTagsCache(
-        Utils.isNotEmptyString(file) ? file : 'empty',
-        this.getIdTagsFromFile(file)
-      );
+      this.setIdTagsCache(file, this.getIdTagsFromFile(file));
     }
     return this.getIdTagsCache(file);
   }
