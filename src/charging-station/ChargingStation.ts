@@ -951,7 +951,7 @@ export class ChargingStation {
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate | undefined = this.getTemplateFromFile();
-    ChargingStationUtils.checkTemplateFile(stationTemplate, this.logPrefix(), this.templateFile);
+    ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     ChargingStationUtils.warnTemplateKeysDeprecation(
       stationTemplate,
       this.logPrefix(),
@@ -1066,7 +1066,7 @@ export class ChargingStation {
 
   private initialize(): void {
     const stationTemplate = this.getTemplateFromFile();
-    ChargingStationUtils.checkTemplateFile(stationTemplate, this.logPrefix(), this.templateFile);
+    ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     this.configurationFile = path.join(
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`

@@ -145,7 +145,7 @@ export class ChargingStationUtils {
     return connectorBootStatus;
   }
 
-  public static checkTemplateFile(
+  public static checkTemplate(
     stationTemplate: ChargingStationTemplate,
     logPrefix: string,
     templateFile: string
