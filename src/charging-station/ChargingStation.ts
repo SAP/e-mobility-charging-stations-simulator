@@ -63,8 +63,11 @@ import {
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
+  OCPP16AuthorizationStatus,
+  type OCPP16AuthorizeRequest,
+  type OCPP16AuthorizeResponse,
+  OCPP16RequestCommand,
   OCPP16SupportedFeatureProfiles,
-  OCPP20ConnectorStatusEnumType,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -84,6 +87,7 @@ import {
   WebSocketCloseEventStatusCode,
   type WsOptions,
 } from '../types';
+import { ReservationTerminationReason } from '../types/ocpp/1.6/Reservation';
 import type { Reservation } from '../types/ocpp/Reservation';
 import {
   ACElectricUtils,
@@ -137,6 +141,7 @@ export class ChargingStation {
   private webSocketPingSetInterval!: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
   private reservations?: Reservation[];
+  private reservationExpiryDateSetInterval?: NodeJS.Timeout;
 
   constructor(index: number, templateFile: string) {
     this.started = false;
@@ -647,6 +652,9 @@ export class ChargingStation {
         if (this.getEnableStatistics() === true) {
           this.performanceStatistics?.start();
         }
+        if (this.supportsReservations()) {
+          this.startReservationExpiryDateSetInterval();
+        }
         this.openWSConnection();
         // Monitor charging station template file
         this.templateFileWatcher = FileUtils.watchJsonFile(
@@ -903,7 +911,7 @@ export class ChargingStation {
 
   public supportsReservationsOnConnectorId0(): boolean {
     logger.info(
-      `Check for reservation support on connector 0 in charging station (CS): ${this.logPrefix()}`
+      ` ${this.logPrefix()} Check for reservation support on connector 0 in charging station (CS)`
     );
     return (
       this.supportsReservations() &&
@@ -914,57 +922,188 @@ export class ChargingStation {
     );
   }
 
-  public addReservation(newReservation: Reservation): void {
+  public async addReservation(reservation: Reservation): Promise<void> {
     if (Utils.isNullOrUndefined(this.reservations)) {
       this.reservations = [];
     }
-    const [exists, foundReservation] = this.doesReservationExist(newReservation.reservationId);
+    const [exists, reservationFound] = this.doesReservationExists(reservation);
     if (exists) {
-      this.replaceExistingReservation(foundReservation, newReservation);
-    } else {
-      this.reservations.push(newReservation);
+      await this.removeReservation(reservationFound);
     }
-  }
-
-  public removeReservation(existingReservationId: number): void {
-    const index = this.reservations.findIndex((res) => res.reservationId === existingReservationId);
-    this.reservations.splice(index, 1);
-  }
-
-  public getReservation(reservationId: number, reservationIndex?: number): Reservation {
-    if (!Utils.isNullOrUndefined(reservationIndex)) {
-      return this.reservations[reservationIndex];
+    this.reservations.push(reservation);
+    if (reservation.connectorId === 0) {
+      return;
     }
-    return this.reservations.find((r) => r.reservationId === reservationId);
-  }
-
-  public doesReservationExist(
-    reservationId: number,
-    reservation?: Reservation
-  ): [boolean, Reservation] {
-    const foundReservation = this.reservations.find(
-      (r) => r.reservationId === reservationId || r.reservationId === reservation.reservationId
+    this.getConnectorStatus(reservation.connectorId).status = ConnectorStatusEnum.Reserved;
+    await this.ocppRequestService.requestHandler<
+      StatusNotificationRequest,
+      StatusNotificationResponse
+    >(
+      this,
+      RequestCommand.STATUS_NOTIFICATION,
+      OCPPServiceUtils.buildStatusNotificationRequest(
+        this,
+        reservation.connectorId,
+        ConnectorStatusEnum.Reserved
+      )
     );
+  }
+
+  public async removeReservation(
+    reservation: Reservation,
+    reason?: ReservationTerminationReason
+  ): Promise<void> {
+    const sameReservation = (r: Reservation) => r.id === reservation.id;
+    const index = this.reservations?.findIndex(sameReservation);
+    this.reservations.splice(index, 1);
+    switch (reason) {
+      case ReservationTerminationReason.TRANSACTION_STARTED:
+        // No action needed
+        break;
+      case ReservationTerminationReason.CONNECTOR_STATE_CHANGED:
+        // No action needed
+        break;
+      default: // ReservationTerminationReason.EXPIRED, ReservationTerminationReason.CANCELED
+        this.getConnectorStatus(reservation.connectorId).status = ConnectorStatusEnum.Available;
+        await this.ocppRequestService.requestHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(
+          this,
+          RequestCommand.STATUS_NOTIFICATION,
+          OCPPServiceUtils.buildStatusNotificationRequest(
+            this,
+            reservation.connectorId,
+            ConnectorStatusEnum.Available
+          )
+        );
+        break;
+    }
+  }
+
+  public getReservationById(id: number): Reservation {
+    return this.reservations?.find((reservation) => reservation.id === id);
+  }
+
+  public getReservationByIdTag(id: string): Reservation {
+    return this.reservations?.find((reservation) => reservation.idTag === id);
+  }
+
+  public getReservationByConnectorId(id: number): Reservation {
+    return this.reservations?.find((reservation) => reservation.connectorId === id);
+  }
+
+  public doesReservationExists(reservation: Partial<Reservation>): [boolean, Reservation] {
+    const sameReservation = (r: Reservation) => r.id === reservation.id;
+    const foundReservation = this.reservations?.find(sameReservation);
     return Utils.isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
   }
 
-  public getReservationByConnectorId(connectorId: number): Reservation {
-    return this.reservations.find((r) => r.connectorId === connectorId);
+  public async isAuthorized(
+    connectorId: number,
+    idTag: string,
+    parentIdTag?: string
+  ): Promise<boolean> {
+    let authorized = false;
+    const connectorStatus = this.getConnectorStatus(connectorId);
+    if (
+      this.getLocalAuthListEnabled() === true &&
+      this.hasIdTags() === true &&
+      Utils.isNotEmptyString(
+        this.idTagsCache
+          .getIdTags(ChargingStationUtils.getIdTagsFile(this.stationInfo))
+          ?.find((tag) => tag === idTag)
+      )
+    ) {
+      connectorStatus.localAuthorizeIdTag = idTag;
+      connectorStatus.idTagLocalAuthorized = true;
+      authorized = true;
+    } else if (this.getMustAuthorizeAtRemoteStart() === true) {
+      connectorStatus.authorizeIdTag = idTag;
+      const authorizeResponse: OCPP16AuthorizeResponse =
+        await this.ocppRequestService.requestHandler<
+          OCPP16AuthorizeRequest,
+          OCPP16AuthorizeResponse
+        >(this, OCPP16RequestCommand.AUTHORIZE, {
+          idTag: idTag,
+        });
+      if (authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+        authorized = true;
+      }
+    } else {
+      logger.warn(
+        `${this.logPrefix()} The charging station configuration expects authorize at
+          remote start transaction but local authorization or authorize isn't enabled`
+      );
+    }
+    return authorized;
   }
 
-  public getAvailableConnector(): Map<number, ConnectorStatus> {
-    for (const connectorId in this.connectors) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const connector = this.connectors[Utils.convertToInt(connectorId)];
-      if (
-        this.isConnectorAvailable(Utils.convertToInt(connectorId)) &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        connector.status === OCPP20ConnectorStatusEnumType.Available
-      ) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return connector;
+  public startReservationExpiryDateSetInterval(customInterval?: number): void {
+    const interval =
+      customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
+    logger.info(
+      `${this.logPrefix()} Reservation expiration date interval is set to ${interval}
+        and starts on CS now`
+    );
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    this.reservationExpiryDateSetInterval = setInterval(async (): Promise<void> => {
+      if (!Utils.isNullOrUndefined(this.reservations) && !Utils.isEmptyArray(this.reservations)) {
+        for (const reservation of this.reservations) {
+          if (reservation.expiryDate.toString() < new Date().toISOString()) {
+            await this.removeReservation(reservation);
+            logger.info(
+              `${this.logPrefix()} Reservation with ID ${
+                reservation.id
+              } reached expiration date and was removed from CS`
+            );
+          }
+        }
       }
+    }, interval);
+  }
+
+  public restartReservationExpiryDateSetInterval(): void {
+    this.stopReservationExpiryDateSetInterval();
+    this.startReservationExpiryDateSetInterval();
+  }
+
+  public validateIncomingRequestWithReservation(connectorId: number, idTag: string): boolean {
+    const reservation = this.getReservationByConnectorId(connectorId);
+    return Utils.isUndefined(reservation) || reservation.idTag !== idTag;
+  }
+
+  public isConnectorReservable(
+    reservationId: number,
+    connectorId?: number,
+    idTag?: string
+  ): boolean {
+    const [alreadyExists, _] = this.doesReservationExists({ id: reservationId });
+    if (alreadyExists) {
+      return alreadyExists;
     }
+    const userReservedAlready = Utils.isUndefined(this.getReservationByIdTag(idTag)) ? false : true;
+    const notConnectorZero = Utils.isUndefined(connectorId) ? true : connectorId > 0;
+    const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
+    return !alreadyExists && !userReservedAlready && notConnectorZero && freeConnectorsAvailable;
+  }
+
+  private getNumberOfReservableConnectors(): number {
+    let reservableConnectors = 0;
+    this.connectors.forEach((connector, id) => {
+      if (id === 0) {
+        return;
+      }
+      if (connector.status === ConnectorStatusEnum.Available) {
+        reservableConnectors++;
+      }
+    });
+    return reservableConnectors - this.getNumberOfReservationsOnConnectorZero();
+  }
+
+  private getNumberOfReservationsOnConnectorZero(): number {
+    const reservations = this.reservations?.filter((reservation) => reservation.connectorId === 0);
+    return Utils.isNullOrUndefined(reservations) ? 0 : reservations.length;
   }
 
   private flushMessageBuffer(): void {
@@ -994,14 +1133,10 @@ export class ChargingStation {
     return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
   }
 
-  private replaceExistingReservation(
-    existingReservation: Reservation,
-    newReservation: Reservation
-  ): void {
-    const existingReservationIndex = this.reservations.findIndex(
-      (r) => r.reservationId === existingReservation.reservationId
-    );
-    this.reservations.splice(existingReservationIndex, 1, newReservation);
+  private stopReservationExpiryDateSetInterval(): void {
+    if (this.reservationExpiryDateSetInterval) {
+      clearInterval(this.reservationExpiryDateSetInterval);
+    }
   }
 
   private getSupervisionUrlOcppKey(): string {
@@ -1040,6 +1175,7 @@ export class ChargingStation {
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate | undefined = this.getTemplateFromFile();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     ChargingStationUtils.warnTemplateKeysDeprecation(
       stationTemplate,
@@ -1155,6 +1291,7 @@ export class ChargingStation {
 
   private initialize(): void {
     const stationTemplate = this.getTemplateFromFile();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     this.configurationFile = path.join(
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),

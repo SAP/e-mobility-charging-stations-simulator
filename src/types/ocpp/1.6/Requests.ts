@@ -188,7 +188,7 @@ export interface OCPP16DataTransferRequest extends JsonObject {
   data?: string;
 }
 
-export interface OCPP16ReserveNowRequest {
+export interface OCPP16ReserveNowRequest extends JsonObject {
   connectorId: number;
   expiryDate: Date;
   idTag: string;
@@ -196,6 +196,6 @@ export interface OCPP16ReserveNowRequest {
   reservationId: number;
 }
 
-export interface OCPP16CancelReservationRequest {
+export interface OCPP16CancelReservationRequest extends JsonObject {
   reservationId: number;
 }

@@ -24,6 +24,10 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../types';
+import type {
+  OCPP16CancelReservationRequest,
+  OCPP16ReserveNowRequest,
+} from '../../../types/ocpp/1.6/Requests';
 import { Constants, Utils } from '../../../utils';
 import { OCPPRequestService } from '../OCPPRequestService';
 import type { OCPPResponseService } from '../OCPPResponseService';
@@ -115,6 +119,22 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationRequest>(
           'assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16RequestCommand.RESERVE_NOW,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowRequest>(
+          'assets/json-schemas/ocpp/1.6/ReserveNow.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16RequestCommand.CANCEL_RESERVATION,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16CancelReservationRequest>(
+          'assets/json-schemas/ocpp/1.6/CancelReservation.json',
           moduleName,
           'constructor'
         ),
