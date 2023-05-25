@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import fs from 'node:fs';
