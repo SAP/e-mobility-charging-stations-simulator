@@ -107,7 +107,6 @@ export const DataTransferStatus = {
 export type DataTransferStatus = OCPP16DataTransferStatus;
 
 export type ReservationStatus = OCPP16ReservationStatus;
-
 export const ReservationStatus = {
   ...OCPP16ReservationStatus,
 };
