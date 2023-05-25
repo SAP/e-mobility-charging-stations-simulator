@@ -831,12 +831,22 @@ export class ChargingStation {
   public getAutomaticTransactionGeneratorConfiguration():
     | AutomaticTransactionGeneratorConfiguration
     | undefined {
+    let automaticTransactionGeneratorConfiguration:
+      | AutomaticTransactionGeneratorConfiguration
+      | undefined;
     const automaticTransactionGeneratorConfigurationFromFile =
       this.getConfigurationFromFile()?.automaticTransactionGenerator;
     if (automaticTransactionGeneratorConfigurationFromFile) {
-      return automaticTransactionGeneratorConfigurationFromFile;
+      automaticTransactionGeneratorConfiguration =
+        automaticTransactionGeneratorConfigurationFromFile;
+    } else {
+      automaticTransactionGeneratorConfiguration =
+        this.getTemplateFromFile()?.AutomaticTransactionGenerator;
     }
-    return this.getTemplateFromFile()?.AutomaticTransactionGenerator;
+    return {
+      ...Constants.DEFAULT_ATG_CONFIGURATION,
+      ...automaticTransactionGeneratorConfiguration,
+    };
   }
 
   public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
@@ -1878,7 +1888,7 @@ export class ChargingStation {
             skipBufferingOnError: true,
           });
           if (this.isRegistered() === false) {
-            this.getRegistrationMaxRetries() !== -1 && registrationRetryCount++;
+            this.getRegistrationMaxRetries() !== -1 && ++registrationRetryCount;
             await Utils.sleep(
               this?.bootNotificationResponse?.interval
                 ? this.bootNotificationResponse.interval * 1000
@@ -2440,7 +2450,7 @@ export class ChargingStation {
       this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() ||
       this.getAutoReconnectMaxRetries() === -1
     ) {
-      this.autoReconnectRetryCount++;
+      ++this.autoReconnectRetryCount;
       const reconnectDelay = this.getReconnectExponentialDelay()
         ? Utils.exponentialDelay(this.autoReconnectRetryCount)
         : this.getConnectionTimeout() * 1000;

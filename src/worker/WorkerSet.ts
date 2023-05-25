@@ -55,7 +55,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       id: WorkerMessageEvents.startWorkerElement,
       data: elementData,
     });
-    this.getLastWorkerSetElement().numberOfWorkerElements++;
+    ++this.getLastWorkerSetElement().numberOfWorkerElements;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {
       await WorkerUtils.sleep(this.workerOptions.elementStartDelay);

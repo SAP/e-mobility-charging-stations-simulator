@@ -612,7 +612,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }#${transactionConnectorId.toString()} for idTag '${requestPayload.idTag}'`
       );
       if (chargingStation.stationInfo.powerSharedByConnectors) {
-        chargingStation.powerDivider++;
+        ++chargingStation.powerDivider;
       }
       const configuredMeterValueSampleInterval =
         ChargingStationConfigurationUtils.getConfigurationKey(
