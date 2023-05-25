@@ -883,7 +883,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           ) === true
         ) {
           connectorStatus.transactionRemoteStarted = true;
-          const startTransactionData: JsonType = {
+          const startTransactionPayload: JsonType = {
             connectorId: transactionConnectorId,
             idTag: commandPayload.idTag,
           };
