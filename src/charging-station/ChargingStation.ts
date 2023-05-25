@@ -1175,7 +1175,6 @@ export class ChargingStation {
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate | undefined = this.getTemplateFromFile();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     ChargingStationUtils.warnTemplateKeysDeprecation(
       stationTemplate,
