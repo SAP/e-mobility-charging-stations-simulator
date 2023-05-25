@@ -10,8 +10,12 @@ export class WorkerUtils {
   }
 
   public static defaultExitHandler = (code: number): void => {
-    if (code !== 0) {
-      console.error(chalk.red(`Worker exited with error exit code: ${code.toString()}`));
+    if (code === 0) {
+      console.info(chalk.green('Worker exited successfully'));
+    } else if (code === 1) {
+      console.info(chalk.green('Worker terminated successfully'));
+    } else if (code > 1) {
+      console.error(chalk.red(`Worker exited with exit code: ${code.toString()}`));
     }
   };
 

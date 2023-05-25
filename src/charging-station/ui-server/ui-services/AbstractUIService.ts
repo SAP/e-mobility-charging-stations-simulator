@@ -87,7 +87,7 @@ export abstract class AbstractUIService {
       responsePayload = await this.requestHandlers.get(command)(messageId, command, requestPayload);
     } catch (error) {
       // Log
-      logger.error(`${this.logPrefix(moduleName, 'messageHandler')} Handle request error:`, error);
+      logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error);
       responsePayload = {
         hashIds: requestPayload?.hashIds,
         status: ResponseStatus.FAILURE,

@@ -46,6 +46,16 @@ export abstract class AbstractUIServer {
     this.chargingStations.clear();
   }
 
+  public async sendBroadcastChannelRequest(
+    id: string,
+    procedureName: ProcedureName,
+    requestPayload: RequestPayload
+  ): Promise<void> {
+    for (const uiService of this.uiServices.values()) {
+      await uiService.requestHandler(this.buildProtocolRequest(id, procedureName, requestPayload));
+    }
+  }
+
   protected startHttpServer(): void {
     if (this.httpServer.listening === false) {
       this.httpServer.listen(this.uiServerConfiguration.options);

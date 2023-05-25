@@ -17,10 +17,11 @@ import {
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
+  ProcedureName,
   type StationTemplateUrl,
   type Statistics,
 } from '../types';
-import { Configuration, ErrorUtils, Utils, logger } from '../utils';
+import { Configuration, Constants, ErrorUtils, Utils, logger } from '../utils';
 import { type MessageHandler, type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
@@ -44,6 +45,11 @@ export class Bootstrap {
   private readonly workerScript: string;
 
   private constructor() {
+    for (const signal of ['SIGINT', 'SIGQUIT', 'SIGTERM']) {
+      process.on(signal, () => {
+        this.gracefulShutdown().catch(Constants.EMPTY_FUNCTION);
+      });
+    }
     // Enable unconditionally for now
     ErrorUtils.handleUnhandledRejection();
     ErrorUtils.handleUncaughtException();
@@ -123,6 +129,11 @@ export class Bootstrap {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started === true) {
+      await this.uiServer?.sendBroadcastChannelRequest(
+        Utils.generateUUID(),
+        ProcedureName.STOP_CHARGING_STATION,
+        Constants.EMPTY_FREEZED_OBJECT
+      );
       await this.workerImplementation?.stop();
       this.workerImplementation = null;
       this.uiServer?.stop();
@@ -270,6 +281,16 @@ export class Bootstrap {
       ),
     });
   }
+
+  private gracefulShutdown = async (): Promise<void> => {
+    console.info(`${chalk.green('Graceful shutdown')}`);
+    try {
+      await this.stop();
+      process.exit(0);
+    } catch (error) {
+      process.exit(1);
+    }
+  };
 
   private logPrefix = (): string => {
     return Utils.logPrefix(' Bootstrap |');

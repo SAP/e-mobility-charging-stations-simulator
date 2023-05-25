@@ -35,7 +35,6 @@ export let threadWorker: ThreadWorker;
 if (Configuration.workerPoolInUse()) {
   threadWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
     maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
-    async: false,
   });
 } else {
   // Add message listener to start charging station from main thread
