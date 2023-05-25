@@ -1078,7 +1078,7 @@ export class ChargingStation {
     connectorId?: number,
     idTag?: string
   ): boolean {
-    const [alreadyExists, _] = this.doesReservationExists({ id: reservationId });
+    const [alreadyExists] = this.doesReservationExists({ id: reservationId });
     if (alreadyExists) {
       return alreadyExists;
     }
