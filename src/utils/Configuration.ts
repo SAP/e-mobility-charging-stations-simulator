@@ -55,7 +55,9 @@ export class Configuration {
   public static getUIServer(): UIServerConfiguration {
     if (Utils.hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
       console.error(
-        chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead}`
+        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+          "Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead"
+        )}`
       );
     }
     let uiServerConfiguration: UIServerConfiguration = {
@@ -137,9 +139,9 @@ export class Configuration {
       (stationTemplateUrl: StationTemplateUrl) => {
         if (!Utils.isUndefined(stationTemplateUrl['numberOfStation'])) {
           console.error(
-            chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key 'numberOfStation' usage for template file '${
-              stationTemplateUrl.file
-            }' in 'stationTemplateUrls'. Use 'numberOfStations' instead}`
+            `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+              `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`
+            )}`
           );
         }
       }
@@ -337,15 +339,19 @@ export class Configuration {
       !Utils.isUndefined((Configuration.getConfig()[sectionName] as Record<string, unknown>)[key])
     ) {
       console.error(
-        chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key '${key}' usage in section '${sectionName}'${
-          logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
-        }}`
+        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+          `Deprecated configuration key '${key}' usage in section '${sectionName}'${
+            logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
+          }`
+        )}`
       );
     } else if (!Utils.isUndefined(Configuration.getConfig()[key])) {
       console.error(
-        chalk`{green ${Configuration.logPrefix()}} {red Deprecated configuration key '${key}' usage${
-          logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
-        }}`
+        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+          `Deprecated configuration key '${key}' usage${
+            logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
+          }`
+        )}`
       );
     }
   }
