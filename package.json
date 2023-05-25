@@ -87,10 +87,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.7.9",
-    "@mikro-orm/mariadb": "^5.7.9",
-    "@mikro-orm/reflection": "^5.7.9",
-    "@mikro-orm/sqlite": "^5.7.9",
+    "@mikro-orm/core": "^5.7.10",
+    "@mikro-orm/mariadb": "^5.7.10",
+    "@mikro-orm/reflection": "^5.7.10",
+    "@mikro-orm/sqlite": "^5.7.10",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.3",
@@ -117,7 +117,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.6.3",
     "@commitlint/config-conventional": "^17.6.3",
-    "@mikro-orm/cli": "^5.7.9",
+    "@mikro-orm/cli": "^5.7.10",
     "@release-it/bumper": "^4.0.2",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^0.4.3",
@@ -138,7 +138,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jsdoc": "^44.2.4",
+    "eslint-plugin-jsdoc": "^44.2.5",
     "eslint-plugin-n": "^16.0.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-tsdoc": "^0.2.17",
