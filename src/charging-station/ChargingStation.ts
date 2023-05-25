@@ -1290,7 +1290,6 @@ export class ChargingStation {
 
   private initialize(): void {
     const stationTemplate = this.getTemplateFromFile();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     this.configurationFile = path.join(
       path.dirname(this.templateFile.replace('station-templates', 'configurations')),
