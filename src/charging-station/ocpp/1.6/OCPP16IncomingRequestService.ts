@@ -1488,13 +1488,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   ): OCPP16DataTransferResponse {
     try {
       if (Object.values(OCPP16DataTransferVendorId).includes(commandPayload.vendorId)) {
-        return {
-          status: OCPP16DataTransferStatus.ACCEPTED,
-        };
+        return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED;
       }
-      return {
-        status: OCPP16DataTransferStatus.UNKNOWN_VENDOR_ID,
-      };
+      return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID;
     } catch (error) {
       return this.handleIncomingRequestError(
         chargingStation,
