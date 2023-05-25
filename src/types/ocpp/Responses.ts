@@ -112,7 +112,6 @@ export const ReservationStatus = {
 };
 
 export type CancelReservationStatus = OCPP16CancelReservationStatus;
-
 export const CancelReservationStatus = {
   ...OCPP16CancelReservationStatus,
 };
