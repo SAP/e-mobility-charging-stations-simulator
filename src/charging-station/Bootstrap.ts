@@ -299,7 +299,7 @@ export class Bootstrap extends EventEmitter {
         process.exit(0);
       })
       .catch((error) => {
-        console.error(chalk.red('Error while stopping charging stations simulator: '), error);
+        console.error(chalk.red('Error while shutdowning charging stations simulator: '), error);
         process.exit(1);
       });
   };
