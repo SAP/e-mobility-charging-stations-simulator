@@ -4,7 +4,7 @@ import { DynamicThreadPool, type ErrorHandler, type ExitHandler } from 'poolifie
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
-import { WorkerUtils } from './WorkerUtils';
+import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
 
 export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   private readonly pool: DynamicThreadPool<WorkerData>;
@@ -18,10 +18,10 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
     this.workerOptions.poolOptions.errorHandler = (
-      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler
+      this.workerOptions?.poolOptions?.errorHandler ?? defaultErrorHandler
     ).bind(this) as ErrorHandler<Worker>;
     this.workerOptions.poolOptions.exitHandler = (
-      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler
+      this.workerOptions?.poolOptions?.exitHandler ?? defaultExitHandler
     ).bind(this) as ExitHandler<Worker>;
     this.workerOptions.poolOptions.messageHandler.bind(this);
     this.pool = new DynamicThreadPool<WorkerData>(
@@ -67,7 +67,6 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup
-    this.workerOptions.elementStartDelay > 0 &&
-      (await WorkerUtils.sleep(this.workerOptions.elementStartDelay));
+    this.workerOptions.elementStartDelay > 0 && (await sleep(this.workerOptions.elementStartDelay));
   }
 }

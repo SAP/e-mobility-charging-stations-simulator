@@ -4,7 +4,7 @@ import { type ErrorHandler, type ExitHandler, FixedThreadPool } from 'poolifier'
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
-import { WorkerUtils } from './WorkerUtils';
+import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
 
 export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
   private readonly pool: FixedThreadPool<WorkerData>;
@@ -18,10 +18,10 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
     this.workerOptions.poolOptions.errorHandler = (
-      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler
+      this.workerOptions?.poolOptions?.errorHandler ?? defaultErrorHandler
     ).bind(this) as ErrorHandler<Worker>;
     this.workerOptions.poolOptions.exitHandler = (
-      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler
+      this.workerOptions?.poolOptions?.exitHandler ?? defaultExitHandler
     ).bind(this) as ExitHandler<Worker>;
     this.workerOptions.poolOptions.messageHandler.bind(this);
     this.pool = new FixedThreadPool(
@@ -66,7 +66,6 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
   public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup
-    this.workerOptions.elementStartDelay > 0 &&
-      (await WorkerUtils.sleep(this.workerOptions.elementStartDelay));
+    this.workerOptions.elementStartDelay > 0 && (await sleep(this.workerOptions.elementStartDelay));
   }
 }

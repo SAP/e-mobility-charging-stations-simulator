@@ -11,7 +11,7 @@ import {
   type WorkerOptions,
   type WorkerSetElement,
 } from './WorkerTypes';
-import { WorkerUtils } from './WorkerUtils';
+import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   private readonly workerSet: Set<WorkerSetElement>;
@@ -58,7 +58,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     ++this.getLastWorkerSetElement().numberOfWorkerElements;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {
-      await WorkerUtils.sleep(this.workerOptions.elementStartDelay);
+      await sleep(this.workerOptions.elementStartDelay);
     }
   }
 
@@ -94,15 +94,14 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
         this
       ) as MessageHandler<Worker>
     );
-    worker.on('error', WorkerUtils.defaultErrorHandler.bind(this) as (err: Error) => void);
+    worker.on('error', defaultErrorHandler.bind(this) as (err: Error) => void);
     worker.on('exit', (code) => {
-      WorkerUtils.defaultExitHandler(code);
+      defaultExitHandler(code);
       this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
     });
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });
     // Start worker sequentially to optimize memory at startup
-    this.workerOptions.workerStartDelay > 0 &&
-      (await WorkerUtils.sleep(this.workerOptions.workerStartDelay));
+    this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {
