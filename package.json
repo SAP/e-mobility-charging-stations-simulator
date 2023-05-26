@@ -106,7 +106,7 @@
     "source-map-support": "^0.5.21",
     "tar": "^6.1.15",
     "tslib": "^2.5.2",
-    "winston": "^3.8.2",
+    "winston": "^3.9.0",
     "winston-daily-rotate-file": "^4.7.1",
     "ws": "^8.13.0"
   },
