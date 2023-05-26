@@ -27,7 +27,7 @@ export abstract class Storage {
     table?: string,
     params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
   ): void {
-    ErrorUtils.handleErrorParams(params, { throwError: false, consoleOut: false });
+    ErrorUtils.setDefaultErrorParams(params, { throwError: false, consoleOut: false });
     const inTableOrCollectionStr =
       (!Utils.isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`;
     logger.error(

@@ -12,6 +12,11 @@ import type {
   RequestCommand,
 } from '../types';
 
+const defaultErrorParams = {
+  throwError: true,
+  consoleOut: false,
+};
+
 export class ErrorUtils {
   private constructor() {
     // This is intentional
@@ -34,9 +39,9 @@ export class ErrorUtils {
     fileType: FileType,
     error: NodeJS.ErrnoException,
     logPrefix: string,
-    params: HandleErrorParams<EmptyObject> = { throwError: true, consoleOut: false }
+    params: HandleErrorParams<EmptyObject> = defaultErrorParams
   ): void {
-    ErrorUtils.handleErrorParams(params);
+    ErrorUtils.setDefaultErrorParams(params);
     const prefix = Utils.isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
     let logMsg: string;
     switch (error.code) {
@@ -79,16 +84,16 @@ export class ErrorUtils {
     error: Error,
     params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
   ): void {
-    ErrorUtils.handleErrorParams(params, { throwError: false, consoleOut: false });
+    ErrorUtils.setDefaultErrorParams(params, { throwError: false, consoleOut: false });
     logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error);
     if (params?.throwError === true) {
       throw error;
     }
   }
 
-  public static handleErrorParams<T extends JsonType>(
+  public static setDefaultErrorParams<T extends JsonType>(
     params: HandleErrorParams<T>,
-    defaultParams: HandleErrorParams<T> = { throwError: true, consoleOut: false }
+    defaultParams: HandleErrorParams<T> = defaultErrorParams
   ): HandleErrorParams<T> {
     return { ...defaultParams, ...params };
   }

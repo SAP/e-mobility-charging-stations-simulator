@@ -62,7 +62,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     error: Error,
     params: HandleErrorParams<T> = { throwError: true, consoleOut: false }
   ): T | undefined {
-    ErrorUtils.handleErrorParams(params);
+    ErrorUtils.setDefaultErrorParams(params);
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
       error
