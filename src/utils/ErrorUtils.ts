@@ -95,6 +95,7 @@ export class ErrorUtils {
     params: HandleErrorParams<T>,
     defaultParams: HandleErrorParams<T> = defaultErrorParams
   ): HandleErrorParams<T> {
-    return { ...defaultParams, ...params };
+    params = { ...defaultParams, ...params };
+    return params;
   }
 }
