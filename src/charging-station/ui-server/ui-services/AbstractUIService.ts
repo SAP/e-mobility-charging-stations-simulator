@@ -100,22 +100,20 @@ export abstract class AbstractUIService {
         errorDetails: (error as OCPPError).details,
       };
     }
-    // Send response
     if (!Utils.isNullOrUndefined(responsePayload)) {
-      this.sendResponse(messageId, responsePayload);
       return this.uiServer.buildProtocolResponse(messageId, responsePayload);
     }
   }
 
-  public sendRequest(
-    messageId: string,
-    procedureName: ProcedureName,
-    requestPayload: RequestPayload
-  ): void {
-    this.uiServer.sendRequest(
-      this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
-    );
-  }
+  // public sendRequest(
+  //   messageId: string,
+  //   procedureName: ProcedureName,
+  //   requestPayload: RequestPayload
+  // ): void {
+  //   this.uiServer.sendRequest(
+  //     this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
+  //   );
+  // }
 
   public sendResponse(messageId: string, responsePayload: ResponsePayload): void {
     this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
