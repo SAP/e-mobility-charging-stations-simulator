@@ -36,6 +36,7 @@ export default {
     'mongodb',
     'node:async_hooks',
     'node:crypto',
+    'node:events',
     'node:fs',
     'node:http',
     'node:path',
