@@ -304,13 +304,18 @@ export class Bootstrap extends EventEmitter {
       });
   };
 
-  private waitForChargingStationsStopped = async (): Promise<void> => {
+  private waitForChargingStationsStopped = async (
+    stoppedEventsToWait = this.numberOfStartedChargingStations
+  ): Promise<number> => {
     return new Promise((resolve) => {
       let stoppedEvents = 0;
+      if (stoppedEventsToWait === 0) {
+        resolve(stoppedEvents);
+      }
       this.on(ChargingStationWorkerMessageEvents.stopped, () => {
         ++stoppedEvents;
-        if (stoppedEvents === this.numberOfChargingStations) {
-          resolve();
+        if (stoppedEvents === stoppedEventsToWait) {
+          resolve(stoppedEvents);
         }
       });
     });
