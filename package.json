@@ -1,6 +1,6 @@
 {
   "name": "e-mobility-charging-stations-simulator",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "engines": {
     "node": ">=16.9.0",
     "pnpm": ">=8.0.0"
