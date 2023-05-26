@@ -46,7 +46,7 @@ export abstract class AbstractUIServer {
     this.chargingStations.clear();
   }
 
-  public async sendBroadcastChannelRequest(request: ProtocolRequest): Promise<ProtocolResponse> {
+  public async sendRequestOnBroadcastChannel(request: ProtocolRequest): Promise<ProtocolResponse> {
     const protocolVersion = ProtocolVersion['0.0.1'];
     this.registerProtocolVersionUIService(protocolVersion);
     return this.uiServices.get(protocolVersion)?.requestHandler(request);

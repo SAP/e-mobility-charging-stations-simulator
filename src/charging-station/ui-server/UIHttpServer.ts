@@ -126,7 +126,7 @@ export class UIHttpServer extends AbstractUIServer {
                 )
               )
               .then((protocolResponse: ProtocolResponse) => {
-                if (Utils.isNullOrUndefined(protocolResponse)) {
+                if (!Utils.isNullOrUndefined(protocolResponse)) {
                   this.sendResponse(protocolResponse);
                 }
               })

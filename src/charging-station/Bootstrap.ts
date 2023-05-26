@@ -129,7 +129,7 @@ export class Bootstrap extends EventEmitter {
 
   public async stop(): Promise<void> {
     if (isMainThread && this.started === true) {
-      await this.uiServer?.sendBroadcastChannelRequest(
+      await this.uiServer?.sendRequestOnBroadcastChannel(
         this.uiServer.buildProtocolRequest(
           Utils.generateUUID(),
           ProcedureName.STOP_CHARGING_STATION,
