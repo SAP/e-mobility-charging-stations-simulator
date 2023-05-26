@@ -11,7 +11,7 @@ import {
   type ProcedureName,
   type ProtocolRequest,
   type ProtocolResponse,
-  type ProtocolVersion,
+  ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
   type UIServerConfiguration,
@@ -46,14 +46,10 @@ export abstract class AbstractUIServer {
     this.chargingStations.clear();
   }
 
-  public async sendBroadcastChannelRequest(
-    id: string,
-    procedureName: ProcedureName,
-    requestPayload: RequestPayload
-  ): Promise<void> {
-    for (const uiService of this.uiServices.values()) {
-      await uiService.requestHandler(this.buildProtocolRequest(id, procedureName, requestPayload));
-    }
+  public async sendBroadcastChannelRequest(request: ProtocolRequest): Promise<ProtocolResponse> {
+    const protocolVersion = ProtocolVersion['0.0.1'];
+    this.registerProtocolVersionUIService(protocolVersion);
+    return this.uiServices.get(protocolVersion)?.requestHandler(request);
   }
 
   protected startHttpServer(): void {

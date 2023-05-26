@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import { EventEmitter } from 'node:events';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Worker, isMainThread } from 'node:worker_threads';
@@ -31,7 +32,7 @@ enum exitCodes {
   noChargingStationTemplates = 2,
 }
 
-export class Bootstrap {
+export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null;
   public numberOfChargingStations!: number;
   public numberOfChargingStationTemplates!: number;
@@ -45,10 +46,9 @@ export class Bootstrap {
   private readonly workerScript: string;
 
   private constructor() {
+    super();
     for (const signal of ['SIGINT', 'SIGQUIT', 'SIGTERM']) {
-      process.on(signal, () => {
-        this.gracefulShutdown().catch(Constants.EMPTY_FUNCTION);
-      });
+      process.on(signal, this.gracefulShutdown);
     }
     // Enable unconditionally for now
     ErrorUtils.handleUnhandledRejection();
@@ -130,10 +130,13 @@ export class Bootstrap {
   public async stop(): Promise<void> {
     if (isMainThread && this.started === true) {
       await this.uiServer?.sendBroadcastChannelRequest(
-        Utils.generateUUID(),
-        ProcedureName.STOP_CHARGING_STATION,
-        Constants.EMPTY_FREEZED_OBJECT
+        this.uiServer.buildProtocolRequest(
+          Utils.generateUUID(),
+          ProcedureName.STOP_CHARGING_STATION,
+          Constants.EMPTY_FREEZED_OBJECT
+        )
       );
+      await this.waitForChargingStationsStopped();
       await this.workerImplementation?.stop();
       this.workerImplementation = null;
       this.uiServer?.stop();
@@ -183,15 +186,22 @@ export class Bootstrap {
       switch (msg.id) {
         case ChargingStationWorkerMessageEvents.started:
           this.workerEventStarted(msg.data as ChargingStationData);
+          this.emit(ChargingStationWorkerMessageEvents.started, msg.data as ChargingStationData);
           break;
         case ChargingStationWorkerMessageEvents.stopped:
           this.workerEventStopped(msg.data as ChargingStationData);
+          this.emit(ChargingStationWorkerMessageEvents.stopped, msg.data as ChargingStationData);
           break;
         case ChargingStationWorkerMessageEvents.updated:
           this.workerEventUpdated(msg.data as ChargingStationData);
+          this.emit(ChargingStationWorkerMessageEvents.updated, msg.data as ChargingStationData);
           break;
         case ChargingStationWorkerMessageEvents.performanceStatistics:
           this.workerEventPerformanceStatistics(msg.data as Statistics);
+          this.emit(
+            ChargingStationWorkerMessageEvents.performanceStatistics,
+            msg.data as Statistics
+          );
           break;
         default:
           throw new BaseError(
@@ -282,14 +292,28 @@ export class Bootstrap {
     });
   }
 
-  private gracefulShutdown = async (): Promise<void> => {
+  private gracefulShutdown = (): void => {
     console.info(`${chalk.green('Graceful shutdown')}`);
-    try {
-      await this.stop();
-      process.exit(0);
-    } catch (error) {
-      process.exit(1);
-    }
+    this.stop()
+      .then(() => {
+        process.exit(0);
+      })
+      .catch((error) => {
+        console.error(chalk.red('Error while stopping charging stations simulator:'), error);
+        process.exit(1);
+      });
+  };
+
+  private waitForChargingStationsStopped = async (): Promise<void> => {
+    return new Promise((resolve) => {
+      let stoppedEvents = 0;
+      this.on(ChargingStationWorkerMessageEvents.stopped, () => {
+        ++stoppedEvents;
+        if (stoppedEvents === this.numberOfChargingStations) {
+          resolve();
+        }
+      });
+    });
   };
 
   private logPrefix = (): string => {

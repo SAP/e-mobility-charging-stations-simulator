@@ -5,6 +5,7 @@ import {
   ProcedureName,
   type ProtocolRequest,
   type ProtocolRequestHandler,
+  type ProtocolResponse,
   type ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
@@ -65,11 +66,11 @@ export abstract class AbstractUIService {
     this.broadcastChannelRequests = new Map<string, number>();
   }
 
-  public async requestHandler(request: ProtocolRequest): Promise<void> {
+  public async requestHandler(request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
     let messageId: string;
     let command: ProcedureName;
     let requestPayload: RequestPayload | undefined;
-    let responsePayload: ResponsePayload;
+    let responsePayload: ResponsePayload | undefined;
     try {
       [messageId, command, requestPayload] = request;
 
@@ -98,11 +99,11 @@ export abstract class AbstractUIService {
         errorStack: (error as Error).stack,
         errorDetails: (error as OCPPError).details,
       };
-    } finally {
-      // Send response for payload not forwarded to broadcast channel
-      if (!Utils.isNullOrUndefined(responsePayload)) {
-        this.sendResponse(messageId, responsePayload);
-      }
+    }
+    // Send response
+    if (!Utils.isNullOrUndefined(responsePayload)) {
+      this.sendResponse(messageId, responsePayload);
+      return this.uiServer.buildProtocolResponse(messageId, responsePayload);
     }
   }
 
