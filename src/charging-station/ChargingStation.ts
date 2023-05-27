@@ -1094,10 +1094,9 @@ export class ChargingStation {
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
     );
     const chargingStationConfiguration = this.getConfigurationFromFile();
-    // FIXME: template changes to evses or connectors are not taken into account
     if (
-      chargingStationConfiguration?.connectorsStatus ||
-      chargingStationConfiguration?.evsesStatus
+      chargingStationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
+      (chargingStationConfiguration?.connectorsStatus || chargingStationConfiguration?.evsesStatus)
     ) {
       this.initializeConnectorsOrEvsesFromFile(chargingStationConfiguration);
     } else {
@@ -1479,7 +1478,7 @@ export class ChargingStation {
     if (stationTemplate?.Evses) {
       const evsesConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(`${JSON.stringify(stationTemplate?.Evses)}`)
+        .update(JSON.stringify(stationTemplate?.Evses))
         .digest('hex');
       const evsesConfigChanged =
         this.evses?.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash;
