@@ -853,7 +853,7 @@ export class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.start();
     }
-    this.saveChargingStationAutomaticTransactionGeneratorConfiguration();
+    this.saveAutomaticTransactionGeneratorConfiguration();
     parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
@@ -865,7 +865,7 @@ export class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.stop();
     }
-    this.saveChargingStationAutomaticTransactionGeneratorConfiguration();
+    this.saveAutomaticTransactionGeneratorConfiguration();
     parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
   }
 
@@ -1550,7 +1550,7 @@ export class ChargingStation {
     return configuration;
   }
 
-  private saveChargingStationAutomaticTransactionGeneratorConfiguration(): void {
+  private saveAutomaticTransactionGeneratorConfiguration(): void {
     if (this.getAutomaticTransactionGeneratorPersistentConfiguration()) {
       this.saveConfiguration();
     }
