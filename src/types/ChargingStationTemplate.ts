@@ -67,6 +67,7 @@ export type ChargingStationTemplate = {
   ocppStrictCompliance?: boolean;
   ocppPersistentConfiguration?: boolean;
   stationInfoPersistentConfiguration?: boolean;
+  automaticTransactionGeneratorPersistentConfiguration?: boolean;
   wsOptions?: WsOptions;
   idTagsFile?: string;
   baseName: string;

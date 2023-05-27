@@ -69,6 +69,7 @@ import {
   RequestCommand,
   type Response,
   StandardParametersKey,
+  type Status,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
   StopTransactionReason,
@@ -823,7 +824,10 @@ export class ChargingStation {
       | undefined;
     const automaticTransactionGeneratorConfigurationFromFile =
       this.getConfigurationFromFile()?.automaticTransactionGenerator;
-    if (automaticTransactionGeneratorConfigurationFromFile) {
+    if (
+      this.getAutomaticTransactionGeneratorPersistentConfiguration() &&
+      automaticTransactionGeneratorConfigurationFromFile
+    ) {
       automaticTransactionGeneratorConfiguration =
         automaticTransactionGeneratorConfigurationFromFile;
     } else {
@@ -834,6 +838,10 @@ export class ChargingStation {
       ...Constants.DEFAULT_ATG_CONFIGURATION,
       ...automaticTransactionGeneratorConfiguration,
     };
+  }
+
+  public getAutomaticTransactionGeneratorStatuses(): Status[] | undefined {
+    return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses;
   }
 
   public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
@@ -1068,6 +1076,10 @@ export class ChargingStation {
     return this.stationInfo?.stationInfoPersistentConfiguration ?? true;
   }
 
+  private getAutomaticTransactionGeneratorPersistentConfiguration(): boolean {
+    return this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration ?? true;
+  }
+
   private handleUnsupportedVersion(version: OCPPVersion) {
     const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`;
     logger.error(`${this.logPrefix()} ${errorMsg}`);
@@ -1082,10 +1094,10 @@ export class ChargingStation {
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
     );
     const chargingStationConfiguration = this.getConfigurationFromFile();
-    const featureFlag = false;
+    // FIXME: template changes to evses or connectors are not taken into account
     if (
-      featureFlag &&
-      (chargingStationConfiguration?.connectorsStatus || chargingStationConfiguration?.evsesStatus)
+      chargingStationConfiguration?.connectorsStatus ||
+      chargingStationConfiguration?.evsesStatus
     ) {
       this.initializeConnectorsOrEvsesFromFile(chargingStationConfiguration);
     } else {
@@ -1540,7 +1552,9 @@ export class ChargingStation {
   }
 
   private saveChargingStationAutomaticTransactionGeneratorConfiguration(): void {
-    this.saveConfiguration();
+    if (this.getAutomaticTransactionGeneratorPersistentConfiguration()) {
+      this.saveConfiguration();
+    }
   }
 
   private saveConnectorsStatus() {
@@ -1561,24 +1575,44 @@ export class ChargingStation {
           Utils.cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()) ?? {};
         if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
+        } else {
+          delete configurationData.stationInfo;
         }
         if (this.getOcppPersistentConfiguration() && this.ocppConfiguration?.configurationKey) {
           configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+        } else {
+          delete configurationData.configurationKey;
         }
         configurationData = merge<ChargingStationConfiguration>(
           configurationData,
           buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
         );
+        if (
+          !this.getAutomaticTransactionGeneratorPersistentConfiguration() ||
+          !this.getAutomaticTransactionGeneratorConfiguration()
+        ) {
+          delete configurationData.automaticTransactionGenerator;
+        }
         if (this.connectors.size > 0) {
           configurationData.connectorsStatus = buildConnectorsStatus(this);
+        } else {
+          delete configurationData.connectorsStatus;
         }
         if (this.evses.size > 0) {
           configurationData.evsesStatus = buildEvsesStatus(this);
+        } else {
+          delete configurationData.evsesStatus;
         }
         delete configurationData.configurationHash;
         const configurationHash = crypto
           .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-          .update(JSON.stringify(configurationData))
+          .update(
+            JSON.stringify({
+              stationInfo: configurationData.stationInfo,
+              configurationKey: configurationData.configurationKey,
+              automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
+            } as ChargingStationConfiguration)
+          )
           .digest('hex');
         if (this.configurationFileHash !== configurationHash) {
           AsyncLock.acquire(AsyncLockType.configuration)
