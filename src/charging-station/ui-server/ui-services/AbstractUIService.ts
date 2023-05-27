@@ -116,7 +116,9 @@ export abstract class AbstractUIService {
   // }
 
   public sendResponse(messageId: string, responsePayload: ResponsePayload): void {
-    this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
+    if (this.uiServer.hasResponseHandler(messageId)) {
+      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
+    }
   }
 
   public logPrefix = (modName: string, methodName: string): string => {

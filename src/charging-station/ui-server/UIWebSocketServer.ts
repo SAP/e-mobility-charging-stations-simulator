@@ -112,7 +112,7 @@ export class UIWebSocketServer extends AbstractUIServer {
   public sendResponse(response: ProtocolResponse): void {
     const responseId = response[0];
     try {
-      if (this.responseHandlers.has(responseId)) {
+      if (this.hasResponseHandler(responseId)) {
         const ws = this.responseHandlers.get(responseId) as WebSocket;
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify(response));

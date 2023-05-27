@@ -44,7 +44,7 @@ export class UIHttpServer extends AbstractUIServer {
   public sendResponse(response: ProtocolResponse): void {
     const [uuid, payload] = response;
     try {
-      if (this.responseHandlers.has(uuid) === true) {
+      if (this.hasResponseHandler(uuid) === true) {
         const res = this.responseHandlers.get(uuid) as ServerResponse;
         res
           .writeHead(this.responseStatusToStatusCode(payload.status), {
