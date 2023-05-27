@@ -31,9 +31,9 @@ export class IdTagsCache {
    * Get one idtag from the cache given the distribution
    * Must be called after checking the cache is not an empty array
    *
-   * @param distribution
-   * @param chargingStation
-   * @param connectorId
+   * @param distribution -
+   * @param chargingStation -
+   * @param connectorId -
    * @returns
    */
   public getIdTag(
@@ -59,7 +59,7 @@ export class IdTagsCache {
    * Get all idtags from the cache
    * Must be called after checking the cache is not an empty array
    *
-   * @param file
+   * @param file -
    * @returns
    */
   public getIdTags(file: string): string[] | undefined {

@@ -30,7 +30,7 @@ import {
   type StatusNotificationRequest,
   type StatusNotificationResponse,
 } from '../../types';
-import { Constants, ErrorUtils, Utils, logger } from '../../utils';
+import { ErrorUtils, Utils, logger } from '../../utils';
 
 export class OCPPServiceUtils {
   protected constructor() {

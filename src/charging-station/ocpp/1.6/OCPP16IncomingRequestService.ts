@@ -48,7 +48,6 @@ import {
   type OCPP16ClearCacheRequest,
   type OCPP16DataTransferRequest,
   type OCPP16DataTransferResponse,
-  OCPP16DataTransferStatus,
   OCPP16DataTransferVendorId,
   OCPP16DiagnosticsStatus,
   type OCPP16DiagnosticsStatusNotificationRequest,
