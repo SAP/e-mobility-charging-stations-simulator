@@ -363,8 +363,13 @@ export class OCPPServiceUtils {
       unitMultiplier: 1,
     }
   ): number {
-    options.limitationEnabled = options?.limitationEnabled ?? true;
-    options.unitMultiplier = options?.unitMultiplier ?? 1;
+    options = {
+      ...{
+        limitationEnabled: true,
+        unitMultiplier: 1,
+      },
+      ...options,
+    };
     const parsedInt = parseInt(value);
     const numberValue = isNaN(parsedInt) ? Infinity : parsedInt;
     return options?.limitationEnabled

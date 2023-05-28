@@ -748,7 +748,7 @@ export class ChargingStation {
       terminateOpened: false,
     }
   ): void {
-    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+    options = { handshakeTimeout: this.getConnectionTimeout() * 1000, ...options };
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
     if (this.started === false && this.starting === false) {
       logger.warn(
