@@ -67,7 +67,6 @@ temp
 outputs
 coverage
 node_modules
-!dist/node_modules
 sonar-project.properties
 performanceRecords.json
 performanceRecords.json.lock

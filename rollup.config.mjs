@@ -57,6 +57,9 @@ export default {
     json(),
     typescript({
       tsconfig: 'tsconfig.json',
+      compilerOptions: {
+        sourceMap: !!isDevelopmentBuild,
+      },
     }),
     del({
       targets: [
