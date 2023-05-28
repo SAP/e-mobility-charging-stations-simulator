@@ -78,7 +78,7 @@ The charging stations simulator's configuration parameters must be within the `s
 
 All charging station configuration templates are in the directory [src/assets/station-templates](src/assets/station-templates).
 
-A list of RFID tags must be defined for the automatic transaction generator in a file with a default location and name: `src/assets/idtags.json`. A template file is available at [src/assets/idtags-template.json](src/assets/idtags-template.json).
+A list of RFID tags must be defined for the automatic transaction generator in a file with the default location and name: `src/assets/idtags.json`. A template file is available at [src/assets/idtags-template.json](src/assets/idtags-template.json).
 
 **Configuration files hierarchy and priority**:
 
@@ -86,13 +86,13 @@ A list of RFID tags must be defined for the automatic transaction generator in a
 2. charging station configuration template: [src/assets/station-templates](src/assets/station-templates);
 3. charging stations simulator configuration: [src/assets/config.json](src/assets/config.json).
 
-The charging stations simulator have an automatic configuration files reload feature at change for:
+The charging stations simulator has an automatic configuration files reload feature at change for:
 
 - charging stations simulator configuration;
 - charging station configuration templates;
 - charging station authorization RFID tags lists.
 
-But the modifications to test have to be done to the files in the build target directory [dist/assets](dist/assets). Once the modifications are finished, they have to be reported or copied to the matching files in the build source directory [src/assets](src/assets) to ensure they will be taken into account at next build.
+But the modifications to test have to be done to the files in the build target directory [dist/assets](dist/assets). Once the modifications are done, they have to be reported to the matching files in the build source directory [src/assets](src/assets) to ensure they will be taken into account at next build.
 
 ### Charging stations simulator configuration
 
@@ -145,7 +145,7 @@ But the modifications to test have to be done to the files in the build target d
 | stationInfoPersistentConfiguration                   | true/false    | true                                                                                                                                | boolean                                                                                                                                                                  | enable persistent station information and specifications storage by charging stations 'hashId'. The persistency is ensured by the charging stations configuration files in [dist/assets/configurations](dist/assets/configurations)        |
 | automaticTransactionGeneratorPersistentConfiguration | true/false    | true                                                                                                                                | boolean                                                                                                                                                                  | enable persistent automatic transaction generator configuration storage by charging stations 'hashId'. The persistency is ensured by the charging stations configuration files in [dist/assets/configurations](dist/assets/configurations) |
 | wsOptions                                            |               | {}                                                                                                                                  | ClientOptions & ClientRequestArgs                                                                                                                                        | [ws](https://github.com/websockets/ws) and node.js [http](https://nodejs.org/api/http.html) clients options intersection                                                                                                                   |
-| idTagsFile                                           |               | undefined                                                                                                                           | string                                                                                                                                                                   | RFID tags list file relative to src/assets path                                                                                                                                                                                            |
+| idTagsFile                                           |               | undefined                                                                                                                           | string                                                                                                                                                                   | RFID tags list file relative to [src/assets](src/assets) path                                                                                                                                                                              |
 | baseName                                             |               | undefined                                                                                                                           | string                                                                                                                                                                   | base name to build charging stations id                                                                                                                                                                                                    |
 | nameSuffix                                           |               | undefined                                                                                                                           | string                                                                                                                                                                   | name suffix to build charging stations id                                                                                                                                                                                                  |
 | fixedName                                            | true/false    | false                                                                                                                               | boolean                                                                                                                                                                  | use the baseName as the charging stations unique name                                                                                                                                                                                      |
@@ -339,6 +339,10 @@ The syntax is similar to charging station configuration template with some added
 
 The syntax is similar to the charging station configuration template 'Configuration' section.
 
+#### automaticTransactionGenerator section
+
+The syntax is similar to the charging station configuration template 'AutomaticTransactionGenerator' section.
+
 ## Docker
 
 In the [docker](./docker) folder:
@@ -420,7 +424,7 @@ make SUBMODULES_INIT=true
 
 ## OCPP-J standard parameters supported
 
-All kind of OCPP parameters are supported in a charging station configuration or a charging station configuration template file. The list here mention the standard ones also handled automatically in the simulator.
+All kind of OCPP parameters are supported in charging station configuration or charging station configuration template file. The list here mention the standard ones also handled automatically in the simulator.
 
 ### Version 1.6
 
