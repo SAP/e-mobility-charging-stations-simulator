@@ -1,4 +1,6 @@
 /* eslint-disable n/no-unpublished-import */
+import os from 'os';
+
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
@@ -16,9 +18,8 @@ export default {
     {
       dir: 'dist',
       format: 'esm',
-      exports: 'auto',
-      ...(isDevelopmentBuild && { sourcemap: true }),
-      ...(!isDevelopmentBuild && { plugins: [terser({ maxWorkers: 2 })] }),
+      sourcemap: !!isDevelopmentBuild,
+      plugins: [terser({ maxWorkers: os.cpus().length / 2 })],
     },
   ],
   external: [
