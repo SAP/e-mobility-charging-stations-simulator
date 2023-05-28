@@ -15,8 +15,8 @@ import {
   CircularArray,
   Configuration,
   Constants,
-  MessageChannelUtils,
   Utils,
+  buildPerformanceStatisticsMessage,
   logger,
 } from '../utils';
 
@@ -249,9 +249,7 @@ export class PerformanceStatistics {
       )
     );
     if (Configuration.getPerformanceStorage().enabled) {
-      parentPort?.postMessage(
-        MessageChannelUtils.buildPerformanceStatisticsMessage(this.statistics)
-      );
+      parentPort?.postMessage(buildPerformanceStatisticsMessage(this.statistics));
     }
   }
 

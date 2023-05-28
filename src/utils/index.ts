@@ -17,6 +17,11 @@ export {
   setDefaultErrorParams,
 } from './ErrorUtils';
 export { watchJsonFile } from './FileUtils';
-export { MessageChannelUtils } from './MessageChannelUtils';
+export {
+  buildPerformanceStatisticsMessage,
+  buildUpdatedMessage,
+  buildStartedMessage,
+  buildStoppedMessage,
+} from './MessageChannelUtils';
 export { Utils } from './Utils';
 export { logger } from './Logger';

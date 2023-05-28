@@ -89,11 +89,13 @@ import {
   Configuration,
   Constants,
   DCElectricUtils,
-  MessageChannelUtils,
   Utils,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
+  buildStartedMessage,
+  buildStoppedMessage,
+  buildUpdatedMessage,
   handleFileException,
   logger,
   watchJsonFile,
@@ -682,7 +684,7 @@ export class ChargingStation {
           }
         );
         this.started = true;
-        parentPort?.postMessage(MessageChannelUtils.buildStartedMessage(this));
+        parentPort?.postMessage(buildStartedMessage(this));
         this.starting = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already starting...`);
@@ -707,7 +709,7 @@ export class ChargingStation {
         delete this.bootNotificationResponse;
         this.started = false;
         this.saveConfiguration();
-        parentPort?.postMessage(MessageChannelUtils.buildStoppedMessage(this));
+        parentPort?.postMessage(buildStoppedMessage(this));
         this.stopping = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already stopping...`);
@@ -854,7 +856,7 @@ export class ChargingStation {
       this.automaticTransactionGenerator?.start();
     }
     this.saveAutomaticTransactionGeneratorConfiguration();
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
@@ -866,7 +868,7 @@ export class ChargingStation {
       this.automaticTransactionGenerator?.stop();
     }
     this.saveAutomaticTransactionGeneratorConfiguration();
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
   public async stopTransactionOnConnector(
@@ -1721,7 +1723,7 @@ export class ChargingStation {
       }
       this.wsConnectionRestarted = false;
       this.autoReconnectRetryCount = 0;
-      parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+      parentPort?.postMessage(buildUpdatedMessage(this));
     } else {
       logger.warn(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
@@ -1751,7 +1753,7 @@ export class ChargingStation {
         this.started === true && (await this.reconnect());
         break;
     }
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
   private getCachedRequest(messageType: MessageType, messageId: string): CachedRequest | undefined {
@@ -1861,7 +1863,7 @@ export class ChargingStation {
             logger.error(`${this.logPrefix()} ${errorMsg}`);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errorMsg);
         }
-        parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+        parentPort?.postMessage(buildUpdatedMessage(this));
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not an array', null, {
           request,

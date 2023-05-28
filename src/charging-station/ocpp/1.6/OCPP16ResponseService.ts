@@ -49,7 +49,7 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
 } from '../../../types';
-import { Constants, MessageChannelUtils, Utils, logger } from '../../../utils';
+import { Constants, Utils, buildUpdatedMessage, logger } from '../../../utils';
 import { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP16ResponseService';
@@ -641,7 +641,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
   ): Promise<void> {
     ChargingStationUtils.resetConnectorStatus(chargingStation.getConnectorStatus(connectorId));
     chargingStation.stopMeterValues(connectorId);
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(chargingStation));
+    parentPort?.postMessage(buildUpdatedMessage(chargingStation));
     if (
       chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.Available
     ) {
@@ -707,7 +707,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.getConnectorStatus(transactionConnectorId)
     );
     chargingStation.stopMeterValues(transactionConnectorId);
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(chargingStation));
+    parentPort?.postMessage(buildUpdatedMessage(chargingStation));
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       chargingStation.stationInfo.chargingStationId
     }#${transactionConnectorId?.toString()} with status '${
