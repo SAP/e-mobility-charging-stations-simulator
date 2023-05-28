@@ -23,7 +23,7 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import { Constants, ErrorUtils, Utils, logger } from '../../utils';
+import { Constants, Utils, handleSendMessageError, logger } from '../../utils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -133,7 +133,7 @@ export abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error, {
+      handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: true,
       });
     }
@@ -155,7 +155,7 @@ export abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error);
+      handleSendMessageError(chargingStation, commandName, error as Error);
     }
   }
 
@@ -180,7 +180,7 @@ export abstract class OCPPRequestService {
         params
       );
     } catch (error) {
-      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error, {
+      handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: params.throwError,
       });
     }

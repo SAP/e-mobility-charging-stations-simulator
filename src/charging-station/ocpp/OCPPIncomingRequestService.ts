@@ -15,7 +15,7 @@ import type {
   JsonType,
   OCPPVersion,
 } from '../../types';
-import { ErrorUtils, logger } from '../../utils';
+import { logger, setDefaultErrorParams } from '../../utils';
 
 const moduleName = 'OCPPIncomingRequestService';
 
@@ -62,7 +62,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     error: Error,
     params: HandleErrorParams<T> = { throwError: true, consoleOut: false }
   ): T | undefined {
-    ErrorUtils.setDefaultErrorParams(params);
+    setDefaultErrorParams(params);
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
       error

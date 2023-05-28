@@ -22,7 +22,14 @@ import {
   type StationTemplateUrl,
   type Statistics,
 } from '../types';
-import { Configuration, Constants, ErrorUtils, Utils, logger } from '../utils';
+import {
+  Configuration,
+  Constants,
+  Utils,
+  handleUncaughtException,
+  handleUnhandledRejection,
+  logger,
+} from '../utils';
 import { type MessageHandler, type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
@@ -51,8 +58,8 @@ export class Bootstrap extends EventEmitter {
       process.on(signal, this.gracefulShutdown);
     }
     // Enable unconditionally for now
-    ErrorUtils.handleUnhandledRejection();
-    ErrorUtils.handleUncaughtException();
+    handleUnhandledRejection();
+    handleUncaughtException();
     this.initializedCounters = false;
     this.started = false;
     this.initializeCounters();

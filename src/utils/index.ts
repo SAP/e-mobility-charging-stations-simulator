@@ -9,8 +9,14 @@ export {
 export { CircularArray } from './CircularArray';
 export { Configuration } from './Configuration';
 export { Constants } from './Constants';
-export { ErrorUtils } from './ErrorUtils';
-export { FileUtils } from './FileUtils';
+export {
+  handleFileException,
+  handleUncaughtException,
+  handleUnhandledRejection,
+  handleSendMessageError,
+  setDefaultErrorParams,
+} from './ErrorUtils';
+export { watchJsonFile } from './FileUtils';
 export { MessageChannelUtils } from './MessageChannelUtils';
 export { Utils } from './Utils';
 export { logger } from './Logger';

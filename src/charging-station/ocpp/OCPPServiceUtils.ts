@@ -30,7 +30,7 @@ import {
   type StatusNotificationRequest,
   type StatusNotificationResponse,
 } from '../../types';
-import { ErrorUtils, Utils, logger } from '../../utils';
+import { Utils, handleFileException, logger } from '../../utils';
 
 export class OCPPServiceUtils {
   protected constructor() {
@@ -264,7 +264,7 @@ export class OCPPServiceUtils {
     try {
       return JSON.parse(fs.readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
     } catch (error) {
-      ErrorUtils.handleFileException(
+      handleFileException(
         filePath,
         FileType.JsonSchema,
         error as NodeJS.ErrnoException,

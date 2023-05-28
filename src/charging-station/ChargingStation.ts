@@ -89,14 +89,14 @@ import {
   Configuration,
   Constants,
   DCElectricUtils,
-  ErrorUtils,
-  FileUtils,
   MessageChannelUtils,
   Utils,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
+  handleFileException,
   logger,
+  watchJsonFile,
 } from '../utils';
 
 export class ChargingStation {
@@ -645,7 +645,7 @@ export class ChargingStation {
         }
         this.openWSConnection();
         // Monitor charging station template file
-        this.templateFileWatcher = FileUtils.watchJsonFile(
+        this.templateFileWatcher = watchJsonFile(
           this.templateFile,
           FileType.ChargingStationTemplate,
           this.logPrefix(),
@@ -957,7 +957,7 @@ export class ChargingStation {
         this.templateFileHash = template.templateHash;
       }
     } catch (error) {
-      ErrorUtils.handleFileException(
+      handleFileException(
         this.templateFile,
         FileType.ChargingStationTemplate,
         error as NodeJS.ErrnoException,
@@ -1539,7 +1539,7 @@ export class ChargingStation {
           this.configurationFileHash = configuration.configurationHash;
         }
       } catch (error) {
-        ErrorUtils.handleFileException(
+        handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,
@@ -1628,7 +1628,7 @@ export class ChargingStation {
               this.configurationFileHash = configurationHash;
             })
             .catch((error) => {
-              ErrorUtils.handleFileException(
+              handleFileException(
                 this.configurationFile,
                 FileType.ChargingStationConfiguration,
                 error as NodeJS.ErrnoException,
@@ -1646,7 +1646,7 @@ export class ChargingStation {
           );
         }
       } catch (error) {
-        ErrorUtils.handleFileException(
+        handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import type { ChargingStation } from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import { FileType, IdTagDistribution } from '../types';
-import { ErrorUtils, FileUtils, Utils, logger } from '../utils';
+import { Utils, handleFileException, logger, watchJsonFile } from '../utils';
 
 type IdTagsCacheValueType = {
   idTags: string[];
@@ -116,7 +116,7 @@ export class IdTagsCache {
   private setIdTagsCache(file: string, idTags: string[]) {
     return this.idTagsCaches.set(file, {
       idTags,
-      idTagsFileWatcher: FileUtils.watchJsonFile(
+      idTagsFileWatcher: watchJsonFile(
         file,
         FileType.Authorization,
         this.logPrefix(file),
@@ -130,7 +130,7 @@ export class IdTagsCache {
               this.deleteIdTagsCache(file);
               this.deleteIdTagsCacheIndexes(file);
             } catch (error) {
-              ErrorUtils.handleFileException(
+              handleFileException(
                 file,
                 FileType.Authorization,
                 error as NodeJS.ErrnoException,
@@ -172,7 +172,7 @@ export class IdTagsCache {
       try {
         return JSON.parse(fs.readFileSync(file, 'utf8')) as string[];
       } catch (error) {
-        ErrorUtils.handleFileException(
+        handleFileException(
           file,
           FileType.Authorization,
           error as NodeJS.ErrnoException,

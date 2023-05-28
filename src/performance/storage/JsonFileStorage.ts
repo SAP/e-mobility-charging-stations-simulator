@@ -6,7 +6,7 @@ import path from 'node:path';
 import { Storage } from './Storage';
 import { BaseError } from '../../exception';
 import { FileType, type Statistics } from '../../types';
-import { AsyncLock, AsyncLockType, Constants, ErrorUtils, Utils } from '../../utils';
+import { AsyncLock, AsyncLockType, Constants, Utils, handleFileException } from '../../utils';
 
 export class JsonFileStorage extends Storage {
   private fd: number | null = null;
@@ -32,7 +32,7 @@ export class JsonFileStorage extends Storage {
         );
       })
       .catch((error) => {
-        ErrorUtils.handleFileException(
+        handleFileException(
           this.dbName,
           FileType.PerformanceRecords,
           error as NodeJS.ErrnoException,
@@ -53,7 +53,7 @@ export class JsonFileStorage extends Storage {
         this.fd = fs.openSync(this.dbName, 'a+');
       }
     } catch (error) {
-      ErrorUtils.handleFileException(
+      handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
         error as NodeJS.ErrnoException,
@@ -69,7 +69,7 @@ export class JsonFileStorage extends Storage {
         this.fd = null;
       }
     } catch (error) {
-      ErrorUtils.handleFileException(
+      handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
         error as NodeJS.ErrnoException,
