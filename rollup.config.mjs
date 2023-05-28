@@ -75,6 +75,7 @@ export default {
         'assets/config-template.json',
         'assets/*config[-_]*.json',
         'assets/idtags-template.json',
+        'assets/authorization-tags-template.json',
         'assets/ui-protocol/**/*',
       ],
     }),
