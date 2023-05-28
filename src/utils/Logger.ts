@@ -38,7 +38,7 @@ if (Configuration.getLogRotate() === true) {
   ];
 }
 
-const logger: Logger = createLogger({
+export const logger: Logger = createLogger({
   level: Configuration.getLogLevel(),
   format: format.combine(format.splat(), (format[Configuration.getLogFormat()] as FormatWrap)()),
   transports,
@@ -58,5 +58,3 @@ if (Configuration.getLogConsole()) {
     })
   );
 }
-
-export { logger };
