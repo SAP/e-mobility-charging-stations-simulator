@@ -15,6 +15,7 @@
     "bufferutil",
     "cacheable",
     "commitlint",
+    "corepack",
     "csms",
     "emobility",
     "evse",

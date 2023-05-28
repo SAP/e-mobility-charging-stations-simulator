@@ -7,7 +7,7 @@
 
 ## Summary
 
-Simple [node.js](https://nodejs.org/) software to simulate and scale a set of charging stations based on the OCPP-J 1.6 protocol as part of SAP e-Mobility solution.
+Simple [node.js](https://nodejs.org/) software to simulate and scale a set of charging stations based on the OCPP-J protocol as part of [SAP e-Mobility](https://www.sap.com/products/scm/e-mobility.html) solution.
 
 ## Prerequisites
 
