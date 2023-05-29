@@ -24,4 +24,5 @@ export {
   buildStoppedMessage,
 } from './MessageChannelUtils';
 export { Utils } from './Utils';
+export { median, nthPercentile, stdDeviation } from './StatisticUtils';
 export { logger } from './Logger';
