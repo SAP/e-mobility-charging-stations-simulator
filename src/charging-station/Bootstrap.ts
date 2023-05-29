@@ -60,8 +60,8 @@ export class Bootstrap extends EventEmitter {
     // Enable unconditionally for now
     handleUnhandledRejection();
     handleUncaughtException();
-    this.initializedCounters = false;
     this.started = false;
+    this.initializedCounters = false;
     this.initializeCounters();
     this.workerImplementation = null;
     this.workerScript = path.join(
@@ -148,6 +148,7 @@ export class Bootstrap extends EventEmitter {
       this.workerImplementation = null;
       this.uiServer?.stop();
       await this.storage?.close();
+      this.resetCounters();
       this.initializedCounters = false;
       this.started = false;
     } else {
@@ -259,8 +260,7 @@ export class Bootstrap extends EventEmitter {
 
   private initializeCounters() {
     if (this.initializedCounters === false) {
-      this.numberOfChargingStationTemplates = 0;
-      this.numberOfChargingStations = 0;
+      this.resetCounters();
       const stationTemplateUrls = Configuration.getStationTemplateUrls();
       if (Utils.isNotEmptyArray(stationTemplateUrls)) {
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
@@ -279,9 +279,14 @@ export class Bootstrap extends EventEmitter {
         );
         process.exit(exitCodes.noChargingStationTemplates);
       }
-      this.numberOfStartedChargingStations = 0;
       this.initializedCounters = true;
     }
+  }
+
+  private resetCounters(): void {
+    this.numberOfChargingStationTemplates = 0;
+    this.numberOfChargingStations = 0;
+    this.numberOfStartedChargingStations = 0;
   }
 
   private async startChargingStation(
