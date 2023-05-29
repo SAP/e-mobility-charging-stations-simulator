@@ -8,7 +8,7 @@
     "--no-warnings=ExperimentalWarning",
     "--experimental-specifier-resolution=node"
   ],
-  "mochaExplorer.files": ["test/**/*Test.ts"],
+  "mochaExplorer.files": ["test/**/*.test.ts"],
   "mochaExplorer.debuggerConfig": "Debug Simulator Unit Tests",
   "cSpell.words": [
     "benoit",
