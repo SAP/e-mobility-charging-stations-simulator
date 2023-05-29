@@ -1,4 +1,4 @@
-import { LRUCacheWithDelete as LRUCache } from 'mnemonist';
+import { LRUMapWithDelete as LRUCache } from 'mnemonist';
 
 import { Bootstrap } from './Bootstrap';
 import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types';
