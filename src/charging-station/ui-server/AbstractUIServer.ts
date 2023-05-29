@@ -52,8 +52,8 @@ export abstract class AbstractUIServer {
     return this.uiServices.get(protocolVersion)?.requestHandler(request);
   }
 
-  public hasResponseHandler(uuid: string): boolean {
-    return this.responseHandlers.has(uuid);
+  public hasResponseHandler(id: string): boolean {
+    return this.responseHandlers.has(id);
   }
 
   protected startHttpServer(): void {
