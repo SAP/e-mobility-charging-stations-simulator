@@ -63,6 +63,7 @@ mta_archives
 docker
 src
 test
+ui
 temp
 outputs
 coverage

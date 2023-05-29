@@ -76,7 +76,7 @@ export default {
       patterns: 'assets/**/*.json',
       exclude: [
         'assets/config-template.json',
-        'assets/*config[-_]*.json',
+        'assets/*config[-_.]*.json',
         'assets/idtags-template.json',
         'assets/authorization-tags-template.json',
         'assets/ui-protocol/**/*',
