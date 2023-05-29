@@ -1,18 +1,22 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import { Queue } from './Queue';
+
 export enum AsyncLockType {
   configuration = 'configuration',
   performance = 'performance',
 }
 
+type ResolveType = (value: void | PromiseLike<void>) => void;
+
 export class AsyncLock {
   private static readonly asyncLocks = new Map<AsyncLockType, AsyncLock>();
   private acquired: boolean;
-  private readonly resolveQueue: ((value: void | PromiseLike<void>) => void)[];
+  private readonly resolveQueue: Queue<ResolveType>;
 
   private constructor() {
     this.acquired = false;
-    this.resolveQueue = [];
+    this.resolveQueue = new Queue<ResolveType>();
   }
 
   public static async acquire(type: AsyncLockType): Promise<void> {
@@ -22,17 +26,17 @@ export class AsyncLock {
       return;
     }
     return new Promise((resolve) => {
-      asyncLock.resolveQueue.push(resolve);
+      asyncLock.resolveQueue.enqueue(resolve);
     });
   }
 
   public static async release(type: AsyncLockType): Promise<void> {
     const asyncLock = AsyncLock.getAsyncLock(type);
-    if (asyncLock.resolveQueue.length === 0 && asyncLock.acquired) {
+    if (asyncLock.resolveQueue.size === 0 && asyncLock.acquired) {
       asyncLock.acquired = false;
       return;
     }
-    const queuedResolve = asyncLock.resolveQueue.shift();
+    const queuedResolve = asyncLock.resolveQueue.dequeue();
     return new Promise((resolve) => {
       queuedResolve();
       resolve();
