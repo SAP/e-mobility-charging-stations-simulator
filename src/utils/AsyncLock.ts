@@ -19,11 +19,11 @@ export class AsyncLock {
     const asyncLock = AsyncLock.getAsyncLock(type);
     if (!asyncLock.acquired) {
       asyncLock.acquired = true;
-    } else {
-      return new Promise((resolve) => {
-        asyncLock.resolveQueue.push(resolve);
-      });
+      return;
     }
+    return new Promise((resolve) => {
+      asyncLock.resolveQueue.push(resolve);
+    });
   }
 
   public static async release(type: AsyncLockType): Promise<void> {
