@@ -32,7 +32,7 @@ export default {
     'http-status-codes',
     'just-clone',
     'just-merge',
-    'mnemonist/lru-map-with-delete.js',
+    'mnemonist',
     'moment',
     'mongodb',
     'node:async_hooks',

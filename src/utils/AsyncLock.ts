@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { Queue } from './Queue';
+import { Queue } from 'mnemonist';
 
 export enum AsyncLockType {
   configuration = 'configuration',
