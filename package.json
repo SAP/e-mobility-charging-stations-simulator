@@ -115,8 +115,8 @@
     "utf-8-validate": "^6.0.3"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.6.3",
-    "@commitlint/config-conventional": "^17.6.3",
+    "@commitlint/cli": "^17.6.5",
+    "@commitlint/config-conventional": "^17.6.5",
     "@mikro-orm/cli": "^5.7.10",
     "@release-it/bumper": "^4.0.2",
     "@rollup/plugin-json": "^6.0.0",
@@ -128,8 +128,8 @@
     "@types/sinon": "^10.0.15",
     "@types/tar": "^6.1.5",
     "@types/ws": "^8.5.4",
-    "@typescript-eslint/eslint-plugin": "^5.59.7",
-    "@typescript-eslint/parser": "^5.59.7",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
     "@web/rollup-plugin-copy": "^0.4.0",
     "auto-changelog": "^2.4.0",
     "c8": "^7.14.0",
