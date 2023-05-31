@@ -91,7 +91,10 @@ export class Bootstrap extends EventEmitter {
   }
 
   public async start(): Promise<void> {
-    if (isMainThread && this.started === false) {
+    if (!isMainThread) {
+      throw new Error('Cannot start charging stations simulator from worker thread');
+    }
+    if (this.started === false) {
       if (this.starting === false) {
         this.starting = true;
         this.initializeCounters();
@@ -145,7 +148,10 @@ export class Bootstrap extends EventEmitter {
   }
 
   public async stop(): Promise<void> {
-    if (isMainThread && this.started === true) {
+    if (!isMainThread) {
+      throw new Error('Cannot stop charging stations simulator from worker thread');
+    }
+    if (this.started === true) {
       if (this.stopping === false) {
         this.stopping = true;
         await this.uiServer?.sendInternalRequest(
