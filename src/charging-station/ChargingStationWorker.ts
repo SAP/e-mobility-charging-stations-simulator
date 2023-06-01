@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import { AsyncResource } from 'node:async_hooks';
 import { parentPort, workerData } from 'node:worker_threads';
 
 import { ThreadWorker } from 'poolifier';
@@ -15,19 +16,7 @@ import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../wor
  * @param data - workerData
  */
 const startChargingStation = (data: ChargingStationWorkerData): void => {
-  const station = new ChargingStation(data.index, data.templateFile);
-  station.start();
-};
-
-/**
- * Listen messages send by the main thread
- */
-const addMessageListener = (): void => {
-  parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
-    if (message.id === WorkerMessageEvents.startWorkerElement) {
-      startChargingStation(message.data);
-    }
-  });
+  new ChargingStation(data.index, data.templateFile).start();
 };
 
 // Conditionally export ThreadWorker instance for pool usage
@@ -37,9 +26,26 @@ if (Configuration.workerPoolInUse()) {
     maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
   });
 } else {
+  class ChargingStationWorker extends AsyncResource {
+    constructor() {
+      super('ChargingStationWorker');
+    }
+
+    public run(data: ChargingStationWorkerData): void {
+      this.runInAsyncScope(
+        startChargingStation.bind(this) as (data: ChargingStationWorkerData) => void,
+        this,
+        data
+      );
+    }
+  }
   // Add message listener to start charging station from main thread
-  addMessageListener();
+  parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
+    if (message.id === WorkerMessageEvents.startWorkerElement) {
+      startChargingStation(message.data);
+    }
+  });
   if (workerData !== undefined) {
-    startChargingStation(workerData as ChargingStationWorkerData);
+    new ChargingStationWorker().run(workerData as ChargingStationWorkerData);
   }
 }
