@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import { AsyncResource } from 'node:async_hooks';
-import { parentPort, workerData } from 'node:worker_threads';
+import { parentPort } from 'node:worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 
@@ -19,6 +19,27 @@ const startChargingStation = (data: ChargingStationWorkerData): void => {
   new ChargingStation(data.index, data.templateFile).start();
 };
 
+class ChargingStationWorker extends AsyncResource {
+  constructor() {
+    super('ChargingStationWorker');
+    // Add message listener to create and start charging station from the main thread
+    parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
+      if (message.id === WorkerMessageEvents.startWorkerElement) {
+        this.run(message.data);
+      }
+    });
+  }
+
+  private run(data: ChargingStationWorkerData): void {
+    this.runInAsyncScope(
+      startChargingStation.bind(this) as (data: ChargingStationWorkerData) => void,
+      this,
+      data
+    );
+  }
+}
+
+export let chargingStationWorker: ChargingStationWorker;
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
 if (Configuration.workerPoolInUse()) {
@@ -26,26 +47,5 @@ if (Configuration.workerPoolInUse()) {
     maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
   });
 } else {
-  class ChargingStationWorker extends AsyncResource {
-    constructor() {
-      super('ChargingStationWorker');
-    }
-
-    public run(data: ChargingStationWorkerData): void {
-      this.runInAsyncScope(
-        startChargingStation.bind(this) as (data: ChargingStationWorkerData) => void,
-        this,
-        data
-      );
-    }
-  }
-  // Add message listener to create and start charging station from the main thread
-  parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
-    if (message.id === WorkerMessageEvents.startWorkerElement) {
-      new ChargingStationWorker().run(message.data);
-    }
-  });
-  if (workerData !== undefined) {
-    new ChargingStationWorker().run(workerData as ChargingStationWorkerData);
-  }
+  chargingStationWorker = new ChargingStationWorker();
 }
