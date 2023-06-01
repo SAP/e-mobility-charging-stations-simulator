@@ -39,10 +39,10 @@ if (Configuration.workerPoolInUse()) {
       );
     }
   }
-  // Add message listener to start charging station from main thread
+  // Add message listener to create and start charging station from the main thread
   parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
     if (message.id === WorkerMessageEvents.startWorkerElement) {
-      startChargingStation(message.data);
+      new ChargingStationWorker().run(message.data);
     }
   });
   if (workerData !== undefined) {
