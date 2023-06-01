@@ -40,7 +40,18 @@ export abstract class WorkerAbstract<T extends WorkerData> {
     this.workerOptions = workerOptions;
   }
 
+  /**
+   * Start the worker pool/set.
+   */
   public abstract start(): Promise<void>;
+  /**
+   * Stop the worker pool/set.
+   */
   public abstract stop(): Promise<void>;
+  /**
+   * Add a task element to the worker pool/set.
+   *
+   * @param elementData -
+   */
   public abstract addElement(elementData: T): Promise<void>;
 }

@@ -39,30 +39,17 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
     return undefined;
   }
 
-  /**
-   *
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async start(): Promise<void> {
     // This is intentional
   }
 
-  /**
-   *
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async stop(): Promise<void> {
     return this.pool.destroy();
   }
 
-  /**
-   *
-   * @param elementData -
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup

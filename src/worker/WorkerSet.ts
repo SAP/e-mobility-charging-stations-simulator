@@ -35,47 +35,40 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     return this.workerOptions.elementsPerWorker;
   }
 
-  /**
-   *
-   * @param elementData -
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async addElement(elementData: WorkerData): Promise<void> {
     if (!this.workerSet) {
       throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
     }
+    let lastWorkerSetElement = this.getLastWorkerSetElement();
     if (
       this.workerSet.size === 0 ||
-      this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker
+      lastWorkerSetElement.numberOfWorkerElements >= this.workerOptions.elementsPerWorker
     ) {
-      await this.startWorker();
+      this.startWorker();
+      // Start worker sequentially to optimize memory at startup
+      this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
+      lastWorkerSetElement = this.getLastWorkerSetElement();
     }
-    this.getLastWorker().postMessage({
+    lastWorkerSetElement.worker.postMessage({
       id: WorkerMessageEvents.startWorkerElement,
       data: elementData,
     });
-    ++this.getLastWorkerSetElement().numberOfWorkerElements;
+    ++lastWorkerSetElement.numberOfWorkerElements;
     // Start element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay > 0) {
       await sleep(this.workerOptions.elementStartDelay);
     }
   }
 
-  /**
-   *
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async start(): Promise<void> {
-    await this.startWorker();
+    this.startWorker();
+    // Start worker sequentially to optimize memory at startup
+    this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
   }
 
-  /**
-   *
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async stop(): Promise<void> {
     for (const workerSetElement of this.workerSet) {
       await workerSetElement.worker.terminate();
@@ -86,7 +79,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   /**
    * Start a new `Worker`.
    */
-  private async startWorker(): Promise<void> {
+  private startWorker(): void {
     const worker = new Worker(this.workerScript);
     worker.on(
       'message',
@@ -95,13 +88,10 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       ) as MessageHandler<Worker>
     );
     worker.on('error', defaultErrorHandler.bind(this) as (err: Error) => void);
-    worker.on('exit', (code) => {
-      defaultExitHandler(code);
-      this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
-    });
+    worker.on('error', () => this.startWorker());
+    worker.on('exit', defaultExitHandler.bind(this) as (exitCode: number) => void);
+    worker.on('exit', () => this.workerSet.delete(this.getWorkerSetElementByWorker(worker)));
     this.workerSet.add({ worker, numberOfWorkerElements: 0 });
-    // Start worker sequentially to optimize memory at startup
-    this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
   }
 
   private getLastWorkerSetElement(): WorkerSetElement {
@@ -110,10 +100,6 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       /* This is intentional */
     }
     return workerSetElement;
-  }
-
-  private getLastWorker(): Worker {
-    return this.getLastWorkerSetElement().worker;
   }
 
   private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement {
