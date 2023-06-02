@@ -7,6 +7,7 @@ import { WorkerAbstract } from './WorkerAbstract';
 import { WorkerConstants } from './WorkerConstants';
 import {
   type MessageHandler,
+  type SetInfo,
   type WorkerData,
   WorkerMessageEvents,
   type WorkerOptions,
@@ -28,6 +29,17 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     super(workerScript, workerOptions);
     this.workerSet = new Set<WorkerSetElement>();
     this.emitter = new EventEmitterAsyncResource();
+  }
+
+  get info(): SetInfo {
+    return {
+      size: this.size,
+      runningElements: [...this.workerSet].reduce(
+        (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
+        0
+      ),
+      elementsPerWorker: this.maxElementsPerWorker,
+    };
   }
 
   get size(): number {

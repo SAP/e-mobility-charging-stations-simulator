@@ -1,7 +1,7 @@
 import type EventEmitterAsyncResource from 'node:events';
 import type { Worker } from 'node:worker_threads';
 
-import { type ErrorHandler, type ExitHandler, FixedThreadPool } from 'poolifier';
+import { type ErrorHandler, type ExitHandler, FixedThreadPool, type PoolInfo } from 'poolifier';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
@@ -32,8 +32,12 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
     );
   }
 
+  get info(): PoolInfo {
+    return this.pool.info;
+  }
+
   get size(): number {
-    return this.pool.workerNodes.length;
+    return this.pool.info.workerNodes;
   }
 
   get maxElementsPerWorker(): number | undefined {
