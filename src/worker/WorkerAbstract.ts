@@ -1,3 +1,4 @@
+import type EventEmitterAsyncResource from 'node:events';
 import fs from 'node:fs';
 
 import { WorkerConstants } from './WorkerConstants';
@@ -8,6 +9,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerOptions: WorkerOptions;
   public abstract readonly size: number;
   public abstract readonly maxElementsPerWorker: number | undefined;
+  public abstract readonly emitter: EventEmitterAsyncResource | undefined;
 
   /**
    * `WorkerAbstract` constructor.

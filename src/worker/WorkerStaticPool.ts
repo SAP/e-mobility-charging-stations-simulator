@@ -1,3 +1,4 @@
+import type EventEmitterAsyncResource from 'node:events';
 import type { Worker } from 'node:worker_threads';
 
 import { type ErrorHandler, type ExitHandler, FixedThreadPool } from 'poolifier';
@@ -37,6 +38,10 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
 
   get maxElementsPerWorker(): number | undefined {
     return undefined;
+  }
+
+  get emitter(): EventEmitterAsyncResource | undefined {
+    return this.pool?.emitter;
   }
 
   /** @inheritDoc */

@@ -1,3 +1,4 @@
+import type EventEmitterAsyncResource from 'node:events';
 import type { Worker } from 'node:worker_threads';
 
 import { DynamicThreadPool, type ErrorHandler, type ExitHandler } from 'poolifier';
@@ -38,6 +39,10 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
 
   get maxElementsPerWorker(): number | undefined {
     return undefined;
+  }
+
+  get emitter(): EventEmitterAsyncResource | undefined {
+    return this.pool?.emitter;
   }
 
   /** @inheritDoc */
