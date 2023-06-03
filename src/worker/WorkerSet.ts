@@ -51,6 +51,21 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   }
 
   /** @inheritDoc */
+  public async start(): Promise<void> {
+    this.addWorkerSetElement();
+    // Add worker set element sequentially to optimize memory at startup
+    this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
+  }
+
+  /** @inheritDoc */
+  public async stop(): Promise<void> {
+    for (const workerSetElement of this.workerSet) {
+      await workerSetElement.worker.terminate();
+    }
+    this.workerSet.clear();
+  }
+
+  /** @inheritDoc */
   public async addElement(elementData: WorkerData): Promise<void> {
     if (!this.workerSet) {
       throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
@@ -65,21 +80,6 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     if (this.workerOptions.elementStartDelay > 0) {
       await sleep(this.workerOptions.elementStartDelay);
     }
-  }
-
-  /** @inheritDoc */
-  public async start(): Promise<void> {
-    this.addWorkerSetElement();
-    // Add worker set element sequentially to optimize memory at startup
-    this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
-  }
-
-  /** @inheritDoc */
-  public async stop(): Promise<void> {
-    for (const workerSetElement of this.workerSet) {
-      await workerSetElement.worker.terminate();
-    }
-    this.workerSet.clear();
   }
 
   /**
