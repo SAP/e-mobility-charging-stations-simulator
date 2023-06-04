@@ -57,8 +57,8 @@ dependencies:
     specifier: ^5.6.0
     version: 5.6.0
   poolifier:
-    specifier: ^2.5.2
-    version: 2.5.2
+    specifier: ^2.5.3
+    version: 2.5.3
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -160,8 +160,8 @@ devDependencies:
     specifier: ^2.27.5
     version: 2.27.5(@typescript-eslint/parser@5.59.8)(eslint-import-resolver-typescript@3.5.5)(eslint@8.42.0)
   eslint-plugin-jsdoc:
-    specifier: ^46.2.0
-    version: 46.2.0(eslint@8.42.0)
+    specifier: ^46.2.3
+    version: 46.2.3(eslint@8.42.0)
   eslint-plugin-n:
     specifier: ^16.0.0
     version: 16.0.0(eslint@8.42.0)
@@ -1322,8 +1322,8 @@ packages:
     resolution: {integrity: sha512-XJfwUVUKDHF5ugKwIcxEgc9k8b7HbznCp6eUfWgu710hMPNIO4aw4/zB5RogDQz8nd6gyCDpU9O/m6qYEWY6yQ==}
     dev: true
 
-  /@sindresorhus/is@5.4.0:
-    resolution: {integrity: sha512-Ggh6E9AnMpiNXlbXfFUcWE9qm408rL8jDi7+PMBBx7TMbwEmiqAiSmZ+zydYwxcJLqPGNDoLc9mXDuMDBZg0sA==}
+  /@sindresorhus/is@5.4.1:
+    resolution: {integrity: sha512-axlrvsHlHlFmKKMEg4VyvMzFr93JWJj4eIfXY1STVuO2fsImCa7ncaiG5gC8HKOX590AW5RtRsC41/B+OfrSqw==}
     engines: {node: '>=14.16'}
     dev: true
 
@@ -4000,8 +4000,8 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-jsdoc@46.2.0(eslint@8.42.0):
-    resolution: {integrity: sha512-Lo2Bs39UPtcvLGfBrI/RF+8mOPcYaHdj++YTfDrqrWHND2trGQBDKxCVcEyYACrQxyMYgpfqHkyxE0S184hOGg==}
+  /eslint-plugin-jsdoc@46.2.3(eslint@8.42.0):
+    resolution: {integrity: sha512-06s2RmIyichD2+CYQzSq4DH5YAaXdYm6WPe6C8daf7vr6MxzJiYJYOKxNYLDdQRTRE2JAW1kfU1OYRxvAxDzjA==}
     engines: {node: '>=16'}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
@@ -4832,7 +4832,7 @@ packages:
     resolution: {integrity: sha512-mThBblvlAF1d4O5oqyvN+ZxLAYwIJK7bpMxgYqPD9okW0C3qm5FFn7k811QrcuEBwaogR3ngOFoCfs6mRv7teQ==}
     engines: {node: '>=14.16'}
     dependencies:
-      '@sindresorhus/is': 5.4.0
+      '@sindresorhus/is': 5.4.1
       '@szmarczak/http-timer': 5.0.1
       cacheable-lookup: 7.0.0
       cacheable-request: 10.2.10
@@ -7599,8 +7599,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.5.2:
-    resolution: {integrity: sha512-2ViiH65yHqIv6PneR7GlVh/ZavnoAcktwpQADYnj+yFnvo4zlgnozR0uvA1yt6lACFUf81AJFJ4x2YviffLA2w==}
+  /poolifier@2.5.3:
+    resolution: {integrity: sha512-L/0ka0p/9zvchXtwUjVSJ/wKCQFMhjzSqNdFXqJaTjcME50d4+VrlvgxdfOj9rmIJ/EHSpTVVc05eAD8rQ4DpQ==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
