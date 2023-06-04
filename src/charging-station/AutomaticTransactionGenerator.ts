@@ -31,11 +31,15 @@ export class AutomaticTransactionGenerator extends AsyncResource {
 
   public readonly connectorsStatus: Map<number, Status>;
   public started: boolean;
+  private starting: boolean;
+  private stopping: boolean;
   private readonly chargingStation: ChargingStation;
 
   private constructor(chargingStation: ChargingStation) {
     super(moduleName);
     this.started = false;
+    this.starting = false;
+    this.stopping = false;
     this.chargingStation = chargingStation;
     this.connectorsStatus = new Map<number, Status>();
     this.initializeConnectorsStatus();
@@ -63,8 +67,14 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       logger.warn(`${this.logPrefix()} is already started`);
       return;
     }
+    if (this.starting === true) {
+      logger.warn(`${this.logPrefix()} is already starting`);
+      return;
+    }
+    this.starting = true;
     this.startConnectors();
     this.started = true;
+    this.starting = false;
   }
 
   public stop(): void {
@@ -72,8 +82,14 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       logger.warn(`${this.logPrefix()} is already stopped`);
       return;
     }
+    if (this.stopping === true) {
+      logger.warn(`${this.logPrefix()} is already stopping`);
+      return;
+    }
+    this.stopping = true;
     this.stopConnectors();
     this.started = false;
+    this.stopping = false;
   }
 
   public startConnector(connectorId: number): void {

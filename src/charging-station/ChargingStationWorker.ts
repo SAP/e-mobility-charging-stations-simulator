@@ -10,6 +10,8 @@ import type { ChargingStationWorkerData } from '../types';
 import { Configuration } from '../utils';
 import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
+const moduleName = 'ChargingStationWorker';
+
 /**
  * Create and start a charging station instance
  *
@@ -21,7 +23,7 @@ const startChargingStation = (data: ChargingStationWorkerData): void => {
 
 class ChargingStationWorker extends AsyncResource {
   constructor() {
-    super('ChargingStationWorker');
+    super(moduleName);
     // Add message listener to create and start charging station from the main thread
     parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
       if (message.id === WorkerMessageEvents.startWorkerElement) {
