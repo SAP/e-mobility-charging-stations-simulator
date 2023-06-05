@@ -935,8 +935,7 @@ export class ChargingStation {
     if (exists) {
       await this.removeReservation(reservationFound);
     }
-    const connectorStatus = this.getConnectorStatus(reservation.connectorId);
-    connectorStatus.reservation = reservation;
+    this.getConnectorStatus(reservation.connectorId).reservation = reservation;
     await OCPPServiceUtils.sendAndSetConnectorStatus(
       this,
       reservation.connectorId,
@@ -967,6 +966,8 @@ export class ChargingStation {
           { send: reservation.connectorId !== 0 }
         );
         delete connector.reservation;
+        break;
+      default:
         break;
     }
   }
