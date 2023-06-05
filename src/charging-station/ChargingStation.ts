@@ -951,10 +951,9 @@ export class ChargingStation {
   ): Promise<void> {
     const connector = this.getConnectorStatus(reservation.connectorId);
     switch (reason) {
-      case ReservationTerminationReason.CONNECTOR_STATE_CHANGED: {
+      case ReservationTerminationReason.CONNECTOR_STATE_CHANGED:
         delete connector.reservation;
         break;
-      }
       case ReservationTerminationReason.TRANSACTION_STARTED:
       case ReservationTerminationReason.EXPIRED:
       case ReservationTerminationReason.RESERVATION_CANCELED:
