@@ -8,6 +8,12 @@ export enum WorkerProcessType {
   staticPool = 'staticPool',
 }
 
+export type SetInfo = {
+  size: number;
+  runningElements: number;
+  elementsPerWorker: number;
+};
+
 export type MessageHandler<T> = (this: T, message: unknown) => void;
 
 export type WorkerOptions = {

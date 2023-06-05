@@ -72,6 +72,7 @@ import {
   ReservationTerminationReason,
   type Response,
   StandardParametersKey,
+  type Status,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
   StopTransactionReason,
@@ -91,14 +92,16 @@ import {
   Configuration,
   Constants,
   DCElectricUtils,
-  ErrorUtils,
-  FileUtils,
-  MessageChannelUtils,
   Utils,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
+  buildStartedMessage,
+  buildStoppedMessage,
+  buildUpdatedMessage,
+  handleFileException,
   logger,
+  watchJsonFile,
 } from '../utils';
 
 export class ChargingStation {
@@ -655,7 +658,7 @@ export class ChargingStation {
         }
         this.openWSConnection();
         // Monitor charging station template file
-        this.templateFileWatcher = FileUtils.watchJsonFile(
+        this.templateFileWatcher = watchJsonFile(
           this.templateFile,
           FileType.ChargingStationTemplate,
           this.logPrefix(),
@@ -692,7 +695,7 @@ export class ChargingStation {
           }
         );
         this.started = true;
-        parentPort?.postMessage(MessageChannelUtils.buildStartedMessage(this));
+        parentPort?.postMessage(buildStartedMessage(this));
         this.starting = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already starting...`);
@@ -717,7 +720,7 @@ export class ChargingStation {
         delete this.bootNotificationResponse;
         this.started = false;
         this.saveConfiguration();
-        parentPort?.postMessage(MessageChannelUtils.buildStoppedMessage(this));
+        parentPort?.postMessage(buildStoppedMessage(this));
         this.stopping = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already stopping...`);
@@ -758,7 +761,7 @@ export class ChargingStation {
       terminateOpened: false,
     }
   ): void {
-    options.handshakeTimeout = options?.handshakeTimeout ?? this.getConnectionTimeout() * 1000;
+    options = { handshakeTimeout: this.getConnectionTimeout() * 1000, ...options };
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
     if (this.started === false && this.starting === false) {
       logger.warn(
@@ -836,7 +839,10 @@ export class ChargingStation {
       | undefined;
     const automaticTransactionGeneratorConfigurationFromFile =
       this.getConfigurationFromFile()?.automaticTransactionGenerator;
-    if (automaticTransactionGeneratorConfigurationFromFile) {
+    if (
+      this.getAutomaticTransactionGeneratorPersistentConfiguration() &&
+      automaticTransactionGeneratorConfigurationFromFile
+    ) {
       automaticTransactionGeneratorConfiguration =
         automaticTransactionGeneratorConfigurationFromFile;
     } else {
@@ -849,6 +855,10 @@ export class ChargingStation {
     };
   }
 
+  public getAutomaticTransactionGeneratorStatuses(): Status[] | undefined {
+    return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses;
+  }
+
   public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
     this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this);
     if (Utils.isNotEmptyArray(connectorIds)) {
@@ -858,8 +868,8 @@ export class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.start();
     }
-    this.saveChargingStationAutomaticTransactionGeneratorConfiguration();
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    this.saveAutomaticTransactionGeneratorConfiguration();
+    parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
@@ -870,8 +880,8 @@ export class ChargingStation {
     } else {
       this.automaticTransactionGenerator?.stop();
     }
-    this.saveChargingStationAutomaticTransactionGeneratorConfiguration();
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    this.saveAutomaticTransactionGeneratorConfiguration();
+    parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
   public async stopTransactionOnConnector(
@@ -1161,7 +1171,7 @@ export class ChargingStation {
         this.templateFileHash = template.templateHash;
       }
     } catch (error) {
-      ErrorUtils.handleFileException(
+      handleFileException(
         this.templateFile,
         FileType.ChargingStationTemplate,
         error as NodeJS.ErrnoException,
@@ -1280,6 +1290,10 @@ export class ChargingStation {
     return this.stationInfo?.stationInfoPersistentConfiguration ?? true;
   }
 
+  private getAutomaticTransactionGeneratorPersistentConfiguration(): boolean {
+    return this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration ?? true;
+  }
+
   private handleUnsupportedVersion(version: OCPPVersion) {
     const errorMsg = `Unsupported protocol version '${version}' configured
       in template file ${this.templateFile}`;
@@ -1295,9 +1309,8 @@ export class ChargingStation {
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
     );
     const chargingStationConfiguration = this.getConfigurationFromFile();
-    const featureFlag = false;
     if (
-      featureFlag &&
+      chargingStationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
       (chargingStationConfiguration?.connectorsStatus || chargingStationConfiguration?.evsesStatus)
     ) {
       this.initializeConnectorsOrEvsesFromFile(chargingStationConfiguration);
@@ -1680,7 +1693,7 @@ export class ChargingStation {
     if (stationTemplate?.Evses) {
       const evsesConfigHash = crypto
         .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(`${JSON.stringify(stationTemplate?.Evses)}`)
+        .update(JSON.stringify(stationTemplate?.Evses))
         .digest('hex');
       const evsesConfigChanged =
         this.evses?.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash;
@@ -1741,7 +1754,7 @@ export class ChargingStation {
           this.configurationFileHash = configuration.configurationHash;
         }
       } catch (error) {
-        ErrorUtils.handleFileException(
+        handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,
@@ -1752,8 +1765,10 @@ export class ChargingStation {
     return configuration;
   }
 
-  private saveChargingStationAutomaticTransactionGeneratorConfiguration(): void {
-    this.saveConfiguration();
+  private saveAutomaticTransactionGeneratorConfiguration(): void {
+    if (this.getAutomaticTransactionGeneratorPersistentConfiguration()) {
+      this.saveConfiguration();
+    }
   }
 
   private saveConnectorsStatus() {
@@ -1774,24 +1789,44 @@ export class ChargingStation {
           Utils.cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()) ?? {};
         if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
+        } else {
+          delete configurationData.stationInfo;
         }
         if (this.getOcppPersistentConfiguration() && this.ocppConfiguration?.configurationKey) {
           configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+        } else {
+          delete configurationData.configurationKey;
         }
         configurationData = merge<ChargingStationConfiguration>(
           configurationData,
           buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
         );
+        if (
+          !this.getAutomaticTransactionGeneratorPersistentConfiguration() ||
+          !this.getAutomaticTransactionGeneratorConfiguration()
+        ) {
+          delete configurationData.automaticTransactionGenerator;
+        }
         if (this.connectors.size > 0) {
           configurationData.connectorsStatus = buildConnectorsStatus(this);
+        } else {
+          delete configurationData.connectorsStatus;
         }
         if (this.evses.size > 0) {
           configurationData.evsesStatus = buildEvsesStatus(this);
+        } else {
+          delete configurationData.evsesStatus;
         }
         delete configurationData.configurationHash;
         const configurationHash = crypto
           .createHash(Constants.DEFAULT_HASH_ALGORITHM)
-          .update(JSON.stringify(configurationData))
+          .update(
+            JSON.stringify({
+              stationInfo: configurationData.stationInfo,
+              configurationKey: configurationData.configurationKey,
+              automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
+            } as ChargingStationConfiguration)
+          )
           .digest('hex');
         if (this.configurationFileHash !== configurationHash) {
           AsyncLock.acquire(AsyncLockType.configuration)
@@ -1808,7 +1843,7 @@ export class ChargingStation {
               this.configurationFileHash = configurationHash;
             })
             .catch((error) => {
-              ErrorUtils.handleFileException(
+              handleFileException(
                 this.configurationFile,
                 FileType.ChargingStationConfiguration,
                 error as NodeJS.ErrnoException,
@@ -1826,7 +1861,7 @@ export class ChargingStation {
           );
         }
       } catch (error) {
-        ErrorUtils.handleFileException(
+        handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,
@@ -1901,7 +1936,7 @@ export class ChargingStation {
       }
       this.wsConnectionRestarted = false;
       this.autoReconnectRetryCount = 0;
-      parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+      parentPort?.postMessage(buildUpdatedMessage(this));
     } else {
       logger.warn(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
@@ -1931,7 +1966,7 @@ export class ChargingStation {
         this.started === true && (await this.reconnect());
         break;
     }
-    parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+    parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
   private getCachedRequest(messageType: MessageType, messageId: string): CachedRequest | undefined {
@@ -2041,7 +2076,7 @@ export class ChargingStation {
             logger.error(`${this.logPrefix()} ${errorMsg}`);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errorMsg);
         }
-        parentPort?.postMessage(MessageChannelUtils.buildUpdatedMessage(this));
+        parentPort?.postMessage(buildUpdatedMessage(this));
       } else {
         throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not an array', null, {
           request,

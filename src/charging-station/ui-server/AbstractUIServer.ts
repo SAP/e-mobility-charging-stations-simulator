@@ -11,7 +11,7 @@ import {
   type ProcedureName,
   type ProtocolRequest,
   type ProtocolResponse,
-  type ProtocolVersion,
+  ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
   type UIServerConfiguration,
@@ -44,6 +44,16 @@ export abstract class AbstractUIServer {
 
   public stop(): void {
     this.chargingStations.clear();
+  }
+
+  public async sendInternalRequest(request: ProtocolRequest): Promise<ProtocolResponse> {
+    const protocolVersion = ProtocolVersion['0.0.1'];
+    this.registerProtocolVersionUIService(protocolVersion);
+    return this.uiServices.get(protocolVersion)?.requestHandler(request);
+  }
+
+  public hasResponseHandler(id: string): boolean {
+    return this.responseHandlers.has(id);
   }
 
   protected startHttpServer(): void {

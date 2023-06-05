@@ -2,7 +2,7 @@ import { expect } from 'expect';
 
 import { CircularArray } from '../../src/utils/CircularArray';
 
-describe('Circular array test suite', () => {
+describe('CircularArray test suite', () => {
   it('Verify that circular array can be instantiated', () => {
     const circularArray = new CircularArray();
     expect(circularArray).toBeInstanceOf(CircularArray);

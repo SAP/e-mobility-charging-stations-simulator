@@ -30,7 +30,7 @@ import {
   type StatusNotificationRequest,
   type StatusNotificationResponse,
 } from '../../types';
-import { Constants, ErrorUtils, Utils, logger } from '../../utils';
+import { Utils, handleFileException, logger } from '../../utils';
 
 export class OCPPServiceUtils {
   protected constructor() {
@@ -264,7 +264,7 @@ export class OCPPServiceUtils {
     try {
       return JSON.parse(fs.readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
     } catch (error) {
-      ErrorUtils.handleFileException(
+      handleFileException(
         filePath,
         FileType.JsonSchema,
         error as NodeJS.ErrnoException,
@@ -363,8 +363,13 @@ export class OCPPServiceUtils {
       unitMultiplier: 1,
     }
   ): number {
-    options.limitationEnabled = options?.limitationEnabled ?? true;
-    options.unitMultiplier = options?.unitMultiplier ?? 1;
+    options = {
+      ...{
+        limitationEnabled: true,
+        unitMultiplier: 1,
+      },
+      ...options,
+    };
     const parsedInt = parseInt(value);
     const numberValue = isNaN(parsedInt) ? Infinity : parsedInt;
     return options?.limitationEnabled

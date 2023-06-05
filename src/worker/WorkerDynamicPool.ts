@@ -1,10 +1,11 @@
+import type EventEmitterAsyncResource from 'node:events';
 import type { Worker } from 'node:worker_threads';
 
-import { DynamicThreadPool, type ErrorHandler, type ExitHandler } from 'poolifier';
+import { DynamicThreadPool, type ErrorHandler, type ExitHandler, type PoolInfo } from 'poolifier';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
-import { WorkerUtils } from './WorkerUtils';
+import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
 
 export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   private readonly pool: DynamicThreadPool<WorkerData>;
@@ -18,10 +19,10 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
     this.workerOptions.poolOptions.errorHandler = (
-      this.workerOptions?.poolOptions?.errorHandler ?? WorkerUtils.defaultErrorHandler
+      this.workerOptions?.poolOptions?.errorHandler ?? defaultErrorHandler
     ).bind(this) as ErrorHandler<Worker>;
     this.workerOptions.poolOptions.exitHandler = (
-      this.workerOptions?.poolOptions?.exitHandler ?? WorkerUtils.defaultExitHandler
+      this.workerOptions?.poolOptions?.exitHandler ?? defaultExitHandler
     ).bind(this) as ExitHandler<Worker>;
     this.workerOptions.poolOptions.messageHandler.bind(this);
     this.pool = new DynamicThreadPool<WorkerData>(
@@ -32,42 +33,36 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
     );
   }
 
+  get info(): PoolInfo {
+    return this.pool.info;
+  }
+
   get size(): number {
-    return this.pool.workerNodes.length;
+    return this.pool.info.workerNodes;
   }
 
   get maxElementsPerWorker(): number | undefined {
     return undefined;
   }
 
-  /**
-   *
-   * @returns
-   * @public
-   */
+  get emitter(): EventEmitterAsyncResource | undefined {
+    return this.pool?.emitter;
+  }
+
+  /** @inheritDoc */
   public async start(): Promise<void> {
     // This is intentional
   }
 
-  /**
-   *
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async stop(): Promise<void> {
     return this.pool.destroy();
   }
 
-  /**
-   *
-   * @param elementData -
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup
-    this.workerOptions.elementStartDelay > 0 &&
-      (await WorkerUtils.sleep(this.workerOptions.elementStartDelay));
+    this.workerOptions.elementStartDelay > 0 && (await sleep(this.workerOptions.elementStartDelay));
   }
 }

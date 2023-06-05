@@ -44,7 +44,7 @@ export class UIHttpServer extends AbstractUIServer {
   public sendResponse(response: ProtocolResponse): void {
     const [uuid, payload] = response;
     try {
-      if (this.responseHandlers.has(uuid) === true) {
+      if (this.hasResponseHandler(uuid) === true) {
         const res = this.responseHandlers.get(uuid) as ServerResponse;
         res
           .writeHead(this.responseStatusToStatusCode(payload.status), {
@@ -125,6 +125,11 @@ export class UIHttpServer extends AbstractUIServer {
                   body ?? Constants.EMPTY_FREEZED_OBJECT
                 )
               )
+              .then((protocolResponse: ProtocolResponse) => {
+                if (!Utils.isNullOrUndefined(protocolResponse)) {
+                  this.sendResponse(protocolResponse);
+                }
+              })
               .catch(Constants.EMPTY_FUNCTION);
           });
       } else {

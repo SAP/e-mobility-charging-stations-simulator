@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import { EventEmitter } from 'node:events';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Worker, isMainThread } from 'node:worker_threads';
@@ -17,10 +18,18 @@ import {
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
+  ProcedureName,
   type StationTemplateUrl,
   type Statistics,
 } from '../types';
-import { Configuration, ErrorUtils, Utils, logger } from '../utils';
+import {
+  Configuration,
+  Constants,
+  Utils,
+  handleUncaughtException,
+  handleUnhandledRejection,
+  logger,
+} from '../utils';
 import { type MessageHandler, type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
@@ -30,7 +39,7 @@ enum exitCodes {
   noChargingStationTemplates = 2,
 }
 
-export class Bootstrap {
+export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null;
   public numberOfChargingStations!: number;
   public numberOfChargingStationTemplates!: number;
@@ -41,14 +50,22 @@ export class Bootstrap {
   private readonly version: string = packageJson.version;
   private initializedCounters: boolean;
   private started: boolean;
+  private starting: boolean;
+  private stopping: boolean;
   private readonly workerScript: string;
 
   private constructor() {
+    super();
+    for (const signal of ['SIGINT', 'SIGQUIT', 'SIGTERM']) {
+      process.on(signal, this.gracefulShutdown);
+    }
     // Enable unconditionally for now
-    ErrorUtils.handleUnhandledRejection();
-    ErrorUtils.handleUncaughtException();
-    this.initializedCounters = false;
+    handleUnhandledRejection();
+    handleUncaughtException();
     this.started = false;
+    this.starting = false;
+    this.stopping = false;
+    this.initializedCounters = false;
     this.initializeCounters();
     this.workerImplementation = null;
     this.workerScript = path.join(
@@ -74,63 +91,90 @@ export class Bootstrap {
   }
 
   public async start(): Promise<void> {
-    if (isMainThread && this.started === false) {
-      this.initializeCounters();
-      this.initializeWorkerImplementation();
-      await this.workerImplementation?.start();
-      await this.storage?.open();
-      this.uiServer?.start();
-      // Start ChargingStation object instance in worker thread
-      for (const stationTemplateUrl of Configuration.getStationTemplateUrls()) {
-        try {
-          const nbStations = stationTemplateUrl.numberOfStations ?? 0;
-          for (let index = 1; index <= nbStations; index++) {
-            await this.startChargingStation(index, stationTemplateUrl);
+    if (!isMainThread) {
+      throw new Error('Cannot start charging stations simulator from worker thread');
+    }
+    if (this.started === false) {
+      if (this.starting === false) {
+        this.starting = true;
+        this.initializeCounters();
+        this.initializeWorkerImplementation();
+        await this.workerImplementation?.start();
+        await this.storage?.open();
+        this.uiServer?.start();
+        // Start ChargingStation object instance in worker thread
+        for (const stationTemplateUrl of Configuration.getStationTemplateUrls()) {
+          try {
+            const nbStations = stationTemplateUrl.numberOfStations ?? 0;
+            for (let index = 1; index <= nbStations; index++) {
+              await this.startChargingStation(index, stationTemplateUrl);
+            }
+          } catch (error) {
+            console.error(
+              chalk.red(
+                `Error at starting charging station with template file ${stationTemplateUrl.file}: `
+              ),
+              error
+            );
           }
-        } catch (error) {
-          console.error(
-            chalk.red(
-              `Error at starting charging station with template file ${stationTemplateUrl.file}: `
-            ),
-            error
-          );
         }
+        console.info(
+          chalk.green(
+            `Charging stations simulator ${
+              this.version
+            } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
+              Configuration.workerDynamicPoolInUse()
+                ? `${Configuration.getWorker().poolMinSize?.toString()}/`
+                : ''
+            }${this.workerImplementation?.size}${
+              Configuration.workerPoolInUse()
+                ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
+                : ''
+            } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
+              !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
+                ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
+                : ''
+            }`
+          )
+        );
+        this.started = true;
+        this.starting = false;
+      } else {
+        console.error(chalk.red('Cannot start an already starting charging stations simulator'));
       }
-      console.info(
-        chalk.green(
-          `Charging stations simulator ${
-            this.version
-          } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
-            Configuration.workerDynamicPoolInUse()
-              ? `${Configuration.getWorker().poolMinSize?.toString()}/`
-              : ''
-          }${this.workerImplementation?.size}${
-            Configuration.workerPoolInUse()
-              ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
-              : ''
-          } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
-            !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
-              ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
-              : ''
-          }`
-        )
-      );
-      this.started = true;
     } else {
       console.error(chalk.red('Cannot start an already started charging stations simulator'));
     }
   }
 
   public async stop(): Promise<void> {
-    if (isMainThread && this.started === true) {
-      await this.workerImplementation?.stop();
-      this.workerImplementation = null;
-      this.uiServer?.stop();
-      await this.storage?.close();
-      this.initializedCounters = false;
-      this.started = false;
+    if (!isMainThread) {
+      throw new Error('Cannot stop charging stations simulator from worker thread');
+    }
+    if (this.started === true) {
+      if (this.stopping === false) {
+        this.stopping = true;
+        await this.uiServer?.sendInternalRequest(
+          this.uiServer.buildProtocolRequest(
+            Utils.generateUUID(),
+            ProcedureName.STOP_CHARGING_STATION,
+            Constants.EMPTY_FREEZED_OBJECT
+          )
+        );
+        await this.waitForChargingStationsStopped();
+        await this.workerImplementation?.stop();
+        this.workerImplementation = null;
+        this.uiServer?.stop();
+        await this.storage?.close();
+        this.resetCounters();
+        this.initializedCounters = false;
+        this.started = false;
+        this.stopping = false;
+      } else {
+        console.error(chalk.red('Cannot stop an already stopping charging stations simulator'));
+      }
     } else {
-      console.error(chalk.red('Cannot stop a not started charging stations simulator'));
+      console.error(chalk.red('Cannot stop an already stopped charging stations simulator'));
     }
   }
 
@@ -172,15 +216,22 @@ export class Bootstrap {
       switch (msg.id) {
         case ChargingStationWorkerMessageEvents.started:
           this.workerEventStarted(msg.data as ChargingStationData);
+          this.emit(ChargingStationWorkerMessageEvents.started, msg.data as ChargingStationData);
           break;
         case ChargingStationWorkerMessageEvents.stopped:
           this.workerEventStopped(msg.data as ChargingStationData);
+          this.emit(ChargingStationWorkerMessageEvents.stopped, msg.data as ChargingStationData);
           break;
         case ChargingStationWorkerMessageEvents.updated:
           this.workerEventUpdated(msg.data as ChargingStationData);
+          this.emit(ChargingStationWorkerMessageEvents.updated, msg.data as ChargingStationData);
           break;
         case ChargingStationWorkerMessageEvents.performanceStatistics:
           this.workerEventPerformanceStatistics(msg.data as Statistics);
+          this.emit(
+            ChargingStationWorkerMessageEvents.performanceStatistics,
+            msg.data as Statistics
+          );
           break;
         default:
           throw new BaseError(
@@ -231,8 +282,7 @@ export class Bootstrap {
 
   private initializeCounters() {
     if (this.initializedCounters === false) {
-      this.numberOfChargingStationTemplates = 0;
-      this.numberOfChargingStations = 0;
+      this.resetCounters();
       const stationTemplateUrls = Configuration.getStationTemplateUrls();
       if (Utils.isNotEmptyArray(stationTemplateUrls)) {
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
@@ -251,9 +301,14 @@ export class Bootstrap {
         );
         process.exit(exitCodes.noChargingStationTemplates);
       }
-      this.numberOfStartedChargingStations = 0;
       this.initializedCounters = true;
     }
+  }
+
+  private resetCounters(): void {
+    this.numberOfChargingStationTemplates = 0;
+    this.numberOfChargingStations = 0;
+    this.numberOfStartedChargingStations = 0;
   }
 
   private async startChargingStation(
@@ -270,6 +325,35 @@ export class Bootstrap {
       ),
     });
   }
+
+  private gracefulShutdown = (): void => {
+    console.info(`${chalk.green('Graceful shutdown')}`);
+    this.stop()
+      .then(() => {
+        process.exit(0);
+      })
+      .catch((error) => {
+        console.error(chalk.red('Error while shutdowning charging stations simulator: '), error);
+        process.exit(1);
+      });
+  };
+
+  private waitForChargingStationsStopped = async (
+    stoppedEventsToWait = this.numberOfStartedChargingStations
+  ): Promise<number> => {
+    return new Promise((resolve) => {
+      let stoppedEvents = 0;
+      if (stoppedEventsToWait === 0) {
+        resolve(stoppedEvents);
+      }
+      this.on(ChargingStationWorkerMessageEvents.stopped, () => {
+        ++stoppedEvents;
+        if (stoppedEvents === stoppedEventsToWait) {
+          resolve(stoppedEvents);
+        }
+      });
+    });
+  };
 
   private logPrefix = (): string => {
     return Utils.logPrefix(' Bootstrap |');

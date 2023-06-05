@@ -31,11 +31,15 @@ export class AutomaticTransactionGenerator extends AsyncResource {
 
   public readonly connectorsStatus: Map<number, Status>;
   public started: boolean;
+  private starting: boolean;
+  private stopping: boolean;
   private readonly chargingStation: ChargingStation;
 
   private constructor(chargingStation: ChargingStation) {
     super(moduleName);
     this.started = false;
+    this.starting = false;
+    this.stopping = false;
     this.chargingStation = chargingStation;
     this.connectorsStatus = new Map<number, Status>();
     this.initializeConnectorsStatus();
@@ -63,8 +67,14 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       logger.warn(`${this.logPrefix()} is already started`);
       return;
     }
+    if (this.starting === true) {
+      logger.warn(`${this.logPrefix()} is already starting`);
+      return;
+    }
+    this.starting = true;
     this.startConnectors();
     this.started = true;
+    this.starting = false;
   }
 
   public stop(): void {
@@ -72,8 +82,14 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       logger.warn(`${this.logPrefix()} is already stopped`);
       return;
     }
+    if (this.stopping === true) {
+      logger.warn(`${this.logPrefix()} is already stopping`);
+      return;
+    }
+    this.stopping = true;
     this.stopConnectors();
     this.started = false;
+    this.stopping = false;
   }
 
   public startConnector(connectorId: number): void {
@@ -316,43 +332,43 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       for (const [evseId, evseStatus] of this.chargingStation.evses) {
         if (evseId > 0) {
           for (const connectorId of evseStatus.connectors.keys()) {
-            this.connectorsStatus.set(connectorId, {
-              start: false,
-              authorizeRequests: 0,
-              acceptedAuthorizeRequests: 0,
-              rejectedAuthorizeRequests: 0,
-              startTransactionRequests: 0,
-              acceptedStartTransactionRequests: 0,
-              rejectedStartTransactionRequests: 0,
-              stopTransactionRequests: 0,
-              acceptedStopTransactionRequests: 0,
-              rejectedStopTransactionRequests: 0,
-              skippedConsecutiveTransactions: 0,
-              skippedTransactions: 0,
-            });
+            this.connectorsStatus.set(connectorId, this.getConnectorStatus(connectorId));
           }
         }
       }
     } else {
       for (const connectorId of this.chargingStation.connectors.keys()) {
         if (connectorId > 0) {
-          this.connectorsStatus.set(connectorId, {
-            start: false,
-            authorizeRequests: 0,
-            acceptedAuthorizeRequests: 0,
-            rejectedAuthorizeRequests: 0,
-            startTransactionRequests: 0,
-            acceptedStartTransactionRequests: 0,
-            rejectedStartTransactionRequests: 0,
-            stopTransactionRequests: 0,
-            acceptedStopTransactionRequests: 0,
-            rejectedStopTransactionRequests: 0,
-            skippedConsecutiveTransactions: 0,
-            skippedTransactions: 0,
-          });
+          this.connectorsStatus.set(connectorId, this.getConnectorStatus(connectorId));
         }
       }
     }
+  }
+
+  private getConnectorStatus(connectorId: number): Status {
+    const connectorStatus = Utils.cloneObject(
+      this.chargingStation.getAutomaticTransactionGeneratorStatuses()
+    )[connectorId];
+    delete connectorStatus?.startDate;
+    delete connectorStatus?.lastRunDate;
+    delete connectorStatus?.stopDate;
+    delete connectorStatus?.stoppedDate;
+    return (
+      connectorStatus ?? {
+        start: false,
+        authorizeRequests: 0,
+        acceptedAuthorizeRequests: 0,
+        rejectedAuthorizeRequests: 0,
+        startTransactionRequests: 0,
+        acceptedStartTransactionRequests: 0,
+        rejectedStartTransactionRequests: 0,
+        stopTransactionRequests: 0,
+        acceptedStopTransactionRequests: 0,
+        rejectedStopTransactionRequests: 0,
+        skippedConsecutiveTransactions: 0,
+        skippedTransactions: 0,
+      }
+    );
   }
 
   private async startTransaction(

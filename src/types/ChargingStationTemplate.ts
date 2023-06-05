@@ -55,6 +55,15 @@ type CommandsSupport = {
   outgoingCommands?: Record<RequestCommand, boolean>;
 };
 
+enum x509CertificateType {
+  V2GRootCertificate = 'V2GRootCertificate',
+  MORootCertificate = 'MORootCertificate',
+  CSMSRootCertificate = 'CSMSRootCertificate',
+  ManufacturerRootCertificate = 'ManufacturerRootCertificate',
+  ChargingStationCertificate = 'ChargingStationCertificate',
+  V2GCertificate = 'V2GCertificate',
+}
+
 export type ChargingStationTemplate = {
   templateHash?: string;
   supervisionUrls?: string | string[];
@@ -67,6 +76,7 @@ export type ChargingStationTemplate = {
   ocppStrictCompliance?: boolean;
   ocppPersistentConfiguration?: boolean;
   stationInfoPersistentConfiguration?: boolean;
+  automaticTransactionGeneratorPersistentConfiguration?: boolean;
   wsOptions?: WsOptions;
   idTagsFile?: string;
   baseName: string;
@@ -115,4 +125,5 @@ export type ChargingStationTemplate = {
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   Evses?: Record<string, EvseTemplate>;
   Connectors?: Record<string, ConnectorStatus>;
+  x509Certificates?: Record<x509CertificateType, string>;
 };

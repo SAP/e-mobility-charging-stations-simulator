@@ -1,19 +1,22 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
+import EventEmitterAsyncResource from 'node:events';
 import { Worker } from 'node:worker_threads';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import { WorkerConstants } from './WorkerConstants';
 import {
   type MessageHandler,
+  type SetInfo,
   type WorkerData,
   WorkerMessageEvents,
   type WorkerOptions,
   type WorkerSetElement,
 } from './WorkerTypes';
-import { WorkerUtils } from './WorkerUtils';
+import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
+  public readonly emitter: EventEmitterAsyncResource;
   private readonly workerSet: Set<WorkerSetElement>;
 
   /**
@@ -25,6 +28,18 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
     this.workerSet = new Set<WorkerSetElement>();
+    this.emitter = new EventEmitterAsyncResource();
+  }
+
+  get info(): SetInfo {
+    return {
+      size: this.size,
+      runningElements: [...this.workerSet].reduce(
+        (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
+        0
+      ),
+      elementsPerWorker: this.maxElementsPerWorker,
+    };
   }
 
   get size(): number {
@@ -35,47 +50,14 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     return this.workerOptions.elementsPerWorker;
   }
 
-  /**
-   *
-   * @param elementData -
-   * @returns
-   * @public
-   */
-  public async addElement(elementData: WorkerData): Promise<void> {
-    if (!this.workerSet) {
-      throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
-    }
-    if (
-      this.workerSet.size === 0 ||
-      this.getLastWorkerSetElement().numberOfWorkerElements >= this.workerOptions.elementsPerWorker
-    ) {
-      await this.startWorker();
-    }
-    this.getLastWorker().postMessage({
-      id: WorkerMessageEvents.startWorkerElement,
-      data: elementData,
-    });
-    ++this.getLastWorkerSetElement().numberOfWorkerElements;
-    // Start element sequentially to optimize memory at startup
-    if (this.workerOptions.elementStartDelay > 0) {
-      await WorkerUtils.sleep(this.workerOptions.elementStartDelay);
-    }
-  }
-
-  /**
-   *
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async start(): Promise<void> {
-    await this.startWorker();
+    this.addWorkerSetElement();
+    // Add worker set element sequentially to optimize memory at startup
+    this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
   }
 
-  /**
-   *
-   * @returns
-   * @public
-   */
+  /** @inheritDoc */
   public async stop(): Promise<void> {
     for (const workerSetElement of this.workerSet) {
       await workerSetElement.worker.terminate();
@@ -83,10 +65,27 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     this.workerSet.clear();
   }
 
+  /** @inheritDoc */
+  public async addElement(elementData: WorkerData): Promise<void> {
+    if (!this.workerSet) {
+      throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
+    }
+    const workerSetElement = await this.getWorkerSetElement();
+    workerSetElement.worker.postMessage({
+      id: WorkerMessageEvents.startWorkerElement,
+      data: elementData,
+    });
+    ++workerSetElement.numberOfWorkerElements;
+    // Add element sequentially to optimize memory at startup
+    if (this.workerOptions.elementStartDelay > 0) {
+      await sleep(this.workerOptions.elementStartDelay);
+    }
+  }
+
   /**
-   * Start a new `Worker`.
+   * Add a new `WorkerSetElement`.
    */
-  private async startWorker(): Promise<void> {
+  private addWorkerSetElement(): WorkerSetElement {
     const worker = new Worker(this.workerScript);
     worker.on(
       'message',
@@ -94,30 +93,35 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
         this
       ) as MessageHandler<Worker>
     );
-    worker.on('error', WorkerUtils.defaultErrorHandler.bind(this) as (err: Error) => void);
-    worker.on('exit', (code) => {
-      WorkerUtils.defaultExitHandler(code);
-      this.workerSet.delete(this.getWorkerSetElementByWorker(worker));
+    worker.on('error', defaultErrorHandler.bind(this) as (err: Error) => void);
+    worker.on('error', (error) => {
+      this.emitter.emit('error', error);
+      this.addWorkerSetElement();
     });
-    this.workerSet.add({ worker, numberOfWorkerElements: 0 });
-    // Start worker sequentially to optimize memory at startup
-    this.workerOptions.workerStartDelay > 0 &&
-      (await WorkerUtils.sleep(this.workerOptions.workerStartDelay));
-  }
-
-  private getLastWorkerSetElement(): WorkerSetElement {
-    let workerSetElement: WorkerSetElement;
-    for (workerSetElement of this.workerSet) {
-      /* This is intentional */
-    }
+    worker.on('exit', defaultExitHandler.bind(this) as (exitCode: number) => void);
+    worker.on('exit', () => this.workerSet.delete(this.getWorkerSetElementByWorker(worker)));
+    const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
+    this.workerSet.add(workerSetElement);
     return workerSetElement;
   }
 
-  private getLastWorker(): Worker {
-    return this.getLastWorkerSetElement().worker;
+  private async getWorkerSetElement(): Promise<WorkerSetElement> {
+    let chosenWorkerSetElement: WorkerSetElement;
+    for (const workerSetElement of this.workerSet) {
+      if (workerSetElement.numberOfWorkerElements < this.workerOptions.elementsPerWorker) {
+        chosenWorkerSetElement = workerSetElement;
+        break;
+      }
+    }
+    if (!chosenWorkerSetElement) {
+      chosenWorkerSetElement = this.addWorkerSetElement();
+      // Add worker set element sequentially to optimize memory at startup
+      this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
+    }
+    return chosenWorkerSetElement;
   }
 
-  private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement {
+  private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement | undefined {
     let workerSetElt: WorkerSetElement;
     for (const workerSetElement of this.workerSet) {
       if (workerSetElement.worker.threadId === worker.threadId) {

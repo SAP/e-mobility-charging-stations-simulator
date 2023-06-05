@@ -70,6 +70,8 @@ export type ConfigurationData = {
   /** @deprecated Moved to worker configuration section. */
   chargingStationsPerWorker?: number;
   logStatisticsInterval?: number;
+  logEnabled?: boolean;
+  logConsole?: boolean;
   logFormat?: string;
   logLevel?: string;
   logRotate?: boolean;
@@ -77,5 +79,4 @@ export type ConfigurationData = {
   logMaxSize?: number | string;
   logFile?: string;
   logErrorFile?: string;
-  logConsole?: boolean;
 };

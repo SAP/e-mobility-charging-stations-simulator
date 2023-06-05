@@ -1,6 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { parentPort, workerData } from 'node:worker_threads';
+import { AsyncResource } from 'node:async_hooks';
+import { parentPort } from 'node:worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 
@@ -9,38 +10,40 @@ import type { ChargingStationWorkerData } from '../types';
 import { Configuration } from '../utils';
 import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
+const moduleName = 'ChargingStationWorker';
+
 /**
  * Create and start a charging station instance
  *
  * @param data - workerData
  */
 const startChargingStation = (data: ChargingStationWorkerData): void => {
-  const station = new ChargingStation(data.index, data.templateFile);
-  station.start();
+  new ChargingStation(data.index, data.templateFile).start();
 };
 
-/**
- * Listen messages send by the main thread
- */
-const addMessageListener = (): void => {
-  parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
-    if (message.id === WorkerMessageEvents.startWorkerElement) {
-      startChargingStation(message.data);
-    }
-  });
-};
+class ChargingStationWorker extends AsyncResource {
+  constructor() {
+    super(moduleName);
+    // Add message listener to create and start charging station from the main thread
+    parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
+      if (message.id === WorkerMessageEvents.startWorkerElement) {
+        this.runInAsyncScope(
+          startChargingStation.bind(this) as (data: ChargingStationWorkerData) => void,
+          this,
+          message.data
+        );
+      }
+    });
+  }
+}
 
+export let chargingStationWorker: ChargingStationWorker;
 // Conditionally export ThreadWorker instance for pool usage
 export let threadWorker: ThreadWorker;
 if (Configuration.workerPoolInUse()) {
   threadWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
     maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
-    async: false,
   });
 } else {
-  // Add message listener to start charging station from main thread
-  addMessageListener();
-  if (workerData !== undefined) {
-    startChargingStation(workerData as ChargingStationWorkerData);
-  }
+  chargingStationWorker = new ChargingStationWorker();
 }

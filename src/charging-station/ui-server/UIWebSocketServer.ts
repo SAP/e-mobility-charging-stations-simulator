@@ -49,7 +49,15 @@ export class UIWebSocketServer extends AbstractUIServer {
         }
         const [requestId] = request as ProtocolRequest;
         this.responseHandlers.set(requestId, ws);
-        this.uiServices.get(version)?.requestHandler(request).catch(Constants.EMPTY_FUNCTION);
+        this.uiServices
+          .get(version)
+          ?.requestHandler(request)
+          .then((protocolResponse: ProtocolResponse) => {
+            if (!Utils.isNullOrUndefined(protocolResponse)) {
+              this.sendResponse(protocolResponse);
+            }
+          })
+          .catch(Constants.EMPTY_FUNCTION);
       });
       ws.on('error', (error) => {
         logger.error(`${this.logPrefix(moduleName, 'start.ws.onerror')} WebSocket error:`, error);
@@ -104,7 +112,7 @@ export class UIWebSocketServer extends AbstractUIServer {
   public sendResponse(response: ProtocolResponse): void {
     const responseId = response[0];
     try {
-      if (this.responseHandlers.has(responseId)) {
+      if (this.hasResponseHandler(responseId)) {
         const ws = this.responseHandlers.get(responseId) as WebSocket;
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify(response));

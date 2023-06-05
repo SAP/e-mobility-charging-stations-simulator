@@ -5,6 +5,7 @@ import {
   ProcedureName,
   type ProtocolRequest,
   type ProtocolRequestHandler,
+  type ProtocolResponse,
   type ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
@@ -65,11 +66,11 @@ export abstract class AbstractUIService {
     this.broadcastChannelRequests = new Map<string, number>();
   }
 
-  public async requestHandler(request: ProtocolRequest): Promise<void> {
+  public async requestHandler(request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
     let messageId: string;
     let command: ProcedureName;
     let requestPayload: RequestPayload | undefined;
-    let responsePayload: ResponsePayload;
+    let responsePayload: ResponsePayload | undefined;
     try {
       [messageId, command, requestPayload] = request;
 
@@ -87,7 +88,7 @@ export abstract class AbstractUIService {
       responsePayload = await this.requestHandlers.get(command)(messageId, command, requestPayload);
     } catch (error) {
       // Log
-      logger.error(`${this.logPrefix(moduleName, 'messageHandler')} Handle request error:`, error);
+      logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error);
       responsePayload = {
         hashIds: requestPayload?.hashIds,
         status: ResponseStatus.FAILURE,
@@ -98,26 +99,26 @@ export abstract class AbstractUIService {
         errorStack: (error as Error).stack,
         errorDetails: (error as OCPPError).details,
       };
-    } finally {
-      // Send response for payload not forwarded to broadcast channel
-      if (!Utils.isNullOrUndefined(responsePayload)) {
-        this.sendResponse(messageId, responsePayload);
-      }
+    }
+    if (!Utils.isNullOrUndefined(responsePayload)) {
+      return this.uiServer.buildProtocolResponse(messageId, responsePayload);
     }
   }
 
-  public sendRequest(
-    messageId: string,
-    procedureName: ProcedureName,
-    requestPayload: RequestPayload
-  ): void {
-    this.uiServer.sendRequest(
-      this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
-    );
-  }
+  // public sendRequest(
+  //   messageId: string,
+  //   procedureName: ProcedureName,
+  //   requestPayload: RequestPayload
+  // ): void {
+  //   this.uiServer.sendRequest(
+  //     this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
+  //   );
+  // }
 
   public sendResponse(messageId: string, responsePayload: ResponsePayload): void {
-    this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
+    if (this.uiServer.hasResponseHandler(messageId)) {
+      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
+    }
   }
 
   public logPrefix = (modName: string, methodName: string): string => {

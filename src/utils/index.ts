@@ -9,8 +9,20 @@ export {
 export { CircularArray } from './CircularArray';
 export { Configuration } from './Configuration';
 export { Constants } from './Constants';
-export { ErrorUtils } from './ErrorUtils';
-export { FileUtils } from './FileUtils';
-export { MessageChannelUtils } from './MessageChannelUtils';
+export {
+  handleFileException,
+  handleUncaughtException,
+  handleUnhandledRejection,
+  handleSendMessageError,
+  setDefaultErrorParams,
+} from './ErrorUtils';
+export { watchJsonFile } from './FileUtils';
+export {
+  buildPerformanceStatisticsMessage,
+  buildUpdatedMessage,
+  buildStartedMessage,
+  buildStoppedMessage,
+} from './MessageChannelUtils';
 export { Utils } from './Utils';
+export { median, nthPercentile, stdDeviation } from './StatisticUtils';
 export { logger } from './Logger';

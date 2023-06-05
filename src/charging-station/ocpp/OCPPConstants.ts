@@ -98,8 +98,16 @@ export class OCPPConstants {
     status: TriggerMessageStatus.NOT_IMPLEMENTED,
   });
 
+  static readonly OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED = Object.freeze({
+    status: DataTransferStatus.ACCEPTED,
+  });
+
   static readonly OCPP_DATA_TRANSFER_RESPONSE_REJECTED = Object.freeze({
     status: DataTransferStatus.REJECTED,
+  });
+  
+  static readonly OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID = Object.freeze({
+    status: DataTransferStatus.UNKNOWN_VENDOR_ID,
   });
 
   static readonly OCPP_RESERVATION_RESPONSE_ACCEPTED = Object.freeze({

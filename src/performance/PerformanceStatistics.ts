@@ -15,9 +15,12 @@ import {
   CircularArray,
   Configuration,
   Constants,
-  MessageChannelUtils,
   Utils,
+  buildPerformanceStatisticsMessage,
   logger,
+  median,
+  nthPercentile,
+  stdDeviation,
 } from '../utils';
 
 export class PerformanceStatistics {
@@ -231,27 +234,25 @@ export class PerformanceStatistics {
             timestamp: entry.startTime,
             value: entry.duration,
           }));
-    this.statistics.statisticsData.get(entryName).medTimeMeasurement = Utils.median(
+    this.statistics.statisticsData.get(entryName).medTimeMeasurement = median(
       this.extractTimeSeriesValues(
         this.statistics.statisticsData.get(entryName).timeMeasurementSeries
       )
     );
     this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement =
-      Utils.percentile(
+      nthPercentile(
         this.extractTimeSeriesValues(
           this.statistics.statisticsData.get(entryName).timeMeasurementSeries
         ),
         95
       );
-    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = Utils.stdDeviation(
+    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = stdDeviation(
       this.extractTimeSeriesValues(
         this.statistics.statisticsData.get(entryName).timeMeasurementSeries
       )
     );
     if (Configuration.getPerformanceStorage().enabled) {
-      parentPort?.postMessage(
-        MessageChannelUtils.buildPerformanceStatisticsMessage(this.statistics)
-      );
+      parentPort?.postMessage(buildPerformanceStatisticsMessage(this.statistics));
     }
   }
 

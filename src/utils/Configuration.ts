@@ -234,6 +234,12 @@ export class Configuration {
     return Configuration.getWorker().processType === WorkerProcessType.dynamicPool;
   }
 
+  public static getLogEnabled(): boolean | undefined {
+    return Utils.hasOwnProp(Configuration.getConfig(), 'logEnabled')
+      ? Configuration.getConfig()?.logEnabled
+      : true;
+  }
+
   public static getLogConsole(): boolean | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'consoleLog',

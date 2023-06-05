@@ -1,5 +1,5 @@
 import type { FormatWrap } from 'logform';
-import { type Logger, createLogger, format, type transport } from 'winston';
+import { createLogger, format, type transport } from 'winston';
 import TransportType from 'winston/lib/winston/transports/index.js';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
@@ -38,7 +38,8 @@ if (Configuration.getLogRotate() === true) {
   ];
 }
 
-const logger: Logger = createLogger({
+export const logger = createLogger({
+  silent: !Configuration.getLogEnabled(),
   level: Configuration.getLogLevel(),
   format: format.combine(format.splat(), (format[Configuration.getLogFormat()] as FormatWrap)()),
   transports,
@@ -58,5 +59,3 @@ if (Configuration.getLogConsole()) {
     })
   );
 }
-
-export { logger };

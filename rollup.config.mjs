@@ -1,9 +1,11 @@
 /* eslint-disable n/no-unpublished-import */
+import { cpus } from 'node:os';
+
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
+import { copy } from '@web/rollup-plugin-copy';
 import analyze from 'rollup-plugin-analyzer';
-import copy from 'rollup-plugin-copy';
 import del from 'rollup-plugin-delete';
 
 const isDevelopmentBuild = process.env.BUILD === 'development';
@@ -16,9 +18,8 @@ export default {
     {
       dir: 'dist',
       format: 'esm',
-      exports: 'auto',
-      ...(isDevelopmentBuild && { sourcemap: true }),
-      ...(!isDevelopmentBuild && { plugins: [terser({ maxWorkers: 2 })] }),
+      sourcemap: !!isDevelopmentBuild,
+      plugins: [terser({ maxWorkers: cpus().length / 2 })],
     },
   ],
   external: [
@@ -32,10 +33,12 @@ export default {
     'just-clone',
     'just-merge',
     'mnemonist/lru-map-with-delete.js',
+    'mnemonist/queue.js',
     'moment',
     'mongodb',
     'node:async_hooks',
     'node:crypto',
+    'node:events',
     'node:fs',
     'node:http',
     'node:path',
@@ -55,6 +58,9 @@ export default {
     json(),
     typescript({
       tsconfig: 'tsconfig.json',
+      compilerOptions: {
+        sourceMap: !!isDevelopmentBuild,
+      },
     }),
     del({
       targets: [
@@ -67,7 +73,15 @@ export default {
       ],
     }),
     copy({
-      targets: [{ src: 'src/assets', dest: 'dist/' }],
+      rootDir: 'src',
+      patterns: 'assets/**/*.json',
+      exclude: [
+        'assets/config-template.json',
+        'assets/*config[-_.]*.json',
+        'assets/idtags-template.json',
+        'assets/authorization-tags-template.json',
+        'assets/ui-protocol/**/*',
+      ],
     }),
     isAnalyzeBuild && analyze(),
   ],

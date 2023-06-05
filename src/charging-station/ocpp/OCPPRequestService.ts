@@ -23,9 +23,15 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import { Constants, ErrorUtils, Utils, logger } from '../../utils';
+import { Constants, Utils, handleSendMessageError, logger } from '../../utils';
 
 const moduleName = 'OCPPRequestService';
+
+const defaultRequestParams: RequestParams = {
+  skipBufferingOnError: false,
+  triggerMessage: false,
+  throwError: false,
+};
 
 export abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null;
@@ -127,7 +133,7 @@ export abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error, {
+      handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: true,
       });
     }
@@ -149,7 +155,7 @@ export abstract class OCPPRequestService {
         commandName
       );
     } catch (error) {
-      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error);
+      handleSendMessageError(chargingStation, commandName, error as Error);
     }
   }
 
@@ -158,14 +164,10 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType,
     commandName: RequestCommand,
-    params: RequestParams = {
-      skipBufferingOnError: false,
-      triggerMessage: false,
-      throwError: false,
-    }
+    params: RequestParams = defaultRequestParams
   ): Promise<ResponseType> {
     params = {
-      ...{ skipBufferingOnError: false, triggerMessage: false, throwError: false },
+      ...defaultRequestParams,
       ...params,
     };
     try {
@@ -178,7 +180,7 @@ export abstract class OCPPRequestService {
         params
       );
     } catch (error) {
-      ErrorUtils.handleSendMessageError(chargingStation, commandName, error as Error, {
+      handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: params.throwError,
       });
     }
@@ -264,14 +266,10 @@ export abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName: RequestCommand | IncomingRequestCommand,
-    params: RequestParams = {
-      skipBufferingOnError: false,
-      triggerMessage: false,
-      throwError: false,
-    }
+    params: RequestParams = defaultRequestParams
   ): Promise<ResponseType> {
     params = {
-      ...{ skipBufferingOnError: false, triggerMessage: false, throwError: false },
+      ...defaultRequestParams,
       ...params,
     };
     if (
