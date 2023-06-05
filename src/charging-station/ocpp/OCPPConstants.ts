@@ -105,7 +105,7 @@ export class OCPPConstants {
   static readonly OCPP_DATA_TRANSFER_RESPONSE_REJECTED = Object.freeze({
     status: DataTransferStatus.REJECTED,
   });
-  
+
   static readonly OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID = Object.freeze({
     status: DataTransferStatus.UNKNOWN_VENDOR_ID,
   });

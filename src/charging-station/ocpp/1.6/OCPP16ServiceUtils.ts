@@ -843,8 +843,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static async isIdTagAuthorized(
     chargingStation: ChargingStation,
     connectorId: number,
-    idTag: string,
-    parentIdTag?: string
+    idTag: string
   ): Promise<boolean> {
     let authorized = false;
     const connectorStatus = chargingStation.getConnectorStatus(connectorId);
