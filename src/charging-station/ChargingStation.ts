@@ -138,7 +138,7 @@ export class ChargingStation {
   private readonly sharedLRUCache: SharedLRUCache;
   private webSocketPingSetInterval!: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
-  private reservationExpiryDateSetInterval?: NodeJS.Timeout;
+  private reservationExpirationSetInterval?: NodeJS.Timeout;
 
   constructor(index: number, templateFile: string) {
     this.started = false;
@@ -654,7 +654,7 @@ export class ChargingStation {
           this.performanceStatistics?.start();
         }
         if (this.hasFeatureProfile(SupportedFeatureProfiles.Reservation)) {
-          this.startReservationExpiryDateSetInterval();
+          this.startReservationExpirationSetInterval();
         }
         this.openWSConnection();
         // Monitor charging station template file
@@ -993,18 +993,18 @@ export class ChargingStation {
     }
   }
 
-  public getReservationBy(key: string, value: number | string): Reservation {
+  public getReservationBy(filterKey: ReservationFilterKey, value: number | string): Reservation {
     if (this.hasEvses) {
       for (const evse of this.evses.values()) {
         for (const connector of evse.connectors.values()) {
-          if (connector?.reservation?.[key] === value) {
+          if (connector?.reservation?.[filterKey] === value) {
             return connector.reservation;
           }
         }
       }
     } else {
       for (const connector of this.connectors.values()) {
-        if (connector?.reservation?.[key] === value) {
+        if (connector?.reservation?.[filterKey] === value) {
           return connector.reservation;
         }
       }
@@ -1019,15 +1019,15 @@ export class ChargingStation {
     return Utils.isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
   }
 
-  public startReservationExpiryDateSetInterval(customInterval?: number): void {
+  public startReservationExpirationSetInterval(customInterval?: number): void {
     const interval =
       customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
     logger.info(
       `${this.logPrefix()} Reservation expiration date interval is set to ${interval}
-        and starts on CS now`
+        and starts on charging station now`
     );
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    this.reservationExpiryDateSetInterval = setInterval(async (): Promise<void> => {
+    this.reservationExpirationSetInterval = setInterval(async (): Promise<void> => {
       if (this.hasEvses) {
         for (const evse of this.evses.values()) {
           for (const connector of evse.connectors.values()) {
@@ -1047,8 +1047,8 @@ export class ChargingStation {
   }
 
   public restartReservationExpiryDateSetInterval(): void {
-    this.stopReservationExpiryDateSetInterval();
-    this.startReservationExpiryDateSetInterval();
+    this.stopReservationExpirationSetInterval();
+    this.startReservationExpirationSetInterval();
   }
 
   public validateIncomingRequestWithReservation(connectorId: number, idTag: string): boolean {
@@ -1089,8 +1089,8 @@ export class ChargingStation {
 
   private countReservableConnectors(connectors: Map<number, ConnectorStatus>) {
     let reservableConnectors = 0;
-    for (const [id, connector] of connectors) {
-      if (id === 0) {
+    for (const [connectorId, connector] of connectors) {
+      if (connectorId === 0) {
         continue;
       }
       if (connector.status === ConnectorStatusEnum.Available) {
@@ -1141,9 +1141,9 @@ export class ChargingStation {
     return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
   }
 
-  private stopReservationExpiryDateSetInterval(): void {
-    if (this.reservationExpiryDateSetInterval) {
-      clearInterval(this.reservationExpiryDateSetInterval);
+  private stopReservationExpirationSetInterval(): void {
+    if (this.reservationExpirationSetInterval) {
+      clearInterval(this.reservationExpirationSetInterval);
     }
   }
 

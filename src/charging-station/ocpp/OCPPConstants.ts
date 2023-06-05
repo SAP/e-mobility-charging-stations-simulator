@@ -124,7 +124,7 @@ export class OCPPConstants {
 
   static readonly OCPP_RESERVATION_RESPONSE_REJECTED = Object.freeze({
     status: ReservationStatus.REJECTED,
-  }); // Reservation has not been made, because CS is not configured to accept reservations
+  }); // Reservation has not been made, because charging station is not configured to accept reservations
 
   static readonly OCPP_RESERVATION_RESPONSE_UNAVAILABLE = Object.freeze({
     status: ReservationStatus.UNAVAILABLE,

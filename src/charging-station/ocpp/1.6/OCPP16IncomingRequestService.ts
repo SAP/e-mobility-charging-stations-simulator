@@ -24,7 +24,6 @@ import {
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
   type ConnectorStatus,
-  ConnectorStatusEnum,
   ErrorType,
   type GenericResponse,
   GenericStatus,
@@ -90,7 +89,6 @@ import {
   type UnlockConnectorResponse,
 } from '../../../types';
 import { Constants, Utils, logger } from '../../../utils';
-import { OCPPConstants } from '../OCPPConstants';
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
 
 const moduleName = 'OCPP16IncomingRequestService';
@@ -880,7 +878,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         connectorStatus.transactionRemoteStarted = true;
         const startTransactionPayload: Partial<StartTransactionRequest> = {
           connectorId: transactionConnectorId,
-          idTag: idTag,
+          idTag,
         };
         if (reserved || reservedOnConnectorZero) {
           const reservation = chargingStation.getReservationBy(
@@ -901,7 +899,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, startTransactionPayload)
           ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
         ) {
-          logger.debug(remoteStartTransactionLogMsg);
           return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
         }
         return this.notifyRemoteStartTransactionRejected(
@@ -936,7 +933,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           })
         ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
       ) {
-        logger.debug(remoteStartTransactionLogMsg);
         return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
       }
       return this.notifyRemoteStartTransactionRejected(
@@ -1535,56 +1531,60 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16IncomingRequestCommand.RESERVE_NOW
       )
     ) {
-      return OCPPConstants.OCPP_RESERVATION_RESPONSE_REJECTED;
+      return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
     }
     const { reservationId, idTag, connectorId } = commandPayload;
     let response: OCPP16ReserveNowResponse;
     try {
       if (!chargingStation.isConnectorAvailable(connectorId) && connectorId > 0) {
-        return OCPPConstants.OCPP_RESERVATION_RESPONSE_REJECTED;
+        return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
       }
       if (connectorId === 0 && !chargingStation.getReservationOnConnectorId0Enabled()) {
-        return OCPPConstants.OCPP_RESERVATION_RESPONSE_REJECTED;
+        return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
       }
       if (!(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {
-        return OCPPConstants.OCPP_RESERVATION_RESPONSE_REJECTED;
+        return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
       }
       switch (chargingStation.getConnectorStatus(connectorId).status) {
-        case ConnectorStatusEnum.Faulted:
-          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_FAULTED;
+        case OCPP16ChargePointStatus.Faulted:
+          response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED;
           break;
-        case ConnectorStatusEnum.Occupied:
-          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
+        case OCPP16ChargePointStatus.Preparing:
+        case OCPP16ChargePointStatus.Charging:
+        case OCPP16ChargePointStatus.SuspendedEV:
+        case OCPP16ChargePointStatus.SuspendedEVSE:
+        case OCPP16ChargePointStatus.Finishing:
+          response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
           break;
-        case ConnectorStatusEnum.Unavailable:
-          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_UNAVAILABLE;
+        case OCPP16ChargePointStatus.Unavailable:
+          response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_UNAVAILABLE;
           break;
-        case ConnectorStatusEnum.Reserved:
+        case OCPP16ChargePointStatus.Reserved:
           if (!chargingStation.isConnectorReservable(reservationId, idTag, connectorId)) {
-            response = OCPPConstants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
+            response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
             break;
           }
         // eslint-disable-next-line no-fallthrough
         default:
           if (!chargingStation.isConnectorReservable(reservationId, idTag)) {
-            response = OCPPConstants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
+            response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_OCCUPIED;
             break;
           }
           await chargingStation.addReservation({
             id: commandPayload.reservationId,
             ...commandPayload,
           });
-          response = OCPPConstants.OCPP_RESERVATION_RESPONSE_ACCEPTED;
+          response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_ACCEPTED;
           break;
       }
       return response;
     } catch (error) {
-      chargingStation.getConnectorStatus(connectorId).status = ConnectorStatusEnum.Available;
+      chargingStation.getConnectorStatus(connectorId).status = OCPP16ChargePointStatus.Available;
       return this.handleIncomingRequestError(
         chargingStation,
         OCPP16IncomingRequestCommand.RESERVE_NOW,
         error as Error,
-        { errorResponse: OCPPConstants.OCPP_RESERVATION_RESPONSE_FAULTED }
+        { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED }
       );
     }
   }
@@ -1600,7 +1600,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION
       )
     ) {
-      return OCPPConstants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;
+      return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;
     }
     try {
       const { reservationId } = commandPayload;
@@ -1610,16 +1610,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           `${chargingStation.logPrefix()} Reservation with ID ${reservationId}
             does not exist on charging station`
         );
-        return OCPPConstants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;
+        return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;
       }
       await chargingStation.removeReservation(reservation);
-      return OCPPConstants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED;
+      return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED;
     } catch (error) {
       return this.handleIncomingRequestError(
         chargingStation,
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
         error as Error,
-        { errorResponse: OCPPConstants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED }
+        { errorResponse: OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED }
       );
     }
   }
