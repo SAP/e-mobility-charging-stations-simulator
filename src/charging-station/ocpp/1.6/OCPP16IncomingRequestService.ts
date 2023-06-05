@@ -899,6 +899,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, startTransactionPayload)
           ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
         ) {
+          logger.debug(remoteStartTransactionLogMsg);
           return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
         }
         return this.notifyRemoteStartTransactionRejected(
@@ -933,6 +934,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           })
         ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
       ) {
+        logger.debug(remoteStartTransactionLogMsg);
         return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
       }
       return this.notifyRemoteStartTransactionRejected(
