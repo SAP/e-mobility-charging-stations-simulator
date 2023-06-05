@@ -2,6 +2,7 @@ import type { OCPP16MeterValuesResponse } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityStatus,
   type OCPP16BootNotificationResponse,
+  type OCPP16CancelReservationResponse,
   OCPP16ChargingProfileStatus,
   OCPP16ClearChargingProfileStatus,
   OCPP16ConfigurationStatus,
@@ -10,6 +11,7 @@ import {
   type OCPP16DiagnosticsStatusNotificationResponse,
   type OCPP16FirmwareStatusNotificationResponse,
   type OCPP16HeartbeatResponse,
+  OCPP16ReservationStatus,
   type OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
@@ -103,3 +105,14 @@ export const DataTransferStatus = {
   ...OCPP16DataTransferStatus,
 } as const;
 export type DataTransferStatus = OCPP16DataTransferStatus;
+
+export type ReservationStatus = OCPP16ReservationStatus;
+export const ReservationStatus = {
+  ...OCPP16ReservationStatus,
+};
+
+export const CancelReservationStatus = {
+  ...GenericStatus,
+};
+
+export type CancelReservationResponse = OCPP16CancelReservationResponse;

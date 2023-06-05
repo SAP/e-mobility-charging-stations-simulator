@@ -3,6 +3,7 @@ import type { ChargingProfile } from './ocpp/ChargingProfile';
 import type { ConnectorStatusEnum } from './ocpp/ConnectorStatusEnum';
 import type { MeterValue } from './ocpp/MeterValues';
 import type { AvailabilityType } from './ocpp/Requests';
+import type { Reservation } from './ocpp/Reservation';
 
 export type ConnectorStatus = {
   availability: AvailabilityType;
@@ -22,4 +23,5 @@ export type ConnectorStatus = {
   transactionEnergyActiveImportRegisterValue?: number; // In Wh
   transactionBeginMeterValue?: MeterValue;
   chargingProfiles?: ChargingProfile[];
+  reservation?: Reservation;
 };

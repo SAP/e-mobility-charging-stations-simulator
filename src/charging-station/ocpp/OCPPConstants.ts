@@ -9,6 +9,7 @@ import {
   TriggerMessageStatus,
   UnlockStatus,
 } from '../../types';
+import { ReservationStatus } from '../../types/ocpp/Responses';
 import { Constants } from '../../utils';
 
 export class OCPPConstants {
@@ -104,10 +105,38 @@ export class OCPPConstants {
   static readonly OCPP_DATA_TRANSFER_RESPONSE_REJECTED = Object.freeze({
     status: DataTransferStatus.REJECTED,
   });
-
+  
   static readonly OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID = Object.freeze({
     status: DataTransferStatus.UNKNOWN_VENDOR_ID,
   });
+
+  static readonly OCPP_RESERVATION_RESPONSE_ACCEPTED = Object.freeze({
+    status: ReservationStatus.ACCEPTED,
+  }); // Reservation has been made
+
+  static readonly OCPP_RESERVATION_RESPONSE_FAULTED = Object.freeze({
+    status: ReservationStatus.FAULTED,
+  }); // Reservation has not been made, because of connector in FAULTED state
+
+  static readonly OCPP_RESERVATION_RESPONSE_OCCUPIED = Object.freeze({
+    status: ReservationStatus.OCCUPIED,
+  }); // Reservation has not been made, because all connectors are OCCUPIED
+
+  static readonly OCPP_RESERVATION_RESPONSE_REJECTED = Object.freeze({
+    status: ReservationStatus.REJECTED,
+  }); // Reservation has not been made, because CS is not configured to accept reservations
+
+  static readonly OCPP_RESERVATION_RESPONSE_UNAVAILABLE = Object.freeze({
+    status: ReservationStatus.UNAVAILABLE,
+  }); // Reservation has not been made, because connectors are spec. connector is in UNAVAILABLE state
+
+  static readonly OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED = Object.freeze({
+    status: GenericStatus.Accepted,
+  }); // Reservation for id has been cancelled has been made
+
+  static readonly OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED = Object.freeze({
+    status: GenericStatus.Rejected,
+  }); // Reservation could not be cancelled, because there is no reservation active for id
 
   protected constructor() {
     // This is intentional

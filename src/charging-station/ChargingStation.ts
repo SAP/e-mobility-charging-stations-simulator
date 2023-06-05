@@ -67,6 +67,9 @@ import {
   PowerUnits,
   RegistrationStatusEnumType,
   RequestCommand,
+  type Reservation,
+  ReservationFilterKey,
+  ReservationTerminationReason,
   type Response,
   StandardParametersKey,
   type Status,
@@ -135,6 +138,7 @@ export class ChargingStation {
   private readonly sharedLRUCache: SharedLRUCache;
   private webSocketPingSetInterval!: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
+  private reservationExpiryDateSetInterval?: NodeJS.Timeout;
 
   constructor(index: number, templateFile: string) {
     this.started = false;
@@ -551,7 +555,8 @@ export class ChargingStation {
       );
     } else {
       logger.error(
-        `${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval()}, not starting the heartbeat`
+        `${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval()},
+          not starting the heartbeat`
       );
     }
   }
@@ -579,13 +584,15 @@ export class ChargingStation {
     }
     if (!this.getConnectorStatus(connectorId)) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on non existing connector id ${connectorId.toString()}`
+        `${this.logPrefix()} Trying to start MeterValues on non existing connector id
+          ${connectorId.toString()}`
       );
       return;
     }
     if (this.getConnectorStatus(connectorId)?.transactionStarted === false) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction started`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}
+          with no transaction started`
       );
       return;
     } else if (
@@ -593,7 +600,8 @@ export class ChargingStation {
       Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionId)
     ) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction id`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}
+          with no transaction id`
       );
       return;
     }
@@ -644,6 +652,9 @@ export class ChargingStation {
         this.starting = true;
         if (this.getEnableStatistics() === true) {
           this.performanceStatistics?.start();
+        }
+        if (this.hasFeatureProfile(SupportedFeatureProfiles.Reservation)) {
+          this.startReservationExpiryDateSetInterval();
         }
         this.openWSConnection();
         // Monitor charging station template file
@@ -754,7 +765,8 @@ export class ChargingStation {
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
     if (this.started === false && this.starting === false) {
       logger.warn(
-        `${this.logPrefix()} Cannot open OCPP connection to URL ${this.wsConnectionUrl.toString()} on stopped charging station`
+        `${this.logPrefix()} Cannot open OCPP connection to URL ${this.wsConnectionUrl.toString()}
+          on stopped charging station`
       );
       return;
     }
@@ -773,7 +785,8 @@ export class ChargingStation {
 
     if (this.isWebSocketConnectionOpened() === true) {
       logger.warn(
-        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.toString()} is already opened`
+        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.toString()}
+          is already opened`
       );
       return;
     }
@@ -908,6 +921,199 @@ export class ChargingStation {
     );
   }
 
+  public getReservationOnConnectorId0Enabled(): boolean {
+    return Utils.convertToBoolean(
+      ChargingStationConfigurationUtils.getConfigurationKey(
+        this,
+        StandardParametersKey.ReserveConnectorZeroSupported
+      ).value
+    );
+  }
+
+  public async addReservation(reservation: Reservation): Promise<void> {
+    const [exists, reservationFound] = this.doesReservationExists(reservation);
+    if (exists) {
+      await this.removeReservation(reservationFound);
+    }
+    const connectorStatus = this.getConnectorStatus(reservation.connectorId);
+    connectorStatus.reservation = reservation;
+    connectorStatus.status = ConnectorStatusEnum.Reserved;
+    if (reservation.connectorId === 0) {
+      return;
+    }
+    await this.ocppRequestService.requestHandler<
+      StatusNotificationRequest,
+      StatusNotificationResponse
+    >(
+      this,
+      RequestCommand.STATUS_NOTIFICATION,
+      OCPPServiceUtils.buildStatusNotificationRequest(
+        this,
+        reservation.connectorId,
+        ConnectorStatusEnum.Reserved
+      )
+    );
+  }
+
+  public async removeReservation(
+    reservation: Reservation,
+    reason?: ReservationTerminationReason
+  ): Promise<void> {
+    const connector = this.getConnectorStatus(reservation.connectorId);
+    switch (reason) {
+      case ReservationTerminationReason.TRANSACTION_STARTED: {
+        delete connector.reservation;
+        if (reservation.connectorId === 0) {
+          connector.status = ConnectorStatusEnum.Available;
+        }
+        break;
+      }
+      case ReservationTerminationReason.CONNECTOR_STATE_CHANGED: {
+        delete connector.reservation;
+        break;
+      }
+      default: {
+        // ReservationTerminationReason.EXPIRED, ReservationTerminationReason.CANCELED
+        connector.status = ConnectorStatusEnum.Available;
+        delete connector.reservation;
+        await this.ocppRequestService.requestHandler<
+          StatusNotificationRequest,
+          StatusNotificationResponse
+        >(
+          this,
+          RequestCommand.STATUS_NOTIFICATION,
+          OCPPServiceUtils.buildStatusNotificationRequest(
+            this,
+            reservation.connectorId,
+            ConnectorStatusEnum.Available
+          )
+        );
+        break;
+      }
+    }
+  }
+
+  public getReservationBy(key: string, value: number | string): Reservation {
+    if (this.hasEvses) {
+      for (const evse of this.evses.values()) {
+        for (const connector of evse.connectors.values()) {
+          if (connector?.reservation?.[key] === value) {
+            return connector.reservation;
+          }
+        }
+      }
+    } else {
+      for (const connector of this.connectors.values()) {
+        if (connector?.reservation?.[key] === value) {
+          return connector.reservation;
+        }
+      }
+    }
+  }
+
+  public doesReservationExists(reservation: Partial<Reservation>): [boolean, Reservation] {
+    const foundReservation = this.getReservationBy(
+      ReservationFilterKey.RESERVATION_ID,
+      reservation?.id
+    );
+    return Utils.isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
+  }
+
+  public startReservationExpiryDateSetInterval(customInterval?: number): void {
+    const interval =
+      customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
+    logger.info(
+      `${this.logPrefix()} Reservation expiration date interval is set to ${interval}
+        and starts on CS now`
+    );
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    this.reservationExpiryDateSetInterval = setInterval(async (): Promise<void> => {
+      if (this.hasEvses) {
+        for (const evse of this.evses.values()) {
+          for (const connector of evse.connectors.values()) {
+            if (connector?.reservation?.expiryDate.toString() < new Date().toISOString()) {
+              await this.removeReservation(connector.reservation);
+            }
+          }
+        }
+      } else {
+        for (const connector of this.connectors.values()) {
+          if (connector?.reservation?.expiryDate.toString() < new Date().toISOString()) {
+            await this.removeReservation(connector.reservation);
+          }
+        }
+      }
+    }, interval);
+  }
+
+  public restartReservationExpiryDateSetInterval(): void {
+    this.stopReservationExpiryDateSetInterval();
+    this.startReservationExpiryDateSetInterval();
+  }
+
+  public validateIncomingRequestWithReservation(connectorId: number, idTag: string): boolean {
+    const reservation = this.getReservationBy(ReservationFilterKey.CONNECTOR_ID, connectorId);
+    return !Utils.isUndefined(reservation) && reservation.idTag === idTag;
+  }
+
+  public isConnectorReservable(
+    reservationId: number,
+    idTag?: string,
+    connectorId?: number
+  ): boolean {
+    const [alreadyExists] = this.doesReservationExists({ id: reservationId });
+    if (alreadyExists) {
+      return alreadyExists;
+    }
+    const userReservedAlready = Utils.isUndefined(
+      this.getReservationBy(ReservationFilterKey.ID_TAG, idTag)
+    )
+      ? false
+      : true;
+    const notConnectorZero = Utils.isUndefined(connectorId) ? true : connectorId > 0;
+    const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
+    return !alreadyExists && !userReservedAlready && notConnectorZero && freeConnectorsAvailable;
+  }
+
+  private getNumberOfReservableConnectors(): number {
+    let reservableConnectors = 0;
+    if (this.hasEvses) {
+      for (const evse of this.evses.values()) {
+        reservableConnectors = this.countReservableConnectors(evse.connectors);
+      }
+    } else {
+      reservableConnectors = this.countReservableConnectors(this.connectors);
+    }
+    return reservableConnectors - this.getNumberOfReservationsOnConnectorZero();
+  }
+
+  private countReservableConnectors(connectors: Map<number, ConnectorStatus>) {
+    let reservableConnectors = 0;
+    for (const [id, connector] of connectors) {
+      if (id === 0) {
+        continue;
+      }
+      if (connector.status === ConnectorStatusEnum.Available) {
+        ++reservableConnectors;
+      }
+    }
+    return reservableConnectors;
+  }
+
+  private getNumberOfReservationsOnConnectorZero(): number {
+    let numberOfReservations = 0;
+    if (this.hasEvses) {
+      for (const evse of this.evses.values()) {
+        if (evse.connectors.get(0)?.reservation) {
+          ++numberOfReservations;
+        }
+      }
+    } else if (this.connectors.get(0)?.reservation) {
+      ++numberOfReservations;
+    }
+    return numberOfReservations;
+  }
+
   private flushMessageBuffer(): void {
     if (this.messageBuffer.size > 0) {
       for (const message of this.messageBuffer.values()) {
@@ -933,6 +1139,12 @@ export class ChargingStation {
 
   private getSupervisionUrlOcppConfiguration(): boolean {
     return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
+  }
+
+  private stopReservationExpiryDateSetInterval(): void {
+    if (this.reservationExpiryDateSetInterval) {
+      clearInterval(this.reservationExpiryDateSetInterval);
+    }
   }
 
   private getSupervisionUrlOcppKey(): string {
@@ -1083,7 +1295,8 @@ export class ChargingStation {
   }
 
   private handleUnsupportedVersion(version: OCPPVersion) {
-    const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`;
+    const errorMsg = `Unsupported protocol version '${version}' configured
+      in template file ${this.templateFile}`;
     logger.error(`${this.logPrefix()} ${errorMsg}`);
     throw new BaseError(errorMsg);
   }

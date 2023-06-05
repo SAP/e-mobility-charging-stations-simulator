@@ -2,7 +2,7 @@ import type { OCPP16ChargingSchedule } from './ChargingProfile';
 import type { EmptyObject } from '../../EmptyObject';
 import type { JsonObject } from '../../JsonType';
 import type { OCPPConfigurationKey } from '../Configuration';
-import type { GenericStatus, RegistrationStatusEnumType } from '../Responses';
+import { GenericStatus, type RegistrationStatusEnumType } from '../Responses';
 
 export interface OCPP16HeartbeatResponse extends JsonObject {
   currentTime: Date;
@@ -108,4 +108,21 @@ export enum OCPP16DataTransferStatus {
 export interface OCPP16DataTransferResponse extends JsonObject {
   status: OCPP16DataTransferStatus;
   data?: string;
+}
+
+export interface OCPP16CancelReservationResponse extends JsonObject {
+  status: GenericStatus;
+}
+
+export enum OCPP16ReservationStatus {
+  ACCEPTED = 'Accepted',
+  FAULTED = 'Faulted',
+  OCCUPIED = 'Occupied',
+  REJECTED = 'Rejected',
+  UNAVAILABLE = 'Unavailable',
+  NOT_SUPPORTED = 'NotSupported',
+}
+
+export interface OCPP16ReserveNowResponse extends JsonObject {
+  status: OCPP16ReservationStatus;
 }

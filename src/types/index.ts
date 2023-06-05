@@ -108,6 +108,8 @@ export {
   type ResetRequest,
   type SetChargingProfileRequest,
   type UnlockConnectorRequest,
+  type OCPP16ReserveNowRequest,
+  type OCPP16CancelReservationRequest,
 } from './ocpp/1.6/Requests';
 export {
   type ChangeAvailabilityResponse,
@@ -127,6 +129,8 @@ export {
   type OCPP16UpdateFirmwareResponse,
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
+  type OCPP16ReserveNowResponse,
+  type OCPP16CancelReservationResponse,
 } from './ocpp/1.6/Responses';
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode';
 export {
@@ -251,3 +255,5 @@ export {
   WebSocketCloseEventStatusCode,
   WebSocketCloseEventStatusString,
 } from './WebSocket';
+export { ReservationFilterKey, ReservationTerminationReason } from './ocpp/1.6/Reservation';
+export { type Reservation } from './ocpp/Reservation';
