@@ -937,21 +937,12 @@ export class ChargingStation {
     }
     const connectorStatus = this.getConnectorStatus(reservation.connectorId);
     connectorStatus.reservation = reservation;
-    connectorStatus.status = ConnectorStatusEnum.Reserved;
-    if (reservation.connectorId === 0) {
-      return;
-    }
-    await this.ocppRequestService.requestHandler<
-      StatusNotificationRequest,
-      StatusNotificationResponse
-    >(
+    await OCPPServiceUtils.sendAndSetConnectorStatus(
       this,
-      RequestCommand.STATUS_NOTIFICATION,
-      OCPPServiceUtils.buildStatusNotificationRequest(
-        this,
-        reservation.connectorId,
-        ConnectorStatusEnum.Reserved
-      )
+      reservation.connectorId,
+      ConnectorStatusEnum.Reserved,
+      null,
+      { send: reservation.connectorId !== 0 }
     );
   }
 
@@ -961,35 +952,22 @@ export class ChargingStation {
   ): Promise<void> {
     const connector = this.getConnectorStatus(reservation.connectorId);
     switch (reason) {
-      case ReservationTerminationReason.TRANSACTION_STARTED: {
-        delete connector.reservation;
-        if (reservation.connectorId === 0) {
-          connector.status = ConnectorStatusEnum.Available;
-        }
-        break;
-      }
       case ReservationTerminationReason.CONNECTOR_STATE_CHANGED: {
         delete connector.reservation;
         break;
       }
-      default: {
-        // ReservationTerminationReason.EXPIRED, ReservationTerminationReason.CANCELED
-        connector.status = ConnectorStatusEnum.Available;
-        delete connector.reservation;
-        await this.ocppRequestService.requestHandler<
-          StatusNotificationRequest,
-          StatusNotificationResponse
-        >(
+      case ReservationTerminationReason.TRANSACTION_STARTED:
+      case ReservationTerminationReason.EXPIRED:
+      case ReservationTerminationReason.RESERVATION_CANCELED:
+        await OCPPServiceUtils.sendAndSetConnectorStatus(
           this,
-          RequestCommand.STATUS_NOTIFICATION,
-          OCPPServiceUtils.buildStatusNotificationRequest(
-            this,
-            reservation.connectorId,
-            ConnectorStatusEnum.Available
-          )
+          reservation.connectorId,
+          ConnectorStatusEnum.Available,
+          null,
+          { send: reservation.connectorId !== 0 }
         );
+        delete connector.reservation;
         break;
-      }
     }
   }
 

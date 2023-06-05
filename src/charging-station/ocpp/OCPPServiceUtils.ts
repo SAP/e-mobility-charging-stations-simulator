@@ -185,17 +185,26 @@ export class OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number,
     status: ConnectorStatusEnum,
-    evseId?: number
+    evseId?: number,
+    options: { send: boolean } = { send: true }
   ) {
-    OCPPServiceUtils.checkConnectorStatusTransition(chargingStation, connectorId, status);
-    await chargingStation.ocppRequestService.requestHandler<
-      StatusNotificationRequest,
-      StatusNotificationResponse
-    >(
-      chargingStation,
-      RequestCommand.STATUS_NOTIFICATION,
-      OCPPServiceUtils.buildStatusNotificationRequest(chargingStation, connectorId, status, evseId)
-    );
+    options = { send: true, ...options };
+    if (options.send) {
+      OCPPServiceUtils.checkConnectorStatusTransition(chargingStation, connectorId, status);
+      await chargingStation.ocppRequestService.requestHandler<
+        StatusNotificationRequest,
+        StatusNotificationResponse
+      >(
+        chargingStation,
+        RequestCommand.STATUS_NOTIFICATION,
+        OCPPServiceUtils.buildStatusNotificationRequest(
+          chargingStation,
+          connectorId,
+          status,
+          evseId
+        )
+      );
+    }
     chargingStation.getConnectorStatus(connectorId).status = status;
   }
 
