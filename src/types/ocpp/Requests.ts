@@ -3,6 +3,7 @@ import type { OCPP16MeterValuesRequest } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
+  type OCPP16CancelReservationRequest,
   type OCPP16DataTransferRequest,
   type OCPP16DiagnosticsStatusNotificationRequest,
   OCPP16FirmwareStatus,
@@ -11,6 +12,7 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
   OCPP16RequestCommand,
+  type OCPP16ReserveNowRequest,
   type OCPP16StatusNotificationRequest,
 } from './1.6/Requests';
 import { OperationalStatusEnumType } from './2.0/Common';
@@ -101,3 +103,7 @@ export const FirmwareStatus = {
 export type FirmwareStatus = OCPP16FirmwareStatus;
 
 export type ResponseType = JsonType | OCPPError;
+
+export type ReserveNowRequest = OCPP16ReserveNowRequest;
+
+export type CancelReservationRequest = OCPP16CancelReservationRequest;

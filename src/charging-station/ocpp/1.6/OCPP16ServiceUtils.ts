@@ -2,7 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import type { ChargingStation } from '../../../charging-station';
+import { type ChargingStation, ChargingStationUtils } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   CurrentType,
@@ -13,6 +13,9 @@ import {
   MeterValueContext,
   MeterValueLocation,
   MeterValueUnit,
+  OCPP16AuthorizationStatus,
+  type OCPP16AuthorizeRequest,
+  type OCPP16AuthorizeResponse,
   type OCPP16ChargingProfile,
   type OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
@@ -837,6 +840,30 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     );
   }
 
+  public static async isIdTagAuthorized(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag: string,
+    parentIdTag?: string
+  ): Promise<boolean> {
+    let authorized = false;
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+    if (OCPP16ServiceUtils.isIdTagLocalAuthorized(chargingStation, idTag)) {
+      connectorStatus.localAuthorizeIdTag = idTag;
+      connectorStatus.idTagLocalAuthorized = true;
+      authorized = true;
+    } else if (chargingStation.getMustAuthorizeAtRemoteStart() === true) {
+      connectorStatus.authorizeIdTag = idTag;
+      authorized = await OCPP16ServiceUtils.isIdTagRemoteAuthorized(chargingStation, idTag);
+    } else {
+      logger.warn(
+        `${chargingStation.logPrefix()} The charging station configuration expects authorize at
+          remote start transaction but local authorization or authorize isn't enabled`
+      );
+    }
+    return authorized;
+  }
+
   private static buildSampledValue(
     sampledValueTemplate: SampledValueTemplate,
     value: number,
@@ -911,5 +938,31 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       case OCPP16MeterValueMeasurand.VOLTAGE:
         return MeterValueUnit.VOLT;
     }
+  }
+
+  private static isIdTagLocalAuthorized(chargingStation: ChargingStation, idTag: string): boolean {
+    return (
+      chargingStation.getLocalAuthListEnabled() === true &&
+      chargingStation.hasIdTags() === true &&
+      Utils.isNotEmptyString(
+        chargingStation.idTagsCache
+          .getIdTags(ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo))
+          ?.find((tag) => tag === idTag)
+      )
+    );
+  }
+
+  private static async isIdTagRemoteAuthorized(
+    chargingStation: ChargingStation,
+    idTag: string
+  ): Promise<boolean> {
+    const authorizeResponse: OCPP16AuthorizeResponse =
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP16AuthorizeRequest,
+        OCPP16AuthorizeResponse
+      >(chargingStation, OCPP16RequestCommand.AUTHORIZE, {
+        idTag: idTag,
+      });
+    return authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED;
   }
 }

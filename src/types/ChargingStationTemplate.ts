@@ -14,7 +14,6 @@ import type {
   MessageTrigger,
   RequestCommand,
 } from './ocpp/Requests';
-import type { Reservation } from './ocpp/Reservation';
 
 export enum CurrentType {
   AC = 'AC',
@@ -116,5 +115,4 @@ export type ChargingStationTemplate = {
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   Evses?: Record<string, EvseTemplate>;
   Connectors?: Record<string, ConnectorStatus>;
-  reservation?: Reservation[];
 };

@@ -2,7 +2,7 @@ import type { OCPP16MeterValuesResponse } from './1.6/MeterValues';
 import {
   OCPP16AvailabilityStatus,
   type OCPP16BootNotificationResponse,
-  OCPP16CancelReservationStatus,
+  type OCPP16CancelReservationResponse,
   OCPP16ChargingProfileStatus,
   OCPP16ClearChargingProfileStatus,
   OCPP16ConfigurationStatus,
@@ -111,7 +111,8 @@ export const ReservationStatus = {
   ...OCPP16ReservationStatus,
 };
 
-export type CancelReservationStatus = OCPP16CancelReservationStatus;
 export const CancelReservationStatus = {
-  ...OCPP16CancelReservationStatus,
+  ...GenericStatus,
 };
+
+export type CancelReservationResponse = OCPP16CancelReservationResponse;

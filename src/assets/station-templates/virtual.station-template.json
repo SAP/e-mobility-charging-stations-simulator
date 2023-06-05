@@ -40,6 +40,11 @@
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
+      },
+      {
+        "key": "ReserveConnectorZeroSupported",
+        "readonly": false,
+        "value": "false"
       }
     ]
   },

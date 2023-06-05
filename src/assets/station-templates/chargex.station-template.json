@@ -69,6 +69,11 @@
       {
         "key": "TransactionMessageRetryInterval",
         "value": "20"
+      },
+      {
+        "key": "ReserveConnectorZeroSupported",
+        "readonly": false,
+        "value": "false"
       }
     ]
   },

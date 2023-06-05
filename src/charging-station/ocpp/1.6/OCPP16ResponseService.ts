@@ -25,6 +25,7 @@ import {
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
   type OCPP16BootNotificationResponse,
+  type OCPP16CancelReservationResponse,
   OCPP16ChargePointStatus,
   type OCPP16DataTransferResponse,
   type OCPP16DiagnosticsStatusNotificationResponse,
@@ -35,6 +36,7 @@ import {
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
+  type OCPP16ReserveNowResponse,
   OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
@@ -157,6 +159,22 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationResponse>(
           'assets/json-schemas/ocpp/1.6/FirmwareStatusNotificationResponse.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16RequestCommand.RESERVE_NOW,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowResponse>(
+          'assets/json-schemas/ocpp/1.6/ReserveNowResponse.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16RequestCommand.CANCEL_RESERVATION,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16CancelReservationResponse>(
+          'assets/json-schemas/ocpp/1.6/CancelReservationResponse.json',
           moduleName,
           'constructor'
         ),

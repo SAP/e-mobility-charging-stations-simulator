@@ -460,7 +460,7 @@ All kind of OCPP parameters are supported in a charging station configuration or
 
 #### Reservation Profile
 
-- _none_
+- :white_check_mark: ReserveConnectorZeroSupported (type: boolean) (units: -)
 
 #### Smart Charging Profile
 
