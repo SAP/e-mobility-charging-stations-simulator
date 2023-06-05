@@ -21,8 +21,6 @@ export enum OCPP16RequestCommand {
   DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
   FIRMWARE_STATUS_NOTIFICATION = 'FirmwareStatusNotification',
   DATA_TRANSFER = 'DataTransfer',
-  RESERVE_NOW = 'ReserveNow',
-  CANCEL_RESERVATION = 'CancelReservation',
 }
 
 export enum OCPP16IncomingRequestCommand {

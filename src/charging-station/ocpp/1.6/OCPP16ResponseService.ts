@@ -163,22 +163,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
           'constructor'
         ),
       ],
-      [
-        OCPP16RequestCommand.RESERVE_NOW,
-        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowResponse>(
-          'assets/json-schemas/ocpp/1.6/ReserveNowResponse.json',
-          moduleName,
-          'constructor'
-        ),
-      ],
-      [
-        OCPP16RequestCommand.CANCEL_RESERVATION,
-        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16CancelReservationResponse>(
-          'assets/json-schemas/ocpp/1.6/CancelReservationResponse.json',
-          moduleName,
-          'constructor'
-        ),
-      ],
     ]);
     this.jsonIncomingRequestResponseSchemas = new Map([
       [
@@ -297,6 +281,22 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareResponse>(
           'assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16IncomingRequestCommand.RESERVE_NOW,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowResponse>(
+          'assets/json-schemas/ocpp/1.6/ReserveNowResponse.json',
+          moduleName,
+          'constructor'
+        ),
+      ],
+      [
+        OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16CancelReservationResponse>(
+          'assets/json-schemas/ocpp/1.6/CancelReservationResponse.json',
           moduleName,
           'constructor'
         ),
