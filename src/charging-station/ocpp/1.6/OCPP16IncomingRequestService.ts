@@ -1085,7 +1085,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ).catch(Constants.EMPTY_FUNCTION);
     } else {
       setTimeout(() => {
-        this.updateFirmwareSimulation(chargingStation).catch(Constants.EMPTY_FUNCTION);
+        this.runInAsyncScope(
+          this.updateFirmwareSimulation.bind(this) as (
+            this: OCPP16IncomingRequestService,
+            ...args: any[]
+          ) => Promise<void>,
+          this,
+          chargingStation
+        ).catch(Constants.EMPTY_FUNCTION);
       }, retrieveDate?.getTime() - now);
     }
     return OCPP16Constants.OCPP_RESPONSE_EMPTY;
