@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type EventEmitter from 'node:events';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,6 +19,7 @@ import {
   type ChargingSchedulePeriod,
   type ChargingStationInfo,
   type ChargingStationTemplate,
+  ChargingStationWorkerMessageEvents,
   ConnectorPhaseRotation,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -538,6 +540,25 @@ export class ChargingStationUtils {
       )
     );
   }
+
+  public static waitForChargingStationEvents = async (
+    emitter: EventEmitter,
+    event: ChargingStationWorkerMessageEvents,
+    eventsToWait: number
+  ): Promise<number> => {
+    return new Promise((resolve) => {
+      let events = 0;
+      if (eventsToWait === 0) {
+        resolve(events);
+      }
+      emitter.on(event, () => {
+        ++events;
+        if (events === eventsToWait) {
+          resolve(events);
+        }
+      });
+    });
+  };
 
   private static getConfiguredNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
     let configuredMaxConnectors: number;

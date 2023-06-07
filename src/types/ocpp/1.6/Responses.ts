@@ -110,10 +110,6 @@ export interface OCPP16DataTransferResponse extends JsonObject {
   data?: string;
 }
 
-export interface OCPP16CancelReservationResponse extends JsonObject {
-  status: GenericStatus;
-}
-
 export enum OCPP16ReservationStatus {
   ACCEPTED = 'Accepted',
   FAULTED = 'Faulted',

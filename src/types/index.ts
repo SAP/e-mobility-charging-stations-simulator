@@ -130,7 +130,6 @@ export {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
   type OCPP16ReserveNowResponse,
-  type OCPP16CancelReservationResponse,
 } from './ocpp/1.6/Responses';
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode';
 export {
