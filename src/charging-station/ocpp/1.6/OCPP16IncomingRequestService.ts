@@ -1620,7 +1620,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         );
         return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;
       }
-      await chargingStation.removeReservation(reservation);
+      await chargingStation.removeReservation(
+        reservation,
+        ReservationTerminationReason.RESERVATION_CANCELED
+      );
       return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED;
     } catch (error) {
       return this.handleIncomingRequestError(

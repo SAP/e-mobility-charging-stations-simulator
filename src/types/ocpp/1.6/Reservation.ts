@@ -11,6 +11,7 @@ export enum ReservationTerminationReason {
   TRANSACTION_STARTED = 'TransactionStarted',
   CONNECTOR_STATE_CHANGED = 'ConnectorStateChanged',
   RESERVATION_CANCELED = 'ReservationCanceled',
+  REPLACE_EXISTING = 'ReplaceExisting',
 }
 
 export enum ReservationFilterKey {
