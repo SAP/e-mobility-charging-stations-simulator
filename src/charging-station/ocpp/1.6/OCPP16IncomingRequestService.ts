@@ -39,7 +39,6 @@ import {
   type OCPP16BootNotificationRequest,
   type OCPP16BootNotificationResponse,
   type OCPP16CancelReservationRequest,
-  type OCPP16CancelReservationResponse,
   OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
@@ -1601,7 +1600,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private async handleRequestCancelReservation(
     chargingStation: ChargingStation,
     commandPayload: OCPP16CancelReservationRequest
-  ): Promise<OCPP16CancelReservationResponse> {
+  ): Promise<GenericResponse> {
     if (
       !OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,

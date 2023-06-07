@@ -7,6 +7,7 @@ import { type Worker, isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
 
+import { ChargingStationUtils } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServerFactory } from './ui-server/UIServerFactory';
 import packageJson from '../../package.json' assert { type: 'json' };
@@ -161,7 +162,11 @@ export class Bootstrap extends EventEmitter {
             Constants.EMPTY_FREEZED_OBJECT
           )
         );
-        await this.waitForChargingStationsStopped();
+        await ChargingStationUtils.waitForChargingStationEvents(
+          this,
+          ChargingStationWorkerMessageEvents.stopped,
+          this.numberOfChargingStations
+        );
         await this.workerImplementation?.stop();
         this.workerImplementation = null;
         this.uiServer?.stop();
@@ -336,23 +341,6 @@ export class Bootstrap extends EventEmitter {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error);
         process.exit(1);
       });
-  };
-
-  private waitForChargingStationsStopped = async (
-    stoppedEventsToWait = this.numberOfStartedChargingStations
-  ): Promise<number> => {
-    return new Promise((resolve) => {
-      let stoppedEvents = 0;
-      if (stoppedEventsToWait === 0) {
-        resolve(stoppedEvents);
-      }
-      this.on(ChargingStationWorkerMessageEvents.stopped, () => {
-        ++stoppedEvents;
-        if (stoppedEvents === stoppedEventsToWait) {
-          resolve(stoppedEvents);
-        }
-      });
-    });
   };
 
   private logPrefix = (): string => {

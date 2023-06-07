@@ -25,7 +25,6 @@ import {
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
   type OCPP16BootNotificationResponse,
-  type OCPP16CancelReservationResponse,
   OCPP16ChargePointStatus,
   type OCPP16DataTransferResponse,
   type OCPP16DiagnosticsStatusNotificationResponse,
@@ -295,7 +294,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16CancelReservationResponse>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
           'assets/json-schemas/ocpp/1.6/CancelReservationResponse.json',
           moduleName,
           'constructor'
