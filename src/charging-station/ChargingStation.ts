@@ -933,7 +933,7 @@ export class ChargingStation {
   public async addReservation(reservation: Reservation): Promise<void> {
     const [exists, reservationFound] = this.doesReservationExists(reservation);
     if (exists) {
-      await this.removeReservation(reservationFound);
+      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING);
     }
     this.getConnectorStatus(reservation.connectorId).reservation = reservation;
     await OCPPServiceUtils.sendAndSetConnectorStatus(
@@ -955,8 +955,11 @@ export class ChargingStation {
         delete connector.reservation;
         break;
       case ReservationTerminationReason.TRANSACTION_STARTED:
-      case ReservationTerminationReason.EXPIRED:
-      case ReservationTerminationReason.RESERVATION_CANCELED:
+        delete connector.reservation;
+        break;
+      case ReservationTerminationReason.RESERVATION_CANCELED ||
+        ReservationTerminationReason.REPLACE_EXISTING ||
+        ReservationTerminationReason.EXPIRED:
         await OCPPServiceUtils.sendAndSetConnectorStatus(
           this,
           reservation.connectorId,
@@ -1010,14 +1013,20 @@ export class ChargingStation {
         for (const evse of this.evses.values()) {
           for (const connector of evse.connectors.values()) {
             if (connector?.reservation?.expiryDate.toString() < new Date().toISOString()) {
-              await this.removeReservation(connector.reservation);
+              await this.removeReservation(
+                connector.reservation,
+                ReservationTerminationReason.EXPIRED
+              );
             }
           }
         }
       } else {
         for (const connector of this.connectors.values()) {
           if (connector?.reservation?.expiryDate.toString() < new Date().toISOString()) {
-            await this.removeReservation(connector.reservation);
+            await this.removeReservation(
+              connector.reservation,
+              ReservationTerminationReason.EXPIRED
+            );
           }
         }
       }
