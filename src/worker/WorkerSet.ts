@@ -12,6 +12,7 @@ import {
   WorkerMessageEvents,
   type WorkerOptions,
   type WorkerSetElement,
+  WorkerSetEvents,
 } from './WorkerTypes';
 import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
 
@@ -95,7 +96,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     );
     worker.on('error', defaultErrorHandler.bind(this) as (err: Error) => void);
     worker.on('error', (error) => {
-      this.emitter.emit('error', error);
+      this.emitter.emit(WorkerSetEvents.error, error);
       this.addWorkerSetElement();
     });
     worker.on('exit', defaultExitHandler.bind(this) as (exitCode: number) => void);

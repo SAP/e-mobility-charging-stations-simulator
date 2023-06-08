@@ -4,6 +4,7 @@ export { WorkerFactory } from './WorkerFactory';
 export {
   type MessageHandler,
   type WorkerData,
+  type WorkerEvents,
   type WorkerMessage,
   WorkerMessageEvents,
   WorkerProcessType,

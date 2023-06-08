@@ -1,6 +1,6 @@
 import type { Worker } from 'node:worker_threads';
 
-import type { PoolOptions } from 'poolifier';
+import { type PoolEvent, PoolEvents, type PoolOptions } from 'poolifier';
 
 export enum WorkerProcessType {
   workerSet = 'workerSet',
@@ -13,6 +13,16 @@ export type SetInfo = {
   runningElements: number;
   elementsPerWorker: number;
 };
+
+export enum WorkerSetEvents {
+  error = 'error',
+}
+
+export const WorkerEvents = {
+  ...PoolEvents,
+  ...WorkerSetEvents,
+} as const;
+export type WorkerEvents = PoolEvent | WorkerSetEvents;
 
 export type MessageHandler<T> = (this: T, message: unknown) => void;
 
