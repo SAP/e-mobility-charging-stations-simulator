@@ -6,7 +6,7 @@
     "pnpm": ">=8.6.0"
   },
   "volta": {
-    "node": "20.2.0",
+    "node": "20.3.0",
     "pnpm": "8.6.1"
   },
   "repository": {
@@ -102,7 +102,7 @@
     "mnemonist": "^0.39.5",
     "moment": "^2.29.4",
     "mongodb": "^5.6.0",
-    "poolifier": "^2.5.4",
+    "poolifier": "^2.6.0",
     "source-map-support": "^0.5.21",
     "tar": "^6.1.15",
     "tslib": "^2.5.3",
@@ -127,7 +127,7 @@
     "@types/node": "^20.2.5",
     "@types/sinon": "^10.0.15",
     "@types/tar": "^6.1.5",
-    "@types/ws": "^8.5.4",
+    "@types/ws": "^8.5.5",
     "@typescript-eslint/eslint-plugin": "^5.59.9",
     "@typescript-eslint/parser": "^5.59.9",
     "@web/rollup-plugin-copy": "^0.4.0",
