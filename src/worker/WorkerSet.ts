@@ -27,8 +27,17 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
+    this.workerOptions.poolOptions = {
+      ...{
+        enableEvents: true,
+        restartWorkerOnError: true,
+      },
+      ...this.workerOptions.poolOptions,
+    };
     this.workerSet = new Set<WorkerSetElement>();
-    this.emitter = new EventEmitterAsyncResource();
+    if (this.workerOptions?.poolOptions?.enableEvents) {
+      this.emitter = new EventEmitterAsyncResource();
+    }
   }
 
   get info(): SetInfo {
@@ -99,8 +108,12 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       this.workerOptions?.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION
     );
     worker.on('error', (error) => {
-      this.emitter.emit(WorkerSetEvents.error, error);
-      this.addWorkerSetElement();
+      if (this.emitter !== undefined) {
+        this.emitter.emit(WorkerSetEvents.error, error);
+      }
+      if (this.workerOptions?.poolOptions?.restartWorkerOnError) {
+        this.addWorkerSetElement();
+      }
     });
     worker.on(
       'online',
@@ -110,7 +123,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       'exit',
       this.workerOptions?.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION
     );
-    worker.on('exit', () => this.workerSet.delete(this.getWorkerSetElementByWorker(worker)));
+    worker.once('exit', () => this.workerSet.delete(this.getWorkerSetElementByWorker(worker)));
     const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
     this.workerSet.add(workerSetElement);
     return workerSetElement;
