@@ -1,12 +1,11 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import EventEmitterAsyncResource from 'node:events';
-import { Worker } from 'node:worker_threads';
+import { SHARE_ENV, Worker } from 'node:worker_threads';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import { WorkerConstants } from './WorkerConstants';
 import {
-  type MessageHandler,
   type SetInfo,
   type WorkerData,
   WorkerMessageEvents,
@@ -14,7 +13,7 @@ import {
   type WorkerSetElement,
   WorkerSetEvents,
 } from './WorkerTypes';
-import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
+import { sleep } from './WorkerUtils';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly emitter: EventEmitterAsyncResource;
@@ -87,19 +86,30 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
    * Add a new `WorkerSetElement`.
    */
   private addWorkerSetElement(): WorkerSetElement {
-    const worker = new Worker(this.workerScript);
+    const worker = new Worker(this.workerScript, {
+      env: SHARE_ENV,
+      ...this.workerOptions.poolOptions.workerOptions,
+    });
     worker.on(
       'message',
-      (this.workerOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION).bind(
-        this
-      ) as MessageHandler<Worker>
+      this.workerOptions?.poolOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION
     );
-    worker.on('error', defaultErrorHandler.bind(this) as (err: Error) => void);
+    worker.on(
+      'error',
+      this.workerOptions?.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION
+    );
     worker.on('error', (error) => {
       this.emitter.emit(WorkerSetEvents.error, error);
       this.addWorkerSetElement();
     });
-    worker.on('exit', defaultExitHandler.bind(this) as (exitCode: number) => void);
+    worker.on(
+      'online',
+      this.workerOptions?.poolOptions?.onlineHandler ?? WorkerConstants.EMPTY_FUNCTION
+    );
+    worker.on(
+      'exit',
+      this.workerOptions?.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION
+    );
     worker.on('exit', () => this.workerSet.delete(this.getWorkerSetElementByWorker(worker)));
     const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
     this.workerSet.add(workerSetElement);

@@ -1,6 +1,6 @@
-import { type Worker, isMainThread } from 'node:worker_threads';
+import { isMainThread } from 'node:worker_threads';
 
-import type { PoolOptions } from 'poolifier';
+import type { ThreadPoolOptions } from 'poolifier';
 
 import type { WorkerAbstract } from './WorkerAbstract';
 import { WorkerConstants } from './WorkerConstants';
@@ -27,9 +27,7 @@ export class WorkerFactory {
       workerOptions?.workerStartDelay ?? WorkerConstants.DEFAULT_WORKER_START_DELAY;
     workerOptions.elementStartDelay =
       workerOptions?.elementStartDelay ?? WorkerConstants.DEFAULT_ELEMENT_START_DELAY;
-    workerOptions.poolOptions = workerOptions?.poolOptions ?? ({} as PoolOptions<Worker>);
-    workerOptions?.messageHandler &&
-      (workerOptions.poolOptions.messageHandler = workerOptions.messageHandler);
+    workerOptions.poolOptions = workerOptions?.poolOptions ?? ({} as ThreadPoolOptions);
     let workerImplementation: WorkerAbstract<T> | null = null;
     switch (workerProcessType) {
       case WorkerProcessType.workerSet:

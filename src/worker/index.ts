@@ -2,7 +2,6 @@ export type { WorkerAbstract } from './WorkerAbstract';
 export { WorkerConstants } from './WorkerConstants';
 export { WorkerFactory } from './WorkerFactory';
 export {
-  type MessageHandler,
   type WorkerData,
   WorkerEvents,
   type WorkerMessage,

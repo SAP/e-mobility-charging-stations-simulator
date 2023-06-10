@@ -1,11 +1,10 @@
 import type EventEmitterAsyncResource from 'node:events';
-import type { Worker } from 'node:worker_threads';
 
-import { type ErrorHandler, type ExitHandler, FixedThreadPool, type PoolInfo } from 'poolifier';
+import { FixedThreadPool, type PoolInfo } from 'poolifier';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
-import { defaultErrorHandler, defaultExitHandler, sleep } from './WorkerUtils';
+import { sleep } from './WorkerUtils';
 
 export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
   private readonly pool: FixedThreadPool<WorkerData>;
@@ -18,13 +17,6 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
    */
   constructor(workerScript: string, workerOptions?: WorkerOptions) {
     super(workerScript, workerOptions);
-    this.workerOptions.poolOptions.errorHandler = (
-      this.workerOptions?.poolOptions?.errorHandler ?? defaultErrorHandler
-    ).bind(this) as ErrorHandler<Worker>;
-    this.workerOptions.poolOptions.exitHandler = (
-      this.workerOptions?.poolOptions?.exitHandler ?? defaultExitHandler
-    ).bind(this) as ExitHandler<Worker>;
-    this.workerOptions.poolOptions.messageHandler.bind(this);
     this.pool = new FixedThreadPool(
       this.workerOptions.poolMaxSize,
       this.workerScript,

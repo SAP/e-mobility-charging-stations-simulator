@@ -3,7 +3,7 @@
 import { EventEmitter } from 'node:events';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Worker, isMainThread } from 'node:worker_threads';
+import { isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
 
@@ -31,7 +31,7 @@ import {
   handleUnhandledRejection,
   logger,
 } from '../utils';
-import { type MessageHandler, type WorkerAbstract, WorkerFactory } from '../worker';
+import { type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
 
@@ -201,8 +201,8 @@ export class Bootstrap extends EventEmitter {
           elementsPerWorker: Configuration.getWorker().elementsPerWorker,
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
+            messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
           },
-          messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
         }
       ));
   }

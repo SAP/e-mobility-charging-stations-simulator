@@ -1,10 +1,12 @@
 import type EventEmitterAsyncResource from 'node:events';
 import fs from 'node:fs';
+import type { Worker } from 'node:worker_threads';
 
-import type { PoolInfo } from 'poolifier';
+import type { ErrorHandler, ExitHandler, PoolInfo } from 'poolifier';
 
 import { WorkerConstants } from './WorkerConstants';
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes';
+import { defaultErrorHandler, defaultExitHandler } from './WorkerUtils';
 
 export abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;
@@ -29,7 +31,6 @@ export abstract class WorkerAbstract<T extends WorkerData> {
       poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
       elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
       poolOptions: {},
-      messageHandler: WorkerConstants.EMPTY_FUNCTION,
     }
   ) {
     if (workerScript === null || workerScript === undefined) {
@@ -43,6 +44,14 @@ export abstract class WorkerAbstract<T extends WorkerData> {
     }
     this.workerScript = workerScript;
     this.workerOptions = workerOptions;
+    this.workerOptions.poolOptions?.messageHandler?.bind(this);
+    this.workerOptions.poolOptions.errorHandler = (
+      this.workerOptions?.poolOptions?.errorHandler ?? defaultErrorHandler
+    ).bind(this) as ErrorHandler<Worker>;
+    this.workerOptions.poolOptions?.onlineHandler?.bind(this);
+    this.workerOptions.poolOptions.exitHandler = (
+      this.workerOptions?.poolOptions?.exitHandler ?? defaultExitHandler
+    ).bind(this) as ExitHandler<Worker>;
   }
 
   /**
