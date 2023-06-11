@@ -167,6 +167,7 @@ export {
 } from './ChargingStationTemplate';
 export {
   type ConfigurationData,
+  type LogConfiguration,
   type StationTemplateUrl,
   type StorageConfiguration,
   SupervisionUrlDistribution,

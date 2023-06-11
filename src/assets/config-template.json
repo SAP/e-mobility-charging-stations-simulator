@@ -1,6 +1,12 @@
 {
   "supervisionUrls": ["ws://localhost:8010/OCPP16/5be7fb271014d90008992f06"],
   "supervisionUrlDistribution": "round-robin",
+  "log": {
+    "file": "logs/combined.log",
+    "errorFile": "logs/error.log",
+    "maxFiles": 7,
+    "statisticsInterval": 0
+  },
   "worker": {
     "processType": "workerSet",
     "elementsPerWorker": 1,
@@ -42,9 +48,5 @@
       "file": "schneider.station-template.json",
       "numberOfStations": 1
     }
-  ],
-  "logStatisticsInterval": 0,
-  "logMaxFiles": 7,
-  "logFile": "combined.log",
-  "logErrorFile": "error.log"
+  ]
 }

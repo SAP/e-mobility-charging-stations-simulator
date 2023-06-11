@@ -165,7 +165,9 @@ export class PerformanceStatistics {
   }
 
   private startLogStatisticsInterval(): void {
-    const logStatisticsInterval = Configuration.getLogStatisticsInterval();
+    const logStatisticsInterval = Configuration.getLog().enabled
+      ? Configuration.getLog().statisticsInterval
+      : 0;
     if (logStatisticsInterval > 0 && !this.displayInterval) {
       this.displayInterval = setInterval(() => {
         this.logStatistics();
@@ -179,7 +181,7 @@ export class PerformanceStatistics {
           logStatisticsInterval
         )}`
       );
-    } else {
+    } else if (Configuration.getLog().enabled) {
       logger.info(
         `${this.logPrefix()} log interval is set to ${logStatisticsInterval?.toString()}. Not logging statistics`
       );

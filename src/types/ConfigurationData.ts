@@ -19,6 +19,19 @@ export type StationTemplateUrl = {
   numberOfStations: number;
 };
 
+export type LogConfiguration = {
+  enabled?: boolean;
+  file?: string;
+  errorFile?: string;
+  statisticsInterval?: number;
+  level?: string;
+  console?: boolean;
+  format?: string;
+  rotate?: boolean;
+  maxFiles?: string | number;
+  maxSize?: string | number;
+};
+
 export type UIServerConfiguration = {
   enabled?: boolean;
   type?: ApplicationProtocol;
@@ -51,9 +64,10 @@ export type ConfigurationData = {
   supervisionUrls?: string | string[];
   supervisionUrlDistribution?: SupervisionUrlDistribution;
   stationTemplateUrls: StationTemplateUrl[];
+  log?: LogConfiguration;
+  worker?: WorkerConfiguration;
   uiServer?: UIServerConfiguration;
   performanceStorage?: StorageConfiguration;
-  worker?: WorkerConfiguration;
   autoReconnectMaxRetries?: number;
   /** @deprecated Moved to worker configuration section. */
   workerProcess?: WorkerProcessType;
@@ -69,14 +83,24 @@ export type ConfigurationData = {
   workerPoolStrategy?: WorkerChoiceStrategy;
   /** @deprecated Moved to worker configuration section. */
   chargingStationsPerWorker?: number;
+  /** @deprecated Moved to log configuration section. */
   logStatisticsInterval?: number;
+  /** @deprecated Moved to log configuration section. */
   logEnabled?: boolean;
+  /** @deprecated Moved to log configuration section. */
   logConsole?: boolean;
+  /** @deprecated Moved to log configuration section. */
   logFormat?: string;
+  /** @deprecated Moved to log configuration section. */
   logLevel?: string;
+  /** @deprecated Moved to log configuration section. */
   logRotate?: boolean;
+  /** @deprecated Moved to log configuration section. */
   logMaxFiles?: number | string;
+  /** @deprecated Moved to log configuration section. */
   logMaxSize?: number | string;
+  /** @deprecated Moved to log configuration section. */
   logFile?: string;
+  /** @deprecated Moved to log configuration section. */
   logErrorFile?: string;
 };

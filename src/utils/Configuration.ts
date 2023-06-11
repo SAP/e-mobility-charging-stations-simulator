@@ -12,6 +12,7 @@ import {
   ApplicationProtocol,
   type ConfigurationData,
   FileType,
+  type LogConfiguration,
   type StationTemplateUrl,
   type StorageConfiguration,
   StorageType,
@@ -38,18 +39,6 @@ export class Configuration {
 
   public static setConfigurationChangeCallback(cb: () => Promise<void>): void {
     Configuration.configurationChangeCallback = cb;
-  }
-
-  public static getLogStatisticsInterval(): number | undefined {
-    Configuration.warnDeprecatedConfigurationKey(
-      'statisticsDisplayInterval',
-      undefined,
-      "Use 'logStatisticsInterval' instead"
-    );
-    // Read conf
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logStatisticsInterval')
-      ? Configuration.getConfig()?.logStatisticsInterval
-      : Constants.DEFAULT_LOG_STATISTICS_INTERVAL;
   }
 
   public static getUIServer(): UIServerConfiguration {
@@ -150,6 +139,106 @@ export class Configuration {
     return Configuration.getConfig()?.stationTemplateUrls;
   }
 
+  public static getLog(): LogConfiguration {
+    Configuration.warnDeprecatedConfigurationKey(
+      'logEnabled',
+      undefined,
+      "Use 'log' section to define the logging enablement instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logFile',
+      undefined,
+      "Use 'log' section to define the log file instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logErrorFile',
+      undefined,
+      "Use 'log' section to define the log error file instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logConsole',
+      undefined,
+      "Use 'log' section to define the console logging enablement instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logStatisticsInterval',
+      undefined,
+      "Use 'log' section to define the log statistics interval instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logLevel',
+      undefined,
+      "Use 'log' section to define the log level instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logFormat',
+      undefined,
+      "Use 'log' section to define the log format instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logRotate',
+      undefined,
+      "Use 'log' section to define the log rotation instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logMaxFiles',
+      undefined,
+      "Use 'log' section to define the log maximum files instead"
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'logMaxSize',
+      undefined,
+      "Use 'log' section to define the log maximum size instead"
+    );
+    const defaultLogConfiguration: LogConfiguration = {
+      enabled: true,
+      file: 'logs/combined.log',
+      errorFile: 'logs/error.log',
+      statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL,
+      level: 'info',
+      format: 'simple',
+      rotate: true,
+    };
+    const deprecatedLogConfiguration: LogConfiguration = {
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logEnabled') && {
+        enabled: Configuration.getConfig()?.logEnabled,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logFile') && {
+        file: Configuration.getConfig()?.logFile,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logErrorFile') && {
+        errorFile: Configuration.getConfig()?.logErrorFile,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logStatisticsInterval') && {
+        statisticsInterval: Configuration.getConfig()?.logStatisticsInterval,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logLevel') && {
+        level: Configuration.getConfig()?.logLevel,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logConsole') && {
+        console: Configuration.getConfig()?.logConsole,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logFormat') && {
+        format: Configuration.getConfig()?.logFormat,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logRotate') && {
+        rotate: Configuration.getConfig()?.logRotate,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') && {
+        maxFiles: Configuration.getConfig()?.logMaxFiles,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logMaxSize') && {
+        maxSize: Configuration.getConfig()?.logMaxSize,
+      }),
+    };
+    const logConfiguration: LogConfiguration = {
+      ...defaultLogConfiguration,
+      ...deprecatedLogConfiguration,
+      ...Configuration.getConfig()?.log,
+    };
+    return logConfiguration;
+  }
+
   public static getWorker(): WorkerConfiguration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
@@ -196,31 +285,44 @@ export class Configuration {
       undefined,
       "Use 'worker' section to define the worker pool strategy instead"
     );
-    let workerConfiguration: WorkerConfiguration = {
-      processType: Utils.hasOwnProp(Configuration.getConfig(), 'workerProcess')
-        ? Configuration.getConfig()?.workerProcess
-        : WorkerProcessType.workerSet,
-      startDelay: Utils.hasOwnProp(Configuration.getConfig(), 'workerStartDelay')
-        ? Configuration.getConfig()?.workerStartDelay
-        : WorkerConstants.DEFAULT_WORKER_START_DELAY,
-      elementsPerWorker: Utils.hasOwnProp(Configuration.getConfig(), 'chargingStationsPerWorker')
-        ? Configuration.getConfig()?.chargingStationsPerWorker
-        : WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
-      elementStartDelay: Utils.hasOwnProp(Configuration.getConfig(), 'elementStartDelay')
-        ? Configuration.getConfig()?.elementStartDelay
-        : WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
-      poolMinSize: Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMinSize')
-        ? Configuration.getConfig()?.workerPoolMinSize
-        : WorkerConstants.DEFAULT_POOL_MIN_SIZE,
-      poolMaxSize: Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMaxSize')
-        ? Configuration.getConfig()?.workerPoolMaxSize
-        : WorkerConstants.DEFAULT_POOL_MAX_SIZE,
-      poolStrategy:
-        Configuration.getConfig()?.workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
+    const defaultWorkerConfiguration: WorkerConfiguration = {
+      processType: WorkerProcessType.workerSet,
+      startDelay: WorkerConstants.DEFAULT_WORKER_START_DELAY,
+      elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
+      elementStartDelay: WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
+      poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
+      poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
+      poolStrategy: WorkerChoiceStrategies.ROUND_ROBIN,
     };
-    if (Utils.hasOwnProp(Configuration.getConfig(), 'worker')) {
-      workerConfiguration = { ...workerConfiguration, ...Configuration.getConfig()?.worker };
-    }
+    const deprecatedWorkerConfiguration: WorkerConfiguration = {
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerProcess') && {
+        processType: Configuration.getConfig()?.workerProcess,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerStartDelay') && {
+        startDelay: Configuration.getConfig()?.workerStartDelay,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'chargingStationsPerWorker') && {
+        elementsPerWorker: Configuration.getConfig()?.chargingStationsPerWorker,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'elementStartDelay') && {
+        elementStartDelay: Configuration.getConfig()?.elementStartDelay,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMinSize') && {
+        poolMinSize: Configuration.getConfig()?.workerPoolMinSize,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMaxSize') && {
+        poolMaxSize: Configuration.getConfig()?.workerPoolMaxSize,
+      }),
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolStrategy') && {
+        poolStrategy:
+          Configuration.getConfig()?.workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
+      }),
+    };
+    const workerConfiguration: WorkerConfiguration = {
+      ...defaultWorkerConfiguration,
+      ...deprecatedWorkerConfiguration,
+      ...Configuration.getConfig()?.worker,
+    };
     return workerConfiguration;
   }
 
@@ -232,72 +334,6 @@ export class Configuration {
 
   public static workerDynamicPoolInUse(): boolean {
     return Configuration.getWorker().processType === WorkerProcessType.dynamicPool;
-  }
-
-  public static getLogEnabled(): boolean | undefined {
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logEnabled')
-      ? Configuration.getConfig()?.logEnabled
-      : true;
-  }
-
-  public static getLogConsole(): boolean | undefined {
-    Configuration.warnDeprecatedConfigurationKey(
-      'consoleLog',
-      undefined,
-      "Use 'logConsole' instead"
-    );
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logConsole')
-      ? Configuration.getConfig()?.logConsole
-      : false;
-  }
-
-  public static getLogFormat(): string | undefined {
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logFormat')
-      ? Configuration.getConfig()?.logFormat
-      : 'simple';
-  }
-
-  public static getLogRotate(): boolean | undefined {
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logRotate')
-      ? Configuration.getConfig()?.logRotate
-      : true;
-  }
-
-  public static getLogMaxFiles(): number | string | false | undefined {
-    return (
-      Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') &&
-      Configuration.getConfig()?.logMaxFiles
-    );
-  }
-
-  public static getLogMaxSize(): number | string | false | undefined {
-    return (
-      Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') &&
-      Configuration.getConfig()?.logMaxSize
-    );
-  }
-
-  public static getLogLevel(): string | undefined {
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logLevel')
-      ? Configuration.getConfig()?.logLevel?.toLowerCase()
-      : 'info';
-  }
-
-  public static getLogFile(): string | undefined {
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logFile')
-      ? Configuration.getConfig()?.logFile
-      : 'combined.log';
-  }
-
-  public static getLogErrorFile(): string | undefined {
-    Configuration.warnDeprecatedConfigurationKey(
-      'errorFile',
-      undefined,
-      "Use 'logErrorFile' instead"
-    );
-    return Utils.hasOwnProp(Configuration.getConfig(), 'logErrorFile')
-      ? Configuration.getConfig()?.logErrorFile
-      : 'error.log';
   }
 
   public static getSupervisionUrls(): string | string[] | undefined {

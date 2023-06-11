@@ -7,15 +7,15 @@ import { Configuration } from './Configuration';
 import { Utils } from './Utils';
 
 let transports: transport[];
-if (Configuration.getLogRotate() === true) {
-  const logMaxFiles = Configuration.getLogMaxFiles();
-  const logMaxSize = Configuration.getLogMaxSize();
+if (Configuration.getLog().rotate === true) {
+  const logMaxFiles = Configuration.getLog().maxFiles;
+  const logMaxSize = Configuration.getLog().maxSize;
   transports = [
     new DailyRotateFile({
       filename: Utils.insertAt(
-        Configuration.getLogErrorFile(),
+        Configuration.getLog().errorFile,
         '-%DATE%',
-        Configuration.getLogErrorFile()?.indexOf('.log')
+        Configuration.getLog().errorFile?.indexOf('.log')
       ),
       level: 'error',
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
@@ -23,9 +23,9 @@ if (Configuration.getLogRotate() === true) {
     }),
     new DailyRotateFile({
       filename: Utils.insertAt(
-        Configuration.getLogFile(),
+        Configuration.getLog().file,
         '-%DATE%',
-        Configuration.getLogFile()?.indexOf('.log')
+        Configuration.getLog().file?.indexOf('.log')
       ),
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
       ...(logMaxSize && { maxSize: logMaxSize }),
@@ -33,15 +33,15 @@ if (Configuration.getLogRotate() === true) {
   ];
 } else {
   transports = [
-    new TransportType.File({ filename: Configuration.getLogErrorFile(), level: 'error' }),
-    new TransportType.File({ filename: Configuration.getLogFile() }),
+    new TransportType.File({ filename: Configuration.getLog().errorFile, level: 'error' }),
+    new TransportType.File({ filename: Configuration.getLog().file }),
   ];
 }
 
 export const logger = createLogger({
-  silent: !Configuration.getLogEnabled(),
-  level: Configuration.getLogLevel(),
-  format: format.combine(format.splat(), (format[Configuration.getLogFormat()] as FormatWrap)()),
+  silent: !Configuration.getLog().enabled,
+  level: Configuration.getLog().level,
+  format: format.combine(format.splat(), (format[Configuration.getLog().format] as FormatWrap)()),
   transports,
 });
 
@@ -49,12 +49,12 @@ export const logger = createLogger({
 // If enabled, log to the `console` with the format:
 // `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
 //
-if (Configuration.getLogConsole()) {
+if (Configuration.getLog().console) {
   logger.add(
     new TransportType.Console({
       format: format.combine(
         format.splat(),
-        (format[Configuration.getLogFormat()] as FormatWrap)()
+        (format[Configuration.getLog().format] as FormatWrap)()
       ),
     })
   );
