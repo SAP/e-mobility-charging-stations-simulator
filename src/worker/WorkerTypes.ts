@@ -10,7 +10,7 @@ export enum WorkerProcessType {
 
 export type SetInfo = {
   size: number;
-  runningElements: number;
+  elementsExecuting: number;
   elementsPerWorker: number;
 };
 

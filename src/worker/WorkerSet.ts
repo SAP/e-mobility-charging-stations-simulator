@@ -43,7 +43,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   get info(): SetInfo {
     return {
       size: this.size,
-      runningElements: [...this.workerSet].reduce(
+      elementsExecuting: [...this.workerSet].reduce(
         (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
         0
       ),
