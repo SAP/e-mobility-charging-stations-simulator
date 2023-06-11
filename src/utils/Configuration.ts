@@ -178,7 +178,7 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'logRotate',
       undefined,
-      "Use 'log' section to define the log rotation instead"
+      "Use 'log' section to define the log rotation enablement instead"
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logMaxFiles',
