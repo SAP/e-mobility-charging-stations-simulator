@@ -234,7 +234,7 @@ export class Configuration {
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
       ...deprecatedLogConfiguration,
-      ...Configuration.getConfig()?.log,
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'log') && Configuration.getConfig()?.log),
     };
     return logConfiguration;
   }
@@ -321,7 +321,8 @@ export class Configuration {
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...deprecatedWorkerConfiguration,
-      ...Configuration.getConfig()?.worker,
+      ...(Utils.hasOwnProp(Configuration.getConfig(), 'worker') &&
+        Configuration.getConfig()?.worker),
     };
     return workerConfiguration;
   }
