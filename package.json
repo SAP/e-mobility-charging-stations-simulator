@@ -7,7 +7,7 @@
   },
   "volta": {
     "node": "20.3.0",
-    "pnpm": "8.6.1"
+    "pnpm": "8.6.2"
   },
   "repository": {
     "type": "git",
@@ -128,8 +128,8 @@
     "@types/sinon": "^10.0.15",
     "@types/tar": "^6.1.5",
     "@types/ws": "^8.5.5",
-    "@typescript-eslint/eslint-plugin": "^5.59.9",
-    "@typescript-eslint/parser": "^5.59.9",
+    "@typescript-eslint/eslint-plugin": "^5.59.11",
+    "@typescript-eslint/parser": "^5.59.11",
     "@web/rollup-plugin-copy": "^0.4.0",
     "auto-changelog": "^2.4.0",
     "c8": "^7.14.0",
@@ -152,11 +152,11 @@
     "release-it": "^15.11.0",
     "rimraf": "^5.0.1",
     "robohydra": "^0.6.9",
-    "rollup": "^3.25.0",
+    "rollup": "^3.25.1",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.5.1",
-    "sinon": "^15.1.0",
+    "sinon": "^15.1.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.3"
   }
