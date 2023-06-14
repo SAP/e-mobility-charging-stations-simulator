@@ -53,7 +53,7 @@ pnpm install
 Copy the configuration template file [src/assets/config-template.json](src/assets/config-template.json) to [src/assets/config.json](src/assets/config.json).  
 Copy the RFID tags template file [src/assets/idtags-template.json](src/assets/idtags-template.json) to [src/assets/idtags.json](src/assets/idtags.json).
 
-Tweak them to your needs by following the section [configuration files syntax](README.md#configuration-files-syntax).
+Tweak them to your needs by following the section [configuration files syntax](README.md#configuration-files-syntax): OCPP server supervision URL(s), charging station templates, etc.
 
 ## Start
 
