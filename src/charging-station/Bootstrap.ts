@@ -162,11 +162,22 @@ export class Bootstrap extends EventEmitter {
             Constants.EMPTY_FREEZED_OBJECT
           )
         );
-        await ChargingStationUtils.waitForChargingStationEvents(
-          this,
-          ChargingStationWorkerMessageEvents.stopped,
-          this.numberOfChargingStations
-        );
+        await Promise.race([
+          ChargingStationUtils.waitForChargingStationEvents(
+            this,
+            ChargingStationWorkerMessageEvents.stopped,
+            this.numberOfChargingStations
+          ),
+          new Promise<string>((resolve) => {
+            setTimeout(() => {
+              const message = `Timeout reached ${Utils.formatDurationMilliSeconds(
+                Constants.STOP_SIMULATOR_TIMEOUT
+              )} at stopping charging stations simulator`;
+              console.warn(chalk.yellow(message));
+              resolve(message);
+            }, Constants.STOP_SIMULATOR_TIMEOUT);
+          }),
+        ]);
         await this.workerImplementation?.stop();
         this.workerImplementation = null;
         this.uiServer?.stop();
