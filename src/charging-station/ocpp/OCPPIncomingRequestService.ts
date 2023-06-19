@@ -104,10 +104,14 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
   }
 
   protected handleRequestClearCache(chargingStation: ChargingStation): ClearCacheResponse {
-    chargingStation.idTagsCache.deleteIdTags(
-      ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo)
-    );
-    return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
+    if (
+      chargingStation.idTagsCache.deleteIdTags(
+        ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo)
+      )
+    ) {
+      return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
+    }
+    return OCPPConstants.OCPP_RESPONSE_REJECTED;
   }
 
   public abstract incomingRequestHandler(

@@ -70,7 +70,7 @@ export class IdTagsCache {
   }
 
   public deleteIdTags(file: string): boolean {
-    return this.deleteIdTagsCache(file);
+    return this.deleteIdTagsCache(file) && this.deleteIdTagsCacheIndexes(file);
   }
 
   private getRandomIdTag(hashId: string, file: string): string {
@@ -155,12 +155,14 @@ export class IdTagsCache {
     return this.idTagsCaches.delete(file);
   }
 
-  private deleteIdTagsCacheIndexes(file: string): void {
+  private deleteIdTagsCacheIndexes(file: string): boolean {
+    let deleted: boolean[];
     for (const [key] of this.idTagsCachesAddressableIndexes) {
       if (key.startsWith(file)) {
-        this.idTagsCachesAddressableIndexes.delete(key);
+        deleted.push(this.idTagsCachesAddressableIndexes.delete(key));
       }
     }
+    return !deleted.some((value) => value === false);
   }
 
   private getIdTagsCacheIndexesAddressableKey(prefix: string, uid: string): string {
