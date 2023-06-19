@@ -672,6 +672,7 @@ export class ChargingStation {
                   } file have changed, reload`
                 );
                 this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
+                // FIXME: cleanup idtags cache if idtags file has changed
                 // Initialize
                 this.initialize();
                 // Restart the ATG
