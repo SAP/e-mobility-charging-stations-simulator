@@ -6,7 +6,7 @@
     "pnpm": ">=8.6.0"
   },
   "volta": {
-    "node": "20.3.0",
+    "node": "20.3.1",
     "pnpm": "8.6.3"
   },
   "repository": {
@@ -115,8 +115,8 @@
     "utf-8-validate": "^6.0.3"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.6.5",
-    "@commitlint/config-conventional": "^17.6.5",
+    "@commitlint/cli": "^17.6.6",
+    "@commitlint/config-conventional": "^17.6.6",
     "@mikro-orm/cli": "^5.7.12",
     "@release-it/bumper": "^4.0.2",
     "@rollup/plugin-json": "^6.0.0",
@@ -155,8 +155,8 @@
     "rollup": "^3.25.1",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.0.0",
-    "semver": "^7.5.2",
-    "sinon": "^15.1.2",
+    "semver": "^7.5.3",
+    "sinon": "^15.2.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.3"
   }
