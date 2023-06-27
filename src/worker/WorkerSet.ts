@@ -42,6 +42,8 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
 
   get info(): SetInfo {
     return {
+      type: 'set',
+      worker: 'thread',
       size: this.size,
       elementsExecuting: [...this.workerSet].reduce(
         (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,

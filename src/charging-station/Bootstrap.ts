@@ -138,6 +138,7 @@ export class Bootstrap extends EventEmitter {
             }`
           )
         );
+        console.info(chalk.green('Worker set/pool information:'), this.workerImplementation?.info);
         this.started = true;
         this.starting = false;
       } else {
