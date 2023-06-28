@@ -378,10 +378,7 @@ export class ChargingStation {
       }
     } else {
       for (const connectorId of this.connectors.keys()) {
-        if (
-          connectorId > 0 &&
-          this.getConnectorStatus(connectorId)?.transactionId === transactionId
-        ) {
+        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
           return this.getConnectorStatus(connectorId)?.transactionIdTag;
         }
       }
@@ -391,7 +388,10 @@ export class ChargingStation {
   public getNumberOfRunningTransactions(): number {
     let trxCount = 0;
     if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
+      for (const [evseId, evseStatus] of this.evses) {
+        if (evseId === 0) {
+          continue;
+        }
         for (const connectorStatus of evseStatus.connectors.values()) {
           if (connectorStatus.transactionStarted === true) {
             ++trxCount;
@@ -447,10 +447,7 @@ export class ChargingStation {
       }
     } else {
       for (const connectorId of this.connectors.keys()) {
-        if (
-          connectorId > 0 &&
-          this.getConnectorStatus(connectorId)?.transactionId === transactionId
-        ) {
+        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
           return connectorId;
         }
       }
@@ -975,19 +972,22 @@ export class ChargingStation {
     }
   }
 
-  public getReservationBy(filterKey: ReservationFilterKey, value: number | string): Reservation {
+  public getReservationBy(
+    filterKey: ReservationFilterKey,
+    value: number | string
+  ): Reservation | undefined {
     if (this.hasEvses) {
-      for (const evse of this.evses.values()) {
-        for (const connector of evse.connectors.values()) {
-          if (connector?.reservation?.[filterKey] === value) {
-            return connector.reservation;
+      for (const evseStatus of this.evses.values()) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus?.reservation?.[filterKey] === value) {
+            return connectorStatus.reservation;
           }
         }
       }
     } else {
-      for (const connector of this.connectors.values()) {
-        if (connector?.reservation?.[filterKey] === value) {
-          return connector.reservation;
+      for (const connectorStatus of this.connectors.values()) {
+        if (connectorStatus?.reservation?.[filterKey] === value) {
+          return connectorStatus.reservation;
         }
       }
     }
@@ -1010,22 +1010,23 @@ export class ChargingStation {
     );
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     this.reservationExpirationSetInterval = setInterval(async (): Promise<void> => {
+      const now = new Date();
       if (this.hasEvses) {
-        for (const evse of this.evses.values()) {
-          for (const connector of evse.connectors.values()) {
-            if (connector?.reservation?.expiryDate.toString() < new Date().toISOString()) {
+        for (const evseStatus of this.evses.values()) {
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            if (connectorStatus?.reservation?.expiryDate < now) {
               await this.removeReservation(
-                connector.reservation,
+                connectorStatus.reservation,
                 ReservationTerminationReason.EXPIRED
               );
             }
           }
         }
       } else {
-        for (const connector of this.connectors.values()) {
-          if (connector?.reservation?.expiryDate.toString() < new Date().toISOString()) {
+        for (const connectorStatus of this.connectors.values()) {
+          if (connectorStatus?.reservation?.expiryDate < now) {
             await this.removeReservation(
-              connector.reservation,
+              connectorStatus.reservation,
               ReservationTerminationReason.EXPIRED
             );
           }
@@ -1040,8 +1041,7 @@ export class ChargingStation {
   }
 
   public validateIncomingRequestWithReservation(connectorId: number, idTag: string): boolean {
-    const reservation = this.getReservationBy(ReservationFilterKey.CONNECTOR_ID, connectorId);
-    return !Utils.isUndefined(reservation) && reservation.idTag === idTag;
+    return this.getReservationBy(ReservationFilterKey.CONNECTOR_ID, connectorId)?.idTag === idTag;
   }
 
   public isConnectorReservable(
@@ -1066,36 +1066,21 @@ export class ChargingStation {
   private getNumberOfReservableConnectors(): number {
     let reservableConnectors = 0;
     if (this.hasEvses) {
-      for (const evse of this.evses.values()) {
-        reservableConnectors = this.countReservableConnectors(evse.connectors);
+      for (const evseStatus of this.evses.values()) {
+        reservableConnectors += ChargingStationUtils.countReservableConnectors(
+          evseStatus.connectors
+        );
       }
     } else {
-      reservableConnectors = this.countReservableConnectors(this.connectors);
+      reservableConnectors = ChargingStationUtils.countReservableConnectors(this.connectors);
     }
     return reservableConnectors - this.getNumberOfReservationsOnConnectorZero();
   }
 
-  private countReservableConnectors(connectors: Map<number, ConnectorStatus>) {
-    let reservableConnectors = 0;
-    for (const [connectorId, connector] of connectors) {
-      if (connectorId === 0) {
-        continue;
-      }
-      if (connector.status === ConnectorStatusEnum.Available) {
-        ++reservableConnectors;
-      }
-    }
-    return reservableConnectors;
-  }
-
   private getNumberOfReservationsOnConnectorZero(): number {
     let numberOfReservations = 0;
-    if (this.hasEvses) {
-      for (const evse of this.evses.values()) {
-        if (evse.connectors.get(0)?.reservation) {
-          ++numberOfReservations;
-        }
-      }
+    if (this.hasEvses && this.evses.get(0)?.connectors.get(0)?.reservation) {
+      ++numberOfReservations;
     } else if (this.connectors.get(0)?.reservation) {
       ++numberOfReservations;
     }
@@ -2148,7 +2133,10 @@ export class ChargingStation {
 
   private async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
     if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
+      for (const [evseId, evseStatus] of this.evses) {
+        if (evseId === 0) {
+          continue;
+        }
         for (const [connectorId, connectorStatus] of evseStatus.connectors) {
           if (connectorStatus.transactionStarted === true) {
             await this.stopTransactionOnConnector(connectorId, reason);

@@ -55,6 +55,19 @@ export class ChargingStationUtils {
         )}${idSuffix}`;
   }
 
+  public static countReservableConnectors(connectors: Map<number, ConnectorStatus>) {
+    let reservableConnectors = 0;
+    for (const [connectorId, connectorStatus] of connectors) {
+      if (connectorId === 0) {
+        continue;
+      }
+      if (connectorStatus.status === ConnectorStatusEnum.Available) {
+        ++reservableConnectors;
+      }
+    }
+    return reservableConnectors;
+  }
+
   public static getHashId(index: number, stationTemplate: ChargingStationTemplate): string {
     const chargingStationInfo = {
       chargePointModel: stationTemplate.chargePointModel,
