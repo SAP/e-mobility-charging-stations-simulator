@@ -37,11 +37,9 @@ class ChargingStationWorker extends AsyncResource {
   }
 }
 
-export let chargingStationWorker: ChargingStationWorker;
-// Conditionally export ThreadWorker instance for pool usage
-export let threadWorker: ThreadWorker;
+export let chargingStationWorker: ChargingStationWorker | ThreadWorker<ChargingStationWorkerData>;
 if (Configuration.workerPoolInUse()) {
-  threadWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
+  chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
     maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
   });
 } else {
