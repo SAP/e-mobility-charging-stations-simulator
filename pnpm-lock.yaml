@@ -142,8 +142,8 @@ devDependencies:
     specifier: ^8.0.0
     version: 8.0.0
   clinic:
-    specifier: ^12.1.0
-    version: 12.1.0
+    specifier: ^13.0.0
+    version: 13.0.0
   cross-env:
     specifier: ^7.0.3
     version: 7.0.3
@@ -293,8 +293,8 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
-  /@clinic/bubbleprof@9.1.0:
-    resolution: {integrity: sha512-6Lbm41PfU62yAVs7J72BUZ6IrVUK3U1O4X2BO/rPW6ib8py9gc10JpdxI/7T/0D76gqVS+AriDmhSQ+0Y0s8jw==}
+  /@clinic/bubbleprof@10.0.0:
+    resolution: {integrity: sha512-7Y0uYO4cz7+Y1advV891uMJLXbZMIriLsV1IHSSVJxmf8tEFm8vogKi/GdYyi4CY0D5heuqOFze/WNrv+U3LRw==}
     dependencies:
       '@clinic/clinic-common': 7.1.0
       '@clinic/node-trace-log-join': 2.0.0
@@ -337,8 +337,8 @@ packages:
       webfontloader: 1.6.28
     dev: true
 
-  /@clinic/doctor@10.1.0:
-    resolution: {integrity: sha512-qgTaXUJkSLaiq1MC4cqHkeRIkBjQAHoSf1cyqiI1iXGLCe6lIEdNtw1qhLoMYUcisO7DdbG/6aqZTg41Vhge0g==}
+  /@clinic/doctor@11.0.0:
+    resolution: {integrity: sha512-sfi3etIHDdrziWcG1fOB2XSNIbA+jwnoFNcCwYQxkYG3vh1QUajTur4lZ27YfV1ZsjzLNZAYxV0fOdUin/NJAg==}
     dependencies:
       '@clinic/clinic-common': 7.1.0
       '@clinic/node-trace-log-join': 2.0.0
@@ -374,8 +374,8 @@ packages:
       - supports-color
     dev: true
 
-  /@clinic/flame@12.1.1:
-    resolution: {integrity: sha512-p/Yh+a0RChahvywq5J8q4bt8AGtpUh7IZIQQNYVEEjPhEfRNLSRa5SpMZ8kJzENhivxYKlF5g9aOpBtjxTwPFA==}
+  /@clinic/flame@13.0.0:
+    resolution: {integrity: sha512-3e//olko8YNl0aEUlzVJZybvmIXsmGuwMDxUlF7MKifCes8PICCusTHvuQ1AEIBvP73czbSLrE0xM4lUTWMYpg==}
     dependencies:
       0x: 5.5.0
       '@clinic/clinic-common': 7.1.0
@@ -392,8 +392,8 @@ packages:
       - supports-color
     dev: true
 
-  /@clinic/heap-profiler@4.1.1:
-    resolution: {integrity: sha512-XURcKFqMPvxS1nEhl3Om6sW6w8NJHKrAJ82BCmOBCHNThzei4My4zmS+MT1wtRLKmU+wwojbz9SkvnI/k2B1sQ==}
+  /@clinic/heap-profiler@5.0.0:
+    resolution: {integrity: sha512-1sAU3GuLk6mXGzMn6JGou6bMzP5vTpieZRgk0LVlauVDxq1+vxgiDrSO9Rn0IxHS7spMnHhOB/DigKFY6oci7Q==}
     dependencies:
       '@clinic/clinic-common': 7.1.0
       '@nearform/heap-profiler': 2.0.0
@@ -2746,14 +2746,14 @@ packages:
     engines: {node: '>= 12'}
     dev: true
 
-  /clinic@12.1.0:
-    resolution: {integrity: sha512-3blFGXMfuHERn33jL7qZYoFTXLgHuz0mL2icDa7KykOvRJtGAeYwOCqeHjedB1q069B/FrCA03mKqNtN72jRlA==}
+  /clinic@13.0.0:
+    resolution: {integrity: sha512-QAD3cLgA1OqEC7fJSDbAt4U0BKGAK1c5yopN5tu1OtmmsbRHHYxBeSMiElQfuMMdbkAuLEE7HOffZ0hKMzaYVw==}
     hasBin: true
     dependencies:
-      '@clinic/bubbleprof': 9.1.0
-      '@clinic/doctor': 10.1.0
-      '@clinic/flame': 12.1.1
-      '@clinic/heap-profiler': 4.1.1
+      '@clinic/bubbleprof': 10.0.0
+      '@clinic/doctor': 11.0.0
+      '@clinic/flame': 13.0.0
+      '@clinic/heap-profiler': 5.0.0
       any-shell-escape: 0.1.1
       async: 3.2.4
       autocannon: 7.11.0
