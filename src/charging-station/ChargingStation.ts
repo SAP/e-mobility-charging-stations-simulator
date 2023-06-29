@@ -280,9 +280,6 @@ export class ChargingStation {
 
   public getNumberOfConnectors(): number {
     if (this.hasEvses) {
-      if (this.evses.size === 0) {
-        throw new BaseError('Evses not initialized, cannot get number of connectors');
-      }
       let numberOfConnectors = 0;
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
@@ -291,16 +288,10 @@ export class ChargingStation {
       }
       return numberOfConnectors;
     }
-    if (this.connectors.size === 0) {
-      throw new BaseError('Connectors not initialized, cannot get number of connectors');
-    }
     return this.connectors.has(0) ? this.connectors.size - 1 : this.connectors.size;
   }
 
   public getNumberOfEvses(): number {
-    if (this.evses.size === 0) {
-      throw new BaseError('Evses not initialized, cannot get number of evses');
-    }
     return this.evses.has(0) ? this.evses.size - 1 : this.evses.size;
   }
 
