@@ -20,7 +20,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   private readonly workerSet: Set<WorkerSetElement>;
 
   /**
-   * Create a new `WorkerSet`.
+   * Creates a new `WorkerSet`.
    *
    * @param workerScript -
    * @param workerOptions -
@@ -94,7 +94,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   }
 
   /**
-   * Add a new `WorkerSetElement`.
+   * Adds a new `WorkerSetElement`.
    */
   private addWorkerSetElement(): WorkerSetElement {
     const worker = new Worker(this.workerScript, {

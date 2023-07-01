@@ -140,6 +140,14 @@ export class Utils {
     return Math.floor(crypto.randomInt(max + 1));
   }
 
+  /**
+   * Rounds the given number to the given scale.
+   * The rounding is done using the "round half away from zero" method.
+   *
+   * @param numberValue - The number to round.
+   * @param scale - The scale to round to.
+   * @returns The rounded number.
+   */
   public static roundTo(numberValue: number, scale: number): number {
     const roundPower = Math.pow(10, scale);
     return Math.round(numberValue * roundPower * (1 + Number.EPSILON)) / roundPower;
@@ -240,6 +248,8 @@ export class Utils {
     `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
 
   /**
+   * Computes the retry delay in milliseconds using an exponential backoff algorithm.
+   *
    * @param retryNumber - the number of retries that have already been attempted
    * @returns delay in milliseconds
    */
@@ -277,7 +287,7 @@ export class Utils {
   }
 
   /**
-   * Generate a cryptographically secure random number in the [0,1[ range
+   * Generates a cryptographically secure random number in the [0,1[ range
    *
    * @returns
    */
@@ -305,7 +315,7 @@ export class Utils {
   }
 
   /**
-   * Convert websocket error code to human readable string message
+   * Converts websocket error code to human readable string message
    *
    * @param code - websocket error code
    * @returns human readable string message

@@ -11,6 +11,7 @@
   "mochaExplorer.files": ["test/**/*.test.ts"],
   "mochaExplorer.debuggerConfig": "Debug Simulator Unit Tests",
   "cSpell.words": [
+    "backoff",
     "benoit",
     "bufferutil",
     "cacheable",

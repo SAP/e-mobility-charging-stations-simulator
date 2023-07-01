@@ -10,7 +10,7 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
   private readonly pool: FixedThreadPool<WorkerData>;
 
   /**
-   * Create a new `WorkerStaticPool`.
+   * Creates a new `WorkerStaticPool`.
    *
    * @param workerScript -
    * @param workerOptions -

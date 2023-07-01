@@ -13,7 +13,7 @@ import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../wor
 const moduleName = 'ChargingStationWorker';
 
 /**
- * Create and start a charging station instance
+ * Creates and starts a charging station instance
  *
  * @param data - workerData
  */

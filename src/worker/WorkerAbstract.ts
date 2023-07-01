@@ -55,15 +55,15 @@ export abstract class WorkerAbstract<T extends WorkerData> {
   }
 
   /**
-   * Start the worker pool/set.
+   * Starts the worker pool/set.
    */
   public abstract start(): Promise<void>;
   /**
-   * Stop the worker pool/set.
+   * Stops the worker pool/set.
    */
   public abstract stop(): Promise<void>;
   /**
-   * Add a task element to the worker pool/set.
+   * Adds a task element to the worker pool/set.
    *
    * @param elementData -
    */

@@ -28,7 +28,7 @@ export class IdTagsCache {
   }
 
   /**
-   * Get one idtag from the cache given the distribution
+   * Gets one idtag from the cache given the distribution
    * Must be called after checking the cache is not an empty array
    *
    * @param distribution -
@@ -56,7 +56,7 @@ export class IdTagsCache {
   }
 
   /**
-   * Get all idtags from the cache
+   * Gets all idtags from the cache
    * Must be called after checking the cache is not an empty array
    *
    * @param file -

@@ -10,7 +10,7 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   private readonly pool: DynamicThreadPool<WorkerData>;
 
   /**
-   * Create a new `WorkerDynamicPool`.
+   * Creates a new `WorkerDynamicPool`.
    *
    * @param workerScript -
    * @param workerOptions -
