@@ -476,11 +476,11 @@ export class Configuration {
     switch (storageType) {
       case StorageType.JSON_FILE:
         return Configuration.buildPerformanceUriFilePath(
-          Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME
+          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME}`
         );
       case StorageType.SQLITE:
         return Configuration.buildPerformanceUriFilePath(
-          `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
+          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
         );
       default:
         throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);
