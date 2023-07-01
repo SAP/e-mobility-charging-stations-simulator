@@ -8,10 +8,7 @@
     "statisticsInterval": 0
   },
   "worker": {
-    "processType": "workerSet",
-    "elementsPerWorker": 1,
-    "poolMinSize": 4,
-    "poolMaxSize": 16
+    "processType": "workerSet"
   },
   "performanceStorage": {
     "enabled": true,
