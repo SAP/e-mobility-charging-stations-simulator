@@ -117,7 +117,7 @@ package-lock.json
 .eslintcache
 temp/
 *.tar.gz
-performance/
+/performance/
 performanceRecords.json
 performanceRecords.json.lock
 *.db
