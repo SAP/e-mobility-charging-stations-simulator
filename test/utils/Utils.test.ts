@@ -134,6 +134,21 @@ describe('Utils test suite', () => {
     expect(randomInteger).toBeLessThanOrEqual(Math.floor(max));
   });
 
+  it('Verify roundTo()', () => {
+    expect(Utils.roundTo(0, 2)).toBe(0);
+    expect(Utils.roundTo(0.5, 0)).toBe(1);
+    expect(Utils.roundTo(0.5, 2)).toBe(0.5);
+    expect(Utils.roundTo(-0.5, 0)).toBe(-1);
+    expect(Utils.roundTo(-0.5, 2)).toBe(-0.5);
+    expect(Utils.roundTo(1.005, 0)).toBe(1);
+    expect(Utils.roundTo(1.005, 2)).toBe(1.01);
+    expect(Utils.roundTo(2.175, 2)).toBe(2.18);
+    expect(Utils.roundTo(5.015, 2)).toBe(5.02);
+    expect(Utils.roundTo(-1.005, 2)).toBe(-1.01);
+    expect(Utils.roundTo(-2.175, 2)).toBe(-2.18);
+    expect(Utils.roundTo(-5.015, 2)).toBe(-5.02);
+  });
+
   it('Verify getRandomFloat()', () => {
     let randomFloat = Utils.getRandomFloat();
     expect(typeof randomFloat === 'number').toBe(true);

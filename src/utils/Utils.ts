@@ -142,12 +142,7 @@ export class Utils {
 
   public static roundTo(numberValue: number, scale: number): number {
     const roundPower = Math.pow(10, scale);
-    return Math.round(numberValue * roundPower) / roundPower;
-  }
-
-  public static truncTo(numberValue: number, scale: number): number {
-    const truncPower = Math.pow(10, scale);
-    return Math.trunc(numberValue * truncPower) / truncPower;
+    return Math.round(numberValue * roundPower * (1 + Number.EPSILON)) / roundPower;
   }
 
   public static getRandomFloatRounded(max = Number.MAX_VALUE, min = 0, scale = 2): number {
