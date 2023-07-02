@@ -165,6 +165,11 @@ export class Utils {
     fluctuationPercent: number,
     scale = 2
   ): number {
+    if (fluctuationPercent < 0 || fluctuationPercent > 100) {
+      throw new Error(
+        `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent}`
+      );
+    }
     if (fluctuationPercent === 0) {
       return Utils.roundTo(staticValue, scale);
     }
