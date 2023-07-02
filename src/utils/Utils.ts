@@ -166,7 +166,7 @@ export class Utils {
     scale = 2
   ): number {
     if (fluctuationPercent < 0 || fluctuationPercent > 100) {
-      throw new Error(
+      throw new RangeError(
         `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent}`
       );
     }
