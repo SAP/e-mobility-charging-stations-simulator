@@ -9,6 +9,7 @@ export enum WorkerProcessType {
 }
 
 export type SetInfo = {
+  version: string;
   type: string;
   worker: string;
   size: number;

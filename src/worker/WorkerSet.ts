@@ -42,6 +42,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
 
   get info(): SetInfo {
     return {
+      version: WorkerConstants.version,
       type: 'set',
       worker: 'thread',
       size: this.size,

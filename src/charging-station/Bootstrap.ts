@@ -10,7 +10,7 @@ import chalk from 'chalk';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServerFactory } from './ui-server/UIServerFactory';
-import packageJson from '../../package.json' assert { type: 'json' };
+import { version } from '../../package.json' assert { type: 'json' };
 import { BaseError } from '../exception';
 import { type Storage, StorageFactory } from '../performance';
 import {
@@ -48,7 +48,7 @@ export class Bootstrap extends EventEmitter {
   private readonly uiServer!: AbstractUIServer | null;
   private readonly storage!: Storage;
   private numberOfStartedChargingStations!: number;
-  private readonly version: string = packageJson.version;
+  private readonly version: string = version;
   private initializedCounters: boolean;
   private started: boolean;
   private starting: boolean;
