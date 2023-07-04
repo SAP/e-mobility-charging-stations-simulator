@@ -204,26 +204,18 @@ export class PerformanceStatistics {
     // Update current statistics
     this.statistics.updatedAt = new Date();
     this.statistics.statisticsData.get(entryName).countTimeMeasurement =
-      this.statistics.statisticsData.get(entryName)?.countTimeMeasurement
-        ? this.statistics.statisticsData.get(entryName).countTimeMeasurement + 1
-        : 1;
+      (this.statistics.statisticsData.get(entryName)?.countTimeMeasurement ?? 0) + 1;
     this.statistics.statisticsData.get(entryName).currentTimeMeasurement = entry.duration;
-    this.statistics.statisticsData.get(entryName).minTimeMeasurement =
-      this.statistics.statisticsData.get(entryName)?.minTimeMeasurement
-        ? this.statistics.statisticsData.get(entryName).minTimeMeasurement > entry.duration
-          ? entry.duration
-          : this.statistics.statisticsData.get(entryName).minTimeMeasurement
-        : entry.duration;
-    this.statistics.statisticsData.get(entryName).maxTimeMeasurement =
-      this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement
-        ? this.statistics.statisticsData.get(entryName).maxTimeMeasurement < entry.duration
-          ? entry.duration
-          : this.statistics.statisticsData.get(entryName).maxTimeMeasurement
-        : entry.duration;
+    this.statistics.statisticsData.get(entryName).minTimeMeasurement = Math.min(
+      entry.duration,
+      this.statistics.statisticsData.get(entryName)?.minTimeMeasurement ?? Infinity
+    );
+    this.statistics.statisticsData.get(entryName).maxTimeMeasurement = Math.max(
+      entry.duration,
+      this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ?? -Infinity
+    );
     this.statistics.statisticsData.get(entryName).totalTimeMeasurement =
-      this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement
-        ? this.statistics.statisticsData.get(entryName).totalTimeMeasurement + entry.duration
-        : entry.duration;
+      (this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ?? 0) + entry.duration;
     this.statistics.statisticsData.get(entryName).avgTimeMeasurement =
       this.statistics.statisticsData.get(entryName).totalTimeMeasurement /
       this.statistics.statisticsData.get(entryName).countTimeMeasurement;
