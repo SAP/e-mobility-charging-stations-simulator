@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import EventEmitterAsyncResource from 'node:events';
+import { EventEmitter } from 'node:events';
 import { SHARE_ENV, Worker } from 'node:worker_threads';
 
 import { WorkerAbstract } from './WorkerAbstract';
@@ -16,7 +16,7 @@ import {
 import { sleep } from './WorkerUtils';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
-  public readonly emitter: EventEmitterAsyncResource;
+  public readonly emitter: EventEmitter;
   private readonly workerSet: Set<WorkerSetElement>;
 
   /**
@@ -36,7 +36,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     };
     this.workerSet = new Set<WorkerSetElement>();
     if (this.workerOptions?.poolOptions?.enableEvents) {
-      this.emitter = new EventEmitterAsyncResource();
+      this.emitter = new EventEmitter();
     }
   }
 

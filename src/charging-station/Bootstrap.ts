@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import { EventEmitter } from 'node:events';
-import path from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
 
@@ -69,9 +69,9 @@ export class Bootstrap extends EventEmitter {
     this.initializedCounters = false;
     this.initializeCounters();
     this.workerImplementation = null;
-    this.workerScript = path.join(
-      path.dirname(fileURLToPath(import.meta.url)),
-      `ChargingStationWorker${path.extname(fileURLToPath(import.meta.url))}`
+    this.workerScript = join(
+      dirname(fileURLToPath(import.meta.url)),
+      `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`
     );
     Configuration.getUIServer().enabled === true &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer()));
@@ -334,8 +334,8 @@ export class Bootstrap extends EventEmitter {
   ): Promise<void> {
     await this.workerImplementation?.addElement({
       index,
-      templateFile: path.join(
-        path.dirname(fileURLToPath(import.meta.url)),
+      templateFile: join(
+        dirname(fileURLToPath(import.meta.url)),
         'assets',
         'station-templates',
         stationTemplateUrl.file

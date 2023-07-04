@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 
 import { StatusCodes } from 'http-status-codes';
-import WebSocket, { type RawData, WebSocketServer } from 'ws';
+import { type RawData, WebSocket, WebSocketServer } from 'ws';
 
 import { AbstractUIServer } from './AbstractUIServer';
 import { UIServerUtils } from './UIServerUtils';

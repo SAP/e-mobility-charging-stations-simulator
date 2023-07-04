@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
@@ -10,8 +10,8 @@ export default {
   metadataProvider: TsMorphMetadataProvider,
   entities: [PerformanceRecord, PerformanceData],
   type: 'sqlite',
-  clientUrl: `file://${path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
+  clientUrl: `file://${join(
+    dirname(fileURLToPath(import.meta.url)),
     `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
   )}`,
 };

@@ -1,6 +1,6 @@
-import crypto from 'node:crypto';
-import type EventEmitter from 'node:events';
-import path from 'node:path';
+import { createHash, randomBytes } from 'node:crypto';
+import type { EventEmitter } from 'node:events';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
@@ -85,8 +85,7 @@ export class ChargingStationUtils {
         meterType: stationTemplate.meterType,
       }),
     };
-    return crypto
-      .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+    return createHash(Constants.DEFAULT_HASH_ALGORITHM)
       .update(
         `${JSON.stringify(chargingStationInfo)}${ChargingStationUtils.getChargingStationId(
           index,
@@ -546,11 +545,7 @@ export class ChargingStationUtils {
   public static getIdTagsFile(stationInfo: ChargingStationInfo): string | undefined {
     return (
       stationInfo.idTagsFile &&
-      path.join(
-        path.dirname(fileURLToPath(import.meta.url)),
-        'assets',
-        path.basename(stationInfo.idTagsFile)
-      )
+      join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.idTagsFile))
     );
   }
 
@@ -778,9 +773,7 @@ export class ChargingStationUtils {
     randomBytesLength?: number;
     upperCase?: boolean;
   }): string {
-    const randomSerialNumberSuffix = crypto
-      .randomBytes(params?.randomBytesLength ?? 16)
-      .toString('hex');
+    const randomSerialNumberSuffix = randomBytes(params?.randomBytesLength ?? 16).toString('hex');
     if (params?.upperCase) {
       return randomSerialNumberSuffix.toUpperCase();
     }

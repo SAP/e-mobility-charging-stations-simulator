@@ -1,5 +1,5 @@
-import crypto from 'node:crypto';
-import util from 'node:util';
+import { randomBytes, randomInt, randomUUID } from 'node:crypto';
+import { inspect } from 'node:util';
 
 import clone from 'just-clone';
 
@@ -16,7 +16,7 @@ export class Utils {
   };
 
   public static generateUUID(): string {
-    return crypto.randomUUID();
+    return randomUUID();
   }
 
   public static validateUUID(uuid: string): boolean {
@@ -128,16 +128,16 @@ export class Utils {
     if (max - min === Infinity) {
       throw new RangeError('Invalid interval');
     }
-    return (crypto.randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min;
+    return (randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min;
   }
 
   public static getRandomInteger(max = Constants.MAX_RANDOM_INTEGER, min = 0): number {
     max = Math.floor(max);
     if (!Utils.isNullOrUndefined(min) && min !== 0) {
       min = Math.ceil(min);
-      return Math.floor(crypto.randomInt(min, max + 1));
+      return Math.floor(randomInt(min, max + 1));
     }
-    return Math.floor(crypto.randomInt(max + 1));
+    return Math.floor(randomInt(max + 1));
   }
 
   /**
@@ -265,7 +265,7 @@ export class Utils {
   }
 
   public static isPromisePending(promise: Promise<unknown>): boolean {
-    return util.inspect(promise).includes('pending');
+    return inspect(promise).includes('pending');
   }
 
   public static async promiseWithTimeout<T>(
@@ -297,7 +297,7 @@ export class Utils {
    * @returns
    */
   public static secureRandom(): number {
-    return crypto.randomBytes(4).readUInt32LE() / 0x100000000;
+    return randomBytes(4).readUInt32LE() / 0x100000000;
   }
 
   public static JSONStringifyWithMapSupport(

@@ -1,7 +1,7 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'node:fs';
-import path from 'node:path';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 import { Storage } from './Storage';
 import { BaseError } from '../../exception';
@@ -20,12 +20,12 @@ export class JsonFileStorage extends Storage {
     this.checkPerformanceRecordsFile();
     AsyncLock.acquire(AsyncLockType.performance)
       .then(() => {
-        const fileData = fs.readFileSync(this.dbName, 'utf8');
+        const fileData = readFileSync(this.dbName, 'utf8');
         const performanceRecords: Statistics[] = fileData
           ? (JSON.parse(fileData) as Statistics[])
           : [];
         performanceRecords.push(performanceStatistics);
-        fs.writeFileSync(
+        writeFileSync(
           this.dbName,
           Utils.JSONStringifyWithMapSupport(performanceRecords, 2),
           'utf8'
@@ -47,10 +47,10 @@ export class JsonFileStorage extends Storage {
   public open(): void {
     try {
       if (Utils.isNullOrUndefined(this?.fd)) {
-        if (!fs.existsSync(path.dirname(this.dbName))) {
-          fs.mkdirSync(path.dirname(this.dbName), { recursive: true });
+        if (!existsSync(dirname(this.dbName))) {
+          mkdirSync(dirname(this.dbName), { recursive: true });
         }
-        this.fd = fs.openSync(this.dbName, 'a+');
+        this.fd = openSync(this.dbName, 'a+');
       }
     } catch (error) {
       handleFileException(
@@ -65,7 +65,7 @@ export class JsonFileStorage extends Storage {
   public close(): void {
     try {
       if (this?.fd) {
-        fs.closeSync(this.fd);
+        closeSync(this.fd);
         this.fd = null;
       }
     } catch (error) {

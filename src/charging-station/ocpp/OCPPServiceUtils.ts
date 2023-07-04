@@ -1,5 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
@@ -269,9 +269,9 @@ export class OCPPServiceUtils {
     moduleName?: string,
     methodName?: string
   ): JSONSchemaType<T> {
-    const filePath = path.join(path.dirname(fileURLToPath(import.meta.url)), relativePath);
+    const filePath = join(dirname(fileURLToPath(import.meta.url)), relativePath);
     try {
-      return JSON.parse(fs.readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
+      return JSON.parse(readFileSync(filePath, 'utf8')) as JSONSchemaType<T>;
     } catch (error) {
       handleFileException(
         filePath,

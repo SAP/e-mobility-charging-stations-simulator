@@ -1,8 +1,8 @@
-import type EventEmitterAsyncResource from 'node:events';
-import fs from 'node:fs';
+import type { EventEmitter } from 'node:events';
+import { existsSync } from 'node:fs';
 import type { Worker } from 'node:worker_threads';
 
-import type { ErrorHandler, ExitHandler, PoolInfo } from 'poolifier';
+import type { ErrorHandler, ExitHandler, PoolEmitter, PoolInfo } from 'poolifier';
 
 import { WorkerConstants } from './WorkerConstants';
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes';
@@ -14,7 +14,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
   public abstract readonly info: PoolInfo | SetInfo;
   public abstract readonly size: number;
   public abstract readonly maxElementsPerWorker: number | undefined;
-  public abstract readonly emitter: EventEmitterAsyncResource | undefined;
+  public abstract readonly emitter: EventEmitter | PoolEmitter | undefined;
 
   /**
    * `WorkerAbstract` constructor.
@@ -39,7 +39,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
     if (typeof workerScript === 'string' && workerScript.trim().length === 0) {
       throw new Error('Worker script is empty');
     }
-    if (!fs.existsSync(workerScript)) {
+    if (!existsSync(workerScript)) {
       throw new Error('Worker script file does not exist');
     }
     this.workerScript = workerScript;

@@ -1,13 +1,21 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
+import { createHash } from 'node:crypto';
+import {
+  type FSWatcher,
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, join } from 'node:path';
 import { URL } from 'node:url';
 import { parentPort } from 'node:worker_threads';
 
 import merge from 'just-merge';
-import WebSocket, { type RawData } from 'ws';
+import { type RawData, WebSocket } from 'ws';
 
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator';
 import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel';
@@ -133,7 +141,7 @@ export class ChargingStation {
   private configuredSupervisionUrl!: URL;
   private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
-  private templateFileWatcher!: fs.FSWatcher | undefined;
+  private templateFileWatcher!: FSWatcher | undefined;
   private templateFileHash!: string;
   private readonly sharedLRUCache: SharedLRUCache;
   private webSocketPingSetInterval!: NodeJS.Timeout;
@@ -1123,12 +1131,9 @@ export class ChargingStation {
       } else {
         const measureId = `${FileType.ChargingStationTemplate} read`;
         const beginId = PerformanceStatistics.beginMeasure(measureId);
-        template = JSON.parse(
-          fs.readFileSync(this.templateFile, 'utf8')
-        ) as ChargingStationTemplate;
+        template = JSON.parse(readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate;
         PerformanceStatistics.endMeasure(measureId, beginId);
-        template.templateHash = crypto
-          .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+        template.templateHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
           .update(JSON.stringify(template))
           .digest('hex');
         this.sharedLRUCache.setChargingStationTemplate(template);
@@ -1268,8 +1273,8 @@ export class ChargingStation {
   private initialize(): void {
     const stationTemplate = this.getTemplateFromFile();
     ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
-    this.configurationFile = path.join(
-      path.dirname(this.templateFile.replace('station-templates', 'configurations')),
+    this.configurationFile = join(
+      dirname(this.templateFile.replace('station-templates', 'configurations')),
       `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
     );
     const chargingStationConfiguration = this.getConfigurationFromFile();
@@ -1582,8 +1587,7 @@ export class ChargingStation {
           this.logPrefix(),
           this.templateFile
         );
-      const connectorsConfigHash = crypto
-        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+      const connectorsConfigHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
         .update(
           `${JSON.stringify(stationTemplate?.Connectors)}${configuredMaxConnectors.toString()}`
         )
@@ -1655,8 +1659,7 @@ export class ChargingStation {
       );
     }
     if (stationTemplate?.Evses) {
-      const evsesConfigHash = crypto
-        .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+      const evsesConfigHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
         .update(JSON.stringify(stationTemplate?.Evses))
         .digest('hex');
       const evsesConfigChanged =
@@ -1701,7 +1704,7 @@ export class ChargingStation {
 
   private getConfigurationFromFile(): ChargingStationConfiguration | undefined {
     let configuration: ChargingStationConfiguration | undefined;
-    if (Utils.isNotEmptyString(this.configurationFile) && fs.existsSync(this.configurationFile)) {
+    if (Utils.isNotEmptyString(this.configurationFile) && existsSync(this.configurationFile)) {
       try {
         if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
           configuration = this.sharedLRUCache.getChargingStationConfiguration(
@@ -1711,7 +1714,7 @@ export class ChargingStation {
           const measureId = `${FileType.ChargingStationConfiguration} read`;
           const beginId = PerformanceStatistics.beginMeasure(measureId);
           configuration = JSON.parse(
-            fs.readFileSync(this.configurationFile, 'utf8')
+            readFileSync(this.configurationFile, 'utf8')
           ) as ChargingStationConfiguration;
           PerformanceStatistics.endMeasure(measureId, beginId);
           this.sharedLRUCache.setChargingStationConfiguration(configuration);
@@ -1746,8 +1749,8 @@ export class ChargingStation {
   private saveConfiguration(): void {
     if (Utils.isNotEmptyString(this.configurationFile)) {
       try {
-        if (!fs.existsSync(path.dirname(this.configurationFile))) {
-          fs.mkdirSync(path.dirname(this.configurationFile), { recursive: true });
+        if (!existsSync(dirname(this.configurationFile))) {
+          mkdirSync(dirname(this.configurationFile), { recursive: true });
         }
         let configurationData: ChargingStationConfiguration =
           Utils.cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()) ?? {};
@@ -1782,8 +1785,7 @@ export class ChargingStation {
           delete configurationData.evsesStatus;
         }
         delete configurationData.configurationHash;
-        const configurationHash = crypto
-          .createHash(Constants.DEFAULT_HASH_ALGORITHM)
+        const configurationHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
           .update(
             JSON.stringify({
               stationInfo: configurationData.stationInfo,
@@ -1798,9 +1800,9 @@ export class ChargingStation {
               configurationData.configurationHash = configurationHash;
               const measureId = `${FileType.ChargingStationConfiguration} write`;
               const beginId = PerformanceStatistics.beginMeasure(measureId);
-              const fileDescriptor = fs.openSync(this.configurationFile, 'w');
-              fs.writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
-              fs.closeSync(fileDescriptor);
+              const fileDescriptor = openSync(this.configurationFile, 'w');
+              writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
+              closeSync(fileDescriptor);
               PerformanceStatistics.endMeasure(measureId, beginId);
               this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
               this.sharedLRUCache.setChargingStationConfiguration(configurationData);

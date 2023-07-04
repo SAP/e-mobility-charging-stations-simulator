@@ -1,5 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { type FSWatcher, readFileSync, watch } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
@@ -23,13 +23,13 @@ import {
 import { WorkerConstants, WorkerProcessType } from '../worker';
 
 export class Configuration {
-  private static configurationFile = path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
+  private static configurationFile = join(
+    dirname(fileURLToPath(import.meta.url)),
     'assets',
     'config.json'
   );
 
-  private static configurationFileWatcher: fs.FSWatcher | undefined;
+  private static configurationFileWatcher: FSWatcher | undefined;
   private static configuration: ConfigurationData | null = null;
   private static configurationChangeCallback: () => Promise<void>;
 
@@ -404,7 +404,7 @@ export class Configuration {
     if (!Configuration.configuration) {
       try {
         Configuration.configuration = JSON.parse(
-          fs.readFileSync(Configuration.configurationFile, 'utf8')
+          readFileSync(Configuration.configurationFile, 'utf8')
         ) as ConfigurationData;
       } catch (error) {
         Configuration.handleFileException(
@@ -421,9 +421,9 @@ export class Configuration {
     return Configuration.configuration;
   }
 
-  private static getConfigurationFileWatcher(): fs.FSWatcher | undefined {
+  private static getConfigurationFileWatcher(): FSWatcher | undefined {
     try {
-      return fs.watch(Configuration.configurationFile, (event, filename): void => {
+      return watch(Configuration.configurationFile, (event, filename): void => {
         if (filename?.trim().length > 0 && event === 'change') {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
@@ -488,9 +488,6 @@ export class Configuration {
   }
 
   private static buildPerformanceUriFilePath(file: string) {
-    return `file://${path.join(
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
-      file
-    )}`;
+    return `file://${join(resolve(dirname(fileURLToPath(import.meta.url)), '../'), file)}`;
   }
 }

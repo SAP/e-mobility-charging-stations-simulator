@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import { type FSWatcher, readFileSync } from 'node:fs';
 
 import type { ChargingStation } from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
@@ -7,7 +7,7 @@ import { Utils, handleFileException, logger, watchJsonFile } from '../utils';
 
 type IdTagsCacheValueType = {
   idTags: string[];
-  idTagsFileWatcher: fs.FSWatcher | undefined;
+  idTagsFileWatcher: FSWatcher | undefined;
 };
 
 export class IdTagsCache {
@@ -172,7 +172,7 @@ export class IdTagsCache {
   private getIdTagsFromFile(file: string): string[] {
     if (Utils.isNotEmptyString(file)) {
       try {
-        return JSON.parse(fs.readFileSync(file, 'utf8')) as string[];
+        return JSON.parse(readFileSync(file, 'utf8')) as string[];
       } catch (error) {
         handleFileException(
           file,

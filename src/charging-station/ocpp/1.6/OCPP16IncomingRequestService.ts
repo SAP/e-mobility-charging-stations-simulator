@@ -1,12 +1,12 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import fs from 'node:fs';
-import path from 'node:path';
+import { createWriteStream, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
-import tar from 'tar';
+import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
@@ -1271,12 +1271,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (uri.protocol.startsWith('ftp:')) {
       let ftpClient: Client;
       try {
-        const logFiles = fs
-          .readdirSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'))
+        const logFiles = readdirSync(resolve(dirname(fileURLToPath(import.meta.url)), '../'))
           .filter((file) => file.endsWith('.log'))
-          .map((file) => path.join('./', file));
+          .map((file) => join('./', file));
         const diagnosticsArchive = `${chargingStation.stationInfo.chargingStationId}_logs.tar.gz`;
-        tar.create({ gzip: true }, logFiles).pipe(fs.createWriteStream(diagnosticsArchive));
+        create({ gzip: true }, logFiles).pipe(createWriteStream(diagnosticsArchive));
         ftpClient = new Client();
         const accessResponse = await ftpClient.access({
           host: uri.host,
@@ -1308,10 +1307,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               });
           });
           uploadResponse = await ftpClient.uploadFrom(
-            path.join(
-              path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../'),
-              diagnosticsArchive
-            ),
+            join(resolve(dirname(fileURLToPath(import.meta.url)), '../'), diagnosticsArchive),
             `${uri.pathname}${diagnosticsArchive}`
           );
           if (uploadResponse.code === 226) {

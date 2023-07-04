@@ -1,6 +1,4 @@
-import type EventEmitterAsyncResource from 'node:events';
-
-import { FixedThreadPool, type PoolInfo } from 'poolifier';
+import { FixedThreadPool, type PoolEmitter, type PoolInfo } from 'poolifier';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
@@ -36,7 +34,7 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
     return undefined;
   }
 
-  get emitter(): EventEmitterAsyncResource | undefined {
+  get emitter(): PoolEmitter | undefined {
     return this.pool?.emitter;
   }
 
