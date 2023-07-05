@@ -3,7 +3,7 @@
 import { AsyncResource } from 'node:async_hooks';
 
 import type { ChargingStation } from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
+import { checkChargingStation } from './ChargingStationUtils';
 import { IdTagsCache } from './IdTagsCache';
 import { BaseError } from '../exception';
 import { PerformanceStatistics } from '../performance';
@@ -68,9 +68,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   public start(): void {
-    if (
-      ChargingStationUtils.checkChargingStation(this.chargingStation, this.logPrefix()) === false
-    ) {
+    if (checkChargingStation(this.chargingStation, this.logPrefix()) === false) {
       return;
     }
     if (this.started === true) {
@@ -103,12 +101,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   public startConnector(connectorId: number): void {
-    if (
-      ChargingStationUtils.checkChargingStation(
-        this.chargingStation,
-        this.logPrefix(connectorId)
-      ) === false
-    ) {
+    if (checkChargingStation(this.chargingStation, this.logPrefix(connectorId)) === false) {
       return;
     }
     if (this.connectorsStatus.has(connectorId) === false) {

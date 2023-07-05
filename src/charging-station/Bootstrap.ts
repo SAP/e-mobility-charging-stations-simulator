@@ -7,7 +7,7 @@ import { isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
 
-import { ChargingStationUtils } from './ChargingStationUtils';
+import { waitForChargingStationEvents } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServerFactory } from './ui-server/UIServerFactory';
 import { version } from '../../package.json' assert { type: 'json' };
@@ -168,7 +168,7 @@ export class Bootstrap extends EventEmitter {
           )
         );
         await Promise.race([
-          ChargingStationUtils.waitForChargingStationEvents(
+          waitForChargingStationEvents(
             this,
             ChargingStationWorkerMessageEvents.stopped,
             this.numberOfChargingStations

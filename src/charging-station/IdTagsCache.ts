@@ -1,7 +1,7 @@
 import { type FSWatcher, readFileSync } from 'node:fs';
 
 import type { ChargingStation } from './ChargingStation';
-import { ChargingStationUtils } from './ChargingStationUtils';
+import { getIdTagsFile } from './ChargingStationUtils';
 import { FileType, IdTagDistribution } from '../types';
 import {
   handleFileException,
@@ -49,7 +49,7 @@ export class IdTagsCache {
     connectorId: number
   ): string {
     const hashId = chargingStation.stationInfo.hashId;
-    const idTagsFile = ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo);
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo);
     switch (distribution) {
       case IdTagDistribution.RANDOM:
         return this.getRandomIdTag(hashId, idTagsFile);
@@ -103,7 +103,7 @@ export class IdTagsCache {
   }
 
   private getConnectorAffinityIdTag(chargingStation: ChargingStation, connectorId: number): string {
-    const file = ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo);
+    const file = getIdTagsFile(chargingStation.stationInfo);
     const idTags = this.getIdTags(file);
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
       file,

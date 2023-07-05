@@ -2,7 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { type ChargingStation, ChargingStationUtils } from '../../../charging-station';
+import { type ChargingStation, getIdTagsFile } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   CurrentType,
@@ -958,7 +958,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       chargingStation.hasIdTags() === true &&
       isNotEmptyString(
         chargingStation.idTagsCache
-          .getIdTags(ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo))
+          .getIdTags(getIdTagsFile(chargingStation.stationInfo))
           ?.find((tag) => tag === idTag)
       )
     );

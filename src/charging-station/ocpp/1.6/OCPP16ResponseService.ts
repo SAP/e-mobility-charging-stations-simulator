@@ -8,7 +8,7 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
   type ChargingStation,
   ChargingStationConfigurationUtils,
-  ChargingStationUtils,
+  resetConnectorStatus,
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
@@ -662,7 +662,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {
-    ChargingStationUtils.resetConnectorStatus(chargingStation.getConnectorStatus(connectorId));
+    resetConnectorStatus(chargingStation.getConnectorStatus(connectorId));
     chargingStation.stopMeterValues(connectorId);
     parentPort?.postMessage(buildUpdatedMessage(chargingStation));
     if (
@@ -726,9 +726,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     if (chargingStation.stationInfo.powerSharedByConnectors) {
       chargingStation.powerDivider--;
     }
-    ChargingStationUtils.resetConnectorStatus(
-      chargingStation.getConnectorStatus(transactionConnectorId)
-    );
+    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId));
     chargingStation.stopMeterValues(transactionConnectorId);
     parentPort?.postMessage(buildUpdatedMessage(chargingStation));
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${

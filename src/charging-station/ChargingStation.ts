@@ -20,7 +20,28 @@ import { type RawData, WebSocket } from 'ws';
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator';
 import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel';
 import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
-import { ChargingStationUtils } from './ChargingStationUtils';
+import {
+  buildConnectorsMap,
+  checkConnectorsConfiguration,
+  checkStationInfoConnectorStatus,
+  checkTemplate,
+  countReservableConnectors,
+  createBootNotificationRequest,
+  createSerialNumber,
+  getAmperageLimitationUnitDivider,
+  getBootConnectorStatus,
+  getChargingStationConnectorChargingProfilesPowerLimit,
+  getChargingStationId,
+  getDefaultVoltageOut,
+  getHashId,
+  getIdTagsFile,
+  getMaxNumberOfEvses,
+  getPhaseRotationValue,
+  initializeConnectorsMapStatus,
+  propagateSerialNumber,
+  stationTemplateToStationInfo,
+  warnTemplateKeysDeprecation,
+} from './ChargingStationUtils';
 import { IdTagsCache } from './IdTagsCache';
 import {
   OCPP16IncomingRequestService,
@@ -211,16 +232,14 @@ export class ChargingStation {
       ` ${
         (isNotEmptyString(this?.stationInfo?.chargingStationId)
           ? this?.stationInfo?.chargingStationId
-          : ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())) ??
+          : getChargingStationId(this.index, this.getTemplateFromFile())) ??
         'Error at building log prefix'
       } |`
     );
   };
 
   public hasIdTags(): boolean {
-    return isNotEmptyArray(
-      this.idTagsCache.getIdTags(ChargingStationUtils.getIdTagsFile(this.stationInfo))
-    );
+    return isNotEmptyArray(this.idTagsCache.getIdTags(getIdTagsFile(this.stationInfo)));
   }
 
   public getEnableStatistics(): boolean {
@@ -337,7 +356,7 @@ export class ChargingStation {
   }
 
   public getVoltageOut(stationInfo?: ChargingStationInfo): number | undefined {
-    const defaultVoltageOut = ChargingStationUtils.getDefaultVoltageOut(
+    const defaultVoltageOut = getDefaultVoltageOut(
       this.getCurrentOutType(stationInfo),
       this.logPrefix(),
       this.templateFile
@@ -369,7 +388,7 @@ export class ChargingStation {
     }
     const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
     const connectorChargingProfilesPowerLimit =
-      ChargingStationUtils.getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId);
+      getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
       isNaN(connectorAmperageLimitationPowerLimit)
@@ -1077,12 +1096,10 @@ export class ChargingStation {
     let reservableConnectors = 0;
     if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
-        reservableConnectors += ChargingStationUtils.countReservableConnectors(
-          evseStatus.connectors
-        );
+        reservableConnectors += countReservableConnectors(evseStatus.connectors);
       }
     } else {
-      reservableConnectors = ChargingStationUtils.countReservableConnectors(this.connectors);
+      reservableConnectors = countReservableConnectors(this.connectors);
     }
     return reservableConnectors - this.getNumberOfReservationsOnConnectorZero();
   }
@@ -1163,28 +1180,16 @@ export class ChargingStation {
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate | undefined = this.getTemplateFromFile();
-    ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
-    ChargingStationUtils.warnTemplateKeysDeprecation(
-      stationTemplate,
-      this.logPrefix(),
-      this.templateFile
-    );
+    checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
+    warnTemplateKeysDeprecation(stationTemplate, this.logPrefix(), this.templateFile);
     if (stationTemplate?.Connectors) {
-      ChargingStationUtils.checkConnectorsConfiguration(
-        stationTemplate,
-        this.logPrefix(),
-        this.templateFile
-      );
+      checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile);
     }
-    const stationInfo: ChargingStationInfo =
-      ChargingStationUtils.stationTemplateToStationInfo(stationTemplate);
-    stationInfo.hashId = ChargingStationUtils.getHashId(this.index, stationTemplate);
-    stationInfo.chargingStationId = ChargingStationUtils.getChargingStationId(
-      this.index,
-      stationTemplate
-    );
+    const stationInfo: ChargingStationInfo = stationTemplateToStationInfo(stationTemplate);
+    stationInfo.hashId = getHashId(this.index, stationTemplate);
+    stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate);
     stationInfo.ocppVersion = stationTemplate?.ocppVersion ?? OCPPVersion.VERSION_16;
-    ChargingStationUtils.createSerialNumber(stationTemplate, stationInfo);
+    createSerialNumber(stationTemplate, stationInfo);
     if (isNotEmptyArray(stationTemplate?.power)) {
       stationTemplate.power = stationTemplate.power as number[];
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length);
@@ -1248,7 +1253,7 @@ export class ChargingStation {
       return stationInfoFromFile;
     }
     stationInfoFromFile &&
-      ChargingStationUtils.propagateSerialNumber(
+      propagateSerialNumber(
         this.getTemplateFromFile(),
         stationInfoFromFile,
         stationInfoFromTemplate
@@ -1283,10 +1288,10 @@ export class ChargingStation {
 
   private initialize(): void {
     const stationTemplate = this.getTemplateFromFile();
-    ChargingStationUtils.checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
+    checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     this.configurationFile = join(
       dirname(this.templateFile.replace('station-templates', 'configurations')),
-      `${ChargingStationUtils.getHashId(this.index, stationTemplate)}.json`
+      `${getHashId(this.index, stationTemplate)}.json`
     );
     const chargingStationConfiguration = this.getConfigurationFromFile();
     if (
@@ -1325,9 +1330,7 @@ export class ChargingStation {
         this.configuredSupervisionUrl
       );
     }
-    this.bootNotificationRequest = ChargingStationUtils.createBootNotificationRequest(
-      this.stationInfo
-    );
+    this.bootNotificationRequest = createBootNotificationRequest(this.stationInfo);
     this.powerDivider = this.getPowerDivider();
     // OCPP configuration
     this.ocppConfiguration = this.getOcppConfiguration();
@@ -1425,8 +1428,7 @@ export class ChargingStation {
         this,
         this.stationInfo.amperageLimitationOcppKey,
         (
-          this.stationInfo.maximumAmperage *
-          ChargingStationUtils.getAmperageLimitationUnitDivider(this.stationInfo)
+          this.stationInfo.maximumAmperage * getAmperageLimitationUnitDivider(this.stationInfo)
         ).toString()
       );
     }
@@ -1472,14 +1474,14 @@ export class ChargingStation {
         for (const evseStatus of this.evses.values()) {
           for (const connectorId of evseStatus.connectors.keys()) {
             connectorsPhaseRotation.push(
-              ChargingStationUtils.getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+              getPhaseRotationValue(connectorId, this.getNumberOfPhases())
             );
           }
         }
       } else {
         for (const connectorId of this.connectors.keys()) {
           connectorsPhaseRotation.push(
-            ChargingStationUtils.getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+            getPhaseRotationValue(connectorId, this.getNumberOfPhases())
           );
         }
       }
@@ -1593,11 +1595,7 @@ export class ChargingStation {
     }
     if (stationTemplate?.Connectors) {
       const { configuredMaxConnectors, templateMaxConnectors, templateMaxAvailableConnectors } =
-        ChargingStationUtils.checkConnectorsConfiguration(
-          stationTemplate,
-          this.logPrefix(),
-          this.templateFile
-        );
+        checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile);
       const connectorsConfigHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
         .update(
           `${JSON.stringify(stationTemplate?.Connectors)}${configuredMaxConnectors.toString()}`
@@ -1622,7 +1620,7 @@ export class ChargingStation {
                 ? getRandomInteger(templateMaxAvailableConnectors, 1)
                 : connectorId;
             const connectorStatus = stationTemplate?.Connectors[templateConnectorId];
-            ChargingStationUtils.checkStationInfoConnectorStatus(
+            checkStationInfoConnectorStatus(
               templateConnectorId,
               connectorStatus,
               this.logPrefix(),
@@ -1630,7 +1628,7 @@ export class ChargingStation {
             );
             this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus));
           }
-          ChargingStationUtils.initializeConnectorsMapStatus(this.connectors, this.logPrefix());
+          initializeConnectorsMapStatus(this.connectors, this.logPrefix());
           this.saveConnectorsStatus();
         } else {
           logger.warn(
@@ -1678,22 +1676,19 @@ export class ChargingStation {
       if (this.evses?.size === 0 || evsesConfigChanged) {
         evsesConfigChanged && this.evses.clear();
         this.evsesConfigurationHash = evsesConfigHash;
-        const templateMaxEvses = ChargingStationUtils.getMaxNumberOfEvses(stationTemplate?.Evses);
+        const templateMaxEvses = getMaxNumberOfEvses(stationTemplate?.Evses);
         if (templateMaxEvses > 0) {
           for (const evse in stationTemplate.Evses) {
             const evseId = convertToInt(evse);
             this.evses.set(evseId, {
-              connectors: ChargingStationUtils.buildConnectorsMap(
+              connectors: buildConnectorsMap(
                 stationTemplate?.Evses[evse]?.Connectors,
                 this.logPrefix(),
                 this.templateFile
               ),
               availability: AvailabilityType.Operative,
             });
-            ChargingStationUtils.initializeConnectorsMapStatus(
-              this.evses.get(evseId)?.connectors,
-              this.logPrefix()
-            );
+            initializeConnectorsMapStatus(this.evses.get(evseId)?.connectors, this.logPrefix());
           }
           this.saveEvsesStatus();
         } else {
@@ -2224,7 +2219,7 @@ export class ChargingStation {
             this,
             this.stationInfo.amperageLimitationOcppKey
           )?.value
-        ) / ChargingStationUtils.getAmperageLimitationUnitDivider(this.stationInfo)
+        ) / getAmperageLimitationUnitDivider(this.stationInfo)
       );
     }
   }
@@ -2247,11 +2242,7 @@ export class ChargingStation {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            const connectorBootStatus = ChargingStationUtils.getBootConnectorStatus(
-              this,
-              connectorId,
-              connectorStatus
-            );
+            const connectorBootStatus = getBootConnectorStatus(this, connectorId, connectorStatus);
             await OCPPServiceUtils.sendAndSetConnectorStatus(
               this,
               connectorId,
@@ -2264,7 +2255,7 @@ export class ChargingStation {
     } else {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0) {
-          const connectorBootStatus = ChargingStationUtils.getBootConnectorStatus(
+          const connectorBootStatus = getBootConnectorStatus(
             this,
             connectorId,
             this.getConnectorStatus(connectorId)

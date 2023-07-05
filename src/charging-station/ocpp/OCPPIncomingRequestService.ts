@@ -5,7 +5,7 @@ import ajvFormats from 'ajv-formats';
 
 import { OCPPConstants } from './OCPPConstants';
 import { OCPPServiceUtils } from './OCPPServiceUtils';
-import { type ChargingStation, ChargingStationUtils } from '../../charging-station';
+import { type ChargingStation, getIdTagsFile } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import type {
   ClearCacheResponse,
@@ -104,11 +104,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
   }
 
   protected handleRequestClearCache(chargingStation: ChargingStation): ClearCacheResponse {
-    if (
-      chargingStation.idTagsCache.deleteIdTags(
-        ChargingStationUtils.getIdTagsFile(chargingStation.stationInfo)
-      )
-    ) {
+    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo))) {
       return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
     }
     return OCPPConstants.OCPP_RESPONSE_REJECTED;

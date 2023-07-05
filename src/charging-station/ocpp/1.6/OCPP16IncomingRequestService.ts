@@ -13,7 +13,7 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
   type ChargingStation,
   ChargingStationConfigurationUtils,
-  ChargingStationUtils,
+  checkChargingStation,
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
@@ -1113,10 +1113,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     maxDelay = 30,
     minDelay = 15
   ): Promise<void> {
-    if (
-      ChargingStationUtils.checkChargingStation(chargingStation, chargingStation.logPrefix()) ===
-      false
-    ) {
+    if (checkChargingStation(chargingStation, chargingStation.logPrefix()) === false) {
       return;
     }
     if (chargingStation.hasEvses) {
@@ -1226,10 +1223,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     } while (transactionsStarted);
     !wasTransactionsStarted && (await sleep(getRandomInteger(maxDelay, minDelay) * 1000));
-    if (
-      ChargingStationUtils.checkChargingStation(chargingStation, chargingStation.logPrefix()) ===
-      false
-    ) {
+    if (checkChargingStation(chargingStation, chargingStation.logPrefix()) === false) {
       return;
     }
     await chargingStation.ocppRequestService.requestHandler<
