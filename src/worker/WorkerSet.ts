@@ -72,7 +72,13 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   /** @inheritDoc */
   public async stop(): Promise<void> {
     for (const workerSetElement of this.workerSet) {
+      const workerExitPromise = new Promise<void>((resolve) => {
+        workerSetElement.worker.on('exit', () => {
+          resolve();
+        });
+      });
       await workerSetElement.worker.terminate();
+      await workerExitPromise;
     }
     this.workerSet.clear();
   }
@@ -126,10 +132,16 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       'exit',
       this.workerOptions?.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION
     );
-    worker.once('exit', () => this.workerSet.delete(this.getWorkerSetElementByWorker(worker)));
+    worker.once('exit', () =>
+      this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker))
+    );
     const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
     this.workerSet.add(workerSetElement);
     return workerSetElement;
+  }
+
+  private removeWorkerSetElement(workerSetElement: WorkerSetElement): void {
+    this.workerSet.delete(workerSetElement);
   }
 
   private async getWorkerSetElement(): Promise<WorkerSetElement> {
