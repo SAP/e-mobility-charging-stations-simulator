@@ -15,8 +15,11 @@ import {
   CircularArray,
   Configuration,
   Constants,
-  Utils,
+  JSONStringifyWithMapSupport,
   buildPerformanceStatisticsMessage,
+  formatDurationSeconds,
+  generateUUID,
+  logPrefix,
   logger,
   median,
   nthPercentile,
@@ -60,7 +63,7 @@ export class PerformanceStatistics {
   }
 
   public static beginMeasure(id: string): string {
-    const markId = `${id.charAt(0).toUpperCase()}${id.slice(1)}~${Utils.generateUUID()}`;
+    const markId = `${id.charAt(0).toUpperCase()}${id.slice(1)}~${generateUUID()}`;
     performance.mark(markId);
     return markId;
   }
@@ -160,7 +163,7 @@ export class PerformanceStatistics {
   private logStatistics(): void {
     logger.info(`${this.logPrefix()}`, {
       ...this.statistics,
-      statisticsData: Utils.JSONStringifyWithMapSupport(this.statistics.statisticsData),
+      statisticsData: JSONStringifyWithMapSupport(this.statistics.statisticsData),
     });
   }
 
@@ -173,13 +176,11 @@ export class PerformanceStatistics {
         this.logStatistics();
       }, logStatisticsInterval * 1000);
       logger.info(
-        `${this.logPrefix()} logged every ${Utils.formatDurationSeconds(logStatisticsInterval)}`
+        `${this.logPrefix()} logged every ${formatDurationSeconds(logStatisticsInterval)}`
       );
     } else if (this.displayInterval) {
       logger.info(
-        `${this.logPrefix()} already logged every ${Utils.formatDurationSeconds(
-          logStatisticsInterval
-        )}`
+        `${this.logPrefix()} already logged every ${formatDurationSeconds(logStatisticsInterval)}`
       );
     } else if (Configuration.getLog().enabled) {
       logger.info(
@@ -255,6 +256,6 @@ export class PerformanceStatistics {
   }
 
   private logPrefix = (): string => {
-    return Utils.logPrefix(` ${this.objName} | Performance statistics`);
+    return logPrefix(` ${this.objName} | Performance statistics`);
   };
 }

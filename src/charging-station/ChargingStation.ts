@@ -100,15 +100,30 @@ import {
   Configuration,
   Constants,
   DCElectricUtils,
-  Utils,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
   buildStartedMessage,
   buildStoppedMessage,
   buildUpdatedMessage,
+  cloneObject,
+  convertToBoolean,
+  convertToInt,
+  exponentialDelay,
+  formatDurationMilliSeconds,
+  formatDurationSeconds,
+  getRandomInteger,
+  getWebSocketCloseEventStatusString,
   handleFileException,
+  isNotEmptyArray,
+  isNotEmptyString,
+  isNullOrUndefined,
+  isUndefined,
+  logPrefix,
   logger,
+  roundTo,
+  secureRandom,
+  sleep,
   watchJsonFile,
 } from '../utils';
 
@@ -175,8 +190,8 @@ export class ChargingStation {
     return new URL(
       `${
         this.getSupervisionUrlOcppConfiguration() &&
-        Utils.isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
-        Utils.isNotEmptyString(
+        isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
+        isNotEmptyString(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
             this.getSupervisionUrlOcppKey()
@@ -192,9 +207,9 @@ export class ChargingStation {
   }
 
   public logPrefix = (): string => {
-    return Utils.logPrefix(
+    return logPrefix(
       ` ${
-        (Utils.isNotEmptyString(this?.stationInfo?.chargingStationId)
+        (isNotEmptyString(this?.stationInfo?.chargingStationId)
           ? this?.stationInfo?.chargingStationId
           : ChargingStationUtils.getChargingStationId(this.index, this.getTemplateFromFile())) ??
         'Error at building log prefix'
@@ -203,7 +218,7 @@ export class ChargingStation {
   };
 
   public hasIdTags(): boolean {
-    return Utils.isNotEmptyArray(
+    return isNotEmptyArray(
       this.idTagsCache.getIdTags(ChargingStationUtils.getIdTagsFile(this.stationInfo))
     );
   }
@@ -224,9 +239,7 @@ export class ChargingStation {
     const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
-        return !Utils.isUndefined(localStationInfo.numberOfPhases)
-          ? localStationInfo.numberOfPhases
-          : 3;
+        return !isUndefined(localStationInfo.numberOfPhases) ? localStationInfo.numberOfPhases : 3;
       case CurrentType.DC:
         return 0;
     }
@@ -241,7 +254,7 @@ export class ChargingStation {
   }
 
   public inUnknownState(): boolean {
-    return Utils.isNullOrUndefined(this?.bootNotificationResponse?.status);
+    return isNullOrUndefined(this?.bootNotificationResponse?.status);
   }
 
   public inPendingState(): boolean {
@@ -340,7 +353,7 @@ export class ChargingStation {
   public getConnectorMaximumAvailablePower(connectorId: number): number {
     let connectorAmperageLimitationPowerLimit: number;
     if (
-      !Utils.isNullOrUndefined(this.getAmperageLimitation()) &&
+      !isNullOrUndefined(this.getAmperageLimitation()) &&
       this.getAmperageLimitation() < this.stationInfo?.maximumAmperage
     ) {
       connectorAmperageLimitationPowerLimit =
@@ -472,9 +485,7 @@ export class ChargingStation {
       this,
       StandardParametersKey.AuthorizeRemoteTxRequests
     );
-    return authorizeRemoteTxRequests
-      ? Utils.convertToBoolean(authorizeRemoteTxRequests.value)
-      : false;
+    return authorizeRemoteTxRequests ? convertToBoolean(authorizeRemoteTxRequests.value) : false;
   }
 
   public getLocalAuthListEnabled(): boolean {
@@ -482,7 +493,7 @@ export class ChargingStation {
       this,
       StandardParametersKey.LocalAuthListEnabled
     );
-    return localAuthListEnabled ? Utils.convertToBoolean(localAuthListEnabled.value) : false;
+    return localAuthListEnabled ? convertToBoolean(localAuthListEnabled.value) : false;
   }
 
   public getHeartbeatInterval(): number {
@@ -491,14 +502,14 @@ export class ChargingStation {
       StandardParametersKey.HeartbeatInterval
     );
     if (HeartbeatInterval) {
-      return Utils.convertToInt(HeartbeatInterval.value) * 1000;
+      return convertToInt(HeartbeatInterval.value) * 1000;
     }
     const HeartBeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
       this,
       StandardParametersKey.HeartBeatInterval
     );
     if (HeartBeatInterval) {
-      return Utils.convertToInt(HeartBeatInterval.value) * 1000;
+      return convertToInt(HeartBeatInterval.value) * 1000;
     }
     this.stationInfo?.autoRegister === false &&
       logger.warn(
@@ -512,7 +523,7 @@ export class ChargingStation {
   public setSupervisionUrl(url: string): void {
     if (
       this.getSupervisionUrlOcppConfiguration() &&
-      Utils.isNotEmptyString(this.getSupervisionUrlOcppKey())
+      isNotEmptyString(this.getSupervisionUrlOcppKey())
     ) {
       ChargingStationConfigurationUtils.setConfigurationKeyValue(
         this,
@@ -539,13 +550,13 @@ export class ChargingStation {
           });
       }, this.getHeartbeatInterval());
       logger.info(
-        `${this.logPrefix()} Heartbeat started every ${Utils.formatDurationMilliSeconds(
+        `${this.logPrefix()} Heartbeat started every ${formatDurationMilliSeconds(
           this.getHeartbeatInterval()
         )}`
       );
     } else if (this.heartbeatSetInterval) {
       logger.info(
-        `${this.logPrefix()} Heartbeat already started every ${Utils.formatDurationMilliSeconds(
+        `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
           this.getHeartbeatInterval()
         )}`
       );
@@ -593,7 +604,7 @@ export class ChargingStation {
       return;
     } else if (
       this.getConnectorStatus(connectorId)?.transactionStarted === true &&
-      Utils.isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionId)
+      isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionId)
     ) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}
@@ -660,7 +671,7 @@ export class ChargingStation {
           this.logPrefix(),
           undefined,
           (event, filename): void => {
-            if (Utils.isNotEmptyString(filename) && event === 'change') {
+            if (isNotEmptyString(filename) && event === 'change') {
               try {
                 logger.debug(
                   `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
@@ -729,7 +740,7 @@ export class ChargingStation {
 
   public async reset(reason?: StopTransactionReason): Promise<void> {
     await this.stop(reason);
-    await Utils.sleep(this.stationInfo.resetTime);
+    await sleep(this.stationInfo.resetTime);
     this.initialize();
     this.start();
   }
@@ -768,8 +779,8 @@ export class ChargingStation {
       return;
     }
     if (
-      !Utils.isNullOrUndefined(this.stationInfo.supervisionUser) &&
-      !Utils.isNullOrUndefined(this.stationInfo.supervisionPassword)
+      !isNullOrUndefined(this.stationInfo.supervisionUser) &&
+      !isNullOrUndefined(this.stationInfo.supervisionPassword)
     ) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`;
     }
@@ -858,7 +869,7 @@ export class ChargingStation {
 
   public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
     this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this);
-    if (Utils.isNotEmptyArray(connectorIds)) {
+    if (isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.startConnector(connectorId);
       }
@@ -870,7 +881,7 @@ export class ChargingStation {
   }
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
-    if (Utils.isNotEmptyArray(connectorIds)) {
+    if (isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.stopConnector(connectorId);
       }
@@ -919,7 +930,7 @@ export class ChargingStation {
   }
 
   public getReservationOnConnectorId0Enabled(): boolean {
-    return Utils.convertToBoolean(
+    return convertToBoolean(
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         StandardParametersKey.ReserveConnectorZeroSupported
@@ -997,7 +1008,7 @@ export class ChargingStation {
       ReservationFilterKey.RESERVATION_ID,
       reservation?.id
     );
-    return Utils.isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
+    return isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
   }
 
   public startReservationExpirationSetInterval(customInterval?: number): void {
@@ -1052,12 +1063,12 @@ export class ChargingStation {
     if (alreadyExists) {
       return alreadyExists;
     }
-    const userReservedAlready = Utils.isUndefined(
+    const userReservedAlready = isUndefined(
       this.getReservationBy(ReservationFilterKey.ID_TAG, idTag)
     )
       ? false
       : true;
-    const notConnectorZero = Utils.isUndefined(connectorId) ? true : connectorId > 0;
+    const notConnectorZero = isUndefined(connectorId) ? true : connectorId > 0;
     const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
     return !alreadyExists && !userReservedAlready && notConnectorZero && freeConnectorsAvailable;
   }
@@ -1174,9 +1185,9 @@ export class ChargingStation {
     );
     stationInfo.ocppVersion = stationTemplate?.ocppVersion ?? OCPPVersion.VERSION_16;
     ChargingStationUtils.createSerialNumber(stationTemplate, stationInfo);
-    if (Utils.isNotEmptyArray(stationTemplate?.power)) {
+    if (isNotEmptyArray(stationTemplate?.power)) {
       stationTemplate.power = stationTemplate.power as number[];
-      const powerArrayRandomIndex = Math.floor(Utils.secureRandom() * stationTemplate.power.length);
+      const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length);
       stationInfo.maximumPower =
         stationTemplate?.powerUnit === PowerUnits.KILO_WATT
           ? stationTemplate.power[powerArrayRandomIndex] * 1000
@@ -1191,7 +1202,7 @@ export class ChargingStation {
     stationInfo.firmwareVersionPattern =
       stationTemplate?.firmwareVersionPattern ?? Constants.SEMVER_PATTERN;
     if (
-      Utils.isNotEmptyString(stationInfo.firmwareVersion) &&
+      isNotEmptyString(stationInfo.firmwareVersion) &&
       new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion) === false
     ) {
       logger.warn(
@@ -1209,7 +1220,7 @@ export class ChargingStation {
       },
       stationTemplate?.firmwareUpgrade ?? {}
     );
-    stationInfo.resetTime = !Utils.isNullOrUndefined(stationTemplate?.resetTime)
+    stationInfo.resetTime = !isNullOrUndefined(stationTemplate?.resetTime)
       ? stationTemplate.resetTime * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
@@ -1289,8 +1300,8 @@ export class ChargingStation {
     this.stationInfo = this.getStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
-      Utils.isNotEmptyString(this.stationInfo.firmwareVersion) &&
-      Utils.isNotEmptyString(this.stationInfo.firmwareVersionPattern)
+      isNotEmptyString(this.stationInfo.firmwareVersion) &&
+      isNotEmptyString(this.stationInfo.firmwareVersionPattern)
     ) {
       const patternGroup: number | undefined =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
@@ -1300,7 +1311,7 @@ export class ChargingStation {
         ?.slice(1, patternGroup + 1);
       const patchLevelIndex = match.length - 1;
       match[patchLevelIndex] = (
-        Utils.convertToInt(match[patchLevelIndex]) +
+        convertToInt(match[patchLevelIndex]) +
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.step
       ).toString();
       this.stationInfo.firmwareVersion = match?.join('.');
@@ -1383,7 +1394,7 @@ export class ChargingStation {
     }
     if (
       this.getSupervisionUrlOcppConfiguration() &&
-      Utils.isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
+      isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
       !ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
@@ -1394,7 +1405,7 @@ export class ChargingStation {
       );
     } else if (
       !this.getSupervisionUrlOcppConfiguration() &&
-      Utils.isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
+      isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
       ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
       ChargingStationConfigurationUtils.deleteConfigurationKey(
@@ -1404,7 +1415,7 @@ export class ChargingStation {
       );
     }
     if (
-      Utils.isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
+      isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         this.stationInfo.amperageLimitationOcppKey
@@ -1524,11 +1535,11 @@ export class ChargingStation {
   private initializeConnectorsOrEvsesFromFile(configuration: ChargingStationConfiguration): void {
     if (configuration?.connectorsStatus && !configuration?.evsesStatus) {
       for (const [connectorId, connectorStatus] of configuration.connectorsStatus.entries()) {
-        this.connectors.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
+        this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus));
       }
     } else if (configuration?.evsesStatus && !configuration?.connectorsStatus) {
       for (const [evseId, evseStatusConfiguration] of configuration.evsesStatus.entries()) {
-        const evseStatus = Utils.cloneObject<EvseStatusConfiguration>(evseStatusConfiguration);
+        const evseStatus = cloneObject<EvseStatusConfiguration>(evseStatusConfiguration);
         delete evseStatus.connectorsStatus;
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
@@ -1608,7 +1619,7 @@ export class ChargingStation {
             }
             const templateConnectorId =
               connectorId > 0 && stationTemplate?.randomConnectors
-                ? Utils.getRandomInteger(templateMaxAvailableConnectors, 1)
+                ? getRandomInteger(templateMaxAvailableConnectors, 1)
                 : connectorId;
             const connectorStatus = stationTemplate?.Connectors[templateConnectorId];
             ChargingStationUtils.checkStationInfoConnectorStatus(
@@ -1617,7 +1628,7 @@ export class ChargingStation {
               this.logPrefix(),
               this.templateFile
             );
-            this.connectors.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
+            this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus));
           }
           ChargingStationUtils.initializeConnectorsMapStatus(this.connectors, this.logPrefix());
           this.saveConnectorsStatus();
@@ -1670,7 +1681,7 @@ export class ChargingStation {
         const templateMaxEvses = ChargingStationUtils.getMaxNumberOfEvses(stationTemplate?.Evses);
         if (templateMaxEvses > 0) {
           for (const evse in stationTemplate.Evses) {
-            const evseId = Utils.convertToInt(evse);
+            const evseId = convertToInt(evse);
             this.evses.set(evseId, {
               connectors: ChargingStationUtils.buildConnectorsMap(
                 stationTemplate?.Evses[evse]?.Connectors,
@@ -1704,7 +1715,7 @@ export class ChargingStation {
 
   private getConfigurationFromFile(): ChargingStationConfiguration | undefined {
     let configuration: ChargingStationConfiguration | undefined;
-    if (Utils.isNotEmptyString(this.configurationFile) && existsSync(this.configurationFile)) {
+    if (isNotEmptyString(this.configurationFile) && existsSync(this.configurationFile)) {
       try {
         if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
           configuration = this.sharedLRUCache.getChargingStationConfiguration(
@@ -1747,13 +1758,13 @@ export class ChargingStation {
   }
 
   private saveConfiguration(): void {
-    if (Utils.isNotEmptyString(this.configurationFile)) {
+    if (isNotEmptyString(this.configurationFile)) {
       try {
         if (!existsSync(dirname(this.configurationFile))) {
           mkdirSync(dirname(this.configurationFile), { recursive: true });
         }
         let configurationData: ChargingStationConfiguration =
-          Utils.cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()) ?? {};
+          cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()) ?? {};
         if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         } else {
@@ -1879,7 +1890,7 @@ export class ChargingStation {
           });
           if (this.isRegistered() === false) {
             this.getRegistrationMaxRetries() !== -1 && ++registrationRetryCount;
-            await Utils.sleep(
+            await sleep(
               this?.bootNotificationResponse?.interval
                 ? this.bootNotificationResponse.interval * 1000
                 : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
@@ -1916,7 +1927,7 @@ export class ChargingStation {
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
         logger.info(
-          `${this.logPrefix()} WebSocket normally closed with status '${Utils.getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} WebSocket normally closed with status '${getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason.toString()}'`
         );
@@ -1925,7 +1936,7 @@ export class ChargingStation {
       // Abnormal close
       default:
         logger.error(
-          `${this.logPrefix()} WebSocket abnormally closed with status '${Utils.getWebSocketCloseEventStatusString(
+          `${this.logPrefix()} WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(
             code
           )}' and reason '${reason.toString()}'`
         );
@@ -2201,14 +2212,14 @@ export class ChargingStation {
 
   private getAmperageLimitation(): number | undefined {
     if (
-      Utils.isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
+      isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         this.stationInfo.amperageLimitationOcppKey
       )
     ) {
       return (
-        Utils.convertToInt(
+        convertToInt(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
             this.stationInfo.amperageLimitationOcppKey
@@ -2339,7 +2350,7 @@ export class ChargingStation {
       this,
       StandardParametersKey.WebSocketPingInterval
     )
-      ? Utils.convertToInt(
+      ? convertToInt(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
             StandardParametersKey.WebSocketPingInterval
@@ -2353,13 +2364,13 @@ export class ChargingStation {
         }
       }, webSocketPingInterval * 1000);
       logger.info(
-        `${this.logPrefix()} WebSocket ping started every ${Utils.formatDurationSeconds(
+        `${this.logPrefix()} WebSocket ping started every ${formatDurationSeconds(
           webSocketPingInterval
         )}`
       );
     } else if (this.webSocketPingSetInterval) {
       logger.info(
-        `${this.logPrefix()} WebSocket ping already started every ${Utils.formatDurationSeconds(
+        `${this.logPrefix()} WebSocket ping already started every ${formatDurationSeconds(
           webSocketPingInterval
         )}`
       );
@@ -2380,11 +2391,11 @@ export class ChargingStation {
   private getConfiguredSupervisionUrl(): URL {
     let configuredSupervisionUrl: string;
     const supervisionUrls = this.stationInfo?.supervisionUrls ?? Configuration.getSupervisionUrls();
-    if (Utils.isNotEmptyArray(supervisionUrls)) {
+    if (isNotEmptyArray(supervisionUrls)) {
       let configuredSupervisionUrlIndex: number;
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.RANDOM:
-          configuredSupervisionUrlIndex = Math.floor(Utils.secureRandom() * supervisionUrls.length);
+          configuredSupervisionUrlIndex = Math.floor(secureRandom() * supervisionUrls.length);
           break;
         case SupervisionUrlDistribution.ROUND_ROBIN:
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
@@ -2404,7 +2415,7 @@ export class ChargingStation {
     } else {
       configuredSupervisionUrl = supervisionUrls as string;
     }
-    if (Utils.isNotEmptyString(configuredSupervisionUrl)) {
+    if (isNotEmptyString(configuredSupervisionUrl)) {
       return new URL(configuredSupervisionUrl);
     }
     const errorMsg = 'No supervision url(s) configured';
@@ -2445,7 +2456,7 @@ export class ChargingStation {
     ) {
       ++this.autoReconnectRetryCount;
       const reconnectDelay = this.getReconnectExponentialDelay()
-        ? Utils.exponentialDelay(this.autoReconnectRetryCount)
+        ? exponentialDelay(this.autoReconnectRetryCount)
         : this.getConnectionTimeout() * 1000;
       const reconnectDelayWithdraw = 1000;
       const reconnectTimeout =
@@ -2453,12 +2464,12 @@ export class ChargingStation {
           ? reconnectDelay - reconnectDelayWithdraw
           : 0;
       logger.error(
-        `${this.logPrefix()} WebSocket connection retry in ${Utils.roundTo(
+        `${this.logPrefix()} WebSocket connection retry in ${roundTo(
           reconnectDelay,
           2
         )}ms, timeout ${reconnectTimeout}ms`
       );
-      await Utils.sleep(reconnectDelay);
+      await sleep(reconnectDelay);
       logger.error(
         `${this.logPrefix()} WebSocket connection retry #${this.autoReconnectRetryCount.toString()}`
       );

@@ -6,7 +6,14 @@ import { dirname } from 'node:path';
 import { Storage } from './Storage';
 import { BaseError } from '../../exception';
 import { FileType, type Statistics } from '../../types';
-import { AsyncLock, AsyncLockType, Constants, Utils, handleFileException } from '../../utils';
+import {
+  AsyncLock,
+  AsyncLockType,
+  Constants,
+  JSONStringifyWithMapSupport,
+  handleFileException,
+  isNullOrUndefined,
+} from '../../utils';
 
 export class JsonFileStorage extends Storage {
   private fd: number | null = null;
@@ -25,11 +32,7 @@ export class JsonFileStorage extends Storage {
           ? (JSON.parse(fileData) as Statistics[])
           : [];
         performanceRecords.push(performanceStatistics);
-        writeFileSync(
-          this.dbName,
-          Utils.JSONStringifyWithMapSupport(performanceRecords, 2),
-          'utf8'
-        );
+        writeFileSync(this.dbName, JSONStringifyWithMapSupport(performanceRecords, 2), 'utf8');
       })
       .catch((error) => {
         handleFileException(
@@ -46,7 +49,7 @@ export class JsonFileStorage extends Storage {
 
   public open(): void {
     try {
-      if (Utils.isNullOrUndefined(this?.fd)) {
+      if (isNullOrUndefined(this?.fd)) {
         if (!existsSync(dirname(this.dbName))) {
           mkdirSync(dirname(this.dbName), { recursive: true });
         }

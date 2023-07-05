@@ -12,7 +12,15 @@ import {
   type UIServerConfiguration,
   WebSocketCloseEventStatusCode,
 } from '../../types';
-import { Constants, Utils, logger } from '../../utils';
+import {
+  Constants,
+  getWebSocketCloseEventStatusString,
+  isNotEmptyString,
+  isNullOrUndefined,
+  logPrefix,
+  logger,
+  validateUUID,
+} from '../../utils';
 
 const moduleName = 'UIWebSocketServer';
 
@@ -53,7 +61,7 @@ export class UIWebSocketServer extends AbstractUIServer {
           .get(version)
           ?.requestHandler(request)
           .then((protocolResponse: ProtocolResponse) => {
-            if (!Utils.isNullOrUndefined(protocolResponse)) {
+            if (!isNullOrUndefined(protocolResponse)) {
               this.sendResponse(protocolResponse);
             }
           })
@@ -67,7 +75,7 @@ export class UIWebSocketServer extends AbstractUIServer {
           `${this.logPrefix(
             moduleName,
             'start.ws.onclose'
-          )} WebSocket closed: '${Utils.getWebSocketCloseEventStatusString(
+          )} WebSocket closed: '${getWebSocketCloseEventStatusString(
             code
           )}' - '${reason.toString()}'`
         );
@@ -152,10 +160,10 @@ export class UIWebSocketServer extends AbstractUIServer {
       ? `UI WebSocket Server ${prefixSuffix}`
       : 'UI WebSocket Server';
     const logMsg =
-      Utils.isNotEmptyString(modName) && Utils.isNotEmptyString(methodName)
+      isNotEmptyString(modName) && isNotEmptyString(methodName)
         ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
         : ` ${logMsgPrefix} |`;
-    return Utils.logPrefix(logMsg);
+    return logPrefix(logMsg);
   };
 
   private broadcastToClients(message: string): void {
@@ -195,7 +203,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       return false;
     }
 
-    if (Utils.validateUUID(request[0]) === false) {
+    if (validateUUID(request[0]) === false) {
       logger.error(
         `${this.logPrefix(
           moduleName,

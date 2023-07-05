@@ -24,7 +24,7 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../types';
-import { Constants, Utils } from '../../../utils';
+import { Constants, generateUUID } from '../../../utils';
 import { OCPPRequestService } from '../OCPPRequestService';
 import type { OCPPResponseService } from '../OCPPResponseService';
 
@@ -137,7 +137,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName) === true) {
       return (await this.sendMessage(
         chargingStation,
-        Utils.generateUUID(),
+        generateUUID(),
         this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
         commandName,
         params

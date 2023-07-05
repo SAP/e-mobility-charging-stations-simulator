@@ -31,7 +31,21 @@ import {
   RecurrencyKindType,
   Voltage,
 } from '../types';
-import { ACElectricUtils, Constants, DCElectricUtils, Utils, logger } from '../utils';
+import {
+  ACElectricUtils,
+  Constants,
+  DCElectricUtils,
+  cloneObject,
+  convertToInt,
+  isEmptyObject,
+  isEmptyString,
+  isNotEmptyArray,
+  isNotEmptyString,
+  isNullOrUndefined,
+  isUndefined,
+  logger,
+  secureRandom,
+} from '../utils';
 
 const moduleName = 'ChargingStationUtils';
 
@@ -72,16 +86,16 @@ export class ChargingStationUtils {
     const chargingStationInfo = {
       chargePointModel: stationTemplate.chargePointModel,
       chargePointVendor: stationTemplate.chargePointVendor,
-      ...(!Utils.isUndefined(stationTemplate.chargeBoxSerialNumberPrefix) && {
+      ...(!isUndefined(stationTemplate.chargeBoxSerialNumberPrefix) && {
         chargeBoxSerialNumber: stationTemplate.chargeBoxSerialNumberPrefix,
       }),
-      ...(!Utils.isUndefined(stationTemplate.chargePointSerialNumberPrefix) && {
+      ...(!isUndefined(stationTemplate.chargePointSerialNumberPrefix) && {
         chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix,
       }),
-      ...(!Utils.isUndefined(stationTemplate.meterSerialNumberPrefix) && {
+      ...(!isUndefined(stationTemplate.meterSerialNumberPrefix) && {
         meterSerialNumber: stationTemplate.meterSerialNumberPrefix,
       }),
-      ...(!Utils.isUndefined(stationTemplate.meterType) && {
+      ...(!isUndefined(stationTemplate.meterType) && {
         meterType: stationTemplate.meterType,
       }),
     };
@@ -164,17 +178,17 @@ export class ChargingStationUtils {
     logPrefix: string,
     templateFile: string
   ) {
-    if (Utils.isNullOrUndefined(stationTemplate)) {
+    if (isNullOrUndefined(stationTemplate)) {
       const errorMsg = `Failed to read charging station template file ${templateFile}`;
       logger.error(`${logPrefix} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    if (Utils.isEmptyObject(stationTemplate)) {
+    if (isEmptyObject(stationTemplate)) {
       const errorMsg = `Empty charging station information from template file ${templateFile}`;
       logger.error(`${logPrefix} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    if (Utils.isEmptyObject(stationTemplate.AutomaticTransactionGenerator)) {
+    if (isEmptyObject(stationTemplate.AutomaticTransactionGenerator)) {
       stationTemplate.AutomaticTransactionGenerator = Constants.DEFAULT_ATG_CONFIGURATION;
       logger.warn(
         `${logPrefix} Empty automatic transaction generator configuration from template file ${templateFile}, set to default: %j`,
@@ -182,8 +196,8 @@ export class ChargingStationUtils {
       );
     }
     if (
-      Utils.isNullOrUndefined(stationTemplate.idTagsFile) ||
-      Utils.isEmptyString(stationTemplate.idTagsFile)
+      isNullOrUndefined(stationTemplate.idTagsFile) ||
+      isEmptyString(stationTemplate.idTagsFile)
     ) {
       logger.warn(
         `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
@@ -232,7 +246,7 @@ export class ChargingStationUtils {
     logPrefix: string,
     templateFile: string
   ): void {
-    if (!Utils.isNullOrUndefined(connectorStatus?.status)) {
+    if (!isNullOrUndefined(connectorStatus?.status)) {
       logger.warn(
         `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId} status configuration defined, undefine it`
       );
@@ -249,14 +263,14 @@ export class ChargingStationUtils {
     if (ChargingStationUtils.getMaxNumberOfConnectors(connectors) > 0) {
       for (const connector in connectors) {
         const connectorStatus = connectors[connector];
-        const connectorId = Utils.convertToInt(connector);
+        const connectorId = convertToInt(connector);
         ChargingStationUtils.checkStationInfoConnectorStatus(
           connectorId,
           connectorStatus,
           logPrefix,
           templateFile
         );
-        connectorsMap.set(connectorId, Utils.cloneObject<ConnectorStatus>(connectorStatus));
+        connectorsMap.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus));
       }
     } else {
       logger.warn(
@@ -280,12 +294,12 @@ export class ChargingStationUtils {
       }
       if (connectorId === 0) {
         connectors.get(connectorId).availability = AvailabilityType.Operative;
-        if (Utils.isUndefined(connectors.get(connectorId)?.chargingProfiles)) {
+        if (isUndefined(connectors.get(connectorId)?.chargingProfiles)) {
           connectors.get(connectorId).chargingProfiles = [];
         }
       } else if (
         connectorId > 0 &&
-        Utils.isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
+        isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
       ) {
         ChargingStationUtils.initializeConnectorStatus(connectors.get(connectorId));
       }
@@ -315,21 +329,21 @@ export class ChargingStationUtils {
         return {
           chargePointModel: stationInfo.chargePointModel,
           chargePointVendor: stationInfo.chargePointVendor,
-          ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
+          ...(!isUndefined(stationInfo.chargeBoxSerialNumber) && {
             chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
           }),
-          ...(!Utils.isUndefined(stationInfo.chargePointSerialNumber) && {
+          ...(!isUndefined(stationInfo.chargePointSerialNumber) && {
             chargePointSerialNumber: stationInfo.chargePointSerialNumber,
           }),
-          ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
+          ...(!isUndefined(stationInfo.firmwareVersion) && {
             firmwareVersion: stationInfo.firmwareVersion,
           }),
-          ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-          ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-          ...(!Utils.isUndefined(stationInfo.meterSerialNumber) && {
+          ...(!isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
+          ...(!isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
+          ...(!isUndefined(stationInfo.meterSerialNumber) && {
             meterSerialNumber: stationInfo.meterSerialNumber,
           }),
-          ...(!Utils.isUndefined(stationInfo.meterType) && {
+          ...(!isUndefined(stationInfo.meterType) && {
             meterType: stationInfo.meterType,
           }),
         } as OCPP16BootNotificationRequest;
@@ -340,16 +354,16 @@ export class ChargingStationUtils {
           chargingStation: {
             model: stationInfo.chargePointModel,
             vendorName: stationInfo.chargePointVendor,
-            ...(!Utils.isUndefined(stationInfo.firmwareVersion) && {
+            ...(!isUndefined(stationInfo.firmwareVersion) && {
               firmwareVersion: stationInfo.firmwareVersion,
             }),
-            ...(!Utils.isUndefined(stationInfo.chargeBoxSerialNumber) && {
+            ...(!isUndefined(stationInfo.chargeBoxSerialNumber) && {
               serialNumber: stationInfo.chargeBoxSerialNumber,
             }),
-            ...((!Utils.isUndefined(stationInfo.iccid) || !Utils.isUndefined(stationInfo.imsi)) && {
+            ...((!isUndefined(stationInfo.iccid) || !isUndefined(stationInfo.imsi)) && {
               modem: {
-                ...(!Utils.isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-                ...(!Utils.isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
+                ...(!isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
+                ...(!isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
               },
             }),
           },
@@ -385,7 +399,7 @@ export class ChargingStationUtils {
   public static stationTemplateToStationInfo(
     stationTemplate: ChargingStationTemplate
   ): ChargingStationInfo {
-    stationTemplate = Utils.cloneObject<ChargingStationTemplate>(stationTemplate);
+    stationTemplate = cloneObject<ChargingStationTemplate>(stationTemplate);
     delete stationTemplate.power;
     delete stationTemplate.powerUnit;
     delete stationTemplate?.Connectors;
@@ -415,11 +429,11 @@ export class ChargingStationUtils {
           upperCase: params.randomSerialNumberUpperCase,
         })
       : '';
-    Utils.isNotEmptyString(stationTemplate?.chargePointSerialNumberPrefix) &&
+    isNotEmptyString(stationTemplate?.chargePointSerialNumberPrefix) &&
       (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`);
-    Utils.isNotEmptyString(stationTemplate?.chargeBoxSerialNumberPrefix) &&
+    isNotEmptyString(stationTemplate?.chargeBoxSerialNumberPrefix) &&
       (stationInfo.chargeBoxSerialNumber = `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`);
-    Utils.isNotEmptyString(stationTemplate?.meterSerialNumberPrefix) &&
+    isNotEmptyString(stationTemplate?.meterSerialNumberPrefix) &&
       (stationInfo.meterSerialNumber = `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`);
   }
 
@@ -467,23 +481,23 @@ export class ChargingStationUtils {
     let limit: number, matchingChargingProfile: ChargingProfile;
     // Get charging profiles for connector and sort by stack level
     const chargingProfiles =
-      Utils.cloneObject<ChargingProfile[]>(
+      cloneObject<ChargingProfile[]>(
         chargingStation.getConnectorStatus(connectorId)?.chargingProfiles
       )?.sort((a, b) => b.stackLevel - a.stackLevel) ?? [];
     // Get profiles on connector 0
     if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
       chargingProfiles.push(
-        ...Utils.cloneObject<ChargingProfile[]>(
+        ...cloneObject<ChargingProfile[]>(
           chargingStation.getConnectorStatus(0).chargingProfiles
         ).sort((a, b) => b.stackLevel - a.stackLevel)
       );
     }
-    if (Utils.isNotEmptyArray(chargingProfiles)) {
+    if (isNotEmptyArray(chargingProfiles)) {
       const result = ChargingStationUtils.getLimitFromChargingProfiles(
         chargingProfiles,
         chargingStation.logPrefix()
       );
-      if (!Utils.isNullOrUndefined(result)) {
+      if (!isNullOrUndefined(result)) {
         limit = result?.limit;
         matchingChargingProfile = result?.matchingChargingProfile;
         switch (chargingStation.getCurrentOutType()) {
@@ -570,11 +584,11 @@ export class ChargingStationUtils {
 
   private static getConfiguredNumberOfConnectors(stationTemplate: ChargingStationTemplate): number {
     let configuredMaxConnectors: number;
-    if (Utils.isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
+    if (isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
       const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
       configuredMaxConnectors =
-        numberOfConnectors[Math.floor(Utils.secureRandom() * numberOfConnectors.length)];
-    } else if (Utils.isUndefined(stationTemplate.numberOfConnectors) === false) {
+        numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)];
+    } else if (isUndefined(stationTemplate.numberOfConnectors) === false) {
       configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
     } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
       configuredMaxConnectors = stationTemplate?.Connectors[0]
@@ -630,7 +644,7 @@ export class ChargingStationUtils {
     connectorStatus.transactionStarted = false;
     connectorStatus.energyActiveImportRegisterValue = 0;
     connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
-    if (Utils.isUndefined(connectorStatus.chargingProfiles)) {
+    if (isUndefined(connectorStatus.chargingProfiles)) {
       connectorStatus.chargingProfiles = [];
     }
   }
@@ -642,9 +656,9 @@ export class ChargingStationUtils {
     templateFile: string,
     logMsgToAppend = ''
   ): void {
-    if (!Utils.isUndefined(template[key])) {
+    if (!isUndefined(template[key])) {
       const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
-        Utils.isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
+        isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
       }`;
       logger.warn(`${logPrefix} ${logMsg}`);
       console.warn(chalk.yellow(`${logMsg}`));
@@ -656,7 +670,7 @@ export class ChargingStationUtils {
     deprecatedKey: string,
     key: string
   ): void {
-    if (!Utils.isUndefined(template[deprecatedKey])) {
+    if (!isUndefined(template[deprecatedKey])) {
       template[key] = template[deprecatedKey] as unknown;
       delete template[deprecatedKey];
     }

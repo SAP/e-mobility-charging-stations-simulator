@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
 import { logger } from './Logger';
-import { Utils } from './Utils';
+import { isNotEmptyString } from './Utils';
 import type { ChargingStation } from '../charging-station';
 import type {
   EmptyObject,
@@ -37,7 +37,7 @@ export const handleFileException = (
   params: HandleErrorParams<EmptyObject> = defaultErrorParams
 ): void => {
   setDefaultErrorParams(params);
-  const prefix = Utils.isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
+  const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
   let logMsg: string;
   switch (error.code) {
     case 'ENOENT':

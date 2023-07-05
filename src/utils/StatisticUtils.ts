@@ -1,7 +1,7 @@
-import { Utils } from './Utils';
+import { isEmptyArray, isNullOrUndefined } from './Utils';
 
 export const median = (dataSet: number[]): number => {
-  if (Utils.isEmptyArray(dataSet)) {
+  if (isEmptyArray(dataSet)) {
     return 0;
   }
   if (Array.isArray(dataSet) === true && dataSet.length === 1) {
@@ -18,7 +18,7 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   if (percentile < 0 && percentile > 100) {
     throw new RangeError('Percentile is not between 0 and 100');
   }
-  if (Utils.isEmptyArray(dataSet)) {
+  if (isEmptyArray(dataSet)) {
     return 0;
   }
   const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
@@ -30,7 +30,7 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   }
   const percentileIndexBase = (percentile / 100) * (sortedDataSet.length - 1);
   const percentileIndexInteger = Math.floor(percentileIndexBase);
-  if (!Utils.isNullOrUndefined(sortedDataSet[percentileIndexInteger + 1])) {
+  if (!isNullOrUndefined(sortedDataSet[percentileIndexInteger + 1])) {
     return (
       sortedDataSet[percentileIndexInteger] +
       (percentileIndexBase - percentileIndexInteger) *

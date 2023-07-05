@@ -26,9 +26,13 @@ import {
 import {
   Configuration,
   Constants,
-  Utils,
+  formatDurationMilliSeconds,
+  generateUUID,
   handleUncaughtException,
   handleUnhandledRejection,
+  isNotEmptyArray,
+  isNullOrUndefined,
+  logPrefix,
   logger,
 } from '../utils';
 import { type WorkerAbstract, WorkerFactory } from '../worker';
@@ -132,7 +136,7 @@ export class Bootstrap extends EventEmitter {
                 ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
                 : ''
             } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
-              !Utils.isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
+              !isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
                 ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
             }`
@@ -158,7 +162,7 @@ export class Bootstrap extends EventEmitter {
         this.stopping = true;
         await this.uiServer?.sendInternalRequest(
           this.uiServer.buildProtocolRequest(
-            Utils.generateUUID(),
+            generateUUID(),
             ProcedureName.STOP_CHARGING_STATION,
             Constants.EMPTY_FREEZED_OBJECT
           )
@@ -171,7 +175,7 @@ export class Bootstrap extends EventEmitter {
           ),
           new Promise<string>((resolve) => {
             setTimeout(() => {
-              const message = `Timeout reached ${Utils.formatDurationMilliSeconds(
+              const message = `Timeout reached ${formatDurationMilliSeconds(
                 Constants.STOP_SIMULATOR_TIMEOUT
               )} at stopping charging stations simulator`;
               console.warn(chalk.yellow(message));
@@ -301,7 +305,7 @@ export class Bootstrap extends EventEmitter {
     if (this.initializedCounters === false) {
       this.resetCounters();
       const stationTemplateUrls = Configuration.getStationTemplateUrls();
-      if (Utils.isNotEmptyArray(stationTemplateUrls)) {
+      if (isNotEmptyArray(stationTemplateUrls)) {
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
         for (const stationTemplateUrl of stationTemplateUrls) {
           this.numberOfChargingStations += stationTemplateUrl.numberOfStations ?? 0;
@@ -356,6 +360,6 @@ export class Bootstrap extends EventEmitter {
   };
 
   private logPrefix = (): string => {
-    return Utils.logPrefix(' Bootstrap |');
+    return logPrefix(' Bootstrap |');
   };
 }

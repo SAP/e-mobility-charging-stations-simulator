@@ -34,7 +34,7 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types';
-import { Constants, Utils, logger } from '../../utils';
+import { Constants, convertToInt, isEmptyObject, isNullOrUndefined, logger } from '../../utils';
 import type { ChargingStation } from '../ChargingStation';
 import { ChargingStationConfigurationUtils } from '../ChargingStationConfigurationUtils';
 import { OCPP16ServiceUtils } from '../ocpp';
@@ -196,7 +196,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                   this.chargingStation.getConnectorStatus(requestPayload.connectorId)
                     ?.transactionId,
                   configuredMeterValueSampleInterval
-                    ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000
+                    ? convertToInt(configuredMeterValueSampleInterval.value) * 1000
                     : Constants.DEFAULT_METER_VALUES_INTERVAL
                 ),
               ],
@@ -256,12 +256,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
     const [uuid, command, requestPayload] = validatedMessageEvent.data as BroadcastChannelRequest;
     if (
-      !Utils.isNullOrUndefined(requestPayload?.hashIds) &&
+      !isNullOrUndefined(requestPayload?.hashIds) &&
       requestPayload?.hashIds?.includes(this.chargingStation.stationInfo.hashId) === false
     ) {
       return;
     }
-    if (!Utils.isNullOrUndefined(requestPayload?.hashId)) {
+    if (!isNullOrUndefined(requestPayload?.hashId)) {
       logger.error(
         `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' array instead`
       );
@@ -271,10 +271,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     let commandResponse: CommandResponse | void;
     try {
       commandResponse = await this.commandHandler(command, requestPayload);
-      if (
-        Utils.isNullOrUndefined(commandResponse) ||
-        Utils.isEmptyObject(commandResponse as CommandResponse)
-      ) {
+      if (isNullOrUndefined(commandResponse) || isEmptyObject(commandResponse as CommandResponse)) {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
           status: ResponseStatus.SUCCESS,
@@ -388,7 +385,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         return ResponseStatus.FAILURE;
       case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
       case BroadcastChannelProcedureName.METER_VALUES:
-        if (Utils.isEmptyObject(commandResponse) === true) {
+        if (isEmptyObject(commandResponse) === true) {
           return ResponseStatus.SUCCESS;
         }
         return ResponseStatus.FAILURE;

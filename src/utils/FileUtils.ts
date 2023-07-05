@@ -2,7 +2,7 @@ import { type FSWatcher, type WatchListener, readFileSync, watch } from 'node:fs
 
 import { handleFileException } from './ErrorUtils';
 import { logger } from './Logger';
-import { Utils } from './Utils';
+import { isNotEmptyString } from './Utils';
 import type { FileType, JsonType } from '../types';
 
 export const watchJsonFile = <T extends JsonType>(
@@ -11,7 +11,7 @@ export const watchJsonFile = <T extends JsonType>(
   logPrefix: string,
   refreshedVariable?: T,
   listener: WatchListener<string> = (event, filename) => {
-    if (Utils.isNotEmptyString(filename) && event === 'change') {
+    if (isNotEmptyString(filename) && event === 'change') {
       try {
         logger.debug(`${logPrefix} ${fileType} file ${file} have changed, reload`);
         refreshedVariable && (refreshedVariable = JSON.parse(readFileSync(file, 'utf8')) as T);
@@ -23,7 +23,7 @@ export const watchJsonFile = <T extends JsonType>(
     }
   }
 ): FSWatcher | undefined => {
-  if (Utils.isNotEmptyString(file)) {
+  if (isNotEmptyString(file)) {
     try {
       return watch(file, listener);
     } catch (error) {

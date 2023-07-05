@@ -87,7 +87,20 @@ import {
   type UnlockConnectorRequest,
   type UnlockConnectorResponse,
 } from '../../../types';
-import { Constants, Utils, logger } from '../../../utils';
+import {
+  Constants,
+  convertToDate,
+  convertToInt,
+  formatDurationMilliSeconds,
+  getRandomInteger,
+  isEmptyArray,
+  isNotEmptyArray,
+  isNotEmptyString,
+  isNullOrUndefined,
+  isUndefined,
+  logger,
+  sleep,
+} from '../../../utils';
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
 
 const moduleName = 'OCPP16IncomingRequestService';
@@ -412,7 +425,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${
         commandPayload.type
       } reset command received, simulating it. The station will be
-        back online in ${Utils.formatDurationMilliSeconds(chargingStation.stationInfo.resetTime)}`
+        back online in ${formatDurationMilliSeconds(chargingStation.stationInfo.resetTime)}`
     );
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
   }
@@ -459,9 +472,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   ): GetConfigurationResponse {
     const configurationKey: OCPPConfigurationKey[] = [];
     const unknownKey: string[] = [];
-    if (Utils.isUndefined(commandPayload.key) === true) {
+    if (isUndefined(commandPayload.key) === true) {
       for (const configuration of chargingStation.ocppConfiguration.configurationKey) {
-        if (Utils.isUndefined(configuration.visible) === true) {
+        if (isUndefined(configuration.visible) === true) {
           configuration.visible = true;
         }
         if (configuration.visible === false) {
@@ -473,7 +486,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           value: configuration.value,
         });
       }
-    } else if (Utils.isNotEmptyArray(commandPayload.key) === true) {
+    } else if (isNotEmptyArray(commandPayload.key) === true) {
       for (const key of commandPayload.key) {
         const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
@@ -481,7 +494,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           true
         );
         if (keyFound) {
-          if (Utils.isUndefined(keyFound.visible) === true) {
+          if (isUndefined(keyFound.visible) === true) {
             keyFound.visible = true;
           }
           if (keyFound.visible === false) {
@@ -632,9 +645,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
     if (
-      Utils.isEmptyArray(
-        chargingStation.getConnectorStatus(commandPayload.connectorId)?.chargingProfiles
-      )
+      isEmptyArray(chargingStation.getConnectorStatus(commandPayload.connectorId)?.chargingProfiles)
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
@@ -681,8 +692,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
     if (
-      !Utils.isNullOrUndefined(commandPayload.connectorId) &&
-      Utils.isNotEmptyArray(
+      !isNullOrUndefined(commandPayload.connectorId) &&
+      isNotEmptyArray(
         chargingStation.getConnectorStatus(commandPayload.connectorId)?.chargingProfiles
       )
     ) {
@@ -694,10 +705,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED;
     }
-    if (Utils.isNullOrUndefined(commandPayload.connectorId)) {
+    if (isNullOrUndefined(commandPayload.connectorId)) {
       let clearedCP = false;
       const clearChargingProfiles = (connectorStatus: ConnectorStatus) => {
-        if (Utils.isNotEmptyArray(connectorStatus?.chargingProfiles)) {
+        if (isNotEmptyArray(connectorStatus?.chargingProfiles)) {
           connectorStatus?.chargingProfiles?.forEach(
             (chargingProfile: OCPP16ChargingProfile, index: number) => {
               let clearCurrentCP = false;
@@ -1062,7 +1073,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_EMPTY;
     }
     if (
-      !Utils.isNullOrUndefined(chargingStation.stationInfo.firmwareStatus) &&
+      !isNullOrUndefined(chargingStation.stationInfo.firmwareStatus) &&
       chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed
     ) {
       logger.warn(
@@ -1071,7 +1082,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
       return OCPP16Constants.OCPP_RESPONSE_EMPTY;
     }
-    const retrieveDate = Utils.convertToDate(commandPayload.retrieveDate);
+    const retrieveDate = convertToDate(commandPayload.retrieveDate);
     const now = Date.now();
     if (retrieveDate?.getTime() <= now) {
       this.runInAsyncScope(
@@ -1147,7 +1158,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.DownloadFailed
     ) {
-      await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+      await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
@@ -1158,7 +1169,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation.stationInfo?.firmwareUpgrade?.failureStatus;
       return;
     }
-    await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+    await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1178,7 +1189,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             waitTime / 1000
           } seconds before continuing firmware update simulation`
         );
-        await Utils.sleep(waitTime);
+        await sleep(waitTime);
         transactionsStarted = true;
         wasTransactionsStarted = true;
       } else {
@@ -1214,8 +1225,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionsStarted = false;
       }
     } while (transactionsStarted);
-    !wasTransactionsStarted &&
-      (await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000));
+    !wasTransactionsStarted && (await sleep(getRandomInteger(maxDelay, minDelay) * 1000));
     if (
       ChargingStationUtils.checkChargingStation(chargingStation, chargingStation.logPrefix()) ===
       false
@@ -1233,7 +1243,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.InstallationFailed
     ) {
-      await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+      await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
@@ -1245,7 +1255,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return;
     }
     if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
-      await Utils.sleep(Utils.getRandomInteger(maxDelay, minDelay) * 1000);
+      await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
     }
   }
@@ -1279,9 +1289,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ftpClient = new Client();
         const accessResponse = await ftpClient.access({
           host: uri.host,
-          ...(Utils.isNotEmptyString(uri.port) && { port: Utils.convertToInt(uri.port) }),
-          ...(Utils.isNotEmptyString(uri.username) && { user: uri.username }),
-          ...(Utils.isNotEmptyString(uri.password) && { password: uri.password }),
+          ...(isNotEmptyString(uri.port) && { port: convertToInt(uri.port) }),
+          ...(isNotEmptyString(uri.username) && { user: uri.username }),
+          ...(isNotEmptyString(uri.password) && { password: uri.password }),
         });
         let uploadResponse: FTPResponse;
         if (accessResponse.code === 220) {
@@ -1429,7 +1439,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED;
         case OCPP16MessageTrigger.StatusNotification:
           setTimeout(() => {
-            if (!Utils.isNullOrUndefined(commandPayload?.connectorId)) {
+            if (!isNullOrUndefined(commandPayload?.connectorId)) {
               chargingStation.ocppRequestService
                 .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
                   chargingStation,

@@ -4,7 +4,7 @@ import TransportType from 'winston/lib/winston/transports/index.js';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
 import { Configuration } from './Configuration';
-import { Utils } from './Utils';
+import { insertAt } from './Utils';
 
 let transports: transport[];
 if (Configuration.getLog().rotate === true) {
@@ -12,7 +12,7 @@ if (Configuration.getLog().rotate === true) {
   const logMaxSize = Configuration.getLog().maxSize;
   transports = [
     new DailyRotateFile({
-      filename: Utils.insertAt(
+      filename: insertAt(
         Configuration.getLog().errorFile,
         '-%DATE%',
         Configuration.getLog().errorFile?.indexOf('.log')
@@ -22,7 +22,7 @@ if (Configuration.getLog().rotate === true) {
       ...(logMaxSize && { maxSize: logMaxSize }),
     }),
     new DailyRotateFile({
-      filename: Utils.insertAt(
+      filename: insertAt(
         Configuration.getLog().file,
         '-%DATE%',
         Configuration.getLog().file?.indexOf('.log')

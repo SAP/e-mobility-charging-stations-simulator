@@ -1,4 +1,4 @@
-import { Utils } from './Utils';
+import { isNullOrUndefined } from './Utils';
 import type { ChargingStation } from '../charging-station';
 import type {
   ChargingStationAutomaticTransactionGeneratorConfiguration,
@@ -12,9 +12,7 @@ export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
 ): ChargingStationAutomaticTransactionGeneratorConfiguration => {
   return {
     automaticTransactionGenerator: chargingStation.getAutomaticTransactionGeneratorConfiguration(),
-    ...(!Utils.isNullOrUndefined(
-      chargingStation.automaticTransactionGenerator?.connectorsStatus
-    ) && {
+    ...(!isNullOrUndefined(chargingStation.automaticTransactionGenerator?.connectorsStatus) && {
       automaticTransactionGeneratorStatuses: [
         ...chargingStation.automaticTransactionGenerator.connectorsStatus.values(),
       ],

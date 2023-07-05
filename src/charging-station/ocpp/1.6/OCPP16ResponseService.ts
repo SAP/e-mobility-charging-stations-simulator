@@ -50,7 +50,13 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
 } from '../../../types';
-import { Constants, Utils, buildUpdatedMessage, logger } from '../../../utils';
+import {
+  Constants,
+  buildUpdatedMessage,
+  convertToInt,
+  isNullOrUndefined,
+  logger,
+} from '../../../utils';
 import { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP16ResponseService';
@@ -442,7 +448,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }
       }
     }
-    const authorizeConnectorIdDefined = !Utils.isNullOrUndefined(authorizeConnectorId);
+    const authorizeConnectorIdDefined = !isNullOrUndefined(authorizeConnectorId);
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
       authorizeConnectorIdDefined &&
         (chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = true);
@@ -589,7 +595,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           payload.transactionId
         }, converting to integer`
       );
-      payload.transactionId = Utils.convertToInt(payload.transactionId);
+      payload.transactionId = convertToInt(payload.transactionId);
     }
 
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
@@ -639,7 +645,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.startMeterValues(
         transactionConnectorId,
         configuredMeterValueSampleInterval
-          ? Utils.convertToInt(configuredMeterValueSampleInterval.value) * 1000
+          ? convertToInt(configuredMeterValueSampleInterval.value) * 1000
           : Constants.DEFAULT_METER_VALUES_INTERVAL
       );
     } else {
@@ -678,7 +684,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     );
-    if (Utils.isNullOrUndefined(transactionConnectorId)) {
+    if (isNullOrUndefined(transactionConnectorId)) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
       );
@@ -731,7 +737,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       payload.idTagInfo?.status ?? 'undefined'
     }'`;
     if (
-      Utils.isNullOrUndefined(payload.idTagInfo) ||
+      isNullOrUndefined(payload.idTagInfo) ||
       payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED
     ) {
       logger.info(logMsg);

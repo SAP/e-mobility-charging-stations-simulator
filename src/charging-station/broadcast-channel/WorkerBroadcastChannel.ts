@@ -6,7 +6,7 @@ import type {
   JsonType,
   MessageEvent,
 } from '../../types';
-import { Utils, logger } from '../../utils';
+import { logPrefix, logger, validateUUID } from '../../utils';
 
 const moduleName = 'WorkerBroadcastChannel';
 
@@ -41,7 +41,7 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
       );
       return false;
     }
-    if (Utils.validateUUID(messageEvent.data[0]) === false) {
+    if (validateUUID(messageEvent.data[0]) === false) {
       logger.error(
         `${this.logPrefix(
           moduleName,
@@ -54,6 +54,6 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
   }
 
   private logPrefix = (modName: string, methodName: string): string => {
-    return Utils.logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`);
+    return logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`);
   };
 }

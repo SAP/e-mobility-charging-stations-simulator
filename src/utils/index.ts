@@ -23,6 +23,34 @@ export {
   buildStartedMessage,
   buildStoppedMessage,
 } from './MessageChannelUtils';
-export { Utils } from './Utils';
+export {
+  JSONStringifyWithMapSupport,
+  cloneObject,
+  convertToBoolean,
+  convertToDate,
+  convertToFloat,
+  convertToInt,
+  exponentialDelay,
+  formatDurationMilliSeconds,
+  formatDurationSeconds,
+  generateUUID,
+  getRandomFloatFluctuatedRounded,
+  getRandomFloatRounded,
+  getRandomInteger,
+  getWebSocketCloseEventStatusString,
+  isEmptyArray,
+  isEmptyObject,
+  isEmptyString,
+  isNotEmptyArray,
+  isNotEmptyString,
+  isNullOrUndefined,
+  isUndefined,
+  logPrefix,
+  promiseWithTimeout,
+  roundTo,
+  secureRandom,
+  sleep,
+  validateUUID,
+} from './Utils';
 export { median, nthPercentile, stdDeviation } from './StatisticUtils';
 export { logger } from './Logger';

@@ -30,7 +30,13 @@ import {
   type StatusNotificationRequest,
   type StatusNotificationResponse,
 } from '../../types';
-import { Utils, handleFileException, logger } from '../../utils';
+import {
+  handleFileException,
+  isNotEmptyArray,
+  isNotEmptyString,
+  logPrefix,
+  logger,
+} from '../../utils';
 
 export class OCPPServiceUtils {
   protected constructor() {
@@ -314,7 +320,7 @@ export class OCPPServiceUtils {
       chargingStation.getConnectorStatus(connectorId)?.MeterValues;
     for (
       let index = 0;
-      Utils.isNotEmptyArray(sampledValueTemplates) === true && index < sampledValueTemplates.length;
+      isNotEmptyArray(sampledValueTemplates) === true && index < sampledValueTemplates.length;
       index++
     ) {
       if (
@@ -392,9 +398,9 @@ export class OCPPServiceUtils {
     methodName?: string
   ): string => {
     const logMsg =
-      Utils.isNotEmptyString(moduleName) && Utils.isNotEmptyString(methodName)
+      isNotEmptyString(moduleName) && isNotEmptyString(methodName)
         ? ` OCPP ${ocppVersion} | ${moduleName}.${methodName}:`
         : ` OCPP ${ocppVersion} |`;
-    return Utils.logPrefix(logMsg);
+    return logPrefix(logMsg);
   };
 }

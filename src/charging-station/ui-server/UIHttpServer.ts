@@ -15,7 +15,14 @@ import {
   ResponseStatus,
   type UIServerConfiguration,
 } from '../../types';
-import { Constants, Utils, logger } from '../../utils';
+import {
+  Constants,
+  generateUUID,
+  isNotEmptyString,
+  isNullOrUndefined,
+  logPrefix,
+  logger,
+} from '../../utils';
 
 const moduleName = 'UIHttpServer';
 
@@ -69,10 +76,10 @@ export class UIHttpServer extends AbstractUIServer {
   public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
     const logMsgPrefix = prefixSuffix ? `UI HTTP Server ${prefixSuffix}` : 'UI HTTP Server';
     const logMsg =
-      Utils.isNotEmptyString(modName) && Utils.isNotEmptyString(methodName)
+      isNotEmptyString(modName) && isNotEmptyString(methodName)
         ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
         : ` ${logMsgPrefix} |`;
-    return Utils.logPrefix(logMsg);
+    return logPrefix(logMsg);
   };
 
   private requestListener(req: IncomingMessage, res: ServerResponse): void {
@@ -94,7 +101,7 @@ export class UIHttpServer extends AbstractUIServer {
       ProtocolVersion,
       ProcedureName
     ];
-    const uuid = Utils.generateUUID();
+    const uuid = generateUUID();
     this.responseHandlers.set(uuid, res);
     try {
       const fullProtocol = `${protocol}${version}`;
@@ -126,7 +133,7 @@ export class UIHttpServer extends AbstractUIServer {
                 )
               )
               .then((protocolResponse: ProtocolResponse) => {
-                if (!Utils.isNullOrUndefined(protocolResponse)) {
+                if (!isNullOrUndefined(protocolResponse)) {
                   this.sendResponse(protocolResponse);
                 }
               })

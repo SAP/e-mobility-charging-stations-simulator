@@ -23,7 +23,13 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import { Constants, Utils, handleSendMessageError, logger } from '../../utils';
+import {
+  Constants,
+  cloneObject,
+  handleSendMessageError,
+  logger,
+  promiseWithTimeout,
+} from '../../utils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -201,7 +207,7 @@ export abstract class OCPPRequestService {
       return true;
     }
     const validate = this.ajv.compile(this.jsonSchemas.get(commandName as RequestCommand));
-    payload = Utils.cloneObject<T>(payload);
+    payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
       return true;
@@ -242,7 +248,7 @@ export abstract class OCPPRequestService {
         commandName as IncomingRequestCommand
       )
     );
-    payload = Utils.cloneObject<T>(payload);
+    payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
       return true;
@@ -284,7 +290,7 @@ export abstract class OCPPRequestService {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
       // Send a message through wsConnection
-      return Utils.promiseWithTimeout(
+      return promiseWithTimeout(
         new Promise((resolve, reject) => {
           /**
            * Function that will receive the request's response

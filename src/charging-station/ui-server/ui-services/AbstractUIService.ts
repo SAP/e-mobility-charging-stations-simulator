@@ -11,7 +11,7 @@ import {
   type ResponsePayload,
   ResponseStatus,
 } from '../../../types';
-import { Utils, logger } from '../../../utils';
+import { isNotEmptyArray, isNullOrUndefined, logger } from '../../../utils';
 import { Bootstrap } from '../../Bootstrap';
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel';
 import type { AbstractUIServer } from '../AbstractUIServer';
@@ -100,7 +100,7 @@ export abstract class AbstractUIService {
         errorDetails: (error as OCPPError).details,
       };
     }
-    if (!Utils.isNullOrUndefined(responsePayload)) {
+    if (!isNullOrUndefined(responsePayload)) {
       return this.uiServer.buildProtocolResponse(messageId, responsePayload);
     }
   }
@@ -152,9 +152,9 @@ export abstract class AbstractUIService {
     procedureName: BroadcastChannelProcedureName,
     payload: BroadcastChannelRequestPayload
   ): void {
-    if (Utils.isNotEmptyArray(payload.hashIds)) {
+    if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
-        .filter((hashId) => !Utils.isNullOrUndefined(hashId))
+        .filter((hashId) => !isNullOrUndefined(hashId))
         .map((hashId) => {
           if (this.uiServer.chargingStations.has(hashId) === true) {
             return hashId;
@@ -167,7 +167,7 @@ export abstract class AbstractUIService {
           );
         });
     }
-    const expectedNumberOfResponses = Utils.isNotEmptyArray(payload.hashIds)
+    const expectedNumberOfResponses = isNotEmptyArray(payload.hashIds)
       ? payload.hashIds.length
       : this.uiServer.chargingStations.size;
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);

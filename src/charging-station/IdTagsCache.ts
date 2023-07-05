@@ -3,7 +3,14 @@ import { type FSWatcher, readFileSync } from 'node:fs';
 import type { ChargingStation } from './ChargingStation';
 import { ChargingStationUtils } from './ChargingStationUtils';
 import { FileType, IdTagDistribution } from '../types';
-import { Utils, handleFileException, logger, watchJsonFile } from '../utils';
+import {
+  handleFileException,
+  isNotEmptyString,
+  logPrefix,
+  logger,
+  secureRandom,
+  watchJsonFile,
+} from '../utils';
 
 type IdTagsCacheValueType = {
   idTags: string[];
@@ -78,7 +85,7 @@ export class IdTagsCache {
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
-      Math.floor(Utils.secureRandom() * idTags.length)
+      Math.floor(secureRandom() * idTags.length)
     );
     return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)];
   }
@@ -122,7 +129,7 @@ export class IdTagsCache {
         this.logPrefix(file),
         undefined,
         (event, filename) => {
-          if (Utils.isNotEmptyString(filename) && event === 'change') {
+          if (isNotEmptyString(filename) && event === 'change') {
             try {
               logger.debug(
                 `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`
@@ -170,7 +177,7 @@ export class IdTagsCache {
   }
 
   private getIdTagsFromFile(file: string): string[] {
-    if (Utils.isNotEmptyString(file)) {
+    if (isNotEmptyString(file)) {
       try {
         return JSON.parse(readFileSync(file, 'utf8')) as string[];
       } catch (error) {
@@ -186,6 +193,6 @@ export class IdTagsCache {
   }
 
   private logPrefix = (file: string): string => {
-    return Utils.logPrefix(` Id tags cache for id tags file '${file}' |`);
+    return logPrefix(` Id tags cache for id tags file '${file}' |`);
   };
 }

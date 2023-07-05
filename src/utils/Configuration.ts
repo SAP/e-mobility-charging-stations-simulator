@@ -7,7 +7,7 @@ import merge from 'just-merge';
 import { WorkerChoiceStrategies } from 'poolifier';
 
 import { Constants } from './Constants';
-import { Utils } from './Utils';
+import { hasOwnProp, isCFEnvironment, isNotEmptyString, isUndefined } from './Utils';
 import {
   ApplicationProtocol,
   type ConfigurationData,
@@ -42,7 +42,7 @@ export class Configuration {
   }
 
   public static getUIServer(): UIServerConfiguration {
-    if (Utils.hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
+    if (hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
           "Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead"
@@ -57,13 +57,13 @@ export class Configuration {
         port: Constants.DEFAULT_UI_SERVER_PORT,
       },
     };
-    if (Utils.hasOwnProp(Configuration.getConfig(), 'uiServer')) {
+    if (hasOwnProp(Configuration.getConfig(), 'uiServer')) {
       uiServerConfiguration = merge<UIServerConfiguration>(
         uiServerConfiguration,
         Configuration.getConfig()?.uiServer
       );
     }
-    if (Utils.isCFEnvironment() === true) {
+    if (isCFEnvironment() === true) {
       delete uiServerConfiguration.options?.host;
       uiServerConfiguration.options.port = parseInt(process.env.PORT);
     }
@@ -77,7 +77,7 @@ export class Configuration {
       type: StorageType.JSON_FILE,
       uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
     };
-    if (Utils.hasOwnProp(Configuration.getConfig(), 'performanceStorage')) {
+    if (hasOwnProp(Configuration.getConfig(), 'performanceStorage')) {
       storageConfiguration = {
         ...storageConfiguration,
         ...Configuration.getConfig()?.performanceStorage,
@@ -109,7 +109,7 @@ export class Configuration {
       'Use it in charging station template instead'
     );
     // Read conf
-    if (Utils.hasOwnProp(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
+    if (hasOwnProp(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
       return Configuration.getConfig()?.autoReconnectMaxRetries;
     }
   }
@@ -120,13 +120,13 @@ export class Configuration {
       undefined,
       "Use 'stationTemplateUrls' instead"
     );
-    !Utils.isUndefined(Configuration.getConfig()['stationTemplateURLs']) &&
+    !isUndefined(Configuration.getConfig()['stationTemplateURLs']) &&
       (Configuration.getConfig().stationTemplateUrls = Configuration.getConfig()[
         'stationTemplateURLs'
       ] as StationTemplateUrl[]);
     Configuration.getConfig().stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
-        if (!Utils.isUndefined(stationTemplateUrl['numberOfStation'])) {
+        if (!isUndefined(stationTemplateUrl['numberOfStation'])) {
           console.error(
             `${chalk.green(Configuration.logPrefix())} ${chalk.red(
               `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`
@@ -200,41 +200,41 @@ export class Configuration {
       rotate: true,
     };
     const deprecatedLogConfiguration: LogConfiguration = {
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logEnabled') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logEnabled') && {
         enabled: Configuration.getConfig()?.logEnabled,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logFile') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logFile') && {
         file: Configuration.getConfig()?.logFile,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logErrorFile') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logErrorFile') && {
         errorFile: Configuration.getConfig()?.logErrorFile,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logStatisticsInterval') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logStatisticsInterval') && {
         statisticsInterval: Configuration.getConfig()?.logStatisticsInterval,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logLevel') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logLevel') && {
         level: Configuration.getConfig()?.logLevel,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logConsole') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logConsole') && {
         console: Configuration.getConfig()?.logConsole,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logFormat') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logFormat') && {
         format: Configuration.getConfig()?.logFormat,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logRotate') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logRotate') && {
         rotate: Configuration.getConfig()?.logRotate,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logMaxFiles') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logMaxFiles') && {
         maxFiles: Configuration.getConfig()?.logMaxFiles,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'logMaxSize') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'logMaxSize') && {
         maxSize: Configuration.getConfig()?.logMaxSize,
       }),
     };
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
       ...deprecatedLogConfiguration,
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'log') && Configuration.getConfig()?.log),
+      ...(hasOwnProp(Configuration.getConfig(), 'log') && Configuration.getConfig()?.log),
     };
     return logConfiguration;
   }
@@ -295,25 +295,25 @@ export class Configuration {
       poolStrategy: WorkerChoiceStrategies.ROUND_ROBIN,
     };
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerProcess') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'workerProcess') && {
         processType: Configuration.getConfig()?.workerProcess,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerStartDelay') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'workerStartDelay') && {
         startDelay: Configuration.getConfig()?.workerStartDelay,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'chargingStationsPerWorker') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'chargingStationsPerWorker') && {
         elementsPerWorker: Configuration.getConfig()?.chargingStationsPerWorker,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'elementStartDelay') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'elementStartDelay') && {
         elementStartDelay: Configuration.getConfig()?.elementStartDelay,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMinSize') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'workerPoolMinSize') && {
         poolMinSize: Configuration.getConfig()?.workerPoolMinSize,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolMaxSize') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'workerPoolMaxSize') && {
         poolMaxSize: Configuration.getConfig()?.workerPoolMaxSize,
       }),
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'workerPoolStrategy') && {
+      ...(hasOwnProp(Configuration.getConfig(), 'workerPoolStrategy') && {
         poolStrategy:
           Configuration.getConfig()?.workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
       }),
@@ -321,8 +321,7 @@ export class Configuration {
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...deprecatedWorkerConfiguration,
-      ...(Utils.hasOwnProp(Configuration.getConfig(), 'worker') &&
-        Configuration.getConfig()?.worker),
+      ...(hasOwnProp(Configuration.getConfig(), 'worker') && Configuration.getConfig()?.worker),
     };
     return workerConfiguration;
   }
@@ -343,7 +342,7 @@ export class Configuration {
       undefined,
       "Use 'supervisionUrls' instead"
     );
-    !Utils.isUndefined(Configuration.getConfig()['supervisionURLs']) &&
+    !isUndefined(Configuration.getConfig()['supervisionURLs']) &&
       (Configuration.getConfig().supervisionUrls = Configuration.getConfig()['supervisionURLs'] as
         | string
         | string[]);
@@ -362,7 +361,7 @@ export class Configuration {
       undefined,
       "Use 'supervisionUrlDistribution' instead"
     );
-    return Utils.hasOwnProp(Configuration.getConfig(), 'supervisionUrlDistribution')
+    return hasOwnProp(Configuration.getConfig(), 'supervisionUrlDistribution')
       ? Configuration.getConfig()?.supervisionUrlDistribution
       : SupervisionUrlDistribution.ROUND_ROBIN;
   }
@@ -378,8 +377,8 @@ export class Configuration {
   ) {
     if (
       sectionName &&
-      !Utils.isUndefined(Configuration.getConfig()[sectionName]) &&
-      !Utils.isUndefined((Configuration.getConfig()[sectionName] as Record<string, unknown>)[key])
+      !isUndefined(Configuration.getConfig()[sectionName]) &&
+      !isUndefined((Configuration.getConfig()[sectionName] as Record<string, unknown>)[key])
     ) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
@@ -388,7 +387,7 @@ export class Configuration {
           }`
         )}`
       );
-    } else if (!Utils.isUndefined(Configuration.getConfig()[key])) {
+    } else if (!isUndefined(Configuration.getConfig()[key])) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage${
@@ -427,7 +426,7 @@ export class Configuration {
         if (filename?.trim().length > 0 && event === 'change') {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
-          if (!Utils.isUndefined(Configuration.configurationChangeCallback)) {
+          if (!isUndefined(Configuration.configurationChangeCallback)) {
             Configuration.configurationChangeCallback().catch((error) => {
               throw typeof error === 'string' ? new Error(error) : error;
             });
@@ -450,7 +449,7 @@ export class Configuration {
     error: NodeJS.ErrnoException,
     logPrefix: string
   ): void {
-    const prefix = Utils.isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
+    const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':

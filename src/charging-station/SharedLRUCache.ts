@@ -2,7 +2,7 @@ import LRUCache from 'mnemonist/lru-map-with-delete.js';
 
 import { Bootstrap } from './Bootstrap';
 import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types';
-import { Utils } from '../utils';
+import { isEmptyObject, isNotEmptyArray, isNotEmptyString, isNullOrUndefined } from '../utils';
 
 enum CacheType {
   chargingStationTemplate = 'chargingStationTemplate',
@@ -109,15 +109,14 @@ export class SharedLRUCache {
     chargingStationConfiguration: ChargingStationConfiguration
   ): boolean {
     return (
-      Utils.isNullOrUndefined(chargingStationConfiguration?.configurationKey) === false &&
-      Utils.isNullOrUndefined(chargingStationConfiguration?.stationInfo) === false &&
-      Utils.isNullOrUndefined(chargingStationConfiguration?.automaticTransactionGenerator) ===
-        false &&
-      Utils.isNullOrUndefined(chargingStationConfiguration?.configurationHash) === false &&
-      Utils.isNotEmptyArray(chargingStationConfiguration?.configurationKey) === true &&
-      Utils.isEmptyObject(chargingStationConfiguration?.stationInfo) === false &&
-      Utils.isEmptyObject(chargingStationConfiguration?.automaticTransactionGenerator) === false &&
-      Utils.isNotEmptyString(chargingStationConfiguration?.configurationHash) === true
+      isNullOrUndefined(chargingStationConfiguration?.configurationKey) === false &&
+      isNullOrUndefined(chargingStationConfiguration?.stationInfo) === false &&
+      isNullOrUndefined(chargingStationConfiguration?.automaticTransactionGenerator) === false &&
+      isNullOrUndefined(chargingStationConfiguration?.configurationHash) === false &&
+      isNotEmptyArray(chargingStationConfiguration?.configurationKey) === true &&
+      isEmptyObject(chargingStationConfiguration?.stationInfo) === false &&
+      isEmptyObject(chargingStationConfiguration?.automaticTransactionGenerator) === false &&
+      isNotEmptyString(chargingStationConfiguration?.configurationHash) === true
     );
   }
 }

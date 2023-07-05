@@ -19,7 +19,17 @@ import {
   StopTransactionReason,
   type StopTransactionResponse,
 } from '../types';
-import { Constants, Utils, logger } from '../utils';
+import {
+  Constants,
+  cloneObject,
+  formatDurationMilliSeconds,
+  getRandomInteger,
+  isNullOrUndefined,
+  logPrefix,
+  logger,
+  secureRandom,
+  sleep,
+} from '../utils';
 
 const moduleName = 'AutomaticTransactionGenerator';
 
@@ -179,7 +189,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     logger.info(
       `${this.logPrefix(
         connectorId
-      )} started on connector and will run for ${Utils.formatDurationMilliSeconds(
+      )} started on connector and will run for ${formatDurationMilliSeconds(
         this.connectorsStatus.get(connectorId).stopDate.getTime() -
           this.connectorsStatus.get(connectorId).startDate.getTime()
       )}`
@@ -235,21 +245,19 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           )} transaction loop waiting for charging station service to be initialized`
         );
         do {
-          await Utils.sleep(Constants.CHARGING_STATION_ATG_INITIALIZATION_TIME);
+          await sleep(Constants.CHARGING_STATION_ATG_INITIALIZATION_TIME);
         } while (!this.chargingStation?.ocppRequestService);
       }
       const wait =
-        Utils.getRandomInteger(
+        getRandomInteger(
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
             .maxDelayBetweenTwoTransactions,
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
             .minDelayBetweenTwoTransactions
         ) * 1000;
-      logger.info(
-        `${this.logPrefix(connectorId)} waiting for ${Utils.formatDurationMilliSeconds(wait)}`
-      );
-      await Utils.sleep(wait);
-      const start = Utils.secureRandom();
+      logger.info(`${this.logPrefix(connectorId)} waiting for ${formatDurationMilliSeconds(wait)}`);
+      await sleep(wait);
+      const start = secureRandom();
       if (
         start <
         this.chargingStation.getAutomaticTransactionGeneratorConfiguration().probabilityOfStart
@@ -260,18 +268,18 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           // Wait until end of transaction
           const waitTrxEnd =
-            Utils.getRandomInteger(
+            getRandomInteger(
               this.chargingStation.getAutomaticTransactionGeneratorConfiguration().maxDuration,
               this.chargingStation.getAutomaticTransactionGeneratorConfiguration().minDuration
             ) * 1000;
           logger.info(
             `${this.logPrefix(connectorId)} transaction started with id ${this.chargingStation
               .getConnectorStatus(connectorId)
-              ?.transactionId?.toString()} and will stop in ${Utils.formatDurationMilliSeconds(
+              ?.transactionId?.toString()} and will stop in ${formatDurationMilliSeconds(
               waitTrxEnd
             )}`
           );
-          await Utils.sleep(waitTrxEnd);
+          await sleep(waitTrxEnd);
           // Stop transaction
           logger.info(
             `${this.logPrefix(connectorId)} stop transaction with id ${this.chargingStation
@@ -297,7 +305,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     logger.info(
       `${this.logPrefix(
         connectorId
-      )} stopped on connector and lasted for ${Utils.formatDurationMilliSeconds(
+      )} stopped on connector and lasted for ${formatDurationMilliSeconds(
         this.connectorsStatus.get(connectorId).stoppedDate.getTime() -
           this.connectorsStatus.get(connectorId).startDate.getTime()
       )}`
@@ -346,7 +354,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private getConnectorStatus(connectorId: number): Status {
-    const connectorStatus = Utils.cloneObject(
+    const connectorStatus = cloneObject(
       this.chargingStation.getAutomaticTransactionGeneratorStatuses()
     )[connectorId];
     delete connectorStatus?.startDate;
@@ -458,7 +466,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId;
       logger.warn(
         `${this.logPrefix(connectorId)} stopping a not started transaction${
-          !Utils.isNullOrUndefined(transactionId) ? ` with id ${transactionId?.toString()}` : ''
+          !isNullOrUndefined(transactionId) ? ` with id ${transactionId?.toString()}` : ''
         }`
       );
     }
@@ -473,9 +481,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private logPrefix = (connectorId?: number): string => {
-    return Utils.logPrefix(
+    return logPrefix(
       ` ${this.chargingStation.stationInfo.chargingStationId} | ATG${
-        !Utils.isNullOrUndefined(connectorId) ? ` on connector #${connectorId.toString()}` : ''
+        !isNullOrUndefined(connectorId) ? ` on connector #${connectorId.toString()}` : ''
       }:`
     );
   };

@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 
 import { Protocol, ProtocolVersion } from '../../types';
-import { Utils, logger } from '../../utils';
+import { logPrefix, logger } from '../../utils';
 
 export class UIServerUtils {
   private constructor() {
@@ -24,7 +24,7 @@ export class UIServerUtils {
       }
     }
     logger.error(
-      `${Utils.logPrefix(
+      `${logPrefix(
         ' UI WebSocket Server |'
       )} Unsupported protocol: ${protocol} or protocol version: ${version}`
     );
