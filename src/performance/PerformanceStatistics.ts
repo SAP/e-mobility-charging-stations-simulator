@@ -9,7 +9,7 @@ import {
   MessageType,
   type RequestCommand,
   type Statistics,
-  type TimeSeries,
+  type TimestampedData,
 } from '../types';
 import {
   CircularArray,
@@ -220,30 +220,30 @@ export class PerformanceStatistics {
     this.statistics.statisticsData.get(entryName).avgTimeMeasurement =
       this.statistics.statisticsData.get(entryName).totalTimeMeasurement /
       this.statistics.statisticsData.get(entryName).countTimeMeasurement;
-    this.statistics.statisticsData.get(entryName)?.timeMeasurementSeries instanceof CircularArray
+    this.statistics.statisticsData.get(entryName)?.measurementTimeSeries instanceof CircularArray
       ? this.statistics.statisticsData
           .get(entryName)
-          ?.timeMeasurementSeries?.push({ timestamp: entry.startTime, value: entry.duration })
-      : (this.statistics.statisticsData.get(entryName).timeMeasurementSeries =
-          new CircularArray<TimeSeries>(Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY, {
+          ?.measurementTimeSeries?.push({ timestamp: entry.startTime, value: entry.duration })
+      : (this.statistics.statisticsData.get(entryName).measurementTimeSeries =
+          new CircularArray<TimestampedData>(Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY, {
             timestamp: entry.startTime,
             value: entry.duration,
           }));
     this.statistics.statisticsData.get(entryName).medTimeMeasurement = median(
       this.extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName).timeMeasurementSeries
+        this.statistics.statisticsData.get(entryName).measurementTimeSeries
       )
     );
     this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement =
       nthPercentile(
         this.extractTimeSeriesValues(
-          this.statistics.statisticsData.get(entryName).timeMeasurementSeries
+          this.statistics.statisticsData.get(entryName).measurementTimeSeries
         ),
         95
       );
     this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = stdDeviation(
       this.extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName).timeMeasurementSeries
+        this.statistics.statisticsData.get(entryName).measurementTimeSeries
       )
     );
     if (Configuration.getPerformanceStorage().enabled) {
@@ -251,7 +251,7 @@ export class PerformanceStatistics {
     }
   }
 
-  private extractTimeSeriesValues(timeSeries: CircularArray<TimeSeries>): number[] {
+  private extractTimeSeriesValues(timeSeries: CircularArray<TimestampedData>): number[] {
     return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
   }
 

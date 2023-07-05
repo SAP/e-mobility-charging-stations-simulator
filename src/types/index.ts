@@ -249,7 +249,7 @@ export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables';
 export { OCPPVersion } from './ocpp/OCPPVersion';
 export { PerformanceData } from './orm/entities/PerformanceData';
 export { PerformanceRecord } from './orm/entities/PerformanceRecord';
-export type { Statistics, TimeSeries } from './Statistics';
+export type { Statistics, TimestampedData } from './Statistics';
 export {
   type WSError,
   WebSocketCloseEventStatusCode,

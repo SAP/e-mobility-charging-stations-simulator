@@ -2,17 +2,17 @@ import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
 import type { CircularArray } from '../utils';
 import type { WorkerData } from '../worker';
 
-export type TimeSeries = {
+export type TimestampedData = {
   timestamp: number;
   value: number;
 };
 
-type StatisticsData = {
+type StatisticsData = Partial<{
   countRequest: number;
   countResponse: number;
   countError: number;
   countTimeMeasurement: number;
-  timeMeasurementSeries: CircularArray<TimeSeries>;
+  measurementTimeSeries: CircularArray<TimestampedData>;
   currentTimeMeasurement: number;
   minTimeMeasurement: number;
   maxTimeMeasurement: number;
@@ -21,7 +21,7 @@ type StatisticsData = {
   medTimeMeasurement: number;
   ninetyFiveThPercentileTimeMeasurement: number;
   stdDevTimeMeasurement: number;
-};
+}>;
 
 export type Statistics = {
   id: string;
@@ -29,5 +29,5 @@ export type Statistics = {
   uri: string;
   createdAt: Date;
   updatedAt?: Date;
-  statisticsData: Map<string | RequestCommand | IncomingRequestCommand, Partial<StatisticsData>>;
+  statisticsData: Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>;
 } & WorkerData;
