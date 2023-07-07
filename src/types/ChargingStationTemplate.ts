@@ -109,6 +109,7 @@ export type ChargingStationTemplate = {
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
   mustAuthorizeAtRemoteStart?: boolean;
+  /** @deprecated Replaced by ocppStrictCompliance */
   payloadSchemaValidation?: boolean;
   amperageLimitationOcppKey?: string;
   amperageLimitationUnit?: AmpereUnits;

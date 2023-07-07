@@ -250,23 +250,6 @@ export class ChargingStation {
     return this.stationInfo.mustAuthorizeAtRemoteStart ?? true;
   }
 
-  public getPayloadSchemaValidation(): boolean {
-    if (
-      this.getOcppStrictCompliance() === true &&
-      (isNullOrUndefined(this.stationInfo.payloadSchemaValidation) ||
-        this.stationInfo.payloadSchemaValidation === false)
-    ) {
-      return true;
-    } else if (
-      this.getOcppStrictCompliance() === false &&
-      (isNullOrUndefined(this.stationInfo.payloadSchemaValidation) ||
-        this.stationInfo.payloadSchemaValidation === true)
-    ) {
-      return false;
-    }
-    return this.stationInfo.payloadSchemaValidation ?? true;
-  }
-
   public getNumberOfPhases(stationInfo?: ChargingStationInfo): number | undefined {
     const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
     switch (this.getCurrentOutType(stationInfo)) {
@@ -365,7 +348,7 @@ export class ChargingStation {
   }
 
   public getOcppStrictCompliance(): boolean {
-    return this.stationInfo?.ocppStrictCompliance ?? false;
+    return this.stationInfo?.ocppStrictCompliance ?? true;
   }
 
   public getVoltageOut(stationInfo?: ChargingStationInfo): number | undefined {

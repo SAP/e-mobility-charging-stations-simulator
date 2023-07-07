@@ -197,7 +197,7 @@ export abstract class OCPPRequestService {
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T
   ): boolean {
-    if (chargingStation.getPayloadSchemaValidation() === false) {
+    if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
     }
     if (this.jsonSchemas.has(commandName as RequestCommand) === false) {
@@ -230,7 +230,7 @@ export abstract class OCPPRequestService {
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T
   ): boolean {
-    if (chargingStation.getPayloadSchemaValidation() === false) {
+    if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
     }
     if (

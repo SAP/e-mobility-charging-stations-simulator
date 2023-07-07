@@ -84,7 +84,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     schema: JSONSchemaType<T>,
     payload: T
   ): boolean {
-    if (chargingStation.getPayloadSchemaValidation() === false) {
+    if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
     }
     const validate = this.ajv.compile(schema);
