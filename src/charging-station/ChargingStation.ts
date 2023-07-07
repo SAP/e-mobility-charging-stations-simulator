@@ -251,6 +251,19 @@ export class ChargingStation {
   }
 
   public getPayloadSchemaValidation(): boolean {
+    if (
+      this.getOcppStrictCompliance() === true &&
+      (isNullOrUndefined(this.stationInfo.payloadSchemaValidation) ||
+        this.stationInfo.payloadSchemaValidation === false)
+    ) {
+      return true;
+    } else if (
+      this.getOcppStrictCompliance() === false &&
+      (isNullOrUndefined(this.stationInfo.payloadSchemaValidation) ||
+        this.stationInfo.payloadSchemaValidation === true)
+    ) {
+      return false;
+    }
     return this.stationInfo.payloadSchemaValidation ?? true;
   }
 
