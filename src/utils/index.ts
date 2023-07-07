@@ -31,6 +31,7 @@ export {
   convertToFloat,
   convertToInt,
   exponentialDelay,
+  extractTimeSeriesValues,
   formatDurationMilliSeconds,
   formatDurationSeconds,
   generateUUID,

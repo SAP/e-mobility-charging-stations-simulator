@@ -17,6 +17,7 @@ import {
   Constants,
   JSONStringifyWithMapSupport,
   buildPerformanceStatisticsMessage,
+  extractTimeSeriesValues,
   formatDurationSeconds,
   generateUUID,
   logPrefix,
@@ -230,29 +231,21 @@ export class PerformanceStatistics {
             value: entry.duration,
           }));
     this.statistics.statisticsData.get(entryName).medTimeMeasurement = median(
-      this.extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName).measurementTimeSeries
-      )
+      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries)
     );
     this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement =
       nthPercentile(
-        this.extractTimeSeriesValues(
+        extractTimeSeriesValues(
           this.statistics.statisticsData.get(entryName).measurementTimeSeries
         ),
         95
       );
     this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = stdDeviation(
-      this.extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName).measurementTimeSeries
-      )
+      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries)
     );
     if (Configuration.getPerformanceStorage().enabled) {
       parentPort?.postMessage(buildPerformanceStatisticsMessage(this.statistics));
     }
-  }
-
-  private extractTimeSeriesValues(timeSeries: CircularArray<TimestampedData>): number[] {
-    return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
   }
 
   private logPrefix = (): string => {

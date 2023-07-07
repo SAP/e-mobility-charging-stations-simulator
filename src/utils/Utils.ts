@@ -4,7 +4,7 @@ import { inspect } from 'node:util';
 import clone from 'just-clone';
 
 import { Constants } from './Constants';
-import { WebSocketCloseEventStatusString } from '../types';
+import { type TimestampedData, WebSocketCloseEventStatusString } from '../types';
 
 export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`;
@@ -171,6 +171,10 @@ export const getRandomFloatFluctuatedRounded = (
     staticValue * (1 - fluctuationRatio),
     scale
   );
+};
+
+export const extractTimeSeriesValues = (timeSeries: Array<TimestampedData>): number[] => {
+  return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
 };
 
 export const isObject = (item: unknown): boolean => {
