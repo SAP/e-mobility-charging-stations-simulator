@@ -698,9 +698,9 @@ export class ChargingStation {
                   } file have changed, reload`
                 );
                 this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
-                // FIXME: cleanup idtags cache if idtags file has changed
                 // Initialize
                 this.initialize();
+                this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo));
                 // Restart the ATG
                 this.stopAutomaticTransactionGenerator();
                 if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
@@ -984,9 +984,9 @@ export class ChargingStation {
       case ReservationTerminationReason.TRANSACTION_STARTED:
         delete connector.reservation;
         break;
-      case ReservationTerminationReason.RESERVATION_CANCELED ||
-        ReservationTerminationReason.REPLACE_EXISTING ||
-        ReservationTerminationReason.EXPIRED:
+      case ReservationTerminationReason.RESERVATION_CANCELED:
+      case ReservationTerminationReason.REPLACE_EXISTING:
+      case ReservationTerminationReason.EXPIRED:
         await OCPPServiceUtils.sendAndSetConnectorStatus(
           this,
           reservation.connectorId,
