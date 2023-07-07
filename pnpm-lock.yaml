@@ -55,11 +55,11 @@ dependencies:
     specifier: ^2.29.4
     version: 2.29.4
   mongodb:
-    specifier: ^5.6.0
-    version: 5.6.0
+    specifier: ^5.7.0
+    version: 5.7.0
   poolifier:
-    specifier: ^2.6.8
-    version: 2.6.8
+    specifier: ^2.6.9
+    version: 2.6.9
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -6850,15 +6850,21 @@ packages:
       whatwg-url: 11.0.0
     dev: false
 
-  /mongodb@5.6.0:
-    resolution: {integrity: sha512-z8qVs9NfobHJm6uzK56XBZF8XwM9H294iRnB7wNjF0SnY93si5HPziIJn+qqvUR5QOff/4L0gCD6SShdR/GtVQ==}
+  /mongodb@5.7.0:
+    resolution: {integrity: sha512-zm82Bq33QbqtxDf58fLWBwTjARK3NSvKYjyz997KSy6hpat0prjeX/kxjbPVyZY60XYPDNETaHkHJI2UCzSLuw==}
     engines: {node: '>=14.20.1'}
     peerDependencies:
       '@aws-sdk/credential-providers': ^3.201.0
+      '@mongodb-js/zstd': ^1.1.0
+      kerberos: ^2.0.1
       mongodb-client-encryption: '>=2.3.0 <3'
       snappy: ^7.2.2
     peerDependenciesMeta:
       '@aws-sdk/credential-providers':
+        optional: true
+      '@mongodb-js/zstd':
+        optional: true
+      kerberos:
         optional: true
       mongodb-client-encryption:
         optional: true
@@ -7645,8 +7651,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.8:
-    resolution: {integrity: sha512-3mBZcAlKIc6jDjrQD9KsMBVF0tpZj9SpqhumMk8giKVsNh0l6qKGp30xvQg1W6AQT9j84XHK8haNUtpHim/6Tw==}
+  /poolifier@2.6.9:
+    resolution: {integrity: sha512-+ewErS7PZ9k2y59xWyB0SEcp3X+bZQbAZKr9KD7Qt0BCD6TvUUUr2gr3hHWymf86XM4z/ceDoukeVTxV3sJieQ==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
