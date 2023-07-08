@@ -58,8 +58,8 @@ dependencies:
     specifier: ^5.7.0
     version: 5.7.0
   poolifier:
-    specifier: ^2.6.10
-    version: 2.6.10
+    specifier: ^2.6.11
+    version: 2.6.11
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -4757,8 +4757,8 @@ packages:
       is-glob: 4.0.3
     dev: true
 
-  /glob@10.3.2:
-    resolution: {integrity: sha512-vsuLzB3c/uyDLLEdBZtT8vGnN0z57rwOxHV2oYZib/7HWmBspUaja/McYIobBjC4qaUTuNpUyFO2IdqM4DZIJA==}
+  /glob@10.3.3:
+    resolution: {integrity: sha512-92vPiMb/iqpmEgsOoIDvTjc50wf9CCCvMzsi6W0JLPeUKE8TWP1a73PgqSrqy7iAZxaSD1YdzU7QZR5LF51MJw==}
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
     dependencies:
@@ -7651,8 +7651,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.10:
-    resolution: {integrity: sha512-FYi3n9wRRbFZ4V4I2WNN4QlXXNoJdosoeiS3t8EVFfwYlt4bLRdmWhjihuP4fTwfV0zKt1+qkM+D4dyqWqDnVA==}
+  /poolifier@2.6.11:
+    resolution: {integrity: sha512-N7a5WPU/3WfizfJFRxiuwkZGbavJHcVPw2sc/uvqTBNrIn2NUcPZOu0XOI7VUbLk7TMXIVzB95Xg5Us3sbBl5Q==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
@@ -8269,7 +8269,7 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
     dependencies:
-      glob: 10.3.2
+      glob: 10.3.3
     dev: true
 
   /ripemd160@2.0.2:
