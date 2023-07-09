@@ -58,8 +58,8 @@ dependencies:
     specifier: ^5.7.0
     version: 5.7.0
   poolifier:
-    specifier: ^2.6.12
-    version: 2.6.12
+    specifier: ^2.6.14
+    version: 2.6.14
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -98,8 +98,8 @@ devDependencies:
     specifier: ^5.7.12
     version: 5.7.12(@mikro-orm/mariadb@5.7.12)(@mikro-orm/sqlite@5.7.12)
   '@release-it/bumper':
-    specifier: ^4.0.2
-    version: 4.0.2(release-it@16.1.0)
+    specifier: ^5.0.0
+    version: 5.0.0(release-it@16.1.0)
   '@rollup/plugin-json':
     specifier: ^6.0.0
     version: 6.0.0(rollup@3.26.2)
@@ -1246,16 +1246,16 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/bumper@4.0.2(release-it@16.1.0):
-    resolution: {integrity: sha512-HjiFIBNvb67cLTbzdm6EqiSRwpB4MJY4TGJFY/ac5qnIxERWK5gx1zBnwbJZffDSoS46hJMugoXrDbITEfX4gA==}
-    engines: {node: '>=14'}
+  /@release-it/bumper@5.0.0(release-it@16.1.0):
+    resolution: {integrity: sha512-s5DNaLhM177WSaV8GtHTKbEmkKmszsqChktFUVpAmoLDlUW4WmXq/S92DSfC9BHdM7SFhVTHsjgZBYReRpp3zw==}
+    engines: {node: '>=16'}
     peerDependencies:
-      release-it: ^15.2.0
+      release-it: ^16.0.0
     dependencies:
       '@iarna/toml': 2.2.5
       detect-indent: 7.0.1
-      fast-glob: 3.2.12
-      ini: 3.0.1
+      fast-glob: 3.3.0
+      ini: 4.1.1
       js-yaml: 4.1.0
       lodash.castarray: 4.4.0
       lodash.get: 4.4.2
@@ -4327,17 +4327,6 @@ packages:
     resolution: {integrity: sha512-VxPP4NqbUjj6MaAOafWeUn2cXWLcCtljklUtZf0Ind4XQ+QPtmA0b18zZy0jIQx+ExRVCR/ZQpBmik5lXshNsw==}
     dev: true
 
-  /fast-glob@3.2.12:
-    resolution: {integrity: sha512-DVj4CQIYYow0BlaelwK1pHl5n5cRSJfM60UA0zK891sVInoPri2Ekj7+e1CT3/3qxXenpI+nBBmQAcJPJgaj4w==}
-    engines: {node: '>=8.6.0'}
-    dependencies:
-      '@nodelib/fs.stat': 2.0.5
-      '@nodelib/fs.walk': 1.2.8
-      glob-parent: 5.1.2
-      merge2: 1.4.1
-      micromatch: 4.0.5
-    dev: true
-
   /fast-glob@3.3.0:
     resolution: {integrity: sha512-ChDuvbOypPuNjO8yIDf36x7BlZX1smcUMTTcyoIjycexOxd6DFsKsg21qVBzEmr3G7fUKIRy2/psii+CIUt7FA==}
     engines: {node: '>=8.6.0'}
@@ -5267,9 +5256,9 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /ini@3.0.1:
-    resolution: {integrity: sha512-it4HyVAUTKBc6m8e1iXWvXSTdndF7HbdN713+kvLrymxTaU4AUBWrJ4vEooP+V7fexnVD3LKcBshjGGPefSMUQ==}
-    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+  /ini@4.1.1:
+    resolution: {integrity: sha512-QQnnxNyfvmHFIsj7gkPcYymR8Jdw/o7mp5ZFihxn6h8Ci6fh3Dx4E1gPjpQEpIuPo9XVNY/ZUwh4BPMjGyL01g==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dev: true
 
   /inline-source-map@0.6.2:
@@ -7651,8 +7640,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.12:
-    resolution: {integrity: sha512-GO+M061/FZh1hZl1eFR1MvNr3Vgn9lB5UFWQXwL8v2L0x+IlW5jiJpRZjzNIveRglRETTFQ3u9QdmeTQ2JDVcg==}
+  /poolifier@2.6.14:
+    resolution: {integrity: sha512-AHsc+iCCR8Dr+SJ1lA6+HHFOUsREKN6wP3KmTNPoG1hg1Fbee7Dzae4yh1U5vwRPPr48R8+511xEL0IQaXOkdQ==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
