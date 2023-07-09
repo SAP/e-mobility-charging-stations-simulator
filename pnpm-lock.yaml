@@ -58,8 +58,8 @@ dependencies:
     specifier: ^5.7.0
     version: 5.7.0
   poolifier:
-    specifier: ^2.6.11
-    version: 2.6.11
+    specifier: ^2.6.12
+    version: 2.6.12
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -7651,8 +7651,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.11:
-    resolution: {integrity: sha512-N7a5WPU/3WfizfJFRxiuwkZGbavJHcVPw2sc/uvqTBNrIn2NUcPZOu0XOI7VUbLk7TMXIVzB95Xg5Us3sbBl5Q==}
+  /poolifier@2.6.12:
+    resolution: {integrity: sha512-GO+M061/FZh1hZl1eFR1MvNr3Vgn9lB5UFWQXwL8v2L0x+IlW5jiJpRZjzNIveRglRETTFQ3u9QdmeTQ2JDVcg==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
