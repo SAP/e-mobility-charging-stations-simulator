@@ -8,10 +8,10 @@ export type TimestampedData = {
 };
 
 type StatisticsData = Partial<{
-  countRequest: number;
-  countResponse: number;
-  countError: number;
-  countTimeMeasurement: number;
+  requestCount: number;
+  responseCount: number;
+  errorCount: number;
+  timeMeasurementCount: number;
   measurementTimeSeries: CircularArray<TimestampedData>;
   currentTimeMeasurement: number;
   minTimeMeasurement: number;

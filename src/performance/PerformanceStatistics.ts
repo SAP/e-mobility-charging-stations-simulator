@@ -83,39 +83,39 @@ export class PerformanceStatistics {
       case MessageType.CALL_MESSAGE:
         if (
           this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.countRequest
+          this.statistics.statisticsData.get(command)?.requestCount
         ) {
-          ++this.statistics.statisticsData.get(command).countRequest;
+          ++this.statistics.statisticsData.get(command).requestCount;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
-            countRequest: 1,
+            requestCount: 1,
           });
         }
         break;
       case MessageType.CALL_RESULT_MESSAGE:
         if (
           this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.countResponse
+          this.statistics.statisticsData.get(command)?.responseCount
         ) {
-          ++this.statistics.statisticsData.get(command).countResponse;
+          ++this.statistics.statisticsData.get(command).responseCount;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
-            countResponse: 1,
+            responseCount: 1,
           });
         }
         break;
       case MessageType.CALL_ERROR_MESSAGE:
         if (
           this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.countError
+          this.statistics.statisticsData.get(command)?.errorCount
         ) {
-          ++this.statistics.statisticsData.get(command).countError;
+          ++this.statistics.statisticsData.get(command).errorCount;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
-            countError: 1,
+            errorCount: 1,
           });
         }
         break;
@@ -205,8 +205,8 @@ export class PerformanceStatistics {
     }
     // Update current statistics
     this.statistics.updatedAt = new Date();
-    this.statistics.statisticsData.get(entryName).countTimeMeasurement =
-      (this.statistics.statisticsData.get(entryName)?.countTimeMeasurement ?? 0) + 1;
+    this.statistics.statisticsData.get(entryName).timeMeasurementCount =
+      (this.statistics.statisticsData.get(entryName)?.timeMeasurementCount ?? 0) + 1;
     this.statistics.statisticsData.get(entryName).currentTimeMeasurement = entry.duration;
     this.statistics.statisticsData.get(entryName).minTimeMeasurement = Math.min(
       entry.duration,
@@ -220,7 +220,7 @@ export class PerformanceStatistics {
       (this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ?? 0) + entry.duration;
     this.statistics.statisticsData.get(entryName).avgTimeMeasurement =
       this.statistics.statisticsData.get(entryName).totalTimeMeasurement /
-      this.statistics.statisticsData.get(entryName).countTimeMeasurement;
+      this.statistics.statisticsData.get(entryName).timeMeasurementCount;
     this.statistics.statisticsData.get(entryName)?.measurementTimeSeries instanceof CircularArray
       ? this.statistics.statisticsData
           .get(entryName)
