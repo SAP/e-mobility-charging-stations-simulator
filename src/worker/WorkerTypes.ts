@@ -4,6 +4,7 @@ import { type PoolEvent, PoolEvents, type ThreadPoolOptions } from 'poolifier';
 
 export enum WorkerProcessType {
   workerSet = 'workerSet',
+  /** @experimental */
   dynamicPool = 'dynamicPool',
   staticPool = 'staticPool',
 }

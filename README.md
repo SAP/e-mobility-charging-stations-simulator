@@ -116,7 +116,7 @@ But the modifications to test have to be done to the files in the build target d
 - **staticPool**:
   Statically sized worker pool executing a static total number of simulated charging stations
 
-- **dynamicPool**:
+- **dynamicPool** (experimental):
   Dynamically sized worker pool executing a static total number of simulated charging stations
 
 ### Charging station configuration template
