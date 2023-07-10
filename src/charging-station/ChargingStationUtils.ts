@@ -532,7 +532,7 @@ export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefi
   );
 };
 
-export const waitForChargingStationEvents = async (
+export const waitChargingStationEvents = async (
   emitter: EventEmitter,
   event: ChargingStationWorkerMessageEvents,
   eventsToWait: number

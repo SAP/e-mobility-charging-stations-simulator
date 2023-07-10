@@ -19,7 +19,7 @@ import type { AbstractUIServer } from '../AbstractUIServer';
 const moduleName = 'AbstractUIService';
 
 export abstract class AbstractUIService {
-  protected static readonly ProcedureNameToBroadCastChannelProcedureNameMap: Omit<
+  protected static readonly ProcedureNameToBroadCastChannelProcedureNameMapping: Omit<
     Record<ProcedureName, BroadcastChannelProcedureName>,
     | ProcedureName.START_SIMULATOR
     | ProcedureName.STOP_SIMULATOR
@@ -140,7 +140,7 @@ export abstract class AbstractUIService {
   ): void {
     this.sendBroadcastChannelRequest(
       uuid,
-      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMap[
+      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping[
         procedureName
       ] as BroadcastChannelProcedureName,
       payload
