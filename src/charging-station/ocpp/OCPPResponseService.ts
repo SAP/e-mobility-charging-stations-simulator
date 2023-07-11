@@ -35,13 +35,13 @@ export abstract class OCPPResponseService {
       chargingStation: ChargingStation,
       commandName: RequestCommand,
       payload: JsonType,
-      requestPayload: JsonType
+      requestPayload: JsonType,
     ) => Promise<void>;
     this.validateResponsePayload = this.validateResponsePayload.bind(this) as <T extends JsonType>(
       chargingStation: ChargingStation,
       commandName: RequestCommand,
       schema: JSONSchemaType<T>,
-      payload: T
+      payload: T,
     ) => boolean;
   }
 
@@ -56,7 +56,7 @@ export abstract class OCPPResponseService {
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     schema: JSONSchemaType<T>,
-    payload: T
+    payload: T,
   ): boolean {
     if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
@@ -67,13 +67,13 @@ export abstract class OCPPResponseService {
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Command '${commandName}' response PDU is invalid: %j`,
-      validate.errors
+      validate.errors,
     );
     throw new OCPPError(
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Response PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, null, 2)
+      JSON.stringify(validate.errors, null, 2),
     );
   }
 
@@ -85,6 +85,6 @@ export abstract class OCPPResponseService {
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     payload: JsonType,
-    requestPayload: JsonType
+    requestPayload: JsonType,
   ): Promise<void>;
 }

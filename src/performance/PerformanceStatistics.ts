@@ -55,7 +55,7 @@ export class PerformanceStatistics {
   public static getInstance(
     objId: string,
     objName: string,
-    uri: URL
+    uri: URL,
   ): PerformanceStatistics | undefined {
     if (!PerformanceStatistics.instances.has(objId)) {
       PerformanceStatistics.instances.set(objId, new PerformanceStatistics(objId, objName, uri));
@@ -77,7 +77,7 @@ export class PerformanceStatistics {
 
   public addRequestStatistic(
     command: RequestCommand | IncomingRequestCommand,
-    messageType: MessageType
+    messageType: MessageType,
   ): void {
     switch (messageType) {
       case MessageType.CALL_MESSAGE:
@@ -132,7 +132,7 @@ export class PerformanceStatistics {
       logger.info(
         `${this.logPrefix()} storage enabled: type ${
           Configuration.getPerformanceStorage().type
-        }, uri: ${Configuration.getPerformanceStorage().uri}`
+        }, uri: ${Configuration.getPerformanceStorage().uri}`,
       );
     }
   }
@@ -177,15 +177,15 @@ export class PerformanceStatistics {
         this.logStatistics();
       }, logStatisticsInterval * 1000);
       logger.info(
-        `${this.logPrefix()} logged every ${formatDurationSeconds(logStatisticsInterval)}`
+        `${this.logPrefix()} logged every ${formatDurationSeconds(logStatisticsInterval)}`,
       );
     } else if (this.displayInterval) {
       logger.info(
-        `${this.logPrefix()} already logged every ${formatDurationSeconds(logStatisticsInterval)}`
+        `${this.logPrefix()} already logged every ${formatDurationSeconds(logStatisticsInterval)}`,
       );
     } else if (Configuration.getLog().enabled) {
       logger.info(
-        `${this.logPrefix()} log interval is set to ${logStatisticsInterval?.toString()}. Not logging statistics`
+        `${this.logPrefix()} log interval is set to ${logStatisticsInterval?.toString()}. Not logging statistics`,
       );
     }
   }
@@ -210,11 +210,11 @@ export class PerformanceStatistics {
     this.statistics.statisticsData.get(entryName).currentTimeMeasurement = entry.duration;
     this.statistics.statisticsData.get(entryName).minTimeMeasurement = Math.min(
       entry.duration,
-      this.statistics.statisticsData.get(entryName)?.minTimeMeasurement ?? Infinity
+      this.statistics.statisticsData.get(entryName)?.minTimeMeasurement ?? Infinity,
     );
     this.statistics.statisticsData.get(entryName).maxTimeMeasurement = Math.max(
       entry.duration,
-      this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ?? -Infinity
+      this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ?? -Infinity,
     );
     this.statistics.statisticsData.get(entryName).totalTimeMeasurement =
       (this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ?? 0) + entry.duration;
@@ -231,17 +231,17 @@ export class PerformanceStatistics {
             value: entry.duration,
           }));
     this.statistics.statisticsData.get(entryName).medTimeMeasurement = median(
-      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries)
+      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries),
     );
     this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement =
       nthPercentile(
         extractTimeSeriesValues(
-          this.statistics.statisticsData.get(entryName).measurementTimeSeries
+          this.statistics.statisticsData.get(entryName).measurementTimeSeries,
         ),
-        95
+        95,
       );
     this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = stdDeviation(
-      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries)
+      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries),
     );
     if (Configuration.getPerformanceStorage().enabled) {
       parentPort?.postMessage(buildPerformanceStatisticsMessage(this.statistics));

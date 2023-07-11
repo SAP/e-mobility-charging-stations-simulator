@@ -10,8 +10,8 @@ export function checkNodeVersion() {
   if (semVer.satisfies(process.version, enginesNodeVersion) === false) {
     console.error(
       chalk.red(
-        `Required node version ${enginesNodeVersion} not satisfied with current version ${process.version}.`
-      )
+        `Required node version ${enginesNodeVersion} not satisfied with current version ${process.version}.`,
+      ),
     );
     // eslint-disable-next-line n/no-process-exit
     process.exit(1);

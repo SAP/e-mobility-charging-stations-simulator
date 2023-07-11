@@ -37,7 +37,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
           'assets/json-schemas/ocpp/2.0/BootNotificationRequest.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -45,7 +45,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
           'assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -53,14 +53,14 @@ export class OCPP20RequestService extends OCPPRequestService {
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
           'assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
     ]);
     this.buildRequestPayload = this.buildRequestPayload.bind(this) as <Request extends JsonType>(
       chargingStation: ChargingStation,
       commandName: OCPP20RequestCommand,
-      commandParams?: JsonType
+      commandParams?: JsonType,
     ) => Request;
   }
 
@@ -68,7 +68,7 @@ export class OCPP20RequestService extends OCPPRequestService {
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
     commandParams?: JsonType,
-    params?: RequestParams
+    params?: RequestParams,
   ): Promise<ResponseType> {
     // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP20ServiceUtils.isRequestCommandSupported(chargingStation, commandName) === true) {
@@ -77,7 +77,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         generateUUID(),
         this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
         commandName,
-        params
+        params,
       )) as ResponseType;
     }
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
@@ -85,14 +85,14 @@ export class OCPP20RequestService extends OCPPRequestService {
       ErrorType.NOT_SUPPORTED,
       `Unsupported OCPP command '${commandName}'`,
       commandName,
-      commandParams
+      commandParams,
     );
   }
 
   private buildRequestPayload<Request extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
-    commandParams?: JsonType
+    commandParams?: JsonType,
   ): Request {
     commandParams = commandParams as JsonObject;
     switch (commandName) {
@@ -112,7 +112,7 @@ export class OCPP20RequestService extends OCPPRequestService {
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `Unsupported OCPP command '${commandName}'`,
           commandName,
-          commandParams
+          commandParams,
         );
     }
   }

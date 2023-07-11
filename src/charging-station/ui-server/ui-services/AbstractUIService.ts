@@ -79,8 +79,8 @@ export abstract class AbstractUIService {
           `${command} is not implemented to handle message payload ${JSON.stringify(
             requestPayload,
             null,
-            2
-          )}`
+            2,
+          )}`,
         );
       }
 
@@ -136,21 +136,21 @@ export abstract class AbstractUIService {
   protected handleProtocolRequest(
     uuid: string,
     procedureName: ProcedureName,
-    payload: RequestPayload
+    payload: RequestPayload,
   ): void {
     this.sendBroadcastChannelRequest(
       uuid,
       AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping[
         procedureName
       ] as BroadcastChannelProcedureName,
-      payload
+      payload,
     );
   }
 
   private sendBroadcastChannelRequest(
     uuid: string,
     procedureName: BroadcastChannelProcedureName,
-    payload: BroadcastChannelRequestPayload
+    payload: BroadcastChannelRequestPayload,
   ): void {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
@@ -162,8 +162,8 @@ export abstract class AbstractUIService {
           logger.warn(
             `${this.logPrefix(
               moduleName,
-              'sendBroadcastChannelRequest'
-            )} Charging station with hashId '${hashId}' not found`
+              'sendBroadcastChannelRequest',
+            )} Charging station with hashId '${hashId}' not found`,
           );
         });
     }

@@ -25,7 +25,7 @@ if (config && config.mongoConnectionString) {
       console.info(
         response.deletedCount,
         `Charging Stations with id = %${config.idPattern}% deleted. TenantID =`,
-        tenantID
+        tenantID,
       );
     }
     client.close();

@@ -32,7 +32,7 @@ export type ErrorResponse = [MessageType.CALL_ERROR_MESSAGE, string, ErrorType, 
 export type ResponseHandler = (
   chargingStation: ChargingStation,
   payload: JsonType,
-  requestPayload?: JsonType
+  requestPayload?: JsonType,
 ) => void | Promise<void>;
 
 export type BootNotificationResponse =

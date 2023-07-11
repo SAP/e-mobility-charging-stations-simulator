@@ -93,7 +93,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationResponse>(
           'assets/json-schemas/ocpp/1.6/BootNotificationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -101,7 +101,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatResponse>(
           'assets/json-schemas/ocpp/1.6/HeartbeatResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -109,7 +109,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeResponse>(
           'assets/json-schemas/ocpp/1.6/AuthorizeResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -117,7 +117,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionResponse>(
           'assets/json-schemas/ocpp/1.6/StartTransactionResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -125,7 +125,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionResponse>(
           'assets/json-schemas/ocpp/1.6/StopTransactionResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -133,7 +133,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationResponse>(
           'assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -141,7 +141,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesResponse>(
           'assets/json-schemas/ocpp/1.6/MeterValuesResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -149,7 +149,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationResponse>(
           'assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotificationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -157,7 +157,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferResponse>(
           'assets/json-schemas/ocpp/1.6/DataTransferResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -165,7 +165,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationResponse>(
           'assets/json-schemas/ocpp/1.6/FirmwareStatusNotificationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
     ]);
@@ -175,7 +175,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
           'assets/json-schemas/ocpp/1.6/ResetResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -183,7 +183,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
           'assets/json-schemas/ocpp/1.6/ClearCacheResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -191,7 +191,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<ChangeAvailabilityResponse>(
           'assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -199,7 +199,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<UnlockConnectorResponse>(
           'assets/json-schemas/ocpp/1.6/UnlockConnectorResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -207,7 +207,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<GetConfigurationResponse>(
           'assets/json-schemas/ocpp/1.6/GetConfigurationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -215,7 +215,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationResponse>(
           'assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -223,7 +223,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16GetCompositeScheduleResponse>(
           'assets/json-schemas/ocpp/1.6/GetCompositeScheduleResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -231,7 +231,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<SetChargingProfileResponse>(
           'assets/json-schemas/ocpp/1.6/SetChargingProfileResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -239,7 +239,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<ClearChargingProfileResponse>(
           'assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -247,7 +247,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
           'assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -255,7 +255,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
           'assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -263,7 +263,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsResponse>(
           'assets/json-schemas/ocpp/1.6/GetDiagnosticsResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -271,7 +271,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16TriggerMessageResponse>(
           'assets/json-schemas/ocpp/1.6/TriggerMessageResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -279,7 +279,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferResponse>(
           'assets/json-schemas/ocpp/1.6/DataTransferResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -287,7 +287,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareResponse>(
           'assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -295,7 +295,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowResponse>(
           'assets/json-schemas/ocpp/1.6/ReserveNowResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -303,14 +303,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
           'assets/json-schemas/ocpp/1.6/CancelReservationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
     ]);
     this.validatePayload = this.validatePayload.bind(this) as (
       chargingStation: ChargingStation,
       commandName: OCPP16RequestCommand,
-      payload: JsonType
+      payload: JsonType,
     ) => boolean;
   }
 
@@ -318,7 +318,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     payload: JsonType,
-    requestPayload: JsonType
+    requestPayload: JsonType,
   ): Promise<void> {
     if (
       chargingStation.isRegistered() === true ||
@@ -334,7 +334,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         } catch (error) {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
-            error
+            error,
           );
           throw error;
         }
@@ -345,10 +345,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
           `${commandName} is not implemented to handle response PDU ${JSON.stringify(
             payload,
             null,
-            2
+            2,
           )}`,
           commandName,
-          payload
+          payload,
         );
       }
     } else {
@@ -357,10 +357,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
         `${commandName} cannot be issued to handle response PDU ${JSON.stringify(
           payload,
           null,
-          2
+          2,
         )} while the charging station is not registered on the central server.`,
         commandName,
-        payload
+        payload,
       );
     }
   }
@@ -368,25 +368,25 @@ export class OCPP16ResponseService extends OCPPResponseService {
   private validatePayload(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
-    payload: JsonType
+    payload: JsonType,
   ): boolean {
     if (this.jsonSchemas.has(commandName) === true) {
       return this.validateResponsePayload(
         chargingStation,
         commandName,
         this.jsonSchemas.get(commandName),
-        payload
+        payload,
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`,
     );
     return false;
   }
 
   private handleResponseBootNotification(
     chargingStation: ChargingStation,
-    payload: OCPP16BootNotificationResponse
+    payload: OCPP16BootNotificationResponse,
   ): void {
     if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
       ChargingStationConfigurationUtils.addConfigurationKey(
@@ -394,14 +394,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16StandardParametersKey.HeartbeatInterval,
         payload.interval.toString(),
         {},
-        { overwrite: true, save: true }
+        { overwrite: true, save: true },
       );
       ChargingStationConfigurationUtils.addConfigurationKey(
         chargingStation,
         OCPP16StandardParametersKey.HeartBeatInterval,
         payload.interval.toString(),
         { visible: false },
-        { overwrite: true, save: true }
+        { overwrite: true, save: true },
       );
       OCPP16ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval);
     }
@@ -415,7 +415,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     } else {
       logger.error(
         `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
-        payload
+        payload,
       );
     }
   }
@@ -423,7 +423,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
   private handleResponseAuthorize(
     chargingStation: ChargingStation,
     payload: OCPP16AuthorizeResponse,
-    requestPayload: OCPP16AuthorizeRequest
+    requestPayload: OCPP16AuthorizeRequest,
   ): void {
     let authorizeConnectorId: number;
     if (chargingStation.hasEvses) {
@@ -455,7 +455,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.debug(
         `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' accepted${
           authorizeConnectorIdDefined ? ` on connector id ${authorizeConnectorId}` : ''
-        }`
+        }`,
       );
     } else {
       if (authorizeConnectorIdDefined) {
@@ -465,7 +465,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.debug(
         `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' rejected with status '${
           payload.idTagInfo.status
-        }'${authorizeConnectorIdDefined ? ` on connector id ${authorizeConnectorId}` : ''}`
+        }'${authorizeConnectorIdDefined ? ` on connector id ${authorizeConnectorId}` : ''}`,
       );
     }
   }
@@ -473,7 +473,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
   private async handleResponseStartTransaction(
     chargingStation: ChargingStation,
     payload: OCPP16StartTransactionResponse,
-    requestPayload: OCPP16StartTransactionRequest
+    requestPayload: OCPP16StartTransactionRequest,
   ): Promise<void> {
     const transactionConnectorId = requestPayload.connectorId;
     if (
@@ -481,7 +481,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.hasConnector(transactionConnectorId) === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on a non existing connector id ${transactionConnectorId.toString()}`
+        `${chargingStation.logPrefix()} Trying to start a transaction on a non existing connector id ${transactionConnectorId.toString()}`,
       );
       return;
     }
@@ -494,9 +494,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.getConnectorStatus(transactionConnectorId)?.idTagLocalAuthorized === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with a not local authorized idTag ${
-          chargingStation.getConnectorStatus(transactionConnectorId)?.localAuthorizeIdTag
-        } on connector id ${transactionConnectorId.toString()}`
+        `${chargingStation.logPrefix()} Trying to start a transaction with a not local authorized idTag ${chargingStation.getConnectorStatus(
+          transactionConnectorId,
+        )?.localAuthorizeIdTag} on connector id ${transactionConnectorId.toString()}`,
       );
       await this.resetConnectorOnStartTransactionError(chargingStation, transactionConnectorId);
       return;
@@ -510,9 +510,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.getConnectorStatus(transactionConnectorId)?.idTagAuthorized === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with a not authorized idTag ${
-          chargingStation.getConnectorStatus(transactionConnectorId)?.authorizeIdTag
-        } on connector id ${transactionConnectorId.toString()}`
+        `${chargingStation.logPrefix()} Trying to start a transaction with a not authorized idTag ${chargingStation.getConnectorStatus(
+          transactionConnectorId,
+        )?.authorizeIdTag} on connector id ${transactionConnectorId.toString()}`,
       );
       await this.resetConnectorOnStartTransactionError(chargingStation, transactionConnectorId);
       return;
@@ -525,9 +525,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.error(
         `${chargingStation.logPrefix()} Trying to start a transaction with an idTag ${
           requestPayload.idTag
-        } different from the authorize request one ${
-          chargingStation.getConnectorStatus(transactionConnectorId)?.authorizeIdTag
-        } on connector id ${transactionConnectorId.toString()}`
+        } different from the authorize request one ${chargingStation.getConnectorStatus(
+          transactionConnectorId,
+        )?.authorizeIdTag} on connector id ${transactionConnectorId.toString()}`,
       );
       await this.resetConnectorOnStartTransactionError(chargingStation, transactionConnectorId);
       return;
@@ -540,9 +540,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.error(
         `${chargingStation.logPrefix()} Trying to start a transaction with an idTag ${
           requestPayload.idTag
-        } different from the local authorized one ${
-          chargingStation.getConnectorStatus(transactionConnectorId)?.localAuthorizeIdTag
-        } on connector id ${transactionConnectorId.toString()}`
+        } different from the local authorized one ${chargingStation.getConnectorStatus(
+          transactionConnectorId,
+        )?.localAuthorizeIdTag} on connector id ${transactionConnectorId.toString()}`,
       );
       await this.resetConnectorOnStartTransactionError(chargingStation, transactionConnectorId);
       return;
@@ -550,7 +550,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     if (chargingStation.getConnectorStatus(transactionConnectorId)?.transactionStarted === true) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to start a transaction on an already used connector id ${transactionConnectorId.toString()}:`,
-        chargingStation.getConnectorStatus(transactionConnectorId)
+        chargingStation.getConnectorStatus(transactionConnectorId),
       );
       return;
     }
@@ -564,11 +564,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
             ) {
               logger.error(
                 `${chargingStation.logPrefix()} Trying to start a transaction on an already used evse id ${evseId.toString()}:`,
-                evseStatus
+                evseStatus,
               );
               await this.resetConnectorOnStartTransactionError(
                 chargingStation,
-                transactionConnectorId
+                transactionConnectorId,
               );
               return;
             }
@@ -583,9 +583,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ChargePointStatus.Preparing
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${transactionConnectorId.toString()} with status ${
-          chargingStation.getConnectorStatus(transactionConnectorId)?.status
-        }`
+        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${transactionConnectorId.toString()} with status ${chargingStation.getConnectorStatus(
+          transactionConnectorId,
+        )?.status}`,
       );
       return;
     }
@@ -593,7 +593,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${transactionConnectorId.toString()} with a non integer transaction id ${
           payload.transactionId
-        }, converting to integer`
+        }, converting to integer`,
       );
       payload.transactionId = convertToInt(payload.transactionId);
     }
@@ -605,13 +605,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.getConnectorStatus(transactionConnectorId).transactionIdTag =
         requestPayload.idTag;
       chargingStation.getConnectorStatus(
-        transactionConnectorId
+        transactionConnectorId,
       ).transactionEnergyActiveImportRegisterValue = 0;
       chargingStation.getConnectorStatus(transactionConnectorId).transactionBeginMeterValue =
         OCPP16ServiceUtils.buildTransactionBeginMeterValue(
           chargingStation,
           transactionConnectorId,
-          requestPayload.meterStart
+          requestPayload.meterStart,
         );
       chargingStation.getBeginEndMeterValues() &&
         (await chargingStation.ocppRequestService.requestHandler<
@@ -627,12 +627,12 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
         transactionConnectorId,
-        OCPP16ChargePointStatus.Charging
+        OCPP16ChargePointStatus.Charging,
       );
       logger.info(
         `${chargingStation.logPrefix()} Transaction with id ${payload.transactionId.toString()} STARTED on ${
           chargingStation.stationInfo.chargingStationId
-        }#${transactionConnectorId.toString()} for idTag '${requestPayload.idTag}'`
+        }#${transactionConnectorId.toString()} for idTag '${requestPayload.idTag}'`,
       );
       if (chargingStation.stationInfo.powerSharedByConnectors) {
         ++chargingStation.powerDivider;
@@ -640,19 +640,18 @@ export class OCPP16ResponseService extends OCPPResponseService {
       const configuredMeterValueSampleInterval =
         ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
-          OCPP16StandardParametersKey.MeterValueSampleInterval
+          OCPP16StandardParametersKey.MeterValueSampleInterval,
         );
       chargingStation.startMeterValues(
         transactionConnectorId,
         configuredMeterValueSampleInterval
           ? convertToInt(configuredMeterValueSampleInterval.value) * 1000
-          : Constants.DEFAULT_METER_VALUES_INTERVAL
+          : Constants.DEFAULT_METER_VALUES_INTERVAL,
       );
     } else {
       logger.warn(
-        `${chargingStation.logPrefix()} Starting transaction with id ${payload.transactionId.toString()} REJECTED with status '${
-          payload.idTagInfo?.status
-        }', idTag '${requestPayload.idTag}'`
+        `${chargingStation.logPrefix()} Starting transaction with id ${payload.transactionId.toString()} REJECTED with status '${payload
+          .idTagInfo?.status}', idTag '${requestPayload.idTag}'`,
       );
       await this.resetConnectorOnStartTransactionError(chargingStation, transactionConnectorId);
     }
@@ -660,7 +659,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
 
   private async resetConnectorOnStartTransactionError(
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
   ): Promise<void> {
     resetConnectorStatus(chargingStation.getConnectorStatus(connectorId));
     chargingStation.stopMeterValues(connectorId);
@@ -671,7 +670,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
         connectorId,
-        OCPP16ChargePointStatus.Available
+        OCPP16ChargePointStatus.Available,
       );
     }
   }
@@ -679,14 +678,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
   private async handleResponseStopTransaction(
     chargingStation: ChargingStation,
     payload: OCPP16StopTransactionResponse,
-    requestPayload: OCPP16StopTransactionRequest
+    requestPayload: OCPP16StopTransactionRequest,
   ): Promise<void> {
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
-      requestPayload.transactionId
+      requestPayload.transactionId,
     );
     if (isNullOrUndefined(transactionConnectorId)) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
+        `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`,
       );
       return;
     }
@@ -703,7 +702,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           OCPP16ServiceUtils.buildTransactionEndMeterValue(
             chargingStation,
             transactionConnectorId,
-            requestPayload.meterStop
+            requestPayload.meterStop,
           ),
         ],
       }));
@@ -714,13 +713,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
         transactionConnectorId,
-        OCPP16ChargePointStatus.Unavailable
+        OCPP16ChargePointStatus.Unavailable,
       );
     } else {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
         transactionConnectorId,
-        OCPP16ChargePointStatus.Available
+        OCPP16ChargePointStatus.Available,
       );
     }
     if (chargingStation.stationInfo.powerSharedByConnectors) {

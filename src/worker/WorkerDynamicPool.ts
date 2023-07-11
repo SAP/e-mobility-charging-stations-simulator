@@ -19,7 +19,7 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
       this.workerOptions.poolMinSize,
       this.workerOptions.poolMaxSize,
       this.workerScript,
-      this.workerOptions.poolOptions
+      this.workerOptions.poolOptions,
     );
   }
 

@@ -11,7 +11,7 @@ export class UIServerUtils {
   public static handleProtocols = (
     protocols: Set<string>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    request: IncomingMessage
+    request: IncomingMessage,
   ): string | false => {
     let protocol: Protocol;
     let version: ProtocolVersion;
@@ -25,8 +25,8 @@ export class UIServerUtils {
     }
     logger.error(
       `${logPrefix(
-        ' UI WebSocket Server |'
-      )} Unsupported protocol: ${protocol} or protocol version: ${version}`
+        ' UI WebSocket Server |',
+      )} Unsupported protocol: ${protocol} or protocol version: ${version}`,
     );
     return false;
   };
@@ -43,7 +43,7 @@ export class UIServerUtils {
     const protocolIndex = protocolStr.indexOf(Protocol.UI);
     const protocol = protocolStr.substring(
       protocolIndex,
-      protocolIndex + Protocol.UI.length
+      protocolIndex + Protocol.UI.length,
     ) as Protocol;
     const version = protocolStr.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion;
     return [protocol, version];
@@ -53,7 +53,7 @@ export class UIServerUtils {
     const isLoopbackRegExp = new RegExp(
       // eslint-disable-next-line no-useless-escape
       /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*\:)*?:?0*1$/,
-      'i'
+      'i',
     );
     return isLoopbackRegExp.test(address);
   }

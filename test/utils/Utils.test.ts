@@ -137,15 +137,15 @@ describe('Utils test suite', () => {
     expect(randomInteger).toBeGreaterThanOrEqual(-Constants.MAX_RANDOM_INTEGER);
     expect(randomInteger).toBeLessThanOrEqual(0);
     expect(() => getRandomInteger(0, 1)).toThrowError(
-      'The value of "max" is out of range. It must be greater than the value of "min" (1). Received 1'
+      'The value of "max" is out of range. It must be greater than the value of "min" (1). Received 1',
     );
     expect(() => getRandomInteger(-1)).toThrowError(
-      'The value of "max" is out of range. It must be greater than the value of "min" (0). Received 0'
+      'The value of "max" is out of range. It must be greater than the value of "min" (0). Received 0',
     );
     expect(() => getRandomInteger(Constants.MAX_RANDOM_INTEGER + 1)).toThrowError(
       `The value of "max" is out of range. It must be <= ${
         Constants.MAX_RANDOM_INTEGER + 1
-      }. Received 281_474_976_710_656`
+      }. Received 281_474_976_710_656`,
     );
     randomInteger = getRandomInteger(2, 1);
     expect(randomInteger).toBeGreaterThanOrEqual(1);
@@ -180,7 +180,7 @@ describe('Utils test suite', () => {
     expect(randomFloat).not.toEqual(getRandomFloat());
     expect(() => getRandomFloat(0, 1)).toThrowError(new RangeError('Invalid interval'));
     expect(() => getRandomFloat(Number.MAX_VALUE, -Number.MAX_VALUE)).toThrowError(
-      new RangeError('Invalid interval')
+      new RangeError('Invalid interval'),
     );
     randomFloat = getRandomFloat(0, -Number.MAX_VALUE);
     expect(randomFloat).toBeGreaterThanOrEqual(-Number.MAX_VALUE);

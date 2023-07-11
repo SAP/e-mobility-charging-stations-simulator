@@ -74,7 +74,7 @@ export class OCPPServiceUtils {
 
   public static isRequestCommandSupported(
     chargingStation: ChargingStation,
-    command: RequestCommand
+    command: RequestCommand,
   ): boolean {
     const isRequestCommand = Object.values<RequestCommand>(RequestCommand).includes(command);
     if (
@@ -94,7 +94,7 @@ export class OCPPServiceUtils {
 
   public static isIncomingRequestCommandSupported(
     chargingStation: ChargingStation,
-    command: IncomingRequestCommand
+    command: IncomingRequestCommand,
   ): boolean {
     const isIncomingRequestCommand =
       Object.values<IncomingRequestCommand>(IncomingRequestCommand).includes(command);
@@ -115,7 +115,7 @@ export class OCPPServiceUtils {
 
   public static isMessageTriggerSupported(
     chargingStation: ChargingStation,
-    messageTrigger: MessageTrigger
+    messageTrigger: MessageTrigger,
   ): boolean {
     const isMessageTrigger = Object.values(MessageTrigger).includes(messageTrigger);
     if (isMessageTrigger === true && !chargingStation.stationInfo?.messageTriggerSupport) {
@@ -124,7 +124,7 @@ export class OCPPServiceUtils {
       return chargingStation.stationInfo?.messageTriggerSupport[messageTrigger] ?? false;
     }
     logger.error(
-      `${chargingStation.logPrefix()} Unknown incoming OCPP message trigger '${messageTrigger}'`
+      `${chargingStation.logPrefix()} Unknown incoming OCPP message trigger '${messageTrigger}'`,
     );
     return false;
   }
@@ -132,11 +132,11 @@ export class OCPPServiceUtils {
   public static isConnectorIdValid(
     chargingStation: ChargingStation,
     ocppCommand: IncomingRequestCommand,
-    connectorId: number
+    connectorId: number,
   ): boolean {
     if (connectorId < 0) {
       logger.error(
-        `${chargingStation.logPrefix()} ${ocppCommand} incoming request received with invalid connector id ${connectorId}`
+        `${chargingStation.logPrefix()} ${ocppCommand} incoming request received with invalid connector id ${connectorId}`,
       );
       return false;
     }
@@ -157,7 +157,7 @@ export class OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number,
     status: ConnectorStatusEnum,
-    evseId?: number
+    evseId?: number,
   ): StatusNotificationRequest {
     switch (chargingStation.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16) {
       case OCPPVersion.VERSION_16:
@@ -192,7 +192,7 @@ export class OCPPServiceUtils {
     connectorId: number,
     status: ConnectorStatusEnum,
     evseId?: number,
-    options: { send: boolean } = { send: true }
+    options: { send: boolean } = { send: true },
   ) {
     options = { send: true, ...options };
     if (options.send) {
@@ -207,8 +207,8 @@ export class OCPPServiceUtils {
           chargingStation,
           connectorId,
           status,
-          evseId
-        )
+          evseId,
+        ),
       );
     }
     chargingStation.getConnectorStatus(connectorId).status = status;
@@ -217,7 +217,7 @@ export class OCPPServiceUtils {
   protected static checkConnectorStatusTransition(
     chargingStation: ChargingStation,
     connectorId: number,
-    status: ConnectorStatusEnum
+    status: ConnectorStatusEnum,
   ): boolean {
     const fromStatus = chargingStation.getConnectorStatus(connectorId).status;
     let transitionAllowed = false;
@@ -226,11 +226,11 @@ export class OCPPServiceUtils {
         if (
           (connectorId === 0 &&
             OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status
+              (transition) => transition.from === fromStatus && transition.to === status,
             ) !== -1) ||
           (connectorId > 0 &&
             OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status
+              (transition) => transition.from === fromStatus && transition.to === status,
             ) !== -1)
         ) {
           transitionAllowed = true;
@@ -241,11 +241,11 @@ export class OCPPServiceUtils {
         if (
           (connectorId === 0 &&
             OCPP20Constants.ChargingStationStatusTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status
+              (transition) => transition.from === fromStatus && transition.to === status,
             ) !== -1) ||
           (connectorId > 0 &&
             OCPP20Constants.ConnectorStatusTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status
+              (transition) => transition.from === fromStatus && transition.to === status,
             ) !== -1)
         ) {
           transitionAllowed = true;
@@ -254,7 +254,7 @@ export class OCPPServiceUtils {
       default:
         throw new BaseError(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo.ocppVersion} not supported`
+          `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo.ocppVersion} not supported`,
         );
     }
     if (transitionAllowed === false) {
@@ -263,7 +263,7 @@ export class OCPPServiceUtils {
           chargingStation.stationInfo.ocppVersion
         } connector id ${connectorId} status transition from '${
           chargingStation.getConnectorStatus(connectorId).status
-        }' to '${status}' is not allowed`
+        }' to '${status}' is not allowed`,
       );
     }
     return transitionAllowed;
@@ -273,7 +273,7 @@ export class OCPPServiceUtils {
     relativePath: string,
     ocppVersion: OCPPVersion,
     moduleName?: string,
-    methodName?: string
+    methodName?: string,
   ): JSONSchemaType<T> {
     const filePath = join(dirname(fileURLToPath(import.meta.url)), relativePath);
     try {
@@ -284,7 +284,7 @@ export class OCPPServiceUtils {
         FileType.JsonSchema,
         error as NodeJS.ErrnoException,
         OCPPServiceUtils.logPrefix(ocppVersion, moduleName, methodName),
-        { throwError: false }
+        { throwError: false },
       );
     }
   }
@@ -293,12 +293,12 @@ export class OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number,
     measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-    phase?: MeterValuePhase
+    phase?: MeterValuePhase,
   ): SampledValueTemplate | undefined {
     const onPhaseStr = phase ? `on phase ${phase} ` : '';
     if (OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(measurand) === false) {
       logger.warn(
-        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`
+        `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`,
       );
       return;
     }
@@ -306,13 +306,13 @@ export class OCPPServiceUtils {
       measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
       ChargingStationConfigurationUtils.getConfigurationKey(
         chargingStation,
-        StandardParametersKey.MeterValuesSampledData
+        StandardParametersKey.MeterValuesSampledData,
       )?.value?.includes(measurand) === false
     ) {
       logger.debug(
         `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId} not found in '${
           StandardParametersKey.MeterValuesSampledData
-        }' OCPP parameter`
+        }' OCPP parameter`,
       );
       return;
     }
@@ -326,11 +326,11 @@ export class OCPPServiceUtils {
       if (
         OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(
           sampledValueTemplates[index]?.measurand ??
-            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+            MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
         ) === false
       ) {
         logger.warn(
-          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`
+          `${chargingStation.logPrefix()} Unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`,
         );
       } else if (
         phase &&
@@ -338,7 +338,7 @@ export class OCPPServiceUtils {
         sampledValueTemplates[index]?.measurand === measurand &&
         ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
-          StandardParametersKey.MeterValuesSampledData
+          StandardParametersKey.MeterValuesSampledData,
         )?.value?.includes(measurand) === true
       ) {
         return sampledValueTemplates[index];
@@ -348,7 +348,7 @@ export class OCPPServiceUtils {
         sampledValueTemplates[index]?.measurand === measurand &&
         ChargingStationConfigurationUtils.getConfigurationKey(
           chargingStation,
-          StandardParametersKey.MeterValuesSampledData
+          StandardParametersKey.MeterValuesSampledData,
         )?.value?.includes(measurand) === true
       ) {
         return sampledValueTemplates[index];
@@ -366,7 +366,7 @@ export class OCPPServiceUtils {
       throw new BaseError(errorMsg);
     }
     logger.debug(
-      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`
+      `${chargingStation.logPrefix()} No MeterValues for measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId}`,
     );
   }
 
@@ -376,7 +376,7 @@ export class OCPPServiceUtils {
     options: { limitationEnabled?: boolean; unitMultiplier?: number } = {
       limitationEnabled: true,
       unitMultiplier: 1,
-    }
+    },
   ): number {
     options = {
       ...{
@@ -395,7 +395,7 @@ export class OCPPServiceUtils {
   private static logPrefix = (
     ocppVersion: OCPPVersion,
     moduleName?: string,
-    methodName?: string
+    methodName?: string,
   ): string => {
     const logMsg =
       isNotEmptyString(moduleName) && isNotEmptyString(methodName)

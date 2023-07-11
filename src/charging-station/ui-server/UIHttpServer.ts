@@ -60,13 +60,13 @@ export class UIHttpServer extends AbstractUIServer {
           .end(JSON.stringify(payload));
       } else {
         logger.error(
-          `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
+          `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`,
         );
       }
     } catch (error) {
       logger.error(
         `${this.logPrefix(moduleName, 'sendResponse')} Error at sending response id '${uuid}':`,
-        error
+        error,
       );
     } finally {
       this.responseHandlers.delete(uuid);
@@ -99,7 +99,7 @@ export class UIHttpServer extends AbstractUIServer {
     const [protocol, version, procedureName] = req.url?.split('/').slice(1) as [
       Protocol,
       ProtocolVersion,
-      ProcedureName
+      ProcedureName,
     ];
     const uuid = generateUUID();
     this.responseHandlers.set(uuid, res);
@@ -112,7 +112,7 @@ export class UIHttpServer extends AbstractUIServer {
       req.on('error', (error) => {
         logger.error(
           `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
-          error
+          error,
         );
       });
       if (req.method === HttpMethods.POST) {
@@ -129,8 +129,8 @@ export class UIHttpServer extends AbstractUIServer {
                 this.buildProtocolRequest(
                   uuid,
                   procedureName,
-                  body ?? Constants.EMPTY_FREEZED_OBJECT
-                )
+                  body ?? Constants.EMPTY_FREEZED_OBJECT,
+                ),
               )
               .then((protocolResponse: ProtocolResponse) => {
                 if (!isNullOrUndefined(protocolResponse)) {
@@ -145,7 +145,7 @@ export class UIHttpServer extends AbstractUIServer {
     } catch (error) {
       logger.error(
         `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
-        error
+        error,
       );
       this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }));
     }

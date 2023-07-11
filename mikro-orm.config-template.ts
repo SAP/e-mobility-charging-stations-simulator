@@ -12,6 +12,6 @@ export default {
   type: 'sqlite',
   clientUrl: `file://${join(
     dirname(fileURLToPath(import.meta.url)),
-    `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
+    `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`,
   )}`,
 };

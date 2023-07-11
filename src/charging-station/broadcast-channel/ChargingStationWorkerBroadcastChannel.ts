@@ -54,7 +54,7 @@ type CommandResponse =
   | FirmwareStatusNotificationResponse;
 
 type CommandHandler = (
-  requestPayload?: BroadcastChannelRequestPayload
+  requestPayload?: BroadcastChannelRequestPayload,
 ) => Promise<CommandResponse | void> | void;
 
 export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
@@ -115,11 +115,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             {
               meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
                 requestPayload.transactionId,
-                true
+                true,
               ),
               ...requestPayload,
             },
-            requestParams
+            requestParams,
           ),
       ],
       [
@@ -147,7 +147,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
               {
                 skipBufferingOnError: true,
                 throwError: true,
-              }
+              },
             );
           return this.chargingStation.bootNotificationResponse;
         },
@@ -162,7 +162,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             this.chargingStation,
             RequestCommand.STATUS_NOTIFICATION,
             requestPayload,
-            requestParams
+            requestParams,
           ),
       ],
       [
@@ -179,7 +179,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           const configuredMeterValueSampleInterval =
             ChargingStationConfigurationUtils.getConfigurationKey(
               chargingStation,
-              StandardParametersKey.MeterValueSampleInterval
+              StandardParametersKey.MeterValueSampleInterval,
             );
           return this.chargingStation.ocppRequestService.requestHandler<
             MeterValuesRequest,
@@ -197,12 +197,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                     ?.transactionId,
                   configuredMeterValueSampleInterval
                     ? convertToInt(configuredMeterValueSampleInterval.value) * 1000
-                    : Constants.DEFAULT_METER_VALUES_INTERVAL
+                    : Constants.DEFAULT_METER_VALUES_INTERVAL,
                 ),
               ],
               ...requestPayload,
             },
-            requestParams
+            requestParams,
           );
         },
       ],
@@ -224,7 +224,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             this.chargingStation,
             RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
             requestPayload,
-            requestParams
+            requestParams,
           ),
       ],
       [
@@ -237,7 +237,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             this.chargingStation,
             RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
             requestPayload,
-            requestParams
+            requestParams,
           ),
       ],
     ]);
@@ -263,7 +263,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
     if (!isNullOrUndefined(requestPayload?.hashId)) {
       logger.error(
-        `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' array instead`
+        `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' array instead`,
       );
       return;
     }
@@ -280,13 +280,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         responsePayload = this.commandResponseToResponsePayload(
           command,
           requestPayload,
-          commandResponse as CommandResponse
+          commandResponse as CommandResponse,
         );
       }
     } catch (error) {
       logger.error(
         `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: Handle request error:`,
-        error
+        error,
       );
       responsePayload = {
         hashId: this.chargingStation.stationInfo.hashId,
@@ -306,13 +306,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private messageErrorHandler(messageEvent: MessageEvent): void {
     logger.error(
       `${this.chargingStation.logPrefix()} ${moduleName}.messageErrorHandler: Error at handling message:`,
-      messageEvent
+      messageEvent,
     );
   }
 
   private async commandHandler(
     command: BroadcastChannelProcedureName,
-    requestPayload: BroadcastChannelRequestPayload
+    requestPayload: BroadcastChannelRequestPayload,
   ): Promise<CommandResponse | void> {
     if (this.commandHandlers.has(command) === true) {
       this.cleanRequestPayload(command, requestPayload);
@@ -323,7 +323,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
 
   private cleanRequestPayload(
     command: BroadcastChannelProcedureName,
-    requestPayload: BroadcastChannelRequestPayload
+    requestPayload: BroadcastChannelRequestPayload,
   ): void {
     delete requestPayload.hashId;
     delete requestPayload.hashIds;
@@ -336,7 +336,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private commandResponseToResponsePayload(
     command: BroadcastChannelProcedureName,
     requestPayload: BroadcastChannelRequestPayload,
-    commandResponse: CommandResponse
+    commandResponse: CommandResponse,
   ): BroadcastChannelResponsePayload {
     const responseStatus = this.commandResponseToResponseStatus(command, commandResponse);
     if (responseStatus === ResponseStatus.SUCCESS) {
@@ -356,7 +356,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
 
   private commandResponseToResponseStatus(
     command: BroadcastChannelProcedureName,
-    commandResponse: CommandResponse
+    commandResponse: CommandResponse,
   ): ResponseStatus {
     switch (command) {
       case BroadcastChannelProcedureName.START_TRANSACTION:

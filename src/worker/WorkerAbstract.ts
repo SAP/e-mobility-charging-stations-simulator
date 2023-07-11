@@ -31,7 +31,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
       poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
       elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
       poolOptions: {},
-    }
+    },
   ) {
     if (workerScript === null || workerScript === undefined) {
       throw new Error('Worker script is not defined');

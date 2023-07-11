@@ -13,7 +13,7 @@ import {
 } from '../types';
 
 export const buildStartedMessage = (
-  chargingStation: ChargingStation
+  chargingStation: ChargingStation,
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     id: ChargingStationWorkerMessageEvents.started,
@@ -22,7 +22,7 @@ export const buildStartedMessage = (
 };
 
 export const buildStoppedMessage = (
-  chargingStation: ChargingStation
+  chargingStation: ChargingStation,
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     id: ChargingStationWorkerMessageEvents.stopped,
@@ -31,7 +31,7 @@ export const buildStoppedMessage = (
 };
 
 export const buildUpdatedMessage = (
-  chargingStation: ChargingStation
+  chargingStation: ChargingStation,
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     id: ChargingStationWorkerMessageEvents.updated,
@@ -40,7 +40,7 @@ export const buildUpdatedMessage = (
 };
 
 export const buildPerformanceStatisticsMessage = (
-  statistics: Statistics
+  statistics: Statistics,
 ): ChargingStationWorkerMessage<Statistics> => {
   return {
     id: ChargingStationWorkerMessageEvents.performanceStatistics,

@@ -44,7 +44,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeRequest>(
           'assets/json-schemas/ocpp/1.6/Authorize.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -52,7 +52,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationRequest>(
           'assets/json-schemas/ocpp/1.6/BootNotification.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -60,7 +60,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationRequest>(
           'assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotification.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -68,7 +68,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatRequest>(
           'assets/json-schemas/ocpp/1.6/Heartbeat.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -76,7 +76,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesRequest>(
           'assets/json-schemas/ocpp/1.6/MeterValues.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -84,7 +84,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationRequest>(
           'assets/json-schemas/ocpp/1.6/StatusNotification.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -92,7 +92,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionRequest>(
           'assets/json-schemas/ocpp/1.6/StartTransaction.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -100,7 +100,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionRequest>(
           'assets/json-schemas/ocpp/1.6/StopTransaction.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -108,7 +108,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
           'assets/json-schemas/ocpp/1.6/DataTransfer.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -116,14 +116,14 @@ export class OCPP16RequestService extends OCPPRequestService {
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationRequest>(
           'assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
     ]);
     this.buildRequestPayload = this.buildRequestPayload.bind(this) as <Request extends JsonType>(
       chargingStation: ChargingStation,
       commandName: OCPP16RequestCommand,
-      commandParams?: JsonType
+      commandParams?: JsonType,
     ) => Request;
   }
 
@@ -131,7 +131,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType,
-    params?: RequestParams
+    params?: RequestParams,
   ): Promise<ResponseType> {
     // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName) === true) {
@@ -140,7 +140,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         generateUUID(),
         this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
         commandName,
-        params
+        params,
       )) as ResponseType;
     }
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
@@ -148,14 +148,14 @@ export class OCPP16RequestService extends OCPPRequestService {
       ErrorType.NOT_SUPPORTED,
       `Unsupported OCPP command '${commandName}'`,
       commandName,
-      commandParams
+      commandParams,
     );
   }
 
   private buildRequestPayload<Request extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
-    commandParams?: JsonType
+    commandParams?: JsonType,
   ): Request {
     let connectorId: number;
     let energyActiveImportRegister: number;
@@ -180,7 +180,7 @@ export class OCPP16RequestService extends OCPPRequestService {
           idTag: Constants.DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
             commandParams?.connectorId as number,
-            true
+            true,
           ),
           timestamp: new Date(),
           ...commandParams,
@@ -188,11 +188,11 @@ export class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.getTransactionDataMeterValues() &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
-            commandParams?.transactionId as number
+            commandParams?.transactionId as number,
           ));
         energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
           commandParams?.transactionId as number,
-          true
+          true,
         );
         return {
           idTag: chargingStation.getTransactionIdTag(commandParams?.transactionId as number),
@@ -204,8 +204,8 @@ export class OCPP16RequestService extends OCPPRequestService {
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
                 connectorId,
-                energyActiveImportRegister
-              )
+                energyActiveImportRegister,
+              ),
             ),
           }),
           ...commandParams,
@@ -217,7 +217,7 @@ export class OCPP16RequestService extends OCPPRequestService {
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `Unsupported OCPP command '${commandName}'`,
           commandName,
-          commandParams
+          commandParams,
         );
     }
   }

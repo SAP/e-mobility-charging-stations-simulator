@@ -16,7 +16,7 @@ export const generateUUID = (): string => {
 
 export const validateUUID = (uuid: string): boolean => {
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-    uuid
+    uuid,
   );
 };
 
@@ -50,7 +50,7 @@ export const formatDurationSeconds = (duration: number): string => {
 };
 
 export const convertToDate = (
-  value: Date | string | number | null | undefined
+  value: Date | string | number | null | undefined,
 ): Date | null | undefined => {
   if (isNullOrUndefined(value)) {
     return value as null | undefined;
@@ -155,11 +155,11 @@ export const getRandomFloatRounded = (max = Number.MAX_VALUE, min = 0, scale = 2
 export const getRandomFloatFluctuatedRounded = (
   staticValue: number,
   fluctuationPercent: number,
-  scale = 2
+  scale = 2,
 ): number => {
   if (fluctuationPercent < 0 || fluctuationPercent > 100) {
     throw new RangeError(
-      `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent}`
+      `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent}`,
     );
   }
   if (fluctuationPercent === 0) {
@@ -169,7 +169,7 @@ export const getRandomFloatFluctuatedRounded = (
   return getRandomFloatRounded(
     staticValue * (1 + fluctuationRatio),
     staticValue * (1 - fluctuationRatio),
-    scale
+    scale,
   );
 };
 
@@ -265,7 +265,7 @@ export const promiseWithTimeout = async <T>(
   timeoutError: Error,
   timeoutCallback: () => void = () => {
     /* This is intentional */
-  }
+  },
 ): Promise<T> => {
   // Create a timeout promise that rejects in timeout milliseconds
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -293,7 +293,7 @@ export const secureRandom = (): number => {
 
 export const JSONStringifyWithMapSupport = (
   obj: Record<string, unknown> | Record<string, unknown>[] | Map<unknown, unknown>,
-  space?: number
+  space?: number,
 ): string => {
   return JSON.stringify(
     obj,
@@ -306,7 +306,7 @@ export const JSONStringifyWithMapSupport = (
       }
       return value;
     },
-    space
+    space,
   );
 };
 

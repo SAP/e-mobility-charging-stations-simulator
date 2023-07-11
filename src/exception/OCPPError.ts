@@ -18,7 +18,7 @@ export class OCPPError extends BaseError {
     code: ErrorType,
     message: string,
     command?: RequestCommand | IncomingRequestCommand,
-    details?: JsonType
+    details?: JsonType,
   ) {
     super(message);
 

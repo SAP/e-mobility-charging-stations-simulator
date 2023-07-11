@@ -30,7 +30,7 @@ class ChargingStationWorker extends AsyncResource {
         this.runInAsyncScope(
           startChargingStation.bind(this) as (data: ChargingStationWorkerData) => void,
           this,
-          message.data
+          message.data,
         );
       }
     });

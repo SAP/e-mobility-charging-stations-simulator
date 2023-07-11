@@ -26,7 +26,7 @@ if (config && config.mongoConnectionString) {
       console.info(
         response.modifiedCount,
         `Charging Stations with id = %${config.idPattern}% updated. TenantID =`,
-        tenantID
+        tenantID,
       );
     }
     client.close();

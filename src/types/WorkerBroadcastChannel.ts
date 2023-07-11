@@ -3,7 +3,7 @@ import type { RequestPayload, ResponsePayload } from './UIProtocol';
 export type BroadcastChannelRequest = [
   string,
   BroadcastChannelProcedureName,
-  BroadcastChannelRequestPayload
+  BroadcastChannelRequestPayload,
 ];
 export type BroadcastChannelResponse = [string, BroadcastChannelResponsePayload];
 

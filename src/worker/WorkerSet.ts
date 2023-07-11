@@ -48,7 +48,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       size: this.size,
       elementsExecuting: [...this.workerSet].reduce(
         (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
-        0
+        0,
       ),
       elementsPerWorker: this.maxElementsPerWorker,
     };
@@ -110,11 +110,11 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     });
     worker.on(
       'message',
-      this.workerOptions?.poolOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION
+      this.workerOptions?.poolOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.on(
       'error',
-      this.workerOptions?.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION
+      this.workerOptions?.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.on('error', (error) => {
       if (this.emitter !== undefined) {
@@ -126,14 +126,14 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     });
     worker.on(
       'online',
-      this.workerOptions?.poolOptions?.onlineHandler ?? WorkerConstants.EMPTY_FUNCTION
+      this.workerOptions?.poolOptions?.onlineHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.on(
       'exit',
-      this.workerOptions?.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION
+      this.workerOptions?.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.once('exit', () =>
-      this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker))
+      this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker)),
     );
     const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
     this.workerSet.add(workerSetElement);

@@ -37,15 +37,15 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       chargingStation: ChargingStation,
       messageId: string,
       commandName: IncomingRequestCommand,
-      commandPayload: JsonType
+      commandPayload: JsonType,
     ) => Promise<void>;
     this.validateIncomingRequestPayload = this.validateIncomingRequestPayload.bind(this) as <
-      T extends JsonType
+      T extends JsonType,
     >(
       chargingStation: ChargingStation,
       commandName: IncomingRequestCommand,
       schema: JSONSchemaType<T>,
-      payload: T
+      payload: T,
     ) => boolean;
   }
 
@@ -60,12 +60,12 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
     error: Error,
-    params: HandleErrorParams<T> = { throwError: true, consoleOut: false }
+    params: HandleErrorParams<T> = { throwError: true, consoleOut: false },
   ): T | undefined {
     setDefaultErrorParams(params);
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
-      error
+      error,
     );
     if (!params?.throwError && params?.errorResponse) {
       return params?.errorResponse;
@@ -82,7 +82,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
     schema: JSONSchemaType<T>,
-    payload: T
+    payload: T,
   ): boolean {
     if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
@@ -93,13 +93,13 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Command '${commandName}' incoming request PDU is invalid: %j`,
-      validate.errors
+      validate.errors,
     );
     throw new OCPPError(
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Incoming request PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, null, 2)
+      JSON.stringify(validate.errors, null, 2),
     );
   }
 
@@ -114,6 +114,6 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     chargingStation: ChargingStation,
     messageId: string,
     commandName: IncomingRequestCommand,
-    commandPayload: JsonType
+    commandPayload: JsonType,
   ): Promise<void>;
 }

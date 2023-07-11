@@ -14,7 +14,7 @@ export class ChargingStationConfigurationUtils {
   public static getConfigurationKey(
     chargingStation: ChargingStation,
     key: ConfigurationKeyType,
-    caseInsensitive = false
+    caseInsensitive = false,
   ): ConfigurationKey | undefined {
     return chargingStation.ocppConfiguration?.configurationKey?.find((configElement) => {
       if (caseInsensitive) {
@@ -33,7 +33,7 @@ export class ChargingStationConfigurationUtils {
       visible: true,
       reboot: false,
     },
-    params: AddConfigurationKeyParams = { overwrite: false, save: false }
+    params: AddConfigurationKeyParams = { overwrite: false, save: false },
   ): void {
     options = {
       ...{
@@ -63,7 +63,7 @@ export class ChargingStationConfigurationUtils {
     } else {
       logger.error(
         `${chargingStation.logPrefix()} Trying to add an already existing configuration key: %j`,
-        keyFound
+        keyFound,
       );
     }
   }
@@ -72,12 +72,12 @@ export class ChargingStationConfigurationUtils {
     chargingStation: ChargingStation,
     key: ConfigurationKeyType,
     value: string,
-    caseInsensitive = false
+    caseInsensitive = false,
   ): void {
     const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
       key,
-      caseInsensitive
+      caseInsensitive,
     );
     if (keyFound) {
       chargingStation.ocppConfiguration.configurationKey[
@@ -87,7 +87,7 @@ export class ChargingStationConfigurationUtils {
     } else {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
-        { key, value }
+        { key, value },
       );
     }
   }
@@ -95,18 +95,18 @@ export class ChargingStationConfigurationUtils {
   public static deleteConfigurationKey(
     chargingStation: ChargingStation,
     key: ConfigurationKeyType,
-    params: DeleteConfigurationKeyParams = { save: true, caseInsensitive: false }
+    params: DeleteConfigurationKeyParams = { save: true, caseInsensitive: false },
   ): ConfigurationKey[] | undefined {
     params = { ...{ save: true, caseInsensitive: false }, ...params };
     const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
       chargingStation,
       key,
-      params?.caseInsensitive
+      params?.caseInsensitive,
     );
     if (keyFound) {
       const deletedConfigurationKey = chargingStation.ocppConfiguration?.configurationKey?.splice(
         chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound),
-        1
+        1,
       );
       params?.save && chargingStation.saveOcppConfiguration();
       return deletedConfigurationKey;

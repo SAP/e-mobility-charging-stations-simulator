@@ -39,7 +39,7 @@ export class JsonFileStorage extends Storage {
           this.dbName,
           FileType.PerformanceRecords,
           error as NodeJS.ErrnoException,
-          this.logPrefix
+          this.logPrefix,
         );
       })
       .finally(() => {
@@ -60,7 +60,7 @@ export class JsonFileStorage extends Storage {
         this.dbName,
         FileType.PerformanceRecords,
         error as NodeJS.ErrnoException,
-        this.logPrefix
+        this.logPrefix,
       );
     }
   }
@@ -76,7 +76,7 @@ export class JsonFileStorage extends Storage {
         this.dbName,
         FileType.PerformanceRecords,
         error as NodeJS.ErrnoException,
-        this.logPrefix
+        this.logPrefix,
       );
     }
   }
@@ -84,7 +84,7 @@ export class JsonFileStorage extends Storage {
   private checkPerformanceRecordsFile(): void {
     if (!this?.fd) {
       throw new BaseError(
-        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
+        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`,
       );
     }
   }

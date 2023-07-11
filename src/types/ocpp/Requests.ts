@@ -57,7 +57,7 @@ export type CachedRequest = [
   ResponseCallback,
   ErrorCallback,
   RequestCommand | IncomingRequestCommand,
-  JsonType
+  JsonType,
 ];
 
 export const MessageTrigger = {
@@ -83,7 +83,7 @@ export type FirmwareStatusNotificationRequest = OCPP16FirmwareStatusNotification
 
 export type IncomingRequestHandler = (
   chargingStation: ChargingStation,
-  commandPayload: JsonType
+  commandPayload: JsonType,
 ) => JsonType | Promise<JsonType>;
 
 export const AvailabilityType = {

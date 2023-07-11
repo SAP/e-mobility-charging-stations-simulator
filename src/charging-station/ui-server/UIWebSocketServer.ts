@@ -42,8 +42,8 @@ export class UIWebSocketServer extends AbstractUIServer {
         logger.error(
           `${this.logPrefix(
             moduleName,
-            'start.server.onconnection'
-          )} Unsupported UI protocol version: '${ws.protocol}'`
+            'start.server.onconnection',
+          )} Unsupported UI protocol version: '${ws.protocol}'`,
         );
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR);
       }
@@ -74,10 +74,10 @@ export class UIWebSocketServer extends AbstractUIServer {
         logger.debug(
           `${this.logPrefix(
             moduleName,
-            'start.ws.onclose'
+            'start.ws.onclose',
           )} WebSocket closed: '${getWebSocketCloseEventStatusString(
-            code
-          )}' - '${reason.toString()}'`
+            code,
+          )}' - '${reason.toString()}'`,
         );
       });
     });
@@ -103,9 +103,9 @@ export class UIWebSocketServer extends AbstractUIServer {
           logger.error(
             `${this.logPrefix(
               moduleName,
-              'start.httpServer.on.upgrade'
+              'start.httpServer.on.upgrade',
             )} Error at handling connection upgrade:`,
-            error
+            error,
           );
         }
       });
@@ -128,27 +128,25 @@ export class UIWebSocketServer extends AbstractUIServer {
           logger.error(
             `${this.logPrefix(
               moduleName,
-              'sendResponse'
-            )} Error at sending response id '${responseId}', WebSocket is not open: ${
-              ws?.readyState
-            }`
+              'sendResponse',
+            )} Error at sending response id '${responseId}', WebSocket is not open: ${ws?.readyState}`,
           );
         }
       } else {
         logger.error(
           `${this.logPrefix(
             moduleName,
-            'sendResponse'
-          )} Response for unknown request id: ${responseId}`
+            'sendResponse',
+          )} Response for unknown request id: ${responseId}`,
         );
       }
     } catch (error) {
       logger.error(
         `${this.logPrefix(
           moduleName,
-          'sendResponse'
+          'sendResponse',
         )} Error at sending response id '${responseId}':`,
-        error
+        error,
       );
     } finally {
       this.responseHandlers.delete(responseId);
@@ -188,9 +186,9 @@ export class UIWebSocketServer extends AbstractUIServer {
       logger.error(
         `${this.logPrefix(
           moduleName,
-          'validateRawDataRequest'
+          'validateRawDataRequest',
         )} UI protocol request is not an array:`,
-        request
+        request,
       );
       return false;
     }
@@ -198,7 +196,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     if (request.length !== 3) {
       logger.error(
         `${this.logPrefix(moduleName, 'validateRawDataRequest')} UI protocol request is malformed:`,
-        request
+        request,
       );
       return false;
     }
@@ -207,9 +205,9 @@ export class UIWebSocketServer extends AbstractUIServer {
       logger.error(
         `${this.logPrefix(
           moduleName,
-          'validateRawDataRequest'
+          'validateRawDataRequest',
         )} UI protocol request UUID field is invalid:`,
-        request
+        request,
       );
       return false;
     }

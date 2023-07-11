@@ -34,7 +34,7 @@ export const handleFileException = (
   fileType: FileType,
   error: NodeJS.ErrnoException,
   logPrefix: string,
-  params: HandleErrorParams<EmptyObject> = defaultErrorParams
+  params: HandleErrorParams<EmptyObject> = defaultErrorParams,
 ): void => {
   setDefaultErrorParams(params);
   const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
@@ -77,7 +77,7 @@ export const handleSendMessageError = (
   chargingStation: ChargingStation,
   commandName: RequestCommand | IncomingRequestCommand,
   error: Error,
-  params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
+  params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false },
 ): void => {
   setDefaultErrorParams(params, { throwError: false, consoleOut: false });
   logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error);
@@ -88,7 +88,7 @@ export const handleSendMessageError = (
 
 export const setDefaultErrorParams = <T extends JsonType>(
   params: HandleErrorParams<T>,
-  defaultParams: HandleErrorParams<T> = defaultErrorParams
+  defaultParams: HandleErrorParams<T> = defaultErrorParams,
 ): HandleErrorParams<T> => {
   params = { ...defaultParams, ...params };
   return params;

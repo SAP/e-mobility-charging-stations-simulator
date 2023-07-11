@@ -50,7 +50,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
           'assets/json-schemas/ocpp/2.0/BootNotificationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -58,7 +58,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
           'assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
       [
@@ -66,7 +66,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
           'assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
     ]);
@@ -76,14 +76,14 @@ export class OCPP20ResponseService extends OCPPResponseService {
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
           'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
           moduleName,
-          'constructor'
+          'constructor',
         ),
       ],
     ]);
     this.validatePayload = this.validatePayload.bind(this) as (
       chargingStation: ChargingStation,
       commandName: OCPP20RequestCommand,
-      payload: JsonType
+      payload: JsonType,
     ) => boolean;
   }
 
@@ -91,7 +91,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
     payload: JsonType,
-    requestPayload: JsonType
+    requestPayload: JsonType,
   ): Promise<void> {
     if (
       chargingStation.isRegistered() === true ||
@@ -107,7 +107,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         } catch (error) {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
-            error
+            error,
           );
           throw error;
         }
@@ -118,10 +118,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
           `${commandName} is not implemented to handle response PDU ${JSON.stringify(
             payload,
             null,
-            2
+            2,
           )}`,
           commandName,
-          payload
+          payload,
         );
       }
     } else {
@@ -130,10 +130,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
         `${commandName} cannot be issued to handle response PDU ${JSON.stringify(
           payload,
           null,
-          2
+          2,
         )} while the charging station is not registered on the central server.`,
         commandName,
-        payload
+        payload,
       );
     }
   }
@@ -141,25 +141,25 @@ export class OCPP20ResponseService extends OCPPResponseService {
   private validatePayload(
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
-    payload: JsonType
+    payload: JsonType,
   ): boolean {
     if (this.jsonSchemas.has(commandName) === true) {
       return this.validateResponsePayload(
         chargingStation,
         commandName,
         this.jsonSchemas.get(commandName),
-        payload
+        payload,
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`,
     );
     return false;
   }
 
   private handleResponseBootNotification(
     chargingStation: ChargingStation,
-    payload: OCPP20BootNotificationResponse
+    payload: OCPP20BootNotificationResponse,
   ): void {
     if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
       ChargingStationConfigurationUtils.addConfigurationKey(
@@ -167,7 +167,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         OCPP20OptionalVariableName.HeartbeatInterval,
         payload.interval.toString(),
         {},
-        { overwrite: true, save: true }
+        { overwrite: true, save: true },
       );
       OCPP20ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval);
     }
@@ -181,7 +181,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     } else {
       logger.error(
         `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
-        payload
+        payload,
       );
     }
   }

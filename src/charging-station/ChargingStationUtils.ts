@@ -51,7 +51,7 @@ const moduleName = 'ChargingStationUtils';
 
 export const getChargingStationId = (
   index: number,
-  stationTemplate: ChargingStationTemplate
+  stationTemplate: ChargingStationTemplate,
 ): string => {
   // In case of multiple instances: add instance index to charging station id
   const instanceIndex = process.env.CF_INSTANCE_INDEX ?? 0;
@@ -60,7 +60,7 @@ export const getChargingStationId = (
   return stationTemplate?.fixedName
     ? stationTemplate.baseName
     : `${stationTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
-        idStr.length - 4
+        idStr.length - 4,
       )}${idSuffix}`;
 };
 
@@ -101,7 +101,7 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
 
 export const checkChargingStation = (
   chargingStation: ChargingStation,
-  logPrefix: string
+  logPrefix: string,
 ): boolean => {
   if (chargingStation.started === false && chargingStation.starting === false) {
     logger.warn(`${logPrefix} charging station is stopped, cannot proceed`);
@@ -112,7 +112,7 @@ export const checkChargingStation = (
 
 export const getPhaseRotationValue = (
   connectorId: number,
-  numberOfPhases: number
+  numberOfPhases: number,
 ): string | undefined => {
   // AC/DC
   if (connectorId === 0 && numberOfPhases === 0) {
@@ -144,7 +144,7 @@ const getMaxNumberOfConnectors = (connectors: Record<string, ConnectorStatus>): 
 export const getBootConnectorStatus = (
   chargingStation: ChargingStation,
   connectorId: number,
-  connectorStatus: ConnectorStatus
+  connectorStatus: ConnectorStatus,
 ): ConnectorStatusEnum => {
   let connectorBootStatus: ConnectorStatusEnum;
   if (
@@ -169,7 +169,7 @@ export const getBootConnectorStatus = (
 export const checkTemplate = (
   stationTemplate: ChargingStationTemplate,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ): void => {
   if (isNullOrUndefined(stationTemplate)) {
     const errorMsg = `Failed to read charging station template file ${templateFile}`;
@@ -185,12 +185,12 @@ export const checkTemplate = (
     stationTemplate.AutomaticTransactionGenerator = Constants.DEFAULT_ATG_CONFIGURATION;
     logger.warn(
       `${logPrefix} Empty automatic transaction generator configuration from template file ${templateFile}, set to default: %j`,
-      Constants.DEFAULT_ATG_CONFIGURATION
+      Constants.DEFAULT_ATG_CONFIGURATION,
     );
   }
   if (isNullOrUndefined(stationTemplate.idTagsFile) || isEmptyString(stationTemplate.idTagsFile)) {
     logger.warn(
-      `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
+      `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`,
     );
   }
 };
@@ -198,7 +198,7 @@ export const checkTemplate = (
 export const checkConnectorsConfiguration = (
   stationTemplate: ChargingStationTemplate,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ): {
   configuredMaxConnectors: number;
   templateMaxConnectors: number;
@@ -216,7 +216,7 @@ export const checkConnectorsConfiguration = (
     !stationTemplate?.randomConnectors
   ) {
     logger.warn(
-      `${logPrefix} Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`
+      `${logPrefix} Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`,
     );
     stationTemplate.randomConnectors = true;
   }
@@ -227,11 +227,11 @@ export const checkStationInfoConnectorStatus = (
   connectorId: number,
   connectorStatus: ConnectorStatus,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ): void => {
   if (!isNullOrUndefined(connectorStatus?.status)) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId} status configuration defined, undefine it`
+      `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId} status configuration defined, undefine it`,
     );
     delete connectorStatus.status;
   }
@@ -240,7 +240,7 @@ export const checkStationInfoConnectorStatus = (
 export const buildConnectorsMap = (
   connectors: Record<string, ConnectorStatus>,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ): Map<number, ConnectorStatus> => {
   const connectorsMap = new Map<number, ConnectorStatus>();
   if (getMaxNumberOfConnectors(connectors) > 0) {
@@ -252,7 +252,7 @@ export const buildConnectorsMap = (
     }
   } else {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
+      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`,
     );
   }
   return connectorsMap;
@@ -260,14 +260,14 @@ export const buildConnectorsMap = (
 
 export const initializeConnectorsMapStatus = (
   connectors: Map<number, ConnectorStatus>,
-  logPrefix: string
+  logPrefix: string,
 ): void => {
   for (const connectorId of connectors.keys()) {
     if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
       logger.warn(
-        `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${
-          connectors.get(connectorId)?.transactionId
-        }`
+        `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${connectors.get(
+          connectorId,
+        )?.transactionId}`,
       );
     }
     if (connectorId === 0) {
@@ -299,7 +299,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => 
 
 export const createBootNotificationRequest = (
   stationInfo: ChargingStationInfo,
-  bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp
+  bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp,
 ): BootNotificationRequest => {
   const ocppVersion = stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
   switch (ocppVersion) {
@@ -352,7 +352,7 @@ export const createBootNotificationRequest = (
 export const warnTemplateKeysDeprecation = (
   stationTemplate: ChargingStationTemplate,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ) => {
   const templateKeys: { key: string; deprecatedKey: string }[] = [
     { key: 'supervisionUrls', deprecatedKey: 'supervisionUrl' },
@@ -364,14 +364,14 @@ export const warnTemplateKeysDeprecation = (
       templateKey.deprecatedKey,
       logPrefix,
       templateFile,
-      `Use '${templateKey.key}' instead`
+      `Use '${templateKey.key}' instead`,
     );
     convertDeprecatedTemplateKey(stationTemplate, templateKey.deprecatedKey, templateKey.key);
   }
 };
 
 export const stationTemplateToStationInfo = (
-  stationTemplate: ChargingStationTemplate
+  stationTemplate: ChargingStationTemplate,
 ): ChargingStationInfo => {
   stationTemplate = cloneObject<ChargingStationTemplate>(stationTemplate);
   delete stationTemplate.power;
@@ -395,7 +395,7 @@ export const createSerialNumber = (
   } = {
     randomSerialNumberUpperCase: true,
     randomSerialNumber: true,
-  }
+  },
 ): void => {
   params = { ...{ randomSerialNumberUpperCase: true, randomSerialNumber: true }, ...params };
   const serialNumberSuffix = params?.randomSerialNumber
@@ -414,11 +414,11 @@ export const createSerialNumber = (
 export const propagateSerialNumber = (
   stationTemplate: ChargingStationTemplate,
   stationInfoSrc: ChargingStationInfo,
-  stationInfoDst: ChargingStationInfo
+  stationInfoDst: ChargingStationInfo,
 ) => {
   if (!stationInfoSrc || !stationTemplate) {
     throw new BaseError(
-      'Missing charging station template or existing configuration to propagate serial number'
+      'Missing charging station template or existing configuration to propagate serial number',
     );
   }
   stationTemplate?.chargePointSerialNumberPrefix && stationInfoSrc?.chargePointSerialNumber
@@ -450,20 +450,20 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
 
 export const getChargingStationConnectorChargingProfilesPowerLimit = (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
 ): number | undefined => {
   let limit: number, matchingChargingProfile: ChargingProfile;
   // Get charging profiles for connector and sort by stack level
   const chargingProfiles =
     cloneObject<ChargingProfile[]>(
-      chargingStation.getConnectorStatus(connectorId)?.chargingProfiles
+      chargingStation.getConnectorStatus(connectorId)?.chargingProfiles,
     )?.sort((a, b) => b.stackLevel - a.stackLevel) ?? [];
   // Get profiles on connector 0
   if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
     chargingProfiles.push(
       ...cloneObject<ChargingProfile[]>(
-        chargingStation.getConnectorStatus(0).chargingProfiles
-      ).sort((a, b) => b.stackLevel - a.stackLevel)
+        chargingStation.getConnectorStatus(0).chargingProfiles,
+      ).sort((a, b) => b.stackLevel - a.stackLevel),
     );
   }
   if (isNotEmptyArray(chargingProfiles)) {
@@ -479,7 +479,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
               : ACElectricUtils.powerTotal(
                   chargingStation.getNumberOfPhases(),
                   chargingStation.getVoltageOut(),
-                  limit
+                  limit,
                 );
           break;
         case CurrentType.DC:
@@ -495,7 +495,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
           `${chargingStation.logPrefix()} Charging profile id ${
             matchingChargingProfile.chargingProfileId
           } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
-          result
+          result,
         );
         limit = connectorMaximumPower;
       }
@@ -507,7 +507,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
 export const getDefaultVoltageOut = (
   currentType: CurrentType,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ): Voltage => {
   const errorMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
   let defaultVoltageOut: number;
@@ -535,7 +535,7 @@ export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefi
 export const waitChargingStationEvents = async (
   emitter: EventEmitter,
   event: ChargingStationWorkerMessageEvents,
-  eventsToWait: number
+  eventsToWait: number,
 ): Promise<number> => {
   return new Promise((resolve) => {
     let events = 0;
@@ -578,11 +578,11 @@ const getConfiguredNumberOfConnectors = (stationTemplate: ChargingStationTemplat
 const checkConfiguredMaxConnectors = (
   configuredMaxConnectors: number,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ): void => {
   if (configuredMaxConnectors <= 0) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`
+      `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`,
     );
   }
 };
@@ -590,15 +590,15 @@ const checkConfiguredMaxConnectors = (
 const checkTemplateMaxConnectors = (
   templateMaxConnectors: number,
   logPrefix: string,
-  templateFile: string
+  templateFile: string,
 ): void => {
   if (templateMaxConnectors === 0) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`
+      `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`,
     );
   } else if (templateMaxConnectors < 0) {
     logger.error(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`
+      `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`,
     );
   }
 };
@@ -621,7 +621,7 @@ const warnDeprecatedTemplateKey = (
   key: string,
   logPrefix: string,
   templateFile: string,
-  logMsgToAppend = ''
+  logMsgToAppend = '',
 ): void => {
   if (!isUndefined(template[key])) {
     const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
@@ -635,7 +635,7 @@ const warnDeprecatedTemplateKey = (
 const convertDeprecatedTemplateKey = (
   template: ChargingStationTemplate,
   deprecatedKey: string,
-  key: string
+  key: string,
 ): void => {
   if (!isUndefined(template[deprecatedKey])) {
     template[key] = template[deprecatedKey] as unknown;
@@ -652,7 +652,7 @@ const convertDeprecatedTemplateKey = (
  */
 const getLimitFromChargingProfiles = (
   chargingProfiles: ChargingProfile[],
-  logPrefix: string
+  logPrefix: string,
 ): {
   limit: number;
   matchingChargingProfile: ChargingProfile;
@@ -665,7 +665,7 @@ const getLimitFromChargingProfiles = (
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (!chargingSchedule?.startSchedule) {
       logger.warn(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}`
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}`,
       );
     }
     // Check type (recurring) and if it is already active
@@ -677,14 +677,14 @@ const getLimitFromChargingProfiles = (
     ) {
       if (!(chargingSchedule?.startSchedule instanceof Date)) {
         logger.warn(
-          `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`
+          `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
         );
         chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule);
       }
       chargingSchedule.startSchedule.setFullYear(
         currentDate.getFullYear(),
         currentDate.getMonth(),
-        currentDate.getDate()
+        currentDate.getDate(),
       );
       // Check if the start of the schedule is yesterday
       if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {

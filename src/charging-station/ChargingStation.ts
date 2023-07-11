@@ -215,15 +215,15 @@ export class ChargingStation {
         isNotEmptyString(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
-            this.getSupervisionUrlOcppKey()
-          )?.value
+            this.getSupervisionUrlOcppKey(),
+          )?.value,
         )
           ? ChargingStationConfigurationUtils.getConfigurationKey(
               this,
-              this.getSupervisionUrlOcppKey()
+              this.getSupervisionUrlOcppKey(),
             ).value
           : this.configuredSupervisionUrl.href
-      }/${this.stationInfo.chargingStationId}`
+      }/${this.stationInfo.chargingStationId}`,
     );
   }
 
@@ -234,7 +234,7 @@ export class ChargingStation {
           ? this?.stationInfo?.chargingStationId
           : getChargingStationId(this.index, this.getTemplateFromFile())) ??
         'Error at building log prefix'
-      } |`
+      } |`,
     );
   };
 
@@ -355,7 +355,7 @@ export class ChargingStation {
     const defaultVoltageOut = getDefaultVoltageOut(
       this.getCurrentOutType(stationInfo),
       this.logPrefix(),
-      this.templateFile
+      this.templateFile,
     );
     return (stationInfo ?? this.stationInfo).voltageOut ?? defaultVoltageOut;
   }
@@ -377,7 +377,7 @@ export class ChargingStation {
               this.getNumberOfPhases(),
               this.getVoltageOut(),
               this.getAmperageLimitation() *
-                (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
+                (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()),
             )
           : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation())) /
         this.powerDivider;
@@ -390,7 +390,7 @@ export class ChargingStation {
       isNaN(connectorAmperageLimitationPowerLimit)
         ? Infinity
         : connectorAmperageLimitationPowerLimit,
-      isNaN(connectorChargingProfilesPowerLimit) ? Infinity : connectorChargingProfilesPowerLimit
+      isNaN(connectorChargingProfilesPowerLimit) ? Infinity : connectorChargingProfilesPowerLimit,
     );
   }
 
@@ -483,11 +483,11 @@ export class ChargingStation {
 
   public getEnergyActiveImportRegisterByTransactionId(
     transactionId: number,
-    rounded = false
+    rounded = false,
   ): number {
     return this.getEnergyActiveImportRegister(
       this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)),
-      rounded
+      rounded,
     );
   }
 
@@ -498,7 +498,7 @@ export class ChargingStation {
   public getAuthorizeRemoteTxRequests(): boolean {
     const authorizeRemoteTxRequests = ChargingStationConfigurationUtils.getConfigurationKey(
       this,
-      StandardParametersKey.AuthorizeRemoteTxRequests
+      StandardParametersKey.AuthorizeRemoteTxRequests,
     );
     return authorizeRemoteTxRequests ? convertToBoolean(authorizeRemoteTxRequests.value) : false;
   }
@@ -506,7 +506,7 @@ export class ChargingStation {
   public getLocalAuthListEnabled(): boolean {
     const localAuthListEnabled = ChargingStationConfigurationUtils.getConfigurationKey(
       this,
-      StandardParametersKey.LocalAuthListEnabled
+      StandardParametersKey.LocalAuthListEnabled,
     );
     return localAuthListEnabled ? convertToBoolean(localAuthListEnabled.value) : false;
   }
@@ -514,14 +514,14 @@ export class ChargingStation {
   public getHeartbeatInterval(): number {
     const HeartbeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
       this,
-      StandardParametersKey.HeartbeatInterval
+      StandardParametersKey.HeartbeatInterval,
     );
     if (HeartbeatInterval) {
       return convertToInt(HeartbeatInterval.value) * 1000;
     }
     const HeartBeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
       this,
-      StandardParametersKey.HeartBeatInterval
+      StandardParametersKey.HeartBeatInterval,
     );
     if (HeartBeatInterval) {
       return convertToInt(HeartBeatInterval.value) * 1000;
@@ -530,7 +530,7 @@ export class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${
           Constants.DEFAULT_HEARTBEAT_INTERVAL
-        }`
+        }`,
       );
     return Constants.DEFAULT_HEARTBEAT_INTERVAL;
   }
@@ -543,7 +543,7 @@ export class ChargingStation {
       ChargingStationConfigurationUtils.setConfigurationKeyValue(
         this,
         this.getSupervisionUrlOcppKey(),
-        url
+        url,
       );
     } else {
       this.stationInfo.supervisionUrls = url;
@@ -560,25 +560,25 @@ export class ChargingStation {
           .catch((error) => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
-              error
+              error,
             );
           });
       }, this.getHeartbeatInterval());
       logger.info(
         `${this.logPrefix()} Heartbeat started every ${formatDurationMilliSeconds(
-          this.getHeartbeatInterval()
-        )}`
+          this.getHeartbeatInterval(),
+        )}`,
       );
     } else if (this.heartbeatSetInterval) {
       logger.info(
         `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
-          this.getHeartbeatInterval()
-        )}`
+          this.getHeartbeatInterval(),
+        )}`,
       );
     } else {
       logger.error(
         `${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval()},
-          not starting the heartbeat`
+          not starting the heartbeat`,
       );
     }
   }
@@ -600,21 +600,21 @@ export class ChargingStation {
   public startMeterValues(connectorId: number, interval: number): void {
     if (connectorId === 0) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`,
       );
       return;
     }
     if (!this.getConnectorStatus(connectorId)) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on non existing connector id
-          ${connectorId.toString()}`
+          ${connectorId.toString()}`,
       );
       return;
     }
     if (this.getConnectorStatus(connectorId)?.transactionStarted === false) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}
-          with no transaction started`
+          with no transaction started`,
       );
       return;
     } else if (
@@ -623,7 +623,7 @@ export class ChargingStation {
     ) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}
-          with no transaction id`
+          with no transaction id`,
       );
       return;
     }
@@ -634,7 +634,7 @@ export class ChargingStation {
           this,
           connectorId,
           this.getConnectorStatus(connectorId).transactionId,
-          interval
+          interval,
         );
         this.ocppRequestService
           .requestHandler<MeterValuesRequest, MeterValuesResponse>(
@@ -644,12 +644,12 @@ export class ChargingStation {
               connectorId,
               transactionId: this.getConnectorStatus(connectorId)?.transactionId,
               meterValue: [meterValue],
-            }
+            },
           )
           .catch((error) => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
-              error
+              error,
             );
           });
       }, interval);
@@ -657,7 +657,7 @@ export class ChargingStation {
       logger.error(
         `${this.logPrefix()} Charging station ${
           StandardParametersKey.MeterValueSampleInterval
-        } configuration set to ${interval}, not sending MeterValues`
+        } configuration set to ${interval}, not sending MeterValues`,
       );
     }
   }
@@ -691,7 +691,7 @@ export class ChargingStation {
                 logger.debug(
                   `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
                     this.templateFile
-                  } file have changed, reload`
+                  } file have changed, reload`,
                 );
                 this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
                 // Initialize
@@ -711,11 +711,11 @@ export class ChargingStation {
               } catch (error) {
                 logger.error(
                   `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
-                  error
+                  error,
                 );
               }
             }
-          }
+          },
         );
         this.started = true;
         parentPort?.postMessage(buildStartedMessage(this));
@@ -769,7 +769,7 @@ export class ChargingStation {
   public hasFeatureProfile(featureProfile: SupportedFeatureProfiles): boolean | undefined {
     return ChargingStationConfigurationUtils.getConfigurationKey(
       this,
-      StandardParametersKey.SupportedFeatureProfiles
+      StandardParametersKey.SupportedFeatureProfiles,
     )?.value?.includes(featureProfile);
   }
 
@@ -782,14 +782,14 @@ export class ChargingStation {
     params: { closeOpened?: boolean; terminateOpened?: boolean } = {
       closeOpened: false,
       terminateOpened: false,
-    }
+    },
   ): void {
     options = { handshakeTimeout: this.getConnectionTimeout() * 1000, ...options };
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
     if (this.started === false && this.starting === false) {
       logger.warn(
         `${this.logPrefix()} Cannot open OCPP connection to URL ${this.wsConnectionUrl.toString()}
-          on stopped charging station`
+          on stopped charging station`,
       );
       return;
     }
@@ -809,35 +809,35 @@ export class ChargingStation {
     if (this.isWebSocketConnectionOpened() === true) {
       logger.warn(
         `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.toString()}
-          is already opened`
+          is already opened`,
       );
       return;
     }
 
     logger.info(
-      `${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.toString()}`
+      `${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.toString()}`,
     );
 
     this.wsConnection = new WebSocket(
       this.wsConnectionUrl,
       `ocpp${this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16}`,
-      options
+      options,
     );
 
     // Handle WebSocket message
     this.wsConnection.on(
       'message',
-      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
+      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void,
     );
     // Handle WebSocket error
     this.wsConnection.on(
       'error',
-      this.onError.bind(this) as (this: WebSocket, error: Error) => void
+      this.onError.bind(this) as (this: WebSocket, error: Error) => void,
     );
     // Handle WebSocket close
     this.wsConnection.on(
       'close',
-      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
+      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void,
     );
     // Handle WebSocket open
     this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void);
@@ -909,7 +909,7 @@ export class ChargingStation {
 
   public async stopTransactionOnConnector(
     connectorId: number,
-    reason = StopTransactionReason.NONE
+    reason = StopTransactionReason.NONE,
   ): Promise<StopTransactionResponse> {
     const transactionId = this.getConnectorStatus(connectorId)?.transactionId;
     if (
@@ -921,7 +921,7 @@ export class ChargingStation {
       const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
         this,
         connectorId,
-        this.getEnergyActiveImportRegisterByTransactionId(transactionId)
+        this.getEnergyActiveImportRegisterByTransactionId(transactionId),
       );
       await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
         this,
@@ -930,7 +930,7 @@ export class ChargingStation {
           connectorId,
           transactionId,
           meterValue: [transactionEndMeterValue],
-        }
+        },
       );
     }
     return this.ocppRequestService.requestHandler<StopTransactionRequest, StopTransactionResponse>(
@@ -940,7 +940,7 @@ export class ChargingStation {
         transactionId,
         meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
         reason,
-      }
+      },
     );
   }
 
@@ -948,8 +948,8 @@ export class ChargingStation {
     return convertToBoolean(
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.ReserveConnectorZeroSupported
-      ).value
+        StandardParametersKey.ReserveConnectorZeroSupported,
+      ).value,
     );
   }
 
@@ -964,13 +964,13 @@ export class ChargingStation {
       reservation.connectorId,
       ConnectorStatusEnum.Reserved,
       null,
-      { send: reservation.connectorId !== 0 }
+      { send: reservation.connectorId !== 0 },
     );
   }
 
   public async removeReservation(
     reservation: Reservation,
-    reason?: ReservationTerminationReason
+    reason?: ReservationTerminationReason,
   ): Promise<void> {
     const connector = this.getConnectorStatus(reservation.connectorId);
     switch (reason) {
@@ -988,7 +988,7 @@ export class ChargingStation {
           reservation.connectorId,
           ConnectorStatusEnum.Available,
           null,
-          { send: reservation.connectorId !== 0 }
+          { send: reservation.connectorId !== 0 },
         );
         delete connector.reservation;
         break;
@@ -999,7 +999,7 @@ export class ChargingStation {
 
   public getReservationBy(
     filterKey: ReservationFilterKey,
-    value: number | string
+    value: number | string,
   ): Reservation | undefined {
     if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
@@ -1021,7 +1021,7 @@ export class ChargingStation {
   public doesReservationExists(reservation: Partial<Reservation>): [boolean, Reservation] {
     const foundReservation = this.getReservationBy(
       ReservationFilterKey.RESERVATION_ID,
-      reservation?.id
+      reservation?.id,
     );
     return isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
   }
@@ -1031,7 +1031,7 @@ export class ChargingStation {
       customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
     logger.info(
       `${this.logPrefix()} Reservation expiration date interval is set to ${interval}
-        and starts on charging station now`
+        and starts on charging station now`,
     );
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     this.reservationExpirationSetInterval = setInterval(async (): Promise<void> => {
@@ -1042,7 +1042,7 @@ export class ChargingStation {
             if (connectorStatus?.reservation?.expiryDate < now) {
               await this.removeReservation(
                 connectorStatus.reservation,
-                ReservationTerminationReason.EXPIRED
+                ReservationTerminationReason.EXPIRED,
               );
             }
           }
@@ -1052,7 +1052,7 @@ export class ChargingStation {
           if (connectorStatus?.reservation?.expiryDate < now) {
             await this.removeReservation(
               connectorStatus.reservation,
-              ReservationTerminationReason.EXPIRED
+              ReservationTerminationReason.EXPIRED,
             );
           }
         }
@@ -1072,14 +1072,14 @@ export class ChargingStation {
   public isConnectorReservable(
     reservationId: number,
     idTag?: string,
-    connectorId?: number
+    connectorId?: number,
   ): boolean {
     const [alreadyExists] = this.doesReservationExists({ id: reservationId });
     if (alreadyExists) {
       return alreadyExists;
     }
     const userReservedAlready = isUndefined(
-      this.getReservationBy(ReservationFilterKey.ID_TAG, idTag)
+      this.getReservationBy(ReservationFilterKey.ID_TAG, idTag),
     )
       ? false
       : true;
@@ -1125,8 +1125,8 @@ export class ChargingStation {
         isRequest && PerformanceStatistics.endMeasure(commandName, beginId);
         logger.debug(
           `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
-            messageType
-          )} payload sent: ${message}`
+            messageType,
+          )} payload sent: ${message}`,
         );
         this.messageBuffer.delete(message);
       }
@@ -1168,7 +1168,7 @@ export class ChargingStation {
         this.templateFile,
         FileType.ChargingStationTemplate,
         error as NodeJS.ErrnoException,
-        this.logPrefix()
+        this.logPrefix(),
       );
     }
     return template;
@@ -1209,7 +1209,7 @@ export class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Firmware version '${stationInfo.firmwareVersion}' in template file ${
           this.templateFile
-        } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
+        } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`,
       );
     }
     stationInfo.firmwareUpgrade = merge<FirmwareUpgrade>(
@@ -1219,7 +1219,7 @@ export class ChargingStation {
         },
         reset: true,
       },
-      stationTemplate?.firmwareUpgrade ?? {}
+      stationTemplate?.firmwareUpgrade ?? {},
     );
     stationInfo.resetTime = !isNullOrUndefined(stationTemplate?.resetTime)
       ? stationTemplate.resetTime * 1000
@@ -1252,7 +1252,7 @@ export class ChargingStation {
       propagateSerialNumber(
         this.getTemplateFromFile(),
         stationInfoFromFile,
-        stationInfoFromTemplate
+        stationInfoFromTemplate,
       );
     return stationInfoFromTemplate;
   }
@@ -1287,7 +1287,7 @@ export class ChargingStation {
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     this.configurationFile = join(
       dirname(this.templateFile.replace('station-templates', 'configurations')),
-      `${getHashId(this.index, stationTemplate)}.json`
+      `${getHashId(this.index, stationTemplate)}.json`,
     );
     const chargingStationConfiguration = this.getConfigurationFromFile();
     if (
@@ -1323,7 +1323,7 @@ export class ChargingStation {
       this.performanceStatistics = PerformanceStatistics.getInstance(
         this.stationInfo.hashId,
         this.stationInfo.chargingStationId,
-        this.configuredSupervisionUrl
+        this.configuredSupervisionUrl,
       );
     }
     this.bootNotificationRequest = createBootNotificationRequest(this.stationInfo);
@@ -1348,7 +1348,7 @@ export class ChargingStation {
         this.ocppIncomingRequestService =
           OCPP16IncomingRequestService.getInstance<OCPP16IncomingRequestService>();
         this.ocppRequestService = OCPP16RequestService.getInstance<OCPP16RequestService>(
-          OCPP16ResponseService.getInstance<OCPP16ResponseService>()
+          OCPP16ResponseService.getInstance<OCPP16ResponseService>(),
         );
         break;
       case OCPPVersion.VERSION_20:
@@ -1356,7 +1356,7 @@ export class ChargingStation {
         this.ocppIncomingRequestService =
           OCPP20IncomingRequestService.getInstance<OCPP20IncomingRequestService>();
         this.ocppRequestService = OCPP20RequestService.getInstance<OCPP20RequestService>(
-          OCPP20ResponseService.getInstance<OCPP20ResponseService>()
+          OCPP20ResponseService.getInstance<OCPP20ResponseService>(),
         );
         break;
       default:
@@ -1369,26 +1369,26 @@ export class ChargingStation {
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.HeartbeatInterval
+        StandardParametersKey.HeartbeatInterval,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.HeartbeatInterval,
-        '0'
+        '0',
       );
     }
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.HeartBeatInterval
+        StandardParametersKey.HeartBeatInterval,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.HeartBeatInterval,
         '0',
-        { visible: false }
+        { visible: false },
       );
     }
     if (
@@ -1400,7 +1400,7 @@ export class ChargingStation {
         this,
         this.getSupervisionUrlOcppKey(),
         this.configuredSupervisionUrl.href,
-        { reboot: true }
+        { reboot: true },
       );
     } else if (
       !this.getSupervisionUrlOcppConfiguration() &&
@@ -1410,14 +1410,14 @@ export class ChargingStation {
       ChargingStationConfigurationUtils.deleteConfigurationKey(
         this,
         this.getSupervisionUrlOcppKey(),
-        { save: false }
+        { save: false },
       );
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        this.stationInfo.amperageLimitationOcppKey
+        this.stationInfo.amperageLimitationOcppKey,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
@@ -1425,19 +1425,19 @@ export class ChargingStation {
         this.stationInfo.amperageLimitationOcppKey,
         (
           this.stationInfo.maximumAmperage * getAmperageLimitationUnitDivider(this.stationInfo)
-        ).toString()
+        ).toString(),
       );
     }
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.SupportedFeatureProfiles
+        StandardParametersKey.SupportedFeatureProfiles,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.SupportedFeatureProfiles,
-        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.FirmwareManagement},${SupportedFeatureProfiles.LocalAuthListManagement},${SupportedFeatureProfiles.SmartCharging},${SupportedFeatureProfiles.RemoteTrigger}`
+        `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.FirmwareManagement},${SupportedFeatureProfiles.LocalAuthListManagement},${SupportedFeatureProfiles.SmartCharging},${SupportedFeatureProfiles.RemoteTrigger}`,
       );
     }
     ChargingStationConfigurationUtils.addConfigurationKey(
@@ -1445,24 +1445,24 @@ export class ChargingStation {
       StandardParametersKey.NumberOfConnectors,
       this.getNumberOfConnectors().toString(),
       { readonly: true },
-      { overwrite: true }
+      { overwrite: true },
     );
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.MeterValuesSampledData
+        StandardParametersKey.MeterValuesSampledData,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.MeterValuesSampledData,
-        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       );
     }
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.ConnectorPhaseRotation
+        StandardParametersKey.ConnectorPhaseRotation,
       )
     ) {
       const connectorsPhaseRotation: string[] = [];
@@ -1470,61 +1470,61 @@ export class ChargingStation {
         for (const evseStatus of this.evses.values()) {
           for (const connectorId of evseStatus.connectors.keys()) {
             connectorsPhaseRotation.push(
-              getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+              getPhaseRotationValue(connectorId, this.getNumberOfPhases()),
             );
           }
         }
       } else {
         for (const connectorId of this.connectors.keys()) {
           connectorsPhaseRotation.push(
-            getPhaseRotationValue(connectorId, this.getNumberOfPhases())
+            getPhaseRotationValue(connectorId, this.getNumberOfPhases()),
           );
         }
       }
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.ConnectorPhaseRotation,
-        connectorsPhaseRotation.toString()
+        connectorsPhaseRotation.toString(),
       );
     }
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.AuthorizeRemoteTxRequests
+        StandardParametersKey.AuthorizeRemoteTxRequests,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.AuthorizeRemoteTxRequests,
-        'true'
+        'true',
       );
     }
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.LocalAuthListEnabled
+        StandardParametersKey.LocalAuthListEnabled,
       ) &&
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.SupportedFeatureProfiles
+        StandardParametersKey.SupportedFeatureProfiles,
       )?.value?.includes(SupportedFeatureProfiles.LocalAuthListManagement)
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.LocalAuthListEnabled,
-        'false'
+        'false',
       );
     }
     if (
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.ConnectionTimeOut
+        StandardParametersKey.ConnectionTimeOut,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
         StandardParametersKey.ConnectionTimeOut,
-        Constants.DEFAULT_CONNECTION_TIMEOUT.toString()
+        Constants.DEFAULT_CONNECTION_TIMEOUT.toString(),
       );
     }
     this.saveOcppConfiguration();
@@ -1545,7 +1545,7 @@ export class ChargingStation {
             evseStatusConfiguration.connectorsStatus.map((connectorStatus, connectorId) => [
               connectorId,
               connectorStatus,
-            ])
+            ]),
           ),
         });
       }
@@ -1586,7 +1586,7 @@ export class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
-        } with no connector id 0 configuration`
+        } with no connector id 0 configuration`,
       );
     }
     if (stationTemplate?.Connectors) {
@@ -1594,7 +1594,7 @@ export class ChargingStation {
         checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile);
       const connectorsConfigHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
         .update(
-          `${JSON.stringify(stationTemplate?.Connectors)}${configuredMaxConnectors.toString()}`
+          `${JSON.stringify(stationTemplate?.Connectors)}${configuredMaxConnectors.toString()}`,
         )
         .digest('hex');
       const connectorsConfigChanged =
@@ -1620,7 +1620,7 @@ export class ChargingStation {
               templateConnectorId,
               connectorStatus,
               this.logPrefix(),
-              this.templateFile
+              this.templateFile,
             );
             this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus));
           }
@@ -1630,7 +1630,7 @@ export class ChargingStation {
           logger.warn(
             `${this.logPrefix()} Charging station information from template ${
               this.templateFile
-            } with no connectors configuration defined, cannot create connectors`
+            } with no connectors configuration defined, cannot create connectors`,
           );
         }
       }
@@ -1638,7 +1638,7 @@ export class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
-        } with no connectors configuration defined, using already defined connectors`
+        } with no connectors configuration defined, using already defined connectors`,
       );
     }
   }
@@ -1653,14 +1653,14 @@ export class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
-        } with no evse id 0 configuration`
+        } with no evse id 0 configuration`,
       );
     }
     if (!stationTemplate?.Evses[0]?.Connectors[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
-        } with evse id 0 with no connector id 0 configuration`
+        } with evse id 0 with no connector id 0 configuration`,
       );
     }
     if (stationTemplate?.Evses) {
@@ -1680,7 +1680,7 @@ export class ChargingStation {
               connectors: buildConnectorsMap(
                 stationTemplate?.Evses[evse]?.Connectors,
                 this.logPrefix(),
-                this.templateFile
+                this.templateFile,
               ),
               availability: AvailabilityType.Operative,
             });
@@ -1691,7 +1691,7 @@ export class ChargingStation {
           logger.warn(
             `${this.logPrefix()} Charging station information from template ${
               this.templateFile
-            } with no evses configuration defined, cannot create evses`
+            } with no evses configuration defined, cannot create evses`,
           );
         }
       }
@@ -1699,7 +1699,7 @@ export class ChargingStation {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
-        } with no evses configuration defined, using already defined evses`
+        } with no evses configuration defined, using already defined evses`,
       );
     }
   }
@@ -1710,13 +1710,13 @@ export class ChargingStation {
       try {
         if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
           configuration = this.sharedLRUCache.getChargingStationConfiguration(
-            this.configurationFileHash
+            this.configurationFileHash,
           );
         } else {
           const measureId = `${FileType.ChargingStationConfiguration} read`;
           const beginId = PerformanceStatistics.beginMeasure(measureId);
           configuration = JSON.parse(
-            readFileSync(this.configurationFile, 'utf8')
+            readFileSync(this.configurationFile, 'utf8'),
           ) as ChargingStationConfiguration;
           PerformanceStatistics.endMeasure(measureId, beginId);
           this.sharedLRUCache.setChargingStationConfiguration(configuration);
@@ -1727,7 +1727,7 @@ export class ChargingStation {
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,
-          this.logPrefix()
+          this.logPrefix(),
         );
       }
     }
@@ -1768,7 +1768,7 @@ export class ChargingStation {
         }
         configurationData = merge<ChargingStationConfiguration>(
           configurationData,
-          buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
+          buildChargingStationAutomaticTransactionGeneratorConfiguration(this),
         );
         if (
           !this.getAutomaticTransactionGeneratorPersistentConfiguration() ||
@@ -1793,7 +1793,7 @@ export class ChargingStation {
               stationInfo: configurationData.stationInfo,
               configurationKey: configurationData.configurationKey,
               automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
-            } as ChargingStationConfiguration)
+            } as ChargingStationConfiguration),
           )
           .digest('hex');
         if (this.configurationFileHash !== configurationHash) {
@@ -1815,7 +1815,7 @@ export class ChargingStation {
                 this.configurationFile,
                 FileType.ChargingStationConfiguration,
                 error as NodeJS.ErrnoException,
-                this.logPrefix()
+                this.logPrefix(),
               );
             })
             .finally(() => {
@@ -1825,7 +1825,7 @@ export class ChargingStation {
           logger.debug(
             `${this.logPrefix()} Not saving unchanged charging station configuration file ${
               this.configurationFile
-            }`
+            }`,
           );
         }
       } catch (error) {
@@ -1833,12 +1833,12 @@ export class ChargingStation {
           this.configurationFile,
           FileType.ChargingStationConfiguration,
           error as NodeJS.ErrnoException,
-          this.logPrefix()
+          this.logPrefix(),
         );
       }
     } else {
       logger.error(
-        `${this.logPrefix()} Trying to save charging station configuration to undefined configuration file`
+        `${this.logPrefix()} Trying to save charging station configuration to undefined configuration file`,
       );
     }
   }
@@ -1867,7 +1867,7 @@ export class ChargingStation {
   private async onOpen(): Promise<void> {
     if (this.isWebSocketConnectionOpened() === true) {
       logger.info(
-        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`,
       );
       if (this.isRegistered() === false) {
         // Send BootNotification
@@ -1884,7 +1884,7 @@ export class ChargingStation {
             await sleep(
               this?.bootNotificationResponse?.interval
                 ? this.bootNotificationResponse.interval * 1000
-                : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
+                : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL,
             );
           }
         } while (
@@ -1899,7 +1899,7 @@ export class ChargingStation {
         }
       } else {
         logger.error(
-          `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`
+          `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`,
         );
       }
       this.wsConnectionRestarted = false;
@@ -1907,7 +1907,7 @@ export class ChargingStation {
       parentPort?.postMessage(buildUpdatedMessage(this));
     } else {
       logger.warn(
-        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`,
       );
     }
   }
@@ -1919,8 +1919,8 @@ export class ChargingStation {
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
         logger.info(
           `${this.logPrefix()} WebSocket normally closed with status '${getWebSocketCloseEventStatusString(
-            code
-          )}' and reason '${reason.toString()}'`
+            code,
+          )}' and reason '${reason.toString()}'`,
         );
         this.autoReconnectRetryCount = 0;
         break;
@@ -1928,8 +1928,8 @@ export class ChargingStation {
       default:
         logger.error(
           `${this.logPrefix()} WebSocket abnormally closed with status '${getWebSocketCloseEventStatusString(
-            code
-          )}' and reason '${reason.toString()}'`
+            code,
+          )}' and reason '${reason.toString()}'`,
         );
         this.started === true && (await this.reconnect());
         break;
@@ -1945,10 +1945,10 @@ export class ChargingStation {
     throw new OCPPError(
       ErrorType.PROTOCOL_ERROR,
       `Cached request for message id ${messageId} ${OCPPServiceUtils.getMessageTypeString(
-        messageType
+        messageType,
       )} is not an array`,
       undefined,
-      cachedRequest as JsonType
+      cachedRequest as JsonType,
     );
   }
 
@@ -1959,15 +1959,15 @@ export class ChargingStation {
     }
     logger.debug(
       `${this.logPrefix()} << Command '${commandName}' received request payload: ${JSON.stringify(
-        request
-      )}`
+        request,
+      )}`,
     );
     // Process the message
     await this.ocppIncomingRequestService.incomingRequestHandler(
       this,
       messageId,
       commandName,
-      commandPayload
+      commandPayload,
     );
   }
 
@@ -1979,18 +1979,18 @@ export class ChargingStation {
         ErrorType.INTERNAL_ERROR,
         `Response for unknown message id ${messageId}`,
         undefined,
-        commandPayload
+        commandPayload,
       );
     }
     // Respond
     const [responseCallback, , requestCommandName, requestPayload] = this.getCachedRequest(
       messageType,
-      messageId
+      messageId,
     );
     logger.debug(
       `${this.logPrefix()} << Command '${
         requestCommandName ?? Constants.UNKNOWN_COMMAND
-      }' received response payload: ${JSON.stringify(response)}`
+      }' received response payload: ${JSON.stringify(response)}`,
     );
     responseCallback(commandPayload, requestPayload);
   }
@@ -2003,14 +2003,14 @@ export class ChargingStation {
         ErrorType.INTERNAL_ERROR,
         `Error response for unknown message id ${messageId}`,
         undefined,
-        { errorType, errorMessage, errorDetails }
+        { errorType, errorMessage, errorDetails },
       );
     }
     const [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId);
     logger.debug(
       `${this.logPrefix()} << Command '${
         requestCommandName ?? Constants.UNKNOWN_COMMAND
-      }' received error response payload: ${JSON.stringify(errorResponse)}`
+      }' received error response payload: ${JSON.stringify(errorResponse)}`,
     );
     errorCallback(new OCPPError(errorType, errorMessage, requestCommandName, errorDetails));
   }
@@ -2078,7 +2078,7 @@ export class ChargingStation {
           `${this.logPrefix()} Error thrown at incoming OCPP command '${
             commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
           }' message '${data.toString()}' handling is not an OCPPError:`,
-          error
+          error,
         );
       }
       logger.error(
@@ -2089,7 +2089,7 @@ export class ChargingStation {
             ? ` matching cached request '${JSON.stringify(this.requests.get(messageId))}'`
             : ''
         } processing error:`,
-        error
+        error,
       );
     }
   }
@@ -2152,15 +2152,15 @@ export class ChargingStation {
     if (
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        StandardParametersKey.ConnectionTimeOut
+        StandardParametersKey.ConnectionTimeOut,
       )
     ) {
       return (
         parseInt(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
-            StandardParametersKey.ConnectionTimeOut
-          ).value
+            StandardParametersKey.ConnectionTimeOut,
+          ).value,
         ) ?? Constants.DEFAULT_CONNECTION_TIMEOUT
       );
     }
@@ -2194,7 +2194,7 @@ export class ChargingStation {
         return ACElectricUtils.amperagePerPhaseFromPower(
           this.getNumberOfPhases(stationInfo),
           maximumPower / (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()),
-          this.getVoltageOut(stationInfo)
+          this.getVoltageOut(stationInfo),
         );
       case CurrentType.DC:
         return DCElectricUtils.amperage(maximumPower, this.getVoltageOut(stationInfo));
@@ -2206,15 +2206,15 @@ export class ChargingStation {
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        this.stationInfo.amperageLimitationOcppKey
+        this.stationInfo.amperageLimitationOcppKey,
       )
     ) {
       return (
         convertToInt(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
-            this.stationInfo.amperageLimitationOcppKey
-          )?.value
+            this.stationInfo.amperageLimitationOcppKey,
+          )?.value,
         ) / getAmperageLimitationUnitDivider(this.stationInfo)
       );
     }
@@ -2243,7 +2243,7 @@ export class ChargingStation {
               this,
               connectorId,
               connectorBootStatus,
-              evseId
+              evseId,
             );
           }
         }
@@ -2254,7 +2254,7 @@ export class ChargingStation {
           const connectorBootStatus = getBootConnectorStatus(
             this,
             connectorId,
-            this.getConnectorStatus(connectorId)
+            this.getConnectorStatus(connectorId),
           );
           await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
         }
@@ -2278,7 +2278,7 @@ export class ChargingStation {
   }
 
   private async stopMessageSequence(
-    reason: StopTransactionReason = StopTransactionReason.NONE
+    reason: StopTransactionReason = StopTransactionReason.NONE,
   ): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
@@ -2304,8 +2304,8 @@ export class ChargingStation {
                 this,
                 connectorId,
                 ConnectorStatusEnum.Unavailable,
-                evseId
-              )
+                evseId,
+              ),
             );
             delete connectorStatus?.status;
           }
@@ -2323,8 +2323,8 @@ export class ChargingStation {
             OCPPServiceUtils.buildStatusNotificationRequest(
               this,
               connectorId,
-              ConnectorStatusEnum.Unavailable
-            )
+              ConnectorStatusEnum.Unavailable,
+            ),
           );
           delete this.getConnectorStatus(connectorId)?.status;
         }
@@ -2335,13 +2335,13 @@ export class ChargingStation {
   private startWebSocketPing(): void {
     const webSocketPingInterval: number = ChargingStationConfigurationUtils.getConfigurationKey(
       this,
-      StandardParametersKey.WebSocketPingInterval
+      StandardParametersKey.WebSocketPingInterval,
     )
       ? convertToInt(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
-            StandardParametersKey.WebSocketPingInterval
-          )?.value
+            StandardParametersKey.WebSocketPingInterval,
+          )?.value,
         )
       : 0;
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
@@ -2352,18 +2352,18 @@ export class ChargingStation {
       }, webSocketPingInterval * 1000);
       logger.info(
         `${this.logPrefix()} WebSocket ping started every ${formatDurationSeconds(
-          webSocketPingInterval
-        )}`
+          webSocketPingInterval,
+        )}`,
       );
     } else if (this.webSocketPingSetInterval) {
       logger.info(
         `${this.logPrefix()} WebSocket ping already started every ${formatDurationSeconds(
-          webSocketPingInterval
-        )}`
+          webSocketPingInterval,
+        )}`,
       );
     } else {
       logger.error(
-        `${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval}, not starting the WebSocket ping`
+        `${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval}, not starting the WebSocket ping`,
       );
     }
   }
@@ -2388,12 +2388,12 @@ export class ChargingStation {
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
         default:
           Object.values(SupervisionUrlDistribution).includes(
-            Configuration.getSupervisionUrlDistribution()
+            Configuration.getSupervisionUrlDistribution(),
           ) === false &&
             logger.error(
               `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
-              }`
+              }`,
             );
           configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
           break;
@@ -2453,26 +2453,26 @@ export class ChargingStation {
       logger.error(
         `${this.logPrefix()} WebSocket connection retry in ${roundTo(
           reconnectDelay,
-          2
-        )}ms, timeout ${reconnectTimeout}ms`
+          2,
+        )}ms, timeout ${reconnectTimeout}ms`,
       );
       await sleep(reconnectDelay);
       logger.error(
-        `${this.logPrefix()} WebSocket connection retry #${this.autoReconnectRetryCount.toString()}`
+        `${this.logPrefix()} WebSocket connection retry #${this.autoReconnectRetryCount.toString()}`,
       );
       this.openWSConnection(
         {
           ...(this.stationInfo?.wsOptions ?? {}),
           handshakeTimeout: reconnectTimeout,
         },
-        { closeOpened: true }
+        { closeOpened: true },
       );
       this.wsConnectionRestarted = true;
     } else if (this.getAutoReconnectMaxRetries() !== -1) {
       logger.error(
         `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${
           this.autoReconnectRetryCount
-        }) or retries disabled (${this.getAutoReconnectMaxRetries()})`
+        }) or retries disabled (${this.getAutoReconnectMaxRetries()})`,
       );
     }
   }

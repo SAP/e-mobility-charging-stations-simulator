@@ -8,7 +8,7 @@ export class UIService001 extends AbstractUIService {
     for (const procedureName in AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping) {
       this.requestHandlers.set(
         procedureName as ProcedureName,
-        this.handleProtocolRequest.bind(this) as ProtocolRequestHandler
+        this.handleProtocolRequest.bind(this) as ProtocolRequestHandler,
       );
     }
   }

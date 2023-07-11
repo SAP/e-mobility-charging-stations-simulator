@@ -18,7 +18,7 @@ export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
     this.pool = new FixedThreadPool(
       this.workerOptions.poolMaxSize,
       this.workerScript,
-      this.workerOptions.poolOptions
+      this.workerOptions.poolOptions,
     );
   }
 

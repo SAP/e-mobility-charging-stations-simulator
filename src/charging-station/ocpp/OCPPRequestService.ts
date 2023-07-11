@@ -56,31 +56,31 @@ export abstract class OCPPRequestService {
     this.ocppResponseService = ocppResponseService;
     this.requestHandler = this.requestHandler.bind(this) as <
       ReqType extends JsonType,
-      ResType extends JsonType
+      ResType extends JsonType,
     >(
       chargingStation: ChargingStation,
       commandName: RequestCommand,
       commandParams?: JsonType,
-      params?: RequestParams
+      params?: RequestParams,
     ) => Promise<ResType>;
     this.sendMessage = this.sendMessage.bind(this) as (
       chargingStation: ChargingStation,
       messageId: string,
       messagePayload: JsonType,
       commandName: RequestCommand,
-      params?: RequestParams
+      params?: RequestParams,
     ) => Promise<ResponseType>;
     this.sendResponse = this.sendResponse.bind(this) as (
       chargingStation: ChargingStation,
       messageId: string,
       messagePayload: JsonType,
-      commandName: IncomingRequestCommand
+      commandName: IncomingRequestCommand,
     ) => Promise<ResponseType>;
     this.sendError = this.sendError.bind(this) as (
       chargingStation: ChargingStation,
       messageId: string,
       ocppError: OCPPError,
-      commandName: RequestCommand | IncomingRequestCommand
+      commandName: RequestCommand | IncomingRequestCommand,
     ) => Promise<ResponseType>;
     this.internalSendMessage = this.internalSendMessage.bind(this) as (
       chargingStation: ChargingStation,
@@ -88,7 +88,7 @@ export abstract class OCPPRequestService {
       messagePayload: JsonType | OCPPError,
       messageType: MessageType,
       commandName: RequestCommand | IncomingRequestCommand,
-      params?: RequestParams
+      params?: RequestParams,
     ) => Promise<ResponseType>;
     this.buildMessageToSend = this.buildMessageToSend.bind(this) as (
       chargingStation: ChargingStation,
@@ -97,25 +97,25 @@ export abstract class OCPPRequestService {
       messageType: MessageType,
       commandName: RequestCommand | IncomingRequestCommand,
       responseCallback: ResponseCallback,
-      errorCallback: ErrorCallback
+      errorCallback: ErrorCallback,
     ) => string;
     this.validateRequestPayload = this.validateRequestPayload.bind(this) as <T extends JsonObject>(
       chargingStation: ChargingStation,
       commandName: RequestCommand | IncomingRequestCommand,
-      payload: T
+      payload: T,
     ) => boolean;
     this.validateIncomingRequestResponsePayload = this.validateIncomingRequestResponsePayload.bind(
-      this
+      this,
     ) as <T extends JsonObject>(
       chargingStation: ChargingStation,
       commandName: RequestCommand | IncomingRequestCommand,
-      payload: T
+      payload: T,
     ) => boolean;
   }
 
   public static getInstance<T extends OCPPRequestService>(
     this: new (ocppResponseService: OCPPResponseService) => T,
-    ocppResponseService: OCPPResponseService
+    ocppResponseService: OCPPResponseService,
   ): T {
     if (OCPPRequestService.instance === null) {
       OCPPRequestService.instance = new this(ocppResponseService);
@@ -127,7 +127,7 @@ export abstract class OCPPRequestService {
     chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType,
-    commandName: IncomingRequestCommand
+    commandName: IncomingRequestCommand,
   ): Promise<ResponseType> {
     try {
       // Send response message
@@ -136,7 +136,7 @@ export abstract class OCPPRequestService {
         messageId,
         messagePayload,
         MessageType.CALL_RESULT_MESSAGE,
-        commandName
+        commandName,
       );
     } catch (error) {
       handleSendMessageError(chargingStation, commandName, error as Error, {
@@ -149,7 +149,7 @@ export abstract class OCPPRequestService {
     chargingStation: ChargingStation,
     messageId: string,
     ocppError: OCPPError,
-    commandName: RequestCommand | IncomingRequestCommand
+    commandName: RequestCommand | IncomingRequestCommand,
   ): Promise<ResponseType> {
     try {
       // Send error message
@@ -158,7 +158,7 @@ export abstract class OCPPRequestService {
         messageId,
         ocppError,
         MessageType.CALL_ERROR_MESSAGE,
-        commandName
+        commandName,
       );
     } catch (error) {
       handleSendMessageError(chargingStation, commandName, error as Error);
@@ -170,7 +170,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType,
     commandName: RequestCommand,
-    params: RequestParams = defaultRequestParams
+    params: RequestParams = defaultRequestParams,
   ): Promise<ResponseType> {
     params = {
       ...defaultRequestParams,
@@ -183,7 +183,7 @@ export abstract class OCPPRequestService {
         messagePayload,
         MessageType.CALL_MESSAGE,
         commandName,
-        params
+        params,
       );
     } catch (error) {
       handleSendMessageError(chargingStation, commandName, error as Error, {
@@ -195,14 +195,14 @@ export abstract class OCPPRequestService {
   private validateRequestPayload<T extends JsonObject>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
-    payload: T
+    payload: T,
   ): boolean {
     if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
     }
     if (this.jsonSchemas.has(commandName as RequestCommand) === false) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema found for command '${commandName}' PDU validation`
+        `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema found for command '${commandName}' PDU validation`,
       );
       return true;
     }
@@ -214,39 +214,39 @@ export abstract class OCPPRequestService {
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: Command '${commandName}' request PDU is invalid: %j`,
-      validate.errors
+      validate.errors,
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, null, 2)
+      JSON.stringify(validate.errors, null, 2),
     );
   }
 
   private validateIncomingRequestResponsePayload<T extends JsonObject>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
-    payload: T
+    payload: T,
   ): boolean {
     if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
     }
     if (
       this.ocppResponseService.jsonIncomingRequestResponseSchemas.has(
-        commandName as IncomingRequestCommand
+        commandName as IncomingRequestCommand,
       ) === false
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: No JSON schema found for command '${commandName}' PDU validation`
+        `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: No JSON schema found for command '${commandName}' PDU validation`,
       );
       return true;
     }
     const validate = this.ajv.compile(
       this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(
-        commandName as IncomingRequestCommand
-      )
+        commandName as IncomingRequestCommand,
+      ),
     );
     payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
@@ -255,14 +255,14 @@ export abstract class OCPPRequestService {
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: Command '${commandName}' reponse PDU is invalid: %j`,
-      validate.errors
+      validate.errors,
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Response PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, null, 2)
+      JSON.stringify(validate.errors, null, 2),
     );
   }
 
@@ -272,7 +272,7 @@ export abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName: RequestCommand | IncomingRequestCommand,
-    params: RequestParams = defaultRequestParams
+    params: RequestParams = defaultRequestParams,
   ): Promise<ResponseType> {
     params = {
       ...defaultRequestParams,
@@ -302,7 +302,7 @@ export abstract class OCPPRequestService {
             if (chargingStation.getEnableStatistics() === true) {
               chargingStation.performanceStatistics?.addRequestStatistic(
                 commandName,
-                MessageType.CALL_RESULT_MESSAGE
+                MessageType.CALL_RESULT_MESSAGE,
               );
             }
             // Handle the request's response
@@ -311,7 +311,7 @@ export abstract class OCPPRequestService {
                 chargingStation,
                 commandName as RequestCommand,
                 payload,
-                requestPayload
+                requestPayload,
               )
               .then(() => {
                 resolve(payload);
@@ -334,15 +334,15 @@ export abstract class OCPPRequestService {
             if (requestStatistic === true && chargingStation.getEnableStatistics() === true) {
               chargingStation.performanceStatistics?.addRequestStatistic(
                 commandName,
-                MessageType.CALL_ERROR_MESSAGE
+                MessageType.CALL_ERROR_MESSAGE,
               );
             }
             logger.error(
               `${chargingStation.logPrefix()} Error occurred at ${OCPPServiceUtils.getMessageTypeString(
-                messageType
+                messageType,
               )} command ${commandName} with PDU %j:`,
               messagePayload,
-              error
+              error,
             );
             chargingStation.requests.delete(messageId);
             reject(error);
@@ -358,7 +358,7 @@ export abstract class OCPPRequestService {
             messageType,
             commandName,
             responseCallback,
-            errorCallback
+            errorCallback,
           );
           let sendError = false;
           // Check if wsConnection opened
@@ -369,15 +369,15 @@ export abstract class OCPPRequestService {
               chargingStation.wsConnection?.send(messageToSend);
               logger.debug(
                 `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
-                  messageType
-                )} payload: ${messageToSend}`
+                  messageType,
+                )} payload: ${messageToSend}`,
               );
             } catch (error) {
               logger.error(
                 `${chargingStation.logPrefix()} >> Command '${commandName}' failed to send ${OCPPServiceUtils.getMessageTypeString(
-                  messageType
+                  messageType,
                 )} payload: ${messageToSend}:`,
-                error
+                error,
               );
               sendError = true;
             }
@@ -393,15 +393,15 @@ export abstract class OCPPRequestService {
                 ErrorType.GENERIC_ERROR,
                 `WebSocket closed or errored for buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
-                (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT
-              )
+                (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT,
+              ),
             );
           } else if (wsClosedOrErrored) {
             const ocppError = new OCPPError(
               ErrorType.GENERIC_ERROR,
               `WebSocket closed or errored for non buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
-              (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT
+              (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT,
             );
             // Reject response
             if (messageType !== MessageType.CALL_MESSAGE) {
@@ -420,17 +420,17 @@ export abstract class OCPPRequestService {
           ErrorType.GENERIC_ERROR,
           `Timeout for message id '${messageId}'`,
           commandName,
-          (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT
+          (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FREEZED_OBJECT,
         ),
         () => {
           messageType === MessageType.CALL_MESSAGE && chargingStation.requests.delete(messageId);
-        }
+        },
       );
     }
     throw new OCPPError(
       ErrorType.SECURITY_ERROR,
       `Cannot send command ${commandName} PDU when the charging station is in ${chargingStation.getRegistrationStatus()} state on the central server`,
-      commandName
+      commandName,
     );
   }
 
@@ -441,7 +441,7 @@ export abstract class OCPPRequestService {
     messageType: MessageType,
     commandName: RequestCommand | IncomingRequestCommand,
     responseCallback: ResponseCallback,
-    errorCallback: ErrorCallback
+    errorCallback: ErrorCallback,
   ): string {
     let messageToSend: string;
     // Type of message
@@ -469,7 +469,7 @@ export abstract class OCPPRequestService {
         this.validateIncomingRequestResponsePayload(
           chargingStation,
           commandName,
-          messagePayload as JsonObject
+          messagePayload as JsonObject,
         );
         messageToSend = JSON.stringify([messageType, messageId, messagePayload] as Response);
         break;
@@ -493,6 +493,6 @@ export abstract class OCPPRequestService {
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     commandParams?: JsonType,
-    params?: RequestParams
+    params?: RequestParams,
   ): Promise<ResType>;
 }

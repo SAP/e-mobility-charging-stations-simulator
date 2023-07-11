@@ -25,7 +25,7 @@ export abstract class Storage {
     type: StorageType,
     error: Error,
     table?: string,
-    params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
+    params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false },
   ): void {
     setDefaultErrorParams(params, { throwError: false, consoleOut: false });
     const inTableOrCollectionStr =
@@ -34,7 +34,7 @@ export abstract class Storage {
       `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
         error.message
       }'${inTableOrCollectionStr}:`,
-      error
+      error,
     );
     if (params?.throwError) {
       throw error;
@@ -57,6 +57,6 @@ export abstract class Storage {
   public abstract open(): void | Promise<void>;
   public abstract close(): void | Promise<void>;
   public abstract storePerformanceStatistics(
-    performanceStatistics: Statistics
+    performanceStatistics: Statistics,
   ): void | Promise<void>;
 }

@@ -33,7 +33,7 @@ export abstract class AbstractUIServer {
   public buildProtocolRequest(
     id: string,
     procedureName: ProcedureName,
-    requestPayload: RequestPayload
+    requestPayload: RequestPayload,
   ): ProtocolRequest {
     return [id, procedureName, requestPayload];
   }
@@ -104,6 +104,6 @@ export abstract class AbstractUIServer {
   public abstract logPrefix(
     moduleName?: string,
     methodName?: string,
-    prefixSuffix?: string
+    prefixSuffix?: string,
   ): string;
 }

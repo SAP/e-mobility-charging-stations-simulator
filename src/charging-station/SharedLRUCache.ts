@@ -18,7 +18,7 @@ export class SharedLRUCache {
   private constructor() {
     this.lruCache = new LRUCache<string, CacheValueType>(
       Bootstrap.getInstance().numberOfChargingStationTemplates +
-        Bootstrap.getInstance().numberOfChargingStations
+        Bootstrap.getInstance().numberOfChargingStations,
     );
   }
 
@@ -34,21 +34,21 @@ export class SharedLRUCache {
   }
 
   public setChargingStationConfiguration(
-    chargingStationConfiguration: ChargingStationConfiguration
+    chargingStationConfiguration: ChargingStationConfiguration,
   ): void {
     if (this.isChargingStationConfigurationCacheable(chargingStationConfiguration)) {
       this.set(
         this.getChargingStationConfigurationKey(chargingStationConfiguration.configurationHash),
-        chargingStationConfiguration
+        chargingStationConfiguration,
       );
     }
   }
 
   public getChargingStationConfiguration(
-    chargingStationConfigurationHash: string
+    chargingStationConfigurationHash: string,
   ): ChargingStationConfiguration {
     return this.get(
-      this.getChargingStationConfigurationKey(chargingStationConfigurationHash)
+      this.getChargingStationConfigurationKey(chargingStationConfigurationHash),
     ) as ChargingStationConfiguration;
   }
 
@@ -63,13 +63,13 @@ export class SharedLRUCache {
   public setChargingStationTemplate(chargingStationTemplate: ChargingStationTemplate): void {
     this.set(
       this.getChargingStationTemplateKey(chargingStationTemplate.templateHash),
-      chargingStationTemplate
+      chargingStationTemplate,
     );
   }
 
   public getChargingStationTemplate(chargingStationTemplateHash: string): ChargingStationTemplate {
     return this.get(
-      this.getChargingStationTemplateKey(chargingStationTemplateHash)
+      this.getChargingStationTemplateKey(chargingStationTemplateHash),
     ) as ChargingStationTemplate;
   }
 
@@ -106,7 +106,7 @@ export class SharedLRUCache {
   }
 
   private isChargingStationConfigurationCacheable(
-    chargingStationConfiguration: ChargingStationConfiguration
+    chargingStationConfiguration: ChargingStationConfiguration,
   ): boolean {
     return (
       isNullOrUndefined(chargingStationConfiguration?.configurationKey) === false &&

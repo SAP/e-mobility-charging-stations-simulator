@@ -15,7 +15,7 @@ if (Configuration.getLog().rotate === true) {
       filename: insertAt(
         Configuration.getLog().errorFile,
         '-%DATE%',
-        Configuration.getLog().errorFile?.indexOf('.log')
+        Configuration.getLog().errorFile?.indexOf('.log'),
       ),
       level: 'error',
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
@@ -25,7 +25,7 @@ if (Configuration.getLog().rotate === true) {
       filename: insertAt(
         Configuration.getLog().file,
         '-%DATE%',
-        Configuration.getLog().file?.indexOf('.log')
+        Configuration.getLog().file?.indexOf('.log'),
       ),
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
       ...(logMaxSize && { maxSize: logMaxSize }),
@@ -54,8 +54,8 @@ if (Configuration.getLog().console) {
     new TransportType.Console({
       format: format.combine(
         format.splat(),
-        (format[Configuration.getLog().format] as FormatWrap)()
+        (format[Configuration.getLog().format] as FormatWrap)(),
       ),
-    })
+    }),
   );
 }

@@ -58,15 +58,15 @@ export class MongoDBStorage extends Storage {
     if (!this?.client) {
       throw new BaseError(
         `${this.logPrefix} ${this.getDBNameFromStorageType(
-          StorageType.MONGO_DB
-        )} client initialization failed while trying to issue a request`
+          StorageType.MONGO_DB,
+        )} client initialization failed while trying to issue a request`,
       );
     }
     if (!this.connected) {
       throw new BaseError(
         `${this.logPrefix} ${this.getDBNameFromStorageType(
-          StorageType.MONGO_DB
-        )} connection not opened while trying to issue a request`
+          StorageType.MONGO_DB,
+        )} connection not opened while trying to issue a request`,
       );
     }
   }

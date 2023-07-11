@@ -13,13 +13,13 @@ export class UIServerFactory {
   }
 
   public static getUIServerImplementation(
-    uiServerConfiguration?: UIServerConfiguration
+    uiServerConfiguration?: UIServerConfiguration,
   ): AbstractUIServer | null {
     if (UIServerUtils.isLoopback(uiServerConfiguration.options?.host) === false) {
       console.warn(
         chalk.yellow(
-          'Loopback address not detected in UI server configuration. This is not recommended.'
-        )
+          'Loopback address not detected in UI server configuration. This is not recommended.',
+        ),
       );
     }
     switch (uiServerConfiguration?.type ?? Configuration.getUIServer().type) {

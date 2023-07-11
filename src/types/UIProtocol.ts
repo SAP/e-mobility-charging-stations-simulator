@@ -24,7 +24,7 @@ export type ProtocolResponse = [string, ResponsePayload];
 export type ProtocolRequestHandler = (
   uuid?: string,
   procedureName?: ProcedureName,
-  payload?: RequestPayload
+  payload?: RequestPayload,
 ) => undefined | Promise<undefined> | ResponsePayload | Promise<ResponsePayload>;
 
 export enum ProcedureName {

@@ -10,7 +10,7 @@ export class UIServiceFactory {
 
   public static getUIServiceImplementation(
     version: ProtocolVersion,
-    uiServer: AbstractUIServer
+    uiServer: AbstractUIServer,
   ): AbstractUIService {
     switch (version) {
       case ProtocolVersion['0.0.1']:

@@ -86,6 +86,6 @@ export class OCPP20Constants extends OCPPConstants {
         to: OCPP20ConnectorStatusEnumType.Unavailable,
       },
       // { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Faulted },
-    ]
+    ],
   );
 }

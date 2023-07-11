@@ -36,8 +36,8 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
       logger.error(
         `${this.logPrefix(
           moduleName,
-          'validateMessageEvent'
-        )} Worker broadcast channel protocol message event data is not an array`
+          'validateMessageEvent',
+        )} Worker broadcast channel protocol message event data is not an array`,
       );
       return false;
     }
@@ -45,8 +45,8 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
       logger.error(
         `${this.logPrefix(
           moduleName,
-          'validateMessageEvent'
-        )} Worker broadcast channel protocol message event data UUID field is invalid`
+          'validateMessageEvent',
+        )} Worker broadcast channel protocol message event data UUID field is invalid`,
       );
       return false;
     }

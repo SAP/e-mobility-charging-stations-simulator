@@ -8,7 +8,7 @@ import type {
 } from '../types';
 
 export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
-  chargingStation: ChargingStation
+  chargingStation: ChargingStation,
 ): ChargingStationAutomaticTransactionGeneratorConfiguration => {
   return {
     automaticTransactionGenerator: chargingStation.getAutomaticTransactionGeneratorConfiguration(),
@@ -23,7 +23,7 @@ export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
 export const buildConnectorsStatus = (chargingStation: ChargingStation): ConnectorStatus[] => {
   return [...chargingStation.connectors.values()].map(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
+    ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest,
   );
 };
 
@@ -34,12 +34,12 @@ export const enum OutputFormat {
 
 export const buildEvsesStatus = (
   chargingStation: ChargingStation,
-  outputFormat: OutputFormat = OutputFormat.configuration
+  outputFormat: OutputFormat = OutputFormat.configuration,
 ): (EvseStatusWorkerType | EvseStatusConfiguration)[] => {
   return [...chargingStation.evses.values()].map((evseStatus) => {
     const connectorsStatus = [...evseStatus.connectors.values()].map(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
+      ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest,
     );
     let status: EvseStatusConfiguration;
     switch (outputFormat) {

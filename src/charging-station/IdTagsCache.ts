@@ -46,7 +46,7 @@ export class IdTagsCache {
   public getIdTag(
     distribution: IdTagDistribution,
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
   ): string {
     const hashId = chargingStation.stationInfo.hashId;
     const idTagsFile = getIdTagsFile(chargingStation.stationInfo);
@@ -85,7 +85,7 @@ export class IdTagsCache {
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
-      Math.floor(secureRandom() * idTags.length)
+      Math.floor(secureRandom() * idTags.length),
     );
     return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)];
   }
@@ -97,7 +97,7 @@ export class IdTagsCache {
     const idTag = idTags[idTagIndex];
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
-      idTagIndex === idTags.length - 1 ? 0 : idTagIndex + 1
+      idTagIndex === idTags.length - 1 ? 0 : idTagIndex + 1,
     );
     return idTag;
   }
@@ -107,11 +107,11 @@ export class IdTagsCache {
     const idTags = this.getIdTags(file);
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
       file,
-      chargingStation.stationInfo.hashId
+      chargingStation.stationInfo.hashId,
     );
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
-      (chargingStation.index - 1 + (connectorId - 1)) % idTags.length
+      (chargingStation.index - 1 + (connectorId - 1)) % idTags.length,
     );
     return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)];
   }
@@ -132,7 +132,7 @@ export class IdTagsCache {
           if (isNotEmptyString(filename) && event === 'change') {
             try {
               logger.debug(
-                `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`
+                `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`,
               );
               this.deleteIdTagsCache(file);
               this.deleteIdTagsCacheIndexes(file);
@@ -144,11 +144,11 @@ export class IdTagsCache {
                 this.logPrefix(file),
                 {
                   throwError: false,
-                }
+                },
               );
             }
           }
-        }
+        },
       ),
     });
   }
@@ -185,7 +185,7 @@ export class IdTagsCache {
           file,
           FileType.Authorization,
           error as NodeJS.ErrnoException,
-          this.logPrefix(file)
+          this.logPrefix(file),
         );
       }
     }

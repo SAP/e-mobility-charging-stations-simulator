@@ -21,7 +21,7 @@ export const watchJsonFile = <T extends JsonType>(
         });
       }
     }
-  }
+  },
 ): FSWatcher | undefined => {
   if (isNotEmptyString(file)) {
     try {

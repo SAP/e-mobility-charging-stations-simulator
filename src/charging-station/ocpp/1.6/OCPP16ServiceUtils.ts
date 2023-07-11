@@ -51,13 +51,13 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static checkFeatureProfile(
     chargingStation: ChargingStation,
     featureProfile: OCPP16SupportedFeatureProfiles,
-    command: OCPP16RequestCommand | OCPP16IncomingRequestCommand
+    command: OCPP16RequestCommand | OCPP16IncomingRequestCommand,
   ): boolean {
     if (!chargingStation.hasFeatureProfile(featureProfile)) {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to '${command}' without '${featureProfile}' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles
-        } in configuration`
+        } in configuration`,
       );
       return false;
     }
@@ -69,7 +69,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     connectorId: number,
     transactionId: number,
     interval: number,
-    debug = false
+    debug = false,
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
       timestamp: new Date(),
@@ -80,7 +80,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     const socSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
-      OCPP16MeterValueMeasurand.STATE_OF_CHARGE
+      OCPP16MeterValueMeasurand.STATE_OF_CHARGE,
     );
     if (socSampledValueTemplate) {
       const socMaximumValue = 100;
@@ -88,11 +88,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       const socSampledValueTemplateValue = socSampledValueTemplate.value
         ? getRandomFloatFluctuatedRounded(
             parseInt(socSampledValueTemplate.value),
-            socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+            socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT,
           )
         : getRandomInteger(socMaximumValue, socMinimumValue);
       meterValue.sampledValue.push(
-        OCPP16ServiceUtils.buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue)
+        OCPP16ServiceUtils.buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue),
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
       if (
@@ -104,11 +104,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connector id ${connectorId}, transaction id ${
-            connector?.transactionId
-          }, value: ${socMinimumValue}/${
+          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${socMinimumValue}/${
             meterValue.sampledValue[sampledValuesIndex].value
-          }/${socMaximumValue}}`
+          }/${socMaximumValue}}`,
         );
       }
     }
@@ -116,7 +114,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     const voltageSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
-      OCPP16MeterValueMeasurand.VOLTAGE
+      OCPP16MeterValueMeasurand.VOLTAGE,
     );
     if (voltageSampledValueTemplate) {
       const voltageSampledValueTemplateValue = voltageSampledValueTemplate.value
@@ -126,14 +124,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT;
       const voltageMeasurandValue = getRandomFloatFluctuatedRounded(
         voltageSampledValueTemplateValue,
-        fluctuationPercent
+        fluctuationPercent,
       );
       if (
         chargingStation.getNumberOfPhases() !== 3 ||
         (chargingStation.getNumberOfPhases() === 3 && chargingStation.getMainVoltageMeterValues())
       ) {
         meterValue.sampledValue.push(
-          OCPP16ServiceUtils.buildSampledValue(voltageSampledValueTemplate, voltageMeasurandValue)
+          OCPP16ServiceUtils.buildSampledValue(voltageSampledValueTemplate, voltageMeasurandValue),
         );
       }
       for (
@@ -147,7 +145,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             chargingStation,
             connectorId,
             OCPP16MeterValueMeasurand.VOLTAGE,
-            phaseLineToNeutralValue as OCPP16MeterValuePhase
+            phaseLineToNeutralValue as OCPP16MeterValuePhase,
           );
         let voltagePhaseLineToNeutralMeasurandValue: number;
         if (voltagePhaseLineToNeutralSampledValueTemplate) {
@@ -160,7 +158,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             Constants.DEFAULT_FLUCTUATION_PERCENT;
           voltagePhaseLineToNeutralMeasurandValue = getRandomFloatFluctuatedRounded(
             voltagePhaseLineToNeutralSampledValueTemplateValue,
-            fluctuationPhaseToNeutralPercent
+            fluctuationPhaseToNeutralPercent,
           );
         }
         meterValue.sampledValue.push(
@@ -168,8 +166,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
             voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
             undefined,
-            phaseLineToNeutralValue as OCPP16MeterValuePhase
-          )
+            phaseLineToNeutralValue as OCPP16MeterValuePhase,
+          ),
         );
         if (chargingStation.getPhaseLineToLineVoltageMeterValues()) {
           const phaseLineToLineValue = `L${phase}-L${
@@ -182,7 +180,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               chargingStation,
               connectorId,
               OCPP16MeterValueMeasurand.VOLTAGE,
-              phaseLineToLineValue as OCPP16MeterValuePhase
+              phaseLineToLineValue as OCPP16MeterValuePhase,
             );
           let voltagePhaseLineToLineMeasurandValue: number;
           if (voltagePhaseLineToLineSampledValueTemplate) {
@@ -195,20 +193,20 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               Constants.DEFAULT_FLUCTUATION_PERCENT;
             voltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
               voltagePhaseLineToLineSampledValueTemplateValue,
-              fluctuationPhaseLineToLinePercent
+              fluctuationPhaseLineToLinePercent,
             );
           }
           const defaultVoltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
             Voltage.VOLTAGE_400,
-            fluctuationPercent
+            fluctuationPercent,
           );
           meterValue.sampledValue.push(
             OCPP16ServiceUtils.buildSampledValue(
               voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
               voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
               undefined,
-              phaseLineToLineValue as OCPP16MeterValuePhase
-            )
+              phaseLineToLineValue as OCPP16MeterValuePhase,
+            ),
           );
         }
       }
@@ -217,7 +215,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     const powerSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
-      OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT
+      OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
     );
     let powerPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
     if (chargingStation.getNumberOfPhases() === 3) {
@@ -226,26 +224,26 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
-          OCPP16MeterValuePhase.L1_N
+          OCPP16MeterValuePhase.L1_N,
         ),
         L2: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
-          OCPP16MeterValuePhase.L2_N
+          OCPP16MeterValuePhase.L2_N,
         ),
         L3: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT,
-          OCPP16MeterValuePhase.L3_N
+          OCPP16MeterValuePhase.L3_N,
         ),
       };
     }
     if (powerSampledValueTemplate) {
       OCPP16ServiceUtils.checkMeasurandPowerDivider(
         chargingStation,
-        powerSampledValueTemplate.measurand
+        powerSampledValueTemplate.measurand,
       );
       const errMsg = `MeterValues measurand ${
         powerSampledValueTemplate.measurand ??
@@ -262,11 +260,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         chargingStation.getConnectorMaximumAvailablePower(connectorId);
       const connectorMaximumPower = Math.round(connectorMaximumAvailablePower);
       const connectorMaximumPowerPerPhase = Math.round(
-        connectorMaximumAvailablePower / chargingStation.getNumberOfPhases()
+        connectorMaximumAvailablePower / chargingStation.getNumberOfPhases(),
       );
       const connectorMinimumPower = Math.round(powerSampledValueTemplate.minimumValue) ?? 0;
       const connectorMinimumPowerPerPhase = Math.round(
-        connectorMinimumPower / chargingStation.getNumberOfPhases()
+        connectorMinimumPower / chargingStation.getNumberOfPhases(),
       );
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
@@ -277,10 +275,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerSampledValueTemplate.value,
                   connectorMaximumPower / unitDivider,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ) / chargingStation.getNumberOfPhases(),
                 powerSampledValueTemplate.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             const phase1FluctuatedValue =
               powerPerPhaseSampledValueTemplates?.L1?.value &&
@@ -288,10 +286,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerPerPhaseSampledValueTemplates.L1.value,
                   connectorMaximumPowerPerPhase / unitDivider,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 powerPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             const phase2FluctuatedValue =
               powerPerPhaseSampledValueTemplates?.L2?.value &&
@@ -299,10 +297,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerPerPhaseSampledValueTemplates.L2.value,
                   connectorMaximumPowerPerPhase / unitDivider,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 powerPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             const phase3FluctuatedValue =
               powerPerPhaseSampledValueTemplates?.L3?.value &&
@@ -310,31 +308,31 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerPerPhaseSampledValueTemplates.L3.value,
                   connectorMaximumPowerPerPhase / unitDivider,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 powerPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             powerMeasurandValues.L1 =
               phase1FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
               getRandomFloatRounded(
                 connectorMaximumPowerPerPhase / unitDivider,
-                connectorMinimumPowerPerPhase / unitDivider
+                connectorMinimumPowerPerPhase / unitDivider,
               );
             powerMeasurandValues.L2 =
               phase2FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
               getRandomFloatRounded(
                 connectorMaximumPowerPerPhase / unitDivider,
-                connectorMinimumPowerPerPhase / unitDivider
+                connectorMinimumPowerPerPhase / unitDivider,
               );
             powerMeasurandValues.L3 =
               phase3FluctuatedValue ??
               defaultFluctuatedPowerPerPhase ??
               getRandomFloatRounded(
                 connectorMaximumPowerPerPhase / unitDivider,
-                connectorMinimumPowerPerPhase / unitDivider
+                connectorMinimumPowerPerPhase / unitDivider,
               );
           } else {
             powerMeasurandValues.L1 = powerSampledValueTemplate.value
@@ -342,21 +340,21 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                     powerSampledValueTemplate.value,
                     connectorMaximumPower / unitDivider,
-                    { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                    { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                   ),
                   powerSampledValueTemplate.fluctuationPercent ??
-                    Constants.DEFAULT_FLUCTUATION_PERCENT
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
                 )
               : getRandomFloatRounded(
                   connectorMaximumPower / unitDivider,
-                  connectorMinimumPower / unitDivider
+                  connectorMinimumPower / unitDivider,
                 );
             powerMeasurandValues.L2 = 0;
             powerMeasurandValues.L3 = 0;
           }
           powerMeasurandValues.allPhases = roundTo(
             powerMeasurandValues.L1 + powerMeasurandValues.L2 + powerMeasurandValues.L3,
-            2
+            2,
           );
           break;
         case CurrentType.DC:
@@ -365,14 +363,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerSampledValueTemplate.value,
                   connectorMaximumPower / unitDivider,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 powerSampledValueTemplate.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               )
             : getRandomFloatRounded(
                 connectorMaximumPower / unitDivider,
-                connectorMinimumPower / unitDivider
+                connectorMinimumPower / unitDivider,
               );
           break;
         default:
@@ -382,8 +380,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       meterValue.sampledValue.push(
         OCPP16ServiceUtils.buildSampledValue(
           powerSampledValueTemplate,
-          powerMeasurandValues.allPhases
-        )
+          powerMeasurandValues.allPhases,
+        ),
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
       const connectorMaximumPowerRounded = roundTo(connectorMaximumPower / unitDivider, 2);
@@ -399,11 +397,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connector id ${connectorId}, transaction id ${
-            connector?.transactionId
-          }, value: ${connectorMinimumPowerRounded}/${
+          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${connectorMinimumPowerRounded}/${
             meterValue.sampledValue[sampledValuesIndex].value
-          }/${connectorMaximumPowerRounded}`
+          }/${connectorMaximumPowerRounded}`,
         );
       }
       for (
@@ -418,17 +414,17 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               powerSampledValueTemplate,
             powerMeasurandValues[`L${phase}`] as number,
             undefined,
-            phaseValue as OCPP16MeterValuePhase
-          )
+            phaseValue as OCPP16MeterValuePhase,
+          ),
         );
         const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1;
         const connectorMaximumPowerPerPhaseRounded = roundTo(
           connectorMaximumPowerPerPhase / unitDivider,
-          2
+          2,
         );
         const connectorMinimumPowerPerPhaseRounded = roundTo(
           connectorMinimumPowerPerPhase / unitDivider,
-          2
+          2,
         );
         if (
           convertToFloat(meterValue.sampledValue[sampledValuesPerPhaseIndex].value) >
@@ -443,11 +439,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connector id ${connectorId}, transaction id ${
-              connector?.transactionId
-            }, value: ${connectorMinimumPowerPerPhaseRounded}/${
+            }, connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${connectorMinimumPowerPerPhaseRounded}/${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-            }/${connectorMaximumPowerPerPhaseRounded}`
+            }/${connectorMaximumPowerPerPhaseRounded}`,
           );
         }
       }
@@ -456,7 +450,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     const currentSampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
       connectorId,
-      OCPP16MeterValueMeasurand.CURRENT_IMPORT
+      OCPP16MeterValueMeasurand.CURRENT_IMPORT,
     );
     let currentPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {};
     if (chargingStation.getNumberOfPhases() === 3) {
@@ -465,26 +459,26 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
-          OCPP16MeterValuePhase.L1
+          OCPP16MeterValuePhase.L1,
         ),
         L2: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
-          OCPP16MeterValuePhase.L2
+          OCPP16MeterValuePhase.L2,
         ),
         L3: OCPP16ServiceUtils.getSampledValueTemplate(
           chargingStation,
           connectorId,
           OCPP16MeterValueMeasurand.CURRENT_IMPORT,
-          OCPP16MeterValuePhase.L3
+          OCPP16MeterValuePhase.L3,
         ),
       };
     }
     if (currentSampledValueTemplate) {
       OCPP16ServiceUtils.checkMeasurandPowerDivider(
         chargingStation,
-        currentSampledValueTemplate.measurand
+        currentSampledValueTemplate.measurand,
       );
       const errMsg = `MeterValues measurand ${
         currentSampledValueTemplate.measurand ??
@@ -505,7 +499,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           connectorMaximumAmperage = ACElectricUtils.amperagePerPhaseFromPower(
             chargingStation.getNumberOfPhases(),
             connectorMaximumAvailablePower,
-            chargingStation.getVoltageOut()
+            chargingStation.getVoltageOut(),
           );
           if (chargingStation.getNumberOfPhases() === 3) {
             const defaultFluctuatedAmperagePerPhase =
@@ -514,10 +508,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentSampledValueTemplate.value,
                   connectorMaximumAmperage,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 currentSampledValueTemplate.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             const phase1FluctuatedValue =
               currentPerPhaseSampledValueTemplates?.L1?.value &&
@@ -525,10 +519,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentPerPhaseSampledValueTemplates.L1.value,
                   connectorMaximumAmperage,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 currentPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             const phase2FluctuatedValue =
               currentPerPhaseSampledValueTemplates?.L2?.value &&
@@ -536,10 +530,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentPerPhaseSampledValueTemplates.L2.value,
                   connectorMaximumAmperage,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 currentPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             const phase3FluctuatedValue =
               currentPerPhaseSampledValueTemplates?.L3?.value &&
@@ -547,10 +541,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentPerPhaseSampledValueTemplates.L3.value,
                   connectorMaximumAmperage,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 currentPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               );
             currentMeasurandValues.L1 =
               phase1FluctuatedValue ??
@@ -570,10 +564,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                     currentSampledValueTemplate.value,
                     connectorMaximumAmperage,
-                    { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                    { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                   ),
                   currentSampledValueTemplate.fluctuationPercent ??
-                    Constants.DEFAULT_FLUCTUATION_PERCENT
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
                 )
               : getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
             currentMeasurandValues.L2 = 0;
@@ -582,23 +576,23 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           currentMeasurandValues.allPhases = roundTo(
             (currentMeasurandValues.L1 + currentMeasurandValues.L2 + currentMeasurandValues.L3) /
               chargingStation.getNumberOfPhases(),
-            2
+            2,
           );
           break;
         case CurrentType.DC:
           connectorMaximumAmperage = DCElectricUtils.amperage(
             connectorMaximumAvailablePower,
-            chargingStation.getVoltageOut()
+            chargingStation.getVoltageOut(),
           );
           currentMeasurandValues.allPhases = currentSampledValueTemplate.value
             ? getRandomFloatFluctuatedRounded(
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentSampledValueTemplate.value,
                   connectorMaximumAmperage,
-                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() }
+                  { limitationEnabled: chargingStation.getCustomValueLimitationMeterValues() },
                 ),
                 currentSampledValueTemplate.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT
+                  Constants.DEFAULT_FLUCTUATION_PERCENT,
               )
             : getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
           break;
@@ -609,8 +603,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       meterValue.sampledValue.push(
         OCPP16ServiceUtils.buildSampledValue(
           currentSampledValueTemplate,
-          currentMeasurandValues.allPhases
-        )
+          currentMeasurandValues.allPhases,
+        ),
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
       if (
@@ -624,11 +618,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connector id ${connectorId}, transaction id ${
-            connector?.transactionId
-          }, value: ${connectorMinimumAmperage}/${
+          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${connectorMinimumAmperage}/${
             meterValue.sampledValue[sampledValuesIndex].value
-          }/${connectorMaximumAmperage}`
+          }/${connectorMaximumAmperage}`,
         );
       }
       for (
@@ -643,8 +635,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               currentSampledValueTemplate,
             currentMeasurandValues[phaseValue] as number,
             undefined,
-            phaseValue as OCPP16MeterValuePhase
-          )
+            phaseValue as OCPP16MeterValuePhase,
+          ),
         );
         const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1;
         if (
@@ -660,11 +652,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: phase ${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-            }, connector id ${connectorId}, transaction id ${
-              connector?.transactionId
-            }, value: ${connectorMinimumAmperage}/${
+            }, connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${connectorMinimumAmperage}/${
               meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-            }/${connectorMaximumAmperage}`
+            }/${connectorMaximumAmperage}`,
           );
         }
       }
@@ -672,12 +662,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     // Energy.Active.Import.Register measurand (default)
     const energySampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
-      connectorId
+      connectorId,
     );
     if (energySampledValueTemplate) {
       OCPP16ServiceUtils.checkMeasurandPowerDivider(
         chargingStation,
-        energySampledValueTemplate.measurand
+        energySampledValueTemplate.measurand,
       );
       const unitDivider =
         energySampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
@@ -685,7 +675,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         chargingStation.getConnectorMaximumAvailablePower(connectorId);
       const connectorMaximumEnergyRounded = roundTo(
         (connectorMaximumAvailablePower * interval) / (3600 * 1000),
-        2
+        2,
       );
       const energyValueRounded = energySampledValueTemplate.value
         ? // Cumulate the fluctuated value around the static one
@@ -696,9 +686,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               {
                 limitationEnabled: chargingStation.getCustomValueLimitationMeterValues(),
                 unitMultiplier: unitDivider,
-              }
+              },
             ),
-            energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+            energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT,
           )
         : getRandomFloatRounded(connectorMaximumEnergyRounded);
       // Persist previous value on connector
@@ -721,9 +711,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           roundTo(
             chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
               unitDivider,
-            2
-          )
-        )
+            2,
+          ),
+        ),
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
       if (energyValueRounded > connectorMaximumEnergyRounded || debug) {
@@ -731,12 +721,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connector id ${connectorId}, transaction id ${
-            connector?.transactionId
-          }, value: ${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${roundTo(
+          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${roundTo(
             interval / (3600 * 1000),
-            4
-          )}h`
+            4,
+          )}h`,
         );
       }
     }
@@ -746,7 +734,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static buildTransactionBeginMeterValue(
     chargingStation: ChargingStation,
     connectorId: number,
-    meterStart: number
+    meterStart: number,
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
       timestamp: new Date(),
@@ -755,15 +743,15 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
-      connectorId
+      connectorId,
     );
     const unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
     meterValue.sampledValue.push(
       OCPP16ServiceUtils.buildSampledValue(
         sampledValueTemplate,
         roundTo((meterStart ?? 0) / unitDivider, 4),
-        MeterValueContext.TRANSACTION_BEGIN
-      )
+        MeterValueContext.TRANSACTION_BEGIN,
+      ),
     );
     return meterValue;
   }
@@ -771,7 +759,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static buildTransactionEndMeterValue(
     chargingStation: ChargingStation,
     connectorId: number,
-    meterStop: number
+    meterStop: number,
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
       timestamp: new Date(),
@@ -780,22 +768,22 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
-      connectorId
+      connectorId,
     );
     const unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1;
     meterValue.sampledValue.push(
       OCPP16ServiceUtils.buildSampledValue(
         sampledValueTemplate,
         roundTo((meterStop ?? 0) / unitDivider, 4),
-        MeterValueContext.TRANSACTION_END
-      )
+        MeterValueContext.TRANSACTION_END,
+      ),
     );
     return meterValue;
   }
 
   public static buildTransactionDataMeterValues(
     transactionBeginMeterValue: OCPP16MeterValue,
-    transactionEndMeterValue: OCPP16MeterValue
+    transactionEndMeterValue: OCPP16MeterValue,
   ): OCPP16MeterValue[] {
     const meterValues: OCPP16MeterValue[] = [];
     meterValues.push(transactionBeginMeterValue);
@@ -806,11 +794,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static setChargingProfile(
     chargingStation: ChargingStation,
     connectorId: number,
-    cp: OCPP16ChargingProfile
+    cp: OCPP16ChargingProfile,
   ): void {
     if (isNullOrUndefined(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`,
       );
       chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
     }
@@ -818,7 +806,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles) === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`,
       );
       chargingStation.getConnectorStatus(connectorId).chargingProfiles = [];
     }
@@ -843,20 +831,20 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,
     moduleName?: string,
-    methodName?: string
+    methodName?: string,
   ): JSONSchemaType<T> {
     return super.parseJsonSchemaFile<T>(
       relativePath,
       OCPPVersion.VERSION_16,
       moduleName,
-      methodName
+      methodName,
     );
   }
 
   public static async isIdTagAuthorized(
     chargingStation: ChargingStation,
     connectorId: number,
-    idTag: string
+    idTag: string,
   ): Promise<boolean> {
     let authorized = false;
     const connectorStatus = chargingStation.getConnectorStatus(connectorId);
@@ -870,7 +858,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     } else {
       logger.warn(
         `${chargingStation.logPrefix()} The charging station configuration expects authorize at
-          remote start transaction but local authorization or authorize isn't enabled`
+          remote start transaction but local authorization or authorize isn't enabled`,
       );
     }
     return authorized;
@@ -880,7 +868,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     sampledValueTemplate: SampledValueTemplate,
     value: number,
     context?: MeterValueContext,
-    phase?: OCPP16MeterValuePhase
+    phase?: OCPP16MeterValuePhase,
   ): OCPP16SampledValue {
     const sampledValueValue = value ?? sampledValueTemplate?.value ?? null;
     const sampledValueContext = context ?? sampledValueTemplate?.context ?? null;
@@ -904,7 +892,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
 
   private static checkMeasurandPowerDivider(
     chargingStation: ChargingStation,
-    measurandType: OCPP16MeterValueMeasurand
+    measurandType: OCPP16MeterValueMeasurand,
   ): void {
     if (isUndefined(chargingStation.powerDivider)) {
       const errMsg = `MeterValues measurand ${
@@ -922,7 +910,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   }
 
   private static getMeasurandDefaultLocation(
-    measurandType: OCPP16MeterValueMeasurand
+    measurandType: OCPP16MeterValueMeasurand,
   ): MeterValueLocation | undefined {
     switch (measurandType) {
       case OCPP16MeterValueMeasurand.STATE_OF_CHARGE:
@@ -931,7 +919,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   }
 
   private static getMeasurandDefaultUnit(
-    measurandType: OCPP16MeterValueMeasurand
+    measurandType: OCPP16MeterValueMeasurand,
   ): MeterValueUnit | undefined {
     switch (measurandType) {
       case OCPP16MeterValueMeasurand.CURRENT_EXPORT:
@@ -959,14 +947,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       isNotEmptyString(
         chargingStation.idTagsCache
           .getIdTags(getIdTagsFile(chargingStation.stationInfo))
-          ?.find((tag) => tag === idTag)
+          ?.find((tag) => tag === idTag),
       )
     );
   }
 
   private static async isIdTagRemoteAuthorized(
     chargingStation: ChargingStation,
-    idTag: string
+    idTag: string,
   ): Promise<boolean> {
     const authorizeResponse: OCPP16AuthorizeResponse =
       await chargingStation.ocppRequestService.requestHandler<

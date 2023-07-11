@@ -26,7 +26,7 @@ export class Configuration {
   private static configurationFile = join(
     dirname(fileURLToPath(import.meta.url)),
     'assets',
-    'config.json'
+    'config.json',
   );
 
   private static configurationFileWatcher: FSWatcher | undefined;
@@ -45,8 +45,8 @@ export class Configuration {
     if (hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
-          "Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead"
-        )}`
+          "Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead",
+        )}`,
       );
     }
     let uiServerConfiguration: UIServerConfiguration = {
@@ -60,7 +60,7 @@ export class Configuration {
     if (hasOwnProp(Configuration.getConfig(), 'uiServer')) {
       uiServerConfiguration = merge<UIServerConfiguration>(
         uiServerConfiguration,
-        Configuration.getConfig()?.uiServer
+        Configuration.getConfig()?.uiServer,
       );
     }
     if (isCFEnvironment() === true) {
@@ -84,7 +84,7 @@ export class Configuration {
         ...(Configuration.getConfig()?.performanceStorage?.type === StorageType.JSON_FILE &&
           Configuration.getConfig()?.performanceStorage?.uri && {
             uri: Configuration.buildPerformanceUriFilePath(
-              new URL(Configuration.getConfig()?.performanceStorage?.uri).pathname
+              new URL(Configuration.getConfig()?.performanceStorage?.uri).pathname,
             ),
           }),
       };
@@ -96,17 +96,17 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'autoReconnectTimeout',
       undefined,
-      "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead"
+      "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'connectionTimeout',
       undefined,
-      "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead"
+      "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'autoReconnectMaxRetries',
       undefined,
-      'Use it in charging station template instead'
+      'Use it in charging station template instead',
     );
     // Read conf
     if (hasOwnProp(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
@@ -118,7 +118,7 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'stationTemplateURLs',
       undefined,
-      "Use 'stationTemplateUrls' instead"
+      "Use 'stationTemplateUrls' instead",
     );
     !isUndefined(Configuration.getConfig()['stationTemplateURLs']) &&
       (Configuration.getConfig().stationTemplateUrls = Configuration.getConfig()[
@@ -129,11 +129,11 @@ export class Configuration {
         if (!isUndefined(stationTemplateUrl['numberOfStation'])) {
           console.error(
             `${chalk.green(Configuration.logPrefix())} ${chalk.red(
-              `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`
-            )}`
+              `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`,
+            )}`,
           );
         }
-      }
+      },
     );
     // Read conf
     return Configuration.getConfig()?.stationTemplateUrls;
@@ -143,52 +143,52 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'logEnabled',
       undefined,
-      "Use 'log' section to define the logging enablement instead"
+      "Use 'log' section to define the logging enablement instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logFile',
       undefined,
-      "Use 'log' section to define the log file instead"
+      "Use 'log' section to define the log file instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logErrorFile',
       undefined,
-      "Use 'log' section to define the log error file instead"
+      "Use 'log' section to define the log error file instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logConsole',
       undefined,
-      "Use 'log' section to define the console logging enablement instead"
+      "Use 'log' section to define the console logging enablement instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logStatisticsInterval',
       undefined,
-      "Use 'log' section to define the log statistics interval instead"
+      "Use 'log' section to define the log statistics interval instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logLevel',
       undefined,
-      "Use 'log' section to define the log level instead"
+      "Use 'log' section to define the log level instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logFormat',
       undefined,
-      "Use 'log' section to define the log format instead"
+      "Use 'log' section to define the log format instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logRotate',
       undefined,
-      "Use 'log' section to define the log rotation enablement instead"
+      "Use 'log' section to define the log rotation enablement instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logMaxFiles',
       undefined,
-      "Use 'log' section to define the log maximum files instead"
+      "Use 'log' section to define the log maximum files instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logMaxSize',
       undefined,
-      "Use 'log' section to define the log maximum size instead"
+      "Use 'log' section to define the log maximum size instead",
     );
     const defaultLogConfiguration: LogConfiguration = {
       enabled: true,
@@ -243,47 +243,47 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
       undefined,
-      "Use 'worker' section to define the type of worker process model instead"
+      "Use 'worker' section to define the type of worker process model instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerProcess',
       undefined,
-      "Use 'worker' section to define the type of worker process model instead"
+      "Use 'worker' section to define the type of worker process model instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerStartDelay',
       undefined,
-      "Use 'worker' section to define the worker start delay instead"
+      "Use 'worker' section to define the worker start delay instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'chargingStationsPerWorker',
       undefined,
-      "Use 'worker' section to define the number of element(s) per worker instead"
+      "Use 'worker' section to define the number of element(s) per worker instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'elementStartDelay',
       undefined,
-      "Use 'worker' section to define the worker's element start delay instead"
+      "Use 'worker' section to define the worker's element start delay instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMinSize',
       undefined,
-      "Use 'worker' section to define the worker pool minimum size instead"
+      "Use 'worker' section to define the worker pool minimum size instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolSize;',
       undefined,
-      "Use 'worker' section to define the worker pool maximum size instead"
+      "Use 'worker' section to define the worker pool maximum size instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMaxSize;',
       undefined,
-      "Use 'worker' section to define the worker pool maximum size instead"
+      "Use 'worker' section to define the worker pool maximum size instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolStrategy;',
       undefined,
-      "Use 'worker' section to define the worker pool strategy instead"
+      "Use 'worker' section to define the worker pool strategy instead",
     );
     const defaultWorkerConfiguration: WorkerConfiguration = {
       processType: WorkerProcessType.workerSet,
@@ -328,7 +328,7 @@ export class Configuration {
 
   public static workerPoolInUse(): boolean {
     return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
-      Configuration.getWorker().processType
+      Configuration.getWorker().processType,
     );
   }
 
@@ -340,7 +340,7 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'supervisionURLs',
       undefined,
-      "Use 'supervisionUrls' instead"
+      "Use 'supervisionUrls' instead",
     );
     !isUndefined(Configuration.getConfig()['supervisionURLs']) &&
       (Configuration.getConfig().supervisionUrls = Configuration.getConfig()['supervisionURLs'] as
@@ -354,12 +354,12 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'distributeStationToTenantEqually',
       undefined,
-      "Use 'supervisionUrlDistribution' instead"
+      "Use 'supervisionUrlDistribution' instead",
     );
     Configuration.warnDeprecatedConfigurationKey(
       'distributeStationsToTenantsEqually',
       undefined,
-      "Use 'supervisionUrlDistribution' instead"
+      "Use 'supervisionUrlDistribution' instead",
     );
     return hasOwnProp(Configuration.getConfig(), 'supervisionUrlDistribution')
       ? Configuration.getConfig()?.supervisionUrlDistribution
@@ -373,7 +373,7 @@ export class Configuration {
   private static warnDeprecatedConfigurationKey(
     key: string,
     sectionName?: string,
-    logMsgToAppend = ''
+    logMsgToAppend = '',
   ) {
     if (
       sectionName &&
@@ -384,16 +384,16 @@ export class Configuration {
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage in section '${sectionName}'${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
-          }`
-        )}`
+          }`,
+        )}`,
       );
     } else if (!isUndefined(Configuration.getConfig()[key])) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
-          }`
-        )}`
+          }`,
+        )}`,
       );
     }
   }
@@ -403,14 +403,14 @@ export class Configuration {
     if (!Configuration.configuration) {
       try {
         Configuration.configuration = JSON.parse(
-          readFileSync(Configuration.configurationFile, 'utf8')
+          readFileSync(Configuration.configurationFile, 'utf8'),
         ) as ConfigurationData;
       } catch (error) {
         Configuration.handleFileException(
           Configuration.configurationFile,
           FileType.Configuration,
           error as NodeJS.ErrnoException,
-          Configuration.logPrefix()
+          Configuration.logPrefix(),
         );
       }
       if (!Configuration.configurationFileWatcher) {
@@ -438,7 +438,7 @@ export class Configuration {
         Configuration.configurationFile,
         FileType.Configuration,
         error as NodeJS.ErrnoException,
-        Configuration.logPrefix()
+        Configuration.logPrefix(),
       );
     }
   }
@@ -447,7 +447,7 @@ export class Configuration {
     file: string,
     fileType: FileType,
     error: NodeJS.ErrnoException,
-    logPrefix: string
+    logPrefix: string,
   ): void {
     const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
     let logMsg: string;
@@ -475,11 +475,11 @@ export class Configuration {
     switch (storageType) {
       case StorageType.JSON_FILE:
         return Configuration.buildPerformanceUriFilePath(
-          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME}`
+          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME}`,
         );
       case StorageType.SQLITE:
         return Configuration.buildPerformanceUriFilePath(
-          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
+          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`,
         );
       default:
         throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);

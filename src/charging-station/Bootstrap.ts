@@ -75,7 +75,7 @@ export class Bootstrap extends EventEmitter {
     this.workerImplementation = null;
     this.workerScript = join(
       dirname(fileURLToPath(import.meta.url)),
-      `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`
+      `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`,
     );
     Configuration.getUIServer().enabled === true &&
       (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer()));
@@ -83,7 +83,7 @@ export class Bootstrap extends EventEmitter {
       (this.storage = StorageFactory.getStorage(
         Configuration.getPerformanceStorage().type,
         Configuration.getPerformanceStorage().uri,
-        this.logPrefix()
+        this.logPrefix(),
       ));
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
   }
@@ -117,9 +117,9 @@ export class Bootstrap extends EventEmitter {
           } catch (error) {
             console.error(
               chalk.red(
-                `Error at starting charging station with template file ${stationTemplateUrl.file}: `
+                `Error at starting charging station with template file ${stationTemplateUrl.file}: `,
               ),
-              error
+              error,
             );
           }
         }
@@ -139,14 +139,14 @@ export class Bootstrap extends EventEmitter {
               !isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
                 ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
-            }`
-          )
+            }`,
+          ),
         );
         Configuration.workerDynamicPoolInUse() &&
           console.warn(
             chalk.yellow(
-              'Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using static pool or worker set mode instead'
-            )
+              'Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using static pool or worker set mode instead',
+            ),
           );
         console.info(chalk.green('Worker set/pool information:'), this.workerImplementation?.info);
         this.started = true;
@@ -170,19 +170,19 @@ export class Bootstrap extends EventEmitter {
           this.uiServer.buildProtocolRequest(
             generateUUID(),
             ProcedureName.STOP_CHARGING_STATION,
-            Constants.EMPTY_FREEZED_OBJECT
-          )
+            Constants.EMPTY_FREEZED_OBJECT,
+          ),
         );
         await Promise.race([
           waitChargingStationEvents(
             this,
             ChargingStationWorkerMessageEvents.stopped,
-            this.numberOfChargingStations
+            this.numberOfChargingStations,
           ),
           new Promise<string>((resolve) => {
             setTimeout(() => {
               const message = `Timeout reached ${formatDurationMilliSeconds(
-                Constants.STOP_SIMULATOR_TIMEOUT
+                Constants.STOP_SIMULATOR_TIMEOUT,
               )} at stopping charging stations simulator`;
               console.warn(chalk.yellow(message));
               resolve(message);
@@ -225,12 +225,12 @@ export class Bootstrap extends EventEmitter {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
             messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
           },
-        }
+        },
       ));
   }
 
   private messageHandler(
-    msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
+    msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>,
   ): void {
     // logger.debug(
     //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
@@ -257,12 +257,12 @@ export class Bootstrap extends EventEmitter {
           this.workerEventPerformanceStatistics(msg.data as Statistics);
           this.emit(
             ChargingStationWorkerMessageEvents.performanceStatistics,
-            msg.data as Statistics
+            msg.data as Statistics,
           );
           break;
         default:
           throw new BaseError(
-            `Unknown event type: '${msg.id}' for data: ${JSON.stringify(msg.data, null, 2)}`
+            `Unknown event type: '${msg.id}' for data: ${JSON.stringify(msg.data, null, 2)}`,
           );
       }
     } catch (error) {
@@ -270,7 +270,7 @@ export class Bootstrap extends EventEmitter {
         `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${
           msg.id
         }' event:`,
-        error
+        error,
       );
     }
   }
@@ -283,7 +283,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) started (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfChargingStations})`
+      } started from ${this.numberOfChargingStations})`,
     );
   };
 
@@ -295,7 +295,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) stopped (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfChargingStations})`
+      } started from ${this.numberOfChargingStations})`,
     );
   };
 
@@ -318,13 +318,13 @@ export class Bootstrap extends EventEmitter {
         }
       } else {
         console.warn(
-          chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
+          chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting"),
         );
         process.exit(exitCodes.missingChargingStationsConfiguration);
       }
       if (this.numberOfChargingStations === 0) {
         console.warn(
-          chalk.yellow('No charging station template enabled in configuration, exiting')
+          chalk.yellow('No charging station template enabled in configuration, exiting'),
         );
         process.exit(exitCodes.noChargingStationTemplates);
       }
@@ -340,7 +340,7 @@ export class Bootstrap extends EventEmitter {
 
   private async startChargingStation(
     index: number,
-    stationTemplateUrl: StationTemplateUrl
+    stationTemplateUrl: StationTemplateUrl,
   ): Promise<void> {
     await this.workerImplementation?.addElement({
       index,
@@ -348,7 +348,7 @@ export class Bootstrap extends EventEmitter {
         dirname(fileURLToPath(import.meta.url)),
         'assets',
         'station-templates',
-        stationTemplateUrl.file
+        stationTemplateUrl.file,
       ),
     });
   }
