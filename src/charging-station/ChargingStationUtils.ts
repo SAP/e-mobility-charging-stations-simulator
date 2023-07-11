@@ -357,6 +357,7 @@ export const warnTemplateKeysDeprecation = (
   const templateKeys: { key: string; deprecatedKey: string }[] = [
     { key: 'supervisionUrls', deprecatedKey: 'supervisionUrl' },
     { key: 'idTagsFile', deprecatedKey: 'authorizationFile' },
+    { key: 'ocppStrictCompliance', deprecatedKey: 'payloadSchemaValidation' },
   ];
   for (const templateKey of templateKeys) {
     warnDeprecatedTemplateKey(
