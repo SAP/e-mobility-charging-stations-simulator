@@ -354,10 +354,10 @@ export const warnTemplateKeysDeprecation = (
   logPrefix: string,
   templateFile: string,
 ) => {
-  const templateKeys: { key: string; deprecatedKey: string }[] = [
-    { key: 'supervisionUrls', deprecatedKey: 'supervisionUrl' },
-    { key: 'idTagsFile', deprecatedKey: 'authorizationFile' },
-    { key: 'ocppStrictCompliance', deprecatedKey: 'payloadSchemaValidation' },
+  const templateKeys: { deprecatedKey: string; key?: string }[] = [
+    { deprecatedKey: 'supervisionUrl', key: 'supervisionUrls' },
+    { deprecatedKey: 'authorizationFile', key: 'idTagsFile' },
+    { deprecatedKey: 'payloadSchemaValidation', key: 'ocppStrictCompliance' },
   ];
   for (const templateKey of templateKeys) {
     warnDeprecatedTemplateKey(
@@ -365,7 +365,7 @@ export const warnTemplateKeysDeprecation = (
       templateKey.deprecatedKey,
       logPrefix,
       templateFile,
-      `Use '${templateKey.key}' instead`,
+      !isUndefined(templateKey.key) && `Use '${templateKey.key}' instead`,
     );
     convertDeprecatedTemplateKey(stationTemplate, templateKey.deprecatedKey, templateKey.key);
   }
