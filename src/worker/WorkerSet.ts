@@ -117,9 +117,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       this.workerOptions?.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.on('error', (error) => {
-      if (this.emitter !== undefined) {
-        this.emitter.emit(WorkerSetEvents.error, error);
-      }
+      this.emitter?.emit(WorkerSetEvents.error, error);
       if (this.workerOptions?.poolOptions?.restartWorkerOnError) {
         this.addWorkerSetElement();
       }
