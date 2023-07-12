@@ -212,12 +212,12 @@ export class Bootstrap extends EventEmitter {
   }
 
   private initializeWorkerImplementation(): void {
-    let elementsPerWorker = WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER;
-    if (
-      Configuration.getWorker()?.elementsPerWorker === 'auto' &&
-      this.numberOfChargingStations > availableParallelism()
-    ) {
-      elementsPerWorker = Math.round(this.numberOfChargingStations / availableParallelism());
+    let elementsPerWorker: number;
+    if (Configuration.getWorker()?.elementsPerWorker === 'auto') {
+      elementsPerWorker =
+        this.numberOfChargingStations > availableParallelism()
+          ? Math.round(this.numberOfChargingStations / availableParallelism())
+          : 1;
     }
     this.workerImplementation === null &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
@@ -228,7 +228,8 @@ export class Bootstrap extends EventEmitter {
           elementStartDelay: Configuration.getWorker().elementStartDelay,
           poolMaxSize: Configuration.getWorker().poolMaxSize,
           poolMinSize: Configuration.getWorker().poolMinSize,
-          elementsPerWorker,
+          elementsPerWorker:
+            elementsPerWorker ?? (Configuration.getWorker().elementsPerWorker as number),
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
             messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
