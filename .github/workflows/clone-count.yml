@@ -2,7 +2,7 @@ name: GitHub Clone Count Update Everyday
 
 on:
   schedule:
-    - cron: "0 */24 * * *"
+    - cron: '0 */24 * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      
+      - uses: actions/checkout@v3
+
       - name: gh login
         run: echo "${{ secrets.SECRET_TOKEN }}" | gh auth login --with-token
 
@@ -51,7 +51,7 @@ jobs:
           curl https://raw.githubusercontent.com/MShawon/github-clone-count-badge/master/main.py > main.py
           python3 main.py
 
-      - name: Update gist with latest count
+      - name: update gist with latest count
         run: |
           content=$(sed -e 's/\\/\\\\/g' -e 's/\t/\\t/g' -e 's/\"/\\"/g' -e 's/\r//g' "clone.json" | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g')
           echo '{"description": "${{ github.repository }} clone statistics", "files": {"clone.json": {"content": "'"$content"'"}}}' > post_clone.json
@@ -77,7 +77,7 @@ jobs:
             ```html' >> CLONE.md
             echo "<a href='$repo'><img alt='GitHub Clones' src='$shields$url&logo=github'></a>" >> CLONE.md
             echo '```' >> CLONE.md
-            
+
             git add CLONE.md
             git config --global user.name "GitHub Action"
             git config --global user.email "action@github.com"
