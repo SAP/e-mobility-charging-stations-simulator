@@ -288,7 +288,7 @@ export class Configuration {
     const defaultWorkerConfiguration: WorkerConfiguration = {
       processType: WorkerProcessType.workerSet,
       startDelay: WorkerConstants.DEFAULT_WORKER_START_DELAY,
-      elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
+      elementsPerWorker: 'auto',
       elementStartDelay: WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
       poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
+import { availableParallelism } from 'poolifier';
 
 import { waitChargingStationEvents } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
@@ -35,7 +36,7 @@ import {
   logPrefix,
   logger,
 } from '../utils';
-import { type WorkerAbstract, WorkerFactory } from '../worker';
+import { type WorkerAbstract, WorkerConstants, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
 
@@ -211,6 +212,13 @@ export class Bootstrap extends EventEmitter {
   }
 
   private initializeWorkerImplementation(): void {
+    let elementsPerWorker = WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER;
+    if (
+      Configuration.getWorker()?.elementsPerWorker === 'auto' &&
+      this.numberOfChargingStations > availableParallelism()
+    ) {
+      elementsPerWorker = Math.round(this.numberOfChargingStations / availableParallelism());
+    }
     this.workerImplementation === null &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
         this.workerScript,
@@ -220,7 +228,7 @@ export class Bootstrap extends EventEmitter {
           elementStartDelay: Configuration.getWorker().elementStartDelay,
           poolMaxSize: Configuration.getWorker().poolMaxSize,
           poolMinSize: Configuration.getWorker().poolMinSize,
-          elementsPerWorker: Configuration.getWorker().elementsPerWorker,
+          elementsPerWorker,
           poolOptions: {
             workerChoiceStrategy: Configuration.getWorker().poolStrategy,
             messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,

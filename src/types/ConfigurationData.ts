@@ -53,7 +53,7 @@ export type StorageConfiguration = {
 export type WorkerConfiguration = {
   processType?: WorkerProcessType;
   startDelay?: number;
-  elementsPerWorker?: number;
+  elementsPerWorker?: number | 'auto';
   elementStartDelay?: number;
   poolMinSize?: number;
   poolMaxSize?: number;
