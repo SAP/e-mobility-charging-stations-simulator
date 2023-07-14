@@ -36,7 +36,7 @@ import {
   logPrefix,
   logger,
 } from '../utils';
-import { type WorkerAbstract, WorkerConstants, WorkerFactory } from '../worker';
+import { type WorkerAbstract, WorkerFactory } from '../worker';
 
 const moduleName = 'Bootstrap';
 
@@ -231,7 +231,6 @@ export class Bootstrap extends EventEmitter {
           elementsPerWorker:
             elementsPerWorker ?? (Configuration.getWorker().elementsPerWorker as number),
           poolOptions: {
-            workerChoiceStrategy: Configuration.getWorker().poolStrategy,
             messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
           },
         },

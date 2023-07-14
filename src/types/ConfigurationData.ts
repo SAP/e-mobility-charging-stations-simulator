@@ -57,6 +57,7 @@ export type WorkerConfiguration = {
   elementStartDelay?: number;
   poolMinSize?: number;
   poolMaxSize?: number;
+  /** @deprecated Not publicly exposed to end users. */
   poolStrategy?: WorkerChoiceStrategy;
 };
 

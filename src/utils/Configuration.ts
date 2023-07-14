@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
 import merge from 'just-merge';
-import { WorkerChoiceStrategies } from 'poolifier';
 
 import { Constants } from './Constants';
 import { hasOwnProp, isCFEnvironment, isNotEmptyString, isUndefined } from './Utils';
@@ -292,8 +291,9 @@ export class Configuration {
       elementStartDelay: WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
       poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
-      poolStrategy: WorkerChoiceStrategies.ROUND_ROBIN,
     };
+    hasOwnProp(Configuration.getConfig(), 'workerPoolStrategy') &&
+      delete Configuration.getConfig()?.workerPoolStrategy;
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
       ...(hasOwnProp(Configuration.getConfig(), 'workerProcess') && {
         processType: Configuration.getConfig()?.workerProcess,
@@ -313,11 +313,12 @@ export class Configuration {
       ...(hasOwnProp(Configuration.getConfig(), 'workerPoolMaxSize') && {
         poolMaxSize: Configuration.getConfig()?.workerPoolMaxSize,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'workerPoolStrategy') && {
-        poolStrategy:
-          Configuration.getConfig()?.workerPoolStrategy ?? WorkerChoiceStrategies.ROUND_ROBIN,
-      }),
     };
+    Configuration.warnDeprecatedConfigurationKey(
+      'poolStrategy',
+      'worker',
+      'Not publicly exposed to end users',
+    );
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...deprecatedWorkerConfiguration,
