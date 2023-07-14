@@ -416,7 +416,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     this.runInAsyncScope(
       chargingStation.reset.bind(chargingStation) as (
         this: ChargingStation,
-        ...args: any[]
+        ...args: unknown[]
       ) => Promise<void>,
       chargingStation,
       `${commandPayload.type}Reset` as OCPP16StopTransactionReason,
@@ -1088,7 +1088,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       this.runInAsyncScope(
         this.updateFirmwareSimulation.bind(this) as (
           this: OCPP16IncomingRequestService,
-          ...args: any[]
+          ...args: unknown[]
         ) => Promise<void>,
         this,
         chargingStation,
@@ -1099,7 +1099,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           this.runInAsyncScope(
             this.updateFirmwareSimulation.bind(this) as (
               this: OCPP16IncomingRequestService,
-              ...args: any[]
+              ...args: unknown[]
             ) => Promise<void>,
             this,
             chargingStation,

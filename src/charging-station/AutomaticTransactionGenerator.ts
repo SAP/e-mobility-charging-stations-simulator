@@ -112,7 +112,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       this.runInAsyncScope(
         this.internalStartConnector.bind(this) as (
           this: AutomaticTransactionGenerator,
-          ...args: any[]
+          ...args: unknown[]
         ) => Promise<void>,
         this,
         connectorId,
