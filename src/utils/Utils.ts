@@ -297,7 +297,7 @@ export const JSONStringifyWithMapSupport = (
 ): string => {
   return JSON.stringify(
     obj,
-    (key, value: Record<string, unknown>) => {
+    (_, value: Record<string, unknown>) => {
       if (value instanceof Map) {
         return {
           dataType: 'Map',
