@@ -31,11 +31,14 @@ export abstract class OCPPResponseService {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.responseHandler = this.responseHandler.bind(this) as (
+    this.responseHandler = this.responseHandler.bind(this) as <
+      ReqType extends JsonType,
+      ResType extends JsonType,
+    >(
       chargingStation: ChargingStation,
       commandName: RequestCommand,
-      payload: JsonType,
-      requestPayload: JsonType,
+      payload: ResType,
+      requestPayload: ReqType,
     ) => Promise<void>;
     this.validateResponsePayload = this.validateResponsePayload.bind(this) as <T extends JsonType>(
       chargingStation: ChargingStation,
@@ -81,10 +84,10 @@ export abstract class OCPPResponseService {
     /* This is intentional */
   }
 
-  public abstract responseHandler(
+  public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
-    payload: JsonType,
-    requestPayload: JsonType,
+    payload: ResType,
+    requestPayload: ReqType,
   ): Promise<void>;
 }

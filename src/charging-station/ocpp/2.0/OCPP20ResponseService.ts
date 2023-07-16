@@ -87,11 +87,11 @@ export class OCPP20ResponseService extends OCPPResponseService {
     ) => boolean;
   }
 
-  public async responseHandler(
+  public async responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
-    payload: JsonType,
-    requestPayload: JsonType,
+    payload: ResType,
+    requestPayload: ReqType,
   ): Promise<void> {
     if (
       chargingStation.isRegistered() === true ||

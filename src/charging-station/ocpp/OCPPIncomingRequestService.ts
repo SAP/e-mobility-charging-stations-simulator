@@ -33,11 +33,15 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.incomingRequestHandler = this.incomingRequestHandler.bind(this) as (
+    this.incomingRequestHandler = this.incomingRequestHandler.bind(this) as <
+      ReqType extends JsonType,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      ResType extends JsonType,
+    >(
       chargingStation: ChargingStation,
       messageId: string,
       commandName: IncomingRequestCommand,
-      commandPayload: JsonType,
+      commandPayload: ReqType,
     ) => Promise<void>;
     this.validateIncomingRequestPayload = this.validateIncomingRequestPayload.bind(this) as <
       T extends JsonType,
@@ -110,10 +114,11 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     return OCPPConstants.OCPP_RESPONSE_REJECTED;
   }
 
-  public abstract incomingRequestHandler(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public abstract incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     messageId: string,
     commandName: IncomingRequestCommand,
-    commandPayload: JsonType,
+    commandPayload: ReqType,
   ): Promise<void>;
 }

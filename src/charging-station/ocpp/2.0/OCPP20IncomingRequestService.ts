@@ -48,13 +48,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     ) => boolean;
   }
 
-  public async incomingRequestHandler(
+  public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     messageId: string,
     commandName: OCPP20IncomingRequestCommand,
-    commandPayload: JsonType,
+    commandPayload: ReqType,
   ): Promise<void> {
-    let response: JsonType;
+    let response: ResType;
     if (
       chargingStation.getOcppStrictCompliance() === true &&
       chargingStation.inPendingState() === true &&
@@ -84,10 +84,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         try {
           this.validatePayload(chargingStation, commandName, commandPayload);
           // Call the method to build the response
-          response = await this.incomingRequestHandlers.get(commandName)!(
+          response = (await this.incomingRequestHandlers.get(commandName)!(
             chargingStation,
             commandPayload,
-          );
+          )) as ResType;
         } catch (error) {
           // Log
           logger.error(

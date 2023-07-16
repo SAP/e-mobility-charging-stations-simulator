@@ -314,11 +314,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
     ) => boolean;
   }
 
-  public async responseHandler(
+  public async responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
-    payload: JsonType,
-    requestPayload: JsonType,
+    payload: ResType,
+    requestPayload: ReqType,
   ): Promise<void> {
     if (
       chargingStation.isRegistered() === true ||
