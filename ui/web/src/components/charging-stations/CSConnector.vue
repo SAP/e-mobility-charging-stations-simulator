@@ -9,7 +9,7 @@
       :visibility="state.isIdTagModalVisible"
       :id-tag="state.idTag"
       @close="hideIdTagModal()"
-      @done="Utils.compose(state.transaction, hideIdTagModal)()"
+      @done="compose(state.transaction, hideIdTagModal)()"
     >
       Start Transaction
     </IdTagInputModal> -->
@@ -28,7 +28,7 @@ import Button from '../buttons/Button.vue';
 // import IdTagInputModal from './IdTagInputModal.vue';
 import type { ConnectorStatus } from '@/types';
 import UIClient from '@/composables/UIClient';
-// import Utils from '@/composables/Utils';
+// import { compose } from '@/composables/Utils';
 
 const props = defineProps<{
   hashId: string;

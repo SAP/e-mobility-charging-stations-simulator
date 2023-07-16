@@ -89,9 +89,9 @@ export class ChargingStationConfigurationUtils {
       key,
       caseInsensitive,
     );
-    if (keyFound && chargingStation.ocppConfiguration?.configurationKey) {
-      chargingStation.ocppConfiguration.configurationKey[
-        chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound)
+    if (keyFound) {
+      chargingStation.ocppConfiguration!.configurationKey![
+        chargingStation.ocppConfiguration!.configurationKey!.indexOf(keyFound)
       ].value = value;
       chargingStation.saveOcppConfiguration();
     } else {

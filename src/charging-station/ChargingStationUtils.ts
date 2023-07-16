@@ -565,7 +565,6 @@ const getConfiguredNumberOfConnectors = (stationTemplate: ChargingStationTemplat
       ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
       : getMaxNumberOfConnectors(stationTemplate.Connectors);
   } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
-    configuredMaxConnectors = 0;
     for (const evse in stationTemplate.Evses) {
       if (evse === '0') {
         continue;

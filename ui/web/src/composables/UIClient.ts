@@ -1,4 +1,4 @@
-import Utils from './Utils';
+import { promiseWithTimeout } from './Utils';
 import {
   ProcedureName,
   type ProtocolResponse,
@@ -146,7 +146,7 @@ export default class UIClient {
     data: RequestPayload
   ): Promise<ResponsePayload> {
     let uuid: string;
-    return Utils.promiseWithTimeout(
+    return promiseWithTimeout(
       new Promise((resolve, reject) => {
         uuid = crypto.randomUUID();
         const msg = JSON.stringify([uuid, command, data]);

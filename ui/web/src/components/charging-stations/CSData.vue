@@ -21,7 +21,7 @@
 // import { reactive } from 'vue';
 import CSConnector from './CSConnector.vue';
 import type { ChargingStationData, ChargingStationInfo, ConnectorStatus } from '@/types';
-import Utils from '@/composables/Utils';
+import { ifUndefined } from '@/composables/Utils';
 
 const props = defineProps<{
   chargingStation: ChargingStationData;
@@ -59,7 +59,7 @@ function getHashId(): string {
   return getInfo().hashId;
 }
 function getId(): string {
-  return Utils.ifUndefined<string>(getInfo().chargingStationId, 'Ø');
+  return ifUndefined<string>(getInfo().chargingStationId, 'Ø');
 }
 function getModel(): string {
   return getInfo().chargePointModel;
@@ -68,7 +68,7 @@ function getVendor(): string {
   return getInfo().chargePointVendor;
 }
 function getFirmwareVersion(): string {
-  return Utils.ifUndefined<string>(getInfo().firmwareVersion, 'Ø');
+  return ifUndefined<string>(getInfo().firmwareVersion, 'Ø');
 }
 function getStarted(): string {
   return props.chargingStation.started === true ? 'Yes' : 'No';
