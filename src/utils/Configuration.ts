@@ -385,7 +385,7 @@ export class Configuration {
     if (
       sectionName &&
       !isUndefined(Configuration.getConfig()![sectionName]) &&
-      !isUndefined((Configuration.getConfig()![sectionName] as object)[key])
+      !isUndefined((Configuration.getConfig()![sectionName] as Record<string, unknown>)[key])
     ) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
