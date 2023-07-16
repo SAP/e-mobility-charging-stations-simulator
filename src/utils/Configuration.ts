@@ -23,7 +23,7 @@ import { WorkerConstants, WorkerProcessType } from '../worker';
 
 enum ConfigurationSection {
   log = 'log',
-  performanceStorage = 'storage',
+  performanceStorage = 'performanceStorage',
   worker = 'worker',
   uiServer = 'uiServer',
 }
@@ -36,7 +36,7 @@ export class Configuration {
   );
 
   private static configurationFileWatcher: FSWatcher | undefined;
-  private static configuration: ConfigurationData | null = null;
+  private static configurationData: ConfigurationData | null = null;
   private static configurationSectionCache = new Map<
     ConfigurationSection,
     LogConfiguration | StorageConfiguration | WorkerConfiguration | UIServerConfiguration
@@ -53,7 +53,7 @@ export class Configuration {
   }
 
   public static getUIServer(): UIServerConfiguration {
-    if (hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
+    if (hasOwnProp(Configuration.getConfigurationData(), 'uiWebSocketServer')) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
           `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`,
@@ -68,10 +68,10 @@ export class Configuration {
         port: Constants.DEFAULT_UI_SERVER_PORT,
       },
     };
-    if (hasOwnProp(Configuration.getConfig(), ConfigurationSection.uiServer)) {
+    if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.uiServer)) {
       uiServerConfiguration = merge<UIServerConfiguration>(
         uiServerConfiguration,
-        Configuration.getConfig()!.uiServer!,
+        Configuration.getConfigurationData()!.uiServer!,
       );
     }
     if (isCFEnvironment() === true) {
@@ -95,14 +95,15 @@ export class Configuration {
       type: StorageType.JSON_FILE,
       uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
     };
-    if (hasOwnProp(Configuration.getConfig(), ConfigurationSection.performanceStorage)) {
+    if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
       storageConfiguration = {
         ...storageConfiguration,
-        ...Configuration.getConfig()?.performanceStorage,
-        ...(Configuration.getConfig()?.performanceStorage?.type === StorageType.JSON_FILE &&
-          Configuration.getConfig()?.performanceStorage?.uri && {
+        ...Configuration.getConfigurationData()?.performanceStorage,
+        ...(Configuration.getConfigurationData()?.performanceStorage?.type ===
+          StorageType.JSON_FILE &&
+          Configuration.getConfigurationData()?.performanceStorage?.uri && {
             uri: Configuration.buildPerformanceUriFilePath(
-              new URL(Configuration.getConfig()!.performanceStorage!.uri!).pathname,
+              new URL(Configuration.getConfigurationData()!.performanceStorage!.uri!).pathname,
             ),
           }),
       };
@@ -129,9 +130,8 @@ export class Configuration {
       undefined,
       'Use it in charging station template instead',
     );
-    // Read conf
-    if (hasOwnProp(Configuration.getConfig(), 'autoReconnectMaxRetries')) {
-      return Configuration.getConfig()?.autoReconnectMaxRetries;
+    if (hasOwnProp(Configuration.getConfigurationData(), 'autoReconnectMaxRetries')) {
+      return Configuration.getConfigurationData()?.autoReconnectMaxRetries;
     }
   }
 
@@ -142,12 +142,13 @@ export class Configuration {
       "Use 'stationTemplateUrls' instead",
     );
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    !isUndefined(Configuration.getConfig()!['stationTemplateURLs']) &&
-      (Configuration.getConfig()!.stationTemplateUrls = Configuration.getConfig()![
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        'stationTemplateURLs'
-      ] as StationTemplateUrl[]);
-    Configuration.getConfig()!.stationTemplateUrls.forEach(
+    !isUndefined(Configuration.getConfigurationData()!['stationTemplateURLs']) &&
+      (Configuration.getConfigurationData()!.stationTemplateUrls =
+        Configuration.getConfigurationData()![
+          // eslint-disable-next-line @typescript-eslint/dot-notation
+          'stationTemplateURLs'
+        ] as StationTemplateUrl[]);
+    Configuration.getConfigurationData()!.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
         // eslint-disable-next-line @typescript-eslint/dot-notation
         if (!isUndefined(stationTemplateUrl['numberOfStation'])) {
@@ -159,8 +160,7 @@ export class Configuration {
         }
       },
     );
-    // Read conf
-    return Configuration.getConfig()?.stationTemplateUrls;
+    return Configuration.getConfigurationData()?.stationTemplateUrls;
   }
 
   public static getLog(): LogConfiguration {
@@ -224,42 +224,42 @@ export class Configuration {
       rotate: true,
     };
     const deprecatedLogConfiguration: LogConfiguration = {
-      ...(hasOwnProp(Configuration.getConfig(), 'logEnabled') && {
-        enabled: Configuration.getConfig()?.logEnabled,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logEnabled') && {
+        enabled: Configuration.getConfigurationData()?.logEnabled,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logFile') && {
-        file: Configuration.getConfig()?.logFile,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logFile') && {
+        file: Configuration.getConfigurationData()?.logFile,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logErrorFile') && {
-        errorFile: Configuration.getConfig()?.logErrorFile,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logErrorFile') && {
+        errorFile: Configuration.getConfigurationData()?.logErrorFile,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logStatisticsInterval') && {
-        statisticsInterval: Configuration.getConfig()?.logStatisticsInterval,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logStatisticsInterval') && {
+        statisticsInterval: Configuration.getConfigurationData()?.logStatisticsInterval,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logLevel') && {
-        level: Configuration.getConfig()?.logLevel,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logLevel') && {
+        level: Configuration.getConfigurationData()?.logLevel,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logConsole') && {
-        console: Configuration.getConfig()?.logConsole,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logConsole') && {
+        console: Configuration.getConfigurationData()?.logConsole,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logFormat') && {
-        format: Configuration.getConfig()?.logFormat,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logFormat') && {
+        format: Configuration.getConfigurationData()?.logFormat,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logRotate') && {
-        rotate: Configuration.getConfig()?.logRotate,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logRotate') && {
+        rotate: Configuration.getConfigurationData()?.logRotate,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logMaxFiles') && {
-        maxFiles: Configuration.getConfig()?.logMaxFiles,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logMaxFiles') && {
+        maxFiles: Configuration.getConfigurationData()?.logMaxFiles,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'logMaxSize') && {
-        maxSize: Configuration.getConfig()?.logMaxSize,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'logMaxSize') && {
+        maxSize: Configuration.getConfigurationData()?.logMaxSize,
       }),
     };
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
       ...deprecatedLogConfiguration,
-      ...(hasOwnProp(Configuration.getConfig(), ConfigurationSection.log) &&
-        Configuration.getConfig()?.log),
+      ...(hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.log) &&
+        Configuration.getConfigurationData()?.log),
     };
     return Configuration.getConfigurationSection<LogConfiguration>(
       ConfigurationSection.log,
@@ -321,26 +321,26 @@ export class Configuration {
       poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
     };
-    hasOwnProp(Configuration.getConfig(), 'workerPoolStrategy') &&
-      delete Configuration.getConfig()?.workerPoolStrategy;
+    hasOwnProp(Configuration.getConfigurationData(), 'workerPoolStrategy') &&
+      delete Configuration.getConfigurationData()?.workerPoolStrategy;
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
-      ...(hasOwnProp(Configuration.getConfig(), 'workerProcess') && {
-        processType: Configuration.getConfig()?.workerProcess,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'workerProcess') && {
+        processType: Configuration.getConfigurationData()?.workerProcess,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'workerStartDelay') && {
-        startDelay: Configuration.getConfig()?.workerStartDelay,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'workerStartDelay') && {
+        startDelay: Configuration.getConfigurationData()?.workerStartDelay,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'chargingStationsPerWorker') && {
-        elementsPerWorker: Configuration.getConfig()?.chargingStationsPerWorker,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'chargingStationsPerWorker') && {
+        elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'elementStartDelay') && {
-        elementStartDelay: Configuration.getConfig()?.elementStartDelay,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'elementStartDelay') && {
+        elementStartDelay: Configuration.getConfigurationData()?.elementStartDelay,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'workerPoolMinSize') && {
-        poolMinSize: Configuration.getConfig()?.workerPoolMinSize,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMinSize') && {
+        poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize,
       }),
-      ...(hasOwnProp(Configuration.getConfig(), 'workerPoolMaxSize') && {
-        poolMaxSize: Configuration.getConfig()?.workerPoolMaxSize,
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMaxSize') && {
+        poolMaxSize: Configuration.getConfigurationData()?.workerPoolMaxSize,
       }),
     };
     Configuration.warnDeprecatedConfigurationKey(
@@ -351,8 +351,8 @@ export class Configuration {
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...deprecatedWorkerConfiguration,
-      ...(hasOwnProp(Configuration.getConfig(), ConfigurationSection.worker) &&
-        Configuration.getConfig()?.worker),
+      ...(hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.worker) &&
+        Configuration.getConfigurationData()?.worker),
     };
     if (!Object.values(WorkerProcessType).includes(workerConfiguration.processType!)) {
       throw new SyntaxError(
@@ -382,14 +382,13 @@ export class Configuration {
       "Use 'supervisionUrls' instead",
     );
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    if (!isUndefined(Configuration.getConfig()!['supervisionURLs'])) {
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      Configuration.getConfig()!.supervisionUrls = Configuration.getConfig()!['supervisionURLs'] as
-        | string
-        | string[];
+    if (!isUndefined(Configuration.getConfigurationData()!['supervisionURLs'])) {
+      Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        'supervisionURLs'
+      ] as string | string[];
     }
-    // Read conf
-    return Configuration.getConfig()?.supervisionUrls;
+    return Configuration.getConfigurationData()?.supervisionUrls;
   }
 
   public static getSupervisionUrlDistribution(): SupervisionUrlDistribution | undefined {
@@ -403,8 +402,8 @@ export class Configuration {
       undefined,
       "Use 'supervisionUrlDistribution' instead",
     );
-    return hasOwnProp(Configuration.getConfig(), 'supervisionUrlDistribution')
-      ? Configuration.getConfig()?.supervisionUrlDistribution
+    return hasOwnProp(Configuration.getConfigurationData(), 'supervisionUrlDistribution')
+      ? Configuration.getConfigurationData()?.supervisionUrlDistribution
       : SupervisionUrlDistribution.ROUND_ROBIN;
   }
 
@@ -419,8 +418,10 @@ export class Configuration {
   ) {
     if (
       sectionName &&
-      !isUndefined(Configuration.getConfig()![sectionName]) &&
-      !isUndefined((Configuration.getConfig()![sectionName] as Record<string, unknown>)[key])
+      !isUndefined(Configuration.getConfigurationData()![sectionName]) &&
+      !isUndefined(
+        (Configuration.getConfigurationData()![sectionName] as Record<string, unknown>)[key],
+      )
     ) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
@@ -429,7 +430,7 @@ export class Configuration {
           }`,
         )}`,
       );
-    } else if (!isUndefined(Configuration.getConfig()![key])) {
+    } else if (!isUndefined(Configuration.getConfigurationData()![key])) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage${
@@ -450,10 +451,10 @@ export class Configuration {
     return Configuration.configurationSectionCache.get(sectionName) as T;
   }
 
-  private static getConfig(): ConfigurationData | null {
-    if (!Configuration.configuration) {
+  private static getConfigurationData(): ConfigurationData | null {
+    if (!Configuration.configurationData) {
       try {
-        Configuration.configuration = JSON.parse(
+        Configuration.configurationData = JSON.parse(
           readFileSync(Configuration.configurationFile, 'utf8'),
         ) as ConfigurationData;
       } catch (error) {
@@ -468,7 +469,7 @@ export class Configuration {
         Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
       }
     }
-    return Configuration.configuration;
+    return Configuration.configurationData;
   }
 
   private static getConfigurationFileWatcher(): FSWatcher | undefined {
@@ -476,7 +477,7 @@ export class Configuration {
       return watch(Configuration.configurationFile, (event, filename): void => {
         if (filename!.trim()!.length > 0 && event === 'change') {
           // Nullify to force configuration file reading
-          Configuration.configuration = null;
+          Configuration.configurationData = null;
           Configuration.configurationSectionCache.clear();
           if (!isUndefined(Configuration.configurationChangeCallback)) {
             Configuration.configurationChangeCallback().catch((error) => {
