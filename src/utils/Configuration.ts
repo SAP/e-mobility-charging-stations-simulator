@@ -104,16 +104,6 @@ export class Configuration {
     return Configuration.getConfigurationData()?.stationTemplateUrls;
   }
 
-  public static workerPoolInUse(): boolean {
-    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
-      Configuration.buildWorkerSection().processType!,
-    );
-  }
-
-  public static workerDynamicPoolInUse(): boolean {
-    return Configuration.buildWorkerSection().processType === WorkerProcessType.dynamicPool;
-  }
-
   public static getSupervisionUrls(): string | string[] | undefined {
     Configuration.warnDeprecatedConfigurationKey(
       'supervisionURLs',
@@ -144,6 +134,16 @@ export class Configuration {
     return hasOwnProp(Configuration.getConfigurationData(), 'supervisionUrlDistribution')
       ? Configuration.getConfigurationData()?.supervisionUrlDistribution
       : SupervisionUrlDistribution.ROUND_ROBIN;
+  }
+
+  public static workerPoolInUse(): boolean {
+    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
+      Configuration.buildWorkerSection().processType!,
+    );
+  }
+
+  public static workerDynamicPoolInUse(): boolean {
+    return Configuration.buildWorkerSection().processType === WorkerProcessType.dynamicPool;
   }
 
   private static buildUIServerSection(): UIServerConfiguration {
