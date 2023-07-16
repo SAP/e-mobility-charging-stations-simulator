@@ -14,7 +14,7 @@ type ResponseHandler = {
   reject: (reason?: unknown) => void;
 };
 
-export default class UIClient {
+export class UIClient {
   private static instance: UIClient | null = null;
 
   private ws!: WebSocket;

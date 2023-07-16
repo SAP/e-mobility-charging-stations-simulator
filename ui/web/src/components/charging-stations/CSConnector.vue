@@ -27,7 +27,7 @@
 import Button from '../buttons/Button.vue';
 // import IdTagInputModal from './IdTagInputModal.vue';
 import type { ConnectorStatus } from '@/types';
-import UIClient from '@/composables/UIClient';
+import { UIClient } from '@/composables/UIClient';
 // import { compose } from '@/composables/Utils';
 
 const props = defineProps<{

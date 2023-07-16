@@ -22,7 +22,7 @@ import CSTable from '@/components/charging-stations/CSTable.vue';
 import type { ChargingStationData } from '@/types';
 import Container from '@/components/Container.vue';
 import ReloadButton from '@/components/buttons/ReloadButton.vue';
-import UIClient from '@/composables/UIClient';
+import { UIClient } from '@/composables/UIClient';
 
 const UIClientInstance = UIClient.getInstance();
 
