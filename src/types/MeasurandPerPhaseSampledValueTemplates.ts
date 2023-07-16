@@ -5,8 +5,8 @@ export type SampledValueTemplate = SampledValue & {
   minimumValue?: number;
 };
 
-export type MeasurandPerPhaseSampledValueTemplates = {
+export interface MeasurandPerPhaseSampledValueTemplates {
   L1?: SampledValueTemplate;
   L2?: SampledValueTemplate;
   L3?: SampledValueTemplate;
-};
+}

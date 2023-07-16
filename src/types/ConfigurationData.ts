@@ -14,12 +14,12 @@ export enum SupervisionUrlDistribution {
   CHARGING_STATION_AFFINITY = 'charging-station-affinity',
 }
 
-export type StationTemplateUrl = {
+export interface StationTemplateUrl {
   file: string;
   numberOfStations: number;
-};
+}
 
-export type LogConfiguration = {
+export interface LogConfiguration {
   enabled?: boolean;
   file?: string;
   errorFile?: string;
@@ -30,9 +30,9 @@ export type LogConfiguration = {
   rotate?: boolean;
   maxFiles?: string | number;
   maxSize?: string | number;
-};
+}
 
-export type UIServerConfiguration = {
+export interface UIServerConfiguration {
   enabled?: boolean;
   type?: ApplicationProtocol;
   options?: ServerOptions;
@@ -42,15 +42,15 @@ export type UIServerConfiguration = {
     username?: string;
     password?: string;
   };
-};
+}
 
-export type StorageConfiguration = {
+export interface StorageConfiguration {
   enabled?: boolean;
   type?: StorageType;
   uri?: string;
-};
+}
 
-export type WorkerConfiguration = {
+export interface WorkerConfiguration {
   processType?: WorkerProcessType;
   startDelay?: number;
   elementsPerWorker?: number | 'auto';
@@ -59,9 +59,9 @@ export type WorkerConfiguration = {
   poolMaxSize?: number;
   /** @deprecated Not publicly exposed to end users. */
   poolStrategy?: WorkerChoiceStrategy;
-};
+}
 
-export type ConfigurationData = {
+export interface ConfigurationData {
   supervisionUrls?: string | string[];
   supervisionUrlDistribution?: SupervisionUrlDistribution;
   stationTemplateUrls: StationTemplateUrl[];
@@ -104,4 +104,4 @@ export type ConfigurationData = {
   logFile?: string;
   /** @deprecated Moved to log configuration section. */
   logErrorFile?: string;
-};
+}

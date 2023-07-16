@@ -29,6 +29,7 @@ export class MikroOrmStorage extends Storage {
     this.dbName = this.getDBName();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async storePerformanceStatistics(performanceStatistics: Statistics): Promise<void> {
     try {
       const performanceRecord = new PerformanceRecord();

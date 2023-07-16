@@ -12,10 +12,10 @@ import {
   watchJsonFile,
 } from '../utils';
 
-type IdTagsCacheValueType = {
+interface IdTagsCacheValueType {
   idTags: string[];
   idTagsFileWatcher: FSWatcher | undefined;
-};
+}
 
 export class IdTagsCache {
   private static instance: IdTagsCache | null = null;
@@ -49,7 +49,7 @@ export class IdTagsCache {
     connectorId: number,
   ): string {
     const hashId = chargingStation.stationInfo.hashId;
-    const idTagsFile = getIdTagsFile(chargingStation.stationInfo);
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo)!;
     switch (distribution) {
       case IdTagDistribution.RANDOM:
         return this.getRandomIdTag(hashId, idTagsFile);
@@ -81,17 +81,17 @@ export class IdTagsCache {
   }
 
   private getRandomIdTag(hashId: string, file: string): string {
-    const idTags = this.getIdTags(file);
+    const idTags = this.getIdTags(file)!;
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
       Math.floor(secureRandom() * idTags.length),
     );
-    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)];
+    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)!];
   }
 
   private getRoundRobinIdTag(hashId: string, file: string): string {
-    const idTags = this.getIdTags(file);
+    const idTags = this.getIdTags(file)!;
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(file, hashId);
     const idTagIndex = this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0;
     const idTag = idTags[idTagIndex];
@@ -103,8 +103,8 @@ export class IdTagsCache {
   }
 
   private getConnectorAffinityIdTag(chargingStation: ChargingStation, connectorId: number): string {
-    const file = getIdTagsFile(chargingStation.stationInfo);
-    const idTags = this.getIdTags(file);
+    const file = getIdTagsFile(chargingStation.stationInfo)!;
+    const idTags = this.getIdTags(file)!;
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
       file,
       chargingStation.stationInfo.hashId,
@@ -113,7 +113,7 @@ export class IdTagsCache {
       addressableKey,
       (chargingStation.index - 1 + (connectorId - 1)) % idTags.length,
     );
-    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)];
+    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)!];
   }
 
   private hasIdTagsCache(file: string): boolean {
@@ -163,7 +163,7 @@ export class IdTagsCache {
   }
 
   private deleteIdTagsCacheIndexes(file: string): boolean {
-    let deleted: boolean[];
+    const deleted: boolean[] = [];
     for (const [key] of this.idTagsCachesAddressableIndexes) {
       if (key.startsWith(file)) {
         deleted.push(this.idTagsCachesAddressableIndexes.delete(key));

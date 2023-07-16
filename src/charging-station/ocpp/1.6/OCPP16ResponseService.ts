@@ -330,7 +330,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ) {
         try {
           this.validatePayload(chargingStation, commandName, payload);
-          await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);
+          await this.responseHandlers.get(commandName)!(chargingStation, payload, requestPayload);
         } catch (error) {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
@@ -374,7 +374,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       return this.validateResponsePayload(
         chargingStation,
         commandName,
-        this.jsonSchemas.get(commandName),
+        this.jsonSchemas.get(commandName)!,
         payload,
       );
     }
@@ -425,7 +425,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16AuthorizeResponse,
     requestPayload: OCPP16AuthorizeRequest,
   ): void {
-    let authorizeConnectorId: number;
+    let authorizeConnectorId: number | undefined;
     if (chargingStation.hasEvses) {
       for (const [evseId, evseStatus] of chargingStation.evses) {
         if (evseId > 0) {
@@ -451,7 +451,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const authorizeConnectorIdDefined = !isNullOrUndefined(authorizeConnectorId);
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
       authorizeConnectorIdDefined &&
-        (chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = true);
+        (chargingStation.getConnectorStatus(authorizeConnectorId!)!.idTagAuthorized = true);
       logger.debug(
         `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' accepted${
           authorizeConnectorIdDefined ? ` on connector id ${authorizeConnectorId}` : ''
@@ -459,8 +459,8 @@ export class OCPP16ResponseService extends OCPPResponseService {
       );
     } else {
       if (authorizeConnectorIdDefined) {
-        chargingStation.getConnectorStatus(authorizeConnectorId).idTagAuthorized = false;
-        delete chargingStation.getConnectorStatus(authorizeConnectorId)?.authorizeIdTag;
+        chargingStation.getConnectorStatus(authorizeConnectorId!)!.idTagAuthorized = false;
+        delete chargingStation.getConnectorStatus(authorizeConnectorId!)?.authorizeIdTag;
       }
       logger.debug(
         `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' rejected with status '${
@@ -599,15 +599,15 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
 
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      chargingStation.getConnectorStatus(transactionConnectorId).transactionStarted = true;
-      chargingStation.getConnectorStatus(transactionConnectorId).transactionId =
+      chargingStation.getConnectorStatus(transactionConnectorId)!.transactionStarted = true;
+      chargingStation.getConnectorStatus(transactionConnectorId)!.transactionId =
         payload.transactionId;
-      chargingStation.getConnectorStatus(transactionConnectorId).transactionIdTag =
+      chargingStation.getConnectorStatus(transactionConnectorId)!.transactionIdTag =
         requestPayload.idTag;
       chargingStation.getConnectorStatus(
         transactionConnectorId,
-      ).transactionEnergyActiveImportRegisterValue = 0;
-      chargingStation.getConnectorStatus(transactionConnectorId).transactionBeginMeterValue =
+      )!.transactionEnergyActiveImportRegisterValue = 0;
+      chargingStation.getConnectorStatus(transactionConnectorId)!.transactionBeginMeterValue =
         OCPP16ServiceUtils.buildTransactionBeginMeterValue(
           chargingStation,
           transactionConnectorId,
@@ -621,9 +621,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
           connectorId: transactionConnectorId,
           transactionId: payload.transactionId,
           meterValue: [
-            chargingStation.getConnectorStatus(transactionConnectorId).transactionBeginMeterValue,
+            chargingStation.getConnectorStatus(transactionConnectorId)!.transactionBeginMeterValue,
           ],
-        }));
+        } as OCPP16MeterValuesRequest));
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
         transactionConnectorId,
@@ -661,7 +661,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     connectorId: number,
   ): Promise<void> {
-    resetConnectorStatus(chargingStation.getConnectorStatus(connectorId));
+    resetConnectorStatus(chargingStation.getConnectorStatus(connectorId)!);
     chargingStation.stopMeterValues(connectorId);
     parentPort?.postMessage(buildUpdatedMessage(chargingStation));
     if (
@@ -701,32 +701,32 @@ export class OCPP16ResponseService extends OCPPResponseService {
         meterValue: [
           OCPP16ServiceUtils.buildTransactionEndMeterValue(
             chargingStation,
-            transactionConnectorId,
+            transactionConnectorId!,
             requestPayload.meterStop,
           ),
         ],
       }));
     if (
       chargingStation.isChargingStationAvailable() === false ||
-      chargingStation.isConnectorAvailable(transactionConnectorId) === false
+      chargingStation.isConnectorAvailable(transactionConnectorId!) === false
     ) {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
-        transactionConnectorId,
+        transactionConnectorId!,
         OCPP16ChargePointStatus.Unavailable,
       );
     } else {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
-        transactionConnectorId,
+        transactionConnectorId!,
         OCPP16ChargePointStatus.Available,
       );
     }
     if (chargingStation.stationInfo.powerSharedByConnectors) {
       chargingStation.powerDivider--;
     }
-    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId));
-    chargingStation.stopMeterValues(transactionConnectorId);
+    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId!)!);
+    chargingStation.stopMeterValues(transactionConnectorId!);
     parentPort?.postMessage(buildUpdatedMessage(chargingStation));
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       chargingStation.stationInfo.chargingStationId

@@ -14,7 +14,7 @@ export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
     automaticTransactionGenerator: chargingStation.getAutomaticTransactionGeneratorConfiguration(),
     ...(!isNullOrUndefined(chargingStation.automaticTransactionGenerator?.connectorsStatus) && {
       automaticTransactionGeneratorStatuses: [
-        ...chargingStation.automaticTransactionGenerator.connectorsStatus.values(),
+        ...chargingStation.automaticTransactionGenerator!.connectorsStatus.values(),
       ],
     }),
   };

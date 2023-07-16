@@ -1,6 +1,7 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import { JsonFileStorage } from './JsonFileStorage';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MikroOrmStorage } from './MikroOrmStorage';
 import { MongoDBStorage } from './MongoDBStorage';
 import type { Storage } from './Storage';

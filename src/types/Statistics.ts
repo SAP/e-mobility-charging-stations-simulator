@@ -2,12 +2,12 @@ import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
 import type { CircularArray } from '../utils';
 import type { WorkerData } from '../worker';
 
-export type TimestampedData = {
+export interface TimestampedData {
   timestamp: number;
   value: number;
-};
+}
 
-type StatisticsData = Partial<{
+export type StatisticsData = Partial<{
   requestCount: number;
   responseCount: number;
   errorCount: number;

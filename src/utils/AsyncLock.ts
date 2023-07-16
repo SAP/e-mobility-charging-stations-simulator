@@ -36,7 +36,7 @@ export class AsyncLock {
       asyncLock.acquired = false;
       return;
     }
-    const queuedResolve = asyncLock.resolveQueue.dequeue();
+    const queuedResolve = asyncLock.resolveQueue.dequeue()!;
     return new Promise((resolve) => {
       queuedResolve();
       resolve();
@@ -47,6 +47,6 @@ export class AsyncLock {
     if (!AsyncLock.asyncLocks.has(type)) {
       AsyncLock.asyncLocks.set(type, new AsyncLock());
     }
-    return AsyncLock.asyncLocks.get(type);
+    return AsyncLock.asyncLocks.get(type)!;
   }
 }

@@ -13,8 +13,8 @@ export class UIServerUtils {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     request: IncomingMessage,
   ): string | false => {
-    let protocol: Protocol;
-    let version: ProtocolVersion;
+    let protocol: Protocol | undefined;
+    let version: ProtocolVersion | undefined;
     if (protocols.size === 0) {
       return false;
     }

@@ -162,7 +162,7 @@ export class ChargingStation {
   public readonly evses: Map<number, EvseStatus>;
   public readonly requests: Map<string, CachedRequest>;
   public performanceStatistics!: PerformanceStatistics | undefined;
-  public heartbeatSetInterval!: NodeJS.Timeout;
+  public heartbeatSetInterval?: NodeJS.Timeout;
   public ocppRequestService!: OCPPRequestService;
   public bootNotificationRequest!: BootNotificationRequest;
   public bootNotificationResponse!: BootNotificationResponse | undefined;
@@ -180,7 +180,7 @@ export class ChargingStation {
   private templateFileWatcher!: FSWatcher | undefined;
   private templateFileHash!: string;
   private readonly sharedLRUCache: SharedLRUCache;
-  private webSocketPingSetInterval!: NodeJS.Timeout;
+  private webSocketPingSetInterval?: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
   private reservationExpirationSetInterval?: NodeJS.Timeout;
 
@@ -221,7 +221,7 @@ export class ChargingStation {
           ? ChargingStationConfigurationUtils.getConfigurationKey(
               this,
               this.getSupervisionUrlOcppKey(),
-            ).value
+            )!.value
           : this.configuredSupervisionUrl.href
       }/${this.stationInfo.chargingStationId}`,
     );
@@ -232,14 +232,14 @@ export class ChargingStation {
       ` ${
         (isNotEmptyString(this?.stationInfo?.chargingStationId)
           ? this?.stationInfo?.chargingStationId
-          : getChargingStationId(this.index, this.getTemplateFromFile())) ??
+          : getChargingStationId(this.index, this.getTemplateFromFile()!)) ??
         'Error at building log prefix'
       } |`,
     );
   };
 
   public hasIdTags(): boolean {
-    return isNotEmptyArray(this.idTagsCache.getIdTags(getIdTagsFile(this.stationInfo)));
+    return isNotEmptyArray(this.idTagsCache.getIdTags(getIdTagsFile(this.stationInfo)!));
   }
 
   public getEnableStatistics(): boolean {
@@ -250,11 +250,11 @@ export class ChargingStation {
     return this.stationInfo.mustAuthorizeAtRemoteStart ?? true;
   }
 
-  public getNumberOfPhases(stationInfo?: ChargingStationInfo): number | undefined {
+  public getNumberOfPhases(stationInfo?: ChargingStationInfo): number {
     const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
-        return !isUndefined(localStationInfo.numberOfPhases) ? localStationInfo.numberOfPhases : 3;
+        return !isUndefined(localStationInfo.numberOfPhases) ? localStationInfo.numberOfPhases! : 3;
       case CurrentType.DC:
         return 0;
     }
@@ -351,7 +351,7 @@ export class ChargingStation {
     return this.stationInfo?.ocppStrictCompliance ?? true;
   }
 
-  public getVoltageOut(stationInfo?: ChargingStationInfo): number | undefined {
+  public getVoltageOut(stationInfo?: ChargingStationInfo): number {
     const defaultVoltageOut = getDefaultVoltageOut(
       this.getCurrentOutType(stationInfo),
       this.logPrefix(),
@@ -362,24 +362,25 @@ export class ChargingStation {
 
   public getMaximumPower(stationInfo?: ChargingStationInfo): number {
     const localStationInfo = stationInfo ?? this.stationInfo;
+    // eslint-disable-next-line @typescript-eslint/dot-notation
     return (localStationInfo['maxPower'] as number) ?? localStationInfo.maximumPower;
   }
 
   public getConnectorMaximumAvailablePower(connectorId: number): number {
-    let connectorAmperageLimitationPowerLimit: number;
+    let connectorAmperageLimitationPowerLimit: number | undefined;
     if (
       !isNullOrUndefined(this.getAmperageLimitation()) &&
-      this.getAmperageLimitation() < this.stationInfo?.maximumAmperage
+      this.getAmperageLimitation()! < this.stationInfo.maximumAmperage!
     ) {
       connectorAmperageLimitationPowerLimit =
         (this.getCurrentOutType() === CurrentType.AC
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
               this.getVoltageOut(),
-              this.getAmperageLimitation() *
+              this.getAmperageLimitation()! *
                 (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()),
             )
-          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation())) /
+          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation()!)) /
         this.powerDivider;
     }
     const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
@@ -387,10 +388,10 @@ export class ChargingStation {
       getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId);
     return Math.min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
-      isNaN(connectorAmperageLimitationPowerLimit)
+      isNaN(connectorAmperageLimitationPowerLimit!)
         ? Infinity
-        : connectorAmperageLimitationPowerLimit,
-      isNaN(connectorChargingProfilesPowerLimit) ? Infinity : connectorChargingProfilesPowerLimit,
+        : connectorAmperageLimitationPowerLimit!,
+      isNaN(connectorChargingProfilesPowerLimit!) ? Infinity : connectorChargingProfilesPowerLimit!,
     );
   }
 
@@ -486,13 +487,13 @@ export class ChargingStation {
     rounded = false,
   ): number {
     return this.getEnergyActiveImportRegister(
-      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)),
+      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!)!,
       rounded,
     );
   }
 
   public getEnergyActiveImportRegisterByConnectorId(connectorId: number, rounded = false): number {
-    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded);
+    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId)!, rounded);
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
@@ -628,12 +629,12 @@ export class ChargingStation {
       return;
     }
     if (interval > 0) {
-      this.getConnectorStatus(connectorId).transactionSetInterval = setInterval(() => {
+      this.getConnectorStatus(connectorId)!.transactionSetInterval = setInterval(() => {
         // FIXME: Implement OCPP version agnostic helpers
         const meterValue: MeterValue = OCPP16ServiceUtils.buildMeterValue(
           this,
           connectorId,
-          this.getConnectorStatus(connectorId).transactionId,
+          this.getConnectorStatus(connectorId)!.transactionId!,
           interval,
         );
         this.ocppRequestService
@@ -696,7 +697,7 @@ export class ChargingStation {
                 this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
                 // Initialize
                 this.initialize();
-                this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo));
+                this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo)!);
                 // Restart the ATG
                 this.stopAutomaticTransactionGenerator();
                 if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
@@ -755,7 +756,7 @@ export class ChargingStation {
 
   public async reset(reason?: StopTransactionReason): Promise<void> {
     await this.stop(reason);
-    await sleep(this.stationInfo.resetTime);
+    await sleep(this.stationInfo.resetTime!);
     this.initialize();
     this.start();
   }
@@ -854,9 +855,7 @@ export class ChargingStation {
     }
   }
 
-  public getAutomaticTransactionGeneratorConfiguration():
-    | AutomaticTransactionGeneratorConfiguration
-    | undefined {
+  public getAutomaticTransactionGeneratorConfiguration(): AutomaticTransactionGeneratorConfiguration {
     let automaticTransactionGeneratorConfiguration:
       | AutomaticTransactionGeneratorConfiguration
       | undefined;
@@ -885,7 +884,7 @@ export class ChargingStation {
   public startAutomaticTransactionGenerator(connectorIds?: number[]): void {
     this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this);
     if (isNotEmptyArray(connectorIds)) {
-      for (const connectorId of connectorIds) {
+      for (const connectorId of connectorIds!) {
         this.automaticTransactionGenerator?.startConnector(connectorId);
       }
     } else {
@@ -897,7 +896,7 @@ export class ChargingStation {
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
     if (isNotEmptyArray(connectorIds)) {
-      for (const connectorId of connectorIds) {
+      for (const connectorId of connectorIds!) {
         this.automaticTransactionGenerator?.stopConnector(connectorId);
       }
     } else {
@@ -921,7 +920,7 @@ export class ChargingStation {
       const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
         this,
         connectorId,
-        this.getEnergyActiveImportRegisterByTransactionId(transactionId),
+        this.getEnergyActiveImportRegisterByTransactionId(transactionId!),
       );
       await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
         this,
@@ -938,7 +937,7 @@ export class ChargingStation {
       RequestCommand.STOP_TRANSACTION,
       {
         transactionId,
-        meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
+        meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId!, true),
         reason,
       },
     );
@@ -949,21 +948,24 @@ export class ChargingStation {
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
         StandardParametersKey.ReserveConnectorZeroSupported,
-      ).value,
+      )!.value,
     );
   }
 
   public async addReservation(reservation: Reservation): Promise<void> {
     const [exists, reservationFound] = this.doesReservationExists(reservation);
     if (exists) {
-      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING);
+      await this.removeReservation(
+        reservationFound!,
+        ReservationTerminationReason.REPLACE_EXISTING,
+      );
     }
-    this.getConnectorStatus(reservation.connectorId).reservation = reservation;
+    this.getConnectorStatus(reservation.connectorId)!.reservation = reservation;
     await OCPPServiceUtils.sendAndSetConnectorStatus(
       this,
       reservation.connectorId,
       ConnectorStatusEnum.Reserved,
-      null,
+      undefined,
       { send: reservation.connectorId !== 0 },
     );
   }
@@ -972,7 +974,7 @@ export class ChargingStation {
     reservation: Reservation,
     reason?: ReservationTerminationReason,
   ): Promise<void> {
-    const connector = this.getConnectorStatus(reservation.connectorId);
+    const connector = this.getConnectorStatus(reservation.connectorId)!;
     switch (reason) {
       case ReservationTerminationReason.CONNECTOR_STATE_CHANGED:
         delete connector.reservation;
@@ -987,7 +989,7 @@ export class ChargingStation {
           this,
           reservation.connectorId,
           ConnectorStatusEnum.Available,
-          null,
+          undefined,
           { send: reservation.connectorId !== 0 },
         );
         delete connector.reservation;
@@ -1018,12 +1020,14 @@ export class ChargingStation {
     }
   }
 
-  public doesReservationExists(reservation: Partial<Reservation>): [boolean, Reservation] {
+  public doesReservationExists(
+    reservation: Partial<Reservation>,
+  ): [boolean, Reservation | undefined] {
     const foundReservation = this.getReservationBy(
       ReservationFilterKey.RESERVATION_ID,
-      reservation?.id,
+      reservation.id!,
     );
-    return isUndefined(foundReservation) ? [false, null] : [true, foundReservation];
+    return isUndefined(foundReservation) ? [false, undefined] : [true, foundReservation];
   }
 
   public startReservationExpirationSetInterval(customInterval?: number): void {
@@ -1039,9 +1043,9 @@ export class ChargingStation {
       if (this.hasEvses) {
         for (const evseStatus of this.evses.values()) {
           for (const connectorStatus of evseStatus.connectors.values()) {
-            if (connectorStatus?.reservation?.expiryDate < now) {
+            if (connectorStatus.reservation!.expiryDate < now) {
               await this.removeReservation(
-                connectorStatus.reservation,
+                connectorStatus.reservation!,
                 ReservationTerminationReason.EXPIRED,
               );
             }
@@ -1049,9 +1053,9 @@ export class ChargingStation {
         }
       } else {
         for (const connectorStatus of this.connectors.values()) {
-          if (connectorStatus?.reservation?.expiryDate < now) {
+          if (connectorStatus.reservation!.expiryDate < now) {
             await this.removeReservation(
-              connectorStatus.reservation,
+              connectorStatus.reservation!,
               ReservationTerminationReason.EXPIRED,
             );
           }
@@ -1079,11 +1083,11 @@ export class ChargingStation {
       return alreadyExists;
     }
     const userReservedAlready = isUndefined(
-      this.getReservationBy(ReservationFilterKey.ID_TAG, idTag),
+      this.getReservationBy(ReservationFilterKey.ID_TAG, idTag!),
     )
       ? false
       : true;
-    const notConnectorZero = isUndefined(connectorId) ? true : connectorId > 0;
+    const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
     const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
     return !alreadyExists && !userReservedAlready && notConnectorZero && freeConnectorsAvailable;
   }
@@ -1113,8 +1117,8 @@ export class ChargingStation {
   private flushMessageBuffer(): void {
     if (this.messageBuffer.size > 0) {
       for (const message of this.messageBuffer.values()) {
-        let beginId: string;
-        let commandName: RequestCommand;
+        let beginId: string | undefined;
+        let commandName: RequestCommand | undefined;
         const [messageType] = JSON.parse(message) as OutgoingRequest | Response | ErrorResponse;
         const isRequest = messageType === MessageType.CALL_MESSAGE;
         if (isRequest) {
@@ -1122,7 +1126,7 @@ export class ChargingStation {
           beginId = PerformanceStatistics.beginMeasure(commandName);
         }
         this.wsConnection?.send(message);
-        isRequest && PerformanceStatistics.endMeasure(commandName, beginId);
+        isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!);
         logger.debug(
           `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
             messageType,
@@ -1148,7 +1152,7 @@ export class ChargingStation {
   }
 
   private getTemplateFromFile(): ChargingStationTemplate | undefined {
-    let template: ChargingStationTemplate;
+    let template: ChargingStationTemplate | undefined;
     try {
       if (this.sharedLRUCache.hasChargingStationTemplate(this.templateFileHash)) {
         template = this.sharedLRUCache.getChargingStationTemplate(this.templateFileHash);
@@ -1175,7 +1179,7 @@ export class ChargingStation {
   }
 
   private getStationInfoFromTemplate(): ChargingStationInfo {
-    const stationTemplate: ChargingStationTemplate | undefined = this.getTemplateFromFile();
+    const stationTemplate: ChargingStationTemplate = this.getTemplateFromFile()!;
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     warnTemplateKeysDeprecation(stationTemplate, this.logPrefix(), this.templateFile);
     if (stationTemplate?.Connectors) {
@@ -1204,7 +1208,7 @@ export class ChargingStation {
       stationTemplate?.firmwareVersionPattern ?? Constants.SEMVER_PATTERN;
     if (
       isNotEmptyString(stationInfo.firmwareVersion) &&
-      new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion) === false
+      new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion!) === false
     ) {
       logger.warn(
         `${this.logPrefix()} Firmware version '${stationInfo.firmwareVersion}' in template file ${
@@ -1222,7 +1226,7 @@ export class ChargingStation {
       stationTemplate?.firmwareUpgrade ?? {},
     );
     stationInfo.resetTime = !isNullOrUndefined(stationTemplate?.resetTime)
-      ? stationTemplate.resetTime * 1000
+      ? stationTemplate.resetTime! * 1000
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
     return stationInfo;
@@ -1246,11 +1250,11 @@ export class ChargingStation {
     // 1. charging station info from template
     // 2. charging station info from configuration file
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
-      return stationInfoFromFile;
+      return stationInfoFromFile!;
     }
     stationInfoFromFile &&
       propagateSerialNumber(
-        this.getTemplateFromFile(),
+        this.getTemplateFromFile()!,
         stationInfoFromFile,
         stationInfoFromTemplate,
       );
@@ -1283,7 +1287,7 @@ export class ChargingStation {
   }
 
   private initialize(): void {
-    const stationTemplate = this.getTemplateFromFile();
+    const stationTemplate = this.getTemplateFromFile()!;
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
     this.configurationFile = join(
       dirname(this.templateFile.replace('station-templates', 'configurations')),
@@ -1292,6 +1296,7 @@ export class ChargingStation {
     const chargingStationConfiguration = this.getConfigurationFromFile();
     if (
       chargingStationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       (chargingStationConfiguration?.connectorsStatus || chargingStationConfiguration?.evsesStatus)
     ) {
       this.initializeConnectorsOrEvsesFromFile(chargingStationConfiguration);
@@ -1307,13 +1312,13 @@ export class ChargingStation {
       const patternGroup: number | undefined =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
         this.stationInfo.firmwareVersion?.split('.').length;
-      const match = this.stationInfo?.firmwareVersion
-        ?.match(new RegExp(this.stationInfo.firmwareVersionPattern))
-        ?.slice(1, patternGroup + 1);
+      const match = this.stationInfo
+        .firmwareVersion!.match(new RegExp(this.stationInfo.firmwareVersionPattern!))!
+        .slice(1, patternGroup! + 1);
       const patchLevelIndex = match.length - 1;
       match[patchLevelIndex] = (
         convertToInt(match[patchLevelIndex]) +
-        this.stationInfo.firmwareUpgrade?.versionUpgrade?.step
+        this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!
       ).toString();
       this.stationInfo.firmwareVersion = match?.join('.');
     }
@@ -1322,7 +1327,7 @@ export class ChargingStation {
     if (this.getEnableStatistics() === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
         this.stationInfo.hashId,
-        this.stationInfo.chargingStationId,
+        this.stationInfo.chargingStationId!,
         this.configuredSupervisionUrl,
       );
     }
@@ -1417,14 +1422,14 @@ export class ChargingStation {
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       !ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        this.stationInfo.amperageLimitationOcppKey,
+        this.stationInfo.amperageLimitationOcppKey!,
       )
     ) {
       ChargingStationConfigurationUtils.addConfigurationKey(
         this,
-        this.stationInfo.amperageLimitationOcppKey,
+        this.stationInfo.amperageLimitationOcppKey!,
         (
-          this.stationInfo.maximumAmperage * getAmperageLimitationUnitDivider(this.stationInfo)
+          this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)
         ).toString(),
       );
     }
@@ -1470,14 +1475,14 @@ export class ChargingStation {
         for (const evseStatus of this.evses.values()) {
           for (const connectorId of evseStatus.connectors.keys()) {
             connectorsPhaseRotation.push(
-              getPhaseRotationValue(connectorId, this.getNumberOfPhases()),
+              getPhaseRotationValue(connectorId, this.getNumberOfPhases())!,
             );
           }
         }
       } else {
         for (const connectorId of this.connectors.keys()) {
           connectorsPhaseRotation.push(
-            getPhaseRotationValue(connectorId, this.getNumberOfPhases()),
+            getPhaseRotationValue(connectorId, this.getNumberOfPhases())!,
           );
         }
       }
@@ -1542,7 +1547,7 @@ export class ChargingStation {
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
           connectors: new Map<number, ConnectorStatus>(
-            evseStatusConfiguration.connectorsStatus.map((connectorStatus, connectorId) => [
+            evseStatusConfiguration.connectorsStatus!.map((connectorStatus, connectorId) => [
               connectorId,
               connectorStatus,
             ]),
@@ -1582,7 +1587,7 @@ export class ChargingStation {
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    if (!stationTemplate?.Connectors[0]) {
+    if (!stationTemplate?.Connectors?.[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
@@ -1649,14 +1654,14 @@ export class ChargingStation {
       logger.error(`${this.logPrefix()} ${errorMsg}`);
       throw new BaseError(errorMsg);
     }
-    if (!stationTemplate?.Evses[0]) {
+    if (!stationTemplate?.Evses?.[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
         } with no evse id 0 configuration`,
       );
     }
-    if (!stationTemplate?.Evses[0]?.Connectors[0]) {
+    if (!stationTemplate?.Evses?.[0]?.Connectors?.[0]) {
       logger.warn(
         `${this.logPrefix()} Charging station information from template ${
           this.templateFile
@@ -1684,7 +1689,7 @@ export class ChargingStation {
               ),
               availability: AvailabilityType.Operative,
             });
-            initializeConnectorsMapStatus(this.evses.get(evseId)?.connectors, this.logPrefix());
+            initializeConnectorsMapStatus(this.evses.get(evseId)!.connectors, this.logPrefix());
           }
           this.saveEvsesStatus();
         } else {
@@ -1720,7 +1725,7 @@ export class ChargingStation {
           ) as ChargingStationConfiguration;
           PerformanceStatistics.endMeasure(measureId, beginId);
           this.sharedLRUCache.setChargingStationConfiguration(configuration);
-          this.configurationFileHash = configuration.configurationHash;
+          this.configurationFileHash = configuration.configurationHash!;
         }
       } catch (error) {
         handleFileException(
@@ -1755,7 +1760,7 @@ export class ChargingStation {
           mkdirSync(dirname(this.configurationFile), { recursive: true });
         }
         let configurationData: ChargingStationConfiguration =
-          cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()) ?? {};
+          cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()!) ?? {};
         if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         } else {
@@ -1889,7 +1894,7 @@ export class ChargingStation {
           }
         } while (
           this.isRegistered() === false &&
-          (registrationRetryCount <= this.getRegistrationMaxRetries() ||
+          (registrationRetryCount <= this.getRegistrationMaxRetries()! ||
             this.getRegistrationMaxRetries() === -1)
         );
       }
@@ -1986,7 +1991,7 @@ export class ChargingStation {
     const [responseCallback, , requestCommandName, requestPayload] = this.getCachedRequest(
       messageType,
       messageId,
-    );
+    )!;
     logger.debug(
       `${this.logPrefix()} << Command '${
         requestCommandName ?? Constants.UNKNOWN_COMMAND
@@ -2006,7 +2011,7 @@ export class ChargingStation {
         { errorType, errorMessage, errorDetails },
       );
     }
-    const [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId);
+    const [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId)!;
     logger.debug(
       `${this.logPrefix()} << Command '${
         requestCommandName ?? Constants.UNKNOWN_COMMAND
@@ -2016,10 +2021,11 @@ export class ChargingStation {
   }
 
   private async onMessage(data: RawData): Promise<void> {
-    let request: IncomingRequest | Response | ErrorResponse;
-    let messageType: number;
+    let request: IncomingRequest | Response | ErrorResponse | undefined;
+    let messageType: number | undefined;
     let errorMsg: string;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse;
       if (Array.isArray(request) === true) {
         [messageType] = request;
@@ -2046,15 +2052,20 @@ export class ChargingStation {
         }
         parentPort?.postMessage(buildUpdatedMessage(this));
       } else {
-        throw new OCPPError(ErrorType.PROTOCOL_ERROR, 'Incoming message is not an array', null, {
-          request,
-        });
+        throw new OCPPError(
+          ErrorType.PROTOCOL_ERROR,
+          'Incoming message is not an array',
+          undefined,
+          {
+            request,
+          },
+        );
       }
     } catch (error) {
-      let commandName: IncomingRequestCommand;
-      let requestCommandName: RequestCommand | IncomingRequestCommand;
+      let commandName: IncomingRequestCommand | undefined;
+      let requestCommandName: RequestCommand | IncomingRequestCommand | undefined;
       let errorCallback: ErrorCallback;
-      const [, messageId] = request;
+      const [, messageId] = request!;
       switch (messageType) {
         case MessageType.CALL_MESSAGE:
           [, , commandName] = request as IncomingRequest;
@@ -2064,7 +2075,7 @@ export class ChargingStation {
         case MessageType.CALL_RESULT_MESSAGE:
         case MessageType.CALL_ERROR_MESSAGE:
           if (this.requests.has(messageId) === true) {
-            [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId);
+            [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId)!;
             // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
             errorCallback(error as OCPPError, false);
           } else {
@@ -2077,6 +2088,7 @@ export class ChargingStation {
         logger.warn(
           `${this.logPrefix()} Error thrown at incoming OCPP command '${
             commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
           }' message '${data.toString()}' handling is not an OCPPError:`,
           error,
         );
@@ -2084,6 +2096,7 @@ export class ChargingStation {
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
           commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
         }' message '${data.toString()}'${
           messageType !== MessageType.CALL_MESSAGE
             ? ` matching cached request '${JSON.stringify(this.requests.get(messageId))}'`
@@ -2111,13 +2124,13 @@ export class ChargingStation {
     if (this.getMeteringPerTransaction() === true) {
       return (
         (rounded === true
-          ? Math.round(connectorStatus?.transactionEnergyActiveImportRegisterValue)
+          ? Math.round(connectorStatus.transactionEnergyActiveImportRegisterValue!)
           : connectorStatus?.transactionEnergyActiveImportRegisterValue) ?? 0
       );
     }
     return (
       (rounded === true
-        ? Math.round(connectorStatus?.energyActiveImportRegisterValue)
+        ? Math.round(connectorStatus.energyActiveImportRegisterValue!)
         : connectorStatus?.energyActiveImportRegisterValue) ?? 0
     );
   }
@@ -2160,7 +2173,7 @@ export class ChargingStation {
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
             StandardParametersKey.ConnectionTimeOut,
-          ).value,
+          )!.value!,
         ) ?? Constants.DEFAULT_CONNECTION_TIMEOUT
       );
     }
@@ -2206,14 +2219,14 @@ export class ChargingStation {
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       ChargingStationConfigurationUtils.getConfigurationKey(
         this,
-        this.stationInfo.amperageLimitationOcppKey,
+        this.stationInfo.amperageLimitationOcppKey!,
       )
     ) {
       return (
         convertToInt(
           ChargingStationConfigurationUtils.getConfigurationKey(
             this,
-            this.stationInfo.amperageLimitationOcppKey,
+            this.stationInfo.amperageLimitationOcppKey!,
           )?.value,
         ) / getAmperageLimitationUnitDivider(this.stationInfo)
       );
@@ -2254,7 +2267,7 @@ export class ChargingStation {
           const connectorBootStatus = getBootConnectorStatus(
             this,
             connectorId,
-            this.getConnectorStatus(connectorId),
+            this.getConnectorStatus(connectorId)!,
           );
           await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
         }
@@ -2382,23 +2395,26 @@ export class ChargingStation {
       let configuredSupervisionUrlIndex: number;
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.RANDOM:
-          configuredSupervisionUrlIndex = Math.floor(secureRandom() * supervisionUrls.length);
+          configuredSupervisionUrlIndex = Math.floor(
+            secureRandom() * (supervisionUrls as string[]).length,
+          );
           break;
         case SupervisionUrlDistribution.ROUND_ROBIN:
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
         default:
           Object.values(SupervisionUrlDistribution).includes(
-            Configuration.getSupervisionUrlDistribution(),
+            Configuration.getSupervisionUrlDistribution()!,
           ) === false &&
             logger.error(
+              // eslint-disable-next-line @typescript-eslint/no-base-to-string
               `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
               }`,
             );
-          configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length;
+          configuredSupervisionUrlIndex = (this.index - 1) % (supervisionUrls as string[]).length;
           break;
       }
-      configuredSupervisionUrl = supervisionUrls[configuredSupervisionUrlIndex];
+      configuredSupervisionUrl = (supervisionUrls as string[])[configuredSupervisionUrlIndex];
     } else {
       configuredSupervisionUrl = supervisionUrls as string;
     }
@@ -2438,7 +2454,7 @@ export class ChargingStation {
       this.stopAutomaticTransactionGenerator();
     }
     if (
-      this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries() ||
+      this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries()! ||
       this.getAutoReconnectMaxRetries() === -1
     ) {
       ++this.autoReconnectRetryCount;

@@ -67,8 +67,8 @@ export abstract class AbstractUIService {
   }
 
   public async requestHandler(request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
-    let messageId: string;
-    let command: ProcedureName;
+    let messageId: string | undefined;
+    let command: ProcedureName | undefined;
     let requestPayload: RequestPayload | undefined;
     let responsePayload: ResponsePayload | undefined;
     try {
@@ -85,7 +85,11 @@ export abstract class AbstractUIService {
       }
 
       // Call the request handler to build the response payload
-      responsePayload = await this.requestHandlers.get(command)(messageId, command, requestPayload);
+      responsePayload = await this.requestHandlers.get(command)!(
+        messageId,
+        command,
+        requestPayload,
+      );
     } catch (error) {
       // Log
       logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error);
@@ -101,7 +105,7 @@ export abstract class AbstractUIService {
       };
     }
     if (!isNullOrUndefined(responsePayload)) {
-      return this.uiServer.buildProtocolResponse(messageId, responsePayload);
+      return this.uiServer.buildProtocolResponse(messageId!, responsePayload!);
     }
   }
 
@@ -154,8 +158,8 @@ export abstract class AbstractUIService {
   ): void {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
-        .filter((hashId) => !isNullOrUndefined(hashId))
-        .map((hashId) => {
+        ?.filter((hashId) => !isNullOrUndefined(hashId))
+        ?.map((hashId) => {
           if (this.uiServer.chargingStations.has(hashId) === true) {
             return hashId;
           }
@@ -165,10 +169,10 @@ export abstract class AbstractUIService {
               'sendBroadcastChannelRequest',
             )} Charging station with hashId '${hashId}' not found`,
           );
-        });
+        }) as string[];
     }
     const expectedNumberOfResponses = isNotEmptyArray(payload.hashIds)
-      ? payload.hashIds.length
+      ? payload.hashIds!.length
       : this.uiServer.chargingStations.size;
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);
     this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);

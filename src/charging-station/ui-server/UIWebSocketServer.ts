@@ -176,10 +176,12 @@ export class UIWebSocketServer extends AbstractUIServer {
     // logger.debug(
     //   `${this.logPrefix(
     //     moduleName,
-    //     'validateRawDataRequest'
-    //   )} Raw data received in string format: ${rawData.toString()}`
+    //     'validateRawDataRequest',
+    //     // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    //   )} Raw data received in string format: ${rawData.toString()}`,
     // );
 
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     const request = JSON.parse(rawData.toString()) as ProtocolRequest;
 
     if (Array.isArray(request) === false) {

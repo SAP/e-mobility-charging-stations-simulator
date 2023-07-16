@@ -49,7 +49,9 @@ export abstract class AbstractUIServer {
   public async sendInternalRequest(request: ProtocolRequest): Promise<ProtocolResponse> {
     const protocolVersion = ProtocolVersion['0.0.1'];
     this.registerProtocolVersionUIService(protocolVersion);
-    return this.uiServices.get(protocolVersion)?.requestHandler(request);
+    return this.uiServices
+      .get(protocolVersion)
+      ?.requestHandler(request) as Promise<ProtocolResponse>;
   }
 
   public hasResponseHandler(id: string): boolean {

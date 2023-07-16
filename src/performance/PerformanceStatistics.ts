@@ -37,7 +37,7 @@ export class PerformanceStatistics {
   private readonly objName: string;
   private performanceObserver!: PerformanceObserver;
   private readonly statistics: Statistics;
-  private displayInterval!: NodeJS.Timeout;
+  private displayInterval?: NodeJS.Timeout;
 
   private constructor(objId: string, objName: string, uri: URL) {
     this.objId = objId;
@@ -85,7 +85,7 @@ export class PerformanceStatistics {
           this.statistics.statisticsData.has(command) &&
           this.statistics.statisticsData.get(command)?.requestCount
         ) {
-          ++this.statistics.statisticsData.get(command).requestCount;
+          ++this.statistics.statisticsData.get(command)!.requestCount!;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
@@ -98,7 +98,7 @@ export class PerformanceStatistics {
           this.statistics.statisticsData.has(command) &&
           this.statistics.statisticsData.get(command)?.responseCount
         ) {
-          ++this.statistics.statisticsData.get(command).responseCount;
+          ++this.statistics.statisticsData.get(command)!.responseCount!;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
@@ -111,7 +111,7 @@ export class PerformanceStatistics {
           this.statistics.statisticsData.has(command) &&
           this.statistics.statisticsData.get(command)?.errorCount
         ) {
-          ++this.statistics.statisticsData.get(command).errorCount;
+          ++this.statistics.statisticsData.get(command)!.errorCount!;
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
@@ -154,7 +154,7 @@ export class PerformanceStatistics {
       const lastPerformanceEntry = performanceObserverList.getEntries()[0];
       // logger.debug(
       //   `${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`,
-      //   lastPerformanceEntry
+      //   lastPerformanceEntry,
       // );
       this.addPerformanceEntryToStatistics(lastPerformanceEntry);
     });
@@ -170,7 +170,7 @@ export class PerformanceStatistics {
 
   private startLogStatisticsInterval(): void {
     const logStatisticsInterval = Configuration.getLog().enabled
-      ? Configuration.getLog().statisticsInterval
+      ? Configuration.getLog().statisticsInterval!
       : 0;
     if (logStatisticsInterval > 0 && !this.displayInterval) {
       this.displayInterval = setInterval(() => {
@@ -205,43 +205,47 @@ export class PerformanceStatistics {
     }
     // Update current statistics
     this.statistics.updatedAt = new Date();
-    this.statistics.statisticsData.get(entryName).timeMeasurementCount =
+    this.statistics.statisticsData.get(entryName)!.timeMeasurementCount =
       (this.statistics.statisticsData.get(entryName)?.timeMeasurementCount ?? 0) + 1;
-    this.statistics.statisticsData.get(entryName).currentTimeMeasurement = entry.duration;
-    this.statistics.statisticsData.get(entryName).minTimeMeasurement = Math.min(
+    this.statistics.statisticsData.get(entryName)!.currentTimeMeasurement = entry.duration;
+    this.statistics.statisticsData.get(entryName)!.minTimeMeasurement = Math.min(
       entry.duration,
       this.statistics.statisticsData.get(entryName)?.minTimeMeasurement ?? Infinity,
     );
-    this.statistics.statisticsData.get(entryName).maxTimeMeasurement = Math.max(
+    this.statistics.statisticsData.get(entryName)!.maxTimeMeasurement = Math.max(
       entry.duration,
       this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ?? -Infinity,
     );
-    this.statistics.statisticsData.get(entryName).totalTimeMeasurement =
+    this.statistics.statisticsData.get(entryName)!.totalTimeMeasurement =
       (this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ?? 0) + entry.duration;
-    this.statistics.statisticsData.get(entryName).avgTimeMeasurement =
-      this.statistics.statisticsData.get(entryName).totalTimeMeasurement /
-      this.statistics.statisticsData.get(entryName).timeMeasurementCount;
+    this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement =
+      this.statistics.statisticsData.get(entryName)!.totalTimeMeasurement! /
+      this.statistics.statisticsData.get(entryName)!.timeMeasurementCount!;
     this.statistics.statisticsData.get(entryName)?.measurementTimeSeries instanceof CircularArray
       ? this.statistics.statisticsData
           .get(entryName)
           ?.measurementTimeSeries?.push({ timestamp: entry.startTime, value: entry.duration })
-      : (this.statistics.statisticsData.get(entryName).measurementTimeSeries =
+      : (this.statistics.statisticsData.get(entryName)!.measurementTimeSeries =
           new CircularArray<TimestampedData>(Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY, {
             timestamp: entry.startTime,
             value: entry.duration,
           }));
-    this.statistics.statisticsData.get(entryName).medTimeMeasurement = median(
-      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries),
+    this.statistics.statisticsData.get(entryName)!.medTimeMeasurement = median(
+      extractTimeSeriesValues(
+        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries as TimestampedData[],
+      ),
     );
-    this.statistics.statisticsData.get(entryName).ninetyFiveThPercentileTimeMeasurement =
+    this.statistics.statisticsData.get(entryName)!.ninetyFiveThPercentileTimeMeasurement =
       nthPercentile(
         extractTimeSeriesValues(
-          this.statistics.statisticsData.get(entryName).measurementTimeSeries,
+          this.statistics.statisticsData.get(entryName)!.measurementTimeSeries as TimestampedData[],
         ),
         95,
       );
-    this.statistics.statisticsData.get(entryName).stdDevTimeMeasurement = stdDeviation(
-      extractTimeSeriesValues(this.statistics.statisticsData.get(entryName).measurementTimeSeries),
+    this.statistics.statisticsData.get(entryName)!.stdDevTimeMeasurement = stdDeviation(
+      extractTimeSeriesValues(
+        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries as TimestampedData[],
+      ),
     );
     if (Configuration.getPerformanceStorage().enabled) {
       parentPort?.postMessage(buildPerformanceStatisticsMessage(this.statistics));

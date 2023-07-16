@@ -54,7 +54,7 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
     stationInfo: chargingStation.stationInfo,
     connectors: buildConnectorsStatus(chargingStation),
     evses: buildEvsesStatus(chargingStation, OutputFormat.worker),
-    ocppConfiguration: chargingStation.ocppConfiguration,
+    ocppConfiguration: chargingStation.ocppConfiguration!,
     wsState: chargingStation?.wsConnection?.readyState,
     bootNotificationResponse: chargingStation.bootNotificationResponse,
     ...(chargingStation.automaticTransactionGenerator && {

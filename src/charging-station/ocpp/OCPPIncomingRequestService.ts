@@ -96,7 +96,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       validate.errors,
     );
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors!),
       'Incoming request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2),
@@ -104,7 +104,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
   }
 
   protected handleRequestClearCache(chargingStation: ChargingStation): ClearCacheResponse {
-    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo))) {
+    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo)!)) {
       return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
     }
     return OCPPConstants.OCPP_RESPONSE_REJECTED;

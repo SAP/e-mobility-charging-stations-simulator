@@ -103,7 +103,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
       ) {
         try {
           this.validatePayload(chargingStation, commandName, payload);
-          await this.responseHandlers.get(commandName)(chargingStation, payload, requestPayload);
+          await this.responseHandlers.get(commandName)!(chargingStation, payload, requestPayload);
         } catch (error) {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
@@ -147,7 +147,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
       return this.validateResponsePayload(
         chargingStation,
         commandName,
-        this.jsonSchemas.get(commandName),
+        this.jsonSchemas.get(commandName)!,
         payload,
       );
     }

@@ -53,6 +53,7 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   public async addElement(elementData: WorkerData): Promise<void> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup
-    this.workerOptions.elementStartDelay > 0 && (await sleep(this.workerOptions.elementStartDelay));
+    this.workerOptions.elementStartDelay! > 0 &&
+      (await sleep(this.workerOptions.elementStartDelay!));
   }
 }

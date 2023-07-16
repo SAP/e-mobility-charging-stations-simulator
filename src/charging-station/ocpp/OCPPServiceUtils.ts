@@ -144,11 +144,11 @@ export class OCPPServiceUtils {
   }
 
   public static convertDateToISOString<T extends JsonType>(obj: T): void {
-    for (const key in obj) {
-      if (obj[key] instanceof Date) {
-        (obj as JsonObject)[key] = (obj[key] as Date).toISOString();
-      } else if (obj[key] !== null && typeof obj[key] === 'object') {
-        OCPPServiceUtils.convertDateToISOString<T>(obj[key] as T);
+    for (const key in obj as JsonObject) {
+      if (obj![key] instanceof Date) {
+        obj![key] = (obj![key] as Date).toISOString();
+      } else if (obj![key] !== null && typeof obj![key] === 'object') {
+        OCPPServiceUtils.convertDateToISOString<T>(obj![key] as T);
       }
     }
   }
@@ -192,7 +192,7 @@ export class OCPPServiceUtils {
     connectorId: number,
     status: ConnectorStatusEnum,
     evseId?: number,
-    options: { send: boolean } = { send: true },
+    options?: { send: boolean },
   ) {
     options = { send: true, ...options };
     if (options.send) {
@@ -211,7 +211,7 @@ export class OCPPServiceUtils {
         ),
       );
     }
-    chargingStation.getConnectorStatus(connectorId).status = status;
+    chargingStation.getConnectorStatus(connectorId)!.status = status;
   }
 
   protected static checkConnectorStatusTransition(
@@ -219,7 +219,7 @@ export class OCPPServiceUtils {
     connectorId: number,
     status: ConnectorStatusEnum,
   ): boolean {
-    const fromStatus = chargingStation.getConnectorStatus(connectorId).status;
+    const fromStatus = chargingStation.getConnectorStatus(connectorId)!.status;
     let transitionAllowed = false;
     switch (chargingStation.stationInfo.ocppVersion) {
       case OCPPVersion.VERSION_16:
@@ -262,7 +262,7 @@ export class OCPPServiceUtils {
         `${chargingStation.logPrefix()} OCPP ${
           chargingStation.stationInfo.ocppVersion
         } connector id ${connectorId} status transition from '${
-          chargingStation.getConnectorStatus(connectorId).status
+          chargingStation.getConnectorStatus(connectorId)!.status
         }' to '${status}' is not allowed`,
       );
     }
@@ -286,6 +286,7 @@ export class OCPPServiceUtils {
         OCPPServiceUtils.logPrefix(ocppVersion, moduleName, methodName),
         { throwError: false },
       );
+      return {} as JSONSchemaType<T>;
     }
   }
 
@@ -317,7 +318,7 @@ export class OCPPServiceUtils {
       return;
     }
     const sampledValueTemplates: SampledValueTemplate[] =
-      chargingStation.getConnectorStatus(connectorId)?.MeterValues;
+      chargingStation.getConnectorStatus(connectorId)!.MeterValues;
     for (
       let index = 0;
       isNotEmptyArray(sampledValueTemplates) === true && index < sampledValueTemplates.length;
@@ -388,8 +389,8 @@ export class OCPPServiceUtils {
     const parsedInt = parseInt(value);
     const numberValue = isNaN(parsedInt) ? Infinity : parsedInt;
     return options?.limitationEnabled
-      ? Math.min(numberValue * options.unitMultiplier, limit)
-      : numberValue * options.unitMultiplier;
+      ? Math.min(numberValue * options.unitMultiplier!, limit)
+      : numberValue * options.unitMultiplier!;
   }
 
   private static logPrefix = (

@@ -2,9 +2,19 @@ import type { ChargingStation } from './ChargingStation';
 import type { ConfigurationKey, ConfigurationKeyType } from '../types';
 import { logger } from '../utils';
 
-type ConfigurationKeyOptions = { readonly?: boolean; visible?: boolean; reboot?: boolean };
-type DeleteConfigurationKeyParams = { save?: boolean; caseInsensitive?: boolean };
-type AddConfigurationKeyParams = { overwrite?: boolean; save?: boolean };
+interface ConfigurationKeyOptions {
+  readonly?: boolean;
+  visible?: boolean;
+  reboot?: boolean;
+}
+interface DeleteConfigurationKeyParams {
+  save?: boolean;
+  caseInsensitive?: boolean;
+}
+interface AddConfigurationKeyParams {
+  overwrite?: boolean;
+  save?: boolean;
+}
 
 export class ChargingStationConfigurationUtils {
   private constructor() {
@@ -54,7 +64,7 @@ export class ChargingStationConfigurationUtils {
     if (!keyFound) {
       chargingStation.ocppConfiguration?.configurationKey?.push({
         key,
-        readonly: options.readonly,
+        readonly: options.readonly!,
         value,
         visible: options.visible,
         reboot: options.reboot,
@@ -79,7 +89,7 @@ export class ChargingStationConfigurationUtils {
       key,
       caseInsensitive,
     );
-    if (keyFound) {
+    if (keyFound && chargingStation.ocppConfiguration?.configurationKey) {
       chargingStation.ocppConfiguration.configurationKey[
         chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound)
       ].value = value;

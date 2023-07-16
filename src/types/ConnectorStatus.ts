@@ -5,7 +5,7 @@ import type { MeterValue } from './ocpp/MeterValues';
 import type { AvailabilityType } from './ocpp/Requests';
 import type { Reservation } from './ocpp/Reservation';
 
-export type ConnectorStatus = {
+export interface ConnectorStatus {
   availability: AvailabilityType;
   bootStatus?: ConnectorStatusEnum;
   status?: ConnectorStatusEnum;
@@ -24,4 +24,4 @@ export type ConnectorStatus = {
   transactionBeginMeterValue?: MeterValue;
   chargingProfiles?: ChargingProfile[];
   reservation?: Reservation;
-};
+}

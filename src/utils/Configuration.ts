@@ -59,12 +59,12 @@ export class Configuration {
     if (hasOwnProp(Configuration.getConfig(), 'uiServer')) {
       uiServerConfiguration = merge<UIServerConfiguration>(
         uiServerConfiguration,
-        Configuration.getConfig()?.uiServer,
+        Configuration.getConfig()!.uiServer!,
       );
     }
     if (isCFEnvironment() === true) {
       delete uiServerConfiguration.options?.host;
-      uiServerConfiguration.options.port = parseInt(process.env.PORT);
+      uiServerConfiguration.options!.port = parseInt(process.env.PORT!);
     }
     return uiServerConfiguration;
   }
@@ -83,7 +83,7 @@ export class Configuration {
         ...(Configuration.getConfig()?.performanceStorage?.type === StorageType.JSON_FILE &&
           Configuration.getConfig()?.performanceStorage?.uri && {
             uri: Configuration.buildPerformanceUriFilePath(
-              new URL(Configuration.getConfig()?.performanceStorage?.uri).pathname,
+              new URL(Configuration.getConfig()!.performanceStorage!.uri!).pathname,
             ),
           }),
       };
@@ -119,12 +119,15 @@ export class Configuration {
       undefined,
       "Use 'stationTemplateUrls' instead",
     );
-    !isUndefined(Configuration.getConfig()['stationTemplateURLs']) &&
-      (Configuration.getConfig().stationTemplateUrls = Configuration.getConfig()[
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    !isUndefined(Configuration.getConfig()!['stationTemplateURLs']) &&
+      (Configuration.getConfig()!.stationTemplateUrls = Configuration.getConfig()![
+        // eslint-disable-next-line @typescript-eslint/dot-notation
         'stationTemplateURLs'
       ] as StationTemplateUrl[]);
-    Configuration.getConfig().stationTemplateUrls.forEach(
+    Configuration.getConfig()!.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
+        // eslint-disable-next-line @typescript-eslint/dot-notation
         if (!isUndefined(stationTemplateUrl['numberOfStation'])) {
           console.error(
             `${chalk.green(Configuration.logPrefix())} ${chalk.red(
@@ -329,7 +332,7 @@ export class Configuration {
 
   public static workerPoolInUse(): boolean {
     return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
-      Configuration.getWorker().processType,
+      Configuration.getWorker().processType!,
     );
   }
 
@@ -343,10 +346,13 @@ export class Configuration {
       undefined,
       "Use 'supervisionUrls' instead",
     );
-    !isUndefined(Configuration.getConfig()['supervisionURLs']) &&
-      (Configuration.getConfig().supervisionUrls = Configuration.getConfig()['supervisionURLs'] as
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    if (!isUndefined(Configuration.getConfig()!['supervisionURLs'])) {
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      Configuration.getConfig()!.supervisionUrls = Configuration.getConfig()!['supervisionURLs'] as
         | string
-        | string[]);
+        | string[];
+    }
     // Read conf
     return Configuration.getConfig()?.supervisionUrls;
   }
@@ -378,8 +384,8 @@ export class Configuration {
   ) {
     if (
       sectionName &&
-      !isUndefined(Configuration.getConfig()[sectionName]) &&
-      !isUndefined((Configuration.getConfig()[sectionName] as Record<string, unknown>)[key])
+      !isUndefined(Configuration.getConfig()![sectionName]) &&
+      !isUndefined((Configuration.getConfig()![sectionName] as object)[key])
     ) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
@@ -388,7 +394,7 @@ export class Configuration {
           }`,
         )}`,
       );
-    } else if (!isUndefined(Configuration.getConfig()[key])) {
+    } else if (!isUndefined(Configuration.getConfig()![key])) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage${
@@ -424,7 +430,7 @@ export class Configuration {
   private static getConfigurationFileWatcher(): FSWatcher | undefined {
     try {
       return watch(Configuration.configurationFile, (event, filename): void => {
-        if (filename?.trim().length > 0 && event === 'change') {
+        if (filename!.trim()!.length > 0 && event === 'change') {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
           if (!isUndefined(Configuration.configurationChangeCallback)) {

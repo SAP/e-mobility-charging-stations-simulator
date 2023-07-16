@@ -50,7 +50,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
         (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
         0,
       ),
-      elementsPerWorker: this.maxElementsPerWorker,
+      elementsPerWorker: this.maxElementsPerWorker!,
     };
   }
 
@@ -66,7 +66,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   public async start(): Promise<void> {
     this.addWorkerSetElement();
     // Add worker set element sequentially to optimize memory at startup
-    this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
+    this.workerOptions.workerStartDelay! > 0 && (await sleep(this.workerOptions.workerStartDelay!));
   }
 
   /** @inheritDoc */
@@ -95,8 +95,8 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     });
     ++workerSetElement.numberOfWorkerElements;
     // Add element sequentially to optimize memory at startup
-    if (this.workerOptions.elementStartDelay > 0) {
-      await sleep(this.workerOptions.elementStartDelay);
+    if (this.workerOptions.elementStartDelay! > 0) {
+      await sleep(this.workerOptions.elementStartDelay!);
     }
   }
 
@@ -106,7 +106,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   private addWorkerSetElement(): WorkerSetElement {
     const worker = new Worker(this.workerScript, {
       env: SHARE_ENV,
-      ...this.workerOptions.poolOptions.workerOptions,
+      ...this.workerOptions.poolOptions?.workerOptions,
     });
     worker.on(
       'message',
@@ -131,7 +131,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       this.workerOptions?.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.once('exit', () =>
-      this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker)),
+      this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker)!),
     );
     const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
     this.workerSet.add(workerSetElement);
@@ -143,9 +143,9 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   }
 
   private async getWorkerSetElement(): Promise<WorkerSetElement> {
-    let chosenWorkerSetElement: WorkerSetElement;
+    let chosenWorkerSetElement: WorkerSetElement | undefined;
     for (const workerSetElement of this.workerSet) {
-      if (workerSetElement.numberOfWorkerElements < this.workerOptions.elementsPerWorker) {
+      if (workerSetElement.numberOfWorkerElements < this.workerOptions.elementsPerWorker!) {
         chosenWorkerSetElement = workerSetElement;
         break;
       }
@@ -153,13 +153,14 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     if (!chosenWorkerSetElement) {
       chosenWorkerSetElement = this.addWorkerSetElement();
       // Add worker set element sequentially to optimize memory at startup
-      this.workerOptions.workerStartDelay > 0 && (await sleep(this.workerOptions.workerStartDelay));
+      this.workerOptions.workerStartDelay! > 0 &&
+        (await sleep(this.workerOptions.workerStartDelay!));
     }
     return chosenWorkerSetElement;
   }
 
   private getWorkerSetElementByWorker(worker: Worker): WorkerSetElement | undefined {
-    let workerSetElt: WorkerSetElement;
+    let workerSetElt: WorkerSetElement | undefined;
     for (const workerSetElement of this.workerSet) {
       if (workerSetElement.worker.threadId === worker.threadId) {
         workerSetElt = workerSetElement;

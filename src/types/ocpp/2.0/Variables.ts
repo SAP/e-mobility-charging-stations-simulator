@@ -110,7 +110,7 @@ export type OCPP20SetVariableResultType = {
   attributeStatusInfo?: StatusInfoType;
 } & JsonObject;
 
-type OCPP20ComponentVariableType = {
+export type OCPP20ComponentVariableType = {
   component: ComponentType;
   variable?: VariableType;
 } & JsonObject;

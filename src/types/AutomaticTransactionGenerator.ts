@@ -4,7 +4,7 @@ export enum IdTagDistribution {
   CONNECTOR_AFFINITY = 'connector-affinity',
 }
 
-export type AutomaticTransactionGeneratorConfiguration = {
+export interface AutomaticTransactionGeneratorConfiguration {
   enable: boolean;
   minDuration: number;
   maxDuration: number;
@@ -15,9 +15,9 @@ export type AutomaticTransactionGeneratorConfiguration = {
   stopOnConnectionFailure: boolean;
   requireAuthorize?: boolean;
   idTagDistribution?: IdTagDistribution;
-};
+}
 
-export type Status = {
+export interface Status {
   start: boolean;
   startDate?: Date;
   lastRunDate?: Date;
@@ -34,9 +34,9 @@ export type Status = {
   rejectedStopTransactionRequests?: number;
   skippedConsecutiveTransactions?: number;
   skippedTransactions?: number;
-};
+}
 
-export type ChargingStationAutomaticTransactionGeneratorConfiguration = {
+export interface ChargingStationAutomaticTransactionGeneratorConfiguration {
   automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration;
   automaticTransactionGeneratorStatuses?: Status[];
-};
+}

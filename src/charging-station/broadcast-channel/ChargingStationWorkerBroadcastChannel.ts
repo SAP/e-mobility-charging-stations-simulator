@@ -48,10 +48,7 @@ type CommandResponse =
   | BootNotificationResponse
   | StatusNotificationResponse
   | HeartbeatResponse
-  | MeterValuesResponse
-  | DataTransferResponse
-  | DiagnosticsStatusNotificationResponse
-  | FirmwareStatusNotificationResponse;
+  | DataTransferResponse;
 
 type CommandHandler = (
   requestPayload?: BroadcastChannelRequestPayload,
@@ -114,7 +111,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             RequestCommand.STOP_TRANSACTION,
             {
               meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-                requestPayload.transactionId,
+                requestPayload!.transactionId!,
                 true,
               ),
               ...requestPayload,
@@ -192,9 +189,9 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                 // FIXME: Implement OCPP version agnostic helpers
                 OCPP16ServiceUtils.buildMeterValue(
                   this.chargingStation,
-                  requestPayload.connectorId,
-                  this.chargingStation.getConnectorStatus(requestPayload.connectorId)
-                    ?.transactionId,
+                  requestPayload!.connectorId!,
+                  this.chargingStation.getConnectorStatus(requestPayload!.connectorId!)!
+                    .transactionId!,
                   configuredMeterValueSampleInterval
                     ? convertToInt(configuredMeterValueSampleInterval.value) * 1000
                     : Constants.DEFAULT_METER_VALUES_INTERVAL,
@@ -267,8 +264,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       );
       return;
     }
-    let responsePayload: BroadcastChannelResponsePayload;
-    let commandResponse: CommandResponse | void;
+    let responsePayload: BroadcastChannelResponsePayload | undefined;
+    let commandResponse: CommandResponse | void | undefined;
     try {
       commandResponse = await this.commandHandler(command, requestPayload);
       if (isNullOrUndefined(commandResponse) || isEmptyObject(commandResponse as CommandResponse)) {
@@ -299,7 +296,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         errorDetails: (error as OCPPError).details,
       };
     } finally {
-      this.sendResponse([uuid, responsePayload]);
+      this.sendResponse([uuid, responsePayload!]);
     }
   }
 
@@ -316,7 +313,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   ): Promise<CommandResponse | void> {
     if (this.commandHandlers.has(command) === true) {
       this.cleanRequestPayload(command, requestPayload);
-      return this.commandHandlers.get(command)(requestPayload);
+      return this.commandHandlers.get(command)!(requestPayload);
     }
     throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
   }

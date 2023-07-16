@@ -38,7 +38,7 @@ export class SharedLRUCache {
   ): void {
     if (this.isChargingStationConfigurationCacheable(chargingStationConfiguration)) {
       this.set(
-        this.getChargingStationConfigurationKey(chargingStationConfiguration.configurationHash),
+        this.getChargingStationConfigurationKey(chargingStationConfiguration.configurationHash!),
         chargingStationConfiguration,
       );
     }
@@ -62,7 +62,7 @@ export class SharedLRUCache {
 
   public setChargingStationTemplate(chargingStationTemplate: ChargingStationTemplate): void {
     this.set(
-      this.getChargingStationTemplateKey(chargingStationTemplate.templateHash),
+      this.getChargingStationTemplateKey(chargingStationTemplate.templateHash!),
       chargingStationTemplate,
     );
   }
@@ -114,8 +114,8 @@ export class SharedLRUCache {
       isNullOrUndefined(chargingStationConfiguration?.automaticTransactionGenerator) === false &&
       isNullOrUndefined(chargingStationConfiguration?.configurationHash) === false &&
       isNotEmptyArray(chargingStationConfiguration?.configurationKey) === true &&
-      isEmptyObject(chargingStationConfiguration?.stationInfo) === false &&
-      isEmptyObject(chargingStationConfiguration?.automaticTransactionGenerator) === false &&
+      isEmptyObject(chargingStationConfiguration.stationInfo!) === false &&
+      isEmptyObject(chargingStationConfiguration.automaticTransactionGenerator!) === false &&
       isNotEmptyString(chargingStationConfiguration?.configurationHash) === true
     );
   }

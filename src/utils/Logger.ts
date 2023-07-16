@@ -13,9 +13,9 @@ if (Configuration.getLog().rotate === true) {
   transports = [
     new DailyRotateFile({
       filename: insertAt(
-        Configuration.getLog().errorFile,
+        Configuration.getLog().errorFile!,
         '-%DATE%',
-        Configuration.getLog().errorFile?.indexOf('.log'),
+        Configuration.getLog().errorFile!.indexOf('.log'),
       ),
       level: 'error',
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
@@ -23,9 +23,9 @@ if (Configuration.getLog().rotate === true) {
     }),
     new DailyRotateFile({
       filename: insertAt(
-        Configuration.getLog().file,
+        Configuration.getLog().file!,
         '-%DATE%',
-        Configuration.getLog().file?.indexOf('.log'),
+        Configuration.getLog().file!.indexOf('.log'),
       ),
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
       ...(logMaxSize && { maxSize: logMaxSize }),
@@ -41,7 +41,7 @@ if (Configuration.getLog().rotate === true) {
 export const logger = createLogger({
   silent: !Configuration.getLog().enabled,
   level: Configuration.getLog().level,
-  format: format.combine(format.splat(), (format[Configuration.getLog().format] as FormatWrap)()),
+  format: format.combine(format.splat(), (format[Configuration.getLog().format!] as FormatWrap)()),
   transports,
 });
 
@@ -54,7 +54,7 @@ if (Configuration.getLog().console) {
     new TransportType.Console({
       format: format.combine(
         format.splat(),
-        (format[Configuration.getLog().format] as FormatWrap)(),
+        (format[Configuration.getLog().format!] as FormatWrap)(),
       ),
     }),
   );

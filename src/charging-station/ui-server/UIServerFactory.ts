@@ -15,7 +15,7 @@ export class UIServerFactory {
   public static getUIServerImplementation(
     uiServerConfiguration?: UIServerConfiguration,
   ): AbstractUIServer | null {
-    if (UIServerUtils.isLoopback(uiServerConfiguration.options?.host) === false) {
+    if (UIServerUtils.isLoopback(uiServerConfiguration!.options!.host!) === false) {
       console.warn(
         chalk.yellow(
           'Loopback address not detected in UI server configuration. This is not recommended.',

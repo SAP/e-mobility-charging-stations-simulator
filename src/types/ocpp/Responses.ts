@@ -15,15 +15,11 @@ import {
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
 } from './1.6/Responses';
-import type {
-  OCPP20BootNotificationResponse,
-  OCPP20ClearCacheResponse,
-  OCPP20StatusNotificationResponse,
-} from './2.0/Responses';
+import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses';
 import type { ErrorType } from './ErrorType';
 import type { MessageType } from './MessageType';
 import type { ChargingStation } from '../../charging-station';
-import type { JsonType } from '../JsonType';
+import type { JsonObject, JsonType } from '../JsonType';
 
 export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType];
 
@@ -43,9 +39,7 @@ export type HeartbeatResponse = OCPP16HeartbeatResponse;
 
 export type ClearCacheResponse = GenericResponse | OCPP20ClearCacheResponse;
 
-export type StatusNotificationResponse =
-  | OCPP16StatusNotificationResponse
-  | OCPP20StatusNotificationResponse;
+export type StatusNotificationResponse = OCPP16StatusNotificationResponse;
 
 export type MeterValuesResponse = OCPP16MeterValuesResponse;
 
@@ -60,9 +54,9 @@ export enum GenericStatus {
   Rejected = 'Rejected',
 }
 
-export type GenericResponse = {
+export interface GenericResponse extends JsonObject {
   status: GenericStatus;
-};
+}
 
 export enum RegistrationStatusEnumType {
   ACCEPTED = 'Accepted',

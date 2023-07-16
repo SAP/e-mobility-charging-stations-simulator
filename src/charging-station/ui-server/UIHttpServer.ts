@@ -116,9 +116,9 @@ export class UIHttpServer extends AbstractUIServer {
         );
       });
       if (req.method === HttpMethods.POST) {
-        const bodyBuffer = [];
+        const bodyBuffer: Uint8Array[] = [];
         req
-          .on('data', (chunk) => {
+          .on('data', (chunk: Uint8Array) => {
             bodyBuffer.push(chunk);
           })
           .on('end', () => {

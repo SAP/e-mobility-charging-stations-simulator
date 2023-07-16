@@ -82,8 +82,8 @@ export class Bootstrap extends EventEmitter {
       (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer()));
     Configuration.getPerformanceStorage().enabled === true &&
       (this.storage = StorageFactory.getStorage(
-        Configuration.getPerformanceStorage().type,
-        Configuration.getPerformanceStorage().uri,
+        Configuration.getPerformanceStorage().type!,
+        Configuration.getPerformanceStorage().uri!,
         this.logPrefix(),
       ));
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
@@ -109,7 +109,7 @@ export class Bootstrap extends EventEmitter {
         await this.storage?.open();
         this.uiServer?.start();
         // Start ChargingStation object instance in worker thread
-        for (const stationTemplateUrl of Configuration.getStationTemplateUrls()) {
+        for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
             const nbStations = stationTemplateUrl.numberOfStations ?? 0;
             for (let index = 1; index <= nbStations; index++) {
@@ -212,7 +212,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private initializeWorkerImplementation(): void {
-    let elementsPerWorker: number;
+    let elementsPerWorker: number | undefined;
     if (Configuration.getWorker()?.elementsPerWorker === 'auto') {
       elementsPerWorker =
         this.numberOfChargingStations > availableParallelism()
@@ -222,12 +222,12 @@ export class Bootstrap extends EventEmitter {
     this.workerImplementation === null &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
         this.workerScript,
-        Configuration.getWorker().processType,
+        Configuration.getWorker().processType!,
         {
           workerStartDelay: Configuration.getWorker().startDelay,
           elementStartDelay: Configuration.getWorker().elementStartDelay,
-          poolMaxSize: Configuration.getWorker().poolMaxSize,
-          poolMinSize: Configuration.getWorker().poolMinSize,
+          poolMaxSize: Configuration.getWorker().poolMaxSize!,
+          poolMinSize: Configuration.getWorker().poolMinSize!,
           elementsPerWorker:
             elementsPerWorker ?? (Configuration.getWorker().elementsPerWorker as number),
           poolOptions: {
@@ -244,8 +244,8 @@ export class Bootstrap extends EventEmitter {
     //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
     //     msg,
     //     null,
-    //     2
-    //   )}`
+    //     2,
+    //   )}`,
     // );
     try {
       switch (msg.id) {
@@ -318,7 +318,7 @@ export class Bootstrap extends EventEmitter {
   private initializeCounters() {
     if (this.initializedCounters === false) {
       this.resetCounters();
-      const stationTemplateUrls = Configuration.getStationTemplateUrls();
+      const stationTemplateUrls = Configuration.getStationTemplateUrls()!;
       if (isNotEmptyArray(stationTemplateUrls)) {
         this.numberOfChargingStationTemplates = stationTemplateUrls.length;
         for (const stationTemplateUrl of stationTemplateUrls) {

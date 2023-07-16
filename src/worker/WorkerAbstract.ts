@@ -45,11 +45,11 @@ export abstract class WorkerAbstract<T extends WorkerData> {
     this.workerScript = workerScript;
     this.workerOptions = workerOptions;
     this.workerOptions.poolOptions?.messageHandler?.bind(this);
-    this.workerOptions.poolOptions.errorHandler = (
+    this.workerOptions.poolOptions!.errorHandler = (
       this.workerOptions?.poolOptions?.errorHandler ?? defaultErrorHandler
     ).bind(this) as ErrorHandler<Worker>;
     this.workerOptions.poolOptions?.onlineHandler?.bind(this);
-    this.workerOptions.poolOptions.exitHandler = (
+    this.workerOptions.poolOptions!.exitHandler = (
       this.workerOptions?.poolOptions?.exitHandler ?? defaultExitHandler
     ).bind(this) as ExitHandler<Worker>;
   }

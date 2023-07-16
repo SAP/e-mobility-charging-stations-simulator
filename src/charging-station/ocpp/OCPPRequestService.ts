@@ -55,6 +55,7 @@ export abstract class OCPPRequestService {
     ajvFormats(this.ajv);
     this.ocppResponseService = ocppResponseService;
     this.requestHandler = this.requestHandler.bind(this) as <
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ReqType extends JsonType,
       ResType extends JsonType,
     >(
@@ -142,6 +143,7 @@ export abstract class OCPPRequestService {
       handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: true,
       });
+      return null;
     }
   }
 
@@ -162,6 +164,7 @@ export abstract class OCPPRequestService {
       );
     } catch (error) {
       handleSendMessageError(chargingStation, commandName, error as Error);
+      return null;
     }
   }
 
@@ -189,6 +192,7 @@ export abstract class OCPPRequestService {
       handleSendMessageError(chargingStation, commandName, error as Error, {
         throwError: params.throwError,
       });
+      return null;
     }
   }
 
@@ -206,7 +210,7 @@ export abstract class OCPPRequestService {
       );
       return true;
     }
-    const validate = this.ajv.compile(this.jsonSchemas.get(commandName as RequestCommand));
+    const validate = this.ajv.compile(this.jsonSchemas.get(commandName as RequestCommand)!);
     payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
@@ -218,7 +222,7 @@ export abstract class OCPPRequestService {
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors!),
       'Request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2),
@@ -246,7 +250,7 @@ export abstract class OCPPRequestService {
     const validate = this.ajv.compile(
       this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(
         commandName as IncomingRequestCommand,
-      ),
+      )!,
     );
     payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
@@ -259,7 +263,7 @@ export abstract class OCPPRequestService {
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors!),
       'Response PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, null, 2),
@@ -492,6 +496,7 @@ export abstract class OCPPRequestService {
   public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
+    // FIXME: should be ReqType
     commandParams?: JsonType,
     params?: RequestParams,
   ): Promise<ResType>;

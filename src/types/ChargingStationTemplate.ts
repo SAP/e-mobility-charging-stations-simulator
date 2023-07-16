@@ -41,19 +41,19 @@ export enum Voltage {
 
 export type WsOptions = ClientOptions & ClientRequestArgs;
 
-export type FirmwareUpgrade = {
+export interface FirmwareUpgrade {
   versionUpgrade?: {
     patternGroup?: number;
     step?: number;
   };
   reset?: boolean;
   failureStatus?: FirmwareStatus;
-};
+}
 
-type CommandsSupport = {
+interface CommandsSupport {
   incomingCommands: Record<IncomingRequestCommand, boolean>;
   outgoingCommands?: Record<RequestCommand, boolean>;
-};
+}
 
 enum x509CertificateType {
   V2GRootCertificate = 'V2GRootCertificate',
@@ -64,7 +64,7 @@ enum x509CertificateType {
   V2GCertificate = 'V2GCertificate',
 }
 
-export type ChargingStationTemplate = {
+export interface ChargingStationTemplate {
   templateHash?: string;
   supervisionUrls?: string | string[];
   supervisionUrlOcppConfiguration?: boolean;
@@ -93,9 +93,9 @@ export type ChargingStationTemplate = {
   imsi?: string;
   meterSerialNumberPrefix?: string;
   meterType?: string;
-  power: number | number[];
+  power?: number | number[];
+  powerUnit?: PowerUnits;
   powerSharedByConnectors?: boolean;
-  powerUnit: PowerUnits;
   currentOutType?: CurrentType;
   voltageOut?: Voltage;
   numberOfPhases?: number;
@@ -127,4 +127,4 @@ export type ChargingStationTemplate = {
   Evses?: Record<string, EvseTemplate>;
   Connectors?: Record<string, ConnectorStatus>;
   x509Certificates?: Record<x509CertificateType, string>;
-};
+}

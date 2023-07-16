@@ -25,6 +25,6 @@ export type ChargingStationInfo = Omit<
   firmwareStatus?: FirmwareStatus;
 };
 
-export type ChargingStationInfoConfiguration = {
+export interface ChargingStationInfoConfiguration {
   stationInfo?: ChargingStationInfo;
-};
+}

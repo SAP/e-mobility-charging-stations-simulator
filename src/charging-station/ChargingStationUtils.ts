@@ -181,7 +181,7 @@ export const checkTemplate = (
     logger.error(`${logPrefix} ${errorMsg}`);
     throw new BaseError(errorMsg);
   }
-  if (isEmptyObject(stationTemplate.AutomaticTransactionGenerator)) {
+  if (isEmptyObject(stationTemplate.AutomaticTransactionGenerator!)) {
     stationTemplate.AutomaticTransactionGenerator = Constants.DEFAULT_ATG_CONFIGURATION;
     logger.warn(
       `${logPrefix} Empty automatic transaction generator configuration from template file ${templateFile}, set to default: %j`,
@@ -206,9 +206,9 @@ export const checkConnectorsConfiguration = (
 } => {
   const configuredMaxConnectors = getConfiguredNumberOfConnectors(stationTemplate);
   checkConfiguredMaxConnectors(configuredMaxConnectors, logPrefix, templateFile);
-  const templateMaxConnectors = getMaxNumberOfConnectors(stationTemplate.Connectors);
+  const templateMaxConnectors = getMaxNumberOfConnectors(stationTemplate.Connectors!);
   checkTemplateMaxConnectors(templateMaxConnectors, logPrefix, templateFile);
-  const templateMaxAvailableConnectors = stationTemplate?.Connectors[0]
+  const templateMaxAvailableConnectors = stationTemplate.Connectors![0]
     ? templateMaxConnectors - 1
     : templateMaxConnectors;
   if (
@@ -271,15 +271,15 @@ export const initializeConnectorsMapStatus = (
       );
     }
     if (connectorId === 0) {
-      connectors.get(connectorId).availability = AvailabilityType.Operative;
+      connectors.get(connectorId)!.availability = AvailabilityType.Operative;
       if (isUndefined(connectors.get(connectorId)?.chargingProfiles)) {
-        connectors.get(connectorId).chargingProfiles = [];
+        connectors.get(connectorId)!.chargingProfiles = [];
       }
     } else if (
       connectorId > 0 &&
       isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
     ) {
-      initializeConnectorStatus(connectors.get(connectorId));
+      initializeConnectorStatus(connectors.get(connectorId)!);
     }
   }
 };
@@ -365,7 +365,7 @@ export const warnTemplateKeysDeprecation = (
       templateKey.deprecatedKey,
       logPrefix,
       templateFile,
-      !isUndefined(templateKey.key) && `Use '${templateKey.key}' instead`,
+      !isUndefined(templateKey.key) ? `Use '${templateKey.key}' instead` : undefined,
     );
     convertDeprecatedTemplateKey(stationTemplate, templateKey.deprecatedKey, templateKey.key);
   }
@@ -377,8 +377,8 @@ export const stationTemplateToStationInfo = (
   stationTemplate = cloneObject<ChargingStationTemplate>(stationTemplate);
   delete stationTemplate.power;
   delete stationTemplate.powerUnit;
-  delete stationTemplate?.Connectors;
-  delete stationTemplate?.Evses;
+  delete stationTemplate.Connectors;
+  delete stationTemplate.Evses;
   delete stationTemplate.Configuration;
   delete stationTemplate.AutomaticTransactionGenerator;
   delete stationTemplate.chargeBoxSerialNumberPrefix;
@@ -453,17 +453,17 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
   chargingStation: ChargingStation,
   connectorId: number,
 ): number | undefined => {
-  let limit: number, matchingChargingProfile: ChargingProfile;
+  let limit: number | undefined, matchingChargingProfile: ChargingProfile | undefined;
   // Get charging profiles for connector and sort by stack level
   const chargingProfiles =
     cloneObject<ChargingProfile[]>(
-      chargingStation.getConnectorStatus(connectorId)?.chargingProfiles,
+      chargingStation.getConnectorStatus(connectorId)!.chargingProfiles!,
     )?.sort((a, b) => b.stackLevel - a.stackLevel) ?? [];
   // Get profiles on connector 0
   if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
     chargingProfiles.push(
       ...cloneObject<ChargingProfile[]>(
-        chargingStation.getConnectorStatus(0).chargingProfiles,
+        chargingStation.getConnectorStatus(0)!.chargingProfiles!,
       ).sort((a, b) => b.stackLevel - a.stackLevel),
     );
   }
@@ -475,27 +475,27 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
           limit =
-            matchingChargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+            matchingChargingProfile?.chargingSchedule?.chargingRateUnit ===
+            ChargingRateUnitType.WATT
               ? limit
               : ACElectricUtils.powerTotal(
                   chargingStation.getNumberOfPhases(),
                   chargingStation.getVoltageOut(),
-                  limit,
+                  limit!,
                 );
           break;
         case CurrentType.DC:
           limit =
-            matchingChargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+            matchingChargingProfile?.chargingSchedule?.chargingRateUnit ===
+            ChargingRateUnitType.WATT
               ? limit
-              : DCElectricUtils.power(chargingStation.getVoltageOut(), limit);
+              : DCElectricUtils.power(chargingStation.getVoltageOut(), limit!);
       }
       const connectorMaximumPower =
         chargingStation.getMaximumPower() / chargingStation.powerDivider;
-      if (limit > connectorMaximumPower) {
+      if (limit! > connectorMaximumPower) {
         logger.error(
-          `${chargingStation.logPrefix()} Charging profile id ${
-            matchingChargingProfile.chargingProfileId
-          } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
+          `${chargingStation.logPrefix()} Charging profile id ${matchingChargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
           result,
         );
         limit = connectorMaximumPower;
@@ -553,7 +553,7 @@ export const waitChargingStationEvents = async (
 };
 
 const getConfiguredNumberOfConnectors = (stationTemplate: ChargingStationTemplate): number => {
-  let configuredMaxConnectors: number;
+  let configuredMaxConnectors = 0;
   if (isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
     const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
     configuredMaxConnectors =
@@ -561,7 +561,7 @@ const getConfiguredNumberOfConnectors = (stationTemplate: ChargingStationTemplat
   } else if (isUndefined(stationTemplate.numberOfConnectors) === false) {
     configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
   } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
-    configuredMaxConnectors = stationTemplate?.Connectors[0]
+    configuredMaxConnectors = stationTemplate.Connectors[0]
       ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
       : getMaxNumberOfConnectors(stationTemplate.Connectors);
   } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
@@ -636,10 +636,12 @@ const warnDeprecatedTemplateKey = (
 const convertDeprecatedTemplateKey = (
   template: ChargingStationTemplate,
   deprecatedKey: string,
-  key: string,
+  key?: string,
 ): void => {
   if (!isUndefined(template[deprecatedKey])) {
-    template[key] = template[deprecatedKey] as unknown;
+    if (!isUndefined(key)) {
+      template[key!] = template[deprecatedKey] as unknown;
+    }
     delete template[deprecatedKey];
   }
 };
@@ -680,7 +682,7 @@ const getLimitFromChargingProfiles = (
         logger.warn(
           `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
         );
-        chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule);
+        chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule!);
       }
       chargingSchedule.startSchedule.setFullYear(
         currentDate.getFullYear(),
@@ -700,7 +702,7 @@ const getLimitFromChargingProfiles = (
         .add(chargingSchedule.duration, 's')
         .isAfter(currentMoment)
     ) {
-      let lastButOneSchedule: ChargingSchedulePeriod;
+      let lastButOneSchedule: ChargingSchedulePeriod | undefined;
       // Search the right schedule period
       for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
         // Handling of only one period
@@ -723,7 +725,7 @@ const getLimitFromChargingProfiles = (
         ) {
           // Found the schedule: last but one is the correct one
           const result = {
-            limit: lastButOneSchedule.limit,
+            limit: lastButOneSchedule!.limit,
             matchingChargingProfile: chargingProfile,
           };
           logger.debug(debugLogMsg, result);

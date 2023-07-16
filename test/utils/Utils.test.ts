@@ -360,8 +360,6 @@ describe('Utils test suite', () => {
   it('Verify isEmptyObject()', () => {
     expect(isEmptyObject({})).toBe(true);
     expect(isEmptyObject({ 1: 1, 2: 2 })).toBe(false);
-    expect(isEmptyObject(undefined)).toBe(false);
-    expect(isEmptyObject(null)).toBe(false);
     expect(isEmptyObject(new Map())).toBe(false);
     expect(isEmptyObject(new Set())).toBe(false);
     expect(isEmptyObject(new WeakMap())).toBe(false);

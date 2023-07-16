@@ -9,14 +9,14 @@ export enum WorkerProcessType {
   staticPool = 'staticPool',
 }
 
-export type SetInfo = {
+export interface SetInfo {
   version: string;
   type: string;
   worker: string;
   size: number;
   elementsExecuting: number;
   elementsPerWorker: number;
-};
+}
 
 export enum WorkerSetEvents {
   error = 'error',
@@ -28,26 +28,26 @@ export const WorkerEvents = {
 } as const;
 export type WorkerEvents = PoolEvent | WorkerSetEvents;
 
-export type WorkerOptions = {
+export interface WorkerOptions {
   workerStartDelay?: number;
   elementStartDelay?: number;
   poolMaxSize: number;
   poolMinSize: number;
   elementsPerWorker?: number;
   poolOptions?: ThreadPoolOptions;
-};
+}
 
 export type WorkerData = Record<string, unknown>;
 
-export type WorkerSetElement = {
+export interface WorkerSetElement {
   worker: Worker;
   numberOfWorkerElements: number;
-};
+}
 
-export type WorkerMessage<T extends WorkerData> = {
+export interface WorkerMessage<T extends WorkerData> {
   id: WorkerMessageEvents;
   data: T;
-};
+}
 
 export enum WorkerMessageEvents {
   startWorkerElement = 'startWorkerElement',

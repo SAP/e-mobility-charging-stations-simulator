@@ -11,11 +11,11 @@ import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIServi
 
 const moduleName = 'UIServiceWorkerBroadcastChannel';
 
-type Responses = {
+interface Responses {
   responsesExpected: number;
   responsesReceived: number;
   responses: BroadcastChannelResponsePayload[];
-};
+}
 
 export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly uiService: AbstractUIService;
@@ -45,9 +45,9 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         responses: [responsePayload],
       });
     } else if (
-      this.responses.get(uuid)?.responsesReceived <= this.responses.get(uuid)?.responsesExpected
+      this.responses.get(uuid)!.responsesReceived <= this.responses.get(uuid)!.responsesExpected
     ) {
-      ++this.responses.get(uuid).responsesReceived;
+      ++this.responses.get(uuid)!.responsesReceived;
       this.responses.get(uuid)?.responses.push(responsePayload);
     }
     if (
@@ -75,7 +75,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
           if (status === ResponseStatus.SUCCESS) {
             return hashId;
           }
-        }),
+        }) as string[],
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: this.responses
           .get(uuid)
@@ -84,7 +84,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             if (status === ResponseStatus.FAILURE) {
               return hashId;
             }
-          }),
+          }) as string[],
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: this.responses
@@ -94,7 +94,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             if (response.status === ResponseStatus.FAILURE) {
               return response;
             }
-          }),
+          }) as BroadcastChannelResponsePayload[],
       }),
     };
   }

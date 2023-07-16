@@ -4,17 +4,17 @@ import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConf
 import type { ConnectorStatus } from './ConnectorStatus';
 import type { EvseStatus } from './Evse';
 
-type ConnectorsConfiguration = {
+interface ConnectorsConfiguration {
   connectorsStatus?: ConnectorStatus[];
-};
+}
 
 export type EvseStatusConfiguration = Omit<EvseStatus, 'connectors'> & {
   connectorsStatus?: ConnectorStatus[];
 };
 
-type EvsesConfiguration = {
+interface EvsesConfiguration {
   evsesStatus?: EvseStatusConfiguration[];
-};
+}
 
 export type ChargingStationConfiguration = ChargingStationInfoConfiguration &
   ChargingStationOcppConfiguration &

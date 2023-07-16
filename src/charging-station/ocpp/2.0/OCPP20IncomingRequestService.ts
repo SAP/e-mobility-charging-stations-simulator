@@ -84,7 +84,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         try {
           this.validatePayload(chargingStation, commandName, commandPayload);
           // Call the method to build the response
-          response = await this.incomingRequestHandlers.get(commandName)(
+          response = await this.incomingRequestHandlers.get(commandName)!(
             chargingStation,
             commandPayload,
           );
@@ -139,7 +139,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return this.validateIncomingRequestPayload(
         chargingStation,
         commandName,
-        this.jsonSchemas.get(commandName),
+        this.jsonSchemas.get(commandName)!,
         commandPayload,
       );
     }

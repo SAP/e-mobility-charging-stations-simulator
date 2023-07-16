@@ -37,4 +37,6 @@ export interface BroadcastChannelResponsePayload
   hashId: string;
 }
 
-export type MessageEvent = { data: BroadcastChannelRequest | BroadcastChannelResponse };
+export interface MessageEvent {
+  data: BroadcastChannelRequest | BroadcastChannelResponse;
+}

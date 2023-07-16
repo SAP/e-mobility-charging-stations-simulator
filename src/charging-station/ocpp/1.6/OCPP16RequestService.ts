@@ -157,7 +157,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     commandName: OCPP16RequestCommand,
     commandParams?: JsonType,
   ): Request {
-    let connectorId: number;
+    let connectorId: number | undefined;
     let energyActiveImportRegister: number;
     commandParams = commandParams as JsonObject;
     switch (commandName) {
@@ -189,7 +189,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         chargingStation.getTransactionDataMeterValues() &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams?.transactionId as number,
-          ));
+          )!);
         energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
           commandParams?.transactionId as number,
           true,
@@ -200,10 +200,10 @@ export class OCPP16RequestService extends OCPPRequestService {
           timestamp: new Date(),
           ...(chargingStation.getTransactionDataMeterValues() && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
-              chargingStation.getConnectorStatus(connectorId).transactionBeginMeterValue,
+              chargingStation.getConnectorStatus(connectorId!)!.transactionBeginMeterValue!,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
-                connectorId,
+                connectorId!,
                 energyActiveImportRegister,
               ),
             ),

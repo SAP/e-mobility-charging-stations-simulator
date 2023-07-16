@@ -59,7 +59,7 @@ export const convertToDate = (
     return value;
   }
   if (isString(value) || typeof value === 'number') {
-    return new Date(value);
+    return new Date(value!);
   }
   return null;
 };
@@ -79,6 +79,7 @@ export const convertToInt = (value: unknown): number => {
     changedValue = parseInt(value as string);
   }
   if (isNaN(changedValue)) {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     throw new Error(`Cannot convert to integer: ${value.toString()}`);
   }
   return changedValue;
@@ -93,6 +94,7 @@ export const convertToFloat = (value: unknown): number => {
     changedValue = parseFloat(value as string);
   }
   if (isNaN(changedValue)) {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     throw new Error(`Cannot convert to float: ${value.toString()}`);
   }
   return changedValue;
