@@ -15,7 +15,7 @@ export default class Utils {
     if (obj === null || obj === undefined) {
       return false;
     }
-    return typeof (obj as any)[Symbol.iterator] === 'function';
+    return typeof (obj as unknown as Iterable<T>)[Symbol.iterator] === 'function';
   }
 
   // public static ifNotIterableDo<T>(obj: T, cb: () => void): void {

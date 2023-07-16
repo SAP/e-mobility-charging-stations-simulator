@@ -112,10 +112,10 @@ export abstract class AbstractUIService {
   // public sendRequest(
   //   messageId: string,
   //   procedureName: ProcedureName,
-  //   requestPayload: RequestPayload
+  //   requestPayload: RequestPayload,
   // ): void {
   //   this.uiServer.sendRequest(
-  //     this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
+  //     this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload),
   //   );
   // }
 
