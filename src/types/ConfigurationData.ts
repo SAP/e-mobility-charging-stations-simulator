@@ -8,6 +8,13 @@ import type { WorkerProcessType } from '../worker';
 
 type ServerOptions = ListenOptions;
 
+export enum ConfigurationSection {
+  log = 'log',
+  performanceStorage = 'performanceStorage',
+  worker = 'worker',
+  uiServer = 'uiServer',
+}
+
 export enum SupervisionUrlDistribution {
   ROUND_ROBIN = 'round-robin',
   RANDOM = 'random',

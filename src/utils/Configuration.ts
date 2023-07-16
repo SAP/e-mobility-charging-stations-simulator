@@ -10,6 +10,7 @@ import { hasOwnProp, isCFEnvironment, isNotEmptyString, isUndefined } from './Ut
 import {
   ApplicationProtocol,
   type ConfigurationData,
+  ConfigurationSection,
   FileType,
   type LogConfiguration,
   type StationTemplateUrl,
@@ -20,13 +21,6 @@ import {
   type WorkerConfiguration,
 } from '../types';
 import { WorkerConstants, WorkerProcessType } from '../worker';
-
-enum ConfigurationSection {
-  log = 'log',
-  performanceStorage = 'performanceStorage',
-  worker = 'worker',
-  uiServer = 'uiServer',
-}
 
 export class Configuration {
   private static configurationFile = join(
@@ -40,7 +34,12 @@ export class Configuration {
   private static configurationSectionCache = new Map<
     ConfigurationSection,
     LogConfiguration | StorageConfiguration | WorkerConfiguration | UIServerConfiguration
-  >();
+  >([
+    [ConfigurationSection.log, Configuration.buildLogSection()],
+    [ConfigurationSection.performanceStorage, Configuration.buildPerformanceStorageSection()],
+    [ConfigurationSection.worker, Configuration.buildWorkerSection()],
+    [ConfigurationSection.uiServer, Configuration.buildUIServerSection()],
+  ]);
 
   private static configurationChangeCallback: () => Promise<void>;
 
@@ -52,66 +51,8 @@ export class Configuration {
     Configuration.configurationChangeCallback = cb;
   }
 
-  public static getUIServer(): UIServerConfiguration {
-    if (hasOwnProp(Configuration.getConfigurationData(), 'uiWebSocketServer')) {
-      console.error(
-        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
-          `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`,
-        )}`,
-      );
-    }
-    let uiServerConfiguration: UIServerConfiguration = {
-      enabled: false,
-      type: ApplicationProtocol.WS,
-      options: {
-        host: Constants.DEFAULT_UI_SERVER_HOST,
-        port: Constants.DEFAULT_UI_SERVER_PORT,
-      },
-    };
-    if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.uiServer)) {
-      uiServerConfiguration = merge<UIServerConfiguration>(
-        uiServerConfiguration,
-        Configuration.getConfigurationData()!.uiServer!,
-      );
-    }
-    if (isCFEnvironment() === true) {
-      delete uiServerConfiguration.options?.host;
-      uiServerConfiguration.options!.port = parseInt(process.env.PORT!);
-    }
-    return Configuration.getConfigurationSection<UIServerConfiguration>(
-      ConfigurationSection.uiServer,
-      uiServerConfiguration,
-    );
-  }
-
-  public static getPerformanceStorage(): StorageConfiguration {
-    Configuration.warnDeprecatedConfigurationKey(
-      'URI',
-      ConfigurationSection.performanceStorage,
-      "Use 'uri' instead",
-    );
-    let storageConfiguration: StorageConfiguration = {
-      enabled: false,
-      type: StorageType.JSON_FILE,
-      uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
-    };
-    if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
-      storageConfiguration = {
-        ...storageConfiguration,
-        ...Configuration.getConfigurationData()?.performanceStorage,
-        ...(Configuration.getConfigurationData()?.performanceStorage?.type ===
-          StorageType.JSON_FILE &&
-          Configuration.getConfigurationData()?.performanceStorage?.uri && {
-            uri: Configuration.buildPerformanceUriFilePath(
-              new URL(Configuration.getConfigurationData()!.performanceStorage!.uri!).pathname,
-            ),
-          }),
-      };
-    }
-    return Configuration.getConfigurationSection<StorageConfiguration>(
-      ConfigurationSection.performanceStorage,
-      storageConfiguration,
-    );
+  public static getConfigurationSection<T>(sectionName: ConfigurationSection): T {
+    return Configuration.configurationSectionCache.get(sectionName) as T;
   }
 
   public static getAutoReconnectMaxRetries(): number | undefined {
@@ -163,7 +104,105 @@ export class Configuration {
     return Configuration.getConfigurationData()?.stationTemplateUrls;
   }
 
-  public static getLog(): LogConfiguration {
+  public static workerPoolInUse(): boolean {
+    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
+      Configuration.buildWorkerSection().processType!,
+    );
+  }
+
+  public static workerDynamicPoolInUse(): boolean {
+    return Configuration.buildWorkerSection().processType === WorkerProcessType.dynamicPool;
+  }
+
+  public static getSupervisionUrls(): string | string[] | undefined {
+    Configuration.warnDeprecatedConfigurationKey(
+      'supervisionURLs',
+      undefined,
+      "Use 'supervisionUrls' instead",
+    );
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    if (!isUndefined(Configuration.getConfigurationData()!['supervisionURLs'])) {
+      Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        'supervisionURLs'
+      ] as string | string[];
+    }
+    return Configuration.getConfigurationData()?.supervisionUrls;
+  }
+
+  public static getSupervisionUrlDistribution(): SupervisionUrlDistribution | undefined {
+    Configuration.warnDeprecatedConfigurationKey(
+      'distributeStationToTenantEqually',
+      undefined,
+      "Use 'supervisionUrlDistribution' instead",
+    );
+    Configuration.warnDeprecatedConfigurationKey(
+      'distributeStationsToTenantsEqually',
+      undefined,
+      "Use 'supervisionUrlDistribution' instead",
+    );
+    return hasOwnProp(Configuration.getConfigurationData(), 'supervisionUrlDistribution')
+      ? Configuration.getConfigurationData()?.supervisionUrlDistribution
+      : SupervisionUrlDistribution.ROUND_ROBIN;
+  }
+
+  private static buildUIServerSection(): UIServerConfiguration {
+    if (hasOwnProp(Configuration.getConfigurationData(), 'uiWebSocketServer')) {
+      console.error(
+        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+          `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`,
+        )}`,
+      );
+    }
+    let uiServerConfiguration: UIServerConfiguration = {
+      enabled: false,
+      type: ApplicationProtocol.WS,
+      options: {
+        host: Constants.DEFAULT_UI_SERVER_HOST,
+        port: Constants.DEFAULT_UI_SERVER_PORT,
+      },
+    };
+    if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.uiServer)) {
+      uiServerConfiguration = merge<UIServerConfiguration>(
+        uiServerConfiguration,
+        Configuration.getConfigurationData()!.uiServer!,
+      );
+    }
+    if (isCFEnvironment() === true) {
+      delete uiServerConfiguration.options?.host;
+      uiServerConfiguration.options!.port = parseInt(process.env.PORT!);
+    }
+    return uiServerConfiguration;
+  }
+
+  private static buildPerformanceStorageSection(): StorageConfiguration {
+    Configuration.warnDeprecatedConfigurationKey(
+      'URI',
+      ConfigurationSection.performanceStorage,
+      "Use 'uri' instead",
+    );
+    let storageConfiguration: StorageConfiguration = {
+      enabled: false,
+      type: StorageType.JSON_FILE,
+      uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
+    };
+    if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
+      storageConfiguration = {
+        ...storageConfiguration,
+        ...Configuration.getConfigurationData()?.performanceStorage,
+        ...(Configuration.getConfigurationData()?.performanceStorage?.type ===
+          StorageType.JSON_FILE &&
+          Configuration.getConfigurationData()?.performanceStorage?.uri && {
+            uri: Configuration.buildPerformanceUriFilePath(
+              new URL(Configuration.getConfigurationData()!.performanceStorage!.uri!).pathname,
+            ),
+          }),
+      };
+    }
+    return storageConfiguration;
+  }
+
+  private static buildLogSection(): LogConfiguration {
     Configuration.warnDeprecatedConfigurationKey(
       'logEnabled',
       undefined,
@@ -261,13 +300,10 @@ export class Configuration {
       ...(hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.log) &&
         Configuration.getConfigurationData()?.log),
     };
-    return Configuration.getConfigurationSection<LogConfiguration>(
-      ConfigurationSection.log,
-      logConfiguration,
-    );
+    return logConfiguration;
   }
 
-  public static getWorker(): WorkerConfiguration {
+  private static buildWorkerSection(): WorkerConfiguration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
       undefined,
@@ -359,52 +395,7 @@ export class Configuration {
         `Invalid worker process type '${workerConfiguration.processType}' defined in configuration`,
       );
     }
-    return Configuration.getConfigurationSection<WorkerConfiguration>(
-      ConfigurationSection.worker,
-      workerConfiguration,
-    );
-  }
-
-  public static workerPoolInUse(): boolean {
-    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
-      Configuration.getWorker().processType!,
-    );
-  }
-
-  public static workerDynamicPoolInUse(): boolean {
-    return Configuration.getWorker().processType === WorkerProcessType.dynamicPool;
-  }
-
-  public static getSupervisionUrls(): string | string[] | undefined {
-    Configuration.warnDeprecatedConfigurationKey(
-      'supervisionURLs',
-      undefined,
-      "Use 'supervisionUrls' instead",
-    );
-    // eslint-disable-next-line @typescript-eslint/dot-notation
-    if (!isUndefined(Configuration.getConfigurationData()!['supervisionURLs'])) {
-      Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        'supervisionURLs'
-      ] as string | string[];
-    }
-    return Configuration.getConfigurationData()?.supervisionUrls;
-  }
-
-  public static getSupervisionUrlDistribution(): SupervisionUrlDistribution | undefined {
-    Configuration.warnDeprecatedConfigurationKey(
-      'distributeStationToTenantEqually',
-      undefined,
-      "Use 'supervisionUrlDistribution' instead",
-    );
-    Configuration.warnDeprecatedConfigurationKey(
-      'distributeStationsToTenantsEqually',
-      undefined,
-      "Use 'supervisionUrlDistribution' instead",
-    );
-    return hasOwnProp(Configuration.getConfigurationData(), 'supervisionUrlDistribution')
-      ? Configuration.getConfigurationData()?.supervisionUrlDistribution
-      : SupervisionUrlDistribution.ROUND_ROBIN;
+    return workerConfiguration;
   }
 
   private static logPrefix = (): string => {
@@ -439,16 +430,6 @@ export class Configuration {
         )}`,
       );
     }
-  }
-
-  private static getConfigurationSection<T>(
-    sectionName: ConfigurationSection,
-    sectionConfiguration?: T,
-  ): T {
-    if (!Configuration.configurationSectionCache.has(sectionName) && sectionConfiguration) {
-      Configuration.configurationSectionCache.set(sectionName, sectionConfiguration);
-    }
-    return Configuration.configurationSectionCache.get(sectionName) as T;
   }
 
   private static getConfigurationData(): ConfigurationData | null {

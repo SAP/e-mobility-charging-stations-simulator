@@ -5,10 +5,13 @@ import type { URL } from 'node:url';
 import { parentPort } from 'node:worker_threads';
 
 import {
+  ConfigurationSection,
   type IncomingRequestCommand,
+  type LogConfiguration,
   MessageType,
   type RequestCommand,
   type Statistics,
+  type StorageConfiguration,
   type TimestampedData,
 } from '../types';
 import {
@@ -128,11 +131,21 @@ export class PerformanceStatistics {
 
   public start(): void {
     this.startLogStatisticsInterval();
-    if (Configuration.getPerformanceStorage().enabled) {
+    if (
+      Configuration.getConfigurationSection<StorageConfiguration>(
+        ConfigurationSection.performanceStorage,
+      ).enabled
+    ) {
       logger.info(
         `${this.logPrefix()} storage enabled: type ${
-          Configuration.getPerformanceStorage().type
-        }, uri: ${Configuration.getPerformanceStorage().uri}`,
+          Configuration.getConfigurationSection<StorageConfiguration>(
+            ConfigurationSection.performanceStorage,
+          ).type
+        }, uri: ${
+          Configuration.getConfigurationSection<StorageConfiguration>(
+            ConfigurationSection.performanceStorage,
+          ).uri
+        }`,
       );
     }
   }
@@ -169,8 +182,11 @@ export class PerformanceStatistics {
   }
 
   private startLogStatisticsInterval(): void {
-    const logStatisticsInterval = Configuration.getLog().enabled
-      ? Configuration.getLog().statisticsInterval!
+    const logStatisticsInterval = Configuration.getConfigurationSection<LogConfiguration>(
+      ConfigurationSection.log,
+    ).enabled
+      ? Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
+          .statisticsInterval!
       : 0;
     if (logStatisticsInterval > 0 && !this.displayInterval) {
       this.displayInterval = setInterval(() => {
@@ -183,7 +199,9 @@ export class PerformanceStatistics {
       logger.info(
         `${this.logPrefix()} already logged every ${formatDurationSeconds(logStatisticsInterval)}`,
       );
-    } else if (Configuration.getLog().enabled) {
+    } else if (
+      Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log).enabled
+    ) {
       logger.info(
         `${this.logPrefix()} log interval is set to ${logStatisticsInterval?.toString()}. Not logging statistics`,
       );
@@ -247,7 +265,11 @@ export class PerformanceStatistics {
         this.statistics.statisticsData.get(entryName)!.measurementTimeSeries as TimestampedData[],
       ),
     );
-    if (Configuration.getPerformanceStorage().enabled) {
+    if (
+      Configuration.getConfigurationSection<StorageConfiguration>(
+        ConfigurationSection.performanceStorage,
+      ).enabled
+    ) {
       parentPort?.postMessage(buildPerformanceStatisticsMessage(this.statistics));
     }
   }

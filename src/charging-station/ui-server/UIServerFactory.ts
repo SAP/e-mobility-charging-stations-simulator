@@ -4,7 +4,7 @@ import type { AbstractUIServer } from './AbstractUIServer';
 import { UIHttpServer } from './UIHttpServer';
 import { UIServerUtils } from './UIServerUtils';
 import { UIWebSocketServer } from './UIWebSocketServer';
-import { ApplicationProtocol, type UIServerConfiguration } from '../../types';
+import { ApplicationProtocol, ConfigurationSection, type UIServerConfiguration } from '../../types';
 import { Configuration } from '../../utils';
 
 export class UIServerFactory {
@@ -22,11 +22,25 @@ export class UIServerFactory {
         ),
       );
     }
-    switch (uiServerConfiguration?.type ?? Configuration.getUIServer().type) {
+    switch (
+      uiServerConfiguration?.type ??
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+        .type
+    ) {
       case ApplicationProtocol.WS:
-        return new UIWebSocketServer(uiServerConfiguration ?? Configuration.getUIServer());
+        return new UIWebSocketServer(
+          uiServerConfiguration ??
+            Configuration.getConfigurationSection<UIServerConfiguration>(
+              ConfigurationSection.uiServer,
+            ),
+        );
       case ApplicationProtocol.HTTP:
-        return new UIHttpServer(uiServerConfiguration ?? Configuration.getUIServer());
+        return new UIHttpServer(
+          uiServerConfiguration ??
+            Configuration.getConfigurationSection<UIServerConfiguration>(
+              ConfigurationSection.uiServer,
+            ),
+        );
       default:
         return null;
     }

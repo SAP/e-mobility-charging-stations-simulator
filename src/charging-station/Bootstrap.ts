@@ -20,9 +20,13 @@ import {
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
+  ConfigurationSection,
   ProcedureName,
   type StationTemplateUrl,
   type Statistics,
+  type StorageConfiguration,
+  type UIServerConfiguration,
+  type WorkerConfiguration,
 } from '../types';
 import {
   Configuration,
@@ -78,12 +82,21 @@ export class Bootstrap extends EventEmitter {
       dirname(fileURLToPath(import.meta.url)),
       `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`,
     );
-    Configuration.getUIServer().enabled === true &&
-      (this.uiServer = UIServerFactory.getUIServerImplementation(Configuration.getUIServer()));
-    Configuration.getPerformanceStorage().enabled === true &&
+    Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+      .enabled === true &&
+      (this.uiServer = UIServerFactory.getUIServerImplementation(
+        Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
+      ));
+    Configuration.getConfigurationSection<StorageConfiguration>(
+      ConfigurationSection.performanceStorage,
+    ).enabled === true &&
       (this.storage = StorageFactory.getStorage(
-        Configuration.getPerformanceStorage().type!,
-        Configuration.getPerformanceStorage().uri!,
+        Configuration.getConfigurationSection<StorageConfiguration>(
+          ConfigurationSection.performanceStorage,
+        ).type!,
+        Configuration.getConfigurationSection<StorageConfiguration>(
+          ConfigurationSection.performanceStorage,
+        ).uri!,
         this.logPrefix(),
       ));
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
@@ -130,13 +143,21 @@ export class Bootstrap extends EventEmitter {
               this.version
             } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
               Configuration.workerDynamicPoolInUse()
-                ? `${Configuration.getWorker().poolMinSize?.toString()}/`
+                ? `${Configuration.getConfigurationSection<WorkerConfiguration>(
+                    ConfigurationSection.worker,
+                  ).poolMinSize?.toString()}/`
                 : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse()
-                ? `/${Configuration.getWorker().poolMaxSize?.toString()}`
+                ? `/${Configuration.getConfigurationSection<WorkerConfiguration>(
+                    ConfigurationSection.worker,
+                  ).poolMaxSize?.toString()}`
                 : ''
-            } worker(s) concurrently running in '${Configuration.getWorker().processType}' mode${
+            } worker(s) concurrently running in '${
+              Configuration.getConfigurationSection<WorkerConfiguration>(
+                ConfigurationSection.worker,
+              ).processType
+            }' mode${
               !isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
                 ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
@@ -213,7 +234,10 @@ export class Bootstrap extends EventEmitter {
 
   private initializeWorkerImplementation(): void {
     let elementsPerWorker: number | undefined;
-    if (Configuration.getWorker()?.elementsPerWorker === 'auto') {
+    if (
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+        ?.elementsPerWorker === 'auto'
+    ) {
       elementsPerWorker =
         this.numberOfChargingStations > availableParallelism()
           ? Math.round(this.numberOfChargingStations / availableParallelism())
@@ -222,14 +246,25 @@ export class Bootstrap extends EventEmitter {
     this.workerImplementation === null &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
         this.workerScript,
-        Configuration.getWorker().processType!,
+        Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+          .processType!,
         {
-          workerStartDelay: Configuration.getWorker().startDelay,
-          elementStartDelay: Configuration.getWorker().elementStartDelay,
-          poolMaxSize: Configuration.getWorker().poolMaxSize!,
-          poolMinSize: Configuration.getWorker().poolMinSize!,
+          workerStartDelay: Configuration.getConfigurationSection<WorkerConfiguration>(
+            ConfigurationSection.worker,
+          ).startDelay,
+          elementStartDelay: Configuration.getConfigurationSection<WorkerConfiguration>(
+            ConfigurationSection.worker,
+          ).elementStartDelay,
+          poolMaxSize: Configuration.getConfigurationSection<WorkerConfiguration>(
+            ConfigurationSection.worker,
+          ).poolMaxSize!,
+          poolMinSize: Configuration.getConfigurationSection<WorkerConfiguration>(
+            ConfigurationSection.worker,
+          ).poolMinSize!,
           elementsPerWorker:
-            elementsPerWorker ?? (Configuration.getWorker().elementsPerWorker as number),
+            elementsPerWorker ??
+            (Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+              .elementsPerWorker as number),
           poolOptions: {
             messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
           },
