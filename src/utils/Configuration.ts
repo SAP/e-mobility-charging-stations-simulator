@@ -52,6 +52,34 @@ export class Configuration {
   }
 
   public static getConfigurationSection<T>(sectionName: ConfigurationSection): T {
+    if (!Configuration.configurationSectionCache.has(sectionName)) {
+      switch (sectionName) {
+        case ConfigurationSection.log:
+          Configuration.configurationSectionCache.set(sectionName, Configuration.buildLogSection());
+          break;
+        case ConfigurationSection.performanceStorage:
+          Configuration.configurationSectionCache.set(
+            sectionName,
+            Configuration.buildPerformanceStorageSection(),
+          );
+          break;
+        case ConfigurationSection.worker:
+          Configuration.configurationSectionCache.set(
+            sectionName,
+            Configuration.buildWorkerSection(),
+          );
+          break;
+        case ConfigurationSection.uiServer:
+          Configuration.configurationSectionCache.set(
+            sectionName,
+            Configuration.buildUIServerSection(),
+          );
+          break;
+        default:
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          throw new Error(`Unknown configuration section '${sectionName}'`);
+      }
+    }
     return Configuration.configurationSectionCache.get(sectionName) as T;
   }
 
