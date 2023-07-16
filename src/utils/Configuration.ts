@@ -21,6 +21,13 @@ import {
 } from '../types';
 import { WorkerConstants, WorkerProcessType } from '../worker';
 
+enum ConfigurationSection {
+  log = 'log',
+  performanceStorage = 'storage',
+  worker = 'worker',
+  uiServer = 'uiServer',
+}
+
 export class Configuration {
   private static configurationFile = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -30,6 +37,11 @@ export class Configuration {
 
   private static configurationFileWatcher: FSWatcher | undefined;
   private static configuration: ConfigurationData | null = null;
+  private static configurationSectionCache = new Map<
+    ConfigurationSection,
+    LogConfiguration | StorageConfiguration | WorkerConfiguration | UIServerConfiguration
+  >();
+
   private static configurationChangeCallback: () => Promise<void>;
 
   private constructor() {
@@ -44,7 +56,7 @@ export class Configuration {
     if (hasOwnProp(Configuration.getConfig(), 'uiWebSocketServer')) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
-          "Deprecated configuration section 'uiWebSocketServer' usage. Use 'uiServer' instead",
+          `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`,
         )}`,
       );
     }
@@ -56,7 +68,7 @@ export class Configuration {
         port: Constants.DEFAULT_UI_SERVER_PORT,
       },
     };
-    if (hasOwnProp(Configuration.getConfig(), 'uiServer')) {
+    if (hasOwnProp(Configuration.getConfig(), ConfigurationSection.uiServer)) {
       uiServerConfiguration = merge<UIServerConfiguration>(
         uiServerConfiguration,
         Configuration.getConfig()!.uiServer!,
@@ -66,17 +78,24 @@ export class Configuration {
       delete uiServerConfiguration.options?.host;
       uiServerConfiguration.options!.port = parseInt(process.env.PORT!);
     }
-    return uiServerConfiguration;
+    return Configuration.getConfigurationSection<UIServerConfiguration>(
+      ConfigurationSection.uiServer,
+      uiServerConfiguration,
+    );
   }
 
   public static getPerformanceStorage(): StorageConfiguration {
-    Configuration.warnDeprecatedConfigurationKey('URI', 'performanceStorage', "Use 'uri' instead");
+    Configuration.warnDeprecatedConfigurationKey(
+      'URI',
+      ConfigurationSection.performanceStorage,
+      "Use 'uri' instead",
+    );
     let storageConfiguration: StorageConfiguration = {
       enabled: false,
       type: StorageType.JSON_FILE,
       uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
     };
-    if (hasOwnProp(Configuration.getConfig(), 'performanceStorage')) {
+    if (hasOwnProp(Configuration.getConfig(), ConfigurationSection.performanceStorage)) {
       storageConfiguration = {
         ...storageConfiguration,
         ...Configuration.getConfig()?.performanceStorage,
@@ -88,7 +107,10 @@ export class Configuration {
           }),
       };
     }
-    return storageConfiguration;
+    return Configuration.getConfigurationSection<StorageConfiguration>(
+      ConfigurationSection.performanceStorage,
+      storageConfiguration,
+    );
   }
 
   public static getAutoReconnectMaxRetries(): number | undefined {
@@ -145,52 +167,52 @@ export class Configuration {
     Configuration.warnDeprecatedConfigurationKey(
       'logEnabled',
       undefined,
-      "Use 'log' section to define the logging enablement instead",
+      `Use '${ConfigurationSection.log}' section to define the logging enablement instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logFile',
       undefined,
-      "Use 'log' section to define the log file instead",
+      `Use '${ConfigurationSection.log}' section to define the log file instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logErrorFile',
       undefined,
-      "Use 'log' section to define the log error file instead",
+      `Use '${ConfigurationSection.log}' section to define the log error file instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logConsole',
       undefined,
-      "Use 'log' section to define the console logging enablement instead",
+      `Use '${ConfigurationSection.log}' section to define the console logging enablement instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logStatisticsInterval',
       undefined,
-      "Use 'log' section to define the log statistics interval instead",
+      `Use '${ConfigurationSection.log}' section to define the log statistics interval instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logLevel',
       undefined,
-      "Use 'log' section to define the log level instead",
+      `Use '${ConfigurationSection.log}' section to define the log level instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logFormat',
       undefined,
-      "Use 'log' section to define the log format instead",
+      `Use '${ConfigurationSection.log}' section to define the log format instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logRotate',
       undefined,
-      "Use 'log' section to define the log rotation enablement instead",
+      `Use '${ConfigurationSection.log}' section to define the log rotation enablement instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logMaxFiles',
       undefined,
-      "Use 'log' section to define the log maximum files instead",
+      `Use '${ConfigurationSection.log}' section to define the log maximum files instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'logMaxSize',
       undefined,
-      "Use 'log' section to define the log maximum size instead",
+      `Use '${ConfigurationSection.log}' section to define the log maximum size instead`,
     );
     const defaultLogConfiguration: LogConfiguration = {
       enabled: true,
@@ -236,56 +258,60 @@ export class Configuration {
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
       ...deprecatedLogConfiguration,
-      ...(hasOwnProp(Configuration.getConfig(), 'log') && Configuration.getConfig()?.log),
+      ...(hasOwnProp(Configuration.getConfig(), ConfigurationSection.log) &&
+        Configuration.getConfig()?.log),
     };
-    return logConfiguration;
+    return Configuration.getConfigurationSection<LogConfiguration>(
+      ConfigurationSection.log,
+      logConfiguration,
+    );
   }
 
   public static getWorker(): WorkerConfiguration {
     Configuration.warnDeprecatedConfigurationKey(
       'useWorkerPool',
       undefined,
-      "Use 'worker' section to define the type of worker process model instead",
+      `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerProcess',
       undefined,
-      "Use 'worker' section to define the type of worker process model instead",
+      `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerStartDelay',
       undefined,
-      "Use 'worker' section to define the worker start delay instead",
+      `Use '${ConfigurationSection.worker}' section to define the worker start delay instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'chargingStationsPerWorker',
       undefined,
-      "Use 'worker' section to define the number of element(s) per worker instead",
+      `Use '${ConfigurationSection.worker}' section to define the number of element(s) per worker instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'elementStartDelay',
       undefined,
-      "Use 'worker' section to define the worker's element start delay instead",
+      `Use '${ConfigurationSection.worker}' section to define the worker's element start delay instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMinSize',
       undefined,
-      "Use 'worker' section to define the worker pool minimum size instead",
+      `Use '${ConfigurationSection.worker}' section to define the worker pool minimum size instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolSize;',
       undefined,
-      "Use 'worker' section to define the worker pool maximum size instead",
+      `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMaxSize;',
       undefined,
-      "Use 'worker' section to define the worker pool maximum size instead",
+      `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolStrategy;',
       undefined,
-      "Use 'worker' section to define the worker pool strategy instead",
+      `Use '${ConfigurationSection.worker}' section to define the worker pool strategy instead`,
     );
     const defaultWorkerConfiguration: WorkerConfiguration = {
       processType: WorkerProcessType.workerSet,
@@ -319,20 +345,24 @@ export class Configuration {
     };
     Configuration.warnDeprecatedConfigurationKey(
       'poolStrategy',
-      'worker',
+      ConfigurationSection.worker,
       'Not publicly exposed to end users',
     );
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...deprecatedWorkerConfiguration,
-      ...(hasOwnProp(Configuration.getConfig(), 'worker') && Configuration.getConfig()?.worker),
+      ...(hasOwnProp(Configuration.getConfig(), ConfigurationSection.worker) &&
+        Configuration.getConfig()?.worker),
     };
     if (!Object.values(WorkerProcessType).includes(workerConfiguration.processType!)) {
       throw new SyntaxError(
         `Invalid worker process type '${workerConfiguration.processType}' defined in configuration`,
       );
     }
-    return workerConfiguration;
+    return Configuration.getConfigurationSection<WorkerConfiguration>(
+      ConfigurationSection.worker,
+      workerConfiguration,
+    );
   }
 
   public static workerPoolInUse(): boolean {
@@ -410,7 +440,16 @@ export class Configuration {
     }
   }
 
-  // Read the config file
+  private static getConfigurationSection<T>(
+    sectionName: ConfigurationSection,
+    sectionConfiguration?: T,
+  ): T {
+    if (!Configuration.configurationSectionCache.has(sectionName) && sectionConfiguration) {
+      Configuration.configurationSectionCache.set(sectionName, sectionConfiguration);
+    }
+    return Configuration.configurationSectionCache.get(sectionName) as T;
+  }
+
   private static getConfig(): ConfigurationData | null {
     if (!Configuration.configuration) {
       try {
@@ -438,6 +477,7 @@ export class Configuration {
         if (filename!.trim()!.length > 0 && event === 'change') {
           // Nullify to force configuration file reading
           Configuration.configuration = null;
+          Configuration.configurationSectionCache.clear();
           if (!isUndefined(Configuration.configurationChangeCallback)) {
             Configuration.configurationChangeCallback().catch((error) => {
               throw typeof error === 'string' ? new Error(error) : error;
