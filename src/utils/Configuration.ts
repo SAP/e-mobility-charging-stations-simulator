@@ -327,6 +327,11 @@ export class Configuration {
       ...deprecatedWorkerConfiguration,
       ...(hasOwnProp(Configuration.getConfig(), 'worker') && Configuration.getConfig()?.worker),
     };
+    if (!Object.values(WorkerProcessType).includes(workerConfiguration.processType!)) {
+      throw new SyntaxError(
+        `Invalid worker process type '${workerConfiguration.processType}' defined in configuration`,
+      );
+    }
     return workerConfiguration;
   }
 
