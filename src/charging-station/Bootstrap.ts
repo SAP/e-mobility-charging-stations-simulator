@@ -82,21 +82,19 @@ export class Bootstrap extends EventEmitter {
       dirname(fileURLToPath(import.meta.url)),
       `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`,
     );
-    Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
-      .enabled === true &&
-      (this.uiServer = UIServerFactory.getUIServerImplementation(
-        Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
-      ));
-    Configuration.getConfigurationSection<StorageConfiguration>(
-      ConfigurationSection.performanceStorage,
-    ).enabled === true &&
+    const uiServerConfiguration = Configuration.getConfigurationSection<UIServerConfiguration>(
+      ConfigurationSection.uiServer,
+    );
+    uiServerConfiguration.enabled === true &&
+      (this.uiServer = UIServerFactory.getUIServerImplementation(uiServerConfiguration));
+    const performanceStorageConfiguration =
+      Configuration.getConfigurationSection<StorageConfiguration>(
+        ConfigurationSection.performanceStorage,
+      );
+    performanceStorageConfiguration.enabled === true &&
       (this.storage = StorageFactory.getStorage(
-        Configuration.getConfigurationSection<StorageConfiguration>(
-          ConfigurationSection.performanceStorage,
-        ).type!,
-        Configuration.getConfigurationSection<StorageConfiguration>(
-          ConfigurationSection.performanceStorage,
-        ).uri!,
+        performanceStorageConfiguration.type!,
+        performanceStorageConfiguration.uri!,
         this.logPrefix(),
       ));
     Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
@@ -117,7 +115,10 @@ export class Bootstrap extends EventEmitter {
       if (this.starting === false) {
         this.starting = true;
         this.initializeCounters();
-        this.initializeWorkerImplementation();
+        const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
+          ConfigurationSection.worker,
+        );
+        this.initializeWorkerImplementation(workerConfiguration);
         await this.workerImplementation?.start();
         await this.storage?.open();
         this.uiServer?.start();
@@ -143,21 +144,13 @@ export class Bootstrap extends EventEmitter {
               this.version
             } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
               Configuration.workerDynamicPoolInUse()
-                ? `${Configuration.getConfigurationSection<WorkerConfiguration>(
-                    ConfigurationSection.worker,
-                  ).poolMinSize?.toString()}/`
+                ? `${workerConfiguration.poolMinSize?.toString()}/`
                 : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse()
-                ? `/${Configuration.getConfigurationSection<WorkerConfiguration>(
-                    ConfigurationSection.worker,
-                  ).poolMaxSize?.toString()}`
+                ? `/${workerConfiguration.poolMaxSize?.toString()}`
                 : ''
-            } worker(s) concurrently running in '${
-              Configuration.getConfigurationSection<WorkerConfiguration>(
-                ConfigurationSection.worker,
-              ).processType
-            }' mode${
+            } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
               !isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
                 ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
@@ -232,12 +225,9 @@ export class Bootstrap extends EventEmitter {
     await this.start();
   }
 
-  private initializeWorkerImplementation(): void {
+  private initializeWorkerImplementation(workerConfiguration: WorkerConfiguration): void {
     let elementsPerWorker: number | undefined;
-    if (
-      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-        ?.elementsPerWorker === 'auto'
-    ) {
+    if (workerConfiguration?.elementsPerWorker === 'auto') {
       elementsPerWorker =
         this.numberOfChargingStations > availableParallelism()
           ? Math.round(this.numberOfChargingStations / availableParallelism())
@@ -246,25 +236,13 @@ export class Bootstrap extends EventEmitter {
     this.workerImplementation === null &&
       (this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
         this.workerScript,
-        Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-          .processType!,
+        workerConfiguration.processType!,
         {
-          workerStartDelay: Configuration.getConfigurationSection<WorkerConfiguration>(
-            ConfigurationSection.worker,
-          ).startDelay,
-          elementStartDelay: Configuration.getConfigurationSection<WorkerConfiguration>(
-            ConfigurationSection.worker,
-          ).elementStartDelay,
-          poolMaxSize: Configuration.getConfigurationSection<WorkerConfiguration>(
-            ConfigurationSection.worker,
-          ).poolMaxSize!,
-          poolMinSize: Configuration.getConfigurationSection<WorkerConfiguration>(
-            ConfigurationSection.worker,
-          ).poolMinSize!,
-          elementsPerWorker:
-            elementsPerWorker ??
-            (Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-              .elementsPerWorker as number),
+          workerStartDelay: workerConfiguration.startDelay,
+          elementStartDelay: workerConfiguration.elementStartDelay,
+          poolMaxSize: workerConfiguration.poolMaxSize!,
+          poolMinSize: workerConfiguration.poolMinSize!,
+          elementsPerWorker: elementsPerWorker ?? (workerConfiguration.elementsPerWorker as number),
           poolOptions: {
             messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
           },

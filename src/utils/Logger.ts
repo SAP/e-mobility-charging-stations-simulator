@@ -7,38 +7,26 @@ import { Configuration } from './Configuration';
 import { insertAt } from './Utils';
 import { ConfigurationSection, type LogConfiguration } from '../types';
 
+const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
+  ConfigurationSection.log,
+);
 let transports: transport[];
-if (
-  Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log).rotate === true
-) {
-  const logMaxFiles = Configuration.getConfigurationSection<LogConfiguration>(
-    ConfigurationSection.log,
-  ).maxFiles;
-  const logMaxSize = Configuration.getConfigurationSection<LogConfiguration>(
-    ConfigurationSection.log,
-  ).maxSize;
+if (logConfiguration.rotate === true) {
+  const logMaxFiles = logConfiguration.maxFiles;
+  const logMaxSize = logConfiguration.maxSize;
   transports = [
     new DailyRotateFile({
       filename: insertAt(
-        Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-          .errorFile!,
+        logConfiguration.errorFile!,
         '-%DATE%',
-        Configuration.getConfigurationSection<LogConfiguration>(
-          ConfigurationSection.log,
-        ).errorFile!.indexOf('.log'),
+        logConfiguration.errorFile!.indexOf('.log'),
       ),
       level: 'error',
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
       ...(logMaxSize && { maxSize: logMaxSize }),
     }),
     new DailyRotateFile({
-      filename: insertAt(
-        Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log).file!,
-        '-%DATE%',
-        Configuration.getConfigurationSection<LogConfiguration>(
-          ConfigurationSection.log,
-        ).file!.indexOf('.log'),
-      ),
+      filename: insertAt(logConfiguration.file!, '-%DATE%', logConfiguration.file!.indexOf('.log')),
       ...(logMaxFiles && { maxFiles: logMaxFiles }),
       ...(logMaxSize && { maxSize: logMaxSize }),
     }),
@@ -46,29 +34,19 @@ if (
 } else {
   transports = [
     new TransportType.File({
-      filename: Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-        .errorFile,
+      filename: logConfiguration.errorFile,
       level: 'error',
     }),
     new TransportType.File({
-      filename: Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-        .file,
+      filename: logConfiguration.file,
     }),
   ];
 }
 
 export const logger = createLogger({
-  silent: !Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-    .enabled,
-  level: Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log).level,
-  format: format.combine(
-    format.splat(),
-    (
-      format[
-        Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log).format!
-      ] as FormatWrap
-    )(),
-  ),
+  silent: !logConfiguration.enabled,
+  level: logConfiguration.level,
+  format: format.combine(format.splat(), (format[logConfiguration.format!] as FormatWrap)()),
   transports,
 });
 
@@ -76,18 +54,10 @@ export const logger = createLogger({
 // If enabled, log to the `console` with the format:
 // `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
 //
-if (Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log).console) {
+if (logConfiguration.console) {
   logger.add(
     new TransportType.Console({
-      format: format.combine(
-        format.splat(),
-        (
-          format[
-            Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-              .format!
-          ] as FormatWrap
-        )(),
-      ),
+      format: format.combine(format.splat(), (format[logConfiguration.format!] as FormatWrap)()),
     }),
   );
 }

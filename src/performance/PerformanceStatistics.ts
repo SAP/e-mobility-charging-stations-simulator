@@ -131,20 +131,14 @@ export class PerformanceStatistics {
 
   public start(): void {
     this.startLogStatisticsInterval();
-    if (
+    const performanceStorageConfiguration =
       Configuration.getConfigurationSection<StorageConfiguration>(
         ConfigurationSection.performanceStorage,
-      ).enabled
-    ) {
+      );
+    if (performanceStorageConfiguration.enabled) {
       logger.info(
-        `${this.logPrefix()} storage enabled: type ${
-          Configuration.getConfigurationSection<StorageConfiguration>(
-            ConfigurationSection.performanceStorage,
-          ).type
-        }, uri: ${
-          Configuration.getConfigurationSection<StorageConfiguration>(
-            ConfigurationSection.performanceStorage,
-          ).uri
+        `${this.logPrefix()} storage enabled: type ${performanceStorageConfiguration.type}, uri: ${
+          performanceStorageConfiguration.uri
         }`,
       );
     }
@@ -182,11 +176,11 @@ export class PerformanceStatistics {
   }
 
   private startLogStatisticsInterval(): void {
-    const logStatisticsInterval = Configuration.getConfigurationSection<LogConfiguration>(
+    const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
       ConfigurationSection.log,
-    ).enabled
-      ? Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-          .statisticsInterval!
+    );
+    const logStatisticsInterval = logConfiguration.enabled
+      ? logConfiguration.statisticsInterval!
       : 0;
     if (logStatisticsInterval > 0 && !this.displayInterval) {
       this.displayInterval = setInterval(() => {
@@ -199,9 +193,7 @@ export class PerformanceStatistics {
       logger.info(
         `${this.logPrefix()} already logged every ${formatDurationSeconds(logStatisticsInterval)}`,
       );
-    } else if (
-      Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log).enabled
-    ) {
+    } else if (logConfiguration.enabled) {
       logger.info(
         `${this.logPrefix()} log interval is set to ${logStatisticsInterval?.toString()}. Not logging statistics`,
       );
