@@ -1037,12 +1037,23 @@ export class ChargingStation {
       `${this.logPrefix()} Reservation expiration date interval is set to ${interval}
         and starts on charging station now`,
     );
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    this.reservationExpirationSetInterval = setInterval(async (): Promise<void> => {
-      const now = new Date();
-      if (this.hasEvses) {
-        for (const evseStatus of this.evses.values()) {
-          for (const connectorStatus of evseStatus.connectors.values()) {
+    if (interval > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      this.reservationExpirationSetInterval = setInterval(async (): Promise<void> => {
+        const now = new Date();
+        if (this.hasEvses) {
+          for (const evseStatus of this.evses.values()) {
+            for (const connectorStatus of evseStatus.connectors.values()) {
+              if (connectorStatus.reservation!.expiryDate < now) {
+                await this.removeReservation(
+                  connectorStatus.reservation!,
+                  ReservationTerminationReason.EXPIRED,
+                );
+              }
+            }
+          }
+        } else {
+          for (const connectorStatus of this.connectors.values()) {
             if (connectorStatus.reservation!.expiryDate < now) {
               await this.removeReservation(
                 connectorStatus.reservation!,
@@ -1051,17 +1062,8 @@ export class ChargingStation {
             }
           }
         }
-      } else {
-        for (const connectorStatus of this.connectors.values()) {
-          if (connectorStatus.reservation!.expiryDate < now) {
-            await this.removeReservation(
-              connectorStatus.reservation!,
-              ReservationTerminationReason.EXPIRED,
-            );
-          }
-        }
-      }
-    }, interval);
+      }, interval);
+    }
   }
 
   public restartReservationExpiryDateSetInterval(): void {
