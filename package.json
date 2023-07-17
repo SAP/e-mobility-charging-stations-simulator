@@ -96,10 +96,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.7.12",
-    "@mikro-orm/mariadb": "^5.7.12",
-    "@mikro-orm/reflection": "^5.7.12",
-    "@mikro-orm/sqlite": "^5.7.12",
+    "@mikro-orm/core": "^5.7.13",
+    "@mikro-orm/mariadb": "^5.7.13",
+    "@mikro-orm/reflection": "^5.7.13",
+    "@mikro-orm/sqlite": "^5.7.13",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.3",
@@ -126,7 +126,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.6.6",
     "@commitlint/config-conventional": "^17.6.6",
-    "@mikro-orm/cli": "^5.7.12",
+    "@mikro-orm/cli": "^5.7.13",
     "@release-it/bumper": "^5.0.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^0.4.3",
@@ -161,7 +161,7 @@
     "release-it": "^16.1.2",
     "rimraf": "^5.0.1",
     "robohydra": "^0.6.9",
-    "rollup": "^3.26.2",
+    "rollup": "^3.26.3",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.5.4",
