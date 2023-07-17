@@ -22,6 +22,12 @@ import {
 } from '../types';
 import { WorkerConstants, WorkerProcessType } from '../worker';
 
+type ConfigurationSectionType =
+  | LogConfiguration
+  | StorageConfiguration
+  | WorkerConfiguration
+  | UIServerConfiguration;
+
 export class Configuration {
   private static configurationFile = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -33,7 +39,7 @@ export class Configuration {
   private static configurationData: ConfigurationData | null = null;
   private static configurationSectionCache = new Map<
     ConfigurationSection,
-    LogConfiguration | StorageConfiguration | WorkerConfiguration | UIServerConfiguration
+    ConfigurationSectionType
   >([
     [ConfigurationSection.log, Configuration.buildLogSection()],
     [ConfigurationSection.performanceStorage, Configuration.buildPerformanceStorageSection()],
@@ -51,7 +57,9 @@ export class Configuration {
     Configuration.configurationChangeCallback = cb;
   }
 
-  public static getConfigurationSection<T>(sectionName: ConfigurationSection): T {
+  public static getConfigurationSection<T extends ConfigurationSectionType>(
+    sectionName: ConfigurationSection,
+  ): T {
     if (!Configuration.configurationSectionCache.has(sectionName)) {
       switch (sectionName) {
         case ConfigurationSection.log:
