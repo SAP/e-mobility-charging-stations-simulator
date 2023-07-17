@@ -220,7 +220,7 @@ export class Configuration {
     let storageConfiguration: StorageConfiguration = {
       enabled: false,
       type: StorageType.JSON_FILE,
-      uri: this.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
+      uri: Configuration.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
     };
     if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
       storageConfiguration = {
