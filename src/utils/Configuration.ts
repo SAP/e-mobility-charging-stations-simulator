@@ -474,6 +474,9 @@ export class Configuration {
         Configuration.configurationData = JSON.parse(
           readFileSync(Configuration.configurationFile, 'utf8'),
         ) as ConfigurationData;
+        if (!Configuration.configurationFileWatcher) {
+          Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
+        }
       } catch (error) {
         Configuration.handleFileException(
           Configuration.configurationFile,
@@ -481,9 +484,6 @@ export class Configuration {
           error as NodeJS.ErrnoException,
           Configuration.logPrefix(),
         );
-      }
-      if (!Configuration.configurationFileWatcher) {
-        Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
       }
     }
     return Configuration.configurationData;
