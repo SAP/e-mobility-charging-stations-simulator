@@ -12,8 +12,9 @@ import { OCPP16Constants } from './OCPP16Constants';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
   type ChargingStation,
-  ChargingStationConfigurationUtils,
   checkChargingStation,
+  getConfigurationKey,
+  setConfigurationKeyValue,
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
@@ -512,11 +513,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     } else if (isNotEmptyArray(commandPayload.key) === true) {
       for (const key of commandPayload.key!) {
-        const keyFound = ChargingStationConfigurationUtils.getConfigurationKey(
-          chargingStation,
-          key,
-          true,
-        );
+        const keyFound = getConfigurationKey(chargingStation, key, true);
         if (keyFound) {
           if (isUndefined(keyFound.visible) === true) {
             keyFound.visible = true;
@@ -544,22 +541,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: ChangeConfigurationRequest,
   ): ChangeConfigurationResponse {
-    const keyToChange = ChargingStationConfigurationUtils.getConfigurationKey(
-      chargingStation,
-      commandPayload.key,
-      true,
-    );
+    const keyToChange = getConfigurationKey(chargingStation, commandPayload.key, true);
     if (keyToChange?.readonly === true) {
       return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED;
     } else if (keyToChange?.readonly === false) {
       let valueChanged = false;
       if (keyToChange.value !== commandPayload.value) {
-        ChargingStationConfigurationUtils.setConfigurationKeyValue(
-          chargingStation,
-          commandPayload.key,
-          commandPayload.value,
-          true,
-        );
+        setConfigurationKeyValue(chargingStation, commandPayload.key, commandPayload.value, true);
         valueChanged = true;
       }
       let triggerHeartbeatRestart = false;
@@ -568,7 +556,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           OCPP16StandardParametersKey.HeartBeatInterval &&
         valueChanged
       ) {
-        ChargingStationConfigurationUtils.setConfigurationKeyValue(
+        setConfigurationKeyValue(
           chargingStation,
           OCPP16StandardParametersKey.HeartbeatInterval,
           commandPayload.value,
@@ -580,7 +568,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           OCPP16StandardParametersKey.HeartbeatInterval &&
         valueChanged
       ) {
-        ChargingStationConfigurationUtils.setConfigurationKeyValue(
+        setConfigurationKeyValue(
           chargingStation,
           OCPP16StandardParametersKey.HeartBeatInterval,
           commandPayload.value,

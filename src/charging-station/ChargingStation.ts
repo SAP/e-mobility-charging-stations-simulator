@@ -19,7 +19,12 @@ import { type RawData, WebSocket } from 'ws';
 
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator';
 import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel';
-import { ChargingStationConfigurationUtils } from './ChargingStationConfigurationUtils';
+import {
+  addConfigurationKey,
+  deleteConfigurationKey,
+  getConfigurationKey,
+  setConfigurationKeyValue,
+} from './ChargingStationConfigurationUtils';
 import {
   buildConnectorsMap,
   checkConnectorsConfiguration,
@@ -212,16 +217,8 @@ export class ChargingStation {
       `${
         this.getSupervisionUrlOcppConfiguration() &&
         isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
-        isNotEmptyString(
-          ChargingStationConfigurationUtils.getConfigurationKey(
-            this,
-            this.getSupervisionUrlOcppKey(),
-          )?.value,
-        )
-          ? ChargingStationConfigurationUtils.getConfigurationKey(
-              this,
-              this.getSupervisionUrlOcppKey(),
-            )!.value
+        isNotEmptyString(getConfigurationKey(this, this.getSupervisionUrlOcppKey())?.value)
+          ? getConfigurationKey(this, this.getSupervisionUrlOcppKey())!.value
           : this.configuredSupervisionUrl.href
       }/${this.stationInfo.chargingStationId}`,
     );
@@ -500,7 +497,7 @@ export class ChargingStation {
   }
 
   public getAuthorizeRemoteTxRequests(): boolean {
-    const authorizeRemoteTxRequests = ChargingStationConfigurationUtils.getConfigurationKey(
+    const authorizeRemoteTxRequests = getConfigurationKey(
       this,
       StandardParametersKey.AuthorizeRemoteTxRequests,
     );
@@ -508,7 +505,7 @@ export class ChargingStation {
   }
 
   public getLocalAuthListEnabled(): boolean {
-    const localAuthListEnabled = ChargingStationConfigurationUtils.getConfigurationKey(
+    const localAuthListEnabled = getConfigurationKey(
       this,
       StandardParametersKey.LocalAuthListEnabled,
     );
@@ -516,17 +513,11 @@ export class ChargingStation {
   }
 
   public getHeartbeatInterval(): number {
-    const HeartbeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
-      this,
-      StandardParametersKey.HeartbeatInterval,
-    );
+    const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval);
     if (HeartbeatInterval) {
       return convertToInt(HeartbeatInterval.value) * 1000;
     }
-    const HeartBeatInterval = ChargingStationConfigurationUtils.getConfigurationKey(
-      this,
-      StandardParametersKey.HeartBeatInterval,
-    );
+    const HeartBeatInterval = getConfigurationKey(this, StandardParametersKey.HeartBeatInterval);
     if (HeartBeatInterval) {
       return convertToInt(HeartBeatInterval.value) * 1000;
     }
@@ -544,11 +535,7 @@ export class ChargingStation {
       this.getSupervisionUrlOcppConfiguration() &&
       isNotEmptyString(this.getSupervisionUrlOcppKey())
     ) {
-      ChargingStationConfigurationUtils.setConfigurationKeyValue(
-        this,
-        this.getSupervisionUrlOcppKey(),
-        url,
-      );
+      setConfigurationKeyValue(this, this.getSupervisionUrlOcppKey(), url);
     } else {
       this.stationInfo.supervisionUrls = url;
       this.saveStationInfo();
@@ -771,7 +758,7 @@ export class ChargingStation {
   }
 
   public hasFeatureProfile(featureProfile: SupportedFeatureProfiles): boolean | undefined {
-    return ChargingStationConfigurationUtils.getConfigurationKey(
+    return getConfigurationKey(
       this,
       StandardParametersKey.SupportedFeatureProfiles,
     )?.value?.includes(featureProfile);
@@ -948,10 +935,7 @@ export class ChargingStation {
 
   public getReservationOnConnectorId0Enabled(): boolean {
     return convertToBoolean(
-      ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.ReserveConnectorZeroSupported,
-      )!.value,
+      getConfigurationKey(this, StandardParametersKey.ReserveConnectorZeroSupported)!.value,
     );
   }
 
@@ -1376,37 +1360,18 @@ export class ChargingStation {
   }
 
   private initializeOcppConfiguration(): void {
-    if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.HeartbeatInterval,
-      )
-    ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
-        this,
-        StandardParametersKey.HeartbeatInterval,
-        '0',
-      );
+    if (!getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)) {
+      addConfigurationKey(this, StandardParametersKey.HeartbeatInterval, '0');
     }
-    if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.HeartBeatInterval,
-      )
-    ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
-        this,
-        StandardParametersKey.HeartBeatInterval,
-        '0',
-        { visible: false },
-      );
+    if (!getConfigurationKey(this, StandardParametersKey.HeartBeatInterval)) {
+      addConfigurationKey(this, StandardParametersKey.HeartBeatInterval, '0', { visible: false });
     }
     if (
       this.getSupervisionUrlOcppConfiguration() &&
       isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
-      !ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
+      !getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
+      addConfigurationKey(
         this,
         this.getSupervisionUrlOcppKey(),
         this.configuredSupervisionUrl.href,
@@ -1415,22 +1380,15 @@ export class ChargingStation {
     } else if (
       !this.getSupervisionUrlOcppConfiguration() &&
       isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
-      ChargingStationConfigurationUtils.getConfigurationKey(this, this.getSupervisionUrlOcppKey())
+      getConfigurationKey(this, this.getSupervisionUrlOcppKey())
     ) {
-      ChargingStationConfigurationUtils.deleteConfigurationKey(
-        this,
-        this.getSupervisionUrlOcppKey(),
-        { save: false },
-      );
+      deleteConfigurationKey(this, this.getSupervisionUrlOcppKey(), { save: false });
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        this.stationInfo.amperageLimitationOcppKey!,
-      )
+      !getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!)
     ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
+      addConfigurationKey(
         this,
         this.stationInfo.amperageLimitationOcppKey!,
         (
@@ -1438,43 +1396,28 @@ export class ChargingStation {
         ).toString(),
       );
     }
-    if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.SupportedFeatureProfiles,
-      )
-    ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
+    if (!getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles)) {
+      addConfigurationKey(
         this,
         StandardParametersKey.SupportedFeatureProfiles,
         `${SupportedFeatureProfiles.Core},${SupportedFeatureProfiles.FirmwareManagement},${SupportedFeatureProfiles.LocalAuthListManagement},${SupportedFeatureProfiles.SmartCharging},${SupportedFeatureProfiles.RemoteTrigger}`,
       );
     }
-    ChargingStationConfigurationUtils.addConfigurationKey(
+    addConfigurationKey(
       this,
       StandardParametersKey.NumberOfConnectors,
       this.getNumberOfConnectors().toString(),
       { readonly: true },
       { overwrite: true },
     );
-    if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.MeterValuesSampledData,
-      )
-    ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
+    if (!getConfigurationKey(this, StandardParametersKey.MeterValuesSampledData)) {
+      addConfigurationKey(
         this,
         StandardParametersKey.MeterValuesSampledData,
         MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       );
     }
-    if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.ConnectorPhaseRotation,
-      )
-    ) {
+    if (!getConfigurationKey(this, StandardParametersKey.ConnectorPhaseRotation)) {
       const connectorsPhaseRotation: string[] = [];
       if (this.hasEvses) {
         for (const evseStatus of this.evses.values()) {
@@ -1491,47 +1434,25 @@ export class ChargingStation {
           );
         }
       }
-      ChargingStationConfigurationUtils.addConfigurationKey(
+      addConfigurationKey(
         this,
         StandardParametersKey.ConnectorPhaseRotation,
         connectorsPhaseRotation.toString(),
       );
     }
-    if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.AuthorizeRemoteTxRequests,
-      )
-    ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
-        this,
-        StandardParametersKey.AuthorizeRemoteTxRequests,
-        'true',
-      );
+    if (!getConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests)) {
+      addConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests, 'true');
     }
     if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.LocalAuthListEnabled,
-      ) &&
-      ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.SupportedFeatureProfiles,
-      )?.value?.includes(SupportedFeatureProfiles.LocalAuthListManagement)
-    ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
-        this,
-        StandardParametersKey.LocalAuthListEnabled,
-        'false',
-      );
-    }
-    if (
-      !ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.ConnectionTimeOut,
+      !getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled) &&
+      getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles)?.value?.includes(
+        SupportedFeatureProfiles.LocalAuthListManagement,
       )
     ) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
+      addConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled, 'false');
+    }
+    if (!getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)) {
+      addConfigurationKey(
         this,
         StandardParametersKey.ConnectionTimeOut,
         Constants.DEFAULT_CONNECTION_TIMEOUT.toString(),
@@ -2167,19 +2088,10 @@ export class ChargingStation {
 
   // 0 for disabling
   private getConnectionTimeout(): number {
-    if (
-      ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        StandardParametersKey.ConnectionTimeOut,
-      )
-    ) {
+    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)) {
       return (
-        parseInt(
-          ChargingStationConfigurationUtils.getConfigurationKey(
-            this,
-            StandardParametersKey.ConnectionTimeOut,
-          )!.value!,
-        ) ?? Constants.DEFAULT_CONNECTION_TIMEOUT
+        parseInt(getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)!.value!) ??
+        Constants.DEFAULT_CONNECTION_TIMEOUT
       );
     }
     return Constants.DEFAULT_CONNECTION_TIMEOUT;
@@ -2222,17 +2134,11 @@ export class ChargingStation {
   private getAmperageLimitation(): number | undefined {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      ChargingStationConfigurationUtils.getConfigurationKey(
-        this,
-        this.stationInfo.amperageLimitationOcppKey!,
-      )
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!)
     ) {
       return (
         convertToInt(
-          ChargingStationConfigurationUtils.getConfigurationKey(
-            this,
-            this.stationInfo.amperageLimitationOcppKey!,
-          )?.value,
+          getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!)?.value,
         ) / getAmperageLimitationUnitDivider(this.stationInfo)
       );
     }
@@ -2351,16 +2257,11 @@ export class ChargingStation {
   }
 
   private startWebSocketPing(): void {
-    const webSocketPingInterval: number = ChargingStationConfigurationUtils.getConfigurationKey(
+    const webSocketPingInterval: number = getConfigurationKey(
       this,
       StandardParametersKey.WebSocketPingInterval,
     )
-      ? convertToInt(
-          ChargingStationConfigurationUtils.getConfigurationKey(
-            this,
-            StandardParametersKey.WebSocketPingInterval,
-          )?.value,
-        )
+      ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
       : 0;
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
       this.webSocketPingSetInterval = setInterval(() => {

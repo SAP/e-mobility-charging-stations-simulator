@@ -7,7 +7,8 @@ import type { JSONSchemaType } from 'ajv';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
   type ChargingStation,
-  ChargingStationConfigurationUtils,
+  addConfigurationKey,
+  getConfigurationKey,
   resetConnectorStatus,
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
@@ -407,14 +408,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
     payload: OCPP16BootNotificationResponse,
   ): void {
     if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
+      addConfigurationKey(
         chargingStation,
         OCPP16StandardParametersKey.HeartbeatInterval,
         payload.interval.toString(),
         {},
         { overwrite: true, save: true },
       );
-      ChargingStationConfigurationUtils.addConfigurationKey(
+      addConfigurationKey(
         chargingStation,
         OCPP16StandardParametersKey.HeartBeatInterval,
         payload.interval.toString(),
@@ -655,11 +656,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
       if (chargingStation.stationInfo.powerSharedByConnectors) {
         ++chargingStation.powerDivider;
       }
-      const configuredMeterValueSampleInterval =
-        ChargingStationConfigurationUtils.getConfigurationKey(
-          chargingStation,
-          OCPP16StandardParametersKey.MeterValueSampleInterval,
-        );
+      const configuredMeterValueSampleInterval = getConfigurationKey(
+        chargingStation,
+        OCPP16StandardParametersKey.MeterValueSampleInterval,
+      );
       chargingStation.startMeterValues(
         transactionConnectorId,
         configuredMeterValueSampleInterval

@@ -36,7 +36,7 @@ import {
 } from '../../types';
 import { Constants, convertToInt, isEmptyObject, isNullOrUndefined, logger } from '../../utils';
 import type { ChargingStation } from '../ChargingStation';
-import { ChargingStationConfigurationUtils } from '../ChargingStationConfigurationUtils';
+import { getConfigurationKey } from '../ChargingStationConfigurationUtils';
 import { OCPP16ServiceUtils } from '../ocpp';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
@@ -173,11 +173,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       [
         BroadcastChannelProcedureName.METER_VALUES,
         async (requestPayload?: BroadcastChannelRequestPayload) => {
-          const configuredMeterValueSampleInterval =
-            ChargingStationConfigurationUtils.getConfigurationKey(
-              chargingStation,
-              StandardParametersKey.MeterValueSampleInterval,
-            );
+          const configuredMeterValueSampleInterval = getConfigurationKey(
+            chargingStation,
+            StandardParametersKey.MeterValueSampleInterval,
+          );
           return this.chargingStation.ocppRequestService.requestHandler<
             MeterValuesRequest,
             MeterValuesResponse

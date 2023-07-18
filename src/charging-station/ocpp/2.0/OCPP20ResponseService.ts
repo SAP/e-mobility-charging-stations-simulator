@@ -3,7 +3,7 @@
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import { type ChargingStation, ChargingStationConfigurationUtils } from '../../../charging-station';
+import { type ChargingStation, addConfigurationKey } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   ErrorType,
@@ -168,7 +168,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     payload: OCPP20BootNotificationResponse,
   ): void {
     if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
-      ChargingStationConfigurationUtils.addConfigurationKey(
+      addConfigurationKey(
         chargingStation,
         OCPP20OptionalVariableName.HeartbeatInterval,
         payload.interval.toString(),

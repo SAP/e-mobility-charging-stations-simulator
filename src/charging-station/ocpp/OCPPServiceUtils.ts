@@ -7,7 +7,7 @@ import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 import { OCPP16Constants } from './1.6/OCPP16Constants';
 import { OCPP20Constants } from './2.0/OCPP20Constants';
 import { OCPPConstants } from './OCPPConstants';
-import { type ChargingStation, ChargingStationConfigurationUtils } from '../../charging-station';
+import { type ChargingStation, getConfigurationKey } from '../../charging-station';
 import { BaseError } from '../../exception';
 import {
   ChargePointErrorCode,
@@ -308,7 +308,7 @@ export class OCPPServiceUtils {
     }
     if (
       measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      ChargingStationConfigurationUtils.getConfigurationKey(
+      getConfigurationKey(
         chargingStation,
         StandardParametersKey.MeterValuesSampledData,
       )?.value?.includes(measurand) === false
@@ -340,7 +340,7 @@ export class OCPPServiceUtils {
         phase &&
         sampledValueTemplates[index]?.phase === phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        ChargingStationConfigurationUtils.getConfigurationKey(
+        getConfigurationKey(
           chargingStation,
           StandardParametersKey.MeterValuesSampledData,
         )?.value?.includes(measurand) === true
@@ -350,7 +350,7 @@ export class OCPPServiceUtils {
         !phase &&
         !sampledValueTemplates[index].phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
-        ChargingStationConfigurationUtils.getConfigurationKey(
+        getConfigurationKey(
           chargingStation,
           StandardParametersKey.MeterValuesSampledData,
         )?.value?.includes(measurand) === true
