@@ -3,7 +3,6 @@ import { existsSync } from 'node:fs';
 
 import type { PoolEmitter, PoolInfo } from 'poolifier';
 
-import { WorkerConstants } from './WorkerConstants';
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes';
 import { defaultErrorHandler, defaultExitHandler } from './WorkerUtils';
 
@@ -21,17 +20,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
    * @param workerScript -
    * @param workerOptions -
    */
-  constructor(
-    workerScript: string,
-    workerOptions: WorkerOptions = {
-      workerStartDelay: WorkerConstants.DEFAULT_WORKER_START_DELAY,
-      elementStartDelay: WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
-      poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
-      poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
-      elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
-      poolOptions: {},
-    },
-  ) {
+  constructor(workerScript: string, workerOptions: WorkerOptions) {
     if (workerScript === null || workerScript === undefined) {
       throw new Error('Worker script is not defined');
     }

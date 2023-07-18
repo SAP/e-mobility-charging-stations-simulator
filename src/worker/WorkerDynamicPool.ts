@@ -13,7 +13,7 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
    * @param workerScript -
    * @param workerOptions -
    */
-  constructor(workerScript: string, workerOptions?: WorkerOptions) {
+  constructor(workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions);
     this.pool = new DynamicThreadPool<WorkerData>(
       this.workerOptions.poolMinSize,

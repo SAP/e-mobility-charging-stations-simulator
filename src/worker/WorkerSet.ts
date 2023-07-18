@@ -3,6 +3,8 @@
 import { EventEmitter } from 'node:events';
 import { SHARE_ENV, Worker } from 'node:worker_threads';
 
+import type { ThreadPoolOptions } from 'poolifier';
+
 import { WorkerAbstract } from './WorkerAbstract';
 import { WorkerConstants } from './WorkerConstants';
 import {
@@ -15,6 +17,11 @@ import {
 } from './WorkerTypes';
 import { sleep } from './WorkerUtils';
 
+const DEFAULT_POOL_OPTIONS: ThreadPoolOptions = {
+  enableEvents: true,
+  restartWorkerOnError: true,
+};
+
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly emitter!: EventEmitter;
   private readonly workerSet: Set<WorkerSetElement>;
@@ -25,13 +32,10 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
    * @param workerScript -
    * @param workerOptions -
    */
-  constructor(workerScript: string, workerOptions?: WorkerOptions) {
+  constructor(workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions);
     this.workerOptions.poolOptions = {
-      ...{
-        enableEvents: true,
-        restartWorkerOnError: true,
-      },
+      ...DEFAULT_POOL_OPTIONS,
       ...this.workerOptions.poolOptions,
     };
     this.workerSet = new Set<WorkerSetElement>();

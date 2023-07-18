@@ -60,7 +60,7 @@ export class UIWebSocketServer extends AbstractUIServer {
         this.uiServices
           .get(version)
           ?.requestHandler(request)
-          .then((protocolResponse: ProtocolResponse | undefined) => {
+          .then((protocolResponse?: ProtocolResponse) => {
             if (!isNullOrUndefined(protocolResponse)) {
               this.sendResponse(protocolResponse!);
             }
