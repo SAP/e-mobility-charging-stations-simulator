@@ -363,7 +363,10 @@ export class ChargingStation {
   public getMaximumPower(stationInfo?: ChargingStationInfo): number {
     const localStationInfo = stationInfo ?? this.stationInfo;
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    return (localStationInfo['maxPower'] as number) ?? localStationInfo.maximumPower;
+    return (
+      (localStationInfo['maxPower' as keyof ChargingStationInfo] as number) ??
+      localStationInfo.maximumPower
+    );
   }
 
   public getConnectorMaximumAvailablePower(connectorId: number): number {
@@ -1006,14 +1009,14 @@ export class ChargingStation {
     if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
         for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus?.reservation?.[filterKey] === value) {
+          if (connectorStatus?.reservation?.[filterKey as keyof Reservation] === value) {
             return connectorStatus.reservation;
           }
         }
       }
     } else {
       for (const connectorStatus of this.connectors.values()) {
-        if (connectorStatus?.reservation?.[filterKey] === value) {
+        if (connectorStatus?.reservation?.[filterKey as keyof Reservation] === value) {
           return connectorStatus.reservation;
         }
       }

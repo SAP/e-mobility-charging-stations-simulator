@@ -623,7 +623,7 @@ const warnDeprecatedTemplateKey = (
   templateFile: string,
   logMsgToAppend = '',
 ): void => {
-  if (!isUndefined(template[key])) {
+  if (!isUndefined(template[key as keyof ChargingStationTemplate])) {
     const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
     }`;
@@ -637,11 +637,12 @@ const convertDeprecatedTemplateKey = (
   deprecatedKey: string,
   key?: string,
 ): void => {
-  if (!isUndefined(template[deprecatedKey])) {
+  if (!isUndefined(template[deprecatedKey as keyof ChargingStationTemplate])) {
     if (!isUndefined(key)) {
-      template[key!] = template[deprecatedKey] as unknown;
+      (template as unknown as Record<string, unknown>)[key!] =
+        template[deprecatedKey as keyof ChargingStationTemplate];
     }
-    delete template[deprecatedKey];
+    delete template[deprecatedKey as keyof ChargingStationTemplate];
   }
 };
 

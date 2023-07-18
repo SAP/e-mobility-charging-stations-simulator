@@ -76,16 +76,34 @@ export class OCPP16ResponseService extends OCPPResponseService {
     // }
     super(OCPPVersion.VERSION_16);
     this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
-      [OCPP16RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],
-      [OCPP16RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this)],
-      [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this)],
-      [OCPP16RequestCommand.START_TRANSACTION, this.handleResponseStartTransaction.bind(this)],
-      [OCPP16RequestCommand.STOP_TRANSACTION, this.handleResponseStopTransaction.bind(this)],
-      [OCPP16RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
-      [OCPP16RequestCommand.METER_VALUES, this.emptyResponseHandler.bind(this)],
-      [OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
-      [OCPP16RequestCommand.DATA_TRANSFER, this.emptyResponseHandler.bind(this)],
-      [OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
+      [
+        OCPP16RequestCommand.BOOT_NOTIFICATION,
+        this.handleResponseBootNotification.bind(this) as ResponseHandler,
+      ],
+      [OCPP16RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this) as ResponseHandler],
+      [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
+      [
+        OCPP16RequestCommand.START_TRANSACTION,
+        this.handleResponseStartTransaction.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP16RequestCommand.STOP_TRANSACTION,
+        this.handleResponseStopTransaction.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP16RequestCommand.STATUS_NOTIFICATION,
+        this.emptyResponseHandler.bind(this) as ResponseHandler,
+      ],
+      [OCPP16RequestCommand.METER_VALUES, this.emptyResponseHandler.bind(this) as ResponseHandler],
+      [
+        OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+        this.emptyResponseHandler.bind(this) as ResponseHandler,
+      ],
+      [OCPP16RequestCommand.DATA_TRANSFER, this.emptyResponseHandler.bind(this) as ResponseHandler],
+      [
+        OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+        this.emptyResponseHandler.bind(this) as ResponseHandler,
+      ],
     ]);
     this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
       [

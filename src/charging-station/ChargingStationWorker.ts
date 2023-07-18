@@ -17,8 +17,8 @@ const moduleName = 'ChargingStationWorker';
  *
  * @param data - workerData
  */
-const startChargingStation = (data: ChargingStationWorkerData): void => {
-  new ChargingStation(data.index, data.templateFile).start();
+const startChargingStation = (data?: ChargingStationWorkerData): void => {
+  new ChargingStation(data!.index, data!.templateFile).start();
 };
 
 class ChargingStationWorker extends AsyncResource {
@@ -28,7 +28,7 @@ class ChargingStationWorker extends AsyncResource {
     parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
       if (message.id === WorkerMessageEvents.startWorkerElement) {
         this.runInAsyncScope(
-          startChargingStation.bind(this) as (data: ChargingStationWorkerData) => void,
+          startChargingStation.bind(this) as (data?: ChargingStationWorkerData) => void,
           this,
           message.data,
         );

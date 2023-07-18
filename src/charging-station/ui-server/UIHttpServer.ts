@@ -132,9 +132,9 @@ export class UIHttpServer extends AbstractUIServer {
                   body ?? Constants.EMPTY_FREEZED_OBJECT,
                 ),
               )
-              .then((protocolResponse: ProtocolResponse) => {
+              .then((protocolResponse: ProtocolResponse | undefined) => {
                 if (!isNullOrUndefined(protocolResponse)) {
-                  this.sendResponse(protocolResponse);
+                  this.sendResponse(protocolResponse!);
                 }
               })
               .catch(Constants.EMPTY_FUNCTION);

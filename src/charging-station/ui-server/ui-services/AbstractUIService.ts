@@ -19,34 +19,40 @@ import type { AbstractUIServer } from '../AbstractUIServer';
 const moduleName = 'AbstractUIService';
 
 export abstract class AbstractUIService {
-  protected static readonly ProcedureNameToBroadCastChannelProcedureNameMapping: Omit<
-    Record<ProcedureName, BroadcastChannelProcedureName>,
-    | ProcedureName.START_SIMULATOR
-    | ProcedureName.STOP_SIMULATOR
-    | ProcedureName.LIST_CHARGING_STATIONS
-  > = {
-    [ProcedureName.START_CHARGING_STATION]: BroadcastChannelProcedureName.START_CHARGING_STATION,
-    [ProcedureName.STOP_CHARGING_STATION]: BroadcastChannelProcedureName.STOP_CHARGING_STATION,
-    [ProcedureName.CLOSE_CONNECTION]: BroadcastChannelProcedureName.CLOSE_CONNECTION,
-    [ProcedureName.OPEN_CONNECTION]: BroadcastChannelProcedureName.OPEN_CONNECTION,
-    [ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR]:
+  protected static readonly ProcedureNameToBroadCastChannelProcedureNameMapping = new Map<
+    ProcedureName,
+    BroadcastChannelProcedureName
+  >([
+    [ProcedureName.START_CHARGING_STATION, BroadcastChannelProcedureName.START_CHARGING_STATION],
+    [ProcedureName.STOP_CHARGING_STATION, BroadcastChannelProcedureName.STOP_CHARGING_STATION],
+    [ProcedureName.CLOSE_CONNECTION, BroadcastChannelProcedureName.CLOSE_CONNECTION],
+    [ProcedureName.OPEN_CONNECTION, BroadcastChannelProcedureName.OPEN_CONNECTION],
+    [
+      ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
       BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
-    [ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR]:
+    ],
+    [
+      ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
       BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-    [ProcedureName.SET_SUPERVISION_URL]: BroadcastChannelProcedureName.SET_SUPERVISION_URL,
-    [ProcedureName.START_TRANSACTION]: BroadcastChannelProcedureName.START_TRANSACTION,
-    [ProcedureName.STOP_TRANSACTION]: BroadcastChannelProcedureName.STOP_TRANSACTION,
-    [ProcedureName.AUTHORIZE]: BroadcastChannelProcedureName.AUTHORIZE,
-    [ProcedureName.BOOT_NOTIFICATION]: BroadcastChannelProcedureName.BOOT_NOTIFICATION,
-    [ProcedureName.STATUS_NOTIFICATION]: BroadcastChannelProcedureName.STATUS_NOTIFICATION,
-    [ProcedureName.HEARTBEAT]: BroadcastChannelProcedureName.HEARTBEAT,
-    [ProcedureName.METER_VALUES]: BroadcastChannelProcedureName.METER_VALUES,
-    [ProcedureName.DATA_TRANSFER]: BroadcastChannelProcedureName.DATA_TRANSFER,
-    [ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION]:
+    ],
+    [ProcedureName.SET_SUPERVISION_URL, BroadcastChannelProcedureName.SET_SUPERVISION_URL],
+    [ProcedureName.START_TRANSACTION, BroadcastChannelProcedureName.START_TRANSACTION],
+    [ProcedureName.STOP_TRANSACTION, BroadcastChannelProcedureName.STOP_TRANSACTION],
+    [ProcedureName.AUTHORIZE, BroadcastChannelProcedureName.AUTHORIZE],
+    [ProcedureName.BOOT_NOTIFICATION, BroadcastChannelProcedureName.BOOT_NOTIFICATION],
+    [ProcedureName.STATUS_NOTIFICATION, BroadcastChannelProcedureName.STATUS_NOTIFICATION],
+    [ProcedureName.HEARTBEAT, BroadcastChannelProcedureName.HEARTBEAT],
+    [ProcedureName.METER_VALUES, BroadcastChannelProcedureName.METER_VALUES],
+    [ProcedureName.DATA_TRANSFER, BroadcastChannelProcedureName.DATA_TRANSFER],
+    [
+      ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
       BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
-    [ProcedureName.FIRMWARE_STATUS_NOTIFICATION]:
+    ],
+    [
+      ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
       BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
-  };
+    ],
+  ]);
 
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
   private readonly version: ProtocolVersion;
@@ -144,9 +150,7 @@ export abstract class AbstractUIService {
   ): void {
     this.sendBroadcastChannelRequest(
       uuid,
-      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping[
-        procedureName
-      ] as BroadcastChannelProcedureName,
+      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.get(procedureName)!,
       payload,
     );
   }

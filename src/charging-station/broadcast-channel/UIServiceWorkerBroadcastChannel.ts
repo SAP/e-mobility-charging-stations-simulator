@@ -24,8 +24,8 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   constructor(uiService: AbstractUIService) {
     super();
     this.uiService = uiService;
-    this.onmessage = this.responseHandler.bind(this) as (message: MessageEvent) => void;
-    this.onmessageerror = this.messageErrorHandler.bind(this) as (message: MessageEvent) => void;
+    this.onmessage = this.responseHandler.bind(this) as (message: unknown) => void;
+    this.onmessageerror = this.messageErrorHandler.bind(this) as (message: unknown) => void;
     this.responses = new Map<string, Responses>();
   }
 

@@ -411,9 +411,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         const phaseValue = `L${phase}-N`;
         meterValue.sampledValue.push(
           OCPP16ServiceUtils.buildSampledValue(
-            (powerPerPhaseSampledValueTemplates[`L${phase}`] as SampledValueTemplate) ??
-              powerSampledValueTemplate,
-            powerMeasurandValues[`L${phase}`] as number,
+            powerPerPhaseSampledValueTemplates[
+              `L${phase}` as keyof MeasurandPerPhaseSampledValueTemplates
+            ]! ?? powerSampledValueTemplate,
+            powerMeasurandValues[`L${phase}` as keyof MeasurandPerPhaseSampledValueTemplates],
             undefined,
             phaseValue as OCPP16MeterValuePhase,
           ),
@@ -632,9 +633,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         const phaseValue = `L${phase}`;
         meterValue.sampledValue.push(
           OCPP16ServiceUtils.buildSampledValue(
-            (currentPerPhaseSampledValueTemplates[phaseValue] as SampledValueTemplate) ??
-              currentSampledValueTemplate,
-            currentMeasurandValues[phaseValue] as number,
+            currentPerPhaseSampledValueTemplates[
+              phaseValue as keyof MeasurandPerPhaseSampledValueTemplates
+            ]! ?? currentSampledValueTemplate,
+            currentMeasurandValues[phaseValue as keyof MeasurandPerPhaseSampledValueTemplates],
             undefined,
             phaseValue as OCPP16MeterValuePhase,
           ),

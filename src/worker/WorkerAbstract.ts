@@ -1,8 +1,7 @@
 import type { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
-import type { Worker } from 'node:worker_threads';
 
-import type { ErrorHandler, ExitHandler, PoolEmitter, PoolInfo } from 'poolifier';
+import type { PoolEmitter, PoolInfo } from 'poolifier';
 
 import { WorkerConstants } from './WorkerConstants';
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes';
@@ -44,14 +43,10 @@ export abstract class WorkerAbstract<T extends WorkerData> {
     }
     this.workerScript = workerScript;
     this.workerOptions = workerOptions;
-    this.workerOptions.poolOptions?.messageHandler?.bind(this);
-    this.workerOptions.poolOptions!.errorHandler = (
-      this.workerOptions?.poolOptions?.errorHandler ?? defaultErrorHandler
-    ).bind(this) as ErrorHandler<Worker>;
-    this.workerOptions.poolOptions?.onlineHandler?.bind(this);
-    this.workerOptions.poolOptions!.exitHandler = (
-      this.workerOptions?.poolOptions?.exitHandler ?? defaultExitHandler
-    ).bind(this) as ExitHandler<Worker>;
+    this.workerOptions.poolOptions!.errorHandler =
+      this.workerOptions.poolOptions?.errorHandler ?? defaultErrorHandler;
+    this.workerOptions.poolOptions!.exitHandler =
+      this.workerOptions.poolOptions?.exitHandler ?? defaultExitHandler;
   }
 
   /**

@@ -198,7 +198,7 @@ export const isCFEnvironment = (): boolean => {
 };
 
 export const isIterable = <T>(obj: T): boolean => {
-  return !isNullOrUndefined(obj) ? typeof obj[Symbol.iterator] === 'function' : false;
+  return !isNullOrUndefined(obj) ? typeof obj[Symbol.iterator as keyof T] === 'function' : false;
 };
 
 const isString = (value: unknown): boolean => {
@@ -332,8 +332,12 @@ export const getWebSocketCloseEventStatusString = (code: number): string => {
       return '(For applications)';
     }
   }
-  if (!isUndefined(WebSocketCloseEventStatusString[code])) {
-    return WebSocketCloseEventStatusString[code] as string;
+  if (
+    !isUndefined(
+      WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString],
+    )
+  ) {
+    return WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString];
   }
   return '(Unknown)';
 };

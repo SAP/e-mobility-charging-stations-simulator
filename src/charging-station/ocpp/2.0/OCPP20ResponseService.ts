@@ -40,9 +40,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
     // }
     super(OCPPVersion.VERSION_20);
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
-      [OCPP20RequestCommand.BOOT_NOTIFICATION, this.handleResponseBootNotification.bind(this)],
-      [OCPP20RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this)],
-      [OCPP20RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler.bind(this)],
+      [
+        OCPP20RequestCommand.BOOT_NOTIFICATION,
+        this.handleResponseBootNotification.bind(this) as ResponseHandler,
+      ],
+      [OCPP20RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this) as ResponseHandler],
+      [
+        OCPP20RequestCommand.STATUS_NOTIFICATION,
+        this.emptyResponseHandler.bind(this) as ResponseHandler,
+      ],
     ]);
     this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
       [

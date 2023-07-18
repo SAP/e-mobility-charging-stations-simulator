@@ -1,13 +1,13 @@
 import { AbstractUIService } from './AbstractUIService';
-import { type ProcedureName, type ProtocolRequestHandler, ProtocolVersion } from '../../../types';
+import { type ProtocolRequestHandler, ProtocolVersion } from '../../../types';
 import type { AbstractUIServer } from '../AbstractUIServer';
 
 export class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {
     super(uiServer, ProtocolVersion['0.0.1']);
-    for (const procedureName in AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping) {
+    for (const procedureName of AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.keys()) {
       this.requestHandlers.set(
-        procedureName as ProcedureName,
+        procedureName,
         this.handleProtocolRequest.bind(this) as ProtocolRequestHandler,
       );
     }

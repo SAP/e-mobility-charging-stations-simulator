@@ -115,49 +115,73 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // }
     super(OCPPVersion.VERSION_16);
     this.incomingRequestHandlers = new Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>([
-      [OCPP16IncomingRequestCommand.RESET, this.handleRequestReset.bind(this)],
-      [OCPP16IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],
-      [OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR, this.handleRequestUnlockConnector.bind(this)],
+      [
+        OCPP16IncomingRequestCommand.RESET,
+        this.handleRequestReset.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP16IncomingRequestCommand.CLEAR_CACHE,
+        this.handleRequestClearCache.bind(this) as IncomingRequestHandler,
+      ],
+      [
+        OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
+        this.handleRequestUnlockConnector.bind(this) as unknown as IncomingRequestHandler,
+      ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        this.handleRequestGetConfiguration.bind(this),
+        this.handleRequestGetConfiguration.bind(this) as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        this.handleRequestChangeConfiguration.bind(this),
+        this.handleRequestChangeConfiguration.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
-        this.handleRequestGetCompositeSchedule.bind(this),
+        this.handleRequestGetCompositeSchedule.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        this.handleRequestSetChargingProfile.bind(this),
+        this.handleRequestSetChargingProfile.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        this.handleRequestClearChargingProfile.bind(this),
+        this.handleRequestClearChargingProfile.bind(this) as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        this.handleRequestChangeAvailability.bind(this),
+        this.handleRequestChangeAvailability.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        this.handleRequestRemoteStartTransaction.bind(this),
+        this.handleRequestRemoteStartTransaction.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        this.handleRequestRemoteStopTransaction.bind(this),
+        this.handleRequestRemoteStopTransaction.bind(this) as unknown as IncomingRequestHandler,
       ],
-      [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, this.handleRequestGetDiagnostics.bind(this)],
-      [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, this.handleRequestTriggerMessage.bind(this)],
-      [OCPP16IncomingRequestCommand.DATA_TRANSFER, this.handleRequestDataTransfer.bind(this)],
-      [OCPP16IncomingRequestCommand.UPDATE_FIRMWARE, this.handleRequestUpdateFirmware.bind(this)],
-      [OCPP16IncomingRequestCommand.RESERVE_NOW, this.handleRequestReserveNow.bind(this)],
+      [
+        OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
+        this.handleRequestGetDiagnostics.bind(this) as IncomingRequestHandler,
+      ],
+      [
+        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+        this.handleRequestTriggerMessage.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP16IncomingRequestCommand.DATA_TRANSFER,
+        this.handleRequestDataTransfer.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+        this.handleRequestUpdateFirmware.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP16IncomingRequestCommand.RESERVE_NOW,
+        this.handleRequestReserveNow.bind(this) as unknown as IncomingRequestHandler,
+      ],
       [
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        this.handleRequestCancelReservation.bind(this),
+        this.handleRequestCancelReservation.bind(this) as unknown as IncomingRequestHandler,
       ],
     ]);
     this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([

@@ -46,7 +46,10 @@ if (logConfiguration.rotate === true) {
 export const logger = createLogger({
   silent: !logConfiguration.enabled,
   level: logConfiguration.level,
-  format: format.combine(format.splat(), (format[logConfiguration.format!] as FormatWrap)()),
+  format: format.combine(
+    format.splat(),
+    (format[logConfiguration.format! as keyof FormatWrap] as FormatWrap)(),
+  ),
   transports,
 });
 
@@ -57,7 +60,10 @@ export const logger = createLogger({
 if (logConfiguration.console) {
   logger.add(
     new TransportType.Console({
-      format: format.combine(format.splat(), (format[logConfiguration.format!] as FormatWrap)()),
+      format: format.combine(
+        format.splat(),
+        (format[logConfiguration.format! as keyof FormatWrap] as FormatWrap)(),
+      ),
     }),
   );
 }

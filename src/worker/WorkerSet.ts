@@ -16,7 +16,7 @@ import {
 import { sleep } from './WorkerUtils';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
-  public readonly emitter: EventEmitter;
+  public readonly emitter!: EventEmitter;
   private readonly workerSet: Set<WorkerSetElement>;
 
   /**
@@ -35,7 +35,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       ...this.workerOptions.poolOptions,
     };
     this.workerSet = new Set<WorkerSetElement>();
-    if (this.workerOptions?.poolOptions?.enableEvents) {
+    if (this.workerOptions.poolOptions?.enableEvents) {
       this.emitter = new EventEmitter();
     }
   }
@@ -110,25 +110,25 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     });
     worker.on(
       'message',
-      this.workerOptions?.poolOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION,
+      this.workerOptions.poolOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.on(
       'error',
-      this.workerOptions?.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION,
+      this.workerOptions.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.on('error', (error) => {
       this.emitter?.emit(WorkerSetEvents.error, error);
-      if (this.workerOptions?.poolOptions?.restartWorkerOnError) {
+      if (this.workerOptions.poolOptions?.restartWorkerOnError) {
         this.addWorkerSetElement();
       }
     });
     worker.on(
       'online',
-      this.workerOptions?.poolOptions?.onlineHandler ?? WorkerConstants.EMPTY_FUNCTION,
+      this.workerOptions.poolOptions?.onlineHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.on(
       'exit',
-      this.workerOptions?.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION,
+      this.workerOptions.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
     worker.once('exit', () =>
       this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker)!),

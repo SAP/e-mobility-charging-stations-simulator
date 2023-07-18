@@ -15,7 +15,6 @@ import {
   ErrorType,
   FileType,
   IncomingRequestCommand,
-  type JsonObject,
   type JsonType,
   MessageTrigger,
   MessageType,
@@ -144,10 +143,14 @@ export class OCPPServiceUtils {
   }
 
   public static convertDateToISOString<T extends JsonType>(obj: T): void {
-    for (const key in obj as JsonObject) {
+    for (const key in obj) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       if (obj![key] instanceof Date) {
-        obj![key] = (obj![key] as Date).toISOString();
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        (obj![key] as string) = (obj![key] as Date).toISOString();
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       } else if (obj![key] !== null && typeof obj![key] === 'object') {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         OCPPServiceUtils.convertDateToISOString<T>(obj![key] as T);
       }
     }

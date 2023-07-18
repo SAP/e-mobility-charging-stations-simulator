@@ -239,8 +239,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       ],
     ]);
     this.chargingStation = chargingStation;
-    this.onmessage = this.requestHandler.bind(this) as (message: MessageEvent) => void;
-    this.onmessageerror = this.messageErrorHandler.bind(this) as (message: MessageEvent) => void;
+    this.onmessage = this.requestHandler.bind(this) as (message: unknown) => void;
+    this.onmessageerror = this.messageErrorHandler.bind(this) as (message: unknown) => void;
   }
 
   private async requestHandler(messageEvent: MessageEvent): Promise<void> {
