@@ -128,11 +128,11 @@ export class OCPPConstants {
 
   static readonly OCPP_RESERVATION_RESPONSE_UNAVAILABLE = Object.freeze({
     status: ReservationStatus.UNAVAILABLE,
-  }); // Reservation has not been made, because connectors are spec. connector is in UNAVAILABLE state
+  }); // Reservation has not been made, because connector is in UNAVAILABLE state
 
   static readonly OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED = Object.freeze({
     status: GenericStatus.Accepted,
-  }); // Reservation for id has been cancelled has been made
+  }); // Reservation for id has been cancelled
 
   static readonly OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED = Object.freeze({
     status: GenericStatus.Rejected,
