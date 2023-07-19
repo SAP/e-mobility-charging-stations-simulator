@@ -1,6 +1,12 @@
 # Changelog
 
-## [v1.2.18](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.17...v1.2.18)
+## [v1.2.19](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.18...v1.2.19)
+
+- fix: fix 'Cannot read properties of undefined' with revervation enabled [`8cc482a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8cc482a9324a0989516b6eb6db85a16258c4b4d1)
+- fix: do not use async callback with setInterval() [`37aa4e5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/37aa4e56f13180ae59072d3f86a7a88d5acaedd6)
+- fix: fix ATG startup [`bdc9dc7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/bdc9dc79f18b4af66cf9565e8df86d0348fd294c)
+
+## [v1.2.18](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.17...v1.2.18) (2023-07-19)
 
 - build(deps-dev): apply updates [`5edd8ba`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/5edd8ba0f8978cfb3ca9d80f299d9748c6c5970e)
 - refactor: split Utils static methods class into functions [`9bf0ef2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/9bf0ef23c51160abc6866ad8d07eea85e308edb8)
@@ -25,6 +31,7 @@
 - feat: add elementsPerWorker automatic calculation [`8603c1c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8603c1caae4c616b0c1f8292c7f70bf3b0124175)
 - feat: add configuration cache [`974efe6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/974efe6c9928aabb0d9356c19342d0fa432f3cc1)
 - build(deps-dev): apply updates [`afaf003`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/afaf0037d8d76a4528ec577b69a0c5ad56100083)
+- chore: version 1.2.18 [`ad4b054`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ad4b05411e49ce54ed421f9e393a15aee76bc309)
 - Create clone-count.yml [`3848c42`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3848c42989e06b10344bbfa5bd2ef0c253f7d9f9)
 - build(deps-dev): apply updates [`0feaa97`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0feaa975c49a8607e0b90acdaad9b609c461807f)
 - build(deps-dev): apply updates [`4b8d701`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4b8d701aaa72a3624c66390683e353408e6e89ee)
