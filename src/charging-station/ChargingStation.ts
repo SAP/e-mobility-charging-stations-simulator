@@ -1025,27 +1025,26 @@ export class ChargingStation {
         and starts on charging station now`,
     );
     if (interval > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      this.reservationExpirationSetInterval = setInterval(async (): Promise<void> => {
+      this.reservationExpirationSetInterval = setInterval((): void => {
         const now = new Date();
         if (this.hasEvses) {
           for (const evseStatus of this.evses.values()) {
             for (const connectorStatus of evseStatus.connectors.values()) {
               if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < now) {
-                await this.removeReservation(
+                this.removeReservation(
                   connectorStatus.reservation,
                   ReservationTerminationReason.EXPIRED,
-                );
+                ).catch(Constants.EMPTY_FUNCTION);
               }
             }
           }
         } else {
           for (const connectorStatus of this.connectors.values()) {
             if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < now) {
-              await this.removeReservation(
+              this.removeReservation(
                 connectorStatus.reservation,
                 ReservationTerminationReason.EXPIRED,
-              );
+              ).catch(Constants.EMPTY_FUNCTION);
             }
           }
         }
