@@ -124,8 +124,8 @@
     "utf-8-validate": "^6.0.3"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.6.6",
-    "@commitlint/config-conventional": "^17.6.6",
+    "@commitlint/cli": "^17.6.7",
+    "@commitlint/config-conventional": "^17.6.7",
     "@mikro-orm/cli": "^5.7.13",
     "@release-it/bumper": "^5.0.0",
     "@rollup/plugin-json": "^6.0.0",
