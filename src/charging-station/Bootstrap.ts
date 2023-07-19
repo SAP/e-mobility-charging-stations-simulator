@@ -260,8 +260,11 @@ export class Bootstrap extends EventEmitter {
     //     2,
     //   )}`,
     // );
+    if (isNullOrUndefined(msg?.event)) {
+      return;
+    }
     try {
-      switch (msg.id) {
+      switch (msg.event) {
         case ChargingStationWorkerMessageEvents.started:
           this.workerEventStarted(msg.data as ChargingStationData);
           this.emit(ChargingStationWorkerMessageEvents.started, msg.data as ChargingStationData);
@@ -283,13 +286,13 @@ export class Bootstrap extends EventEmitter {
           break;
         default:
           throw new BaseError(
-            `Unknown event type: '${msg.id}' for data: ${JSON.stringify(msg.data, null, 2)}`,
+            `Unknown event type: '${msg.event}' for data: ${JSON.stringify(msg.data, null, 2)}`,
           );
       }
     } catch (error) {
       logger.error(
         `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${
-          msg.id
+          msg.event
         }' event:`,
         error,
       );

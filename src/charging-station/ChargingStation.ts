@@ -1031,9 +1031,9 @@ export class ChargingStation {
         if (this.hasEvses) {
           for (const evseStatus of this.evses.values()) {
             for (const connectorStatus of evseStatus.connectors.values()) {
-              if (connectorStatus.reservation!.expiryDate < now) {
+              if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < now) {
                 await this.removeReservation(
-                  connectorStatus.reservation!,
+                  connectorStatus.reservation,
                   ReservationTerminationReason.EXPIRED,
                 );
               }
@@ -1041,9 +1041,9 @@ export class ChargingStation {
           }
         } else {
           for (const connectorStatus of this.connectors.values()) {
-            if (connectorStatus.reservation!.expiryDate < now) {
+            if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < now) {
               await this.removeReservation(
-                connectorStatus.reservation!,
+                connectorStatus.reservation,
                 ReservationTerminationReason.EXPIRED,
               );
             }

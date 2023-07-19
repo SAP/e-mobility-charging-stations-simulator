@@ -45,7 +45,7 @@ export interface WorkerSetElement {
 }
 
 export interface WorkerMessage<T extends WorkerData> {
-  id: WorkerMessageEvents;
+  event: WorkerMessageEvents;
   data: T;
 }
 

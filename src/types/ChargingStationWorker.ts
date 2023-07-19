@@ -56,7 +56,7 @@ export type ChargingStationWorkerMessageData = ChargingStationData | Statistics;
 
 export type ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> = Omit<
   WorkerMessage<T>,
-  'id'
+  'event'
 > & {
-  id: ChargingStationWorkerMessageEvents;
+  event: ChargingStationWorkerMessageEvents;
 };

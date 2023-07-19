@@ -16,7 +16,7 @@ export const buildStartedMessage = (
   chargingStation: ChargingStation,
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    id: ChargingStationWorkerMessageEvents.started,
+    event: ChargingStationWorkerMessageEvents.started,
     data: buildChargingStationDataPayload(chargingStation),
   };
 };
@@ -25,7 +25,7 @@ export const buildStoppedMessage = (
   chargingStation: ChargingStation,
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    id: ChargingStationWorkerMessageEvents.stopped,
+    event: ChargingStationWorkerMessageEvents.stopped,
     data: buildChargingStationDataPayload(chargingStation),
   };
 };
@@ -34,7 +34,7 @@ export const buildUpdatedMessage = (
   chargingStation: ChargingStation,
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    id: ChargingStationWorkerMessageEvents.updated,
+    event: ChargingStationWorkerMessageEvents.updated,
     data: buildChargingStationDataPayload(chargingStation),
   };
 };
@@ -43,7 +43,7 @@ export const buildPerformanceStatisticsMessage = (
   statistics: Statistics,
 ): ChargingStationWorkerMessage<Statistics> => {
   return {
-    id: ChargingStationWorkerMessageEvents.performanceStatistics,
+    event: ChargingStationWorkerMessageEvents.performanceStatistics,
     data: statistics,
   };
 };
