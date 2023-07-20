@@ -94,7 +94,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     }
     const workerSetElement = await this.getWorkerSetElement();
     workerSetElement.worker.postMessage({
-      id: WorkerMessageEvents.startWorkerElement,
+      event: WorkerMessageEvents.startWorkerElement,
       data: elementData,
     });
     ++workerSetElement.numberOfWorkerElements;

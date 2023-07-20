@@ -12,7 +12,7 @@ export class WorkerConstants {
   public static readonly DEFAULT_POOL_MAX_SIZE = availableParallelism();
   public static readonly DEFAULT_ELEMENTS_PER_WORKER = 1;
 
-  public static readonly version = '1.0.0';
+  public static readonly version = '1.0.1';
 
   private constructor() {
     // This is intentional

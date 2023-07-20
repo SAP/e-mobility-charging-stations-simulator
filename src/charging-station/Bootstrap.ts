@@ -281,6 +281,15 @@ export class Bootstrap extends EventEmitter {
             msg.data as Statistics,
           );
           break;
+        case ChargingStationWorkerMessageEvents.startWorkerElementError:
+          logger.error(
+            `${this.logPrefix()} ${moduleName}.messageHandler: Error occured while starting worker element:`,
+            msg.data,
+          );
+          this.emit(ChargingStationWorkerMessageEvents.startWorkerElementError, msg.data);
+          break;
+        case ChargingStationWorkerMessageEvents.startedWorkerElement:
+          break;
         default:
           throw new BaseError(
             `Unknown event type: '${msg.event}' for data: ${JSON.stringify(msg.data, null, 2)}`,

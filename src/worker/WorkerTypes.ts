@@ -51,4 +51,6 @@ export interface WorkerMessage<T extends WorkerData> {
 
 export enum WorkerMessageEvents {
   startWorkerElement = 'startWorkerElement',
+  startWorkerElementError = 'startWorkerElementError',
+  startedWorkerElement = 'startedWorkerElement',
 }

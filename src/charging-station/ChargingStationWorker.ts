@@ -27,11 +27,24 @@ class ChargingStationWorker extends AsyncResource {
     // Add message listener to create and start charging station from the main thread
     parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
       if (message.event === WorkerMessageEvents.startWorkerElement) {
-        this.runInAsyncScope(
-          startChargingStation.bind(this) as (data?: ChargingStationWorkerData) => void,
-          this,
-          message.data,
-        );
+        try {
+          this.runInAsyncScope(
+            startChargingStation.bind(this) as (data?: ChargingStationWorkerData) => void,
+            this,
+            message.data,
+          );
+          parentPort?.postMessage({
+            event: WorkerMessageEvents.startedWorkerElement,
+          });
+        } catch (error) {
+          parentPort?.postMessage({
+            event: WorkerMessageEvents.startWorkerElementError,
+            data: {
+              message: (error as Error).message,
+              stack: (error as Error).stack,
+            },
+          });
+        }
       }
     });
   }
