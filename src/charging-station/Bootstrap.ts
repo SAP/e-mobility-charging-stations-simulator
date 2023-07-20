@@ -292,7 +292,9 @@ export class Bootstrap extends EventEmitter {
           break;
         default:
           throw new BaseError(
-            `Unknown event type: '${msg.event}' for data: ${JSON.stringify(msg.data, null, 2)}`,
+            `Unknown charging station worker event: '${
+              msg.event
+            }' received with data: ${JSON.stringify(msg.data, null, 2)}`,
           );
       }
     } catch (error) {
