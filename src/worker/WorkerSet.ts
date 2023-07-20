@@ -119,7 +119,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     );
     worker.on('message', (message: WorkerMessage<WorkerData>) => {
       if (message.event === WorkerMessageEvents.startedWorkerElement) {
-        this.emitter?.emit(WorkerSetEvents.elementStarted, message.data);
+        this.emitter?.emit(WorkerSetEvents.elementStarted, this.info);
       } else if (message.event === WorkerMessageEvents.startWorkerElementError) {
         this.emitter?.emit(WorkerSetEvents.elementError, message.data);
       }
