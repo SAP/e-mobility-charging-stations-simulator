@@ -17,7 +17,7 @@ export type ProtocolRequest = [string, ProcedureName, RequestPayload];
 export type ProtocolResponse = [string, ResponsePayload];
 
 export type ProtocolRequestHandler = (
-  payload: RequestPayload
+  payload: RequestPayload,
 ) => ResponsePayload | Promise<ResponsePayload>;
 
 export enum ProcedureName {

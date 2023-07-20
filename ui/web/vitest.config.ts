@@ -15,5 +15,5 @@ export default mergeConfig(
         reporter: ['lcov'],
       },
     },
-  })
+  }),
 );

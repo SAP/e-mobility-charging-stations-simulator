@@ -71,7 +71,7 @@ export class UIClient {
   public async startTransaction(
     hashId: string,
     connectorId: number,
-    idTag: string | undefined
+    idTag: string | undefined,
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
       hashIds: [hashId],
@@ -82,7 +82,7 @@ export class UIClient {
 
   public async stopTransaction(
     hashId: string,
-    transactionId: number | undefined
+    transactionId: number | undefined,
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
@@ -92,7 +92,7 @@ export class UIClient {
 
   public async startAutomaticTransactionGenerator(
     hashId: string,
-    connectorId: number
+    connectorId: number,
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR, {
       hashIds: [hashId],
@@ -102,7 +102,7 @@ export class UIClient {
 
   public async stopAutomaticTransactionGenerator(
     hashId: string,
-    connectorId: number
+    connectorId: number,
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR, {
       hashIds: [hashId],
@@ -113,7 +113,7 @@ export class UIClient {
   private openWS(): void {
     this.ws = new WebSocket(
       `ws://${config.uiServer.host}:${config.uiServer.port}`,
-      config.uiServer.protocol
+      config.uiServer.protocol,
     );
     this.ws.onmessage = this.responseHandler.bind(this);
     this.ws.onerror = (errorEvent) => {
@@ -128,7 +128,7 @@ export class UIClient {
     id: string,
     procedureName: ProcedureName,
     resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void,
-    reject: (reason?: unknown) => void
+    reject: (reason?: unknown) => void,
   ): void {
     this.responseHandlers.set(id, { procedureName, resolve, reject });
   }
@@ -143,7 +143,7 @@ export class UIClient {
 
   private async sendRequest(
     command: ProcedureName,
-    data: RequestPayload
+    data: RequestPayload,
   ): Promise<ResponsePayload> {
     let uuid: string;
     return promiseWithTimeout(
@@ -166,7 +166,7 @@ export class UIClient {
       Error(`Send request '${command}' message timeout`),
       () => {
         this.responseHandlers.delete(uuid);
-      }
+      },
     );
   }
 

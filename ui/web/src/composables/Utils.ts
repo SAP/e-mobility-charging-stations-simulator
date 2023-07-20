@@ -30,7 +30,7 @@ export const promiseWithTimeout = <T>(
   timeoutError: Error,
   timeoutCallback: () => void = () => {
     /* This is intentional */
-  }
+  },
 ): Promise<T> => {
   // Create a timeout promise that rejects in timeout milliseconds
   const timeoutPromise = new Promise<never>((_, reject) => {
