@@ -9,7 +9,9 @@ applications:
     routes:
       - route: e-mobility-charging-stations-simulator.cfapps.sap.hana.ondemand.com
     health-check-type: process
-    command: node -r source-map-support/register dist/start.js
+    # debug deployed app development build
+    # command: node -r source-map-support/register dist/start.js
+    command: node dist/start.js
     env:
       # OPTIMIZE_MEMORY: true
       NODE_OPTIONS: --stack-trace-limit=1024 --max-old-space-size=768
