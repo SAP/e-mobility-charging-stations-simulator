@@ -260,9 +260,6 @@ export class Bootstrap extends EventEmitter {
     //     2,
     //   )}`,
     // );
-    if (isNullOrUndefined(msg?.event)) {
-      return;
-    }
     try {
       switch (msg.event) {
         case ChargingStationWorkerMessageEvents.started:
