@@ -20,6 +20,8 @@ export interface SetInfo {
 
 export enum WorkerSetEvents {
   error = 'error',
+  elementStarted = 'elementStarted',
+  elementError = 'elementError',
 }
 
 export const WorkerEvents = {

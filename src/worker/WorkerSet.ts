@@ -10,6 +10,7 @@ import { WorkerConstants } from './WorkerConstants';
 import {
   type SetInfo,
   type WorkerData,
+  type WorkerMessage,
   WorkerMessageEvents,
   type WorkerOptions,
   type WorkerSetElement,
@@ -116,6 +117,13 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       'message',
       this.workerOptions.poolOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION,
     );
+    worker.on('message', (message: WorkerMessage<WorkerData>) => {
+      if (message.event === WorkerMessageEvents.startedWorkerElement) {
+        this.emitter?.emit(WorkerSetEvents.elementStarted, message.data);
+      } else if (message.event === WorkerMessageEvents.startWorkerElementError) {
+        this.emitter?.emit(WorkerSetEvents.elementError, message.data);
+      }
+    });
     worker.on(
       'error',
       this.workerOptions.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION,
