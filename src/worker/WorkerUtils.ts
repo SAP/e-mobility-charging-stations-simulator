@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
-  return new Promise((resolve) => setTimeout(resolve as () => void, milliSeconds));
+  return new Promise<NodeJS.Timeout>((resolve) => setTimeout(resolve as () => void, milliSeconds));
 };
 
 export const defaultExitHandler = (code: number): void => {

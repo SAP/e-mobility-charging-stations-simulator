@@ -295,7 +295,7 @@ export abstract class OCPPRequestService {
       const self = this;
       // Send a message through wsConnection
       return promiseWithTimeout(
-        new Promise((resolve, reject) => {
+        new Promise<ResponseType>((resolve, reject) => {
           /**
            * Function that will receive the request's response
            *

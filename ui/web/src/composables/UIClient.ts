@@ -147,7 +147,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     let uuid: string;
     return promiseWithTimeout(
-      new Promise((resolve, reject) => {
+      new Promise<ResponsePayload>((resolve, reject) => {
         uuid = crypto.randomUUID();
         const msg = JSON.stringify([uuid, command, data]);
 

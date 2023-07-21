@@ -25,7 +25,7 @@ export class AsyncLock {
       asyncLock.acquired = true;
       return;
     }
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       asyncLock.resolveQueue.enqueue(resolve);
     });
   }
@@ -37,7 +37,7 @@ export class AsyncLock {
       return;
     }
     const queuedResolve = asyncLock.resolveQueue.dequeue()!;
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       queuedResolve();
       resolve();
     });

@@ -538,7 +538,7 @@ export const waitChargingStationEvents = async (
   event: ChargingStationWorkerMessageEvents,
   eventsToWait: number,
 ): Promise<number> => {
-  return new Promise((resolve) => {
+  return new Promise<number>((resolve) => {
     let events = 0;
     if (eventsToWait === 0) {
       resolve(events);
