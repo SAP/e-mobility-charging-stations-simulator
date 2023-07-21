@@ -77,15 +77,15 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   /** @inheritDoc */
   public async stop(): Promise<void> {
     for (const workerSetElement of this.workerSet) {
+      const worker = workerSetElement.worker;
       const workerExitPromise = new Promise<void>((resolve) => {
-        workerSetElement.worker.on('exit', () => {
+        worker.on('exit', () => {
           resolve();
         });
       });
-      await workerSetElement.worker.terminate();
+      await worker.terminate();
       await workerExitPromise;
     }
-    this.workerSet.clear();
   }
 
   /** @inheritDoc */
