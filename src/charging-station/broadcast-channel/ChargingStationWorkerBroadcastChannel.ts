@@ -15,6 +15,7 @@ import {
   DataTransferStatus,
   type DiagnosticsStatusNotificationRequest,
   type DiagnosticsStatusNotificationResponse,
+  type EmptyObject,
   type FirmwareStatusNotificationRequest,
   type FirmwareStatusNotificationResponse,
   type HeartbeatRequest,
@@ -42,11 +43,11 @@ import { OCPP16ServiceUtils } from '../ocpp';
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 
 type CommandResponse =
+  | EmptyObject
   | StartTransactionResponse
   | StopTransactionResponse
   | AuthorizeResponse
   | BootNotificationResponse
-  | StatusNotificationResponse
   | HeartbeatResponse
   | DataTransferResponse;
 
