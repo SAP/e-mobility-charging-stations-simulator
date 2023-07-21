@@ -111,7 +111,7 @@
     "mnemonist": "^0.39.5",
     "moment": "^2.29.4",
     "mongodb": "^5.7.0",
-    "poolifier": "^2.6.19",
+    "poolifier": "^2.6.20",
     "source-map-support": "^0.5.21",
     "tar": "^6.1.15",
     "tslib": "^2.6.0",

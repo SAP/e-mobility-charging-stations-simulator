@@ -58,8 +58,8 @@ dependencies:
     specifier: ^5.7.0
     version: 5.7.0
   poolifier:
-    specifier: ^2.6.19
-    version: 2.6.19
+    specifier: ^2.6.20
+    version: 2.6.20
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -332,8 +332,8 @@ packages:
       chalk: 4.1.2
       lodash.debounce: 4.0.8
       loose-envify: 1.4.0
-      postcss: 8.4.26
-      postcss-import: 13.0.0(postcss@8.4.26)
+      postcss: 8.4.27
+      postcss-import: 13.0.0(postcss@8.4.27)
       stream-template: 0.0.10
       webfontloader: 1.6.28
     dev: true
@@ -1289,7 +1289,7 @@ packages:
       rollup: 3.26.3
       serialize-javascript: 6.0.1
       smob: 1.4.0
-      terser: 5.19.1
+      terser: 5.19.2
     dev: true
 
   /@rollup/plugin-typescript@11.1.2(rollup@3.26.3)(tslib@2.6.0)(typescript@5.1.6):
@@ -7649,19 +7649,19 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.19:
-    resolution: {integrity: sha512-Ql4c30svl3ZqpgFnNBhnEDCu7nEUj/vbu6k8NQIxvVae9yJuFhyEMRsFGV90sEgy69rn3BsYP7xg5arIzxg5yg==}
+  /poolifier@2.6.20:
+    resolution: {integrity: sha512-1s4Ylz09IU6o6NkYMGKmzM885VNpBzAdqPtoTZmpHkWT1Plyeh1L8VtmmS2nFWYapjSQ46H/Ypr6AeLc4mjkmg==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
 
-  /postcss-import@13.0.0(postcss@8.4.26):
+  /postcss-import@13.0.0(postcss@8.4.27):
     resolution: {integrity: sha512-LPUbm3ytpYopwQQjqgUH4S3EM/Gb9QsaSPP/5vnoi+oKVy3/mIk2sc0Paqw7RL57GpScm9MdIMUypw2znWiBpg==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       postcss: ^8.0.0
     dependencies:
-      postcss: 8.4.26
+      postcss: 8.4.27
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.2
@@ -7671,8 +7671,8 @@ packages:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
     dev: true
 
-  /postcss@8.4.26:
-    resolution: {integrity: sha512-jrXHFF8iTloAenySjM/ob3gSj7pCu0Ji49hnjqzsgSRa50hkWCKD0HQ+gMNJkW38jBI68MpAAg7ZWwHwX8NMMw==}
+  /postcss@8.4.27:
+    resolution: {integrity: sha512-gY/ACJtJPSmUFPDCHtX78+01fHa64FaU4zaaWfuh1MhGJISufJAH4cun6k/8fwsHYeK4UQmENQK+tRLCFJE8JQ==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
       nanoid: 3.3.6
@@ -9093,8 +9093,8 @@ packages:
       source-map-support: 0.5.21
     dev: true
 
-  /terser@5.19.1:
-    resolution: {integrity: sha512-27hxBUVdV6GoNg1pKQ7Z5cbR6V9txPVyBA+FQw3BaZ1Wuzvztce5p156DaP0NVZNrMZZ+6iG9Syf7WgMNKDg2Q==}
+  /terser@5.19.2:
+    resolution: {integrity: sha512-qC5+dmecKJA4cpYxRa5aVkKehYsQKc+AHeKl0Oe62aYjBL8ZA33tTljktDHJSaxxMnbI5ZYw+o/S2DxxLu8OfA==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
