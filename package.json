@@ -133,7 +133,7 @@
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/mocha": "^10.0.1",
     "@types/mochawesome": "^6.2.1",
-    "@types/node": "^20.4.2",
+    "@types/node": "^20.4.3",
     "@types/sinon": "^10.0.15",
     "@types/tar": "^6.1.5",
     "@types/ws": "^8.5.5",
