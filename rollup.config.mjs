@@ -19,7 +19,7 @@ export default {
       dir: 'dist',
       format: 'esm',
       sourcemap: !!isDevelopmentBuild,
-      plugins: [terser({ maxWorkers: cpus().length / 2 })],
+      plugins: [terser({ maxWorkers: Math.floor(cpus().length / 2) })],
     },
   ],
   external: [
