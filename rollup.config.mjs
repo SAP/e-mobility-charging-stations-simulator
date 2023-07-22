@@ -1,5 +1,5 @@
 /* eslint-disable n/no-unpublished-import */
-import { cpus } from 'node:os';
+import * as os from 'node:os';
 
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
@@ -7,6 +7,20 @@ import typescript from '@rollup/plugin-typescript';
 import { copy } from '@web/rollup-plugin-copy';
 import analyze from 'rollup-plugin-analyzer';
 import del from 'rollup-plugin-delete';
+
+const availableParallelism = () => {
+  // eslint-disable-next-line no-shadow
+  let availableParallelism = 1;
+  try {
+    availableParallelism = os.availableParallelism();
+  } catch {
+    const numberOfCpus = os.cpus();
+    if (Array.isArray(numberOfCpus) && numberOfCpus.length > 0) {
+      availableParallelism = numberOfCpus.length;
+    }
+  }
+  return availableParallelism;
+};
 
 const isDevelopmentBuild = process.env.BUILD === 'development';
 const isAnalyzeBuild = process.env.ANALYZE;
@@ -19,7 +33,7 @@ export default {
       dir: 'dist',
       format: 'esm',
       sourcemap: !!isDevelopmentBuild,
-      plugins: [terser({ maxWorkers: Math.floor(cpus().length / 2) })],
+      plugins: [terser({ maxWorkers: Math.floor(availableParallelism() / 2) })],
     },
   ],
   external: [
