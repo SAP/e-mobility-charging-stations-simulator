@@ -1684,8 +1684,9 @@ export class ChargingStation {
         if (!existsSync(dirname(this.configurationFile))) {
           mkdirSync(dirname(this.configurationFile), { recursive: true });
         }
-        let configurationData: ChargingStationConfiguration =
-          cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()!) ?? {};
+        let configurationData: ChargingStationConfiguration = this.getConfigurationFromFile()
+          ? cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()!)
+          : {};
         if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         } else {
