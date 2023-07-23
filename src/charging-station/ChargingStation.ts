@@ -689,9 +689,9 @@ export class ChargingStation {
                 // Initialize
                 this.initialize();
                 this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo)!);
-                delete this.automaticTransactionGeneratorConfiguration;
                 // Restart the ATG
                 this.stopAutomaticTransactionGenerator();
+                delete this.automaticTransactionGeneratorConfiguration;
                 if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
                   this.startAutomaticTransactionGenerator();
                 }
