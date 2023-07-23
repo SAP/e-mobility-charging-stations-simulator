@@ -35,8 +35,8 @@ export class Configuration {
     'config.json',
   );
 
-  private static configurationFileWatcher: FSWatcher | undefined;
-  private static configurationData: ConfigurationData | null = null;
+  private static configurationFileWatcher?: FSWatcher;
+  private static configurationData?: ConfigurationData;
   private static configurationSectionCache = new Map<
     ConfigurationSection,
     ConfigurationSectionType
@@ -481,7 +481,7 @@ export class Configuration {
     }
   }
 
-  private static getConfigurationData(): ConfigurationData | null {
+  private static getConfigurationData(): ConfigurationData | undefined {
     if (!Configuration.configurationData) {
       try {
         Configuration.configurationData = JSON.parse(
@@ -506,8 +506,7 @@ export class Configuration {
     try {
       return watch(Configuration.configurationFile, (event, filename): void => {
         if (filename!.trim()!.length > 0 && event === 'change') {
-          // Nullify to force configuration file reading
-          Configuration.configurationData = null;
+          delete Configuration.configurationData;
           Configuration.configurationSectionCache.clear();
           if (!isUndefined(Configuration.configurationChangeCallback)) {
             Configuration.configurationChangeCallback().catch((error) => {

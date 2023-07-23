@@ -177,6 +177,7 @@ export class ChargingStation {
   private configurationFileHash!: string;
   private connectorsConfigurationHash!: string;
   private evsesConfigurationHash!: string;
+  private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration;
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
   private configuredSupervisionUrl!: URL;
@@ -688,6 +689,7 @@ export class ChargingStation {
                 // Initialize
                 this.initialize();
                 this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo)!);
+                delete this.automaticTransactionGeneratorConfiguration;
                 // Restart the ATG
                 this.stopAutomaticTransactionGenerator();
                 if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
@@ -846,25 +848,28 @@ export class ChargingStation {
   }
 
   public getAutomaticTransactionGeneratorConfiguration(): AutomaticTransactionGeneratorConfiguration {
-    let automaticTransactionGeneratorConfiguration:
-      | AutomaticTransactionGeneratorConfiguration
-      | undefined;
-    const automaticTransactionGeneratorConfigurationFromFile =
-      this.getConfigurationFromFile()?.automaticTransactionGenerator;
-    if (
-      this.getAutomaticTransactionGeneratorPersistentConfiguration() &&
-      automaticTransactionGeneratorConfigurationFromFile
-    ) {
-      automaticTransactionGeneratorConfiguration =
-        automaticTransactionGeneratorConfigurationFromFile;
-    } else {
-      automaticTransactionGeneratorConfiguration =
-        this.getTemplateFromFile()?.AutomaticTransactionGenerator;
+    if (isNullOrUndefined(this.automaticTransactionGeneratorConfiguration)) {
+      let automaticTransactionGeneratorConfiguration:
+        | AutomaticTransactionGeneratorConfiguration
+        | undefined;
+      const automaticTransactionGeneratorConfigurationFromFile =
+        this.getConfigurationFromFile()?.automaticTransactionGenerator;
+      if (
+        this.getAutomaticTransactionGeneratorPersistentConfiguration() &&
+        automaticTransactionGeneratorConfigurationFromFile
+      ) {
+        automaticTransactionGeneratorConfiguration =
+          automaticTransactionGeneratorConfigurationFromFile;
+      } else {
+        automaticTransactionGeneratorConfiguration =
+          this.getTemplateFromFile()?.AutomaticTransactionGenerator;
+      }
+      this.automaticTransactionGeneratorConfiguration = {
+        ...Constants.DEFAULT_ATG_CONFIGURATION,
+        ...automaticTransactionGeneratorConfiguration,
+      };
     }
-    return {
-      ...Constants.DEFAULT_ATG_CONFIGURATION,
-      ...automaticTransactionGeneratorConfiguration,
-    };
+    return this.automaticTransactionGeneratorConfiguration!;
   }
 
   public getAutomaticTransactionGeneratorStatuses(): Status[] | undefined {
