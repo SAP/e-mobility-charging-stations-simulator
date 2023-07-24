@@ -1,7 +1,13 @@
 import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { inspect } from 'node:util';
 
-import { formatDuration, secondsToMilliseconds } from 'date-fns';
+import {
+  formatDuration,
+  millisecondsToHours,
+  millisecondsToMinutes,
+  millisecondsToSeconds,
+  secondsToMilliseconds,
+} from 'date-fns';
 import clone from 'just-clone';
 
 import { Constants } from './Constants';
@@ -28,9 +34,11 @@ export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
 export const formatDurationMilliSeconds = (duration: number): string => {
   duration = convertToInt(duration);
   const days = Math.floor(duration / (24 * 3600 * 1000));
-  const hours = Math.floor(duration / (3600 * 1000) - days * 24);
-  const minutes = Math.floor(duration / (60 * 1000) - days * 24 * 60 - hours * 60);
-  const seconds = Math.floor(duration / 1000 - days * 24 * 3600 - hours * 3600 - minutes * 60);
+  const hours = Math.floor(millisecondsToHours(duration) - days * 24);
+  const minutes = Math.floor(millisecondsToMinutes(duration) - days * 24 * 60 - hours * 60);
+  const seconds = Math.floor(
+    millisecondsToSeconds(duration) - days * 24 * 3600 - hours * 3600 - minutes * 60,
+  );
   return formatDuration({
     days,
     hours,
