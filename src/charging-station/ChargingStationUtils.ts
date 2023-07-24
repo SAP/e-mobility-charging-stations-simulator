@@ -4,7 +4,7 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
-import { addSeconds, isAfter } from 'date-fns';
+import { addSeconds, isAfter, isBefore } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
 import { BaseError } from '../exception';
@@ -671,34 +671,35 @@ const getLimitFromChargingProfiles = (
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}`,
       );
     }
+    if (!(chargingSchedule?.startSchedule instanceof Date)) {
+      logger.warn(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
+      );
+      chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
+    }
     // Check type (recurring) and if it is already active
-    // Adjust the daily recurring schedule to today
+    // Adjust the daily recurring schedule
     if (
       chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-      chargingProfile.recurrencyKind === RecurrencyKindType.DAILY &&
-      isAfter(currentDate, chargingSchedule.startSchedule!)
+      chargingProfile.recurrencyKind === RecurrencyKindType.DAILY
     ) {
-      if (!(chargingSchedule?.startSchedule instanceof Date)) {
-        logger.warn(
-          `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
+      if (isBefore(chargingSchedule.startSchedule, currentDate)) {
+        chargingSchedule.startSchedule.setFullYear(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate(),
         );
-        chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
-      }
-      chargingSchedule.startSchedule.setFullYear(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate(),
-      );
-      // Check if the start of the schedule is yesterday
-      if (isAfter(chargingSchedule.startSchedule, currentDate)) {
+        // Check if the start of the schedule must be set to yesterday
+      } else if (isAfter(chargingSchedule.startSchedule, currentDate)) {
         chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
       }
-    } else if (isAfter(chargingSchedule.startSchedule!, currentDate)) {
-      return null;
     }
+    // if (isAfter(chargingSchedule.startSchedule, currentDate)) {
+    //   return null;
+    // }
     // Check if the charging profile is active
     if (
-      isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
+      isAfter(addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration!), currentDate)
     ) {
       let lastButOneSchedule: ChargingSchedulePeriod | undefined;
       // Search the right schedule period
@@ -718,7 +719,7 @@ const getLimitFromChargingProfiles = (
         // Find the right schedule period
         if (
           isAfter(
-            addSeconds(chargingSchedule.startSchedule!, schedulePeriod.startPeriod),
+            addSeconds(chargingSchedule.startSchedule, schedulePeriod.startPeriod),
             currentDate,
           )
         ) {
