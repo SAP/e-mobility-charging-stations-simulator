@@ -8,9 +8,13 @@ import {
   addDays,
   addSeconds,
   addWeeks,
+  differenceInDays,
+  differenceInWeeks,
+  endOfDay,
+  endOfWeek,
   isAfter,
   isBefore,
-  isYesterday,
+  startOfDay,
   startOfWeek,
 } from 'date-fns';
 
@@ -691,13 +695,19 @@ const getLimitFromChargingProfiles = (
     if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
       switch (chargingProfile.recurrencyKind) {
         case RecurrencyKindType.DAILY:
-          if (isYesterday(chargingSchedule.startSchedule)) {
-            addDays(chargingSchedule.startSchedule, 1);
+          if (isBefore(chargingSchedule.startSchedule, startOfDay(currentDate))) {
+            addDays(
+              chargingSchedule.startSchedule,
+              differenceInDays(chargingSchedule.startSchedule, endOfDay(currentDate)),
+            );
           }
           break;
         case RecurrencyKindType.WEEKLY:
           if (isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate))) {
-            addWeeks(chargingSchedule.startSchedule, 1);
+            addWeeks(
+              chargingSchedule.startSchedule,
+              differenceInWeeks(chargingSchedule.startSchedule, endOfWeek(currentDate)),
+            );
           }
           break;
       }
