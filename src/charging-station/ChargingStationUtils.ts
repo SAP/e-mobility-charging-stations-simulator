@@ -4,7 +4,7 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
-import moment from 'moment';
+import { addSeconds, isAfter } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
 import { BaseError } from '../exception';
@@ -661,7 +661,6 @@ const getLimitFromChargingProfiles = (
   matchingChargingProfile: ChargingProfile;
 } | null => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
-  const currentMoment = moment();
   const currentDate = new Date();
   for (const chargingProfile of chargingProfiles) {
     // Set helpers
@@ -676,7 +675,7 @@ const getLimitFromChargingProfiles = (
     if (
       chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
       chargingProfile.recurrencyKind === RecurrencyKindType.DAILY &&
-      currentMoment.isAfter(chargingSchedule.startSchedule)
+      isAfter(currentDate, chargingSchedule.startSchedule!)
     ) {
       if (!(chargingSchedule?.startSchedule instanceof Date)) {
         logger.warn(
@@ -690,17 +689,15 @@ const getLimitFromChargingProfiles = (
         currentDate.getDate(),
       );
       // Check if the start of the schedule is yesterday
-      if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
+      if (isAfter(chargingSchedule.startSchedule, currentDate)) {
         chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
       }
-    } else if (moment(chargingSchedule.startSchedule).isAfter(currentMoment)) {
+    } else if (isAfter(chargingSchedule.startSchedule!, currentDate)) {
       return null;
     }
     // Check if the charging profile is active
     if (
-      moment(chargingSchedule.startSchedule)
-        .add(chargingSchedule.duration, 's')
-        .isAfter(currentMoment)
+      isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
     ) {
       let lastButOneSchedule: ChargingSchedulePeriod | undefined;
       // Search the right schedule period
@@ -719,9 +716,10 @@ const getLimitFromChargingProfiles = (
         }
         // Find the right schedule period
         if (
-          moment(chargingSchedule.startSchedule)
-            .add(schedulePeriod.startPeriod, 's')
-            .isAfter(currentMoment)
+          isAfter(
+            addSeconds(chargingSchedule.startSchedule!, schedulePeriod.startPeriod),
+            currentDate,
+          )
         ) {
           // Found the schedule: last but one is the correct one
           const result = {

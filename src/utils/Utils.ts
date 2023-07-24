@@ -1,6 +1,7 @@
 import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { inspect } from 'node:util';
 
+import { formatDuration, secondsToMilliseconds } from 'date-fns';
 import clone from 'just-clone';
 
 import { Constants } from './Constants';
@@ -26,27 +27,20 @@ export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
 
 export const formatDurationMilliSeconds = (duration: number): string => {
   duration = convertToInt(duration);
-  const hours = Math.floor(duration / (3600 * 1000));
-  const minutes = Math.floor((duration / 1000 - hours * 3600) / 60);
-  const seconds = duration / 1000 - hours * 3600 - minutes * 60;
-  let hoursStr = hours.toString();
-  let minutesStr = minutes.toString();
-  let secondsStr = seconds.toString();
-
-  if (hours < 10) {
-    hoursStr = `0${hours.toString()}`;
-  }
-  if (minutes < 10) {
-    minutesStr = `0${minutes.toString()}`;
-  }
-  if (seconds < 10) {
-    secondsStr = `0${seconds.toString()}`;
-  }
-  return `${hoursStr}:${minutesStr}:${secondsStr.substring(0, 6)}`;
+  const days = Math.floor(duration / (24 * 3600 * 1000));
+  const hours = Math.floor(duration / (3600 * 1000) - days * 24);
+  const minutes = Math.floor(duration / (60 * 1000) - days * 24 * 60 - hours * 60);
+  const seconds = Math.floor(duration / 1000 - days * 24 * 3600 - hours * 3600 - minutes * 60);
+  return formatDuration({
+    days,
+    hours,
+    minutes,
+    seconds,
+  });
 };
 
 export const formatDurationSeconds = (duration: number): string => {
-  return formatDurationMilliSeconds(duration * 1000);
+  return formatDurationMilliSeconds(secondsToMilliseconds(duration));
 };
 
 export const convertToDate = (

@@ -36,6 +36,9 @@ dependencies:
   chalk:
     specifier: ^5.3.0
     version: 5.3.0
+  date-fns:
+    specifier: ^2.30.0
+    version: 2.30.0
   http-status-codes:
     specifier: ^2.2.0
     version: 2.2.0
@@ -51,9 +54,6 @@ dependencies:
   mnemonist:
     specifier: ^0.39.5
     version: 0.39.5
-  moment:
-    specifier: ^2.29.4
-    version: 2.29.4
   mongodb:
     specifier: ^5.7.0
     version: 5.7.0
@@ -289,6 +289,13 @@ packages:
       chalk: 2.4.2
       js-tokens: 4.0.0
     dev: true
+
+  /@babel/runtime@7.22.6:
+    resolution: {integrity: sha512-wDb5pWm4WDdF6LFUde3Jl8WzPA+3ZbxYqkC6xAXuD3irdEHN1k0NfTRrJD8ZD378SJ61miMLCqIOXYhd8x+AJQ==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: 0.13.11
+    dev: false
 
   /@bcoe/v8-coverage@0.2.3:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
@@ -3347,6 +3354,13 @@ packages:
     resolution: {integrity: sha512-a9l6T1qqDogvvnw0nKlfZzqsyikEBZBClF39V3TFoKhDtGBqHu2HkuomJc02j5zft8zrUaXEuoicLeW54RkzPg==}
     engines: {node: '>= 14'}
     dev: true
+
+  /date-fns@2.30.0:
+    resolution: {integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw==}
+    engines: {node: '>=0.11'}
+    dependencies:
+      '@babel/runtime': 7.22.6
+    dev: false
 
   /dateformat@4.6.3:
     resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
@@ -8041,6 +8055,10 @@ packages:
 
   /reflect-metadata@0.1.13:
     resolution: {integrity: sha512-Ts1Y/anZELhSsjMcU605fU9RE4Oi3p5ORujwbIKXfWa+0Zxs510Qrmrce5/Jowq3cHSZSJqBjypxmHarc+vEWg==}
+
+  /regenerator-runtime@0.13.11:
+    resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
+    dev: false
 
   /regexp.prototype.flags@1.5.0:
     resolution: {integrity: sha512-0SutC3pNudRKgquxGoRGIz946MZVHqbNfPjBdxeOhBrdgDKlRoXmYLQN9xRbrR09ZXWeGAdPuif7egofn6v5LA==}
