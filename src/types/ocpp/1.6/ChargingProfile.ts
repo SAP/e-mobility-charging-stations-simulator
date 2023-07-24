@@ -46,5 +46,4 @@ export enum OCPP16ChargingProfilePurposeType {
 export enum OCPP16RecurrencyKindType {
   DAILY = 'Daily',
   WEEKLY = 'Weekly',
-  MONTHLY = 'Monthly',
 }

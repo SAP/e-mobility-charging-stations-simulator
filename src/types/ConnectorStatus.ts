@@ -16,6 +16,7 @@ export interface ConnectorStatus {
   idTagLocalAuthorized?: boolean;
   transactionRemoteStarted?: boolean;
   transactionStarted?: boolean;
+  transactionStart?: Date;
   transactionId?: number;
   transactionSetInterval?: NodeJS.Timeout;
   transactionIdTag?: string;

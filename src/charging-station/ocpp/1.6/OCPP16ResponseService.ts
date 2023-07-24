@@ -619,6 +619,8 @@ export class OCPP16ResponseService extends OCPPResponseService {
 
     if (payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
       chargingStation.getConnectorStatus(transactionConnectorId)!.transactionStarted = true;
+      chargingStation.getConnectorStatus(transactionConnectorId)!.transactionStart =
+        requestPayload.timestamp;
       chargingStation.getConnectorStatus(transactionConnectorId)!.transactionId =
         payload.transactionId;
       chargingStation.getConnectorStatus(transactionConnectorId)!.transactionIdTag =

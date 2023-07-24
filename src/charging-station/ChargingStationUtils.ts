@@ -4,7 +4,19 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
-import { addSeconds, isAfter } from 'date-fns';
+import {
+  addDays,
+  addSeconds,
+  addWeeks,
+  differenceInDays,
+  differenceInWeeks,
+  endOfDay,
+  endOfWeek,
+  isAfter,
+  isBefore,
+  startOfDay,
+  startOfWeek,
+} from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
 import { BaseError } from '../exception';
@@ -290,9 +302,10 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => 
   connectorStatus.idTagAuthorized = false;
   connectorStatus.transactionRemoteStarted = false;
   connectorStatus.transactionStarted = false;
+  delete connectorStatus?.transactionStart;
+  delete connectorStatus?.transactionId;
   delete connectorStatus?.localAuthorizeIdTag;
   delete connectorStatus?.authorizeIdTag;
-  delete connectorStatus?.transactionId;
   delete connectorStatus?.transactionIdTag;
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
   delete connectorStatus?.transactionBeginMeterValue;
@@ -469,7 +482,12 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
     );
   }
   if (isNotEmptyArray(chargingProfiles)) {
-    const result = getLimitFromChargingProfiles(chargingProfiles, chargingStation.logPrefix());
+    const result = getLimitFromChargingProfiles(
+      chargingStation,
+      connectorId,
+      chargingProfiles,
+      chargingStation.logPrefix(),
+    );
     if (!isNullOrUndefined(result)) {
       limit = result?.limit;
       matchingChargingProfile = result?.matchingChargingProfile;
@@ -655,12 +673,16 @@ const convertDeprecatedTemplateKey = (
  * @returns
  */
 const getLimitFromChargingProfiles = (
+  chargingStation: ChargingStation,
+  connectorId: number,
   chargingProfiles: ChargingProfile[],
   logPrefix: string,
-): {
-  limit: number;
-  matchingChargingProfile: ChargingProfile;
-} | null => {
+):
+  | {
+      limit: number;
+      matchingChargingProfile: ChargingProfile;
+    }
+  | undefined => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
   for (const chargingProfile of chargingProfiles) {
@@ -668,37 +690,66 @@ const getLimitFromChargingProfiles = (
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (!chargingSchedule?.startSchedule) {
       logger.warn(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}`,
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}. Trying to set it to the connector transaction start date`,
       );
+      // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
+      chargingSchedule.startSchedule =
+        chargingStation.getConnectorStatus(connectorId)?.transactionStart;
     }
-    // Check type (recurring) and if it is already active
-    // Adjust the daily recurring schedule to today
-    if (
-      chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-      chargingProfile.recurrencyKind === RecurrencyKindType.DAILY &&
-      isAfter(currentDate, chargingSchedule.startSchedule!)
-    ) {
-      if (!(chargingSchedule?.startSchedule instanceof Date)) {
-        logger.warn(
-          `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
-        );
-        chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
-      }
-      chargingSchedule.startSchedule.setFullYear(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate(),
+    if (!(chargingSchedule?.startSchedule instanceof Date)) {
+      logger.warn(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
       );
-      // Check if the start of the schedule is yesterday
-      if (isAfter(chargingSchedule.startSchedule, currentDate)) {
-        chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
+      chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
+    }
+    // Adjust recurring start schedule
+    if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
+      switch (chargingProfile.recurrencyKind) {
+        case RecurrencyKindType.DAILY:
+          if (isBefore(chargingSchedule.startSchedule, startOfDay(currentDate))) {
+            addDays(
+              chargingSchedule.startSchedule,
+              differenceInDays(chargingSchedule.startSchedule, endOfDay(currentDate)),
+            );
+            if (
+              isBefore(chargingSchedule.startSchedule, startOfDay(currentDate)) ||
+              isAfter(chargingSchedule.startSchedule, endOfDay(currentDate))
+            ) {
+              logger.error(
+                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+                  chargingProfile.recurrencyKind
+                } charging profile id ${
+                  chargingProfile.chargingProfileId
+                } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current day`,
+              );
+            }
+          }
+          break;
+        case RecurrencyKindType.WEEKLY:
+          if (isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate))) {
+            addWeeks(
+              chargingSchedule.startSchedule,
+              differenceInWeeks(chargingSchedule.startSchedule, endOfWeek(currentDate)),
+            );
+            if (
+              isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate)) ||
+              isAfter(chargingSchedule.startSchedule, endOfWeek(currentDate))
+            ) {
+              logger.error(
+                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+                  chargingProfile.recurrencyKind
+                } charging profile id ${
+                  chargingProfile.chargingProfileId
+                } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current week`,
+              );
+            }
+          }
+          break;
       }
-    } else if (isAfter(chargingSchedule.startSchedule!, currentDate)) {
-      return null;
     }
     // Check if the charging profile is active
     if (
-      isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
+      isAfter(addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration!), currentDate)
     ) {
       let lastButOneSchedule: ChargingSchedulePeriod | undefined;
       // Search the right schedule period
@@ -718,7 +769,7 @@ const getLimitFromChargingProfiles = (
         // Find the right schedule period
         if (
           isAfter(
-            addSeconds(chargingSchedule.startSchedule!, schedulePeriod.startPeriod),
+            addSeconds(chargingSchedule.startSchedule, schedulePeriod.startPeriod),
             currentDate,
           )
         ) {
@@ -749,7 +800,6 @@ const getLimitFromChargingProfiles = (
       }
     }
   }
-  return null;
 };
 
 const getRandomSerialNumberSuffix = (params?: {
