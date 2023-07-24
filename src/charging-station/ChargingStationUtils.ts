@@ -8,14 +8,10 @@ import {
   addDays,
   addSeconds,
   addWeeks,
-  endOfWeek,
   isAfter,
   isBefore,
-  isTomorrow,
   isYesterday,
   startOfWeek,
-  subDays,
-  subWeeks,
 } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
@@ -691,21 +687,17 @@ const getLimitFromChargingProfiles = (
       );
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
     }
-    // Adjust recurring schedule
+    // Adjust recurring start schedule
     if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
       switch (chargingProfile.recurrencyKind) {
         case RecurrencyKindType.DAILY:
           if (isYesterday(chargingSchedule.startSchedule)) {
             addDays(chargingSchedule.startSchedule, 1);
-          } else if (isTomorrow(chargingSchedule.startSchedule)) {
-            subDays(chargingSchedule.startSchedule, 1);
           }
           break;
         case RecurrencyKindType.WEEKLY:
           if (isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate))) {
             addWeeks(chargingSchedule.startSchedule, 1);
-          } else if (isAfter(chargingSchedule.startSchedule, endOfWeek(currentDate))) {
-            subWeeks(chargingSchedule.startSchedule, 1);
           }
           break;
       }
