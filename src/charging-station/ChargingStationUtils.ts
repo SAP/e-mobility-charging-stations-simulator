@@ -657,10 +657,12 @@ const convertDeprecatedTemplateKey = (
 const getLimitFromChargingProfiles = (
   chargingProfiles: ChargingProfile[],
   logPrefix: string,
-): {
-  limit: number;
-  matchingChargingProfile: ChargingProfile;
-} | null => {
+):
+  | {
+      limit: number;
+      matchingChargingProfile: ChargingProfile;
+    }
+  | undefined => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
   for (const chargingProfile of chargingProfiles) {
@@ -677,7 +679,6 @@ const getLimitFromChargingProfiles = (
       );
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
     }
-    // Check type (recurring) and if it is already active
     // Adjust the daily recurring schedule to today
     if (
       chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
@@ -746,7 +747,6 @@ const getLimitFromChargingProfiles = (
       }
     }
   }
-  return null;
 };
 
 const getRandomSerialNumberSuffix = (params?: {
