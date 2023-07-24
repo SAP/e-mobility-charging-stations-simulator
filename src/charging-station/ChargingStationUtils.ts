@@ -689,7 +689,7 @@ const getLimitFromChargingProfiles = (
     // Set helpers
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (!chargingSchedule?.startSchedule) {
-      logger.warn(
+      logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}. Trying to set it to the connector transaction start date`,
       );
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
