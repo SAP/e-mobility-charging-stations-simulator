@@ -5,6 +5,7 @@ import type { JSONSchemaType } from 'ajv';
 import { type ChargingStation, getIdTagsFile } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
+  type ClearChargingProfileRequest,
   type ConnectorStatus,
   CurrentType,
   ErrorType,
@@ -831,6 +832,49 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp);
   }
+
+  public static clearChargingProfiles = (
+    chargingStation: ChargingStation,
+    commandPayload: ClearChargingProfileRequest,
+    chargingProfiles: OCPP16ChargingProfile[] | undefined,
+  ): boolean => {
+    let clearedCP = false;
+    if (isNotEmptyArray(chargingProfiles)) {
+      chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
+        let clearCurrentCP = false;
+        if (chargingProfile.chargingProfileId === commandPayload.id) {
+          clearCurrentCP = true;
+        }
+        if (
+          !commandPayload.chargingProfilePurpose &&
+          chargingProfile.stackLevel === commandPayload.stackLevel
+        ) {
+          clearCurrentCP = true;
+        }
+        if (
+          !chargingProfile.stackLevel &&
+          chargingProfile.chargingProfilePurpose === commandPayload.chargingProfilePurpose
+        ) {
+          clearCurrentCP = true;
+        }
+        if (
+          chargingProfile.stackLevel === commandPayload.stackLevel &&
+          chargingProfile.chargingProfilePurpose === commandPayload.chargingProfilePurpose
+        ) {
+          clearCurrentCP = true;
+        }
+        if (clearCurrentCP) {
+          chargingProfiles.splice(index, 1);
+          logger.debug(
+            `${chargingStation.logPrefix()} Matching charging profile(s) cleared: %j`,
+            chargingProfile,
+          );
+          clearedCP = true;
+        }
+      });
+    }
+    return clearedCP;
+  };
 
   public static parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,

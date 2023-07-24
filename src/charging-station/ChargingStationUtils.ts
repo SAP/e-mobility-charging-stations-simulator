@@ -746,10 +746,13 @@ const getLimitFromChargingProfiles = (
           }
           break;
       }
+    } else if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RELATIVE) {
+      chargingSchedule.startSchedule =
+        chargingStation.getConnectorStatus(connectorId)?.transactionStart;
     }
     // Check if the charging profile is active
     if (
-      isAfter(addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration!), currentDate)
+      isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
     ) {
       let lastButOneSchedule: ChargingSchedulePeriod | undefined;
       // Search the right schedule period
@@ -769,7 +772,7 @@ const getLimitFromChargingProfiles = (
         // Find the right schedule period
         if (
           isAfter(
-            addSeconds(chargingSchedule.startSchedule, schedulePeriod.startPeriod),
+            addSeconds(chargingSchedule.startSchedule!, schedulePeriod.startPeriod),
             currentDate,
           )
         ) {
