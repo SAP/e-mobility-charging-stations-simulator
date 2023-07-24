@@ -665,24 +665,24 @@ const convertDeprecatedTemplateKey = (
   }
 };
 
+interface ChargingProfilesLimit {
+  limit: number;
+  matchingChargingProfile: ChargingProfile;
+}
+
 /**
  * Charging profiles should already be sorted by connector id and stack level (highest stack level has priority)
  *
  * @param chargingProfiles -
  * @param logPrefix -
- * @returns
+ * @returns ChargingProfilesLimit
  */
 const getLimitFromChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number,
   chargingProfiles: ChargingProfile[],
   logPrefix: string,
-):
-  | {
-      limit: number;
-      matchingChargingProfile: ChargingProfile;
-    }
-  | undefined => {
+): ChargingProfilesLimit | undefined => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
   for (const chargingProfile of chargingProfiles) {
