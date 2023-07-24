@@ -700,6 +700,16 @@ const getLimitFromChargingProfiles = (
               chargingSchedule.startSchedule,
               differenceInDays(chargingSchedule.startSchedule, endOfDay(currentDate)),
             );
+            if (
+              isBefore(chargingSchedule.startSchedule, startOfDay(currentDate)) ||
+              isAfter(chargingSchedule.startSchedule, endOfDay(currentDate))
+            ) {
+              logger.error(
+                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring charging profile id ${
+                  chargingProfile.chargingProfileId
+                } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current day`,
+              );
+            }
           }
           break;
         case RecurrencyKindType.WEEKLY:
@@ -708,6 +718,16 @@ const getLimitFromChargingProfiles = (
               chargingSchedule.startSchedule,
               differenceInWeeks(chargingSchedule.startSchedule, endOfWeek(currentDate)),
             );
+            if (
+              isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate)) ||
+              isAfter(chargingSchedule.startSchedule, endOfWeek(currentDate))
+            ) {
+              logger.error(
+                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring charging profile id ${
+                  chargingProfile.chargingProfileId
+                } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current week`,
+              );
+            }
           }
           break;
       }
