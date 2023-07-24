@@ -716,7 +716,9 @@ const getLimitFromChargingProfiles = (
               isAfter(chargingSchedule.startSchedule, endOfDay(currentDate))
             ) {
               logger.error(
-                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring charging profile id ${
+                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+                  chargingProfile.recurrencyKind
+                } charging profile id ${
                   chargingProfile.chargingProfileId
                 } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current day`,
               );
@@ -734,7 +736,9 @@ const getLimitFromChargingProfiles = (
               isAfter(chargingSchedule.startSchedule, endOfWeek(currentDate))
             ) {
               logger.error(
-                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring charging profile id ${
+                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+                  chargingProfile.recurrencyKind
+                } charging profile id ${
                   chargingProfile.chargingProfileId
                 } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current week`,
               );
