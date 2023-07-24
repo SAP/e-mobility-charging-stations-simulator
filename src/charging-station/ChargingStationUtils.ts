@@ -302,9 +302,10 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => 
   connectorStatus.idTagAuthorized = false;
   connectorStatus.transactionRemoteStarted = false;
   connectorStatus.transactionStarted = false;
+  delete connectorStatus?.transactionStart;
+  delete connectorStatus?.transactionId;
   delete connectorStatus?.localAuthorizeIdTag;
   delete connectorStatus?.authorizeIdTag;
-  delete connectorStatus?.transactionId;
   delete connectorStatus?.transactionIdTag;
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
   delete connectorStatus?.transactionBeginMeterValue;
@@ -481,7 +482,12 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
     );
   }
   if (isNotEmptyArray(chargingProfiles)) {
-    const result = getLimitFromChargingProfiles(chargingProfiles, chargingStation.logPrefix());
+    const result = getLimitFromChargingProfiles(
+      chargingStation,
+      connectorId,
+      chargingProfiles,
+      chargingStation.logPrefix(),
+    );
     if (!isNullOrUndefined(result)) {
       limit = result?.limit;
       matchingChargingProfile = result?.matchingChargingProfile;
@@ -667,6 +673,8 @@ const convertDeprecatedTemplateKey = (
  * @returns
  */
 const getLimitFromChargingProfiles = (
+  chargingStation: ChargingStation,
+  connectorId: number,
   chargingProfiles: ChargingProfile[],
   logPrefix: string,
 ):
@@ -682,8 +690,11 @@ const getLimitFromChargingProfiles = (
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (!chargingSchedule?.startSchedule) {
       logger.warn(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}`,
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}. Trying to set it to the connector transaction start date`,
       );
+      // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
+      chargingSchedule.startSchedule =
+        chargingStation.getConnectorStatus(connectorId)?.transactionStart;
     }
     if (!(chargingSchedule?.startSchedule instanceof Date)) {
       logger.warn(
