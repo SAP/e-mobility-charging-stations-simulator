@@ -1031,11 +1031,11 @@ export class ChargingStation {
     );
     if (interval > 0) {
       this.reservationExpirationSetInterval = setInterval((): void => {
-        const now = new Date();
+        const dateNow = new Date();
         if (this.hasEvses) {
           for (const evseStatus of this.evses.values()) {
             for (const connectorStatus of evseStatus.connectors.values()) {
-              if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < now) {
+              if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < dateNow) {
                 this.removeReservation(
                   connectorStatus.reservation,
                   ReservationTerminationReason.EXPIRED,
@@ -1045,7 +1045,7 @@ export class ChargingStation {
           }
         } else {
           for (const connectorStatus of this.connectors.values()) {
-            if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < now) {
+            if (connectorStatus.reservation && connectorStatus.reservation.expiryDate < dateNow) {
               this.removeReservation(
                 connectorStatus.reservation,
                 ReservationTerminationReason.EXPIRED,

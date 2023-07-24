@@ -36,6 +36,7 @@ import {
   Constants,
   DCElectricUtils,
   cloneObject,
+  convertToDate,
   convertToInt,
   isEmptyObject,
   isEmptyString,
@@ -681,7 +682,7 @@ const getLimitFromChargingProfiles = (
         logger.warn(
           `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
         );
-        chargingSchedule.startSchedule = new Date(chargingSchedule.startSchedule!);
+        chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
       }
       chargingSchedule.startSchedule.setFullYear(
         currentDate.getFullYear(),
