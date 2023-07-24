@@ -4,7 +4,23 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
-import { addSeconds, isAfter, isTomorrow, isYesterday } from 'date-fns';
+import {
+  addDays,
+  addMonths,
+  addSeconds,
+  addWeeks,
+  endOfMonth,
+  endOfWeek,
+  isAfter,
+  isBefore,
+  isTomorrow,
+  isYesterday,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+  subMonths,
+  subWeeks,
+} from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
 import { BaseError } from '../exception';
@@ -679,19 +695,30 @@ const getLimitFromChargingProfiles = (
       );
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
     }
-    // Adjust the daily recurring schedule to today
-    if (
-      chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-      chargingProfile.recurrencyKind === RecurrencyKindType.DAILY
-    ) {
-      if (isYesterday(chargingSchedule.startSchedule)) {
-        chargingSchedule.startSchedule.setFullYear(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          currentDate.getDate(),
-        );
-      } else if (isTomorrow(chargingSchedule.startSchedule)) {
-        chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
+    // Adjust recurring schedule
+    if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
+      switch (chargingProfile.recurrencyKind) {
+        case RecurrencyKindType.DAILY:
+          if (isYesterday(chargingSchedule.startSchedule)) {
+            addDays(chargingSchedule.startSchedule, 1);
+          } else if (isTomorrow(chargingSchedule.startSchedule)) {
+            subDays(chargingSchedule.startSchedule, 1);
+          }
+          break;
+        case RecurrencyKindType.WEEKLY:
+          if (isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate))) {
+            addWeeks(chargingSchedule.startSchedule, 1);
+          } else if (isAfter(chargingSchedule.startSchedule, endOfWeek(currentDate))) {
+            subWeeks(chargingSchedule.startSchedule, 1);
+          }
+          break;
+        case RecurrencyKindType.MONTHLY:
+          if (isBefore(chargingSchedule.startSchedule, startOfMonth(currentDate))) {
+            addMonths(chargingSchedule.startSchedule, 1);
+          } else if (isAfter(chargingSchedule.startSchedule, endOfMonth(currentDate))) {
+            subMonths(chargingSchedule.startSchedule, 1);
+          }
+          break;
       }
     }
     // Check if the charging profile is active
