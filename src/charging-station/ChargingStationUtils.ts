@@ -6,19 +6,15 @@ import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import {
   addDays,
-  addMonths,
   addSeconds,
   addWeeks,
-  endOfMonth,
   endOfWeek,
   isAfter,
   isBefore,
   isTomorrow,
   isYesterday,
-  startOfMonth,
   startOfWeek,
   subDays,
-  subMonths,
   subWeeks,
 } from 'date-fns';
 
@@ -710,13 +706,6 @@ const getLimitFromChargingProfiles = (
             addWeeks(chargingSchedule.startSchedule, 1);
           } else if (isAfter(chargingSchedule.startSchedule, endOfWeek(currentDate))) {
             subWeeks(chargingSchedule.startSchedule, 1);
-          }
-          break;
-        case RecurrencyKindType.MONTHLY:
-          if (isBefore(chargingSchedule.startSchedule, startOfMonth(currentDate))) {
-            addMonths(chargingSchedule.startSchedule, 1);
-          } else if (isAfter(chargingSchedule.startSchedule, endOfMonth(currentDate))) {
-            subMonths(chargingSchedule.startSchedule, 1);
           }
           break;
       }
