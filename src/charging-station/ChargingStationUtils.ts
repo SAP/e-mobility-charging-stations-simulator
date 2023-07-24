@@ -4,7 +4,7 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
-import { addSeconds, isAfter, isBefore } from 'date-fns';
+import { addSeconds, isAfter, isTomorrow, isYesterday } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
 import { BaseError } from '../exception';
@@ -678,25 +678,21 @@ const getLimitFromChargingProfiles = (
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
     }
     // Check type (recurring) and if it is already active
-    // Adjust the daily recurring schedule
+    // Adjust the daily recurring schedule to today
     if (
       chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
       chargingProfile.recurrencyKind === RecurrencyKindType.DAILY
     ) {
-      if (isBefore(chargingSchedule.startSchedule, currentDate)) {
+      if (isYesterday(chargingSchedule.startSchedule)) {
         chargingSchedule.startSchedule.setFullYear(
           currentDate.getFullYear(),
           currentDate.getMonth(),
           currentDate.getDate(),
         );
-        // Check if the start of the schedule must be set to yesterday
-      } else if (isAfter(chargingSchedule.startSchedule, currentDate)) {
+      } else if (isTomorrow(chargingSchedule.startSchedule)) {
         chargingSchedule.startSchedule.setDate(currentDate.getDate() - 1);
       }
     }
-    // if (isAfter(chargingSchedule.startSchedule, currentDate)) {
-    //   return null;
-    // }
     // Check if the charging profile is active
     if (
       isAfter(addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration!), currentDate)
