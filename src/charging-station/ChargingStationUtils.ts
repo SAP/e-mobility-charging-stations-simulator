@@ -672,8 +672,10 @@ interface ChargingProfilesLimit {
 }
 
 /**
- * Charging profiles should already be sorted by connector id and stack level (highest stack level has priority)
+ * Charging profiles shall already be sorted by connector id and stack level (highest stack level has priority)
  *
+ * @param chargingStation -
+ * @param connectorId -
  * @param chargingProfiles -
  * @param logPrefix -
  * @returns ChargingProfilesLimit
