@@ -114,7 +114,7 @@
     "poolifier": "^2.6.20",
     "source-map-support": "^0.5.21",
     "tar": "^6.1.15",
-    "tslib": "^2.6.0",
+    "tslib": "^2.6.1",
     "winston": "^3.10.0",
     "winston-daily-rotate-file": "^4.7.1",
     "ws": "^8.13.0"
