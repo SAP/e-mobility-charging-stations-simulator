@@ -474,7 +474,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles!,
     )?.sort((a, b) => b.stackLevel - a.stackLevel) ?? [];
   // Get charging profiles on connector 0 and sort by stack level
-  if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
+  if (isNotEmptyArray(chargingStation.getConnectorStatus(0)?.chargingProfiles)) {
     chargingProfiles.push(
       ...cloneObject<ChargingProfile[]>(
         chargingStation.getConnectorStatus(0)!.chargingProfiles!,
@@ -738,6 +738,7 @@ const getLimitFromChargingProfiles = (
       isValidDate(chargingSchedule.startSchedule) &&
       isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
     ) {
+      chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
       if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
         // Handling of only one schedule period
         if (
@@ -873,10 +874,10 @@ const checkRecurringChargingProfileDuration = (
         chargingProfile.chargingProfileKind
       } charging profile id ${chargingProfile.chargingProfileId} duration ${
         chargingProfile.chargingSchedule.duration
-      } is greater than the recurrency time interval ${differenceInSeconds(
+      } is greater than the recurrency time interval duration ${differenceInSeconds(
         interval.end,
         interval.start,
-      )} duration`,
+      )}`,
     );
   }
 };
