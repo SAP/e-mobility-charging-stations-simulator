@@ -705,14 +705,14 @@ const getLimitFromChargingProfiles = (
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (connectorStatus?.transactionStarted && !chargingSchedule?.startSchedule) {
       logger.debug(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}. Trying to set it to the connector transaction start date`,
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`,
       );
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
       chargingSchedule.startSchedule = connectorStatus?.transactionStart;
     }
     if (!(chargingSchedule?.startSchedule instanceof Date)) {
       logger.warn(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date object. Trying to convert it to a Date object`,
       );
       chargingSchedule.startSchedule = convertToDate(chargingSchedule?.startSchedule)!;
     }
@@ -732,6 +732,12 @@ const getLimitFromChargingProfiles = (
       connectorStatus?.transactionStarted
     ) {
       chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+    }
+    if (isNullOrUndefined(chargingSchedule?.startSchedule)) {
+      logger.error(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has (still) no startSchedule defined`,
+      );
+      continue;
     }
     if (isNullOrUndefined(chargingSchedule?.duration)) {
       logger.error(
@@ -826,7 +832,7 @@ const getLimitFromChargingProfiles = (
 };
 
 /**
- *  Adjust recurring charging profile startSchedule to the current recurrency time interval if needed
+ * Adjust recurring charging profile startSchedule to the current recurrency time interval if needed
  *
  * @param chargingProfile -
  * @param currentDate -
@@ -836,8 +842,9 @@ const prepareRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
   logPrefix: string,
-) => {
+): boolean => {
   const chargingSchedule = chargingProfile.chargingSchedule;
+  let recurringIntervalTranslated = false;
   let recurringInterval: Interval;
   switch (chargingProfile.recurrencyKind) {
     case RecurrencyKindType.DAILY:
@@ -858,6 +865,7 @@ const prepareRecurringChargingProfile = (
           start: chargingSchedule.startSchedule,
           end: addDays(chargingSchedule.startSchedule, 1),
         };
+        recurringIntervalTranslated = true;
       }
       break;
     case RecurrencyKindType.WEEKLY:
@@ -878,10 +886,15 @@ const prepareRecurringChargingProfile = (
           start: chargingSchedule.startSchedule,
           end: addWeeks(chargingSchedule.startSchedule, 1),
         };
+        recurringIntervalTranslated = true;
       }
       break;
+    default:
+      logger.error(
+        `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} recurrency kind ${chargingProfile.recurrencyKind} is not supported`,
+      );
   }
-  if (!isWithinInterval(currentDate, recurringInterval!)) {
+  if (recurringIntervalTranslated && !isWithinInterval(currentDate, recurringInterval!)) {
     logger.error(
       `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${
         chargingProfile.recurrencyKind
@@ -889,16 +902,17 @@ const prepareRecurringChargingProfile = (
         recurringInterval!.start,
       ).toISOString()}, ${toDate(
         recurringInterval!.end,
-      ).toISOString()}] is not properly translated to current date ${currentDate.toISOString()} `,
+      ).toISOString()}] has not been properly translated to current date ${currentDate.toISOString()} `,
     );
   }
+  return recurringIntervalTranslated;
 };
 
 const checkRecurringChargingProfileDuration = (
   chargingProfile: ChargingProfile,
   interval: Interval,
   logPrefix: string,
-) => {
+): void => {
   if (isNullOrUndefined(chargingProfile.chargingSchedule.duration)) {
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
