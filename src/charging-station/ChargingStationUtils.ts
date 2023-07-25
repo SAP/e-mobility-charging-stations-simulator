@@ -49,6 +49,7 @@ import {
   cloneObject,
   convertToDate,
   convertToInt,
+  isArraySorted,
   isEmptyObject,
   isEmptyString,
   isNotEmptyArray,
@@ -739,7 +740,21 @@ const getLimitFromChargingProfiles = (
       })
     ) {
       if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
-        chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
+        const chargingSchedulePeriodCompareFn = (
+          a: ChargingSchedulePeriod,
+          b: ChargingSchedulePeriod,
+        ) => a.startPeriod - b.startPeriod;
+        if (
+          isArraySorted<ChargingSchedulePeriod>(
+            chargingSchedule.chargingSchedulePeriod,
+            chargingSchedulePeriodCompareFn,
+          ) === false
+        ) {
+          logger.warn(
+            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} schedule periods are not sorted by start period`,
+          );
+          chargingSchedule.chargingSchedulePeriod.sort(chargingSchedulePeriodCompareFn);
+        }
         // Check if the first schedule period start period is equal to 0
         if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
           logger.error(

@@ -39,6 +39,7 @@ export {
   getRandomFloatRounded,
   getRandomInteger,
   getWebSocketCloseEventStatusString,
+  isArraySorted,
   isEmptyArray,
   isEmptyObject,
   isEmptyString,

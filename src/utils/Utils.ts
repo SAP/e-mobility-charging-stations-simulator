@@ -354,3 +354,12 @@ export const getWebSocketCloseEventStatusString = (code: number): string => {
   }
   return '(Unknown)';
 };
+
+export const isArraySorted = <T>(elements: T[], compareFn: (a: T, b: T) => number): boolean => {
+  for (let i = 0; i < elements.length - 1; ++i) {
+    if (compareFn(elements[i], elements[i + 1]) > 0) {
+      return false;
+    }
+  }
+  return true;
+};
