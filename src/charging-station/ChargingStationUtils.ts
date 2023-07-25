@@ -826,7 +826,7 @@ const getLimitFromChargingProfiles = (
 };
 
 /**
- *  Adjust recurring charging profile startSchedule to the current recurrency time interval if needed
+ * Adjust recurring charging profile startSchedule to the current recurrency time interval if needed
  *
  * @param chargingProfile -
  * @param currentDate -
