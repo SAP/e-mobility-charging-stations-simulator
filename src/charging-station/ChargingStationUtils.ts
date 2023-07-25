@@ -829,7 +829,7 @@ const prepareRecurringChargingProfile = (
       ) {
         chargingSchedule.startSchedule = addDays(
           chargingSchedule.startSchedule!,
-          differenceInDays(recurringInterval.end, chargingSchedule.startSchedule!),
+          differenceInDays(currentDate, recurringInterval.start),
         );
         recurringInterval = {
           start: chargingSchedule.startSchedule,
@@ -849,7 +849,7 @@ const prepareRecurringChargingProfile = (
       ) {
         chargingSchedule.startSchedule = addWeeks(
           chargingSchedule.startSchedule!,
-          differenceInWeeks(recurringInterval.end, chargingSchedule.startSchedule!),
+          differenceInWeeks(currentDate, recurringInterval.start),
         );
         recurringInterval = {
           start: chargingSchedule.startSchedule,
