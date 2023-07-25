@@ -514,7 +514,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
         chargingStation.getMaximumPower() / chargingStation.powerDivider;
       if (limit! > connectorMaximumPower) {
         logger.error(
-          `${chargingStation.logPrefix()} Charging profile id ${matchingChargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
+          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${matchingChargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
           result,
         );
         limit = connectorMaximumPower;
@@ -688,12 +688,9 @@ const getLimitFromChargingProfiles = (
   const connectorStatus = chargingStation.getConnectorStatus(connectorId);
   for (const chargingProfile of chargingProfiles) {
     if (
-      isValidDate(chargingProfile.validFrom) &&
-      isValidDate(chargingProfile.validTo) &&
-      !isWithinInterval(currentDate, {
-        start: chargingProfile.validFrom!,
-        end: chargingProfile.validTo!,
-      })
+      (isValidDate(chargingProfile.validFrom) &&
+        isBefore(currentDate, chargingProfile.validFrom!)) ||
+      (isValidDate(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo!))
     ) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${
@@ -850,7 +847,7 @@ const prepareRecurringChargingProfile = (
   }
   if (!isWithinInterval(currentDate, recurringInterval!)) {
     logger.error(
-      `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+      `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${
         chargingProfile.recurrencyKind
       } charging profile id ${
         chargingProfile.chargingProfileId
@@ -870,7 +867,7 @@ const checkRecurringChargingProfileDuration = (
     chargingProfile.chargingSchedule.duration! > differenceInSeconds(interval.end, interval.start)
   ) {
     logger.warn(
-      `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+      `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
         chargingProfile.chargingProfileKind
       } charging profile id ${chargingProfile.chargingProfileId} duration ${
         chargingProfile.chargingSchedule.duration
