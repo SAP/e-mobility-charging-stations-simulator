@@ -9,6 +9,7 @@ import {
   addSeconds,
   addWeeks,
   differenceInDays,
+  differenceInSeconds,
   differenceInWeeks,
   isAfter,
   isBefore,
@@ -810,6 +811,7 @@ const prepareRecurringChargingProfile = (
         start: chargingSchedule.startSchedule!,
         end: addDays(chargingSchedule.startSchedule!, 1),
       };
+      checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix);
       if (
         !isWithinInterval(currentDate, recurringInterval) &&
         isBefore(chargingSchedule.startSchedule!, currentDate)
@@ -829,6 +831,7 @@ const prepareRecurringChargingProfile = (
         start: chargingSchedule.startSchedule!,
         end: addWeeks(chargingSchedule.startSchedule!, 1),
       };
+      checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix);
       if (
         !isWithinInterval(currentDate, recurringInterval) &&
         isBefore(chargingSchedule.startSchedule!, currentDate)
@@ -853,6 +856,27 @@ const prepareRecurringChargingProfile = (
       } startSchedule ${chargingSchedule.startSchedule!.toISOString()} is not properly translated to current recurrency time interval [${toDate(
         recurringInterval!.start,
       ).toISOString()}, ${toDate(recurringInterval!.end).toISOString()}]`,
+    );
+  }
+};
+
+const checkRecurringChargingProfileDuration = (
+  chargingProfile: ChargingProfile,
+  interval: Interval,
+  logPrefix: string,
+) => {
+  if (
+    chargingProfile.chargingSchedule.duration! > differenceInSeconds(interval.end, interval.start)
+  ) {
+    logger.warn(
+      `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+        chargingProfile.chargingProfileKind
+      } charging profile id ${chargingProfile.chargingProfileId} duration ${
+        chargingProfile.chargingSchedule.duration
+      } is greater than the recurrency time interval ${differenceInSeconds(
+        interval.end,
+        interval.start,
+      )} duration`,
     );
   }
 };
