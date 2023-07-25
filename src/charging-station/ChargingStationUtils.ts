@@ -60,6 +60,7 @@ import {
   logger,
   secureRandom,
 } from '../utils';
+import { isValidDate } from '../utils/Utils';
 
 const moduleName = 'ChargingStationUtils';
 
@@ -686,6 +687,7 @@ const getLimitFromChargingProfiles = (
 ): ChargingProfilesLimit | undefined => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId);
   for (const chargingProfile of chargingProfiles) {
     if (
       chargingProfile.validFrom &&
@@ -703,13 +705,12 @@ const getLimitFromChargingProfiles = (
       continue;
     }
     const chargingSchedule = chargingProfile.chargingSchedule;
-    if (!chargingSchedule?.startSchedule) {
+    if (connectorStatus?.transactionStarted && !chargingSchedule?.startSchedule) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not defined in charging profile id ${chargingProfile.chargingProfileId}. Trying to set it to the connector transaction start date`,
       );
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
-      chargingSchedule.startSchedule =
-        chargingStation.getConnectorStatus(connectorId)?.transactionStart;
+      chargingSchedule.startSchedule = connectorStatus?.transactionStart;
     }
     if (!(chargingSchedule?.startSchedule instanceof Date)) {
       logger.warn(
@@ -770,16 +771,19 @@ const getLimitFromChargingProfiles = (
           }
           break;
       }
-    } else if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RELATIVE) {
-      chargingSchedule.startSchedule =
-        chargingStation.getConnectorStatus(connectorId)?.transactionStart;
+    } else if (
+      chargingProfile.chargingProfileKind === ChargingProfileKindType.RELATIVE &&
+      connectorStatus?.transactionStarted
+    ) {
+      chargingSchedule.startSchedule = connectorStatus?.transactionStart;
     }
     // Check if the charging profile is active
     if (
+      isValidDate(chargingSchedule.startSchedule) &&
       isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
     ) {
       if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
-        // Handling of only one period
+        // Handling of only one schedule period
         if (
           chargingSchedule.chargingSchedulePeriod.length === 1 &&
           chargingSchedule.chargingSchedulePeriod[0].startPeriod === 0
@@ -801,7 +805,7 @@ const getLimitFromChargingProfiles = (
               currentDate,
             )
           ) {
-            // Found the schedule: last but one is the correct one
+            // Found the schedule period: last but one is the correct one
             const result: ChargingProfilesLimit = {
               limit: lastButOneSchedule!.limit,
               matchingChargingProfile: chargingProfile,

@@ -3,6 +3,7 @@ import { inspect } from 'node:util';
 
 import {
   formatDuration,
+  isDate,
   millisecondsToHours,
   millisecondsToMinutes,
   millisecondsToSeconds,
@@ -49,6 +50,16 @@ export const formatDurationMilliSeconds = (duration: number): string => {
 
 export const formatDurationSeconds = (duration: number): string => {
   return formatDurationMilliSeconds(secondsToMilliseconds(duration));
+};
+
+// More efficient date validation function than the one provided by date-fns
+export const isValidDate = (date: unknown): boolean => {
+  if (typeof date === 'number') {
+    return !isNaN(date);
+  } else if (isDate(date)) {
+    return !isNaN((date as Date).getTime());
+  }
+  return false;
 };
 
 export const convertToDate = (
