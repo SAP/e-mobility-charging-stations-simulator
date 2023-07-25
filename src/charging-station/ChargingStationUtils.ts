@@ -14,6 +14,7 @@ import {
   endOfWeek,
   isAfter,
   isBefore,
+  isWithinInterval,
   startOfDay,
   startOfWeek,
 } from 'date-fns';
@@ -468,12 +469,12 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
   connectorId: number,
 ): number | undefined => {
   let limit: number | undefined, matchingChargingProfile: ChargingProfile | undefined;
-  // Get charging profiles for connector and sort by stack level
+  // Get charging profiles for connector id and sort by stack level
   const chargingProfiles =
     cloneObject<ChargingProfile[]>(
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles!,
     )?.sort((a, b) => b.stackLevel - a.stackLevel) ?? [];
-  // Get profiles on connector 0
+  // Get charging profiles on connector 0 and sort by stack level
   if (chargingStation.getConnectorStatus(0)?.chargingProfiles) {
     chargingProfiles.push(
       ...cloneObject<ChargingProfile[]>(
@@ -686,7 +687,21 @@ const getLimitFromChargingProfiles = (
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
   for (const chargingProfile of chargingProfiles) {
-    // Set helpers
+    if (
+      chargingProfile.validFrom &&
+      chargingProfile.validTo &&
+      !isWithinInterval(currentDate, {
+        start: chargingProfile.validFrom,
+        end: chargingProfile.validTo,
+      })
+    ) {
+      logger.debug(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${
+          chargingProfile.chargingProfileId
+        } is not valid for the current date ${currentDate.toISOString()}`,
+      );
+      continue;
+    }
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (!chargingSchedule?.startSchedule) {
       logger.debug(
@@ -701,6 +716,15 @@ const getLimitFromChargingProfiles = (
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: startSchedule is not a Date object in charging profile id ${chargingProfile.chargingProfileId}. Trying to convert it to a Date object`,
       );
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!;
+    }
+    if (
+      chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
+      isNullOrUndefined(chargingProfile.recurrencyKind)
+    ) {
+      logger.error(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring charging profile id ${chargingProfile.chargingProfileId} has no recurrencyKind defined`,
+      );
+      continue;
     }
     // Adjust recurring start schedule
     if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
@@ -754,51 +778,53 @@ const getLimitFromChargingProfiles = (
     if (
       isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
     ) {
-      let lastButOneSchedule: ChargingSchedulePeriod | undefined;
-      // Search the right schedule period
-      for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
+      if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
         // Handling of only one period
         if (
           chargingSchedule.chargingSchedulePeriod.length === 1 &&
-          schedulePeriod.startPeriod === 0
+          chargingSchedule.chargingSchedulePeriod[0].startPeriod === 0
         ) {
-          const result = {
-            limit: schedulePeriod.limit,
+          const result: ChargingProfilesLimit = {
+            limit: chargingSchedule.chargingSchedulePeriod[0].limit,
             matchingChargingProfile: chargingProfile,
           };
           logger.debug(debugLogMsg, result);
           return result;
         }
-        // Find the right schedule period
-        if (
-          isAfter(
-            addSeconds(chargingSchedule.startSchedule!, schedulePeriod.startPeriod),
-            currentDate,
-          )
-        ) {
-          // Found the schedule: last but one is the correct one
-          const result = {
-            limit: lastButOneSchedule!.limit,
-            matchingChargingProfile: chargingProfile,
-          };
-          logger.debug(debugLogMsg, result);
-          return result;
-        }
-        // Keep it
-        lastButOneSchedule = schedulePeriod;
-        // Handle the last schedule period
-        if (
-          schedulePeriod.startPeriod ===
-          chargingSchedule.chargingSchedulePeriod[
-            chargingSchedule.chargingSchedulePeriod.length - 1
-          ].startPeriod
-        ) {
-          const result = {
-            limit: lastButOneSchedule.limit,
-            matchingChargingProfile: chargingProfile,
-          };
-          logger.debug(debugLogMsg, result);
-          return result;
+        let lastButOneSchedule: ChargingSchedulePeriod | undefined;
+        // Search for the right schedule period
+        for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
+          // Find the right schedule period
+          if (
+            isAfter(
+              addSeconds(chargingSchedule.startSchedule!, schedulePeriod.startPeriod),
+              currentDate,
+            )
+          ) {
+            // Found the schedule: last but one is the correct one
+            const result: ChargingProfilesLimit = {
+              limit: lastButOneSchedule!.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(debugLogMsg, result);
+            return result;
+          }
+          // Keep it
+          lastButOneSchedule = schedulePeriod;
+          // Handle the last schedule period
+          if (
+            schedulePeriod.startPeriod ===
+            chargingSchedule.chargingSchedulePeriod[
+              chargingSchedule.chargingSchedulePeriod.length - 1
+            ].startPeriod
+          ) {
+            const result: ChargingProfilesLimit = {
+              limit: lastButOneSchedule.limit,
+              matchingChargingProfile: chargingProfile,
+            };
+            logger.debug(debugLogMsg, result);
+            return result;
+          }
         }
       }
     }
