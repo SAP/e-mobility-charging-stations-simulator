@@ -10,13 +10,10 @@ import {
   addWeeks,
   differenceInDays,
   differenceInWeeks,
-  endOfDay,
-  endOfWeek,
   isAfter,
   isBefore,
   isWithinInterval,
-  startOfDay,
-  startOfWeek,
+  toDate,
 } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
@@ -727,7 +724,6 @@ const getLimitFromChargingProfiles = (
       );
       continue;
     }
-    // Adjust recurring start schedule
     if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
       prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
     } else if (
@@ -794,53 +790,70 @@ const getLimitFromChargingProfiles = (
   }
 };
 
+/**
+ *  Adjust recurring charging profile startSchedule to the current recurrency time interval if needed
+ *
+ * @param chargingProfile -
+ * @param currentDate -
+ * @param logPrefix -
+ */
 const prepareRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
   logPrefix: string,
 ) => {
   const chargingSchedule = chargingProfile.chargingSchedule;
+  let recurringInterval: Interval;
   switch (chargingProfile.recurrencyKind) {
     case RecurrencyKindType.DAILY:
-      if (isBefore(chargingSchedule.startSchedule!, startOfDay(currentDate))) {
-        addDays(
+      recurringInterval = {
+        start: chargingSchedule.startSchedule!,
+        end: addDays(chargingSchedule.startSchedule!, 1),
+      };
+      if (
+        !isWithinInterval(currentDate, recurringInterval) &&
+        isBefore(chargingSchedule.startSchedule!, currentDate)
+      ) {
+        chargingSchedule.startSchedule = addDays(
           chargingSchedule.startSchedule!,
-          differenceInDays(chargingSchedule.startSchedule!, endOfDay(currentDate)),
+          differenceInDays(chargingSchedule.startSchedule!, recurringInterval.end),
         );
-        if (
-          isBefore(chargingSchedule.startSchedule!, startOfDay(currentDate)) ||
-          isAfter(chargingSchedule.startSchedule!, endOfDay(currentDate))
-        ) {
-          logger.error(
-            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
-              chargingProfile.recurrencyKind
-            } charging profile id ${
-              chargingProfile.chargingProfileId
-            } startSchedule ${chargingSchedule.startSchedule!.toISOString()} is not properly translated to the current day`,
-          );
-        }
+        recurringInterval = {
+          start: chargingSchedule.startSchedule,
+          end: addDays(chargingSchedule.startSchedule, 1),
+        };
       }
       break;
     case RecurrencyKindType.WEEKLY:
-      if (isBefore(chargingSchedule.startSchedule!, startOfWeek(currentDate))) {
-        addWeeks(
+      recurringInterval = {
+        start: chargingSchedule.startSchedule!,
+        end: addWeeks(chargingSchedule.startSchedule!, 1),
+      };
+      if (
+        !isWithinInterval(currentDate, recurringInterval) &&
+        isBefore(chargingSchedule.startSchedule!, currentDate)
+      ) {
+        chargingSchedule.startSchedule = addWeeks(
           chargingSchedule.startSchedule!,
-          differenceInWeeks(chargingSchedule.startSchedule!, endOfWeek(currentDate)),
+          differenceInWeeks(chargingSchedule.startSchedule!, recurringInterval.end),
         );
-        if (
-          isBefore(chargingSchedule.startSchedule!, startOfWeek(currentDate)) ||
-          isAfter(chargingSchedule.startSchedule!, endOfWeek(currentDate))
-        ) {
-          logger.error(
-            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
-              chargingProfile.recurrencyKind
-            } charging profile id ${
-              chargingProfile.chargingProfileId
-            } startSchedule ${chargingSchedule.startSchedule!.toISOString()} is not properly translated to the current week`,
-          );
-        }
+        recurringInterval = {
+          start: chargingSchedule.startSchedule,
+          end: addWeeks(chargingSchedule.startSchedule, 1),
+        };
       }
       break;
+  }
+  if (!isWithinInterval(currentDate, recurringInterval!)) {
+    logger.error(
+      `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+        chargingProfile.recurrencyKind
+      } charging profile id ${
+        chargingProfile.chargingProfileId
+      } startSchedule ${chargingSchedule.startSchedule!.toISOString()} is not properly translated to current recurrency time interval [${toDate(
+        recurringInterval!.start,
+      ).toISOString()}, ${toDate(recurringInterval!.end).toISOString()}]`,
+    );
   }
 };
 
