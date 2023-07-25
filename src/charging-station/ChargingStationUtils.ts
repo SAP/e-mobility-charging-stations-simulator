@@ -738,7 +738,6 @@ const getLimitFromChargingProfiles = (
       isValidDate(chargingSchedule.startSchedule) &&
       isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
     ) {
-      chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
       if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
         // Handling of only one schedule period
         if (
@@ -752,6 +751,7 @@ const getLimitFromChargingProfiles = (
           logger.debug(debugLogMsg, result);
           return result;
         }
+        chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
         let lastButOneSchedule: ChargingSchedulePeriod | undefined;
         // Search for the right schedule period
         for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
