@@ -979,20 +979,26 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   private setRemoteStartTransactionChargingProfile(
     chargingStation: ChargingStation,
     connectorId: number,
-    cp: OCPP16ChargingProfile,
+    chargingProfile: OCPP16ChargingProfile,
   ): boolean {
-    if (cp && cp.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE) {
-      OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, cp);
+    if (
+      chargingProfile &&
+      chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE
+    ) {
+      OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile);
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) set at remote start transaction
           on connector id ${connectorId}: %j`,
-        cp,
+        chargingProfile,
       );
       return true;
-    } else if (cp && cp.chargingProfilePurpose !== OCPP16ChargingProfilePurposeType.TX_PROFILE) {
+    } else if (
+      chargingProfile &&
+      chargingProfile.chargingProfilePurpose !== OCPP16ChargingProfilePurposeType.TX_PROFILE
+    ) {
       logger.warn(
         `${chargingStation.logPrefix()} Not allowed to set ${
-          cp.chargingProfilePurpose
+          chargingProfile.chargingProfilePurpose
         } charging profile(s) at remote start transaction`,
       );
       return false;

@@ -736,7 +736,14 @@ const getLimitFromChargingProfiles = (
       isAfter(addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!), currentDate)
     ) {
       if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
-        // Handling of only one schedule period
+        chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
+        if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
+          logger.error(
+            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod} is not equal to 0`,
+          );
+          // continue;
+        }
+        // Handling of only one schedule period with startPeriod = 0
         if (
           chargingSchedule.chargingSchedulePeriod.length === 1 &&
           chargingSchedule.chargingSchedulePeriod[0].startPeriod === 0
@@ -748,7 +755,6 @@ const getLimitFromChargingProfiles = (
           logger.debug(debugLogMsg, result);
           return result;
         }
-        chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
         let lastButOneSchedule: ChargingSchedulePeriod | undefined;
         // Search for the right schedule period
         for (const schedulePeriod of chargingSchedule.chargingSchedulePeriod) {
@@ -876,6 +882,7 @@ const checkRecurringChargingProfileDuration = (
         interval.start,
       )}`,
     );
+    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start);
   }
 };
 
