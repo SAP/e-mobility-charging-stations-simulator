@@ -57,10 +57,10 @@ import {
   isNotEmptyString,
   isNullOrUndefined,
   isUndefined,
+  isValidDate,
   logger,
   secureRandom,
 } from '../utils';
-import { isValidDate } from '../utils/Utils';
 
 const moduleName = 'ChargingStationUtils';
 
@@ -690,11 +690,11 @@ const getLimitFromChargingProfiles = (
   const connectorStatus = chargingStation.getConnectorStatus(connectorId);
   for (const chargingProfile of chargingProfiles) {
     if (
-      chargingProfile.validFrom &&
-      chargingProfile.validTo &&
+      isValidDate(chargingProfile.validFrom) &&
+      isValidDate(chargingProfile.validTo) &&
       !isWithinInterval(currentDate, {
-        start: chargingProfile.validFrom,
-        end: chargingProfile.validTo,
+        start: chargingProfile.validFrom!,
+        end: chargingProfile.validTo!,
       })
     ) {
       logger.debug(
@@ -729,48 +729,7 @@ const getLimitFromChargingProfiles = (
     }
     // Adjust recurring start schedule
     if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
-      switch (chargingProfile.recurrencyKind) {
-        case RecurrencyKindType.DAILY:
-          if (isBefore(chargingSchedule.startSchedule, startOfDay(currentDate))) {
-            addDays(
-              chargingSchedule.startSchedule,
-              differenceInDays(chargingSchedule.startSchedule, endOfDay(currentDate)),
-            );
-            if (
-              isBefore(chargingSchedule.startSchedule, startOfDay(currentDate)) ||
-              isAfter(chargingSchedule.startSchedule, endOfDay(currentDate))
-            ) {
-              logger.error(
-                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
-                  chargingProfile.recurrencyKind
-                } charging profile id ${
-                  chargingProfile.chargingProfileId
-                } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current day`,
-              );
-            }
-          }
-          break;
-        case RecurrencyKindType.WEEKLY:
-          if (isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate))) {
-            addWeeks(
-              chargingSchedule.startSchedule,
-              differenceInWeeks(chargingSchedule.startSchedule, endOfWeek(currentDate)),
-            );
-            if (
-              isBefore(chargingSchedule.startSchedule, startOfWeek(currentDate)) ||
-              isAfter(chargingSchedule.startSchedule, endOfWeek(currentDate))
-            ) {
-              logger.error(
-                `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
-                  chargingProfile.recurrencyKind
-                } charging profile id ${
-                  chargingProfile.chargingProfileId
-                } startSchedule ${chargingSchedule.startSchedule.toISOString()} is not properly translated to the current week`,
-              );
-            }
-          }
-          break;
-      }
+      prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
     } else if (
       chargingProfile.chargingProfileKind === ChargingProfileKindType.RELATIVE &&
       connectorStatus?.transactionStarted
@@ -832,6 +791,56 @@ const getLimitFromChargingProfiles = (
         }
       }
     }
+  }
+};
+
+const prepareRecurringChargingProfile = (
+  chargingProfile: ChargingProfile,
+  currentDate: Date,
+  logPrefix: string,
+) => {
+  const chargingSchedule = chargingProfile.chargingSchedule;
+  switch (chargingProfile.recurrencyKind) {
+    case RecurrencyKindType.DAILY:
+      if (isBefore(chargingSchedule.startSchedule!, startOfDay(currentDate))) {
+        addDays(
+          chargingSchedule.startSchedule!,
+          differenceInDays(chargingSchedule.startSchedule!, endOfDay(currentDate)),
+        );
+        if (
+          isBefore(chargingSchedule.startSchedule!, startOfDay(currentDate)) ||
+          isAfter(chargingSchedule.startSchedule!, endOfDay(currentDate))
+        ) {
+          logger.error(
+            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+              chargingProfile.recurrencyKind
+            } charging profile id ${
+              chargingProfile.chargingProfileId
+            } startSchedule ${chargingSchedule.startSchedule!.toISOString()} is not properly translated to the current day`,
+          );
+        }
+      }
+      break;
+    case RecurrencyKindType.WEEKLY:
+      if (isBefore(chargingSchedule.startSchedule!, startOfWeek(currentDate))) {
+        addWeeks(
+          chargingSchedule.startSchedule!,
+          differenceInWeeks(chargingSchedule.startSchedule!, endOfWeek(currentDate)),
+        );
+        if (
+          isBefore(chargingSchedule.startSchedule!, startOfWeek(currentDate)) ||
+          isAfter(chargingSchedule.startSchedule!, endOfWeek(currentDate))
+        ) {
+          logger.error(
+            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring ${
+              chargingProfile.recurrencyKind
+            } charging profile id ${
+              chargingProfile.chargingProfileId
+            } startSchedule ${chargingSchedule.startSchedule!.toISOString()} is not properly translated to the current week`,
+          );
+        }
+      }
+      break;
   }
 };
 
