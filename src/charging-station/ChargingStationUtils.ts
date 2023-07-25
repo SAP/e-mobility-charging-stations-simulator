@@ -731,6 +731,12 @@ const getLimitFromChargingProfiles = (
     ) {
       chargingSchedule.startSchedule = connectorStatus?.transactionStart;
     }
+    if (isNullOrUndefined(chargingSchedule?.duration)) {
+      logger.error(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined, not yet supported`,
+      );
+      continue;
+    }
     // Check if the charging profile is active
     if (
       isValidDate(chargingSchedule?.startSchedule) &&
@@ -891,7 +897,19 @@ const checkRecurringChargingProfileDuration = (
   interval: Interval,
   logPrefix: string,
 ) => {
-  if (
+  if (isNullOrUndefined(chargingProfile.chargingSchedule.duration)) {
+    logger.warn(
+      `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
+        chargingProfile.chargingProfileKind
+      } charging profile id ${
+        chargingProfile.chargingProfileId
+      } duration is not defined, set it to the recurrency time interval duration ${differenceInSeconds(
+        interval.end,
+        interval.start,
+      )}`,
+    );
+    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start);
+  } else if (
     chargingProfile.chargingSchedule.duration! > differenceInSeconds(interval.end, interval.start)
   ) {
     logger.warn(
