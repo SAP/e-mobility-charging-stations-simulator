@@ -782,11 +782,11 @@ const getLimitFromChargingProfiles = (
             (index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
               chargingSchedule.duration! >
                 differenceInSeconds(
-                  chargingSchedule.startSchedule!,
                   addSeconds(
                     chargingSchedule.startSchedule!,
                     chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod,
                   ),
+                  chargingSchedule.startSchedule!,
                 ))
           ) {
             const result: ChargingProfilesLimit = {
@@ -829,7 +829,7 @@ const prepareRecurringChargingProfile = (
       ) {
         chargingSchedule.startSchedule = addDays(
           chargingSchedule.startSchedule!,
-          differenceInDays(chargingSchedule.startSchedule!, recurringInterval.end),
+          differenceInDays(recurringInterval.end, chargingSchedule.startSchedule!),
         );
         recurringInterval = {
           start: chargingSchedule.startSchedule,
@@ -849,7 +849,7 @@ const prepareRecurringChargingProfile = (
       ) {
         chargingSchedule.startSchedule = addWeeks(
           chargingSchedule.startSchedule!,
-          differenceInWeeks(chargingSchedule.startSchedule!, recurringInterval.end),
+          differenceInWeeks(recurringInterval.end, chargingSchedule.startSchedule!),
         );
         recurringInterval = {
           start: chargingSchedule.startSchedule,
