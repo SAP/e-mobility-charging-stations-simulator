@@ -344,11 +344,11 @@ In the [docker](./docker) folder:
 make
 ```
 
-Or with the optional git submodules:
+<!-- Or with the optional git submodules:
 
 ```bash
 make SUBMODULES_INIT=true
-```
+``` -->
 
 ## OCPP-J commands supported
 
