@@ -785,26 +785,29 @@ const getLimitFromChargingProfiles = (
           logger.debug(debugLogMsg, result);
           return result;
         }
-        let lastButOneSchedule: ChargingSchedulePeriod | undefined;
+        let previousChargingSchedulePeriod: ChargingSchedulePeriod | undefined;
         // Search for the right schedule period
-        for (const [index, schedulePeriod] of chargingSchedule.chargingSchedulePeriod.entries()) {
+        for (const [
+          index,
+          chargingSchedulePeriod,
+        ] of chargingSchedule.chargingSchedulePeriod.entries()) {
           // Find the right schedule period
           if (
             isAfter(
-              addSeconds(chargingSchedule.startSchedule!, schedulePeriod.startPeriod),
+              addSeconds(chargingSchedule.startSchedule!, chargingSchedulePeriod.startPeriod),
               currentDate,
             )
           ) {
-            // Found the schedule period: last but one is the correct one
+            // Found the schedule period: previous is the correct one
             const result: ChargingProfilesLimit = {
-              limit: lastButOneSchedule!.limit,
+              limit: previousChargingSchedulePeriod!.limit,
               matchingChargingProfile: chargingProfile,
             };
             logger.debug(debugLogMsg, result);
             return result;
           }
-          // Keep it
-          lastButOneSchedule = schedulePeriod;
+          // Keep a reference to previous one
+          previousChargingSchedulePeriod = chargingSchedulePeriod;
           // Handle the last schedule period within the charging profile duration
           if (
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
@@ -819,7 +822,7 @@ const getLimitFromChargingProfiles = (
                 ))
           ) {
             const result: ChargingProfilesLimit = {
-              limit: lastButOneSchedule.limit,
+              limit: previousChargingSchedulePeriod.limit,
               matchingChargingProfile: chargingProfile,
             };
             logger.debug(debugLogMsg, result);
