@@ -3,6 +3,7 @@
 import { parentPort } from 'node:worker_threads';
 
 import type { JSONSchemaType } from 'ajv';
+import { secondsToMilliseconds } from 'date-fns';
 
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
@@ -665,7 +666,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.startMeterValues(
         transactionConnectorId,
         configuredMeterValueSampleInterval
-          ? convertToInt(configuredMeterValueSampleInterval.value) * 1000
+          ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
           : Constants.DEFAULT_METER_VALUES_INTERVAL,
       );
     } else {

@@ -1,3 +1,4 @@
+import { hoursToMilliseconds } from 'date-fns';
 import { expect } from 'expect';
 
 import { Constants } from '../../src/utils/Constants';
@@ -7,6 +8,7 @@ import {
   convertToDate,
   convertToFloat,
   convertToInt,
+  formatDurationMilliSeconds,
   generateUUID,
   getRandomFloat,
   getRandomInteger,
@@ -46,6 +48,12 @@ describe('Utils test suite', () => {
     await sleep(1000);
     const end = performance.now();
     expect(end - start).toBeGreaterThanOrEqual(1000);
+  });
+
+  it('Verify formatDurationMilliSeconds()', () => {
+    expect(formatDurationMilliSeconds(0)).toBe('');
+    expect(formatDurationMilliSeconds(1000)).toBe('1 second');
+    expect(formatDurationMilliSeconds(hoursToMilliseconds(4380))).toBe('182 days 12 hours');
   });
 
   it('Verify isValidDate()', () => {

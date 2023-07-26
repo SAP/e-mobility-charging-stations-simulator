@@ -6,6 +6,7 @@ import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
+import { secondsToMilliseconds } from 'date-fns';
 import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';
@@ -673,7 +674,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + commandPayload.duration * 1000);
+    const endDate = new Date(startDate.getTime() + secondsToMilliseconds(commandPayload.duration));
     let compositeSchedule: OCPP16ChargingSchedule | undefined;
     for (const chargingProfile of chargingStation.getConnectorStatus(commandPayload.connectorId)!
       .chargingProfiles!) {
@@ -1156,7 +1157,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.DownloadFailed
     ) {
-      await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
+      await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)));
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
@@ -1167,7 +1168,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation.stationInfo?.firmwareUpgrade?.failureStatus;
       return;
     }
-    await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
+    await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)));
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1180,12 +1181,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     do {
       const runningTransactions = chargingStation.getNumberOfRunningTransactions();
       if (runningTransactions > 0) {
-        const waitTime = 15 * 1000;
+        const waitTime = secondsToMilliseconds(15);
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation:
-            ${runningTransactions} transaction(s) in progress, waiting ${
-              waitTime / 1000
-            } seconds before continuing firmware update simulation`,
+            ${runningTransactions} transaction(s) in progress, waiting ${formatDurationMilliSeconds(
+              waitTime,
+            )} before continuing firmware update simulation`,
         );
         await sleep(waitTime);
         transactionsStarted = true;
@@ -1223,7 +1224,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionsStarted = false;
       }
     } while (transactionsStarted);
-    !wasTransactionsStarted && (await sleep(getRandomInteger(maxDelay, minDelay) * 1000));
+    !wasTransactionsStarted &&
+      (await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay))));
     if (checkChargingStation(chargingStation, chargingStation.logPrefix()) === false) {
       return;
     }
@@ -1238,7 +1240,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.InstallationFailed
     ) {
-      await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
+      await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)));
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
@@ -1250,7 +1252,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return;
     }
     if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
-      await sleep(getRandomInteger(maxDelay, minDelay) * 1000);
+      await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)));
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT);
     }
   }

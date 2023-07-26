@@ -2,6 +2,8 @@
 
 import { AsyncResource } from 'node:async_hooks';
 
+import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns';
+
 import type { ChargingStation } from './ChargingStation';
 import { checkChargingStation } from './ChargingStationUtils';
 import { IdTagsCache } from './IdTagsCache';
@@ -241,13 +243,14 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           await sleep(Constants.CHARGING_STATION_ATG_INITIALIZATION_TIME);
         } while (!this.chargingStation?.ocppRequestService);
       }
-      const wait =
+      const wait = secondsToMilliseconds(
         getRandomInteger(
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
             .maxDelayBetweenTwoTransactions,
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
             .minDelayBetweenTwoTransactions,
-        ) * 1000;
+        ),
+      );
       logger.info(`${this.logPrefix(connectorId)} waiting for ${formatDurationMilliSeconds(wait)}`);
       await sleep(wait);
       const start = secureRandom();
@@ -260,11 +263,12 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         const startResponse = await this.startTransaction(connectorId);
         if (startResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           // Wait until end of transaction
-          const waitTrxEnd =
+          const waitTrxEnd = secondsToMilliseconds(
             getRandomInteger(
               this.chargingStation.getAutomaticTransactionGeneratorConfiguration().maxDuration,
               this.chargingStation.getAutomaticTransactionGeneratorConfiguration().minDuration,
-            ) * 1000;
+            ),
+          );
           logger.info(
             `${this.logPrefix(connectorId)} transaction started with id ${this.chargingStation
               .getConnectorStatus(connectorId)
@@ -320,9 +324,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     this.connectorsStatus.get(connectorId)!.startDate = new Date();
     this.connectorsStatus.get(connectorId)!.stopDate = new Date(
       this.connectorsStatus.get(connectorId)!.startDate!.getTime() +
-        this.chargingStation.getAutomaticTransactionGeneratorConfiguration().stopAfterHours *
-          3600 *
-          1000 -
+        hoursToMilliseconds(
+          this.chargingStation.getAutomaticTransactionGeneratorConfiguration().stopAfterHours,
+        ) -
         previousRunDuration,
     );
     this.connectorsStatus.get(connectorId)!.start = true;

@@ -14,6 +14,7 @@ import { dirname, join } from 'node:path';
 import { URL } from 'node:url';
 import { parentPort } from 'node:worker_threads';
 
+import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns';
 import merge from 'just-merge';
 import { type RawData, WebSocket } from 'ws';
 
@@ -516,11 +517,11 @@ export class ChargingStation {
   public getHeartbeatInterval(): number {
     const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval);
     if (HeartbeatInterval) {
-      return convertToInt(HeartbeatInterval.value) * 1000;
+      return secondsToMilliseconds(convertToInt(HeartbeatInterval.value));
     }
     const HeartBeatInterval = getConfigurationKey(this, StandardParametersKey.HeartBeatInterval);
     if (HeartBeatInterval) {
-      return convertToInt(HeartBeatInterval.value) * 1000;
+      return secondsToMilliseconds(convertToInt(HeartBeatInterval.value));
     }
     this.stationInfo?.autoRegister === false &&
       logger.warn(
@@ -777,7 +778,7 @@ export class ChargingStation {
       terminateOpened: false,
     },
   ): void {
-    options = { handshakeTimeout: this.getConnectionTimeout() * 1000, ...options };
+    options = { handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()), ...options };
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
     if (this.started === false && this.starting === false) {
       logger.warn(
@@ -1226,7 +1227,7 @@ export class ChargingStation {
       stationTemplate?.firmwareUpgrade ?? {},
     );
     stationInfo.resetTime = !isNullOrUndefined(stationTemplate?.resetTime)
-      ? stationTemplate.resetTime! * 1000
+      ? secondsToMilliseconds(stationTemplate.resetTime!)
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
     return stationInfo;
@@ -1340,7 +1341,7 @@ export class ChargingStation {
     if (this.stationInfo?.autoRegister === true) {
       this.bootNotificationResponse = {
         currentTime: new Date(),
-        interval: this.getHeartbeatInterval() / 1000,
+        interval: millisecondsToSeconds(this.getHeartbeatInterval()),
         status: RegistrationStatusEnumType.ACCEPTED,
       };
     }
@@ -1826,7 +1827,7 @@ export class ChargingStation {
             this.getRegistrationMaxRetries() !== -1 && ++registrationRetryCount;
             await sleep(
               this?.bootNotificationResponse?.interval
-                ? this.bootNotificationResponse.interval * 1000
+                ? secondsToMilliseconds(this.bootNotificationResponse.interval)
                 : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL,
             );
           }
@@ -2280,7 +2281,7 @@ export class ChargingStation {
         if (this.isWebSocketConnectionOpened() === true) {
           this.wsConnection?.ping();
         }
-      }, webSocketPingInterval * 1000);
+      }, secondsToMilliseconds(webSocketPingInterval));
       logger.info(
         `${this.logPrefix()} WebSocket ping started every ${formatDurationSeconds(
           webSocketPingInterval,
@@ -2378,7 +2379,7 @@ export class ChargingStation {
       ++this.autoReconnectRetryCount;
       const reconnectDelay = this.getReconnectExponentialDelay()
         ? exponentialDelay(this.autoReconnectRetryCount)
-        : this.getConnectionTimeout() * 1000;
+        : secondsToMilliseconds(this.getConnectionTimeout());
       const reconnectDelayWithdraw = 1000;
       const reconnectTimeout =
         reconnectDelay && reconnectDelay - reconnectDelayWithdraw > 0

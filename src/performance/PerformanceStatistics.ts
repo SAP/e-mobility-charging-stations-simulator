@@ -4,6 +4,8 @@ import { type PerformanceEntry, PerformanceObserver, performance } from 'node:pe
 import type { URL } from 'node:url';
 import { parentPort } from 'node:worker_threads';
 
+import { secondsToMilliseconds } from 'date-fns';
+
 import {
   ConfigurationSection,
   type IncomingRequestCommand,
@@ -185,7 +187,7 @@ export class PerformanceStatistics {
     if (logStatisticsInterval > 0 && !this.displayInterval) {
       this.displayInterval = setInterval(() => {
         this.logStatistics();
-      }, logStatisticsInterval * 1000);
+      }, secondsToMilliseconds(logStatisticsInterval));
       logger.info(
         `${this.logPrefix()} logged every ${formatDurationSeconds(logStatisticsInterval)}`,
       );

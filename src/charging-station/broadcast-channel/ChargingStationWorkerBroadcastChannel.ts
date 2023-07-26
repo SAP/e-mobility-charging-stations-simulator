@@ -1,3 +1,5 @@
+import { secondsToMilliseconds } from 'date-fns';
+
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
 import { BaseError, type OCPPError } from '../../exception';
 import {
@@ -193,7 +195,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                   this.chargingStation.getConnectorStatus(requestPayload!.connectorId!)!
                     .transactionId!,
                   configuredMeterValueSampleInterval
-                    ? convertToInt(configuredMeterValueSampleInterval.value) * 1000
+                    ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
                     : Constants.DEFAULT_METER_VALUES_INTERVAL,
                 ),
               ],

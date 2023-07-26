@@ -3,10 +3,13 @@ import { inspect } from 'node:util';
 
 import {
   formatDuration,
+  hoursToMinutes,
+  hoursToSeconds,
   isDate,
   millisecondsToHours,
   millisecondsToMinutes,
   millisecondsToSeconds,
+  minutesToSeconds,
   secondsToMilliseconds,
 } from 'date-fns';
 import clone from 'just-clone';
@@ -36,9 +39,14 @@ export const formatDurationMilliSeconds = (duration: number): string => {
   duration = convertToInt(duration);
   const days = Math.floor(duration / (24 * 3600 * 1000));
   const hours = Math.floor(millisecondsToHours(duration) - days * 24);
-  const minutes = Math.floor(millisecondsToMinutes(duration) - days * 24 * 60 - hours * 60);
+  const minutes = Math.floor(
+    millisecondsToMinutes(duration) - days * 24 * 60 - hoursToMinutes(hours),
+  );
   const seconds = Math.floor(
-    millisecondsToSeconds(duration) - days * 24 * 3600 - hours * 3600 - minutes * 60,
+    millisecondsToSeconds(duration) -
+      days * 24 * 3600 -
+      hoursToSeconds(hours) -
+      minutesToSeconds(minutes),
   );
   return formatDuration({
     days,
