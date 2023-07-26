@@ -190,46 +190,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       )}`,
     );
     while (this.connectorsStatus.get(connectorId)?.start === true) {
-      if (new Date() > this.connectorsStatus.get(connectorId)!.stopDate!) {
-        this.stopConnector(connectorId);
-        break;
-      }
-      if (this.chargingStation.inAcceptedState() === false) {
-        logger.error(
-          `${this.logPrefix(
-            connectorId,
-          )} entered in transaction loop while the charging station is not in accepted state`,
-        );
-        this.stopConnector(connectorId);
-        break;
-      }
-      if (this.chargingStation.isChargingStationAvailable() === false) {
-        logger.info(
-          `${this.logPrefix(
-            connectorId,
-          )} entered in transaction loop while the charging station is unavailable`,
-        );
-        this.stopConnector(connectorId);
-        break;
-      }
-      if (this.chargingStation.isConnectorAvailable(connectorId) === false) {
-        logger.info(
-          `${this.logPrefix(
-            connectorId,
-          )} entered in transaction loop while the connector ${connectorId} is unavailable`,
-        );
-        this.stopConnector(connectorId);
-        break;
-      }
-      if (
-        this.chargingStation.getConnectorStatus(connectorId)?.status ===
-        ConnectorStatusEnum.Unavailable
-      ) {
-        logger.info(
-          `${this.logPrefix(
-            connectorId,
-          )} entered in transaction loop while the connector ${connectorId} status is unavailable`,
-        );
+      if (!this.canStartConnector(connectorId)) {
         this.stopConnector(connectorId);
         break;
       }
@@ -330,6 +291,48 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         previousRunDuration,
     );
     this.connectorsStatus.get(connectorId)!.start = true;
+  }
+
+  private canStartConnector(connectorId: number): boolean {
+    if (new Date() > this.connectorsStatus.get(connectorId)!.stopDate!) {
+      return false;
+    }
+    if (this.chargingStation.inAcceptedState() === false) {
+      logger.error(
+        `${this.logPrefix(
+          connectorId,
+        )} entered in transaction loop while the charging station is not in accepted state`,
+      );
+      return false;
+    }
+    if (this.chargingStation.isChargingStationAvailable() === false) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId,
+        )} entered in transaction loop while the charging station is unavailable`,
+      );
+      return false;
+    }
+    if (this.chargingStation.isConnectorAvailable(connectorId) === false) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId,
+        )} entered in transaction loop while the connector ${connectorId} is unavailable`,
+      );
+      return false;
+    }
+    if (
+      this.chargingStation.getConnectorStatus(connectorId)?.status ===
+      ConnectorStatusEnum.Unavailable
+    ) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId,
+        )} entered in transaction loop while the connector ${connectorId} status is unavailable`,
+      );
+      return false;
+    }
+    return true;
   }
 
   private initializeConnectorsStatus(): void {

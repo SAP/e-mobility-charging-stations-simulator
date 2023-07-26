@@ -24,7 +24,7 @@ import {
   isNullOrUndefined,
   isObject,
   isUndefined,
-  isValidDate,
+  isValidTime,
   roundTo,
   secureRandom,
   sleep,
@@ -63,22 +63,22 @@ describe('Utils test suite', () => {
     expect(formatDurationSeconds(hoursToSeconds(4380))).toBe('182 days 12 hours');
   });
 
-  it('Verify isValidDate()', () => {
-    expect(isValidDate(undefined)).toBe(false);
-    expect(isValidDate(null)).toBe(false);
-    expect(isValidDate('')).toBe(false);
-    expect(isValidDate({})).toBe(false);
-    expect(isValidDate([])).toBe(false);
-    expect(isValidDate(new Map())).toBe(false);
-    expect(isValidDate(new Set())).toBe(false);
-    expect(isValidDate(new WeakMap())).toBe(false);
-    expect(isValidDate(new WeakSet())).toBe(false);
-    expect(isValidDate(-1)).toBe(true);
-    expect(isValidDate(0)).toBe(true);
-    expect(isValidDate(1)).toBe(true);
-    expect(isValidDate(-0.5)).toBe(true);
-    expect(isValidDate(0.5)).toBe(true);
-    expect(isValidDate(new Date())).toBe(true);
+  it('Verify isValidTime()', () => {
+    expect(isValidTime(undefined)).toBe(false);
+    expect(isValidTime(null)).toBe(false);
+    expect(isValidTime('')).toBe(false);
+    expect(isValidTime({})).toBe(false);
+    expect(isValidTime([])).toBe(false);
+    expect(isValidTime(new Map())).toBe(false);
+    expect(isValidTime(new Set())).toBe(false);
+    expect(isValidTime(new WeakMap())).toBe(false);
+    expect(isValidTime(new WeakSet())).toBe(false);
+    expect(isValidTime(-1)).toBe(true);
+    expect(isValidTime(0)).toBe(true);
+    expect(isValidTime(1)).toBe(true);
+    expect(isValidTime(-0.5)).toBe(true);
+    expect(isValidTime(0.5)).toBe(true);
+    expect(isValidTime(new Date())).toBe(true);
   });
 
   it('Verify convertToDate()', () => {

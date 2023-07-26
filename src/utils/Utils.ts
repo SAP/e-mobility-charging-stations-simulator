@@ -60,8 +60,8 @@ export const formatDurationSeconds = (duration: number): string => {
   return formatDurationMilliSeconds(secondsToMilliseconds(duration));
 };
 
-// More efficient date validation function than the one provided by date-fns
-export const isValidDate = (date: unknown): boolean => {
+// More efficient time validation function than the one provided by date-fns
+export const isValidTime = (date: unknown): boolean => {
   if (typeof date === 'number') {
     return !isNaN(date);
   } else if (isDate(date)) {
@@ -76,8 +76,8 @@ export const convertToDate = (
   if (isNullOrUndefined(value)) {
     return value as null | undefined;
   }
-  if (value instanceof Date) {
-    return value;
+  if (isDate(value)) {
+    return value as Date;
   }
   if (isString(value) || typeof value === 'number') {
     return new Date(value!);

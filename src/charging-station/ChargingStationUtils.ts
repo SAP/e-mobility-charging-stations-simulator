@@ -13,6 +13,7 @@ import {
   differenceInWeeks,
   isAfter,
   isBefore,
+  isDate,
   isWithinInterval,
   toDate,
 } from 'date-fns';
@@ -56,7 +57,7 @@ import {
   isNotEmptyString,
   isNullOrUndefined,
   isUndefined,
-  isValidDate,
+  isValidTime,
   logger,
   secureRandom,
 } from '../utils';
@@ -690,18 +691,6 @@ const getLimitFromChargingProfiles = (
   const currentDate = new Date();
   const connectorStatus = chargingStation.getConnectorStatus(connectorId);
   for (const chargingProfile of chargingProfiles) {
-    if (
-      (isValidDate(chargingProfile.validFrom) &&
-        isBefore(currentDate, chargingProfile.validFrom!)) ||
-      (isValidDate(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo!))
-    ) {
-      logger.debug(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${
-          chargingProfile.chargingProfileId
-        } is not valid for the current date ${currentDate.toISOString()}`,
-      );
-      continue;
-    }
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (connectorStatus?.transactionStarted && isNullOrUndefined(chargingSchedule?.startSchedule)) {
       logger.debug(
@@ -710,44 +699,30 @@ const getLimitFromChargingProfiles = (
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
       chargingSchedule.startSchedule = connectorStatus?.transactionStart;
     }
-    if (!(chargingSchedule?.startSchedule instanceof Date)) {
+    if (!isDate(chargingSchedule?.startSchedule)) {
       logger.warn(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date object. Trying to convert it to a Date object`,
       );
       chargingSchedule.startSchedule = convertToDate(chargingSchedule?.startSchedule)!;
     }
-    if (
-      chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-      isNullOrUndefined(chargingProfile.recurrencyKind)
-    ) {
-      logger.error(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Recurring charging profile id ${chargingProfile.chargingProfileId} has no recurrencyKind defined`,
-      );
-      continue;
+    switch (chargingProfile.chargingProfileKind) {
+      case ChargingProfileKindType.RECURRING:
+        if (!canProceedRecurringChargingProfile(chargingProfile, logPrefix)) {
+          continue;
+        }
+        prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
+        break;
+      case ChargingProfileKindType.RELATIVE:
+        connectorStatus?.transactionStarted &&
+          (chargingSchedule.startSchedule = connectorStatus?.transactionStart);
+        break;
     }
-    if (chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING) {
-      prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
-    } else if (
-      chargingProfile.chargingProfileKind === ChargingProfileKindType.RELATIVE &&
-      connectorStatus?.transactionStarted
-    ) {
-      chargingSchedule.startSchedule = connectorStatus?.transactionStart;
-    }
-    if (isNullOrUndefined(chargingSchedule?.startSchedule)) {
-      logger.error(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has (still) no startSchedule defined`,
-      );
-      continue;
-    }
-    if (isNullOrUndefined(chargingSchedule?.duration)) {
-      logger.error(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined, not yet supported`,
-      );
+    if (!canProceedChargingProfile(chargingProfile, currentDate, logPrefix)) {
       continue;
     }
     // Check if the charging profile is active
     if (
-      isValidDate(chargingSchedule?.startSchedule) &&
+      isValidTime(chargingSchedule?.startSchedule) &&
       isWithinInterval(currentDate, {
         start: chargingSchedule.startSchedule!,
         end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
@@ -832,6 +807,54 @@ const getLimitFromChargingProfiles = (
       }
     }
   }
+};
+
+const canProceedChargingProfile = (
+  chargingProfile: ChargingProfile,
+  currentDate: Date,
+  logPrefix: string,
+): boolean => {
+  if (
+    (isValidTime(chargingProfile.validFrom) && isBefore(currentDate, chargingProfile.validFrom!)) ||
+    (isValidTime(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo!))
+  ) {
+    logger.debug(
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${
+        chargingProfile.chargingProfileId
+      } is not valid for the current date ${currentDate.toISOString()}`,
+    );
+    return false;
+  }
+  const chargingSchedule = chargingProfile.chargingSchedule;
+  if (isNullOrUndefined(chargingSchedule?.startSchedule)) {
+    logger.error(
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has (still) no startSchedule defined`,
+    );
+    return false;
+  }
+  if (isNullOrUndefined(chargingSchedule?.duration)) {
+    logger.error(
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined, not yet supported`,
+    );
+    return false;
+  }
+  return true;
+};
+
+const canProceedRecurringChargingProfile = (
+  chargingProfile: ChargingProfile,
+  logPrefix: string,
+): boolean => {
+  if (
+    chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
+    isNullOrUndefined(chargingProfile.recurrencyKind)
+  ) {
+    logger.error(
+      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no recurrencyKind defined`,
+    );
+    return false;
+  }
+  return true;
 };
 
 /**

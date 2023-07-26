@@ -47,7 +47,7 @@ export {
   isNotEmptyString,
   isNullOrUndefined,
   isUndefined,
-  isValidDate,
+  isValidTime,
   logPrefix,
   promiseWithTimeout,
   roundTo,
