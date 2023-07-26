@@ -1110,9 +1110,11 @@ export class ChargingStation {
 
   private getNumberOfReservationsOnConnectorZero(): number {
     let numberOfReservations = 0;
-    if (this.hasEvses && this.evses.get(0)?.connectors.get(0)?.reservation) {
-      ++numberOfReservations;
-    } else if (this.connectors.get(0)?.reservation) {
+    if (
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      (this.hasEvses && this.evses.get(0)?.connectors.get(0)?.reservation) ||
+      (!this.hasEvses && this.connectors.get(0)?.reservation)
+    ) {
       ++numberOfReservations;
     }
     return numberOfReservations;
