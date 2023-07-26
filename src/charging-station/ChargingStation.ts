@@ -731,6 +731,9 @@ export class ChargingStation {
         if (this.getEnableStatistics() === true) {
           this.performanceStatistics?.stop();
         }
+        if (this.hasFeatureProfile(SupportedFeatureProfiles.Reservation)) {
+          this.stopReservationExpirationSetInterval();
+        }
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
         this.templateFileWatcher?.close();
         this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);

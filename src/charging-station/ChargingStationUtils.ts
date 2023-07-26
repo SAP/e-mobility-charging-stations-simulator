@@ -703,7 +703,7 @@ const getLimitFromChargingProfiles = (
       continue;
     }
     const chargingSchedule = chargingProfile.chargingSchedule;
-    if (connectorStatus?.transactionStarted && !chargingSchedule?.startSchedule) {
+    if (connectorStatus?.transactionStarted && isNullOrUndefined(chargingSchedule?.startSchedule)) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`,
       );
