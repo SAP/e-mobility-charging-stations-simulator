@@ -1,4 +1,4 @@
-import { hoursToMilliseconds, hoursToSeconds } from 'date-fns';
+import { hoursToMilliseconds, hoursToSeconds, isValid } from 'date-fns';
 import { expect } from 'expect';
 
 import { Constants } from '../../src/utils/Constants';
@@ -84,8 +84,7 @@ describe('Utils test suite', () => {
   it('Verify convertToDate()', () => {
     expect(convertToDate(undefined)).toBe(undefined);
     expect(convertToDate(null)).toBe(null);
-    const invalidDate = convertToDate('');
-    expect(invalidDate instanceof Date && !isNaN(invalidDate.getTime())).toBe(false);
+    expect(isValid(convertToDate(''))).toBe(false);
     expect(convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'));
     const dateStr = '2020-01-01T00:00:00.000Z';
     let date = convertToDate(dateStr);

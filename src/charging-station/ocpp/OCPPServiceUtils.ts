@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
+import { isDate } from 'date-fns';
 
 import { OCPP16Constants } from './1.6/OCPP16Constants';
 import { OCPP20Constants } from './2.0/OCPP20Constants';
@@ -145,7 +146,7 @@ export class OCPPServiceUtils {
   public static convertDateToISOString<T extends JsonType>(obj: T): void {
     for (const key in obj) {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      if (obj![key] instanceof Date) {
+      if (isDate(obj![key])) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         (obj![key] as string) = (obj![key] as Date).toISOString();
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
