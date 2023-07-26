@@ -195,7 +195,7 @@ export class PerformanceStatistics {
       );
     } else if (logConfiguration.enabled) {
       logger.info(
-        `${this.logPrefix()} log interval is set to ${logStatisticsInterval?.toString()}. Not logging statistics`,
+        `${this.logPrefix()} log interval is set to ${logStatisticsInterval}. Not logging statistics`,
       );
     }
   }

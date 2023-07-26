@@ -37,7 +37,6 @@ import {
   DCElectricUtils,
   convertToFloat,
   convertToInt,
-  formatDurationMilliSeconds,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   getRandomInteger,
@@ -727,9 +726,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${formatDurationMilliSeconds(
-            interval,
-          )}(${roundTo(interval, 4)}ms)`,
+          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${interval}ms`,
         );
       }
     }

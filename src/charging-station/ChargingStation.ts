@@ -592,14 +592,14 @@ export class ChargingStation {
   public startMeterValues(connectorId: number, interval: number): void {
     if (connectorId === 0) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`,
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}`,
       );
       return;
     }
     if (!this.getConnectorStatus(connectorId)) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on non existing connector id
-          ${connectorId.toString()}`,
+          ${connectorId}`,
       );
       return;
     }
@@ -1025,11 +1025,12 @@ export class ChargingStation {
   public startReservationExpirationSetInterval(customInterval?: number): void {
     const interval =
       customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
-    logger.info(
-      `${this.logPrefix()} Reservation expiration date interval is set to ${interval}
-        and starts on charging station now`,
-    );
     if (interval > 0) {
+      logger.info(
+        `${this.logPrefix()} Reservation expiration date checks started every ${formatDurationMilliSeconds(
+          interval,
+        )}`,
+      );
       this.reservationExpirationSetInterval = setInterval((): void => {
         const currentDate = new Date();
         if (this.hasEvses) {
