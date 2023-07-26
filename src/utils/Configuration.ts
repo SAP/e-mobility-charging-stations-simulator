@@ -47,7 +47,7 @@ export class Configuration {
     [ConfigurationSection.uiServer, Configuration.buildUIServerSection()],
   ]);
 
-  private static configurationChangeCallback: () => Promise<void>;
+  private static configurationChangeCallback?: () => Promise<void>;
 
   private constructor() {
     // This is intentional
@@ -509,7 +509,7 @@ export class Configuration {
           delete Configuration.configurationData;
           Configuration.configurationSectionCache.clear();
           if (!isUndefined(Configuration.configurationChangeCallback)) {
-            Configuration.configurationChangeCallback().catch((error) => {
+            Configuration.configurationChangeCallback!().catch((error) => {
               throw typeof error === 'string' ? new Error(error) : error;
             });
           }
