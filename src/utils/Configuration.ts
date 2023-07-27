@@ -60,33 +60,8 @@ export class Configuration {
   public static getConfigurationSection<T extends ConfigurationSectionType>(
     sectionName: ConfigurationSection,
   ): T {
-    if (!Configuration.configurationSectionCache.has(sectionName)) {
-      switch (sectionName) {
-        case ConfigurationSection.log:
-          Configuration.configurationSectionCache.set(sectionName, Configuration.buildLogSection());
-          break;
-        case ConfigurationSection.performanceStorage:
-          Configuration.configurationSectionCache.set(
-            sectionName,
-            Configuration.buildPerformanceStorageSection(),
-          );
-          break;
-        case ConfigurationSection.worker:
-          Configuration.configurationSectionCache.set(
-            sectionName,
-            Configuration.buildWorkerSection(),
-          );
-          break;
-        case ConfigurationSection.uiServer:
-          Configuration.configurationSectionCache.set(
-            sectionName,
-            Configuration.buildUIServerSection(),
-          );
-          break;
-        default:
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          throw new Error(`Unknown configuration section '${sectionName}'`);
-      }
+    if (!Configuration.isConfigurationSectionCached(sectionName)) {
+      Configuration.cacheConfigurationSection(sectionName);
     }
     return Configuration.configurationSectionCache.get(sectionName) as T;
   }
@@ -186,6 +161,39 @@ export class Configuration {
 
   public static workerDynamicPoolInUse(): boolean {
     return Configuration.buildWorkerSection().processType === WorkerProcessType.dynamicPool;
+  }
+
+  private static isConfigurationSectionCached(sectionName: ConfigurationSection): boolean {
+    return Configuration.configurationSectionCache.has(sectionName);
+  }
+
+  private static cacheConfigurationSection(sectionName: ConfigurationSection): void {
+    switch (sectionName) {
+      case ConfigurationSection.log:
+        Configuration.configurationSectionCache.set(sectionName, Configuration.buildLogSection());
+        break;
+      case ConfigurationSection.performanceStorage:
+        Configuration.configurationSectionCache.set(
+          sectionName,
+          Configuration.buildPerformanceStorageSection(),
+        );
+        break;
+      case ConfigurationSection.worker:
+        Configuration.configurationSectionCache.set(
+          sectionName,
+          Configuration.buildWorkerSection(),
+        );
+        break;
+      case ConfigurationSection.uiServer:
+        Configuration.configurationSectionCache.set(
+          sectionName,
+          Configuration.buildUIServerSection(),
+        );
+        break;
+      default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error(`Unknown configuration section '${sectionName}'`);
+    }
   }
 
   private static buildUIServerSection(): UIServerConfiguration {
