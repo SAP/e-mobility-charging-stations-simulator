@@ -413,5 +413,6 @@ describe('Utils test suite', () => {
     ).toBe(true);
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true);
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false);
+    expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false);
   });
 });
