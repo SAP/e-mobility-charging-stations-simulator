@@ -27,7 +27,7 @@ body:
       label: e-mobility-charging-stations-simulator version
   - type: input
     attributes:
-      label: Node.js Version
+      label: Node.js version
       description: Output of `node -v`.
   - type: textarea
     attributes:
