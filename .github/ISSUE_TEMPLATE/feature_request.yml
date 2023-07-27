@@ -22,6 +22,9 @@ body:
     attributes:
       label: Description
       description: A clear and concise description of the feature.
+      placeholder: |
+        - If your feature request is related to a problem, please describe it
+        - If you have solutions in mind, please describe them
   - type: textarea
     attributes:
       label: Attachments
