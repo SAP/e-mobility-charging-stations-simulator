@@ -400,7 +400,7 @@ export const stationTemplateToStationInfo = (
   delete stationTemplate.chargeBoxSerialNumberPrefix;
   delete stationTemplate.chargePointSerialNumberPrefix;
   delete stationTemplate.meterSerialNumberPrefix;
-  return stationTemplate as unknown as ChargingStationInfo;
+  return stationTemplate as ChargingStationInfo;
 };
 
 export const createSerialNumber = (
