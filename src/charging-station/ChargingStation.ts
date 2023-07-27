@@ -25,7 +25,7 @@ import {
   deleteConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
-} from './ChargingStationConfigurationUtils';
+} from './ChargingStationConfigurationKeyUtils';
 import {
   buildConnectorsMap,
   checkConnectorsConfiguration,

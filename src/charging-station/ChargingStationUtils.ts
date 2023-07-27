@@ -19,7 +19,7 @@ import {
 } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
-import { getConfigurationKey } from './ChargingStationConfigurationUtils';
+import { getConfigurationKey } from './ChargingStationConfigurationKeyUtils';
 import { BaseError } from '../exception';
 import {
   AmpereUnits,

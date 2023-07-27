@@ -4,7 +4,7 @@ export {
   addConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
-} from './ChargingStationConfigurationUtils';
+} from './ChargingStationConfigurationKeyUtils';
 export {
   getIdTagsFile,
   checkChargingStation,
