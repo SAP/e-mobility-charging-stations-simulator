@@ -19,6 +19,7 @@ import {
 } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
+import { getConfigurationKey } from './ChargingStationConfigurationUtils';
 import { BaseError } from '../exception';
 import {
   AmpereUnits,
@@ -41,6 +42,8 @@ import {
   type OCPP20BootNotificationRequest,
   OCPPVersion,
   RecurrencyKindType,
+  StandardParametersKey,
+  SupportedFeatureProfiles,
   Voltage,
 } from '../types';
 import {
@@ -447,6 +450,16 @@ export const propagateSerialNumber = (
   stationTemplate?.meterSerialNumberPrefix && stationInfoSrc?.meterSerialNumber
     ? (stationInfoDst.meterSerialNumber = stationInfoSrc.meterSerialNumber)
     : stationInfoDst?.meterSerialNumber && delete stationInfoDst.meterSerialNumber;
+};
+
+export const hasFeatureProfile = (
+  chargingStation: ChargingStation,
+  featureProfile: SupportedFeatureProfiles,
+): boolean | undefined => {
+  return getConfigurationKey(
+    chargingStation,
+    StandardParametersKey.SupportedFeatureProfiles,
+  )?.value?.includes(featureProfile);
 };
 
 export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInfo): number => {

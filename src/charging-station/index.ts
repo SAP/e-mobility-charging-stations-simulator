@@ -5,4 +5,9 @@ export {
   getConfigurationKey,
   setConfigurationKeyValue,
 } from './ChargingStationConfigurationUtils';
-export { getIdTagsFile, checkChargingStation, resetConnectorStatus } from './ChargingStationUtils';
+export {
+  getIdTagsFile,
+  checkChargingStation,
+  resetConnectorStatus,
+  hasFeatureProfile,
+} from './ChargingStationUtils';

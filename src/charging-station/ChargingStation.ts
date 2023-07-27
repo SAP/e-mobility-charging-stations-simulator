@@ -43,6 +43,7 @@ import {
   getIdTagsFile,
   getMaxNumberOfEvses,
   getPhaseRotationValue,
+  hasFeatureProfile,
   initializeConnectorsMapStatus,
   propagateSerialNumber,
   stationTemplateToStationInfo,
@@ -668,7 +669,7 @@ export class ChargingStation {
         if (this.getEnableStatistics() === true) {
           this.performanceStatistics?.start();
         }
-        if (this.hasFeatureProfile(SupportedFeatureProfiles.Reservation)) {
+        if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
           this.startReservationExpirationSetInterval();
         }
         this.openWSConnection();
@@ -731,7 +732,7 @@ export class ChargingStation {
         if (this.getEnableStatistics() === true) {
           this.performanceStatistics?.stop();
         }
-        if (this.hasFeatureProfile(SupportedFeatureProfiles.Reservation)) {
+        if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
           this.stopReservationExpirationSetInterval();
         }
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
@@ -761,13 +762,6 @@ export class ChargingStation {
     if (this.getOcppPersistentConfiguration()) {
       this.saveConfiguration();
     }
-  }
-
-  public hasFeatureProfile(featureProfile: SupportedFeatureProfiles): boolean | undefined {
-    return getConfigurationKey(
-      this,
-      StandardParametersKey.SupportedFeatureProfiles,
-    )?.value?.includes(featureProfile);
   }
 
   public bufferMessage(message: string): void {
@@ -973,8 +967,6 @@ export class ChargingStation {
     const connector = this.getConnectorStatus(reservation.connectorId)!;
     switch (reason) {
       case ReservationTerminationReason.CONNECTOR_STATE_CHANGED:
-        delete connector.reservation;
-        break;
       case ReservationTerminationReason.TRANSACTION_STARTED:
         delete connector.reservation;
         break;

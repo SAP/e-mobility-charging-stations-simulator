@@ -2,7 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { type ChargingStation, getIdTagsFile } from '../../../charging-station';
+import { type ChargingStation, getIdTagsFile, hasFeatureProfile } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   type ClearChargingProfileRequest,
@@ -55,7 +55,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     featureProfile: OCPP16SupportedFeatureProfiles,
     command: OCPP16RequestCommand | OCPP16IncomingRequestCommand,
   ): boolean {
-    if (!chargingStation.hasFeatureProfile(featureProfile)) {
+    if (!hasFeatureProfile(chargingStation, featureProfile)) {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to '${command}' without '${featureProfile}' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles
