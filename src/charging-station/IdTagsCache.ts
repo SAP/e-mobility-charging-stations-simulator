@@ -1,7 +1,7 @@
 import { type FSWatcher, readFileSync } from 'node:fs';
 
 import type { ChargingStation } from './ChargingStation';
-import { getIdTagsFile } from './ChargingStationUtils';
+import { getIdTagsFile } from './Utils';
 import { FileType, IdTagDistribution } from '../types';
 import {
   handleFileException,

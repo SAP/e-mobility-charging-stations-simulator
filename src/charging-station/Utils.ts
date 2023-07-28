@@ -19,7 +19,7 @@ import {
 } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
-import { getConfigurationKey } from './ChargingStationConfigurationKeyUtils';
+import { getConfigurationKey } from './ConfigurationKeyUtils';
 import { BaseError } from '../exception';
 import {
   AmpereUnits,
@@ -65,7 +65,7 @@ import {
   secureRandom,
 } from '../utils';
 
-const moduleName = 'ChargingStationUtils';
+const moduleName = 'Utils';
 
 export const getChargingStationId = (
   index: number,

@@ -8,9 +8,9 @@ import { isMainThread } from 'node:worker_threads';
 import chalk from 'chalk';
 import { availableParallelism } from 'poolifier';
 
-import { waitChargingStationEvents } from './ChargingStationUtils';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServerFactory } from './ui-server/UIServerFactory';
+import { waitChargingStationEvents } from './Utils';
 import { version } from '../../package.json' assert { type: 'json' };
 import { BaseError } from '../exception';
 import { type Storage, StorageFactory } from '../performance';

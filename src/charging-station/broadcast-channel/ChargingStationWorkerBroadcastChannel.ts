@@ -39,7 +39,7 @@ import {
 } from '../../types';
 import { Constants, convertToInt, isEmptyObject, isNullOrUndefined, logger } from '../../utils';
 import type { ChargingStation } from '../ChargingStation';
-import { getConfigurationKey } from '../ChargingStationConfigurationKeyUtils';
+import { getConfigurationKey } from '../ConfigurationKeyUtils';
 import { OCPP16ServiceUtils } from '../ocpp';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
