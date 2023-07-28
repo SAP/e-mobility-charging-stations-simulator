@@ -8,6 +8,7 @@ import {
   convertToDate,
   convertToFloat,
   convertToInt,
+  extractTimeSeriesValues,
   formatDurationMilliSeconds,
   formatDurationSeconds,
   generateUUID,
@@ -219,6 +220,17 @@ describe('Utils test suite', () => {
     randomFloat = getRandomFloat(0, -Number.MAX_VALUE);
     expect(randomFloat).toBeGreaterThanOrEqual(-Number.MAX_VALUE);
     expect(randomFloat).toBeLessThanOrEqual(0);
+  });
+
+  it('Verify extractTimeSeriesValues()', () => {
+    expect(extractTimeSeriesValues([])).toEqual([]);
+    expect(extractTimeSeriesValues([{ timestamp: Date.now(), value: 1.1 }])).toEqual([1.1]);
+    expect(
+      extractTimeSeriesValues([
+        { timestamp: Date.now(), value: 1.1 },
+        { timestamp: Date.now(), value: 2.2 },
+      ]),
+    ).toEqual([1.1, 2.2]);
   });
 
   it('Verify isObject()', () => {
