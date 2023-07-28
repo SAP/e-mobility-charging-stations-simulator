@@ -49,6 +49,11 @@ export type IncomingRequestCommand = OCPP16IncomingRequestCommand | OCPP20Incomi
 
 export type IncomingRequest = [MessageType.CALL_MESSAGE, string, IncomingRequestCommand, JsonType];
 
+export type IncomingRequestHandler = (
+  chargingStation: ChargingStation,
+  commandPayload: JsonType,
+) => JsonType | Promise<JsonType>;
+
 export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => void;
 
 export type ErrorCallback = (error: OCPPError, requestStatistic?: boolean) => void;
@@ -80,11 +85,6 @@ export type DataTransferRequest = OCPP16DataTransferRequest;
 export type DiagnosticsStatusNotificationRequest = OCPP16DiagnosticsStatusNotificationRequest;
 
 export type FirmwareStatusNotificationRequest = OCPP16FirmwareStatusNotificationRequest;
-
-export type IncomingRequestHandler = (
-  chargingStation: ChargingStation,
-  commandPayload: JsonType,
-) => JsonType | Promise<JsonType>;
 
 export const AvailabilityType = {
   ...OCPP16AvailabilityType,

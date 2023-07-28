@@ -17,6 +17,7 @@ export {
   IdTagDistribution,
   type Status,
 } from './AutomaticTransactionGenerator';
+export { type GenericResponse, GenericStatus, RegistrationStatusEnumType } from './ocpp/Common';
 export {
   AvailabilityType,
   type BootNotificationRequest,
@@ -51,11 +52,8 @@ export {
   type DiagnosticsStatusNotificationResponse,
   type ErrorResponse,
   type FirmwareStatusNotificationResponse,
-  GenericStatus,
-  type GenericResponse,
   type HeartbeatResponse,
   type MeterValuesResponse,
-  RegistrationStatusEnumType,
   type Response,
   type ResponseHandler,
   type StatusNotificationResponse,

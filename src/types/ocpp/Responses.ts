@@ -16,10 +16,11 @@ import {
   OCPP16UnlockStatus,
 } from './1.6/Responses';
 import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses';
+import { type GenericResponse, GenericStatus } from './Common';
 import type { ErrorType } from './ErrorType';
 import type { MessageType } from './MessageType';
 import type { ChargingStation } from '../../charging-station';
-import type { JsonObject, JsonType } from '../JsonType';
+import type { JsonType } from '../JsonType';
 
 export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType];
 
@@ -48,21 +49,6 @@ export type DataTransferResponse = OCPP16DataTransferResponse;
 export type DiagnosticsStatusNotificationResponse = OCPP16DiagnosticsStatusNotificationResponse;
 
 export type FirmwareStatusNotificationResponse = OCPP16FirmwareStatusNotificationResponse;
-
-export enum GenericStatus {
-  Accepted = 'Accepted',
-  Rejected = 'Rejected',
-}
-
-export interface GenericResponse extends JsonObject {
-  status: GenericStatus;
-}
-
-export enum RegistrationStatusEnumType {
-  ACCEPTED = 'Accepted',
-  PENDING = 'Pending',
-  REJECTED = 'Rejected',
-}
 
 export const AvailabilityStatus = {
   ...OCPP16AvailabilityStatus,
@@ -102,11 +88,11 @@ export type DataTransferStatus = OCPP16DataTransferStatus;
 export type ReservationStatus = OCPP16ReservationStatus;
 export const ReservationStatus = {
   ...OCPP16ReservationStatus,
-};
+} as const;
 
 export type CancelReservationStatus = GenericStatus;
 export const CancelReservationStatus = {
   ...GenericStatus,
-};
+} as const;
 
 export type CancelReservationResponse = GenericResponse;

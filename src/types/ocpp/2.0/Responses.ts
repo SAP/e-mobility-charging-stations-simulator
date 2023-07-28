@@ -6,7 +6,7 @@ import type {
 import type { OCPP20SetVariableResultType } from './Variables';
 import type { EmptyObject } from '../../EmptyObject';
 import type { JsonObject } from '../../JsonType';
-import type { RegistrationStatusEnumType } from '../Responses';
+import type { RegistrationStatusEnumType } from '../Common';
 
 export type OCPP20BootNotificationResponse = {
   currentTime: Date;

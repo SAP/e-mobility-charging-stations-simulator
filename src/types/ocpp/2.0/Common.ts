@@ -1,5 +1,5 @@
 import type { JsonObject } from '../../JsonType';
-import type { GenericStatus } from '../Responses';
+import type { GenericStatus } from '../Common';
 
 export enum DataEnumType {
   // eslint-disable-next-line id-blacklist
