@@ -889,7 +889,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             ReservationFilterKey.CONNECTOR_ID,
             reservedOnConnectorZero ? 0 : transactionConnectorId,
           )!;
-          startTransactionPayload.reservationId = reservation.id;
+          startTransactionPayload.reservationId = reservation.reservationId;
           await chargingStation.removeReservation(
             reservation,
             ReservationTerminationReason.TRANSACTION_STARTED,

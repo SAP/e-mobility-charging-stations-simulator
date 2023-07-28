@@ -256,5 +256,8 @@ export {
   WebSocketCloseEventStatusCode,
   WebSocketCloseEventStatusString,
 } from './WebSocket';
-export { ReservationFilterKey, ReservationTerminationReason } from './ocpp/1.6/Reservation';
-export { type Reservation } from './ocpp/Reservation';
+export {
+  type Reservation,
+  ReservationFilterKey,
+  ReservationTerminationReason,
+} from './ocpp/Reservation';

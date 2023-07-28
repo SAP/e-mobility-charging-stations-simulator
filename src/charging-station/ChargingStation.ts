@@ -1013,7 +1013,7 @@ export class ChargingStation {
   ): [boolean, Reservation | undefined] {
     const foundReservation = this.getReservationBy(
       ReservationFilterKey.RESERVATION_ID,
-      reservation.id!,
+      reservation.reservationId!,
     );
     return isUndefined(foundReservation) ? [false, undefined] : [true, foundReservation];
   }
