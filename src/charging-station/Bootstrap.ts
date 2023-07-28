@@ -230,7 +230,7 @@ export class Bootstrap extends EventEmitter {
     if (workerConfiguration?.elementsPerWorker === 'auto') {
       elementsPerWorker =
         this.numberOfChargingStations > availableParallelism()
-          ? Math.round(this.numberOfChargingStations / (availableParallelism() * 1.5))
+          ? Math.round((this.numberOfChargingStations / availableParallelism()) * 1.5)
           : 1;
     }
     this.workerImplementation === null &&
