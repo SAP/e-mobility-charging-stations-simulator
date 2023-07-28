@@ -355,7 +355,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
 
   private getConnectorStatus(connectorId: number): Status {
     const connectorStatus = this.chargingStation.getAutomaticTransactionGeneratorStatuses()
-      ? cloneObject(this.chargingStation.getAutomaticTransactionGeneratorStatuses()!)[connectorId]
+      ? cloneObject<Status[]>(this.chargingStation.getAutomaticTransactionGeneratorStatuses()!)[
+          connectorId
+        ]
       : undefined;
     delete connectorStatus?.startDate;
     delete connectorStatus?.lastRunDate;

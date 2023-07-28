@@ -12,7 +12,7 @@ import {
   minutesToSeconds,
   secondsToMilliseconds,
 } from 'date-fns';
-import clone from 'just-clone';
+import deepClone from 'deep-clone';
 
 import { Constants } from './Constants';
 import { type TimestampedData, WebSocketCloseEventStatusString } from '../types';
@@ -206,8 +206,19 @@ export const isObject = (item: unknown): boolean => {
   );
 };
 
-export const cloneObject = <T extends object>(object: T): T => {
-  return clone<T>(object);
+type CloneableData =
+  | number
+  | string
+  | boolean
+  | null
+  | undefined
+  | Date
+  | CloneableData[]
+  | { [key: string]: CloneableData };
+
+export const cloneObject = <T>(object: T): T => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  return deepClone(object as CloneableData) as T;
 };
 
 export const hasOwnProp = (object: unknown, property: PropertyKey): boolean => {

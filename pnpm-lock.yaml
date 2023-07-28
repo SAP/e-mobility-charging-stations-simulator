@@ -39,12 +39,12 @@ dependencies:
   date-fns:
     specifier: ^2.30.0
     version: 2.30.0
+  deep-clone:
+    specifier: ^4.0.0
+    version: 4.0.0
   http-status-codes:
     specifier: ^2.2.0
     version: 2.2.0
-  just-clone:
-    specifier: ^6.2.0
-    version: 6.2.0
   just-merge:
     specifier: ^3.2.0
     version: 3.2.0
@@ -3444,6 +3444,10 @@ packages:
       mimic-response: 3.1.0
     dev: true
 
+  /deep-clone@4.0.0:
+    resolution: {integrity: sha512-bMvDVR8GiGCGHT4SgqXyXDD9Zmo3kv9YLq8aSO2xslP97A3mFkpNBg+t+fjXERvewzhmtk9efvL+V52iVkD0lg==}
+    dev: false
+
   /deep-extend@0.6.0:
     resolution: {integrity: sha512-LOHxIOaPYdHlJRtCQfDIVZtfw/ufM8+rVj649RIHzcm/vGwQRXFt6OPqIFWsm2XEMrNIEtWR64sY1LEKD2vAOA==}
     engines: {node: '>=4.0.0'}
@@ -6027,10 +6031,6 @@ packages:
       json-schema: 0.4.0
       verror: 1.10.0
     dev: true
-
-  /just-clone@6.2.0:
-    resolution: {integrity: sha512-1IynUYEc/HAwxhi3WDpIpxJbZpMCvvrrmZVqvj9EhpvbH8lls7HhdhiByjL7DkAaWlLIzpC0Xc/VPvy/UxLNjA==}
-    dev: false
 
   /just-extend@4.2.1:
     resolution: {integrity: sha512-g3UB796vUFIY90VIv/WX3L2c8CS2MdWUww3CNrYmqza1Fg0DURc2K/O4YrnklBdQarSJ/y8JnJYDGc+1iumQjg==}

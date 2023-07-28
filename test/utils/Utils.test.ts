@@ -242,28 +242,29 @@ describe('Utils test suite', () => {
     const obj = { 1: 1 };
     expect(cloneObject(obj)).toStrictEqual(obj);
     expect(cloneObject(obj) === obj).toBe(false);
+    const nestedObj = { 1: obj, 2: obj };
+    expect(cloneObject(nestedObj)).toStrictEqual(nestedObj);
+    expect(cloneObject(nestedObj) === nestedObj).toBe(false);
     const array = [1, 2];
     expect(cloneObject(array)).toStrictEqual(array);
     expect(cloneObject(array) === array).toBe(false);
+    const objArray = [obj, obj];
+    expect(cloneObject(objArray)).toStrictEqual(objArray);
+    expect(cloneObject(objArray) === objArray).toBe(false);
     const date = new Date();
     expect(cloneObject(date)).toStrictEqual(date);
     expect(cloneObject(date) === date).toBe(false);
     const map = new Map([['1', '2']]);
-    expect(cloneObject(map)).toStrictEqual(map);
-    expect(cloneObject(map) === map).toBe(false);
+    expect(cloneObject(map)).toStrictEqual({});
     const set = new Set(['1']);
-    expect(cloneObject(set)).toStrictEqual(set);
-    expect(cloneObject(set) === set).toBe(false);
+    expect(cloneObject(set)).toStrictEqual({});
     // The URL object seems to have not enumerable properties
     const url = new URL('https://domain.tld');
-    expect(cloneObject(url)).toStrictEqual(url);
-    expect(cloneObject(url) === url).toBe(true);
+    expect(cloneObject(url)).toStrictEqual({});
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]]);
-    expect(cloneObject(weakMap)).toStrictEqual(weakMap);
-    expect(cloneObject(weakMap) === weakMap).toBe(true);
+    expect(cloneObject(weakMap)).toStrictEqual({});
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }]);
-    expect(cloneObject(weakSet)).toStrictEqual(weakSet);
-    expect(cloneObject(weakSet) === weakSet).toBe(true);
+    expect(cloneObject(weakSet)).toStrictEqual({});
   });
 
   it('Verify hasOwnProp()', () => {
