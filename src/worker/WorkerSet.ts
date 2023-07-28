@@ -35,6 +35,18 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   constructor(workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions);
+    if (
+      this.workerOptions.elementsPerWorker === null ||
+      this.workerOptions.elementsPerWorker === undefined
+    ) {
+      throw new TypeError('Elements per worker is not defined');
+    }
+    if (Number.isSafeInteger(this.workerOptions.elementsPerWorker)) {
+      throw new TypeError('Elements per worker must be an integer');
+    }
+    if (this.workerOptions.elementsPerWorker <= 0) {
+      throw new RangeError('Elements per worker must be greater than zero');
+    }
     this.workerOptions.poolOptions = {
       ...DEFAULT_POOL_OPTIONS,
       ...this.workerOptions.poolOptions,
