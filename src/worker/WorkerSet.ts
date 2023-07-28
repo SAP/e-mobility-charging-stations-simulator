@@ -41,7 +41,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     ) {
       throw new TypeError('Elements per worker is not defined');
     }
-    if (Number.isSafeInteger(this.workerOptions.elementsPerWorker)) {
+    if (!Number.isSafeInteger(this.workerOptions.elementsPerWorker)) {
       throw new TypeError('Elements per worker must be an integer');
     }
     if (this.workerOptions.elementsPerWorker <= 0) {
