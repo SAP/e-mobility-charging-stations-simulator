@@ -24,6 +24,7 @@ const availableParallelism = () => {
 
 const isDevelopmentBuild = process.env.BUILD === 'development';
 const isAnalyzeBuild = process.env.ANALYZE;
+const sourceMap = !!isDevelopmentBuild;
 
 export default {
   input: ['src/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
@@ -32,7 +33,7 @@ export default {
     {
       dir: 'dist',
       format: 'esm',
-      sourcemap: !!isDevelopmentBuild,
+      sourcemap: sourceMap,
       plugins: [terser({ maxWorkers: Math.floor(availableParallelism() / 2) })],
     },
   ],
@@ -73,7 +74,7 @@ export default {
     typescript({
       tsconfig: 'tsconfig.json',
       compilerOptions: {
-        sourceMap: !!isDevelopmentBuild,
+        sourceMap,
       },
     }),
     del({
