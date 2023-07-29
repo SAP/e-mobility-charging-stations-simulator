@@ -4,8 +4,8 @@ import chalk from 'chalk';
 
 import { Bootstrap } from './charging-station';
 
-Bootstrap.getInstance()
-  .start()
-  .catch((error) => {
-    console.error(chalk.red('Startup error: '), error);
-  });
+try {
+  await Bootstrap.getInstance().start();
+} catch (error) {
+  console.error(chalk.red('Startup error: '), error);
+}
