@@ -943,12 +943,12 @@ export class ChargingStation {
   }
 
   public async addReservation(reservation: Reservation): Promise<void> {
-    const [exists, reservationFound] = this.doesReservationExists(reservation);
-    if (exists) {
-      await this.removeReservation(
-        reservationFound!,
-        ReservationTerminationReason.REPLACE_EXISTING,
-      );
+    const reservationFound = this.getReservationBy(
+      ReservationFilterKey.RESERVATION_ID,
+      reservation.reservationId,
+    );
+    if (reservationFound) {
+      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING);
     }
     this.getConnectorStatus(reservation.connectorId)!.reservation = reservation;
     await OCPPServiceUtils.sendAndSetConnectorStatus(
@@ -1008,16 +1008,6 @@ export class ChargingStation {
     }
   }
 
-  public doesReservationExists(
-    reservation: Partial<Reservation>,
-  ): [boolean, Reservation | undefined] {
-    const foundReservation = this.getReservationBy(
-      ReservationFilterKey.RESERVATION_ID,
-      reservation.reservationId!,
-    );
-    return isUndefined(foundReservation) ? [false, undefined] : [true, foundReservation];
-  }
-
   public startReservationExpirationSetInterval(customInterval?: number): void {
     const interval =
       customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
@@ -1074,18 +1064,19 @@ export class ChargingStation {
     idTag?: string,
     connectorId?: number,
   ): boolean {
-    const [alreadyExists] = this.doesReservationExists({ id: reservationId });
-    if (alreadyExists) {
-      return alreadyExists;
-    }
-    const userReservedAlready = isUndefined(
-      this.getReservationBy(ReservationFilterKey.ID_TAG, idTag!),
-    )
-      ? false
-      : true;
+    const reservation = this.getReservationBy(ReservationFilterKey.RESERVATION_ID, reservationId);
+    const userReservedAlready =
+      !isUndefined(idTag) && isUndefined(this.getReservationBy(ReservationFilterKey.ID_TAG, idTag!))
+        ? false
+        : true;
     const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
     const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
-    return !alreadyExists && !userReservedAlready && notConnectorZero && freeConnectorsAvailable;
+    return (
+      isUndefined(reservation) &&
+      !userReservedAlready &&
+      notConnectorZero &&
+      freeConnectorsAvailable
+    );
   }
 
   private getNumberOfReservableConnectors(): number {

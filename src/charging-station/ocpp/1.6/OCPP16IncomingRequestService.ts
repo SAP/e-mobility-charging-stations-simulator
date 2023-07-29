@@ -1615,8 +1615,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     try {
       const { reservationId } = commandPayload;
-      const [exists, reservation] = chargingStation.doesReservationExists({ id: reservationId });
-      if (!exists) {
+      const reservation = chargingStation.getReservationBy(
+        ReservationFilterKey.RESERVATION_ID,
+        reservationId,
+      );
+      if (isUndefined(reservation)) {
         logger.error(
           `${chargingStation.logPrefix()} Reservation with ID ${reservationId}
             does not exist on charging station`,
