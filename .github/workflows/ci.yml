@@ -28,6 +28,7 @@ jobs:
       - name: pnpm install
         run: pnpm install
       - name: pnpm lint
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm lint
       - name: pnpm build
         run: pnpm build
@@ -66,6 +67,7 @@ jobs:
       - name: pnpm install
         run: pnpm install
       - name: pnpm lint
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm lint
       - name: pnpm build
         run: pnpm build
