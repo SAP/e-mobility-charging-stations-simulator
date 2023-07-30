@@ -256,6 +256,6 @@ export {
 } from './WebSocket';
 export {
   type Reservation,
-  ReservationFilterKey,
+  type ReservationFilterKey,
   ReservationTerminationReason,
 } from './ocpp/Reservation';

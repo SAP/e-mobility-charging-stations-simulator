@@ -80,7 +80,6 @@ import {
   OCPPVersion,
   type RemoteStartTransactionRequest,
   type RemoteStopTransactionRequest,
-  ReservationFilterKey,
   ReservationTerminationReason,
   type ResetRequest,
   type SetChargingProfileRequest,
@@ -886,7 +885,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         };
         if (reserved || reservedOnConnectorZero) {
           const reservation = chargingStation.getReservationBy(
-            ReservationFilterKey.CONNECTOR_ID,
+            'connectorId',
             reservedOnConnectorZero ? 0 : transactionConnectorId,
           )!;
           startTransactionPayload.reservationId = reservation.reservationId;
@@ -1615,10 +1614,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     try {
       const { reservationId } = commandPayload;
-      const reservation = chargingStation.getReservationBy(
-        ReservationFilterKey.RESERVATION_ID,
-        reservationId,
-      );
+      const reservation = chargingStation.getReservationBy('reservationId', reservationId);
       if (isUndefined(reservation)) {
         logger.error(
           `${chargingStation.logPrefix()} Reservation with ID ${reservationId}

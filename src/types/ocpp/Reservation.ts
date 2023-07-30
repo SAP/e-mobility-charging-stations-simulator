@@ -10,10 +10,4 @@ export enum ReservationTerminationReason {
   REPLACE_EXISTING = 'ReplaceExisting',
 }
 
-export enum ReservationFilterKey {
-  RESERVATION_ID = 'reservationId',
-  ID_TAG = 'idTag',
-  PARENT_ID_TAG = 'parentIdTag',
-  CONNECTOR_ID = 'connectorId',
-  EVSE_ID = 'evseId',
-}
+export type ReservationFilterKey = keyof OCPP16ReserveNowRequest;

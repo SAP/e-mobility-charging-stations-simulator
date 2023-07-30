@@ -104,7 +104,7 @@ import {
   RegistrationStatusEnumType,
   RequestCommand,
   type Reservation,
-  ReservationFilterKey,
+  type ReservationFilterKey,
   ReservationTerminationReason,
   type Response,
   StandardParametersKey,
@@ -943,10 +943,7 @@ export class ChargingStation {
   }
 
   public async addReservation(reservation: Reservation): Promise<void> {
-    const reservationFound = this.getReservationBy(
-      ReservationFilterKey.RESERVATION_ID,
-      reservation.reservationId,
-    );
+    const reservationFound = this.getReservationBy('reservationId', reservation.reservationId);
     if (!isUndefined(reservationFound)) {
       await this.removeReservation(
         reservationFound!,
@@ -997,14 +994,14 @@ export class ChargingStation {
     if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
         for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus?.reservation?.[filterKey as keyof Reservation] === value) {
+          if (connectorStatus?.reservation?.[filterKey] === value) {
             return connectorStatus.reservation;
           }
         }
       }
     } else {
       for (const connectorStatus of this.connectors.values()) {
-        if (connectorStatus?.reservation?.[filterKey as keyof Reservation] === value) {
+        if (connectorStatus?.reservation?.[filterKey] === value) {
           return connectorStatus.reservation;
         }
       }
@@ -1059,7 +1056,7 @@ export class ChargingStation {
   }
 
   public validateIncomingRequestWithReservation(connectorId: number, idTag: string): boolean {
-    return this.getReservationBy(ReservationFilterKey.CONNECTOR_ID, connectorId)?.idTag === idTag;
+    return this.getReservationBy('connectorId', connectorId)?.idTag === idTag;
   }
 
   public isConnectorReservable(
@@ -1067,13 +1064,9 @@ export class ChargingStation {
     idTag?: string,
     connectorId?: number,
   ): boolean {
-    const reservationExists = !isUndefined(
-      this.getReservationBy(ReservationFilterKey.RESERVATION_ID, reservationId),
-    );
+    const reservationExists = !isUndefined(this.getReservationBy('reservationId', reservationId));
     const userReservationExists =
-      !isUndefined(idTag) && isUndefined(this.getReservationBy(ReservationFilterKey.ID_TAG, idTag!))
-        ? false
-        : true;
+      !isUndefined(idTag) && isUndefined(this.getReservationBy('idTag', idTag!)) ? false : true;
     const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
     const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
     return (
