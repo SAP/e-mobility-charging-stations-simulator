@@ -9,7 +9,6 @@ import {
   ApplicationProtocolVersion,
   type UIServerConfiguration,
 } from '../../types';
-import { isUndefined } from '../../utils';
 
 export class UIServerFactory {
   private constructor() {
@@ -27,12 +26,20 @@ export class UIServerFactory {
       );
     }
     uiServerConfiguration = {
-      ...(uiServerConfiguration.type === ApplicationProtocol.HTTP &&
-        isUndefined(uiServerConfiguration.version) && {
-          version: ApplicationProtocolVersion.VERSION_11,
-        }),
+      version: ApplicationProtocolVersion.VERSION_11,
       ...uiServerConfiguration,
     };
+    if (
+      uiServerConfiguration.type === ApplicationProtocol.WS &&
+      uiServerConfiguration.version !== ApplicationProtocolVersion.VERSION_11
+    ) {
+      console.warn(
+        chalk.yellow(
+          `Only version ${ApplicationProtocolVersion.VERSION_11} is supported for WebSocket UI server. Falling back to version ${ApplicationProtocolVersion.VERSION_11}.`,
+        ),
+      );
+      uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11;
+    }
     switch (uiServerConfiguration.type) {
       case ApplicationProtocol.WS:
         return new UIWebSocketServer(uiServerConfiguration);
