@@ -613,7 +613,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       );
       return;
     }
-    if (!Number.isInteger(payload.transactionId)) {
+    if (!Number.isSafeInteger(payload.transactionId)) {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${transactionConnectorId.toString()} with a non integer transaction id ${
           payload.transactionId
