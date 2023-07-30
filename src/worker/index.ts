@@ -1,5 +1,11 @@
 export type { WorkerAbstract } from './WorkerAbstract';
-export { WorkerConstants } from './WorkerConstants';
+export {
+  DEFAULT_ELEMENT_START_DELAY,
+  DEFAULT_POOL_MAX_SIZE,
+  DEFAULT_POOL_MIN_SIZE,
+  DEFAULT_WORKER_START_DELAY,
+  POOL_MAX_INACTIVE_TIME,
+} from './WorkerConstants';
 export { WorkerFactory } from './WorkerFactory';
 export {
   type WorkerData,

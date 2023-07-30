@@ -3,10 +3,8 @@
 import { EventEmitter } from 'node:events';
 import { SHARE_ENV, Worker } from 'node:worker_threads';
 
-import type { ThreadPoolOptions } from 'poolifier';
-
 import { WorkerAbstract } from './WorkerAbstract';
-import { WorkerConstants } from './WorkerConstants';
+import { DEFAULT_POOL_OPTIONS, EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants';
 import {
   type SetInfo,
   type WorkerData,
@@ -17,11 +15,6 @@ import {
   WorkerSetEvents,
 } from './WorkerTypes';
 import { sleep } from './WorkerUtils';
-
-const DEFAULT_POOL_OPTIONS: ThreadPoolOptions = {
-  enableEvents: true,
-  restartWorkerOnError: true,
-};
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly emitter!: EventEmitter;
@@ -59,7 +52,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
 
   get info(): SetInfo {
     return {
-      version: WorkerConstants.version,
+      version: workerSetVersion,
       type: 'set',
       worker: 'thread',
       size: this.size,
@@ -125,10 +118,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       env: SHARE_ENV,
       ...this.workerOptions.poolOptions?.workerOptions,
     });
-    worker.on(
-      'message',
-      this.workerOptions.poolOptions?.messageHandler ?? WorkerConstants.EMPTY_FUNCTION,
-    );
+    worker.on('message', this.workerOptions.poolOptions?.messageHandler ?? EMPTY_FUNCTION);
     worker.on('message', (message: WorkerMessage<WorkerData>) => {
       if (message.event === WorkerMessageEvents.startedWorkerElement) {
         this.emitter?.emit(WorkerSetEvents.elementStarted, this.info);
@@ -136,24 +126,15 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
         this.emitter?.emit(WorkerSetEvents.elementError, message.data);
       }
     });
-    worker.on(
-      'error',
-      this.workerOptions.poolOptions?.errorHandler ?? WorkerConstants.EMPTY_FUNCTION,
-    );
+    worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION);
     worker.on('error', (error) => {
       this.emitter?.emit(WorkerSetEvents.error, error);
       if (this.workerOptions.poolOptions?.restartWorkerOnError) {
         this.addWorkerSetElement();
       }
     });
-    worker.on(
-      'online',
-      this.workerOptions.poolOptions?.onlineHandler ?? WorkerConstants.EMPTY_FUNCTION,
-    );
-    worker.on(
-      'exit',
-      this.workerOptions.poolOptions?.exitHandler ?? WorkerConstants.EMPTY_FUNCTION,
-    );
+    worker.on('online', this.workerOptions.poolOptions?.onlineHandler ?? EMPTY_FUNCTION);
+    worker.on('exit', this.workerOptions.poolOptions?.exitHandler ?? EMPTY_FUNCTION);
     worker.once('exit', () =>
       this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker)!),
     );

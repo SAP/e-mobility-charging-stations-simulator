@@ -1,20 +1,11 @@
 import { isMainThread } from 'node:worker_threads';
 
 import type { WorkerAbstract } from './WorkerAbstract';
-import { WorkerConstants } from './WorkerConstants';
+import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants';
 import { WorkerDynamicPool } from './WorkerDynamicPool';
 import { WorkerSet } from './WorkerSet';
 import { WorkerStaticPool } from './WorkerStaticPool';
 import { type WorkerData, type WorkerOptions, WorkerProcessType } from './WorkerTypes';
-
-const DEFAULT_WORKER_OPTIONS: WorkerOptions = {
-  workerStartDelay: WorkerConstants.DEFAULT_WORKER_START_DELAY,
-  elementStartDelay: WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
-  poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
-  poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
-  elementsPerWorker: WorkerConstants.DEFAULT_ELEMENTS_PER_WORKER,
-  poolOptions: {},
-};
 
 export class WorkerFactory {
   private constructor() {

@@ -20,7 +20,13 @@ import {
   type UIServerConfiguration,
   type WorkerConfiguration,
 } from '../types';
-import { WorkerConstants, WorkerProcessType } from '../worker';
+import {
+  DEFAULT_ELEMENT_START_DELAY,
+  DEFAULT_POOL_MAX_SIZE,
+  DEFAULT_POOL_MIN_SIZE,
+  DEFAULT_WORKER_START_DELAY,
+  WorkerProcessType,
+} from '../worker';
 
 type ConfigurationSectionType =
   | LogConfiguration
@@ -401,11 +407,11 @@ export class Configuration {
     );
     const defaultWorkerConfiguration: WorkerConfiguration = {
       processType: WorkerProcessType.workerSet,
-      startDelay: WorkerConstants.DEFAULT_WORKER_START_DELAY,
+      startDelay: DEFAULT_WORKER_START_DELAY,
       elementsPerWorker: 'auto',
-      elementStartDelay: WorkerConstants.DEFAULT_ELEMENT_START_DELAY,
-      poolMinSize: WorkerConstants.DEFAULT_POOL_MIN_SIZE,
-      poolMaxSize: WorkerConstants.DEFAULT_POOL_MAX_SIZE,
+      elementStartDelay: DEFAULT_ELEMENT_START_DELAY,
+      poolMinSize: DEFAULT_POOL_MIN_SIZE,
+      poolMaxSize: DEFAULT_POOL_MAX_SIZE,
     };
     hasOwnProp(Configuration.getConfigurationData(), 'workerPoolStrategy') &&
       delete Configuration.getConfigurationData()?.workerPoolStrategy;

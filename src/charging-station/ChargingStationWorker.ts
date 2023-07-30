@@ -8,7 +8,7 @@ import { ThreadWorker } from 'poolifier';
 import { ChargingStation } from './ChargingStation';
 import type { ChargingStationWorkerData } from '../types';
 import { Configuration } from '../utils';
-import { WorkerConstants, type WorkerMessage, WorkerMessageEvents } from '../worker';
+import { POOL_MAX_INACTIVE_TIME, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
 const moduleName = 'ChargingStationWorker';
 
@@ -63,7 +63,7 @@ class ChargingStationWorker extends AsyncResource {
 export let chargingStationWorker: ChargingStationWorker | ThreadWorker<ChargingStationWorkerData>;
 if (Configuration.workerPoolInUse()) {
   chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation, {
-    maxInactiveTime: WorkerConstants.POOL_MAX_INACTIVE_TIME,
+    maxInactiveTime: POOL_MAX_INACTIVE_TIME,
   });
 } else {
   chargingStationWorker = new ChargingStationWorker();
