@@ -7,12 +7,11 @@ import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns';
 import type { ChargingStation } from './ChargingStation';
 import { checkChargingStation } from './Helpers';
 import { IdTagsCache } from './IdTagsCache';
+import { OCPPServiceUtils } from './ocpp';
 import { BaseError } from '../exception';
 import { PerformanceStatistics } from '../performance';
 import {
   AuthorizationStatus,
-  type AuthorizeRequest,
-  type AuthorizeResponse,
   ConnectorStatusEnum,
   RequestCommand,
   type StartTransactionRequest,
@@ -397,24 +396,8 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         connectorId,
       )} start transaction with an idTag '${idTag}'`;
       if (this.getRequireAuthorize()) {
-        // Authorize idTag
-        const authorizeResponse: AuthorizeResponse =
-          await this.chargingStation.ocppRequestService.requestHandler<
-            AuthorizeRequest,
-            AuthorizeResponse
-          >(this.chargingStation, RequestCommand.AUTHORIZE, {
-            idTag,
-          });
         ++this.connectorsStatus.get(connectorId)!.authorizeRequests!;
-        if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
-          if (
-            isNullOrUndefined(this.chargingStation.getConnectorStatus(connectorId)?.authorizeIdTag)
-          ) {
-            logger.warn(
-              `${this.chargingStation.logPrefix()} IdTag ${idTag} is not set as authorized remotely, applying deferred initialization`,
-            );
-            this.chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag;
-          }
+        if (await OCPPServiceUtils.isIdTagAuthorized(this.chargingStation, connectorId, idTag)) {
           ++this.connectorsStatus.get(connectorId)!.acceptedAuthorizeRequests!;
           logger.info(startTransactionLogMsg);
           // Start transaction

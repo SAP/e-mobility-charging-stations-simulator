@@ -8,10 +8,14 @@ import { isDate } from 'date-fns';
 import { OCPP16Constants } from './1.6/OCPP16Constants';
 import { OCPP20Constants } from './2.0/OCPP20Constants';
 import { OCPPConstants } from './OCPPConstants';
-import { type ChargingStation, getConfigurationKey } from '../../charging-station';
+import { type ChargingStation, getConfigurationKey, getIdTagsFile } from '../../charging-station';
 import { BaseError } from '../../exception';
 import {
+  AuthorizationStatus,
+  type AuthorizeRequest,
+  type AuthorizeResponse,
   ChargePointErrorCode,
+  type ConnectorStatus,
   type ConnectorStatusEnum,
   ErrorType,
   FileType,
@@ -218,6 +222,27 @@ export class OCPPServiceUtils {
     chargingStation.getConnectorStatus(connectorId)!.status = status;
   }
 
+  public static async isIdTagAuthorized(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag: string,
+  ): Promise<boolean> {
+    let authorized = false;
+    if (OCPPServiceUtils.isIdTagLocalAuthorized(chargingStation, idTag)) {
+      const connectorStatus: ConnectorStatus = chargingStation.getConnectorStatus(connectorId)!;
+      connectorStatus.localAuthorizeIdTag = idTag;
+      connectorStatus.idTagLocalAuthorized = true;
+      authorized = true;
+    } else {
+      authorized = await OCPPServiceUtils.isIdTagRemoteAuthorized(
+        chargingStation,
+        connectorId,
+        idTag,
+      );
+    }
+    return authorized;
+  }
+
   protected static checkConnectorStatusTransition(
     chargingStation: ChargingStation,
     connectorId: number,
@@ -395,6 +420,36 @@ export class OCPPServiceUtils {
     return options?.limitationEnabled
       ? Math.min(numberValue * options.unitMultiplier!, limit)
       : numberValue * options.unitMultiplier!;
+  }
+
+  private static isIdTagLocalAuthorized(chargingStation: ChargingStation, idTag: string): boolean {
+    return (
+      chargingStation.getLocalAuthListEnabled() === true &&
+      chargingStation.hasIdTags() === true &&
+      isNotEmptyString(
+        chargingStation.idTagsCache
+          .getIdTags(getIdTagsFile(chargingStation.stationInfo)!)
+          ?.find((tag) => tag === idTag),
+      )
+    );
+  }
+
+  private static async isIdTagRemoteAuthorized(
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag: string,
+  ): Promise<boolean> {
+    chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag;
+    return (
+      (
+        await chargingStation.ocppRequestService.requestHandler<
+          AuthorizeRequest,
+          AuthorizeResponse
+        >(chargingStation, RequestCommand.AUTHORIZE, {
+          idTag,
+        })
+      )?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
+    );
   }
 
   private static logPrefix = (

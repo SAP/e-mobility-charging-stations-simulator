@@ -2,11 +2,10 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { type ChargingStation, getIdTagsFile, hasFeatureProfile } from '../../../charging-station';
+import { type ChargingStation, hasFeatureProfile } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   type ClearChargingProfileRequest,
-  type ConnectorStatus,
   CurrentType,
   ErrorType,
   type JsonType,
@@ -15,9 +14,6 @@ import {
   MeterValueContext,
   MeterValueLocation,
   MeterValueUnit,
-  OCPP16AuthorizationStatus,
-  type OCPP16AuthorizeRequest,
-  type OCPP16AuthorizeResponse,
   type OCPP16ChargingProfile,
   type OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
@@ -41,7 +37,6 @@ import {
   getRandomFloatRounded,
   getRandomInteger,
   isNotEmptyArray,
-  isNotEmptyString,
   isNullOrUndefined,
   isUndefined,
   logger,
@@ -886,29 +881,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     );
   }
 
-  public static async isIdTagAuthorized(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    idTag: string,
-  ): Promise<boolean> {
-    let authorized = false;
-    const connectorStatus: ConnectorStatus = chargingStation.getConnectorStatus(connectorId)!;
-    if (OCPP16ServiceUtils.isIdTagLocalAuthorized(chargingStation, idTag)) {
-      connectorStatus.localAuthorizeIdTag = idTag;
-      connectorStatus.idTagLocalAuthorized = true;
-      authorized = true;
-    } else {
-      authorized = await OCPP16ServiceUtils.isIdTagRemoteAuthorized(chargingStation, idTag);
-      if (authorized && isNullOrUndefined(connectorStatus.authorizeIdTag)) {
-        logger.warn(
-          `${chargingStation.logPrefix()} IdTag ${idTag} is not set as authorized remotely, applying deferred initialization`,
-        );
-        connectorStatus.authorizeIdTag = idTag;
-      }
-    }
-    return authorized;
-  }
-
   private static buildSampledValue(
     sampledValueTemplate: SampledValueTemplate,
     value: number,
@@ -983,31 +955,5 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       case OCPP16MeterValueMeasurand.VOLTAGE:
         return MeterValueUnit.VOLT;
     }
-  }
-
-  private static isIdTagLocalAuthorized(chargingStation: ChargingStation, idTag: string): boolean {
-    return (
-      chargingStation.getLocalAuthListEnabled() === true &&
-      chargingStation.hasIdTags() === true &&
-      isNotEmptyString(
-        chargingStation.idTagsCache
-          .getIdTags(getIdTagsFile(chargingStation.stationInfo)!)
-          ?.find((tag) => tag === idTag),
-      )
-    );
-  }
-
-  private static async isIdTagRemoteAuthorized(
-    chargingStation: ChargingStation,
-    idTag: string,
-  ): Promise<boolean> {
-    const authorizeResponse: OCPP16AuthorizeResponse =
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP16AuthorizeRequest,
-        OCPP16AuthorizeResponse
-      >(chargingStation, OCPP16RequestCommand.AUTHORIZE, {
-        idTag,
-      });
-    return authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED;
   }
 }
