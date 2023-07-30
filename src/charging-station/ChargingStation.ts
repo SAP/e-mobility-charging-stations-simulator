@@ -1065,13 +1065,18 @@ export class ChargingStation {
     connectorId?: number,
   ): boolean {
     const reservationExists = !isUndefined(this.getReservationBy('reservationId', reservationId));
-    const userReservationExists =
-      !isUndefined(idTag) && isUndefined(this.getReservationBy('idTag', idTag!)) ? false : true;
-    const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
-    const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
-    return (
-      !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
-    );
+    if (arguments.length === 1) {
+      return !reservationExists;
+    } else if (arguments.length > 1) {
+      const userReservationExists =
+        !isUndefined(idTag) && isUndefined(this.getReservationBy('idTag', idTag!)) ? false : true;
+      const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
+      const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
+      return (
+        !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
+      );
+    }
+    return false;
   }
 
   private getNumberOfReservableConnectors(): number {
