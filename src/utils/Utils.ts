@@ -70,23 +70,20 @@ export const isValidTime = (date: unknown): boolean => {
   return false;
 };
 
-export const convertToDate = (
-  value: Date | string | number | null | undefined,
-): Date | null | undefined => {
+export const convertToDate = (value: Date | string | number | undefined): Date | undefined => {
   if (isNullOrUndefined(value)) {
-    return value as null | undefined;
+    return value as undefined;
   }
   if (isDate(value)) {
     return value as Date;
   }
   if (isString(value) || typeof value === 'number') {
-    value = new Date(value as string | number);
-    if (isNaN(value.getTime())) {
-      throw new Error(`Cannot convert to date: ${String(value)}`);
+    const valueToDate = new Date(value as string | number);
+    if (isNaN(valueToDate.getTime())) {
+      throw new Error(`Cannot convert to date: '${value as string | number}'`);
     }
-    return value;
+    return valueToDate;
   }
-  return null;
 };
 
 export const convertToInt = (value: unknown): number => {
@@ -104,7 +101,7 @@ export const convertToInt = (value: unknown): number => {
     changedValue = parseInt(value as string);
   }
   if (isNaN(changedValue)) {
-    throw new Error(`Cannot convert to integer: ${String(value)}`);
+    throw new Error(`Cannot convert to integer: '${String(value)}'`);
   }
   return changedValue;
 };
@@ -118,7 +115,7 @@ export const convertToFloat = (value: unknown): number => {
     changedValue = parseFloat(value as string);
   }
   if (isNaN(changedValue)) {
-    throw new Error(`Cannot convert to float: ${String(value)}`);
+    throw new Error(`Cannot convert to float: '${String(value)}'`);
   }
   return changedValue;
 };

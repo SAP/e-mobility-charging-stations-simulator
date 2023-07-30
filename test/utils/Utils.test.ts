@@ -1,4 +1,4 @@
-import { hoursToMilliseconds, hoursToSeconds, isValid } from 'date-fns';
+import { hoursToMilliseconds, hoursToSeconds } from 'date-fns';
 import { expect } from 'expect';
 
 import { Constants } from '../../src/utils/Constants';
@@ -84,9 +84,14 @@ describe('Utils test suite', () => {
 
   it('Verify convertToDate()', () => {
     expect(convertToDate(undefined)).toBe(undefined);
-    expect(convertToDate(null)).toBe(null);
-    expect(isValid(convertToDate(''))).toBe(false);
+    expect(() => convertToDate('')).toThrowError(new Error("Cannot convert to date: ''"));
+    expect(() => convertToDate('00:70:61')).toThrowError(
+      new Error("Cannot convert to date: '00:70:61'"),
+    );
+    expect(convertToDate('0')).toStrictEqual(new Date('1999-12-31T23:00:00.000Z'));
+    expect(convertToDate('-1')).toStrictEqual(new Date('2000-12-31T23:00:00.000Z'));
     expect(convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'));
+    expect(convertToDate(-1)).toStrictEqual(new Date('1969-12-31T23:59:59.999Z'));
     const dateStr = '2020-01-01T00:00:00.000Z';
     let date = convertToDate(dateStr);
     expect(date).toBeInstanceOf(Date);
@@ -114,7 +119,7 @@ describe('Utils test suite', () => {
     expect(convertToInt(1.999)).toBe(1);
     expect(() => {
       convertToInt('NaN');
-    }).toThrow('Cannot convert to integer: NaN');
+    }).toThrow("Cannot convert to integer: 'NaN'");
   });
 
   it('Verify convertToFloat()', () => {
@@ -135,7 +140,7 @@ describe('Utils test suite', () => {
     expect(convertToFloat(1.999)).toBe(1.999);
     expect(() => {
       convertToFloat('NaN');
-    }).toThrow('Cannot convert to float: NaN');
+    }).toThrow("Cannot convert to float: 'NaN'");
   });
 
   it('Verify convertToBoolean()', () => {
