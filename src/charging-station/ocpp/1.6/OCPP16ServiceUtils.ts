@@ -897,14 +897,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       connectorStatus.localAuthorizeIdTag = idTag;
       connectorStatus.idTagLocalAuthorized = true;
       authorized = true;
-    } else if (chargingStation.getMustAuthorizeAtRemoteStart() === true) {
-      connectorStatus.authorizeIdTag = idTag;
-      authorized = await OCPP16ServiceUtils.isIdTagRemoteAuthorized(chargingStation, idTag);
     } else {
-      logger.warn(
-        `${chargingStation.logPrefix()} The charging station configuration expects authorize at
-          remote start transaction but local authorization or authorize isn't enabled`,
-      );
+      authorized = await OCPP16ServiceUtils.isIdTagRemoteAuthorized(chargingStation, idTag);
+      if (authorized && isNullOrUndefined(connectorStatus.authorizeIdTag)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} IdTag ${idTag} is not set as authorized remotely, applying deferred initialization`,
+        );
+        connectorStatus.authorizeIdTag = idTag;
+      }
     }
     return authorized;
   }
@@ -1006,7 +1006,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         OCPP16AuthorizeRequest,
         OCPP16AuthorizeResponse
       >(chargingStation, OCPP16RequestCommand.AUTHORIZE, {
-        idTag: idTag,
+        idTag,
       });
     return authorizeResponse?.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED;
   }

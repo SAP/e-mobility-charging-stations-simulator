@@ -48,6 +48,7 @@ import {
   type OCPP16UpdateFirmwareResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
+  ReservationTerminationReason,
   type ResponseHandler,
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
@@ -470,8 +471,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     const authorizeConnectorIdDefined = !isNullOrUndefined(authorizeConnectorId);
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      authorizeConnectorIdDefined &&
-        (chargingStation.getConnectorStatus(authorizeConnectorId!)!.idTagAuthorized = true);
+      if (authorizeConnectorIdDefined) {
+        chargingStation.getConnectorStatus(authorizeConnectorId!)!.idTagAuthorized = true;
+        chargingStation.getConnectorStatus(authorizeConnectorId!)!.authorizeIdTag =
+          requestPayload.idTag;
+      }
       logger.debug(
         `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' accepted${
           authorizeConnectorIdDefined ? ` on connector id ${authorizeConnectorId}` : ''
@@ -510,7 +514,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         true &&
       chargingStation.getAuthorizeRemoteTxRequests() === true &&
       chargingStation.getLocalAuthListEnabled() === true &&
-      chargingStation.hasIdTags() &&
+      chargingStation.hasIdTags() === true &&
       chargingStation.getConnectorStatus(transactionConnectorId)?.idTagLocalAuthorized === false
     ) {
       logger.error(
@@ -635,6 +639,23 @@ export class OCPP16ResponseService extends OCPPResponseService {
           transactionConnectorId,
           requestPayload.meterStart,
         );
+      const reservedOnConnectorZero =
+        chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved;
+      if (
+        chargingStation.getConnectorStatus(transactionConnectorId)!.status ===
+          OCPP16ChargePointStatus.Reserved ||
+        reservedOnConnectorZero
+      ) {
+        const reservation = chargingStation.getReservationBy(
+          'connectorId',
+          reservedOnConnectorZero ? 0 : transactionConnectorId,
+        )!;
+        payload.reservationId = reservation.reservationId;
+        await chargingStation.removeReservation(
+          reservation,
+          ReservationTerminationReason.TRANSACTION_STARTED,
+        );
+      }
       chargingStation.getBeginEndMeterValues() &&
         (await chargingStation.ocppRequestService.requestHandler<
           OCPP16MeterValuesRequest,

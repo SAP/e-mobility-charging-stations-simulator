@@ -84,7 +84,6 @@ import {
   type ResetRequest,
   type SetChargingProfileRequest,
   type SetChargingProfileResponse,
-  type StartTransactionRequest,
   type UnlockConnectorRequest,
   type UnlockConnectorResponse,
 } from '../../../types';
@@ -826,15 +825,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: RemoteStartTransactionRequest,
   ): Promise<GenericResponse> {
     const { connectorId: transactionConnectorId, idTag, chargingProfile } = commandPayload;
-    const reserved =
-      chargingStation.getConnectorStatus(transactionConnectorId)!.status ===
-      OCPP16ChargePointStatus.Reserved;
-    const reservedOnConnectorZero =
-      chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved;
     if (
-      (reserved &&
+      (chargingStation.getConnectorStatus(transactionConnectorId)!.status ===
+        OCPP16ChargePointStatus.Reserved &&
         chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag !== idTag) ||
-      (reservedOnConnectorZero &&
+      (chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved &&
         chargingStation.getReservationBy('connectorId', 0)?.idTag !== idTag)
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
@@ -866,9 +861,20 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       OCPP16ChargePointStatus.Preparing,
     );
     const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)!;
-    // Check if authorized
     if (
       chargingStation.getAuthorizeRemoteTxRequests() &&
+      !chargingStation.getLocalAuthListEnabled() &&
+      !chargingStation.getMustAuthorizeAtRemoteStart()
+    ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction
+          but local authorization or must authorize at remote start isn't enabled`,
+      );
+    }
+    // Authorization check required
+    if (
+      chargingStation.getAuthorizeRemoteTxRequests() === true &&
+      chargingStation.getMustAuthorizeAtRemoteStart() === true &&
       (await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, transactionConnectorId, idTag))
     ) {
       // Authorization successful, start transaction
@@ -880,27 +886,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ) === true
       ) {
         connectorStatus.transactionRemoteStarted = true;
-        const startTransactionPayload: Partial<StartTransactionRequest> = {
-          connectorId: transactionConnectorId,
-          idTag,
-        };
-        if (reserved || reservedOnConnectorZero) {
-          const reservation = chargingStation.getReservationBy(
-            'connectorId',
-            reservedOnConnectorZero ? 0 : transactionConnectorId,
-          )!;
-          startTransactionPayload.reservationId = reservation.reservationId;
-          await chargingStation.removeReservation(
-            reservation,
-            ReservationTerminationReason.TRANSACTION_STARTED,
-          );
-        }
         if (
           (
             await chargingStation.ocppRequestService.requestHandler<
               OCPP16StartTransactionRequest,
               OCPP16StartTransactionResponse
-            >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, startTransactionPayload)
+            >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
+              connectorId: transactionConnectorId,
+              idTag,
+            })
           ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
         ) {
           logger.debug(remoteStartTransactionLogMsg);
@@ -1547,7 +1541,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { reservationId, idTag, connectorId } = commandPayload;
     let response: OCPP16ReserveNowResponse;
     try {
-      if (!chargingStation.isConnectorAvailable(connectorId) && connectorId > 0) {
+      if (connectorId > 0 && !chargingStation.isConnectorAvailable(connectorId)) {
         return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
       }
       if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {

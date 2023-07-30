@@ -397,7 +397,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         connectorId,
       )} start transaction with an idTag '${idTag}'`;
       if (this.getRequireAuthorize()) {
-        this.chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag;
         // Authorize idTag
         const authorizeResponse: AuthorizeResponse =
           await this.chargingStation.ocppRequestService.requestHandler<
@@ -408,6 +407,14 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           });
         ++this.connectorsStatus.get(connectorId)!.authorizeRequests!;
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+          if (
+            isNullOrUndefined(this.chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag)
+          ) {
+            logger.warn(
+              `${this.chargingStation.logPrefix()} IdTag ${idTag} is not set as authorized remotely, applying deferred initialization`,
+            );
+            this.chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag;
+          }
           ++this.connectorsStatus.get(connectorId)!.acceptedAuthorizeRequests!;
           logger.info(startTransactionLogMsg);
           // Start transaction
