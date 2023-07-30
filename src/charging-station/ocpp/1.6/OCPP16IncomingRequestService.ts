@@ -825,15 +825,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: RemoteStartTransactionRequest,
   ): Promise<GenericResponse> {
     const { connectorId: transactionConnectorId, idTag, chargingProfile } = commandPayload;
-    if (
-      (chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
-        OCPP16ChargePointStatus.Reserved &&
-        chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag !== idTag) ||
-      (chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved &&
-        chargingStation.getReservationBy('connectorId', 0)?.idTag !== idTag)
-    ) {
-      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
-    }
     if (chargingStation.hasConnector(transactionConnectorId) === false) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -850,6 +841,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionConnectorId,
         idTag,
       );
+    }
+    if (
+      (chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
+        OCPP16ChargePointStatus.Reserved &&
+        chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag !== idTag) ||
+      (chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved &&
+        chargingStation.getReservationBy('connectorId', 0)?.idTag !== idTag)
+    ) {
+      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
     const remoteStartTransactionLogMsg = `
       ${chargingStation.logPrefix()} Transaction remotely STARTED on ${
