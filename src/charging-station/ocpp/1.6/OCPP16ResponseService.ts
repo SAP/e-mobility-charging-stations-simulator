@@ -640,18 +640,17 @@ export class OCPP16ResponseService extends OCPPResponseService {
           requestPayload.meterStart,
         );
       const reservedOnConnectorZero =
-        chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved;
+        chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved;
       if (
-        chargingStation.getConnectorStatus(transactionConnectorId)!.status ===
+        chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
           OCPP16ChargePointStatus.Reserved ||
         reservedOnConnectorZero
       ) {
-        const reservation = chargingStation.getReservationBy(
-          'connectorId',
-          reservedOnConnectorZero ? 0 : transactionConnectorId,
-        )!;
         await chargingStation.removeReservation(
-          reservation,
+          chargingStation.getReservationBy(
+            'connectorId',
+            reservedOnConnectorZero ? 0 : transactionConnectorId,
+          )!,
           ReservationTerminationReason.TRANSACTION_STARTED,
         );
       }

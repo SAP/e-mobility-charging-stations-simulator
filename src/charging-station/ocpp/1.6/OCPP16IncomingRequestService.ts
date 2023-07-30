@@ -826,10 +826,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<GenericResponse> {
     const { connectorId: transactionConnectorId, idTag, chargingProfile } = commandPayload;
     if (
-      (chargingStation.getConnectorStatus(transactionConnectorId)!.status ===
+      (chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
         OCPP16ChargePointStatus.Reserved &&
         chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag !== idTag) ||
-      (chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved &&
+      (chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved &&
         chargingStation.getReservationBy('connectorId', 0)?.idTag !== idTag)
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
@@ -896,7 +896,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               idTag,
               reservationId: chargingStation.getReservationBy(
                 'connectorId',
-                chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved
+                chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
                   ? 0
                   : transactionConnectorId,
               )!,
@@ -937,7 +937,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             idTag,
             reservationId: chargingStation.getReservationBy(
               'connectorId',
-              chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved
+              chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
                 ? 0
                 : transactionConnectorId,
             )!,

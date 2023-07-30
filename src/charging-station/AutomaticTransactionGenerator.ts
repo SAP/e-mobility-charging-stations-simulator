@@ -408,7 +408,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         ++this.connectorsStatus.get(connectorId)!.authorizeRequests!;
         if (authorizeResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           if (
-            isNullOrUndefined(this.chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag)
+            isNullOrUndefined(this.chargingStation.getConnectorStatus(connectorId)?.authorizeIdTag)
           ) {
             logger.warn(
               `${this.chargingStation.logPrefix()} IdTag ${idTag} is not set as authorized remotely, applying deferred initialization`,
