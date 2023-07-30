@@ -833,8 +833,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved;
     if (
       (reserved &&
-        !chargingStation.validateIncomingRequestWithReservation(transactionConnectorId, idTag)) ||
-      (reservedOnConnectorZero && !chargingStation.validateIncomingRequestWithReservation(0, idTag))
+        !(
+          chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag === idTag
+        )) ||
+      (reservedOnConnectorZero &&
+        !(chargingStation.getReservationBy('connectorId', 0)?.idTag === idTag))
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
@@ -1549,7 +1552,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (!chargingStation.isConnectorAvailable(connectorId) && connectorId > 0) {
         return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
       }
-      if (connectorId === 0 && !chargingStation.getReservationOnConnectorId0Enabled()) {
+      if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {
         return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
       }
       if (!(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {

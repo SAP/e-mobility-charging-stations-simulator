@@ -936,7 +936,7 @@ export class ChargingStation {
     );
   }
 
-  public getReservationOnConnectorId0Enabled(): boolean {
+  public getReserveConnectorZeroSupported(): boolean {
     return convertToBoolean(
       getConfigurationKey(this, StandardParametersKey.ReserveConnectorZeroSupported)!.value,
     );
@@ -1053,10 +1053,6 @@ export class ChargingStation {
   public restartReservationExpiryDateSetInterval(): void {
     this.stopReservationExpirationSetInterval();
     this.startReservationExpirationSetInterval();
-  }
-
-  public validateIncomingRequestWithReservation(connectorId: number, idTag: string): boolean {
-    return this.getReservationBy('connectorId', connectorId)?.idTag === idTag;
   }
 
   public isConnectorReservable(
