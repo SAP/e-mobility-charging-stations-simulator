@@ -4,7 +4,12 @@ import type { AbstractUIServer } from './AbstractUIServer';
 import { UIHttpServer } from './UIHttpServer';
 import { UIServerUtils } from './UIServerUtils';
 import { UIWebSocketServer } from './UIWebSocketServer';
-import { ApplicationProtocol, type UIServerConfiguration } from '../../types';
+import {
+  ApplicationProtocol,
+  ApplicationProtocolVersion,
+  type UIServerConfiguration,
+} from '../../types';
+import { isUndefined } from '../../utils';
 
 export class UIServerFactory {
   private constructor() {
@@ -21,6 +26,13 @@ export class UIServerFactory {
         ),
       );
     }
+    uiServerConfiguration = {
+      ...(uiServerConfiguration.type === ApplicationProtocol.HTTP &&
+        isUndefined(uiServerConfiguration.version) && {
+          version: ApplicationProtocolVersion.VERSION_11,
+        }),
+      ...uiServerConfiguration,
+    };
     switch (uiServerConfiguration.type) {
       case ApplicationProtocol.WS:
         return new UIWebSocketServer(uiServerConfiguration);

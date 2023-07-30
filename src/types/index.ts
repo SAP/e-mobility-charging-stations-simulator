@@ -164,6 +164,7 @@ export {
   type WsOptions,
 } from './ChargingStationTemplate';
 export {
+  ApplicationProtocolVersion,
   type ConfigurationData,
   ConfigurationSection,
   type LogConfiguration,

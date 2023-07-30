@@ -109,7 +109,7 @@ export class Bootstrap extends EventEmitter {
 
   public async start(): Promise<void> {
     if (!isMainThread) {
-      throw new Error('Cannot start charging stations simulator from worker thread');
+      throw new BaseError('Cannot start charging stations simulator from worker thread');
     }
     if (this.started === false) {
       if (this.starting === false) {
@@ -176,7 +176,7 @@ export class Bootstrap extends EventEmitter {
 
   public async stop(): Promise<void> {
     if (!isMainThread) {
-      throw new Error('Cannot stop charging stations simulator from worker thread');
+      throw new BaseError('Cannot stop charging stations simulator from worker thread');
     }
     if (this.started === true) {
       if (this.stopping === false) {

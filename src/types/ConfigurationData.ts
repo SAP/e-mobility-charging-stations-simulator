@@ -39,9 +39,15 @@ export interface LogConfiguration {
   maxSize?: string | number;
 }
 
+export enum ApplicationProtocolVersion {
+  VERSION_11 = 1.1,
+  VERSION_20 = 2.0,
+}
+
 export interface UIServerConfiguration {
   enabled?: boolean;
   type?: ApplicationProtocol;
+  version?: ApplicationProtocolVersion;
   options?: ServerOptions;
   authentication?: {
     enabled: boolean;

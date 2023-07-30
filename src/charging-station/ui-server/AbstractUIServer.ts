@@ -1,4 +1,5 @@
 import { type IncomingMessage, Server, type ServerResponse } from 'node:http';
+import { type Http2Server, createServer } from 'node:http2';
 
 import type { WebSocket } from 'ws';
 
@@ -6,6 +7,7 @@ import type { AbstractUIService } from './ui-services/AbstractUIService';
 import { UIServiceFactory } from './ui-services/UIServiceFactory';
 import { BaseError } from '../../exception';
 import {
+  ApplicationProtocolVersion,
   AuthenticationType,
   type ChargingStationData,
   type ProcedureName,
@@ -19,13 +21,24 @@ import {
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;
-  protected readonly httpServer: Server;
+  protected readonly httpServer: Server | Http2Server;
   protected readonly responseHandlers: Map<string, ServerResponse | WebSocket>;
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>;
 
   public constructor(protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>();
-    this.httpServer = new Server();
+    switch (this.uiServerConfiguration.version) {
+      case ApplicationProtocolVersion.VERSION_11:
+        this.httpServer = new Server();
+        break;
+      case ApplicationProtocolVersion.VERSION_20:
+        this.httpServer = createServer();
+        break;
+      default:
+        throw new BaseError(
+          `Unsupported application protocol version ${this.uiServerConfiguration.version}`,
+        );
+    }
     this.responseHandlers = new Map<string, ServerResponse | WebSocket>();
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>();
   }

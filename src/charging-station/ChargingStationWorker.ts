@@ -6,6 +6,7 @@ import { parentPort } from 'node:worker_threads';
 import { ThreadWorker } from 'poolifier';
 
 import { ChargingStation } from './ChargingStation';
+import { BaseError } from '../exception';
 import type { ChargingStationWorkerData } from '../types';
 import { Configuration } from '../utils';
 import { POOL_MAX_INACTIVE_TIME, type WorkerMessage, WorkerMessageEvents } from '../worker';
@@ -48,7 +49,7 @@ class ChargingStationWorker extends AsyncResource {
           }
           break;
         default:
-          throw new Error(
+          throw new BaseError(
             `Unknown worker event: '${message.event}' received with data: '${JSON.stringify(
               message.data,
               null,

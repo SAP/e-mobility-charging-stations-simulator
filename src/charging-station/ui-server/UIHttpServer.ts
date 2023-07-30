@@ -6,6 +6,7 @@ import { AbstractUIServer } from './AbstractUIServer';
 import { UIServerUtils } from './UIServerUtils';
 import { BaseError } from '../../exception';
 import {
+  ApplicationProtocolVersion,
   type ProcedureName,
   type Protocol,
   type ProtocolRequest,
@@ -43,9 +44,12 @@ export class UIHttpServer extends AbstractUIServer {
     this.startHttpServer();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public sendRequest(request: ProtocolRequest): void {
-    // This is intentionally left blank
+    switch (this.uiServerConfiguration.version) {
+      case ApplicationProtocolVersion.VERSION_20:
+        this.httpServer.emit('request', request);
+        break;
+    }
   }
 
   public sendResponse(response: ProtocolResponse): void {
