@@ -874,7 +874,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // Authorization check required
     if (
       chargingStation.getAuthorizeRemoteTxRequests() === true &&
-      chargingStation.getMustAuthorizeAtRemoteStart() === true &&
       (await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, transactionConnectorId, idTag))
     ) {
       // Authorization successful, start transaction

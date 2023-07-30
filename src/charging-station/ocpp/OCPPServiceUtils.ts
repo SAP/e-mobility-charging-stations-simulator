@@ -233,7 +233,7 @@ export class OCPPServiceUtils {
       connectorStatus.localAuthorizeIdTag = idTag;
       connectorStatus.idTagLocalAuthorized = true;
       authorized = true;
-    } else {
+    } else if (chargingStation.getMustAuthorizeAtRemoteStart()) {
       authorized = await OCPPServiceUtils.isIdTagRemoteAuthorized(
         chargingStation,
         connectorId,
