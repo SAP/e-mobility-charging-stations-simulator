@@ -80,7 +80,11 @@ export const convertToDate = (
     return value as Date;
   }
   if (isString(value) || typeof value === 'number') {
-    return new Date(value!);
+    value = new Date(value as string | number);
+    if (isNaN(value.getTime())) {
+      throw new Error(`Cannot convert to date: ${String(value)}`);
+    }
+    return value;
   }
   return null;
 };
@@ -100,8 +104,7 @@ export const convertToInt = (value: unknown): number => {
     changedValue = parseInt(value as string);
   }
   if (isNaN(changedValue)) {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    throw new Error(`Cannot convert to integer: ${value.toString()}`);
+    throw new Error(`Cannot convert to integer: ${String(value)}`);
   }
   return changedValue;
 };
@@ -115,8 +118,7 @@ export const convertToFloat = (value: unknown): number => {
     changedValue = parseFloat(value as string);
   }
   if (isNaN(changedValue)) {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    throw new Error(`Cannot convert to float: ${value.toString()}`);
+    throw new Error(`Cannot convert to float: ${String(value)}`);
   }
   return changedValue;
 };
