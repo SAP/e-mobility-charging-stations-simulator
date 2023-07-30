@@ -5,8 +5,8 @@ import { AsyncResource } from 'node:async_hooks';
 import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
+import { checkChargingStation } from './Helpers';
 import { IdTagsCache } from './IdTagsCache';
-import { checkChargingStation } from './Utils';
 import { BaseError } from '../exception';
 import { PerformanceStatistics } from '../performance';
 import {

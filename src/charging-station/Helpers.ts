@@ -65,7 +65,7 @@ import {
   secureRandom,
 } from '../utils';
 
-const moduleName = 'Utils';
+const moduleName = 'Helpers';
 
 export const getChargingStationId = (
   index: number,

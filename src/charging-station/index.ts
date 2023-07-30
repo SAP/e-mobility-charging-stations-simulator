@@ -10,4 +10,4 @@ export {
   checkChargingStation,
   resetConnectorStatus,
   hasFeatureProfile,
-} from './Utils';
+} from './Helpers';

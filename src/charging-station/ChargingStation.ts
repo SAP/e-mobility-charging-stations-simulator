@@ -26,20 +26,6 @@ import {
   getConfigurationKey,
   setConfigurationKeyValue,
 } from './ConfigurationKeyUtils';
-import { IdTagsCache } from './IdTagsCache';
-import {
-  OCPP16IncomingRequestService,
-  OCPP16RequestService,
-  OCPP16ResponseService,
-  OCPP16ServiceUtils,
-  OCPP20IncomingRequestService,
-  OCPP20RequestService,
-  OCPP20ResponseService,
-  type OCPPIncomingRequestService,
-  type OCPPRequestService,
-  OCPPServiceUtils,
-} from './ocpp';
-import { SharedLRUCache } from './SharedLRUCache';
 import {
   buildConnectorsMap,
   checkConnectorsConfiguration,
@@ -62,7 +48,21 @@ import {
   propagateSerialNumber,
   stationTemplateToStationInfo,
   warnTemplateKeysDeprecation,
-} from './Utils';
+} from './Helpers';
+import { IdTagsCache } from './IdTagsCache';
+import {
+  OCPP16IncomingRequestService,
+  OCPP16RequestService,
+  OCPP16ResponseService,
+  OCPP16ServiceUtils,
+  OCPP20IncomingRequestService,
+  OCPP20RequestService,
+  OCPP20ResponseService,
+  type OCPPIncomingRequestService,
+  type OCPPRequestService,
+  OCPPServiceUtils,
+} from './ocpp';
+import { SharedLRUCache } from './SharedLRUCache';
 import { BaseError, OCPPError } from '../exception';
 import { PerformanceStatistics } from '../performance';
 import {
