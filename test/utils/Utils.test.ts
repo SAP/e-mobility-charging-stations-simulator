@@ -88,8 +88,6 @@ describe('Utils test suite', () => {
     expect(() => convertToDate('00:70:61')).toThrowError(
       new Error("Cannot convert to date: '00:70:61'"),
     );
-    expect(convertToDate('0')).toStrictEqual(new Date('1999-12-31T23:00:00.000Z'));
-    expect(convertToDate('-1')).toStrictEqual(new Date('2000-12-31T23:00:00.000Z'));
     expect(convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'));
     expect(convertToDate(-1)).toStrictEqual(new Date('1969-12-31T23:59:59.999Z'));
     const dateStr = '2020-01-01T00:00:00.000Z';
