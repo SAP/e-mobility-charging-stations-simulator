@@ -472,9 +472,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const authorizeConnectorIdDefined = !isNullOrUndefined(authorizeConnectorId);
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
       if (authorizeConnectorIdDefined) {
-        chargingStation.getConnectorStatus(authorizeConnectorId!)!.idTagAuthorized = true;
         chargingStation.getConnectorStatus(authorizeConnectorId!)!.authorizeIdTag =
           requestPayload.idTag;
+        chargingStation.getConnectorStatus(authorizeConnectorId!)!.idTagAuthorized = true;
       }
       logger.debug(
         `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' accepted${
