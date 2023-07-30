@@ -833,11 +833,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved;
     if (
       (reserved &&
-        !(
-          chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag === idTag
-        )) ||
+        chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag !== idTag) ||
       (reservedOnConnectorZero &&
-        !(chargingStation.getReservationBy('connectorId', 0)?.idTag === idTag))
+        chargingStation.getReservationBy('connectorId', 0)?.idTag !== idTag)
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
