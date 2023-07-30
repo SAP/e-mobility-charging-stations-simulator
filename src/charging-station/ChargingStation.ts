@@ -1008,7 +1008,27 @@ export class ChargingStation {
     }
   }
 
-  public startReservationExpirationSetInterval(customInterval?: number): void {
+  public isConnectorReservable(
+    reservationId: number,
+    idTag?: string,
+    connectorId?: number,
+  ): boolean {
+    const reservationExists = !isUndefined(this.getReservationBy('reservationId', reservationId));
+    if (arguments.length === 1) {
+      return !reservationExists;
+    } else if (arguments.length > 1) {
+      const userReservationExists =
+        !isUndefined(idTag) && isUndefined(this.getReservationBy('idTag', idTag!)) ? false : true;
+      const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
+      const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
+      return (
+        !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
+      );
+    }
+    return false;
+  }
+
+  private startReservationExpirationSetInterval(customInterval?: number): void {
     const interval =
       customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
     if (interval > 0) {
@@ -1050,29 +1070,15 @@ export class ChargingStation {
     }
   }
 
-  public restartReservationExpiryDateSetInterval(): void {
-    this.stopReservationExpirationSetInterval();
-    this.startReservationExpirationSetInterval();
+  private stopReservationExpirationSetInterval(): void {
+    if (this.reservationExpirationSetInterval) {
+      clearInterval(this.reservationExpirationSetInterval);
+    }
   }
 
-  public isConnectorReservable(
-    reservationId: number,
-    idTag?: string,
-    connectorId?: number,
-  ): boolean {
-    const reservationExists = !isUndefined(this.getReservationBy('reservationId', reservationId));
-    if (arguments.length === 1) {
-      return !reservationExists;
-    } else if (arguments.length > 1) {
-      const userReservationExists =
-        !isUndefined(idTag) && isUndefined(this.getReservationBy('idTag', idTag!)) ? false : true;
-      const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
-      const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
-      return (
-        !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
-      );
-    }
-    return false;
+  private restartReservationExpiryDateSetInterval(): void {
+    this.stopReservationExpirationSetInterval();
+    this.startReservationExpirationSetInterval();
   }
 
   private getNumberOfReservableConnectors(): number {
@@ -1124,12 +1130,6 @@ export class ChargingStation {
 
   private getSupervisionUrlOcppConfiguration(): boolean {
     return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
-  }
-
-  private stopReservationExpirationSetInterval(): void {
-    if (this.reservationExpirationSetInterval) {
-      clearInterval(this.reservationExpirationSetInterval);
-    }
   }
 
   private getSupervisionUrlOcppKey(): string {
