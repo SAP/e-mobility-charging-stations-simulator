@@ -947,8 +947,11 @@ export class ChargingStation {
       ReservationFilterKey.RESERVATION_ID,
       reservation.reservationId,
     );
-    if (reservationFound) {
-      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING);
+    if (!isUndefined(reservationFound)) {
+      await this.removeReservation(
+        reservationFound!,
+        ReservationTerminationReason.REPLACE_EXISTING,
+      );
     }
     this.getConnectorStatus(reservation.connectorId)!.reservation = reservation;
     await OCPPServiceUtils.sendAndSetConnectorStatus(
@@ -1064,18 +1067,17 @@ export class ChargingStation {
     idTag?: string,
     connectorId?: number,
   ): boolean {
-    const reservation = this.getReservationBy(ReservationFilterKey.RESERVATION_ID, reservationId);
-    const userReservedAlready =
+    const reservationExists = !isUndefined(
+      this.getReservationBy(ReservationFilterKey.RESERVATION_ID, reservationId),
+    );
+    const userReservationExists =
       !isUndefined(idTag) && isUndefined(this.getReservationBy(ReservationFilterKey.ID_TAG, idTag!))
         ? false
         : true;
     const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
     const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
     return (
-      isUndefined(reservation) &&
-      !userReservedAlready &&
-      notConnectorZero &&
-      freeConnectorsAvailable
+      !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
     );
   }
 
