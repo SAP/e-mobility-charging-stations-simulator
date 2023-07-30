@@ -578,7 +578,7 @@ export class Configuration {
           `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`,
         );
       default:
-        throw new Error(`Performance storage URI is mandatory with storage type '${storageType}'`);
+        throw new Error(`Unsupported storage type '${storageType}'`);
     }
   }
 
