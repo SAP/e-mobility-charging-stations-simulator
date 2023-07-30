@@ -56,6 +56,7 @@ export default {
     'node:events',
     'node:fs',
     'node:http',
+    'node:http2',
     'node:path',
     'node:perf_hooks',
     'node:stream',
