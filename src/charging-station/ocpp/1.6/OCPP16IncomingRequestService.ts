@@ -894,6 +894,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
               connectorId: transactionConnectorId,
               idTag,
+              reservationId: chargingStation.getReservationBy(
+                'connectorId',
+                chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved
+                  ? 0
+                  : transactionConnectorId,
+              )!,
             })
           ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
         ) {
@@ -929,6 +935,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
             connectorId: transactionConnectorId,
             idTag,
+            reservationId: chargingStation.getReservationBy(
+              'connectorId',
+              chargingStation.getConnectorStatus(0)!.status === OCPP16ChargePointStatus.Reserved
+                ? 0
+                : transactionConnectorId,
+            )!,
           })
         ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
       ) {

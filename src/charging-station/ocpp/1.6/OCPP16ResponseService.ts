@@ -650,7 +650,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
           'connectorId',
           reservedOnConnectorZero ? 0 : transactionConnectorId,
         )!;
-        payload.reservationId = reservation.reservationId;
         await chargingStation.removeReservation(
           reservation,
           ReservationTerminationReason.TRANSACTION_STARTED,
