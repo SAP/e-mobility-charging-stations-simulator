@@ -9,12 +9,14 @@ import {
   type ClearChargingProfileRequest,
   CurrentType,
   ErrorType,
+  type GenericResponse,
   type JsonType,
   type MeasurandPerPhaseSampledValueTemplates,
   type MeasurandValues,
   MeterValueContext,
   MeterValueLocation,
   MeterValueUnit,
+  OCPP16AuthorizationStatus,
   OCPP16AvailabilityType,
   type OCPP16ChangeAvailabilityResponse,
   OCPP16ChargePointStatus,
@@ -26,6 +28,7 @@ import {
   OCPP16RequestCommand,
   type OCPP16SampledValue,
   OCPP16StandardParametersKey,
+  OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
   type SampledValueTemplate,
@@ -791,6 +794,25 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     meterValues.push(transactionEndMeterValue);
     return meterValues;
   }
+
+  public static remoteStopTransaction = async (
+    chargingStation: ChargingStation,
+    connectorId: number,
+  ): Promise<GenericResponse> => {
+    await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+      chargingStation,
+      connectorId,
+      OCPP16ChargePointStatus.Finishing,
+    );
+    const stopResponse = await chargingStation.stopTransactionOnConnector(
+      connectorId,
+      OCPP16StopTransactionReason.REMOTE,
+    );
+    if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+      return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
+    }
+    return OCPP16Constants.OCPP_RESPONSE_REJECTED;
+  };
 
   public static changeAvailability = async (
     chargingStation: ChargingStation,

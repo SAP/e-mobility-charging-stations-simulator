@@ -1002,27 +1002,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: RemoteStopTransactionRequest,
   ): Promise<GenericResponse> {
     const transactionId = commandPayload.transactionId;
-    const remoteStopTransaction = async (connectorId: number): Promise<GenericResponse> => {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
-        connectorId,
-        OCPP16ChargePointStatus.Finishing,
-      );
-      const stopResponse = await chargingStation.stopTransactionOnConnector(
-        connectorId,
-        OCPP16StopTransactionReason.REMOTE,
-      );
-      if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-        return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
-      }
-      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
-    };
     if (chargingStation.hasEvses) {
       for (const [evseId, evseStatus] of chargingStation.evses) {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
             if (connectorStatus.transactionId === transactionId) {
-              return remoteStopTransaction(connectorId);
+              return OCPP16ServiceUtils.remoteStopTransaction(chargingStation, connectorId);
             }
           }
         }
@@ -1033,7 +1018,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           connectorId > 0 &&
           chargingStation.getConnectorStatus(connectorId)?.transactionId === transactionId
         ) {
-          return remoteStopTransaction(connectorId);
+          return OCPP16ServiceUtils.remoteStopTransaction(chargingStation, connectorId);
         }
       }
     }
