@@ -861,16 +861,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       OCPP16ChargePointStatus.Preparing,
     );
     const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)!;
-    if (
-      chargingStation.getAuthorizeRemoteTxRequests() &&
-      !chargingStation.getLocalAuthListEnabled() &&
-      !chargingStation.getMustAuthorizeAtRemoteStart()
-    ) {
-      logger.warn(
-        `${chargingStation.logPrefix()} The charging station configuration expects authorize at remote start transaction
-          but local authorization or must authorize at remote start isn't enabled`,
-      );
-    }
     // Authorization check required
     if (
       chargingStation.getAuthorizeRemoteTxRequests() === true &&

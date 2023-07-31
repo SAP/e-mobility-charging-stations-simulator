@@ -108,6 +108,8 @@ export interface ChargingStationTemplate {
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
+  remoteAuthorization?: boolean;
+  /** @deprecated Replaced by remoteAuthorization */
   mustAuthorizeAtRemoteStart?: boolean;
   /** @deprecated Replaced by ocppStrictCompliance */
   payloadSchemaValidation?: boolean;

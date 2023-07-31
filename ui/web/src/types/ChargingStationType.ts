@@ -57,7 +57,7 @@ export type ChargingStationInfo = {
   reconnectExponentialDelay?: boolean;
   registrationMaxRetries?: number;
   enableStatistics?: boolean;
-  mustAuthorizeAtRemoteStart?: boolean;
+  remoteAuthorization?: boolean;
   amperageLimitationOcppKey?: string;
   amperageLimitationUnit?: AmpereUnits;
   beginEndMeterValues?: boolean;

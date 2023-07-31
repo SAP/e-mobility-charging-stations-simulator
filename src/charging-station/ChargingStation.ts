@@ -246,8 +246,8 @@ export class ChargingStation {
     return this.stationInfo.enableStatistics ?? false;
   }
 
-  public getMustAuthorizeAtRemoteStart(): boolean {
-    return this.stationInfo.mustAuthorizeAtRemoteStart ?? true;
+  public getRemoteAuthorization(): boolean {
+    return this.stationInfo.remoteAuthorization ?? true;
   }
 
   public getNumberOfPhases(stationInfo?: ChargingStationInfo): number {
