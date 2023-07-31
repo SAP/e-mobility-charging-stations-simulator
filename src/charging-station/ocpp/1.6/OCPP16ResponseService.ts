@@ -647,7 +647,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         )!;
         if (reservation.idTag !== requestPayload.idTag) {
           logger.warn(
-            `${chargingStation.logPrefix()} Transaction reserved ${
+            `${chargingStation.logPrefix()} Reserved transaction ${
               payload.transactionId
             } started with a different idTag ${requestPayload.idTag} than the reservation one ${
               reservation.idTag
@@ -656,7 +656,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }
         if (hasReservationExpired(reservation)) {
           logger.warn(
-            `${chargingStation.logPrefix()} Transaction reserved ${
+            `${chargingStation.logPrefix()} Reserved transaction ${
               payload.transactionId
             } started with expired reservation ${
               requestPayload.reservationId
@@ -704,8 +704,19 @@ export class OCPP16ResponseService extends OCPPResponseService {
       );
     } else {
       logger.warn(
-        `${chargingStation.logPrefix()} Starting transaction with id ${payload.transactionId.toString()} REJECTED with status '${payload
-          .idTagInfo?.status}', idTag '${requestPayload.idTag}'`,
+        `${chargingStation.logPrefix()} Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
+          chargingStation.stationInfo.chargingStationId
+        }#${transactionConnectorId.toString()} with status '${payload.idTagInfo?.status}', idTag '${
+          requestPayload.idTag
+        }'${
+          OCPP16ServiceUtils.hasReservation(
+            chargingStation,
+            transactionConnectorId,
+            requestPayload.idTag,
+          )
+            ? `, reservationId '${requestPayload.reservationId}'`
+            : ''
+        }`,
       );
       await this.resetConnectorOnStartTransactionError(chargingStation, transactionConnectorId);
     }

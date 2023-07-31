@@ -6,7 +6,7 @@ import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
-import { secondsToMilliseconds } from 'date-fns';
+import { isWithinInterval, secondsToMilliseconds } from 'date-fns';
 import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';
@@ -678,8 +678,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       .chargingProfiles!) {
       // FIXME: build the composite schedule including the local power limit, the stack level, the charging rate unit, etc.
       if (
-        chargingProfile.chargingSchedule.startSchedule! >= startDate &&
-        chargingProfile.chargingSchedule.startSchedule! <= endDate
+        isWithinInterval(chargingProfile.chargingSchedule.startSchedule!, {
+          start: startDate,
+          end: endDate,
+        })
       ) {
         compositeSchedule = chargingProfile.chargingSchedule;
         break;
@@ -999,7 +1001,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
     logger.warn(
-      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction with id:
+      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction with id
         ${transactionId.toString()}`,
     );
     return OCPP16Constants.OCPP_RESPONSE_REJECTED;
@@ -1245,7 +1247,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         if (accessResponse.code === 220) {
           ftpClient.trackProgress((info) => {
             logger.info(
-              `${chargingStation.logPrefix()} ${
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: ${
                 info.bytes / 1024
               } bytes transferred from diagnostics archive ${info.name}`,
             );

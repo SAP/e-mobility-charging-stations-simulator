@@ -939,16 +939,17 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       (chargingStation.getConnectorStatus(connectorId)?.status ===
         OCPP16ChargePointStatus.Reserved &&
         connectorReservation &&
+        !hasReservationExpired(connectorReservation) &&
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        (hasReservationExpired(connectorReservation) || connectorReservation?.idTag !== idTag)) ||
+        connectorReservation?.idTag === idTag) ||
       (chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved &&
         chargingStationReservation &&
-        (hasReservationExpired(chargingStationReservation) ||
-          chargingStationReservation?.idTag !== idTag))
+        !hasReservationExpired(chargingStationReservation) &&
+        chargingStationReservation?.idTag === idTag)
     ) {
-      return false;
+      return true;
     }
-    return true;
+    return false;
   };
 
   public static parseJsonSchemaFile<T extends JsonType>(

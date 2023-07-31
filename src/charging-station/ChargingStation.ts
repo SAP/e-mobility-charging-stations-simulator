@@ -986,7 +986,7 @@ export class ChargingStation {
         break;
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new Error(`Unknown reservation termination reason '${reason}'`);
+        throw new BaseError(`Unknown reservation termination reason '${reason}'`);
     }
   }
 
