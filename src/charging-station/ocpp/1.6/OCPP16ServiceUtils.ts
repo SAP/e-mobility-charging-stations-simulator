@@ -2,6 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 
+import { OCPP16Constants } from './OCPP16Constants';
 import { type ChargingStation, hasFeatureProfile } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
@@ -14,6 +15,9 @@ import {
   MeterValueContext,
   MeterValueLocation,
   MeterValueUnit,
+  OCPP16AvailabilityType,
+  type OCPP16ChangeAvailabilityResponse,
+  OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
   type OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
@@ -787,6 +791,29 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     meterValues.push(transactionEndMeterValue);
     return meterValues;
   }
+
+  public static changeAvailability = async (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    chargePointStatus: OCPP16ChargePointStatus,
+    availabilityType: OCPP16AvailabilityType,
+  ): Promise<OCPP16ChangeAvailabilityResponse> => {
+    let response: OCPP16ChangeAvailabilityResponse =
+      OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
+    if (connectorStatus?.transactionStarted === true) {
+      response = OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
+    }
+    connectorStatus.availability = availabilityType;
+    if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+        chargingStation,
+        connectorId,
+        chargePointStatus,
+      );
+    }
+    return response;
+  };
 
   public static setChargingProfile(
     chargingStation: ChargingStation,

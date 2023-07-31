@@ -80,7 +80,7 @@ export {
   type MessageEvent,
 } from './WorkerBroadcastChannel';
 export {
-  type ChangeAvailabilityRequest,
+  type OCPP16ChangeAvailabilityRequest,
   type ChangeConfigurationRequest,
   type ClearChargingProfileRequest,
   type GetConfigurationRequest,
@@ -110,7 +110,7 @@ export {
   type OCPP16CancelReservationRequest,
 } from './ocpp/1.6/Requests';
 export {
-  type ChangeAvailabilityResponse,
+  type OCPP16ChangeAvailabilityResponse,
   type ChangeConfigurationResponse,
   type ClearChargingProfileResponse,
   type GetConfigurationResponse,
@@ -257,6 +257,6 @@ export {
 } from './WebSocket';
 export {
   type Reservation,
-  type ReservationFilterKey,
+  type ReservationKey,
   ReservationTerminationReason,
 } from './ocpp/Reservation';

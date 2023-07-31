@@ -19,13 +19,10 @@ import {
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
-  type ChangeAvailabilityRequest,
-  type ChangeAvailabilityResponse,
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
-  type ConnectorStatus,
   ErrorType,
   type GenericResponse,
   GenericStatus,
@@ -41,6 +38,8 @@ import {
   type OCPP16BootNotificationRequest,
   type OCPP16BootNotificationResponse,
   type OCPP16CancelReservationRequest,
+  type OCPP16ChangeAvailabilityRequest,
+  type OCPP16ChangeAvailabilityResponse,
   OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
@@ -259,7 +258,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        OCPP16ServiceUtils.parseJsonSchemaFile<ChangeAvailabilityRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ChangeAvailabilityRequest>(
           'assets/json-schemas/ocpp/1.6/ChangeAvailability.json',
           moduleName,
           'constructor',
@@ -757,8 +756,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
 
   private async handleRequestChangeAvailability(
     chargingStation: ChargingStation,
-    commandPayload: ChangeAvailabilityRequest,
-  ): Promise<ChangeAvailabilityResponse> {
+    commandPayload: OCPP16ChangeAvailabilityRequest,
+  ): Promise<OCPP16ChangeAvailabilityResponse> {
     const connectorId: number = commandPayload.connectorId;
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
@@ -772,33 +771,29 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ? OCPP16ChargePointStatus.Available
         : OCPP16ChargePointStatus.Unavailable;
     if (connectorId === 0) {
-      let response: ChangeAvailabilityResponse =
-        OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
-      const changeAvailability = async (id: number, connectorStatus: ConnectorStatus) => {
-        if (connectorStatus?.transactionStarted === true) {
-          response = OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
-        }
-        connectorStatus.availability = commandPayload.type;
-        if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
-          await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-            chargingStation,
-            id,
-            chargePointStatus,
-          );
-        }
-      };
+      let response: OCPP16ChangeAvailabilityResponse;
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
-          for (const [id, connectorStatus] of evseStatus.connectors) {
-            await changeAvailability(id, connectorStatus);
+          for (const id of evseStatus.connectors.keys()) {
+            response = await OCPP16ServiceUtils.changeAvailability(
+              chargingStation,
+              id,
+              chargePointStatus,
+              commandPayload.type,
+            );
           }
         }
       } else {
         for (const id of chargingStation.connectors.keys()) {
-          await changeAvailability(id, chargingStation.getConnectorStatus(id)!);
+          response = await OCPP16ServiceUtils.changeAvailability(
+            chargingStation,
+            id,
+            chargePointStatus,
+            commandPayload.type,
+          );
         }
       }
-      return response;
+      return response!;
     } else if (
       connectorId > 0 &&
       (chargingStation.isChargingStationAvailable() === true ||

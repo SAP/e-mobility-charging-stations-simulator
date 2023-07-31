@@ -14,7 +14,6 @@ import {
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
-  type ChangeAvailabilityResponse,
   type ChangeConfigurationResponse,
   type ClearChargingProfileResponse,
   ErrorType,
@@ -27,6 +26,7 @@ import {
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
   type OCPP16BootNotificationResponse,
+  type OCPP16ChangeAvailabilityResponse,
   OCPP16ChargePointStatus,
   type OCPP16DataTransferResponse,
   type OCPP16DiagnosticsStatusNotificationResponse,
@@ -209,7 +209,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        OCPP16ServiceUtils.parseJsonSchemaFile<ChangeAvailabilityResponse>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ChangeAvailabilityResponse>(
           'assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json',
           moduleName,
           'constructor',

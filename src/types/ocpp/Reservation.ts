@@ -10,4 +10,4 @@ export enum ReservationTerminationReason {
   REPLACE_EXISTING = 'ReplaceExisting',
 }
 
-export type ReservationFilterKey = keyof OCPP16ReserveNowRequest;
+export type ReservationKey = keyof OCPP16ReserveNowRequest;

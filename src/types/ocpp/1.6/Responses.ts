@@ -65,7 +65,7 @@ export enum OCPP16AvailabilityStatus {
   SCHEDULED = 'Scheduled',
 }
 
-export interface ChangeAvailabilityResponse extends JsonObject {
+export interface OCPP16ChangeAvailabilityResponse extends JsonObject {
   status: OCPP16AvailabilityStatus;
 }
 

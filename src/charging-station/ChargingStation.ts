@@ -104,7 +104,7 @@ import {
   RegistrationStatusEnumType,
   RequestCommand,
   type Reservation,
-  type ReservationFilterKey,
+  type ReservationKey,
   ReservationTerminationReason,
   type Response,
   StandardParametersKey,
@@ -988,7 +988,7 @@ export class ChargingStation {
   }
 
   public getReservationBy(
-    filterKey: ReservationFilterKey,
+    filterKey: ReservationKey,
     value: number | string,
   ): Reservation | undefined {
     if (this.hasEvses) {
@@ -1076,10 +1076,10 @@ export class ChargingStation {
     }
   }
 
-  private restartReservationExpiryDateSetInterval(): void {
-    this.stopReservationExpirationSetInterval();
-    this.startReservationExpirationSetInterval();
-  }
+  // private restartReservationExpiryDateSetInterval(): void {
+  //   this.stopReservationExpirationSetInterval();
+  //   this.startReservationExpirationSetInterval();
+  // }
 
   private getNumberOfReservableConnectors(): number {
     let reservableConnectors = 0;

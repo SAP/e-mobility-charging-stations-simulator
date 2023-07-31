@@ -119,7 +119,7 @@ export enum OCPP16AvailabilityType {
   Operative = 'Operative',
 }
 
-export interface ChangeAvailabilityRequest extends JsonObject {
+export interface OCPP16ChangeAvailabilityRequest extends JsonObject {
   connectorId: number;
   type: OCPP16AvailabilityType;
 }
