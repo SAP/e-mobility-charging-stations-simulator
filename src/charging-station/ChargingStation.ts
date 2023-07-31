@@ -419,7 +419,7 @@ export class ChargingStation {
   }
 
   public getNumberOfRunningTransactions(): number {
-    let trxCount = 0;
+    let numberOfRunningTransactions = 0;
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId === 0) {
@@ -427,18 +427,18 @@ export class ChargingStation {
         }
         for (const connectorStatus of evseStatus.connectors.values()) {
           if (connectorStatus.transactionStarted === true) {
-            ++trxCount;
+            ++numberOfRunningTransactions;
           }
         }
       }
     } else {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-          ++trxCount;
+          ++numberOfRunningTransactions;
         }
       }
     }
-    return trxCount;
+    return numberOfRunningTransactions;
   }
 
   public getOutOfOrderEndMeterValues(): boolean {
@@ -1074,15 +1074,14 @@ export class ChargingStation {
   }
 
   private getNumberOfReservationsOnConnectorZero(): number {
-    let numberOfReservations = 0;
     if (
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       (this.hasEvses && this.evses.get(0)?.connectors.get(0)?.reservation) ||
       (!this.hasEvses && this.connectors.get(0)?.reservation)
     ) {
-      ++numberOfReservations;
+      return 1;
     }
-    return numberOfReservations;
+    return 0;
   }
 
   private flushMessageBuffer(): void {

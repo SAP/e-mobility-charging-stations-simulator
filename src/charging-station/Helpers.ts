@@ -118,16 +118,16 @@ export const removeExpiredReservations = async (
 export const getNumberOfReservableConnectors = (
   connectors: Map<number, ConnectorStatus>,
 ): number => {
-  let reservableConnectors = 0;
+  let numberOfReservableConnectors = 0;
   for (const [connectorId, connectorStatus] of connectors) {
     if (connectorId === 0) {
       continue;
     }
     if (connectorStatus.status === ConnectorStatusEnum.Available) {
-      ++reservableConnectors;
+      ++numberOfReservableConnectors;
     }
   }
-  return reservableConnectors;
+  return numberOfReservableConnectors;
 };
 
 export const getHashId = (index: number, stationTemplate: ChargingStationTemplate): string => {
@@ -257,7 +257,7 @@ export const checkConnectorsConfiguration = (
   templateMaxConnectors: number;
   templateMaxAvailableConnectors: number;
 } => {
-  const configuredMaxConnectors = getConfiguredNumberOfConnectors(stationTemplate);
+  const configuredMaxConnectors = getConfiguredMaxNumberOfConnectors(stationTemplate);
   checkConfiguredMaxConnectors(configuredMaxConnectors, logPrefix, templateFile);
   const templateMaxConnectors = getMaxNumberOfConnectors(stationTemplate.Connectors!);
   checkTemplateMaxConnectors(templateMaxConnectors, logPrefix, templateFile);
@@ -622,16 +622,16 @@ export const waitChargingStationEvents = async (
   });
 };
 
-const getConfiguredNumberOfConnectors = (stationTemplate: ChargingStationTemplate): number => {
-  let configuredMaxConnectors = 0;
+const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemplate): number => {
+  let configuredMaxNumberOfConnectors = 0;
   if (isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
     const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
-    configuredMaxConnectors =
+    configuredMaxNumberOfConnectors =
       numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)];
   } else if (isUndefined(stationTemplate.numberOfConnectors) === false) {
-    configuredMaxConnectors = stationTemplate.numberOfConnectors as number;
+    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors as number;
   } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
-    configuredMaxConnectors = stationTemplate.Connectors[0]
+    configuredMaxNumberOfConnectors = stationTemplate.Connectors[0]
       ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
       : getMaxNumberOfConnectors(stationTemplate.Connectors);
   } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
@@ -639,10 +639,12 @@ const getConfiguredNumberOfConnectors = (stationTemplate: ChargingStationTemplat
       if (evse === '0') {
         continue;
       }
-      configuredMaxConnectors += getMaxNumberOfConnectors(stationTemplate.Evses[evse].Connectors);
+      configuredMaxNumberOfConnectors += getMaxNumberOfConnectors(
+        stationTemplate.Evses[evse].Connectors,
+      );
     }
   }
-  return configuredMaxConnectors;
+  return configuredMaxNumberOfConnectors;
 };
 
 const checkConfiguredMaxConnectors = (
