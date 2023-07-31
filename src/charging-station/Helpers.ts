@@ -14,6 +14,7 @@ import {
   isAfter,
   isBefore,
   isDate,
+  isPast,
   isWithinInterval,
   toDate,
 } from 'date-fns';
@@ -42,6 +43,8 @@ import {
   type OCPP20BootNotificationRequest,
   OCPPVersion,
   RecurrencyKindType,
+  type Reservation,
+  ReservationTerminationReason,
   StandardParametersKey,
   SupportedFeatureProfiles,
   Voltage,
@@ -82,7 +85,39 @@ export const getChargingStationId = (
       )}${idSuffix}`;
 };
 
-export const countReservableConnectors = (connectors: Map<number, ConnectorStatus>) => {
+export const hasReservationExpired = (reservation: Reservation): boolean => {
+  return isPast(reservation.expiryDate);
+};
+
+export const removeExpiredReservations = async (
+  chargingStation: ChargingStation,
+): Promise<void> => {
+  if (chargingStation.hasEvses) {
+    for (const evseStatus of chargingStation.evses.values()) {
+      for (const connectorStatus of evseStatus.connectors.values()) {
+        if (connectorStatus.reservation && hasReservationExpired(connectorStatus.reservation)) {
+          await chargingStation.removeReservation(
+            connectorStatus.reservation,
+            ReservationTerminationReason.EXPIRED,
+          );
+        }
+      }
+    }
+  } else {
+    for (const connectorStatus of chargingStation.connectors.values()) {
+      if (connectorStatus.reservation && hasReservationExpired(connectorStatus.reservation)) {
+        await chargingStation.removeReservation(
+          connectorStatus.reservation,
+          ReservationTerminationReason.EXPIRED,
+        );
+      }
+    }
+  }
+};
+
+export const getNumberOfReservableConnectors = (
+  connectors: Map<number, ConnectorStatus>,
+): number => {
   let reservableConnectors = 0;
   for (const [connectorId, connectorStatus] of connectors) {
     if (connectorId === 0) {

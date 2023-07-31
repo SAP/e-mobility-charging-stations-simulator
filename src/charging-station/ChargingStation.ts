@@ -31,7 +31,6 @@ import {
   checkConnectorsConfiguration,
   checkStationInfoConnectorStatus,
   checkTemplate,
-  countReservableConnectors,
   createBootNotificationRequest,
   createSerialNumber,
   getAmperageLimitationUnitDivider,
@@ -42,10 +41,13 @@ import {
   getHashId,
   getIdTagsFile,
   getMaxNumberOfEvses,
+  getNumberOfReservableConnectors,
   getPhaseRotationValue,
   hasFeatureProfile,
+  hasReservationExpired,
   initializeConnectorsMapStatus,
   propagateSerialNumber,
+  removeExpiredReservations,
   stationTemplateToStationInfo,
   warnTemplateKeysDeprecation,
 } from './Helpers';
@@ -962,7 +964,7 @@ export class ChargingStation {
 
   public async removeReservation(
     reservation: Reservation,
-    reason?: ReservationTerminationReason,
+    reason: ReservationTerminationReason,
   ): Promise<void> {
     const connector = this.getConnectorStatus(reservation.connectorId)!;
     switch (reason) {
@@ -983,7 +985,8 @@ export class ChargingStation {
         delete connector.reservation;
         break;
       default:
-        break;
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error(`Unknown reservation termination reason '${reason}'`);
     }
   }
 
@@ -1013,12 +1016,16 @@ export class ChargingStation {
     idTag?: string,
     connectorId?: number,
   ): boolean {
-    const reservationExists = !isUndefined(this.getReservationBy('reservationId', reservationId));
+    const reservation = this.getReservationBy('reservationId', reservationId);
+    const reservationExists = !isUndefined(reservation) && !hasReservationExpired(reservation!);
     if (arguments.length === 1) {
       return !reservationExists;
     } else if (arguments.length > 1) {
+      const userReservation = !isUndefined(idTag)
+        ? this.getReservationBy('idTag', idTag!)
+        : undefined;
       const userReservationExists =
-        !isUndefined(idTag) && isUndefined(this.getReservationBy('idTag', idTag!)) ? false : true;
+        !isUndefined(userReservation) && !hasReservationExpired(userReservation!);
       const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0;
       const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0;
       return (
@@ -1038,34 +1045,7 @@ export class ChargingStation {
         )}`,
       );
       this.reservationExpirationSetInterval = setInterval((): void => {
-        const currentDate = new Date();
-        if (this.hasEvses) {
-          for (const evseStatus of this.evses.values()) {
-            for (const connectorStatus of evseStatus.connectors.values()) {
-              if (
-                connectorStatus.reservation &&
-                connectorStatus.reservation.expiryDate < currentDate
-              ) {
-                this.removeReservation(
-                  connectorStatus.reservation,
-                  ReservationTerminationReason.EXPIRED,
-                ).catch(Constants.EMPTY_FUNCTION);
-              }
-            }
-          }
-        } else {
-          for (const connectorStatus of this.connectors.values()) {
-            if (
-              connectorStatus.reservation &&
-              connectorStatus.reservation.expiryDate < currentDate
-            ) {
-              this.removeReservation(
-                connectorStatus.reservation,
-                ReservationTerminationReason.EXPIRED,
-              ).catch(Constants.EMPTY_FUNCTION);
-            }
-          }
-        }
+        removeExpiredReservations(this).catch(Constants.EMPTY_FUNCTION);
       }, interval);
     }
   }
@@ -1082,15 +1062,15 @@ export class ChargingStation {
   // }
 
   private getNumberOfReservableConnectors(): number {
-    let reservableConnectors = 0;
+    let numberOfReservableConnectors = 0;
     if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
-        reservableConnectors += countReservableConnectors(evseStatus.connectors);
+        numberOfReservableConnectors += getNumberOfReservableConnectors(evseStatus.connectors);
       }
     } else {
-      reservableConnectors = countReservableConnectors(this.connectors);
+      numberOfReservableConnectors = getNumberOfReservableConnectors(this.connectors);
     }
-    return reservableConnectors - this.getNumberOfReservationsOnConnectorZero();
+    return numberOfReservableConnectors - this.getNumberOfReservationsOnConnectorZero();
   }
 
   private getNumberOfReservationsOnConnectorZero(): number {

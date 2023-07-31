@@ -3,7 +3,11 @@
 import type { JSONSchemaType } from 'ajv';
 
 import { OCPP16Constants } from './OCPP16Constants';
-import { type ChargingStation, hasFeatureProfile } from '../../../charging-station';
+import {
+  type ChargingStation,
+  hasFeatureProfile,
+  hasReservationExpired,
+} from '../../../charging-station';
 import { OCPPError } from '../../../exception';
 import {
   type ClearChargingProfileRequest,
@@ -922,6 +926,29 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       });
     }
     return clearedCP;
+  };
+
+  public static hasReservation = (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag: string,
+  ): boolean => {
+    const connectorReservation = chargingStation.getReservationBy('connectorId', connectorId);
+    const chargingStationReservation = chargingStation.getReservationBy('connectorId', 0);
+    if (
+      (chargingStation.getConnectorStatus(connectorId)?.status ===
+        OCPP16ChargePointStatus.Reserved &&
+        connectorReservation &&
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        (hasReservationExpired(connectorReservation) || connectorReservation?.idTag !== idTag)) ||
+      (chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved &&
+        chargingStationReservation &&
+        (hasReservationExpired(chargingStationReservation) ||
+          chargingStationReservation?.idTag !== idTag))
+    ) {
+      return false;
+    }
+    return true;
   };
 
   public static parseJsonSchemaFile<T extends JsonType>(

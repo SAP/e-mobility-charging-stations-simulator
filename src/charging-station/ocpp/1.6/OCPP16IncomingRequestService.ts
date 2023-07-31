@@ -15,6 +15,7 @@ import {
   type ChargingStation,
   checkChargingStation,
   getConfigurationKey,
+  removeExpiredReservations,
   setConfigurationKeyValue,
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
@@ -833,15 +834,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         idTag,
       );
     }
-    if (
-      (chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
-        OCPP16ChargePointStatus.Reserved &&
-        chargingStation.getReservationBy('connectorId', transactionConnectorId)?.idTag !== idTag) ||
-      (chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved &&
-        chargingStation.getReservationBy('connectorId', 0)?.idTag !== idTag)
-    ) {
-      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
-    }
     const remoteStartTransactionLogMsg = `
       ${chargingStation.logPrefix()} Transaction remotely STARTED on ${
         chargingStation.stationInfo.chargingStationId
@@ -874,12 +866,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
               connectorId: transactionConnectorId,
               idTag,
-              reservationId: chargingStation.getReservationBy(
-                'connectorId',
-                chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
-                  ? 0
-                  : transactionConnectorId,
-              )!,
             })
           ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
         ) {
@@ -915,12 +901,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
             connectorId: transactionConnectorId,
             idTag,
-            reservationId: chargingStation.getReservationBy(
-              'connectorId',
-              chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
-                ? 0
-                : transactionConnectorId,
-            )!,
           })
         ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
       ) {
@@ -1527,6 +1507,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (!(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {
         return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED;
       }
+      await removeExpiredReservations(chargingStation);
       switch (chargingStation.getConnectorStatus(connectorId)!.status) {
         case OCPP16ChargePointStatus.Faulted:
           response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED;
@@ -1588,8 +1569,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       const { reservationId } = commandPayload;
       const reservation = chargingStation.getReservationBy('reservationId', reservationId);
       if (isUndefined(reservation)) {
-        logger.error(
-          `${chargingStation.logPrefix()} Reservation with ID ${reservationId}
+        logger.debug(
+          `${chargingStation.logPrefix()} Reservation with id ${reservationId}
             does not exist on charging station`,
         );
         return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;

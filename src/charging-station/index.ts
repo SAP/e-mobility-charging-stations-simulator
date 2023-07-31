@@ -6,8 +6,10 @@ export {
   setConfigurationKeyValue,
 } from './ConfigurationKeyUtils';
 export {
-  getIdTagsFile,
   checkChargingStation,
-  resetConnectorStatus,
+  getIdTagsFile,
   hasFeatureProfile,
+  hasReservationExpired,
+  removeExpiredReservations,
+  resetConnectorStatus,
 } from './Helpers';

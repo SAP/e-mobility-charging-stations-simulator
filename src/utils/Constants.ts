@@ -55,7 +55,7 @@ export class Constants {
     /* This is intentional */
   });
 
-  static readonly DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL = 5000; // Ms
+  static readonly DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL = 60000; // Ms
 
   private constructor() {
     // This is intentional

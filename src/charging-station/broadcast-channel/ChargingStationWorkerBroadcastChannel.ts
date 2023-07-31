@@ -317,7 +317,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       this.cleanRequestPayload(command, requestPayload);
       return this.commandHandlers.get(command)!(requestPayload);
     }
-    throw new BaseError(`Unknown worker broadcast channel command: ${command}`);
+    throw new BaseError(`Unknown worker broadcast channel command: '${command}'`);
   }
 
   private cleanRequestPayload(

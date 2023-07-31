@@ -12,6 +12,7 @@ import {
   type JsonType,
   type OCPP16AuthorizeRequest,
   type OCPP16BootNotificationRequest,
+  OCPP16ChargePointStatus,
   type OCPP16DataTransferRequest,
   type OCPP16DiagnosticsStatusNotificationRequest,
   type OCPP16FirmwareStatusNotificationRequest,
@@ -183,6 +184,18 @@ export class OCPP16RequestService extends OCPPRequestService {
             true,
           ),
           timestamp: new Date(),
+          ...(OCPP16ServiceUtils.hasReservation(
+            chargingStation,
+            commandParams?.connectorId as number,
+            commandParams?.idTag as string,
+          ) && {
+            reservationId: chargingStation.getReservationBy(
+              'connectorId',
+              chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
+                ? 0
+                : (commandParams?.connectorId as number),
+            )!.reservationId,
+          }),
           ...commandParams,
         } as unknown as Request;
       case OCPP16RequestCommand.STOP_TRANSACTION:

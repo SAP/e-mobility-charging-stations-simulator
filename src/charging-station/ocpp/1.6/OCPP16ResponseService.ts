@@ -10,6 +10,7 @@ import {
   type ChargingStation,
   addConfigurationKey,
   getConfigurationKey,
+  hasReservationExpired,
   resetConnectorStatus,
 } from '../../../charging-station';
 import { OCPPError } from '../../../exception';
@@ -639,18 +640,31 @@ export class OCPP16ResponseService extends OCPPResponseService {
           transactionConnectorId,
           requestPayload.meterStart,
         );
-      const reservedOnConnectorZero =
-        chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved;
-      if (
-        chargingStation.getConnectorStatus(transactionConnectorId)?.status ===
-          OCPP16ChargePointStatus.Reserved ||
-        reservedOnConnectorZero
-      ) {
+      if (requestPayload.reservationId) {
+        const reservation = chargingStation.getReservationBy(
+          'reservationId',
+          requestPayload.reservationId,
+        )!;
+        if (reservation.idTag !== requestPayload.idTag) {
+          logger.warn(
+            `${chargingStation.logPrefix()} Transaction reserved ${
+              payload.transactionId
+            } started with a different idTag ${requestPayload.idTag} than the reservation one ${
+              reservation.idTag
+            }`,
+          );
+        }
+        if (hasReservationExpired(reservation)) {
+          logger.warn(
+            `${chargingStation.logPrefix()} Transaction reserved ${
+              payload.transactionId
+            } started with expired reservation ${
+              requestPayload.reservationId
+            } (expiry date: ${reservation.expiryDate.toISOString()}))`,
+          );
+        }
         await chargingStation.removeReservation(
-          chargingStation.getReservationBy(
-            'connectorId',
-            reservedOnConnectorZero ? 0 : transactionConnectorId,
-          )!,
+          reservation,
           ReservationTerminationReason.TRANSACTION_STARTED,
         );
       }
