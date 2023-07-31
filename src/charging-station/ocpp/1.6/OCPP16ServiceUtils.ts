@@ -838,13 +838,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
       responses.push(response);
     }
-    if (
-      responses.includes(OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED) &&
-      !responses.includes(OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED)
-    ) {
+    if (responses.includes(OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED)) {
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
-    } else if (responses.includes(OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED)) {
-      return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
     }
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
   };
@@ -996,25 +991,25 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  private static getMeasurandDefaultUnit(
-    measurandType: OCPP16MeterValueMeasurand,
-  ): MeterValueUnit | undefined {
-    switch (measurandType) {
-      case OCPP16MeterValueMeasurand.CURRENT_EXPORT:
-      case OCPP16MeterValueMeasurand.CURRENT_IMPORT:
-      case OCPP16MeterValueMeasurand.CURRENT_OFFERED:
-        return MeterValueUnit.AMP;
-      case OCPP16MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER:
-      case OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER:
-        return MeterValueUnit.WATT_HOUR;
-      case OCPP16MeterValueMeasurand.POWER_ACTIVE_EXPORT:
-      case OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT:
-      case OCPP16MeterValueMeasurand.POWER_OFFERED:
-        return MeterValueUnit.WATT;
-      case OCPP16MeterValueMeasurand.STATE_OF_CHARGE:
-        return MeterValueUnit.PERCENT;
-      case OCPP16MeterValueMeasurand.VOLTAGE:
-        return MeterValueUnit.VOLT;
-    }
-  }
+  // private static getMeasurandDefaultUnit(
+  //   measurandType: OCPP16MeterValueMeasurand,
+  // ): MeterValueUnit | undefined {
+  //   switch (measurandType) {
+  //     case OCPP16MeterValueMeasurand.CURRENT_EXPORT:
+  //     case OCPP16MeterValueMeasurand.CURRENT_IMPORT:
+  //     case OCPP16MeterValueMeasurand.CURRENT_OFFERED:
+  //       return MeterValueUnit.AMP;
+  //     case OCPP16MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER:
+  //     case OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER:
+  //       return MeterValueUnit.WATT_HOUR;
+  //     case OCPP16MeterValueMeasurand.POWER_ACTIVE_EXPORT:
+  //     case OCPP16MeterValueMeasurand.POWER_ACTIVE_IMPORT:
+  //     case OCPP16MeterValueMeasurand.POWER_OFFERED:
+  //       return MeterValueUnit.WATT;
+  //     case OCPP16MeterValueMeasurand.STATE_OF_CHARGE:
+  //       return MeterValueUnit.PERCENT;
+  //     case OCPP16MeterValueMeasurand.VOLTAGE:
+  //       return MeterValueUnit.VOLT;
+  //   }
+  // }
 }
