@@ -816,25 +816,37 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
 
   public static changeAvailability = async (
     chargingStation: ChargingStation,
-    connectorId: number,
+    connectorIds: number[],
     chargePointStatus: OCPP16ChargePointStatus,
     availabilityType: OCPP16AvailabilityType,
   ): Promise<OCPP16ChangeAvailabilityResponse> => {
-    let response: OCPP16ChangeAvailabilityResponse =
-      OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
-    if (connectorStatus?.transactionStarted === true) {
-      response = OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
+    const responses: OCPP16ChangeAvailabilityResponse[] = [];
+    for (const connectorId of connectorIds) {
+      let response: OCPP16ChangeAvailabilityResponse =
+        OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
+      if (connectorStatus?.transactionStarted === true) {
+        response = OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
+      }
+      connectorStatus.availability = availabilityType;
+      if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
+        await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+          chargingStation,
+          connectorId,
+          chargePointStatus,
+        );
+      }
+      responses.push(response);
     }
-    connectorStatus.availability = availabilityType;
-    if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
-        connectorId,
-        chargePointStatus,
-      );
+    if (
+      responses.includes(OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED) &&
+      !responses.includes(OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED)
+    ) {
+      return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED;
+    } else if (responses.includes(OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED)) {
+      return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
     }
-    return response;
+    return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED;
   };
 
   public static setChargingProfile(

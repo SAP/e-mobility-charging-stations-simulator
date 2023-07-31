@@ -774,24 +774,20 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       let response: OCPP16ChangeAvailabilityResponse;
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
-          for (const id of evseStatus.connectors.keys()) {
-            response = await OCPP16ServiceUtils.changeAvailability(
-              chargingStation,
-              id,
-              chargePointStatus,
-              commandPayload.type,
-            );
-          }
-        }
-      } else {
-        for (const id of chargingStation.connectors.keys()) {
           response = await OCPP16ServiceUtils.changeAvailability(
             chargingStation,
-            id,
+            [...evseStatus.connectors.keys()],
             chargePointStatus,
             commandPayload.type,
           );
         }
+      } else {
+        response = await OCPP16ServiceUtils.changeAvailability(
+          chargingStation,
+          [...chargingStation.connectors.keys()],
+          chargePointStatus,
+          commandPayload.type,
+        );
       }
       return response!;
     } else if (
