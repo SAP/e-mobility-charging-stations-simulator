@@ -890,28 +890,23 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     commandPayload: ClearChargingProfileRequest,
     chargingProfiles: OCPP16ChargingProfile[] | undefined,
   ): boolean => {
+    const { id, chargingProfilePurpose, stackLevel } = commandPayload;
     let clearedCP = false;
     if (isNotEmptyArray(chargingProfiles)) {
       chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
         let clearCurrentCP = false;
-        if (chargingProfile.chargingProfileId === commandPayload.id) {
+        if (chargingProfile.chargingProfileId === id) {
+          clearCurrentCP = true;
+        }
+        if (!chargingProfilePurpose && chargingProfile.stackLevel === stackLevel) {
+          clearCurrentCP = true;
+        }
+        if (!stackLevel && chargingProfile.chargingProfilePurpose === chargingProfilePurpose) {
           clearCurrentCP = true;
         }
         if (
-          !commandPayload.chargingProfilePurpose &&
-          chargingProfile.stackLevel === commandPayload.stackLevel
-        ) {
-          clearCurrentCP = true;
-        }
-        if (
-          !chargingProfile.stackLevel &&
-          chargingProfile.chargingProfilePurpose === commandPayload.chargingProfilePurpose
-        ) {
-          clearCurrentCP = true;
-        }
-        if (
-          chargingProfile.stackLevel === commandPayload.stackLevel &&
-          chargingProfile.chargingProfilePurpose === commandPayload.chargingProfilePurpose
+          chargingProfile.stackLevel === stackLevel &&
+          chargingProfile.chargingProfilePurpose === chargingProfilePurpose
         ) {
           clearCurrentCP = true;
         }
