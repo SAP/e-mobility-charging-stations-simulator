@@ -728,7 +728,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
   ): Promise<void> {
     resetConnectorStatus(chargingStation.getConnectorStatus(connectorId)!);
     chargingStation.stopMeterValues(connectorId);
-    parentPort?.postMessage(buildUpdatedMessage(chargingStation));
     if (
       chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.Available
     ) {
@@ -738,6 +737,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ChargePointStatus.Available,
       );
     }
+    parentPort?.postMessage(buildUpdatedMessage(chargingStation));
   }
 
   private async handleResponseStopTransaction(
