@@ -8,6 +8,7 @@ import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
 import {
   addSeconds,
+  differenceInSeconds,
   isAfter,
   isBefore,
   isDate,
@@ -754,31 +755,107 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       // Add active charging profiles into chargingProfiles array
       if (
         isValidTime(storedChargingProfile.chargingSchedule?.startSchedule) &&
-        isWithinInterval(storedChargingProfile.chargingSchedule.startSchedule!, interval) &&
-        (isEmptyArray(chargingProfiles) ||
-          (isNotEmptyArray(chargingProfiles) &&
-            (isBefore(
-              storedChargingProfile.chargingSchedule.startSchedule!,
-              min(
-                chargingProfiles.map(
-                  (chargingProfile) => chargingProfile.chargingSchedule.startSchedule ?? maxTime,
-                ),
-              ),
-            ) ||
-              isAfter(
-                storedChargingProfile.chargingSchedule.startSchedule!,
-                max(
-                  chargingProfiles.map(
-                    (chargingProfile) =>
-                      addSeconds(
-                        chargingProfile.chargingSchedule.startSchedule!,
-                        chargingProfile.chargingSchedule.duration!,
-                      ) ?? minTime,
-                  ),
-                ),
-              ))))
+        isWithinInterval(storedChargingProfile.chargingSchedule.startSchedule!, interval)
       ) {
-        chargingProfiles.push(storedChargingProfile);
+        if (isEmptyArray(chargingProfiles)) {
+          if (
+            isAfter(
+              addSeconds(
+                storedChargingProfile.chargingSchedule.startSchedule!,
+                storedChargingProfile.chargingSchedule.duration!,
+              ),
+              interval.end,
+            )
+          ) {
+            storedChargingProfile.chargingSchedule.chargingSchedulePeriod =
+              storedChargingProfile.chargingSchedule.chargingSchedulePeriod.filter(
+                (schedulePeriod) =>
+                  isWithinInterval(
+                    addSeconds(
+                      storedChargingProfile.chargingSchedule.startSchedule!,
+                      schedulePeriod.startPeriod,
+                    )!,
+                    interval,
+                  ),
+              );
+            storedChargingProfile.chargingSchedule.duration = differenceInSeconds(
+              interval.end,
+              storedChargingProfile.chargingSchedule.startSchedule!,
+            );
+          }
+          chargingProfiles.push(storedChargingProfile);
+        } else if (isNotEmptyArray(chargingProfiles)) {
+          const chargingProfilesInterval: Interval = {
+            start: min(
+              chargingProfiles.map(
+                (chargingProfile) => chargingProfile.chargingSchedule.startSchedule ?? maxTime,
+              ),
+            ),
+            end: max(
+              chargingProfiles.map(
+                (chargingProfile) =>
+                  addSeconds(
+                    chargingProfile.chargingSchedule.startSchedule!,
+                    chargingProfile.chargingSchedule.duration!,
+                  ) ?? minTime,
+              ),
+            ),
+          };
+          let addChargingProfile = false;
+          if (
+            isBefore(interval.start, chargingProfilesInterval.start) &&
+            isBefore(
+              storedChargingProfile.chargingSchedule.startSchedule!,
+              chargingProfilesInterval.start,
+            )
+          ) {
+            // Remove charging schedule periods that are after the start of the active profiles interval
+            storedChargingProfile.chargingSchedule.chargingSchedulePeriod =
+              storedChargingProfile.chargingSchedule.chargingSchedulePeriod.filter(
+                (schedulePeriod) =>
+                  isWithinInterval(
+                    addSeconds(
+                      storedChargingProfile.chargingSchedule.startSchedule!,
+                      schedulePeriod.startPeriod,
+                    ),
+                    {
+                      start: interval.start,
+                      end: chargingProfilesInterval.start,
+                    },
+                  ),
+              );
+            addChargingProfile = true;
+          }
+          if (
+            isBefore(chargingProfilesInterval.end, interval.end) &&
+            isAfter(
+              addSeconds(
+                storedChargingProfile.chargingSchedule.startSchedule!,
+                storedChargingProfile.chargingSchedule.duration!,
+              ),
+              chargingProfilesInterval.end,
+            )
+          ) {
+            // Remove charging schedule periods that are before the end of the active profiles interval
+            // FIXME: can lead to a gap in the charging schedule: chargingProfilesInterval.end -> first matching schedulePeriod.startPeriod
+            storedChargingProfile.chargingSchedule.chargingSchedulePeriod =
+              storedChargingProfile.chargingSchedule.chargingSchedulePeriod.filter(
+                (schedulePeriod) =>
+                  isWithinInterval(
+                    addSeconds(
+                      storedChargingProfile.chargingSchedule.startSchedule!,
+                      schedulePeriod.startPeriod,
+                    ),
+                    {
+                      start: chargingProfilesInterval.end,
+                      end: interval.end,
+                    },
+                  ),
+              );
+            addChargingProfile = true;
+          }
+          addChargingProfile && chargingProfiles.push(storedChargingProfile);
+        }
       }
     }
     const compositeScheduleStart: Date = min(
@@ -787,11 +864,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ),
     );
     const compositeScheduleDuration: number = Math.max(
-      ...chargingProfiles.map(
-        (chargingProfile) => chargingProfile.chargingSchedule.duration ?? -Infinity,
+      ...chargingProfiles.map((chargingProfile) =>
+        isNaN(chargingProfile.chargingSchedule.duration!)
+          ? -Infinity
+          : chargingProfile.chargingSchedule.duration!,
       ),
     );
-    // FIXME: remove overlapping charging schedule periods
     const compositeSchedulePeriods: OCPP16ChargingSchedulePeriod[] = chargingProfiles
       .map((chargingProfile) => chargingProfile.chargingSchedule.chargingSchedulePeriod)
       .reduce(
@@ -815,8 +893,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         : OCPP16ChargingRateUnitType.AMPERE,
       chargingSchedulePeriod: compositeSchedulePeriods,
       minChargeRate: Math.min(
-        ...chargingProfiles.map(
-          (chargingProfile) => chargingProfile.chargingSchedule.minChargeRate ?? Infinity,
+        ...chargingProfiles.map((chargingProfile) =>
+          isNaN(chargingProfile.chargingSchedule.minChargeRate!)
+            ? Infinity
+            : chargingProfile.chargingSchedule.minChargeRate!,
         ),
       ),
     };
