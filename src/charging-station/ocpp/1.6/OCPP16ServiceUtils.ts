@@ -863,7 +863,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles) === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an improper attribute type for the charging profiles array, applying proper type initialization`,
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an improper attribute type for the charging profiles array, applying proper type deferred initialization`,
       );
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = [];
     }

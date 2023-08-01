@@ -518,7 +518,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
   chargingStation: ChargingStation,
   connectorId: number,
 ): number | undefined => {
-  let limit: number | undefined, matchingChargingProfile: ChargingProfile | undefined;
+  let limit: number | undefined, chargingProfile: ChargingProfile | undefined;
   // Get charging profiles for connector id and sort by stack level
   const chargingProfiles = cloneObject<ChargingProfile[]>(
     (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? []).concat(
@@ -534,12 +534,11 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
     );
     if (!isNullOrUndefined(result)) {
       limit = result?.limit;
-      matchingChargingProfile = result?.matchingChargingProfile;
+      chargingProfile = result?.chargingProfile;
       switch (chargingStation.getCurrentOutType()) {
         case CurrentType.AC:
           limit =
-            matchingChargingProfile?.chargingSchedule?.chargingRateUnit ===
-            ChargingRateUnitType.WATT
+            chargingProfile?.chargingSchedule?.chargingRateUnit === ChargingRateUnitType.WATT
               ? limit
               : ACElectricUtils.powerTotal(
                   chargingStation.getNumberOfPhases(),
@@ -549,8 +548,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
           break;
         case CurrentType.DC:
           limit =
-            matchingChargingProfile?.chargingSchedule?.chargingRateUnit ===
-            ChargingRateUnitType.WATT
+            chargingProfile?.chargingSchedule?.chargingRateUnit === ChargingRateUnitType.WATT
               ? limit
               : DCElectricUtils.power(chargingStation.getVoltageOut(), limit!);
       }
@@ -558,7 +556,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
         chargingStation.getMaximumPower() / chargingStation.powerDivider;
       if (limit! > connectorMaximumPower) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${matchingChargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
+          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${chargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
           result,
         );
         limit = connectorMaximumPower;
@@ -713,7 +711,7 @@ const convertDeprecatedTemplateKey = (
 
 interface ChargingProfilesLimit {
   limit: number;
-  matchingChargingProfile: ChargingProfile;
+  chargingProfile: ChargingProfile;
 }
 
 /**
@@ -796,7 +794,7 @@ const getLimitFromChargingProfiles = (
         if (chargingSchedule.chargingSchedulePeriod.length === 1) {
           const result: ChargingProfilesLimit = {
             limit: chargingSchedule.chargingSchedulePeriod[0].limit,
-            matchingChargingProfile: chargingProfile,
+            chargingProfile,
           };
           logger.debug(debugLogMsg, result);
           return result;
@@ -817,7 +815,7 @@ const getLimitFromChargingProfiles = (
             // Found the schedule period: previous is the correct one
             const result: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod!.limit,
-              matchingChargingProfile: chargingProfile,
+              chargingProfile: chargingProfile,
             };
             logger.debug(debugLogMsg, result);
             return result;
@@ -839,7 +837,7 @@ const getLimitFromChargingProfiles = (
           ) {
             const result: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod.limit,
-              matchingChargingProfile: chargingProfile,
+              chargingProfile: chargingProfile,
             };
             logger.debug(debugLogMsg, result);
             return result;

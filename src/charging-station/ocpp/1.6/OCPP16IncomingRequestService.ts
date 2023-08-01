@@ -8,10 +8,14 @@ import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
 import {
   addSeconds,
+  isAfter,
+  isBefore,
   isDate,
   isWithinInterval,
+  max,
   maxTime,
   min,
+  minTime,
   secondsToMilliseconds,
 } from 'date-fns';
 import { create } from 'tar';
@@ -681,10 +685,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
     if (chargingRateUnit) {
-      logger.error(
-        `${chargingStation.logPrefix()} Get composite schedule with a specified rate unit is not yet supported`,
+      logger.warn(
+        `${chargingStation.logPrefix()} Get composite schedule with a specified rate unit is not yet supported, no conversion will be done`,
       );
-      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
     if (
@@ -700,38 +703,39 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       start: currentDate,
       end: addSeconds(currentDate, duration),
     };
-    const chargingProfiles: OCPP16ChargingProfile[] = [];
-    for (const chargingProfile of cloneObject<OCPP16ChargingProfile[]>(
+    const storedChargingProfiles: OCPP16ChargingProfile[] = cloneObject<OCPP16ChargingProfile[]>(
       (connectorStatus?.chargingProfiles ?? []).concat(
         chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [],
       ),
-    ).sort((a, b) => b.stackLevel - a.stackLevel)) {
+    ).sort((a, b) => b.stackLevel - a.stackLevel);
+    const chargingProfiles: OCPP16ChargingProfile[] = [];
+    for (const storedChargingProfile of storedChargingProfiles) {
       if (
         connectorStatus?.transactionStarted &&
-        isNullOrUndefined(chargingProfile.chargingSchedule?.startSchedule)
+        isNullOrUndefined(storedChargingProfile.chargingSchedule?.startSchedule)
       ) {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
-            chargingProfile.chargingProfileId
+            storedChargingProfile.chargingProfileId
           } has no startSchedule defined. Trying to set it to the connector current transaction start date`,
         );
         // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
-        chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+        storedChargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart;
       }
-      if (!isDate(chargingProfile.chargingSchedule?.startSchedule)) {
+      if (!isDate(storedChargingProfile.chargingSchedule?.startSchedule)) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
-            chargingProfile.chargingProfileId
+            storedChargingProfile.chargingProfileId
           } startSchedule property is not a Date object. Trying to convert it to a Date object`,
         );
-        chargingProfile.chargingSchedule.startSchedule = convertToDate(
-          chargingProfile.chargingSchedule?.startSchedule,
+        storedChargingProfile.chargingSchedule.startSchedule = convertToDate(
+          storedChargingProfile.chargingSchedule?.startSchedule,
         )!;
       }
       if (
         !prepareChargingProfileKind(
           connectorStatus,
-          chargingProfile,
+          storedChargingProfile,
           interval.start as Date,
           chargingStation.logPrefix(),
         )
@@ -740,7 +744,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       if (
         !canProceedChargingProfile(
-          chargingProfile,
+          storedChargingProfile,
           interval.start as Date,
           chargingStation.logPrefix(),
         )
@@ -749,10 +753,32 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       // Add active charging profiles into chargingProfiles array
       if (
-        isValidTime(chargingProfile.chargingSchedule?.startSchedule) &&
-        isWithinInterval(chargingProfile.chargingSchedule.startSchedule!, interval)
+        isValidTime(storedChargingProfile.chargingSchedule?.startSchedule) &&
+        isWithinInterval(storedChargingProfile.chargingSchedule.startSchedule!, interval) &&
+        (isEmptyArray(chargingProfiles) ||
+          (isNotEmptyArray(chargingProfiles) &&
+            (isBefore(
+              storedChargingProfile.chargingSchedule.startSchedule!,
+              min(
+                chargingProfiles.map(
+                  (chargingProfile) => chargingProfile.chargingSchedule.startSchedule ?? maxTime,
+                ),
+              ),
+            ) ||
+              isAfter(
+                storedChargingProfile.chargingSchedule.startSchedule!,
+                max(
+                  chargingProfiles.map(
+                    (chargingProfile) =>
+                      addSeconds(
+                        chargingProfile.chargingSchedule.startSchedule!,
+                        chargingProfile.chargingSchedule.duration!,
+                      ) ?? minTime,
+                  ),
+                ),
+              ))))
       ) {
-        chargingProfiles.push(chargingProfile);
+        chargingProfiles.push(storedChargingProfile);
       }
     }
     const compositeScheduleStart: Date = min(
