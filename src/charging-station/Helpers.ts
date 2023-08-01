@@ -520,18 +520,11 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
 ): number | undefined => {
   let limit: number | undefined, matchingChargingProfile: ChargingProfile | undefined;
   // Get charging profiles for connector id and sort by stack level
-  const chargingProfiles =
-    cloneObject<ChargingProfile[]>(
-      chargingStation.getConnectorStatus(connectorId)!.chargingProfiles!,
-    )?.sort((a, b) => b.stackLevel - a.stackLevel) ?? [];
-  // Get charging profiles on connector 0 and sort by stack level
-  if (isNotEmptyArray(chargingStation.getConnectorStatus(0)?.chargingProfiles)) {
-    chargingProfiles.push(
-      ...cloneObject<ChargingProfile[]>(
-        chargingStation.getConnectorStatus(0)!.chargingProfiles!,
-      ).sort((a, b) => b.stackLevel - a.stackLevel),
-    );
-  }
+  const chargingProfiles = cloneObject<ChargingProfile[]>(
+    (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? []).concat(
+      chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [],
+    ),
+  ).sort((a, b) => b.stackLevel - a.stackLevel);
   if (isNotEmptyArray(chargingProfiles)) {
     const result = getLimitFromChargingProfiles(
       chargingStation,
@@ -741,6 +734,12 @@ const getLimitFromChargingProfiles = (
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
   const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+  if (!isArraySorted(chargingProfiles, (a, b) => b.stackLevel - a.stackLevel)) {
+    logger.warn(
+      `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profiles are not sorted by stack level. Trying to sort them`,
+    );
+    chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel);
+  }
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (connectorStatus?.transactionStarted && isNullOrUndefined(chargingSchedule?.startSchedule)) {
@@ -860,7 +859,7 @@ const getLimitFromChargingProfiles = (
   }
 };
 
-const canProceedChargingProfile = (
+export const canProceedChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
   logPrefix: string,
@@ -879,7 +878,7 @@ const canProceedChargingProfile = (
   const chargingSchedule = chargingProfile.chargingSchedule;
   if (isNullOrUndefined(chargingSchedule?.startSchedule)) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has (still) no startSchedule defined`,
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`,
     );
     return false;
   }
@@ -892,7 +891,7 @@ const canProceedChargingProfile = (
   return true;
 };
 
-const canProceedRecurringChargingProfile = (
+export const canProceedRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   logPrefix: string,
 ): boolean => {
@@ -915,7 +914,7 @@ const canProceedRecurringChargingProfile = (
  * @param currentDate -
  * @param logPrefix -
  */
-const prepareRecurringChargingProfile = (
+export const prepareRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
   logPrefix: string,

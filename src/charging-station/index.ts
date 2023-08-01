@@ -6,10 +6,13 @@ export {
   setConfigurationKeyValue,
 } from './ConfigurationKeyUtils';
 export {
+  canProceedChargingProfile,
+  canProceedRecurringChargingProfile,
   checkChargingStation,
   getIdTagsFile,
   hasFeatureProfile,
   hasReservationExpired,
+  prepareRecurringChargingProfile,
   removeExpiredReservations,
   resetConnectorStatus,
 } from './Helpers';

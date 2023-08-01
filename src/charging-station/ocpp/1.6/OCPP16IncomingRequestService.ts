@@ -6,15 +6,25 @@ import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
-import { addSeconds, isWithinInterval, max, secondsToMilliseconds } from 'date-fns';
+import {
+  addSeconds,
+  isDate,
+  isWithinInterval,
+  maxTime,
+  min,
+  secondsToMilliseconds,
+} from 'date-fns';
 import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
   type ChargingStation,
+  canProceedChargingProfile,
+  canProceedRecurringChargingProfile,
   checkChargingStation,
   getConfigurationKey,
+  prepareRecurringChargingProfile,
   removeExpiredReservations,
   setConfigurationKeyValue,
 } from '../../../charging-station';
@@ -22,6 +32,8 @@ import { OCPPError } from '../../../exception';
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
+  ChargingProfileKindType,
+  ChargingRateUnitType,
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
   ErrorType,
@@ -89,6 +101,7 @@ import {
 } from '../../../types';
 import {
   Constants,
+  cloneObject,
   convertToDate,
   convertToInt,
   formatDurationMilliSeconds,
@@ -98,6 +111,7 @@ import {
   isNotEmptyString,
   isNullOrUndefined,
   isUndefined,
+  isValidTime,
   logger,
   sleep,
 } from '../../../utils';
@@ -673,67 +687,120 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
-    if (isEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+    if (
+      isEmptyArray(
+        connectorStatus?.chargingProfiles &&
+          isEmptyArray(chargingStation.getConnectorStatus(0)?.chargingProfiles),
+      )
+    ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
-    const startDate = new Date();
+    const currentDate = new Date();
     const interval: Interval = {
-      start: startDate,
-      end: addSeconds(startDate, duration),
+      start: currentDate,
+      end: addSeconds(currentDate, duration),
     };
-    let compositeSchedule: OCPP16ChargingSchedule | undefined;
-    for (const chargingProfile of chargingStation.getConnectorStatus(connectorId)!
-      .chargingProfiles!) {
+    const chargingProfiles: OCPP16ChargingProfile[] = [];
+    for (const chargingProfile of cloneObject<OCPP16ChargingProfile[]>(
+      (connectorStatus?.chargingProfiles ?? []).concat(
+        chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [],
+      ),
+    ).sort((a, b) => b.stackLevel - a.stackLevel)) {
       if (
-        compositeSchedule?.chargingRateUnit &&
-        compositeSchedule.chargingRateUnit !== chargingProfile.chargingSchedule.chargingRateUnit
+        connectorStatus?.transactionStarted &&
+        isNullOrUndefined(chargingProfile.chargingSchedule?.startSchedule)
       ) {
-        logger.error(
-          `${chargingStation.logPrefix()} Building composite schedule with different charging rate units is not yet supported, skipping charging profile id ${
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
             chargingProfile.chargingProfileId
-          }`,
+          } has no startSchedule defined. Trying to set it to the connector current transaction start date`,
         );
-        continue;
+        // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
+        chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+      }
+      if (!isDate(chargingProfile.chargingSchedule?.startSchedule)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
+            chargingProfile.chargingProfileId
+          } startSchedule property is not a Date object. Trying to convert it to a Date object`,
+        );
+        chargingProfile.chargingSchedule.startSchedule = convertToDate(
+          chargingProfile.chargingSchedule?.startSchedule,
+        )!;
+      }
+      switch (chargingProfile.chargingProfileKind) {
+        case ChargingProfileKindType.RECURRING:
+          if (!canProceedRecurringChargingProfile(chargingProfile, chargingStation.logPrefix())) {
+            continue;
+          }
+          prepareRecurringChargingProfile(
+            chargingProfile,
+            interval.start as Date,
+            chargingStation.logPrefix(),
+          );
+          break;
+        case ChargingProfileKindType.RELATIVE:
+          connectorStatus?.transactionStarted &&
+            (chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart);
+          break;
       }
       if (
-        isWithinInterval(chargingProfile.chargingSchedule.startSchedule!, interval) &&
-        isWithinInterval(
-          addSeconds(
-            chargingProfile.chargingSchedule.startSchedule!,
-            chargingProfile.chargingSchedule.duration!,
-          ),
-          interval,
+        !canProceedChargingProfile(
+          chargingProfile,
+          interval.start as Date,
+          chargingStation.logPrefix(),
         )
       ) {
-        compositeSchedule = {
-          startSchedule: max([
-            compositeSchedule?.startSchedule ?? interval.start,
-            chargingProfile.chargingSchedule.startSchedule!,
-          ]),
-          duration: Math.max(
-            compositeSchedule?.duration ?? -Infinity,
-            chargingProfile.chargingSchedule.duration!,
-          ),
-          chargingRateUnit: chargingProfile.chargingSchedule.chargingRateUnit,
-          ...(compositeSchedule?.chargingSchedulePeriod === undefined
-            ? { chargingSchedulePeriod: [] }
-            : {
-                chargingSchedulePeriod: compositeSchedule.chargingSchedulePeriod.concat(
-                  ...chargingProfile.chargingSchedule.chargingSchedulePeriod,
-                ),
-              }),
-          ...(chargingProfile.chargingSchedule.minChargeRate && {
-            minChargeRate: Math.min(
-              compositeSchedule?.minChargeRate ?? Infinity,
-              chargingProfile.chargingSchedule.minChargeRate,
-            ),
-          }),
-        };
+        continue;
+      }
+      // Add active charging profiles into chargingProfiles array
+      if (
+        isValidTime(chargingProfile.chargingSchedule?.startSchedule) &&
+        isWithinInterval(chargingProfile.chargingSchedule.startSchedule!, interval)
+      ) {
+        chargingProfiles.push(chargingProfile);
       }
     }
+    const compositeSchedule: OCPP16ChargingSchedule = {
+      startSchedule: min(
+        chargingProfiles.map(
+          (chargingProfile) => chargingProfile.chargingSchedule.startSchedule ?? maxTime,
+        ),
+      ),
+      duration: Math.max(
+        ...chargingProfiles.map(
+          (chargingProfile) => chargingProfile.chargingSchedule.duration ?? -Infinity,
+        ),
+      ),
+      chargingRateUnit: chargingProfiles.every(
+        (chargingProfile) =>
+          chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.AMPERE,
+      )
+        ? ChargingRateUnitType.AMPERE
+        : chargingProfiles.every(
+            (chargingProfile) =>
+              chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT,
+          )
+        ? ChargingRateUnitType.WATT
+        : ChargingRateUnitType.AMPERE,
+      // FIXME: remove overlapping charging schedule periods
+      chargingSchedulePeriod: chargingProfiles
+        .map((chargingProfile) => chargingProfile.chargingSchedule.chargingSchedulePeriod)
+        .reduce(
+          (accumulator, value) =>
+            accumulator.concat(value).sort((a, b) => a.startPeriod - b.startPeriod),
+          [],
+        ),
+      minChargeRate: Math.min(
+        ...chargingProfiles.map(
+          (chargingProfile) => chargingProfile.chargingSchedule.minChargeRate ?? Infinity,
+        ),
+      ),
+    };
     return {
       status: GenericStatus.Accepted,
-      scheduleStart: compositeSchedule?.startSchedule,
+      scheduleStart: compositeSchedule.startSchedule!,
       connectorId,
       chargingSchedule: compositeSchedule,
     };
