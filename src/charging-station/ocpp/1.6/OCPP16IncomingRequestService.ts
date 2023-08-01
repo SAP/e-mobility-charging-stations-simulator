@@ -6,7 +6,7 @@ import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
-import { isWithinInterval, secondsToMilliseconds } from 'date-fns';
+import { addSeconds, isWithinInterval, max, secondsToMilliseconds } from 'date-fns';
 import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';
@@ -653,7 +653,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
-    const { connectorId, duration } = commandPayload;
+    const { connectorId, duration, chargingRateUnit } = commandPayload;
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to get composite schedule to a
@@ -661,23 +661,77 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
+    if (connectorId === 0) {
+      logger.error(
+        `${chargingStation.logPrefix()} Get composite schedule on connector id ${connectorId} is not yet supported`,
+      );
+      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
+    }
+    if (chargingRateUnit) {
+      logger.error(
+        `${chargingStation.logPrefix()} Get composite schedule with a specified rate unit is not yet supported`,
+      );
+      return OCPP16Constants.OCPP_RESPONSE_REJECTED;
+    }
     if (isEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + secondsToMilliseconds(duration));
+    const endDate = addSeconds(startDate, duration);
     let compositeSchedule: OCPP16ChargingSchedule | undefined;
     for (const chargingProfile of chargingStation.getConnectorStatus(connectorId)!
       .chargingProfiles!) {
-      // FIXME: build the composite schedule including the local power limit, the stack level, the charging rate unit, etc.
+      if (
+        compositeSchedule?.chargingRateUnit &&
+        compositeSchedule.chargingRateUnit !== chargingProfile.chargingSchedule.chargingRateUnit
+      ) {
+        logger.error(
+          `${chargingStation.logPrefix()} Building composite schedule with different charging rate units is not yet supported, skipping charging profile id ${
+            chargingProfile.chargingProfileId
+          }`,
+        );
+        continue;
+      }
       if (
         isWithinInterval(chargingProfile.chargingSchedule.startSchedule!, {
           start: startDate,
           end: endDate,
-        })
+        }) &&
+        isWithinInterval(
+          addSeconds(
+            chargingProfile.chargingSchedule.startSchedule!,
+            chargingProfile.chargingSchedule.duration!,
+          ),
+          {
+            start: startDate,
+            end: endDate,
+          },
+        )
       ) {
-        compositeSchedule = chargingProfile.chargingSchedule;
-        break;
+        compositeSchedule = {
+          startSchedule: max([
+            compositeSchedule?.startSchedule ?? startDate,
+            chargingProfile.chargingSchedule.startSchedule!,
+          ]),
+          duration: Math.max(
+            compositeSchedule?.duration ?? -Infinity,
+            chargingProfile.chargingSchedule.duration!,
+          ),
+          chargingRateUnit: chargingProfile.chargingSchedule.chargingRateUnit,
+          ...(compositeSchedule?.chargingSchedulePeriod === undefined
+            ? { chargingSchedulePeriod: [] }
+            : {
+                chargingSchedulePeriod: compositeSchedule.chargingSchedulePeriod.concat(
+                  ...chargingProfile.chargingSchedule.chargingSchedulePeriod,
+                ),
+              }),
+          ...(chargingProfile.chargingSchedule.minChargeRate && {
+            minChargeRate: Math.min(
+              compositeSchedule?.minChargeRate ?? Infinity,
+              chargingProfile.chargingSchedule.minChargeRate,
+            ),
+          }),
+        };
       }
     }
     return {
