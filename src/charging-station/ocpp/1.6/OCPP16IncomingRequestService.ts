@@ -677,7 +677,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
     const startDate = new Date();
-    const endDate = addSeconds(startDate, duration);
+    const interval: Interval = {
+      start: startDate,
+      end: addSeconds(startDate, duration),
+    };
     let compositeSchedule: OCPP16ChargingSchedule | undefined;
     for (const chargingProfile of chargingStation.getConnectorStatus(connectorId)!
       .chargingProfiles!) {
@@ -693,24 +696,18 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         continue;
       }
       if (
-        isWithinInterval(chargingProfile.chargingSchedule.startSchedule!, {
-          start: startDate,
-          end: endDate,
-        }) &&
+        isWithinInterval(chargingProfile.chargingSchedule.startSchedule!, interval) &&
         isWithinInterval(
           addSeconds(
             chargingProfile.chargingSchedule.startSchedule!,
             chargingProfile.chargingSchedule.duration!,
           ),
-          {
-            start: startDate,
-            end: endDate,
-          },
+          interval,
         )
       ) {
         compositeSchedule = {
           startSchedule: max([
-            compositeSchedule?.startSchedule ?? startDate,
+            compositeSchedule?.startSchedule ?? interval.start,
             chargingProfile.chargingSchedule.startSchedule!,
           ]),
           duration: Math.max(
