@@ -232,7 +232,6 @@ export class OCPPServiceUtils {
         `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`,
       );
     }
-    let authorized = false;
     if (
       chargingStation.getLocalAuthListEnabled() === true &&
       OCPPServiceUtils.isIdTagLocalAuthorized(chargingStation, idTag)
@@ -240,15 +239,11 @@ export class OCPPServiceUtils {
       const connectorStatus: ConnectorStatus = chargingStation.getConnectorStatus(connectorId)!;
       connectorStatus.localAuthorizeIdTag = idTag;
       connectorStatus.idTagLocalAuthorized = true;
-      authorized = true;
+      return true;
     } else if (chargingStation.getRemoteAuthorization()) {
-      authorized = await OCPPServiceUtils.isIdTagRemoteAuthorized(
-        chargingStation,
-        connectorId,
-        idTag,
-      );
+      return await OCPPServiceUtils.isIdTagRemoteAuthorized(chargingStation, connectorId, idTag);
     }
-    return authorized;
+    return false;
   }
 
   protected static checkConnectorStatusTransition(
