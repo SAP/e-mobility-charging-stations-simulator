@@ -733,7 +733,7 @@ const getLimitFromChargingProfiles = (
 ): ChargingProfilesLimit | undefined => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
   if (!isArraySorted(chargingProfiles, (a, b) => b.stackLevel - a.stackLevel)) {
     logger.warn(
       `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profiles are not sorted by stack level. Trying to sort them`,
@@ -755,17 +755,8 @@ const getLimitFromChargingProfiles = (
       );
       chargingSchedule.startSchedule = convertToDate(chargingSchedule?.startSchedule)!;
     }
-    switch (chargingProfile.chargingProfileKind) {
-      case ChargingProfileKindType.RECURRING:
-        if (!canProceedRecurringChargingProfile(chargingProfile, logPrefix)) {
-          continue;
-        }
-        prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
-        break;
-      case ChargingProfileKindType.RELATIVE:
-        connectorStatus?.transactionStarted &&
-          (chargingSchedule.startSchedule = connectorStatus?.transactionStart);
-        break;
+    if (!prepareChargingProfileKind(connectorStatus, chargingProfile, currentDate, logPrefix)) {
+      continue;
     }
     if (!canProceedChargingProfile(chargingProfile, currentDate, logPrefix)) {
       continue;
@@ -859,6 +850,27 @@ const getLimitFromChargingProfiles = (
   }
 };
 
+export const prepareChargingProfileKind = (
+  connectorStatus: ConnectorStatus,
+  chargingProfile: ChargingProfile,
+  currentDate: Date,
+  logPrefix: string,
+): boolean => {
+  switch (chargingProfile.chargingProfileKind) {
+    case ChargingProfileKindType.RECURRING:
+      if (!canProceedRecurringChargingProfile(chargingProfile, logPrefix)) {
+        return false;
+      }
+      prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
+      break;
+    case ChargingProfileKindType.RELATIVE:
+      connectorStatus?.transactionStarted &&
+        (chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart);
+      break;
+  }
+  return true;
+};
+
 export const canProceedChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
@@ -891,7 +903,7 @@ export const canProceedChargingProfile = (
   return true;
 };
 
-export const canProceedRecurringChargingProfile = (
+const canProceedRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   logPrefix: string,
 ): boolean => {
@@ -914,7 +926,7 @@ export const canProceedRecurringChargingProfile = (
  * @param currentDate -
  * @param logPrefix -
  */
-export const prepareRecurringChargingProfile = (
+const prepareRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
   logPrefix: string,

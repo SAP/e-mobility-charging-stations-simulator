@@ -21,10 +21,9 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
 import {
   type ChargingStation,
   canProceedChargingProfile,
-  canProceedRecurringChargingProfile,
   checkChargingStation,
   getConfigurationKey,
-  prepareRecurringChargingProfile,
+  prepareChargingProfileKind,
   removeExpiredReservations,
   setConfigurationKeyValue,
 } from '../../../charging-station';
@@ -32,7 +31,6 @@ import { OCPPError } from '../../../exception';
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
-  ChargingProfileKindType,
   ChargingRateUnitType,
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
@@ -687,7 +685,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
     if (
       isEmptyArray(
         connectorStatus?.chargingProfiles &&
@@ -729,21 +727,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           chargingProfile.chargingSchedule?.startSchedule,
         )!;
       }
-      switch (chargingProfile.chargingProfileKind) {
-        case ChargingProfileKindType.RECURRING:
-          if (!canProceedRecurringChargingProfile(chargingProfile, chargingStation.logPrefix())) {
-            continue;
-          }
-          prepareRecurringChargingProfile(
-            chargingProfile,
-            interval.start as Date,
-            chargingStation.logPrefix(),
-          );
-          break;
-        case ChargingProfileKindType.RELATIVE:
-          connectorStatus?.transactionStarted &&
-            (chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart);
-          break;
+      if (
+        !prepareChargingProfileKind(
+          connectorStatus,
+          chargingProfile,
+          interval.start as Date,
+          chargingStation.logPrefix(),
+        )
+      ) {
+        continue;
       }
       if (
         !canProceedChargingProfile(

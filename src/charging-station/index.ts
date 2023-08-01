@@ -7,12 +7,11 @@ export {
 } from './ConfigurationKeyUtils';
 export {
   canProceedChargingProfile,
-  canProceedRecurringChargingProfile,
   checkChargingStation,
   getIdTagsFile,
   hasFeatureProfile,
   hasReservationExpired,
-  prepareRecurringChargingProfile,
+  prepareChargingProfileKind,
   removeExpiredReservations,
   resetConnectorStatus,
 } from './Helpers';
