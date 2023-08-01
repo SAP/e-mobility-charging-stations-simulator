@@ -31,7 +31,6 @@ import { OCPPError } from '../../../exception';
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
-  ChargingRateUnitType,
   type ClearChargingProfileRequest,
   type ClearChargingProfileResponse,
   ErrorType,
@@ -55,7 +54,9 @@ import {
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
+  OCPP16ChargingRateUnitType,
   type OCPP16ChargingSchedule,
+  type OCPP16ChargingSchedulePeriod,
   type OCPP16ClearCacheRequest,
   type OCPP16DataTransferRequest,
   type OCPP16DataTransferResponse,
@@ -754,36 +755,39 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingProfiles.push(chargingProfile);
       }
     }
+    const compositeScheduleStart: Date = min(
+      chargingProfiles.map(
+        (chargingProfile) => chargingProfile.chargingSchedule.startSchedule ?? maxTime,
+      ),
+    );
+    const compositeScheduleDuration: number = Math.max(
+      ...chargingProfiles.map(
+        (chargingProfile) => chargingProfile.chargingSchedule.duration ?? -Infinity,
+      ),
+    );
+    // FIXME: remove overlapping charging schedule periods
+    const compositeSchedulePeriods: OCPP16ChargingSchedulePeriod[] = chargingProfiles
+      .map((chargingProfile) => chargingProfile.chargingSchedule.chargingSchedulePeriod)
+      .reduce(
+        (accumulator, value) =>
+          accumulator.concat(value).sort((a, b) => a.startPeriod - b.startPeriod),
+        [],
+      );
     const compositeSchedule: OCPP16ChargingSchedule = {
-      startSchedule: min(
-        chargingProfiles.map(
-          (chargingProfile) => chargingProfile.chargingSchedule.startSchedule ?? maxTime,
-        ),
-      ),
-      duration: Math.max(
-        ...chargingProfiles.map(
-          (chargingProfile) => chargingProfile.chargingSchedule.duration ?? -Infinity,
-        ),
-      ),
+      startSchedule: compositeScheduleStart,
+      duration: compositeScheduleDuration,
       chargingRateUnit: chargingProfiles.every(
         (chargingProfile) =>
-          chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.AMPERE,
+          chargingProfile.chargingSchedule.chargingRateUnit === OCPP16ChargingRateUnitType.AMPERE,
       )
-        ? ChargingRateUnitType.AMPERE
+        ? OCPP16ChargingRateUnitType.AMPERE
         : chargingProfiles.every(
             (chargingProfile) =>
-              chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT,
+              chargingProfile.chargingSchedule.chargingRateUnit === OCPP16ChargingRateUnitType.WATT,
           )
-        ? ChargingRateUnitType.WATT
-        : ChargingRateUnitType.AMPERE,
-      // FIXME: remove overlapping charging schedule periods
-      chargingSchedulePeriod: chargingProfiles
-        .map((chargingProfile) => chargingProfile.chargingSchedule.chargingSchedulePeriod)
-        .reduce(
-          (accumulator, value) =>
-            accumulator.concat(value).sort((a, b) => a.startPeriod - b.startPeriod),
-          [],
-        ),
+        ? OCPP16ChargingRateUnitType.WATT
+        : OCPP16ChargingRateUnitType.AMPERE,
+      chargingSchedulePeriod: compositeSchedulePeriods,
       minChargeRate: Math.min(
         ...chargingProfiles.map(
           (chargingProfile) => chargingProfile.chargingSchedule.minChargeRate ?? Infinity,

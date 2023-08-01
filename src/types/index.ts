@@ -44,11 +44,11 @@ export {
   AvailabilityStatus,
   type BootNotificationResponse,
   ChargingProfileStatus,
-  ClearChargingProfileStatus,
   type ClearCacheResponse,
+  ClearChargingProfileStatus,
   ConfigurationStatus,
-  DataTransferStatus,
   type DataTransferResponse,
+  DataTransferStatus,
   type DiagnosticsStatusNotificationResponse,
   type ErrorResponse,
   type FirmwareStatusNotificationResponse,
@@ -80,13 +80,14 @@ export {
   type MessageEvent,
 } from './WorkerBroadcastChannel';
 export {
-  type OCPP16ChangeAvailabilityRequest,
   type ChangeConfigurationRequest,
   type ClearChargingProfileRequest,
   type GetConfigurationRequest,
   type GetDiagnosticsRequest,
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
+  type OCPP16CancelReservationRequest,
+  type OCPP16ChangeAvailabilityRequest,
   type OCPP16ClearCacheRequest,
   type OCPP16DataTransferRequest,
   OCPP16DataTransferVendorId,
@@ -98,6 +99,7 @@ export {
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
   OCPP16RequestCommand,
+  type OCPP16ReserveNowRequest,
   type OCPP16StatusNotificationRequest,
   type OCPP16TriggerMessageRequest,
   type OCPP16UpdateFirmwareRequest,
@@ -106,28 +108,26 @@ export {
   type ResetRequest,
   type SetChargingProfileRequest,
   type UnlockConnectorRequest,
-  type OCPP16ReserveNowRequest,
-  type OCPP16CancelReservationRequest,
 } from './ocpp/1.6/Requests';
 export {
-  type OCPP16ChangeAvailabilityResponse,
   type ChangeConfigurationResponse,
   type ClearChargingProfileResponse,
   type GetConfigurationResponse,
   type GetDiagnosticsResponse,
   type OCPP16BootNotificationResponse,
+  type OCPP16ChangeAvailabilityResponse,
   type OCPP16DataTransferResponse,
   OCPP16DataTransferStatus,
   type OCPP16DiagnosticsStatusNotificationResponse,
   type OCPP16FirmwareStatusNotificationResponse,
   type OCPP16GetCompositeScheduleResponse,
   type OCPP16HeartbeatResponse,
+  type OCPP16ReserveNowResponse,
   type OCPP16StatusNotificationResponse,
   type OCPP16TriggerMessageResponse,
   type OCPP16UpdateFirmwareResponse,
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
-  type OCPP16ReserveNowResponse,
 } from './ocpp/1.6/Responses';
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode';
 export {
@@ -224,7 +224,9 @@ export { OCPP16ChargePointStatus } from './ocpp/1.6/ChargePointStatus';
 export {
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
+  OCPP16ChargingRateUnitType,
   type OCPP16ChargingSchedule,
+  type OCPP16ChargingSchedulePeriod,
 } from './ocpp/1.6/ChargingProfile';
 export {
   OCPP16StandardParametersKey,

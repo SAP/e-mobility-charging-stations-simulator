@@ -2,6 +2,8 @@ import type { OCPP16ReserveNowRequest } from './1.6/Requests';
 
 export type Reservation = OCPP16ReserveNowRequest;
 
+export type ReservationKey = keyof Reservation;
+
 export enum ReservationTerminationReason {
   EXPIRED = 'Expired',
   TRANSACTION_STARTED = 'TransactionStarted',
@@ -9,5 +11,3 @@ export enum ReservationTerminationReason {
   RESERVATION_CANCELED = 'ReservationCanceled',
   REPLACE_EXISTING = 'ReplaceExisting',
 }
-
-export type ReservationKey = keyof OCPP16ReserveNowRequest;

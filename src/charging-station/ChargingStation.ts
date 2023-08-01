@@ -1569,6 +1569,13 @@ export class ChargingStation {
         } with evse id 0 with no connector id 0 configuration`,
       );
     }
+    if (Object.keys(stationTemplate?.Evses?.[0]?.Connectors as object).length > 1) {
+      logger.warn(
+        `${this.logPrefix()} Charging station information from template ${
+          this.templateFile
+        } with evse id 0 with more than one connector configuration, only connector id 0 configuration will be used`,
+      );
+    }
     if (stationTemplate?.Evses) {
       const evsesConfigHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
         .update(JSON.stringify(stationTemplate?.Evses))
