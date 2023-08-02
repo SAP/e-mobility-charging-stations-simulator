@@ -514,17 +514,36 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
   return unitDivider;
 };
 
+/**
+ * Gets the connector cloned charging profiles applying a power limitation
+ * and sorted by connector id ascending then stack level descending
+ *
+ * @param chargingStation -
+ * @param connectorId -
+ * @returns connector charging profiles array
+ */
+export const getConnectorChargingProfiles = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+) => {
+  return cloneObject<ChargingProfile[]>(
+    (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [])
+      .sort((a, b) => b.stackLevel - a.stackLevel)
+      .concat(
+        (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? []).sort(
+          (a, b) => b.stackLevel - a.stackLevel,
+        ),
+      ),
+  );
+};
+
 export const getChargingStationConnectorChargingProfilesPowerLimit = (
   chargingStation: ChargingStation,
   connectorId: number,
 ): number | undefined => {
   let limit: number | undefined, chargingProfile: ChargingProfile | undefined;
-  // Get charging profiles for connector id and sort by stack level
-  const chargingProfiles = cloneObject<ChargingProfile[]>(
-    (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? []).concat(
-      chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [],
-    ),
-  ).sort((a, b) => b.stackLevel - a.stackLevel);
+  // Get charging profiles sorted by connector id then stack level
+  const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId);
   if (isNotEmptyArray(chargingProfiles)) {
     const result = getLimitFromChargingProfiles(
       chargingStation,
@@ -715,7 +734,7 @@ interface ChargingProfilesLimit {
 }
 
 /**
- * Charging profiles shall already be sorted by connector id and stack level (highest stack level has priority)
+ * Charging profiles should already be sorted by connector id ascending then stack level descending
  *
  * @param chargingStation -
  * @param connectorId -
@@ -773,10 +792,10 @@ const getLimitFromChargingProfiles = (
           b: ChargingSchedulePeriod,
         ) => a.startPeriod - b.startPeriod;
         if (
-          isArraySorted<ChargingSchedulePeriod>(
+          !isArraySorted<ChargingSchedulePeriod>(
             chargingSchedule.chargingSchedulePeriod,
             chargingSchedulePeriodCompareFn,
-          ) === false
+          )
         ) {
           logger.warn(
             `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} schedule periods are not sorted by start period`,
@@ -815,7 +834,7 @@ const getLimitFromChargingProfiles = (
             // Found the schedule period: previous is the correct one
             const result: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod!.limit,
-              chargingProfile: chargingProfile,
+              chargingProfile,
             };
             logger.debug(debugLogMsg, result);
             return result;
@@ -836,7 +855,7 @@ const getLimitFromChargingProfiles = (
           ) {
             const result: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod.limit,
-              chargingProfile: chargingProfile,
+              chargingProfile,
             };
             logger.debug(debugLogMsg, result);
             return result;

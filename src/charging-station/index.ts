@@ -8,6 +8,7 @@ export {
 export {
   canProceedChargingProfile,
   checkChargingStation,
+  getConnectorChargingProfiles,
   getIdTagsFile,
   hasFeatureProfile,
   hasReservationExpired,

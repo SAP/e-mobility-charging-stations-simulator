@@ -28,6 +28,7 @@ import {
   canProceedChargingProfile,
   checkChargingStation,
   getConfigurationKey,
+  getConnectorChargingProfiles,
   prepareChargingProfileKind,
   removeExpiredReservations,
   setConfigurationKeyValue,
@@ -105,7 +106,6 @@ import {
 } from '../../../types';
 import {
   Constants,
-  cloneObject,
   convertToDate,
   convertToInt,
   formatDurationMilliSeconds,
@@ -704,11 +704,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       start: currentDate,
       end: addSeconds(currentDate, duration),
     };
-    const storedChargingProfiles: OCPP16ChargingProfile[] = cloneObject<OCPP16ChargingProfile[]>(
-      (connectorStatus?.chargingProfiles ?? []).concat(
-        chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [],
-      ),
-    ).sort((a, b) => b.stackLevel - a.stackLevel);
+    // Get charging profiles sorted by connector id then stack level
+    const storedChargingProfiles: OCPP16ChargingProfile[] = getConnectorChargingProfiles(
+      chargingStation,
+      connectorId,
+    );
     const chargingProfiles: OCPP16ChargingProfile[] = [];
     for (const storedChargingProfile of storedChargingProfiles) {
       if (
