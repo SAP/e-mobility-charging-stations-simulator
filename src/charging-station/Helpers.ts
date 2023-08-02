@@ -863,7 +863,7 @@ export const prepareChargingProfileKind = (
     case ChargingProfileKindType.RELATIVE:
       if (!isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)) {
         logger.warn(
-          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`,
+          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`,
         );
         delete chargingProfile.chargingSchedule.startSchedule;
       }
@@ -982,7 +982,7 @@ const prepareRecurringChargingProfile = (
       break;
     default:
       logger.error(
-        `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} recurrency kind ${chargingProfile.recurrencyKind} is not supported`,
+        `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${chargingProfile.recurrencyKind} charging profile id ${chargingProfile.chargingProfileId} is not supported`,
       );
   }
   if (recurringIntervalTranslated && !isWithinInterval(currentDate, recurringInterval!)) {
