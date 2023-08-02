@@ -826,14 +826,13 @@ const getLimitFromChargingProfiles = (
           if (
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
             (index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
-              chargingSchedule.duration! >
-                differenceInSeconds(
-                  addSeconds(
-                    chargingSchedule.startSchedule!,
-                    chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod,
-                  ),
+              differenceInSeconds(
+                addSeconds(
                   chargingSchedule.startSchedule!,
-                ))
+                  chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod,
+                ),
+                chargingSchedule.startSchedule!,
+              ) > chargingSchedule.duration!)
           ) {
             const result: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod.limit,
@@ -862,6 +861,12 @@ export const prepareChargingProfileKind = (
       prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
       break;
     case ChargingProfileKindType.RELATIVE:
+      if (!isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)) {
+        logger.warn(
+          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or set to the connector current transaction start date`,
+        );
+        delete chargingProfile.chargingSchedule.startSchedule;
+      }
       connectorStatus?.transactionStarted &&
         (chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart);
       break;
