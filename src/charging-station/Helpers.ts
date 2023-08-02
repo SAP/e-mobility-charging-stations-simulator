@@ -863,7 +863,7 @@ export const prepareChargingProfileKind = (
     case ChargingProfileKindType.RELATIVE:
       if (!isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)) {
         logger.warn(
-          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or set to the connector current transaction start date`,
+          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`,
         );
         delete chargingProfile.chargingSchedule.startSchedule;
       }

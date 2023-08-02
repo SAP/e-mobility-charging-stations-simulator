@@ -942,6 +942,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         !hasReservationExpired(chargingStationReservation) &&
         chargingStationReservation?.idTag === idTag)
     ) {
+      logger.debug(
+        `${chargingStation.logPrefix()} Connector id ${connectorId} has a valid reservation for idTag ${idTag}: %j`,
+        connectorReservation ?? chargingStationReservation,
+      );
       return true;
     }
     return false;
