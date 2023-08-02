@@ -734,7 +734,7 @@ interface ChargingProfilesLimit {
 }
 
 /**
- * Charging profiles should already be sorted by connector id ascending then stack level descending
+ * Charging profiles shall already be sorted by connector id ascending then stack level descending
  *
  * @param chargingStation -
  * @param connectorId -
@@ -751,12 +751,6 @@ const getLimitFromChargingProfiles = (
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
   const currentDate = new Date();
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
-  if (!isArraySorted(chargingProfiles, (a, b) => b.stackLevel - a.stackLevel)) {
-    logger.warn(
-      `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profiles are not sorted by stack level. Trying to sort them`,
-    );
-    chargingProfiles.sort((a, b) => b.stackLevel - a.stackLevel);
-  }
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule;
     if (connectorStatus?.transactionStarted && isNullOrUndefined(chargingSchedule?.startSchedule)) {
