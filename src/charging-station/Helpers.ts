@@ -16,6 +16,7 @@ import {
   isDate,
   isPast,
   isWithinInterval,
+  maxTime,
   toDate,
 } from 'date-fns';
 
@@ -753,12 +754,22 @@ const getLimitFromChargingProfiles = (
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule;
-    if (connectorStatus?.transactionStarted && isNullOrUndefined(chargingSchedule?.startSchedule)) {
+    if (isNullOrUndefined(chargingSchedule?.startSchedule) && connectorStatus?.transactionStarted) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`,
       );
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
       chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+    }
+    if (
+      !isNullOrUndefined(chargingSchedule?.startSchedule) &&
+      isNullOrUndefined(chargingSchedule?.duration)
+    ) {
+      logger.debug(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined and will be set to the maximum time allowed`,
+      );
+      // OCPP specifies that if duration is not defined, it should be infinite
+      chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule!);
     }
     if (!isDate(chargingSchedule?.startSchedule)) {
       logger.warn(
@@ -796,7 +807,7 @@ const getLimitFromChargingProfiles = (
           );
           chargingSchedule.chargingSchedulePeriod.sort(chargingSchedulePeriodCompareFn);
         }
-        // Check if the first schedule period start period is equal to 0
+        // Check if the first schedule period startPeriod property is equal to 0
         if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
           logger.error(
             `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod} is not equal to 0`,
@@ -907,12 +918,6 @@ export const canProceedChargingProfile = (
   if (isNullOrUndefined(chargingSchedule?.startSchedule)) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`,
-    );
-    return false;
-  }
-  if (isNullOrUndefined(chargingSchedule?.duration)) {
-    logger.error(
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined, not yet supported`,
     );
     return false;
   }

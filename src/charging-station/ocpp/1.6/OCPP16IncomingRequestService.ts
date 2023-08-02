@@ -712,8 +712,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const chargingProfiles: OCPP16ChargingProfile[] = [];
     for (const storedChargingProfile of storedChargingProfiles) {
       if (
-        connectorStatus?.transactionStarted &&
-        isNullOrUndefined(storedChargingProfile.chargingSchedule?.startSchedule)
+        isNullOrUndefined(storedChargingProfile.chargingSchedule?.startSchedule) &&
+        connectorStatus?.transactionStarted
       ) {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
@@ -722,6 +722,21 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         );
         // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
         storedChargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+      }
+      if (
+        !isNullOrUndefined(storedChargingProfile.chargingSchedule?.startSchedule) &&
+        isNullOrUndefined(storedChargingProfile.chargingSchedule?.duration)
+      ) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${
+            storedChargingProfile.chargingProfileId
+          } has no duration defined and will be set to the maximum time allowed`,
+        );
+        // OCPP specifies that if duration is not defined, it should be infinite
+        storedChargingProfile.chargingSchedule.duration = differenceInSeconds(
+          maxTime,
+          storedChargingProfile.chargingSchedule.startSchedule!,
+        );
       }
       if (!isDate(storedChargingProfile.chargingSchedule?.startSchedule)) {
         logger.warn(
@@ -837,20 +852,52 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             )
           ) {
             // Remove charging schedule periods that are before the end of the active profiles interval
-            // FIXME: can lead to a gap in the charging schedule: chargingProfilesInterval.end -> first matching schedulePeriod.startPeriod
             storedChargingProfile.chargingSchedule.chargingSchedulePeriod =
               storedChargingProfile.chargingSchedule.chargingSchedulePeriod.filter(
-                (schedulePeriod) =>
-                  isWithinInterval(
-                    addSeconds(
-                      storedChargingProfile.chargingSchedule.startSchedule!,
-                      schedulePeriod.startPeriod,
-                    ),
-                    {
-                      start: chargingProfilesInterval.end,
-                      end: interval.end,
-                    },
-                  ),
+                (schedulePeriod, index) => {
+                  if (
+                    isWithinInterval(
+                      addSeconds(
+                        storedChargingProfile.chargingSchedule.startSchedule!,
+                        schedulePeriod.startPeriod,
+                      ),
+                      {
+                        start: chargingProfilesInterval.end,
+                        end: interval.end,
+                      },
+                    )
+                  ) {
+                    return true;
+                  }
+                  if (
+                    !isWithinInterval(
+                      addSeconds(
+                        storedChargingProfile.chargingSchedule.startSchedule!,
+                        schedulePeriod.startPeriod,
+                      ),
+                      {
+                        start: chargingProfilesInterval.end,
+                        end: interval.end,
+                      },
+                    ) &&
+                    index <
+                      storedChargingProfile.chargingSchedule.chargingSchedulePeriod.length - 1 &&
+                    isWithinInterval(
+                      addSeconds(
+                        storedChargingProfile.chargingSchedule.startSchedule!,
+                        storedChargingProfile.chargingSchedule.chargingSchedulePeriod[index + 1]
+                          .startPeriod,
+                      ),
+                      {
+                        start: chargingProfilesInterval.end,
+                        end: interval.end,
+                      },
+                    )
+                  ) {
+                    return true;
+                  }
+                  return false;
+                },
               );
             addChargingProfile = true;
           }
