@@ -626,12 +626,37 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (
       csChargingProfiles.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
-      (connectorId === 0 ||
-        chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false)
+      connectorId === 0
+    ) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s)
+          on connector ${connectorId}`,
+      );
+      return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
+    }
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+    if (
+      csChargingProfiles.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
+      connectorId > 0 &&
+      connectorStatus?.transactionStarted === false
     ) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set transaction charging profile(s)
           on connector ${connectorId} without a started transaction`,
+      );
+      return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
+    }
+    if (
+      csChargingProfiles.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
+      connectorId > 0 &&
+      connectorStatus?.transactionStarted === true &&
+      csChargingProfiles.transactionId !== connectorStatus?.transactionId
+    ) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s)
+          on connector ${connectorId} with a different transaction id ${
+            csChargingProfiles.transactionId
+          } than the started transaction id ${connectorStatus?.transactionId}`,
       );
       return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
