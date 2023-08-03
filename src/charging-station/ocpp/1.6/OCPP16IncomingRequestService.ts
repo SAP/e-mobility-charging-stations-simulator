@@ -950,11 +950,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       // Authorization successful, start transaction
       if (
-        this.setRemoteStartTransactionChargingProfile(
-          chargingStation,
-          transactionConnectorId,
-          chargingProfile!,
-        ) === true
+        (chargingProfile &&
+          this.setRemoteStartTransactionChargingProfile(
+            chargingStation,
+            transactionConnectorId,
+            chargingProfile,
+          ) === true) ??
+        !chargingProfile
       ) {
         connectorStatus.transactionRemoteStarted = true;
         if (
@@ -985,11 +987,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     // No authorization check required, start transaction
     if (
-      this.setRemoteStartTransactionChargingProfile(
-        chargingStation,
-        transactionConnectorId,
-        chargingProfile!,
-      ) === true
+      (chargingProfile &&
+        this.setRemoteStartTransactionChargingProfile(
+          chargingStation,
+          transactionConnectorId,
+          chargingProfile,
+          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        ) === true) ||
+      !chargingProfile
     ) {
       connectorStatus.transactionRemoteStarted = true;
       if (
