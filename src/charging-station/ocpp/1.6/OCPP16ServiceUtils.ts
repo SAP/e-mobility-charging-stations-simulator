@@ -933,49 +933,166 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   };
 
   public static composeChargingSchedules = (
-    chargingSchedule1: OCPP16ChargingSchedule | undefined,
-    chargingSchedule2: OCPP16ChargingSchedule | undefined,
+    chargingScheduleHigher: OCPP16ChargingSchedule | undefined,
+    chargingScheduleLower: OCPP16ChargingSchedule | undefined,
     targetInterval: Interval,
   ): OCPP16ChargingSchedule | undefined => {
-    if (!chargingSchedule1 && !chargingSchedule2) {
+    if (!chargingScheduleHigher && !chargingScheduleLower) {
       return undefined;
     }
-    if (chargingSchedule1 && !chargingSchedule2) {
-      return OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule1, targetInterval);
+    if (chargingScheduleHigher && !chargingScheduleLower) {
+      return OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleHigher, targetInterval);
     }
-    if (!chargingSchedule1 && chargingSchedule2) {
-      return OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule2, targetInterval);
+    if (!chargingScheduleHigher && chargingScheduleLower) {
+      return OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleLower, targetInterval);
     }
-    const compositeChargingSchedule1: OCPP16ChargingSchedule | undefined =
-      OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule1!, targetInterval);
-    const compositeChargingSchedule2: OCPP16ChargingSchedule | undefined =
-      OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule2!, targetInterval);
-    const compositeChargingScheduleInterval1: Interval = {
-      start: compositeChargingSchedule1!.startSchedule!,
+    const compositeChargingScheduleHigher: OCPP16ChargingSchedule | undefined =
+      OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleHigher!, targetInterval);
+    const compositeChargingScheduleLower: OCPP16ChargingSchedule | undefined =
+      OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleLower!, targetInterval);
+    const compositeChargingScheduleHigherInterval: Interval = {
+      start: compositeChargingScheduleHigher!.startSchedule!,
       end: addSeconds(
-        compositeChargingSchedule1!.startSchedule!,
-        compositeChargingSchedule1!.duration!,
+        compositeChargingScheduleHigher!.startSchedule!,
+        compositeChargingScheduleHigher!.duration!,
       ),
     };
-    const compositeChargingScheduleInterval2: Interval = {
-      start: compositeChargingSchedule2!.startSchedule!,
+    const compositeChargingScheduleLowerInterval: Interval = {
+      start: compositeChargingScheduleLower!.startSchedule!,
       end: addSeconds(
-        compositeChargingSchedule2!.startSchedule!,
-        compositeChargingSchedule2!.duration!,
+        compositeChargingScheduleLower!.startSchedule!,
+        compositeChargingScheduleLower!.duration!,
       ),
     };
+    const higherFirst = isBefore(
+      compositeChargingScheduleHigherInterval.start,
+      compositeChargingScheduleLowerInterval.start,
+    );
     if (
       !areIntervalsOverlapping(
-        compositeChargingScheduleInterval1,
-        compositeChargingScheduleInterval2,
+        compositeChargingScheduleHigherInterval,
+        compositeChargingScheduleLowerInterval,
       )
     ) {
       return {
-        ...OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule1!, targetInterval)!,
-        ...OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule2!, targetInterval)!,
+        ...compositeChargingScheduleLower,
+        ...compositeChargingScheduleHigher!,
+        startSchedule: higherFirst
+          ? (compositeChargingScheduleHigherInterval.start as Date)
+          : (compositeChargingScheduleLowerInterval.start as Date),
+        duration: higherFirst
+          ? differenceInSeconds(
+              compositeChargingScheduleLowerInterval.end,
+              compositeChargingScheduleHigherInterval.start,
+            )
+          : differenceInSeconds(
+              compositeChargingScheduleHigherInterval.end,
+              compositeChargingScheduleLowerInterval.start,
+            ),
+        chargingSchedulePeriod: [
+          ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map((schedulePeriod) => {
+            return {
+              ...schedulePeriod,
+              startPeriod: higherFirst
+                ? 0
+                : schedulePeriod.startPeriod +
+                  differenceInSeconds(
+                    compositeChargingScheduleHigherInterval.start,
+                    compositeChargingScheduleLowerInterval.start,
+                  ),
+            };
+          }),
+          ...compositeChargingScheduleLower!.chargingSchedulePeriod.map((schedulePeriod) => {
+            return {
+              ...schedulePeriod,
+              startPeriod: higherFirst
+                ? schedulePeriod.startPeriod +
+                  differenceInSeconds(
+                    compositeChargingScheduleLowerInterval.start,
+                    compositeChargingScheduleHigherInterval.start,
+                  )
+                : 0,
+            };
+          }),
+        ].sort((a, b) => a.startPeriod - b.startPeriod),
       };
     }
-    // FIXME: Handle overlapping intervals
+    return {
+      ...compositeChargingScheduleLower,
+      ...compositeChargingScheduleHigher!,
+      startSchedule: higherFirst
+        ? (compositeChargingScheduleHigherInterval.start as Date)
+        : (compositeChargingScheduleLowerInterval.start as Date),
+      duration: higherFirst
+        ? differenceInSeconds(
+            compositeChargingScheduleLowerInterval.end,
+            compositeChargingScheduleHigherInterval.start,
+          )
+        : differenceInSeconds(
+            compositeChargingScheduleHigherInterval.end,
+            compositeChargingScheduleLowerInterval.start,
+          ),
+      chargingSchedulePeriod: [
+        ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map((schedulePeriod) => {
+          return {
+            ...schedulePeriod,
+            startPeriod: higherFirst
+              ? 0
+              : schedulePeriod.startPeriod +
+                differenceInSeconds(
+                  compositeChargingScheduleHigherInterval.start,
+                  compositeChargingScheduleLowerInterval.start,
+                ),
+          };
+        }),
+        ...compositeChargingScheduleLower!.chargingSchedulePeriod
+          .filter((schedulePeriod) => {
+            if (
+              higherFirst &&
+              isWithinInterval(
+                addSeconds(
+                  compositeChargingScheduleLowerInterval.start,
+                  schedulePeriod.startPeriod,
+                ),
+                {
+                  start: compositeChargingScheduleLowerInterval.start,
+                  end: compositeChargingScheduleHigherInterval.end,
+                },
+              )
+            ) {
+              return false;
+            }
+            if (
+              !higherFirst &&
+              isWithinInterval(
+                addSeconds(
+                  compositeChargingScheduleLowerInterval.start,
+                  schedulePeriod.startPeriod,
+                ),
+                {
+                  start: compositeChargingScheduleHigherInterval.start,
+                  end: compositeChargingScheduleLowerInterval.end,
+                },
+              )
+            ) {
+              return false;
+            }
+            return true;
+          })
+          .map((schedulePeriod) => {
+            return {
+              ...schedulePeriod,
+              startPeriod: higherFirst
+                ? schedulePeriod.startPeriod +
+                  differenceInSeconds(
+                    compositeChargingScheduleLowerInterval.start,
+                    compositeChargingScheduleHigherInterval.start,
+                  )
+                : 0,
+            };
+          }),
+      ].sort((a, b) => a.startPeriod - b.startPeriod),
+    };
   };
 
   public static hasReservation = (
