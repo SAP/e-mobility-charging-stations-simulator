@@ -967,7 +967,10 @@ const canProceedRecurringChargingProfile = (
     );
     return false;
   }
-  if (isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)) {
+  if (
+    chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
+    isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)
+  ) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`,
     );
