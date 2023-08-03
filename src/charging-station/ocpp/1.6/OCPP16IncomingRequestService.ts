@@ -464,14 +464,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to unlock a non existing
-          connector id ${connectorId.toString()}`,
+          connector id ${connectorId}`,
       );
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
     if (connectorId === 0) {
-      logger.error(
-        `${chargingStation.logPrefix()} Trying to unlock connector id ${connectorId.toString()}`,
-      );
+      logger.error(`${chargingStation.logPrefix()} Trying to unlock connector id ${connectorId}`);
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
     if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
@@ -820,11 +818,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
-    if (
-      !isNullOrUndefined(connectorId) &&
-      isNotEmptyArray(chargingStation.getConnectorStatus(connectorId!)?.chargingProfiles)
-    ) {
-      chargingStation.getConnectorStatus(connectorId!)!.chargingProfiles = [];
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId!);
+    if (!isNullOrUndefined(connectorId) && isNotEmptyArray(connectorStatus?.chargingProfiles)) {
+      connectorStatus!.chargingProfiles = [];
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${connectorId}`,
       );
@@ -834,11 +830,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       let clearedCP = false;
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
-          for (const connectorStatus of evseStatus.connectors.values()) {
+          for (const status of evseStatus.connectors.values()) {
             clearedCP = OCPP16ServiceUtils.clearChargingProfiles(
               chargingStation,
               commandPayload,
-              connectorStatus.chargingProfiles,
+              status.chargingProfiles,
             );
           }
         }
@@ -866,7 +862,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to change the availability of a
-          non existing connector id ${connectorId.toString()}`,
+          non existing connector id ${connectorId}`,
       );
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
     }
@@ -940,7 +936,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const remoteStartTransactionLogMsg = `
       ${chargingStation.logPrefix()} Transaction remotely STARTED on ${
         chargingStation.stationInfo.chargingStationId
-      }#${transactionConnectorId.toString()} for idTag '${idTag}'`;
+      }#${transactionConnectorId} for idTag '${idTag}'`;
     await OCPP16ServiceUtils.sendAndSetConnectorStatus(
       chargingStation,
       transactionConnectorId,
@@ -1028,9 +1024,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     connectorId: number,
     idTag: string,
   ): Promise<GenericResponse> {
-    if (
-      chargingStation.getConnectorStatus(connectorId)?.status !== OCPP16ChargePointStatus.Available
-    ) {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId);
+    if (connectorStatus?.status !== OCPP16ChargePointStatus.Available) {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
         connectorId,
@@ -1039,9 +1034,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     logger.warn(
       `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector id
-        ${connectorId.toString()}, idTag '${idTag}', availability '${chargingStation.getConnectorStatus(
-          connectorId,
-        )?.availability}', status '${chargingStation.getConnectorStatus(connectorId)?.status}'`,
+        ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`,
     );
     return OCPP16Constants.OCPP_RESPONSE_REJECTED;
   }
@@ -1051,10 +1044,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     connectorId: number,
     chargingProfile: OCPP16ChargingProfile,
   ): boolean {
-    if (
-      chargingProfile &&
-      chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE
-    ) {
+    if (chargingProfile?.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE) {
       OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile);
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) set at remote start transaction
@@ -1062,18 +1052,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingProfile,
       );
       return true;
-    } else if (
-      chargingProfile &&
-      chargingProfile.chargingProfilePurpose !== OCPP16ChargingProfilePurposeType.TX_PROFILE
-    ) {
-      logger.warn(
-        `${chargingStation.logPrefix()} Not allowed to set ${
-          chargingProfile.chargingProfilePurpose
-        } charging profile(s) at remote start transaction`,
-      );
-      return false;
     }
-    return true;
+    logger.warn(
+      `${chargingStation.logPrefix()} Not allowed to set ${
+        chargingProfile.chargingProfilePurpose
+      } charging profile(s) at remote start transaction`,
+    );
+    return false;
   }
 
   private async handleRequestRemoteStopTransaction(
@@ -1103,7 +1088,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     logger.warn(
       `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction with id
-        ${transactionId.toString()}`,
+        ${transactionId}`,
     );
     return OCPP16Constants.OCPP_RESPONSE_REJECTED;
   }
@@ -1387,16 +1372,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           }
           throw new OCPPError(
             ErrorType.GENERIC_ERROR,
-            `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${
-              uploadResponse?.code && `|${uploadResponse?.code.toString()}`
+            `Diagnostics transfer failed with error code ${accessResponse.code}${
+              uploadResponse?.code && `|${uploadResponse?.code}`
             }`,
             OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
           );
         }
         throw new OCPPError(
           ErrorType.GENERIC_ERROR,
-          `Diagnostics transfer failed with error code ${accessResponse.code.toString()}${
-            uploadResponse?.code && `|${uploadResponse?.code.toString()}`
+          `Diagnostics transfer failed with error code ${accessResponse.code}${
+            uploadResponse?.code && `|${uploadResponse?.code}`
           }`,
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
         );
