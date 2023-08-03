@@ -517,7 +517,7 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
 
 /**
  * Gets the connector cloned charging profiles applying a power limitation
- * and sorted by connector id ascending then stack level descending
+ * and sorted by connector id descending then stack level descending
  *
  * @param chargingStation -
  * @param connectorId -
@@ -528,10 +528,10 @@ export const getConnectorChargingProfiles = (
   connectorId: number,
 ) => {
   return cloneObject<ChargingProfile[]>(
-    (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [])
+    (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
       .sort((a, b) => b.stackLevel - a.stackLevel)
       .concat(
-        (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? []).sort(
+        (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? []).sort(
           (a, b) => b.stackLevel - a.stackLevel,
         ),
       ),
@@ -735,7 +735,7 @@ interface ChargingProfilesLimit {
 }
 
 /**
- * Charging profiles shall already be sorted by connector id ascending then stack level descending
+ * Charging profiles shall already be sorted by connector id descending then stack level descending
  *
  * @param chargingStation -
  * @param connectorId -
