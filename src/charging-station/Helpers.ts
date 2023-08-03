@@ -339,6 +339,11 @@ export const initializeConnectorsMapStatus = (
 };
 
 export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => {
+  connectorStatus.chargingProfiles = isNotEmptyArray(connectorStatus.chargingProfiles)
+    ? connectorStatus.chargingProfiles?.filter(
+        (chargingProfile) => chargingProfile.transactionId !== connectorStatus?.transactionId,
+      )
+    : [];
   connectorStatus.idTagLocalAuthorized = false;
   connectorStatus.idTagAuthorized = false;
   connectorStatus.transactionRemoteStarted = false;
