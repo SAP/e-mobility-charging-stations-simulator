@@ -13,8 +13,8 @@ export interface OCPP16ChargingProfile extends JsonObject {
 }
 
 export interface OCPP16ChargingSchedule extends JsonObject {
-  duration?: number;
   startSchedule?: Date;
+  duration?: number;
   chargingRateUnit: OCPP16ChargingRateUnitType;
   chargingSchedulePeriod: OCPP16ChargingSchedulePeriod[];
   minChargeRate?: number;

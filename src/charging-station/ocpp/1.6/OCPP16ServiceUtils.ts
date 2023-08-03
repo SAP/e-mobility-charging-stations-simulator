@@ -1,6 +1,14 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import type { JSONSchemaType } from 'ajv';
+import {
+  addSeconds,
+  areIntervalsOverlapping,
+  differenceInSeconds,
+  isAfter,
+  isBefore,
+  isWithinInterval,
+} from 'date-fns';
 
 import { OCPP16Constants } from './OCPP16Constants';
 import {
@@ -25,6 +33,7 @@ import {
   type OCPP16ChangeAvailabilityResponse,
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
+  type OCPP16ChargingSchedule,
   type OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
   OCPP16MeterValueMeasurand,
@@ -923,6 +932,52 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return clearedCP;
   };
 
+  public static composeChargingSchedules = (
+    chargingSchedule1: OCPP16ChargingSchedule | undefined,
+    chargingSchedule2: OCPP16ChargingSchedule | undefined,
+    targetInterval: Interval,
+  ): OCPP16ChargingSchedule | undefined => {
+    if (!chargingSchedule1 && !chargingSchedule2) {
+      return undefined;
+    }
+    if (chargingSchedule1 && !chargingSchedule2) {
+      return OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule1, targetInterval);
+    }
+    if (!chargingSchedule1 && chargingSchedule2) {
+      return OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule2, targetInterval);
+    }
+    const compositeChargingSchedule1: OCPP16ChargingSchedule | undefined =
+      OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule1!, targetInterval);
+    const compositeChargingSchedule2: OCPP16ChargingSchedule | undefined =
+      OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule2!, targetInterval);
+    const compositeChargingScheduleInterval1: Interval = {
+      start: compositeChargingSchedule1!.startSchedule!,
+      end: addSeconds(
+        compositeChargingSchedule1!.startSchedule!,
+        compositeChargingSchedule1!.duration!,
+      ),
+    };
+    const compositeChargingScheduleInterval2: Interval = {
+      start: compositeChargingSchedule2!.startSchedule!,
+      end: addSeconds(
+        compositeChargingSchedule2!.startSchedule!,
+        compositeChargingSchedule2!.duration!,
+      ),
+    };
+    if (
+      !areIntervalsOverlapping(
+        compositeChargingScheduleInterval1,
+        compositeChargingScheduleInterval2,
+      )
+    ) {
+      return {
+        ...OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule1!, targetInterval)!,
+        ...OCPP16ServiceUtils.composeChargingSchedule(chargingSchedule2!, targetInterval)!,
+      };
+    }
+    // FIXME: Handle overlapping intervals
+  };
+
   public static hasReservation = (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -963,6 +1018,69 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       methodName,
     );
   }
+
+  private static composeChargingSchedule = (
+    chargingSchedule: OCPP16ChargingSchedule,
+    targetInterval: Interval,
+  ): OCPP16ChargingSchedule | undefined => {
+    const chargingScheduleInterval: Interval = {
+      start: chargingSchedule.startSchedule!,
+      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
+    };
+    if (areIntervalsOverlapping(chargingScheduleInterval, targetInterval)) {
+      chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
+      if (isBefore(chargingScheduleInterval.start, targetInterval.start)) {
+        return {
+          ...chargingSchedule,
+          startSchedule: targetInterval.start as Date,
+          duration: differenceInSeconds(chargingScheduleInterval.end, targetInterval.start as Date),
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(
+            (schedulePeriod, index) => {
+              if (
+                isWithinInterval(
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
+                  targetInterval,
+                )
+              ) {
+                return true;
+              }
+              if (
+                index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
+                !isWithinInterval(
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
+                  targetInterval,
+                ) &&
+                isWithinInterval(
+                  addSeconds(
+                    chargingScheduleInterval.start,
+                    chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod,
+                  ),
+                  targetInterval,
+                )
+              ) {
+                schedulePeriod.startPeriod = 0;
+                return true;
+              }
+              return false;
+            },
+          ),
+        };
+      }
+      if (isAfter(chargingScheduleInterval.end, targetInterval.end)) {
+        return {
+          ...chargingSchedule,
+          duration: differenceInSeconds(targetInterval.end as Date, chargingScheduleInterval.start),
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter((schedulePeriod) =>
+            isWithinInterval(
+              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
+              targetInterval,
+            ),
+          ),
+        };
+      }
+      return chargingSchedule;
+    }
+  };
 
   private static buildSampledValue(
     sampledValueTemplate: SampledValueTemplate,

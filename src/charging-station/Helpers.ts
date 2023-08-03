@@ -763,6 +763,15 @@ const getLimitFromChargingProfiles = (
     }
     if (
       !isNullOrUndefined(chargingSchedule?.startSchedule) &&
+      !isDate(chargingSchedule?.startSchedule)
+    ) {
+      logger.warn(
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`,
+      );
+      chargingSchedule.startSchedule = convertToDate(chargingSchedule?.startSchedule)!;
+    }
+    if (
+      !isNullOrUndefined(chargingSchedule?.startSchedule) &&
       isNullOrUndefined(chargingSchedule?.duration)
     ) {
       logger.debug(
@@ -770,12 +779,6 @@ const getLimitFromChargingProfiles = (
       );
       // OCPP specifies that if duration is not defined, it should be infinite
       chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule!);
-    }
-    if (!isDate(chargingSchedule?.startSchedule)) {
-      logger.warn(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date object. Trying to convert it to a Date object`,
-      );
-      chargingSchedule.startSchedule = convertToDate(chargingSchedule?.startSchedule)!;
     }
     if (!prepareChargingProfileKind(connectorStatus, chargingProfile, currentDate, logPrefix)) {
       continue;
@@ -785,7 +788,6 @@ const getLimitFromChargingProfiles = (
     }
     // Check if the charging profile is active
     if (
-      isValidTime(chargingSchedule?.startSchedule) &&
       isWithinInterval(currentDate, {
         start: chargingSchedule.startSchedule!,
         end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
@@ -891,8 +893,10 @@ export const prepareChargingProfileKind = (
         );
         delete chargingProfile.chargingSchedule.startSchedule;
       }
-      connectorStatus?.transactionStarted &&
-        (chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart);
+      if (connectorStatus?.transactionStarted) {
+        chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+      }
+      // FIXME: Handle relative charging profile duration
       break;
   }
   return true;
@@ -914,10 +918,30 @@ export const canProceedChargingProfile = (
     );
     return false;
   }
-  const chargingSchedule = chargingProfile.chargingSchedule;
-  if (isNullOrUndefined(chargingSchedule?.startSchedule)) {
+  if (
+    isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule) ||
+    isNullOrUndefined(chargingProfile.chargingSchedule.duration)
+  ) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`,
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule or duration defined`,
+    );
+    return false;
+  }
+  if (
+    !isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule) &&
+    !isValidTime(chargingProfile.chargingSchedule.startSchedule)
+  ) {
+    logger.error(
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has an invalid startSchedule date defined`,
+    );
+    return false;
+  }
+  if (
+    !isNullOrUndefined(chargingProfile.chargingSchedule.duration) &&
+    !Number.isSafeInteger(chargingProfile.chargingSchedule.duration)
+  ) {
+    logger.error(
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has non integer duration defined`,
     );
     return false;
   }
@@ -934,6 +958,12 @@ const canProceedRecurringChargingProfile = (
   ) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no recurrencyKind defined`,
+    );
+    return false;
+  }
+  if (isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)) {
+    logger.error(
+      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`,
     );
     return false;
   }
