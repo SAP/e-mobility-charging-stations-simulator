@@ -955,7 +955,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             chargingStation,
             transactionConnectorId,
             chargingProfile,
-          ) === true) ??
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+          ) === true) ||
         !chargingProfile
       ) {
         connectorStatus.transactionRemoteStarted = true;
