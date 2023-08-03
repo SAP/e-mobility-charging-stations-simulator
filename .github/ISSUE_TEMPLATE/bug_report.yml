@@ -42,7 +42,8 @@ body:
       label: Actual result
       description: What actually happened.
       placeholder: |
-        Please include the actual error message generated with from `pnpm start:dev`, if any.
+        - Please include the actual error outputs generated from 'pnpm start:dev', if any
+        - Please include the actual error log messages, if any
   - type: textarea
     attributes:
       label: Steps to reproduce
