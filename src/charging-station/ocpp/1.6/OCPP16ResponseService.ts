@@ -560,8 +560,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (connectorStatus?.transactionStarted === true) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on an already used connector id ${connectorId}:`,
-        connectorStatus,
+        `${chargingStation.logPrefix()} Trying to start a transaction on an already used connector id ${connectorId} by idTag ${connectorStatus?.transactionIdTag}}`,
       );
       return;
     }
@@ -571,8 +570,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           for (const [id, status] of evseStatus.connectors) {
             if (id !== connectorId && status?.transactionStarted === true) {
               logger.error(
-                `${chargingStation.logPrefix()} Trying to start a transaction on an already used evse id ${evseId}:`,
-                evseStatus,
+                `${chargingStation.logPrefix()} Trying to start a transaction on an already used evse id ${evseId} by connector id ${id} with idTag ${status?.transactionIdTag}}`,
               );
               await this.resetConnectorOnStartTransactionError(chargingStation, connectorId);
               return;
