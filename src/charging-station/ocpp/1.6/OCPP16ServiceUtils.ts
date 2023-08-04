@@ -1086,7 +1086,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 },
               )
             ) {
-              schedulePeriod.startPeriod = 0;
               return false;
             }
             if (
@@ -1106,7 +1105,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             }
             return true;
           })
-          .map((schedulePeriod) => {
+          .map((schedulePeriod, index) => {
+            if (index === 0 && schedulePeriod.startPeriod !== 0) {
+              schedulePeriod.startPeriod = 0;
+            }
             return {
               ...schedulePeriod,
               startPeriod: higherFirst
@@ -1178,8 +1180,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           ...chargingSchedule,
           startSchedule: targetInterval.start as Date,
           duration: differenceInSeconds(chargingScheduleInterval.end, targetInterval.start as Date),
-          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(
-            (schedulePeriod, index) => {
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod
+            .filter((schedulePeriod, index) => {
               if (
                 isWithinInterval(
                   addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
@@ -1202,12 +1204,16 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   targetInterval,
                 )
               ) {
-                schedulePeriod.startPeriod = 0;
                 return true;
               }
               return false;
-            },
-          ),
+            })
+            .map((schedulePeriod, index) => {
+              if (index === 0 && schedulePeriod.startPeriod !== 0) {
+                schedulePeriod.startPeriod = 0;
+              }
+              return schedulePeriod;
+            }),
         };
       }
       if (isAfter(chargingScheduleInterval.end, targetInterval.end)) {
