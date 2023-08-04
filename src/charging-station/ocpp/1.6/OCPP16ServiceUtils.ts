@@ -935,21 +935,21 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static composeChargingSchedules = (
     chargingScheduleHigher: OCPP16ChargingSchedule | undefined,
     chargingScheduleLower: OCPP16ChargingSchedule | undefined,
-    targetInterval: Interval,
+    compositeInterval: Interval,
   ): OCPP16ChargingSchedule | undefined => {
     if (!chargingScheduleHigher && !chargingScheduleLower) {
       return undefined;
     }
     if (chargingScheduleHigher && !chargingScheduleLower) {
-      return OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleHigher, targetInterval);
+      return OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleHigher, compositeInterval);
     }
     if (!chargingScheduleHigher && chargingScheduleLower) {
-      return OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleLower, targetInterval);
+      return OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleLower, compositeInterval);
     }
     const compositeChargingScheduleHigher: OCPP16ChargingSchedule | undefined =
-      OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleHigher!, targetInterval);
+      OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleHigher!, compositeInterval);
     const compositeChargingScheduleLower: OCPP16ChargingSchedule | undefined =
-      OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleLower!, targetInterval);
+      OCPP16ServiceUtils.composeChargingSchedule(chargingScheduleLower!, compositeInterval);
     const compositeChargingScheduleHigherInterval: Interval = {
       start: compositeChargingScheduleHigher!.startSchedule!,
       end: addSeconds(
@@ -1167,25 +1167,28 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
 
   private static composeChargingSchedule = (
     chargingSchedule: OCPP16ChargingSchedule,
-    targetInterval: Interval,
+    compositeInterval: Interval,
   ): OCPP16ChargingSchedule | undefined => {
     const chargingScheduleInterval: Interval = {
       start: chargingSchedule.startSchedule!,
       end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
     };
-    if (areIntervalsOverlapping(chargingScheduleInterval, targetInterval)) {
+    if (areIntervalsOverlapping(chargingScheduleInterval, compositeInterval)) {
       chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod);
-      if (isBefore(chargingScheduleInterval.start, targetInterval.start)) {
+      if (isBefore(chargingScheduleInterval.start, compositeInterval.start)) {
         return {
           ...chargingSchedule,
-          startSchedule: targetInterval.start as Date,
-          duration: differenceInSeconds(chargingScheduleInterval.end, targetInterval.start as Date),
+          startSchedule: compositeInterval.start as Date,
+          duration: differenceInSeconds(
+            chargingScheduleInterval.end,
+            compositeInterval.start as Date,
+          ),
           chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod
             .filter((schedulePeriod, index) => {
               if (
                 isWithinInterval(
                   addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
-                  targetInterval,
+                  compositeInterval,
                 )
               ) {
                 return true;
@@ -1194,14 +1197,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
                 !isWithinInterval(
                   addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
-                  targetInterval,
+                  compositeInterval,
                 ) &&
                 isWithinInterval(
                   addSeconds(
                     chargingScheduleInterval.start,
                     chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod,
                   ),
-                  targetInterval,
+                  compositeInterval,
                 )
               ) {
                 return true;
@@ -1216,14 +1219,17 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             }),
         };
       }
-      if (isAfter(chargingScheduleInterval.end, targetInterval.end)) {
+      if (isAfter(chargingScheduleInterval.end, compositeInterval.end)) {
         return {
           ...chargingSchedule,
-          duration: differenceInSeconds(targetInterval.end as Date, chargingScheduleInterval.start),
+          duration: differenceInSeconds(
+            compositeInterval.end as Date,
+            chargingScheduleInterval.start,
+          ),
           chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter((schedulePeriod) =>
             isWithinInterval(
               addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
-              targetInterval,
+              compositeInterval,
             ),
           ),
         };
