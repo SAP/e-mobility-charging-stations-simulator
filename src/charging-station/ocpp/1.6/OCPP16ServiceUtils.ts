@@ -1046,7 +1046,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           };
         }),
         ...compositeChargingScheduleLower!.chargingSchedulePeriod
-          .filter((schedulePeriod) => {
+          .filter((schedulePeriod, index) => {
             if (
               higherFirst &&
               isWithinInterval(
@@ -1060,6 +1060,33 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 },
               )
             ) {
+              return false;
+            }
+            if (
+              higherFirst &&
+              index < compositeChargingScheduleLower!.chargingSchedulePeriod.length - 1 &&
+              !isWithinInterval(
+                addSeconds(
+                  compositeChargingScheduleLowerInterval.start,
+                  schedulePeriod.startPeriod,
+                ),
+                {
+                  start: compositeChargingScheduleLowerInterval.start,
+                  end: compositeChargingScheduleHigherInterval.end,
+                },
+              ) &&
+              isWithinInterval(
+                addSeconds(
+                  compositeChargingScheduleLowerInterval.start,
+                  compositeChargingScheduleLower!.chargingSchedulePeriod[index + 1].startPeriod,
+                ),
+                {
+                  start: compositeChargingScheduleLowerInterval.start,
+                  end: compositeChargingScheduleHigherInterval.end,
+                },
+              )
+            ) {
+              schedulePeriod.startPeriod = 0;
               return false;
             }
             if (
