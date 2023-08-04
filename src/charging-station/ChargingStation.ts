@@ -28,6 +28,7 @@ import {
 } from './ConfigurationKeyUtils';
 import {
   buildConnectorsMap,
+  checkChargingStation,
   checkConnectorsConfiguration,
   checkStationInfoConnectorStatus,
   checkTemplate,
@@ -776,15 +777,11 @@ export class ChargingStation {
   ): void {
     options = {
       handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()),
-      ...(this.stationInfo?.wsOptions ?? {}),
+      ...this.stationInfo?.wsOptions,
       ...options,
     };
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
-    if (this.started === false && this.starting === false) {
-      logger.warn(
-        `${this.logPrefix()} Cannot open OCPP connection to URL ${this.wsConnectionUrl.toString()}
-          on stopped charging station`,
-      );
+    if (!checkChargingStation(this, this.logPrefix())) {
       return;
     }
     if (
