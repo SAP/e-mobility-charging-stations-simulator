@@ -771,13 +771,14 @@ export class ChargingStation {
   }
 
   public openWSConnection(
-    options: WsOptions = this.stationInfo?.wsOptions ?? {},
-    params: { closeOpened?: boolean; terminateOpened?: boolean } = {
-      closeOpened: false,
-      terminateOpened: false,
-    },
+    options?: WsOptions,
+    params?: { closeOpened?: boolean; terminateOpened?: boolean },
   ): void {
-    options = { handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()), ...options };
+    options = {
+      handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()),
+      ...(this.stationInfo?.wsOptions ?? {}),
+      ...options,
+    };
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params };
     if (this.started === false && this.starting === false) {
       logger.warn(
@@ -2367,7 +2368,6 @@ export class ChargingStation {
       );
       this.openWSConnection(
         {
-          ...(this.stationInfo?.wsOptions ?? {}),
           handshakeTimeout: reconnectTimeout,
         },
         { closeOpened: true },

@@ -406,10 +406,7 @@ export class OCPPServiceUtils {
   protected static getLimitFromSampledValueTemplateCustomValue(
     value: string,
     limit: number,
-    options: { limitationEnabled?: boolean; unitMultiplier?: number } = {
-      limitationEnabled: true,
-      unitMultiplier: 1,
-    },
+    options?: { limitationEnabled?: boolean; unitMultiplier?: number },
   ): number {
     options = {
       ...{

@@ -173,7 +173,7 @@ export abstract class OCPPRequestService {
     messageId: string,
     messagePayload: JsonType,
     commandName: RequestCommand,
-    params: RequestParams = defaultRequestParams,
+    params?: RequestParams,
   ): Promise<ResponseType> {
     params = {
       ...defaultRequestParams,
@@ -276,7 +276,7 @@ export abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName: RequestCommand | IncomingRequestCommand,
-    params: RequestParams = defaultRequestParams,
+    params?: RequestParams,
   ): Promise<ResponseType> {
     params = {
       ...defaultRequestParams,
@@ -388,7 +388,7 @@ export abstract class OCPPRequestService {
             PerformanceStatistics.endMeasure(commandName, beginId);
           }
           const wsClosedOrErrored = !wsOpened || sendError === true;
-          if (wsClosedOrErrored && params.skipBufferingOnError === false) {
+          if (wsClosedOrErrored && params?.skipBufferingOnError === false) {
             // Buffer
             chargingStation.bufferMessage(messageToSend);
             // Reject and keep request in the cache

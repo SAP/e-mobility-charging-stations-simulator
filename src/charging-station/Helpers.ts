@@ -452,12 +452,9 @@ export const stationTemplateToStationInfo = (
 export const createSerialNumber = (
   stationTemplate: ChargingStationTemplate,
   stationInfo: ChargingStationInfo,
-  params: {
+  params?: {
     randomSerialNumberUpperCase?: boolean;
     randomSerialNumber?: boolean;
-  } = {
-    randomSerialNumberUpperCase: true,
-    randomSerialNumber: true,
   },
 ): void => {
   params = { ...{ randomSerialNumberUpperCase: true, randomSerialNumber: true }, ...params };

@@ -33,12 +33,8 @@ export const addConfigurationKey = (
   chargingStation: ChargingStation,
   key: ConfigurationKeyType,
   value: string,
-  options: ConfigurationKeyOptions = {
-    readonly: false,
-    visible: true,
-    reboot: false,
-  },
-  params: AddConfigurationKeyParams = { overwrite: false, save: false },
+  options?: ConfigurationKeyOptions,
+  params?: AddConfigurationKeyParams,
 ): void => {
   options = {
     ...{
@@ -96,7 +92,7 @@ export const setConfigurationKeyValue = (
 export const deleteConfigurationKey = (
   chargingStation: ChargingStation,
   key: ConfigurationKeyType,
-  params: DeleteConfigurationKeyParams = { save: true, caseInsensitive: false },
+  params?: DeleteConfigurationKeyParams,
 ): ConfigurationKey[] | undefined => {
   params = { ...{ save: true, caseInsensitive: false }, ...params };
   const keyFound = getConfigurationKey(chargingStation, key, params?.caseInsensitive);
