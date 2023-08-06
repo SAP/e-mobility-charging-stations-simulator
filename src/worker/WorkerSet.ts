@@ -19,6 +19,7 @@ import { sleep } from './WorkerUtils';
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly emitter!: EventEmitter;
   private readonly workerSet: Set<WorkerSetElement>;
+  private workerStartup: boolean;
 
   /**
    * Creates a new `WorkerSet`.
@@ -48,6 +49,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     if (this.workerOptions.poolOptions?.enableEvents) {
       this.emitter = new EventEmitter();
     }
+    this.workerStartup = false;
   }
 
   get info(): SetInfo {
@@ -114,6 +116,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
    * Adds a new `WorkerSetElement`.
    */
   private addWorkerSetElement(): WorkerSetElement {
+    this.workerStartup = true;
     const worker = new Worker(this.workerScript, {
       env: SHARE_ENV,
       ...this.workerOptions.poolOptions?.workerOptions,
@@ -129,7 +132,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION);
     worker.on('error', (error) => {
       this.emitter?.emit(WorkerSetEvents.error, error);
-      if (this.workerOptions.poolOptions?.restartWorkerOnError) {
+      if (this.workerOptions.poolOptions?.restartWorkerOnError && !this.workerStartup) {
         this.addWorkerSetElement();
       }
     });
@@ -138,6 +141,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     worker.once('exit', () =>
       this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker)!),
     );
+    this.workerStartup = false;
     const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
     this.workerSet.add(workerSetElement);
     return workerSetElement;
