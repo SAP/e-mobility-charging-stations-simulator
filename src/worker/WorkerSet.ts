@@ -141,9 +141,9 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     worker.once('exit', () =>
       this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker)!),
     );
-    this.workerStartup = false;
     const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 };
     this.workerSet.add(workerSetElement);
+    this.workerStartup = false;
     return workerSetElement;
   }
 
