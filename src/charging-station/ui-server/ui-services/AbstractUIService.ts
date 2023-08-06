@@ -193,7 +193,7 @@ export abstract class AbstractUIService {
     try {
       await Bootstrap.getInstance().start();
       return { status: ResponseStatus.SUCCESS };
-    } catch (error) {
+    } catch {
       return { status: ResponseStatus.FAILURE };
     }
   }
@@ -202,7 +202,7 @@ export abstract class AbstractUIService {
     try {
       await Bootstrap.getInstance().stop();
       return { status: ResponseStatus.SUCCESS };
-    } catch (error) {
+    } catch {
       return { status: ResponseStatus.FAILURE };
     }
   }
