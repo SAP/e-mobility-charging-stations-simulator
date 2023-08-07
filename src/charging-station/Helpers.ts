@@ -262,7 +262,7 @@ export const checkConnectorsConfiguration = (
   checkConfiguredMaxConnectors(configuredMaxConnectors, logPrefix, templateFile);
   const templateMaxConnectors = getMaxNumberOfConnectors(stationTemplate.Connectors!);
   checkTemplateMaxConnectors(templateMaxConnectors, logPrefix, templateFile);
-  const templateMaxAvailableConnectors = stationTemplate.Connectors![0]
+  const templateMaxAvailableConnectors = stationTemplate.Connectors?.[0]
     ? templateMaxConnectors - 1
     : templateMaxConnectors;
   if (
@@ -645,7 +645,7 @@ const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemp
   } else if (isUndefined(stationTemplate.numberOfConnectors) === false) {
     configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors as number;
   } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
-    configuredMaxNumberOfConnectors = stationTemplate.Connectors[0]
+    configuredMaxNumberOfConnectors = stationTemplate.Connectors?.[0]
       ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
       : getMaxNumberOfConnectors(stationTemplate.Connectors);
   } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
@@ -709,7 +709,7 @@ const warnDeprecatedTemplateKey = (
   templateFile: string,
   logMsgToAppend = '',
 ): void => {
-  if (!isUndefined(template[key as keyof ChargingStationTemplate])) {
+  if (!isUndefined(template?.[key as keyof ChargingStationTemplate])) {
     const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
     }`;
@@ -723,7 +723,7 @@ const convertDeprecatedTemplateKey = (
   deprecatedKey: string,
   key?: string,
 ): void => {
-  if (!isUndefined(template[deprecatedKey as keyof ChargingStationTemplate])) {
+  if (!isUndefined(template?.[deprecatedKey as keyof ChargingStationTemplate])) {
     if (!isUndefined(key)) {
       (template as unknown as Record<string, unknown>)[key!] =
         template[deprecatedKey as keyof ChargingStationTemplate];

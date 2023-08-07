@@ -88,9 +88,9 @@ export class OCPPServiceUtils {
       return true;
     } else if (
       isRequestCommand === true &&
-      chargingStation.stationInfo?.commandsSupport?.outgoingCommands
+      chargingStation.stationInfo?.commandsSupport?.outgoingCommands?.[command]
     ) {
-      return chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command] ?? false;
+      return chargingStation.stationInfo?.commandsSupport?.outgoingCommands[command];
     }
     logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`);
     return false;
@@ -109,9 +109,9 @@ export class OCPPServiceUtils {
       return true;
     } else if (
       isIncomingRequestCommand === true &&
-      chargingStation.stationInfo?.commandsSupport?.incomingCommands
+      chargingStation.stationInfo?.commandsSupport?.incomingCommands?.[command]
     ) {
-      return chargingStation.stationInfo?.commandsSupport?.incomingCommands[command] ?? false;
+      return chargingStation.stationInfo?.commandsSupport?.incomingCommands[command];
     }
     logger.error(`${chargingStation.logPrefix()} Unknown incoming OCPP command '${command}'`);
     return false;
@@ -124,8 +124,11 @@ export class OCPPServiceUtils {
     const isMessageTrigger = Object.values(MessageTrigger).includes(messageTrigger);
     if (isMessageTrigger === true && !chargingStation.stationInfo?.messageTriggerSupport) {
       return true;
-    } else if (isMessageTrigger === true && chargingStation.stationInfo?.messageTriggerSupport) {
-      return chargingStation.stationInfo?.messageTriggerSupport[messageTrigger] ?? false;
+    } else if (
+      isMessageTrigger === true &&
+      chargingStation.stationInfo?.messageTriggerSupport?.[messageTrigger]
+    ) {
+      return chargingStation.stationInfo?.messageTriggerSupport[messageTrigger];
     }
     logger.error(
       `${chargingStation.logPrefix()} Unknown incoming OCPP message trigger '${messageTrigger}'`,
@@ -377,7 +380,7 @@ export class OCPPServiceUtils {
         return sampledValueTemplates[index];
       } else if (
         !phase &&
-        !sampledValueTemplates[index].phase &&
+        !sampledValueTemplates[index]?.phase &&
         sampledValueTemplates[index]?.measurand === measurand &&
         getConfigurationKey(
           chargingStation,
@@ -387,8 +390,8 @@ export class OCPPServiceUtils {
         return sampledValueTemplates[index];
       } else if (
         measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-        (!sampledValueTemplates[index].measurand ||
-          sampledValueTemplates[index].measurand === measurand)
+        (!sampledValueTemplates[index]?.measurand ||
+          sampledValueTemplates[index]?.measurand === measurand)
       ) {
         return sampledValueTemplates[index];
       }

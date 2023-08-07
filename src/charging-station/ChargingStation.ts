@@ -366,7 +366,7 @@ export class ChargingStation {
   public getMaximumPower(stationInfo?: ChargingStationInfo): number {
     const localStationInfo = stationInfo ?? this.stationInfo;
     return (
-      (localStationInfo['maxPower' as keyof ChargingStationInfo] as number) ??
+      (localStationInfo?.['maxPower' as keyof ChargingStationInfo] as number) ??
       localStationInfo.maximumPower
     );
   }
@@ -1509,7 +1509,7 @@ export class ChargingStation {
           for (let connectorId = 0; connectorId <= configuredMaxConnectors; connectorId++) {
             if (
               connectorId === 0 &&
-              (!stationTemplate?.Connectors[connectorId] ||
+              (!stationTemplate?.Connectors?.[connectorId] ||
                 this.getUseConnectorId0(stationTemplate) === false)
             ) {
               continue;

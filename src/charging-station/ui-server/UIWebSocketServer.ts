@@ -118,7 +118,7 @@ export class UIWebSocketServer extends AbstractUIServer {
   }
 
   public sendResponse(response: ProtocolResponse): void {
-    const responseId = response[0];
+    const responseId = response?.[0];
     try {
       if (this.hasResponseHandler(responseId)) {
         const ws = this.responseHandlers.get(responseId) as WebSocket;
@@ -203,7 +203,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       return false;
     }
 
-    if (validateUUID(request[0]) === false) {
+    if (validateUUID(request?.[0]) === false) {
       logger.error(
         `${this.logPrefix(
           moduleName,

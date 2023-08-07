@@ -230,18 +230,18 @@ export class AutomaticTransactionGenerator extends AsyncResource {
             ),
           );
           logger.info(
-            `${this.logPrefix(connectorId)} transaction started with id ${this.chargingStation
-              .getConnectorStatus(connectorId)
-              ?.transactionId?.toString()} and will stop in ${formatDurationMilliSeconds(
-              waitTrxEnd,
-            )}`,
+            `${this.logPrefix(
+              connectorId,
+            )} transaction started with id ${this.chargingStation.getConnectorStatus(connectorId)
+              ?.transactionId} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`,
           );
           await sleep(waitTrxEnd);
           // Stop transaction
           logger.info(
-            `${this.logPrefix(connectorId)} stop transaction with id ${this.chargingStation
-              .getConnectorStatus(connectorId)
-              ?.transactionId?.toString()}`,
+            `${this.logPrefix(
+              connectorId,
+            )} stop transaction with id ${this.chargingStation.getConnectorStatus(connectorId)
+              ?.transactionId}`,
           );
           await this.stopTransaction(connectorId);
         }
@@ -249,11 +249,10 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         ++this.connectorsStatus.get(connectorId)!.skippedConsecutiveTransactions!;
         ++this.connectorsStatus.get(connectorId)!.skippedTransactions!;
         logger.info(
-          `${this.logPrefix(connectorId)} skipped consecutively ${this.connectorsStatus
-            .get(connectorId)
-            ?.skippedConsecutiveTransactions?.toString()}/${this.connectorsStatus
-            .get(connectorId)
-            ?.skippedTransactions?.toString()} transaction(s)`,
+          `${this.logPrefix(connectorId)} skipped consecutively ${this.connectorsStatus.get(
+            connectorId,
+          )?.skippedConsecutiveTransactions}/${this.connectorsStatus.get(connectorId)
+            ?.skippedTransactions} transaction(s)`,
         );
       }
       this.connectorsStatus.get(connectorId)!.lastRunDate = new Date();
@@ -460,7 +459,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId;
       logger.warn(
         `${this.logPrefix(connectorId)} stopping a not started transaction${
-          !isNullOrUndefined(transactionId) ? ` with id ${transactionId?.toString()}` : ''
+          !isNullOrUndefined(transactionId) ? ` with id ${transactionId}` : ''
         }`,
       );
     }
@@ -477,7 +476,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   private logPrefix = (connectorId?: number): string => {
     return logPrefix(
       ` ${this.chargingStation.stationInfo.chargingStationId} | ATG${
-        !isNullOrUndefined(connectorId) ? ` on connector #${connectorId!.toString()}` : ''
+        !isNullOrUndefined(connectorId) ? ` on connector #${connectorId}` : ''
       }:`,
     );
   };

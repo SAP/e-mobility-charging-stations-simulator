@@ -75,9 +75,7 @@ export class Configuration {
   }
 
   public static getAutoReconnectMaxRetries(): number | undefined {
-    if (hasOwnProp(Configuration.getConfigurationData(), 'autoReconnectMaxRetries')) {
-      return Configuration.getConfigurationData()?.autoReconnectMaxRetries;
-    }
+    return Configuration.getConfigurationData()?.autoReconnectMaxRetries;
   }
 
   public static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
@@ -88,7 +86,7 @@ export class Configuration {
   public static getSupervisionUrls(): string | string[] | undefined {
     if (
       !isUndefined(
-        Configuration.getConfigurationData()!['supervisionURLs' as keyof ConfigurationData],
+        Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData],
       )
     ) {
       Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
@@ -323,15 +321,15 @@ export class Configuration {
       "Use 'stationTemplateUrls' instead",
     );
     !isUndefined(
-      Configuration.getConfigurationData()!['stationTemplateURLs' as keyof ConfigurationData],
+      Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData],
     ) &&
       (Configuration.getConfigurationData()!.stationTemplateUrls =
         Configuration.getConfigurationData()![
           'stationTemplateURLs' as keyof ConfigurationData
         ] as StationTemplateUrl[]);
-    Configuration.getConfigurationData()!.stationTemplateUrls.forEach(
+    Configuration.getConfigurationData()?.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
-        if (!isUndefined(stationTemplateUrl['numberOfStation' as keyof StationTemplateUrl])) {
+        if (!isUndefined(stationTemplateUrl?.['numberOfStation' as keyof StationTemplateUrl])) {
           console.error(
             `${chalk.green(Configuration.logPrefix())} ${chalk.red(
               `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`,
@@ -483,14 +481,16 @@ export class Configuration {
   ) {
     if (
       sectionName &&
-      !isUndefined(Configuration.getConfigurationData()![sectionName as keyof ConfigurationData]) &&
+      !isUndefined(
+        Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData],
+      ) &&
       !isUndefined(
         (
-          Configuration.getConfigurationData()![sectionName as keyof ConfigurationData] as Record<
+          Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] as Record<
             string,
             unknown
           >
-        )[key],
+        )?.[key],
       )
     ) {
       console.error(
@@ -501,7 +501,7 @@ export class Configuration {
         )}`,
       );
     } else if (
-      !isUndefined(Configuration.getConfigurationData()![key as keyof ConfigurationData])
+      !isUndefined(Configuration.getConfigurationData()?.[key as keyof ConfigurationData])
     ) {
       console.error(
         `${chalk.green(Configuration.logPrefix())} ${chalk.red(
