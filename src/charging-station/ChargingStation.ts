@@ -1585,11 +1585,11 @@ export class ChargingStation {
         this.evsesConfigurationHash = evsesConfigHash;
         const templateMaxEvses = getMaxNumberOfEvses(stationTemplate?.Evses);
         if (templateMaxEvses > 0) {
-          for (const evse in stationTemplate.Evses) {
-            const evseId = convertToInt(evse);
+          for (const evseKey in stationTemplate.Evses) {
+            const evseId = convertToInt(evseKey);
             this.evses.set(evseId, {
               connectors: buildConnectorsMap(
-                stationTemplate?.Evses[evse]?.Connectors,
+                stationTemplate?.Evses[evseKey]?.Connectors,
                 this.logPrefix(),
                 this.templateFile,
               ),

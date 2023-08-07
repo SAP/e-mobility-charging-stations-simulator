@@ -161,12 +161,16 @@ export class Configuration {
 
   public static workerPoolInUse(): boolean {
     return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
-      Configuration.buildWorkerSection().processType!,
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+        .processType!,
     );
   }
 
   public static workerDynamicPoolInUse(): boolean {
-    return Configuration.buildWorkerSection().processType === WorkerProcessType.dynamicPool;
+    return (
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+        .processType === WorkerProcessType.dynamicPool
+    );
   }
 
   private static isConfigurationSectionCached(sectionName: ConfigurationSection): boolean {
