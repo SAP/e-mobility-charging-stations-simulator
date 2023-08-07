@@ -365,7 +365,6 @@ export class ChargingStation {
 
   public getMaximumPower(stationInfo?: ChargingStationInfo): number {
     const localStationInfo = stationInfo ?? this.stationInfo;
-    // eslint-disable-next-line @typescript-eslint/dot-notation
     return (
       (localStationInfo['maxPower' as keyof ChargingStationInfo] as number) ??
       localStationInfo.maximumPower
