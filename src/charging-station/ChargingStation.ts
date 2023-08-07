@@ -364,11 +364,7 @@ export class ChargingStation {
   }
 
   public getMaximumPower(stationInfo?: ChargingStationInfo): number {
-    const localStationInfo = stationInfo ?? this.stationInfo;
-    return (
-      (localStationInfo?.['maxPower' as keyof ChargingStationInfo] as number) ??
-      localStationInfo.maximumPower
-    );
+    return (stationInfo ?? this.stationInfo).maximumPower!;
   }
 
   public getConnectorMaximumAvailablePower(connectorId: number): number {
