@@ -1,6 +1,6 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, writeSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { Storage } from './Storage';
@@ -16,7 +16,12 @@ import {
 } from '../../utils';
 
 export class JsonFileStorage extends Storage {
-  private fd: number | null = null;
+  private static readonly performanceRecords: Map<string, Statistics> = new Map<
+    string,
+    Statistics
+  >();
+
+  private fd?: number;
 
   constructor(storageUri: string, logPrefix: string) {
     super(storageUri, logPrefix);
@@ -27,12 +32,13 @@ export class JsonFileStorage extends Storage {
     this.checkPerformanceRecordsFile();
     AsyncLock.acquire(AsyncLockType.performance)
       .then(() => {
-        const fileData = readFileSync(this.dbName, 'utf8');
-        const performanceRecords: Statistics[] = fileData
-          ? (JSON.parse(fileData) as Statistics[])
-          : [];
-        performanceRecords.push(performanceStatistics);
-        writeFileSync(this.dbName, JSONStringifyWithMapSupport(performanceRecords, 2), 'utf8');
+        JsonFileStorage.performanceRecords.set(performanceStatistics.id, performanceStatistics);
+        writeSync(
+          this.fd!,
+          JSONStringifyWithMapSupport([...JsonFileStorage.performanceRecords.values()], 2),
+          0,
+          'utf8',
+        );
       })
       .catch((error) => {
         handleFileException(
@@ -53,7 +59,7 @@ export class JsonFileStorage extends Storage {
         if (!existsSync(dirname(this.dbName))) {
           mkdirSync(dirname(this.dbName), { recursive: true });
         }
-        this.fd = openSync(this.dbName, 'a+');
+        this.fd = openSync(this.dbName, 'w+');
       }
     } catch (error) {
       handleFileException(
@@ -69,7 +75,7 @@ export class JsonFileStorage extends Storage {
     try {
       if (this?.fd) {
         closeSync(this.fd);
-        this.fd = null;
+        delete this?.fd;
       }
     } catch (error) {
       handleFileException(

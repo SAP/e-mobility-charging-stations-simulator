@@ -8,7 +8,7 @@ import { type Statistics, StorageType } from '../../types';
 import { Constants } from '../../utils';
 
 export class MongoDBStorage extends Storage {
-  private readonly client: MongoClient | null;
+  private readonly client?: MongoClient;
   private connected: boolean;
 
   constructor(storageUri: string, logPrefix: string) {
@@ -26,7 +26,7 @@ export class MongoDBStorage extends Storage {
       await this.client
         ?.db(this.dbName)
         .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
-        .insertOne(performanceStatistics);
+        .replaceOne({ id: performanceStatistics.id }, performanceStatistics, { upsert: true });
     } catch (error) {
       this.handleDBError(StorageType.MONGO_DB, error as Error, Constants.PERFORMANCE_RECORDS_TABLE);
     }

@@ -21,7 +21,7 @@ import { Constants } from '../../utils';
 
 export class MikroOrmStorage extends Storage {
   private storageType: StorageType;
-  private orm!: MikroORM | null;
+  private orm?: MikroORM;
 
   constructor(storageUri: string, logPrefix: string, storageType: StorageType) {
     super(storageUri, logPrefix);
@@ -53,7 +53,7 @@ export class MikroOrmStorage extends Storage {
     try {
       if (this?.orm) {
         await this.orm.close();
-        this.orm = null;
+        delete this?.orm;
       }
     } catch (error) {
       this.handleDBError(this.storageType, error as Error);
