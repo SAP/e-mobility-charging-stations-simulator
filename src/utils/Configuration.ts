@@ -74,10 +74,6 @@ export class Configuration {
     return Configuration.configurationSectionCache.get(sectionName) as T;
   }
 
-  public static getAutoReconnectMaxRetries(): number | undefined {
-    return Configuration.getConfigurationData()?.autoReconnectMaxRetries;
-  }
-
   public static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
     Configuration.checkDeprecatedConfigurationKeys();
     return Configuration.getConfigurationData()?.stationTemplateUrls;

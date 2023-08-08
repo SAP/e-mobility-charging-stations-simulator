@@ -2070,9 +2070,7 @@ export class ChargingStation {
 
   // -1 for unlimited, 0 for disabling
   private getAutoReconnectMaxRetries(): number | undefined {
-    return (
-      this.stationInfo.autoReconnectMaxRetries ?? Configuration.getAutoReconnectMaxRetries() ?? -1
-    );
+    return this.stationInfo.autoReconnectMaxRetries ?? -1;
   }
 
   // 0 for disabling
