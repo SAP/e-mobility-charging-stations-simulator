@@ -569,8 +569,7 @@ export class ChargingStation {
       );
     } else {
       logger.error(
-        `${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval()},
-          not starting the heartbeat`,
+        `${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval()}, not starting the heartbeat`,
       );
     }
   }
@@ -605,8 +604,7 @@ export class ChargingStation {
     }
     if (this.getConnectorStatus(connectorId)?.transactionStarted === false) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}
-          with no transaction started`,
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction started`,
       );
       return;
     } else if (
@@ -614,8 +612,7 @@ export class ChargingStation {
       isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionId)
     ) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}
-          with no transaction id`,
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction id`,
       );
       return;
     }
@@ -794,8 +791,7 @@ export class ChargingStation {
 
     if (this.isWebSocketConnectionOpened() === true) {
       logger.warn(
-        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.toString()}
-          is already opened`,
+        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.toString()} is already opened`,
       );
       return;
     }
@@ -1237,8 +1233,7 @@ export class ChargingStation {
   }
 
   private handleUnsupportedVersion(version: OCPPVersion) {
-    const errorMsg = `Unsupported protocol version '${version}' configured
-      in template file ${this.templateFile}`;
+    const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`;
     logger.error(`${this.logPrefix()} ${errorMsg}`);
     throw new BaseError(errorMsg);
   }

@@ -375,8 +375,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         } catch (error) {
           // Log
           logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler:
-              Handle incoming request error:`,
+            `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler: Handle incoming request error:`,
             error,
           );
           throw error;
@@ -429,8 +428,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found
-        for command '${commandName}' PDU validation`,
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`,
     );
     return false;
   }
@@ -450,8 +448,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       `${type}Reset` as OCPP16StopTransactionReason,
     ).catch(Constants.EMPTY_FUNCTION);
     logger.info(
-      `${chargingStation.logPrefix()} ${type} reset command received, simulating it. The station will be
-        back online in ${formatDurationMilliSeconds(chargingStation.stationInfo.resetTime!)}`,
+      `${chargingStation.logPrefix()} ${type} reset command received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
+        chargingStation.stationInfo.resetTime!,
+      )}`,
     );
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED;
   }
@@ -463,8 +462,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { connectorId } = commandPayload;
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to unlock a non existing
-          connector id ${connectorId}`,
+        `${chargingStation.logPrefix()} Trying to unlock a non existing connector id ${connectorId}`,
       );
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED;
     }
@@ -610,8 +608,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { connectorId, csChargingProfiles } = commandPayload;
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set charging profile(s) to a
-          non existing connector id ${connectorId}`,
+        `${chargingStation.logPrefix()} Trying to set charging profile(s) to a non existing connector id ${connectorId}`,
       );
       return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
@@ -627,8 +624,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       connectorId === 0
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s)
-          on connector ${connectorId}`,
+        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s) on connector ${connectorId}`,
       );
       return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
@@ -639,8 +635,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       connectorStatus?.transactionStarted === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s)
-          on connector ${connectorId} without a started transaction`,
+        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s) on connector ${connectorId} without a started transaction`,
       );
       return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
@@ -651,10 +646,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       csChargingProfiles.transactionId !== connectorStatus?.transactionId
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s)
-          on connector ${connectorId} with a different transaction id ${
-            csChargingProfiles.transactionId
-          } than the started transaction id ${connectorStatus?.transactionId}`,
+        `${chargingStation.logPrefix()} Trying to set transaction charging profile(s) on connector ${connectorId} with a different transaction id ${
+          csChargingProfiles.transactionId
+        } than the started transaction id ${connectorStatus?.transactionId}`,
       );
       return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED;
     }
@@ -682,8 +676,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { connectorId, duration, chargingRateUnit } = commandPayload;
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to get composite schedule to a
-          non existing connector id ${connectorId}`,
+        `${chargingStation.logPrefix()} Trying to get composite schedule to a non existing connector id ${connectorId}`,
       );
       return OCPP16Constants.OCPP_RESPONSE_REJECTED;
     }
@@ -813,8 +806,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { connectorId } = commandPayload;
     if (chargingStation.hasConnector(connectorId!) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to
-          a non existing connector id ${connectorId}`,
+        `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector id ${connectorId}`,
       );
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN;
     }
@@ -861,8 +853,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { connectorId, type } = commandPayload;
     if (chargingStation.hasConnector(connectorId) === false) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to change the availability of a
-          non existing connector id ${connectorId}`,
+        `${chargingStation.logPrefix()} Trying to change the availability of a non existing connector id ${connectorId}`,
       );
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED;
     }
@@ -1039,8 +1030,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       );
     }
     logger.warn(
-      `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector id
-        ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`,
+      `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector id ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`,
     );
     return OCPP16Constants.OCPP_RESPONSE_REJECTED;
   }
@@ -1053,8 +1043,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (chargingProfile?.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE) {
       OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile);
       logger.debug(
-        `${chargingStation.logPrefix()} Charging profile(s) set at remote start transaction
-          on connector id ${connectorId}: %j`,
+        `${chargingStation.logPrefix()} Charging profile(s) set at remote start transaction on connector id ${connectorId}: %j`,
         chargingProfile,
       );
       return true;
@@ -1093,8 +1082,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
     logger.warn(
-      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction with id
-        ${transactionId}`,
+      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction with id ${transactionId}`,
     );
     return OCPP16Constants.OCPP_RESPONSE_REJECTED;
   }
@@ -1111,8 +1099,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ) === false
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware:
-          Cannot simulate firmware update: feature profile not supported`,
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: feature profile not supported`,
       );
       return OCPP16Constants.OCPP_RESPONSE_EMPTY;
     }
@@ -1122,8 +1109,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware:
-          Cannot simulate firmware update: firmware update is already in progress`,
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`,
       );
       return OCPP16Constants.OCPP_RESPONSE_EMPTY;
     }
@@ -1229,10 +1215,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (runningTransactions > 0) {
         const waitTime = secondsToMilliseconds(15);
         logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation:
-            ${runningTransactions} transaction(s) in progress, waiting ${formatDurationMilliSeconds(
-              waitTime,
-            )} before continuing firmware update simulation`,
+          `${chargingStation.logPrefix()} ${moduleName}.updateFirmwareSimulation: ${runningTransactions} transaction(s) in progress, waiting ${formatDurationMilliSeconds(
+            waitTime,
+          )} before continuing firmware update simulation`,
         );
         await sleep(waitTime);
         transactionsStarted = true;
@@ -1315,8 +1300,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ) === false
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics:
-          Cannot get diagnostics: feature profile not supported`,
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Cannot get diagnostics: feature profile not supported`,
       );
       return OCPP16Constants.OCPP_RESPONSE_EMPTY;
     }
@@ -1354,8 +1338,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               })
               .catch((error) => {
                 logger.error(
-                  `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics:
-                    Error while sending '${OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION}'`,
+                  `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Error while sending '${
+                    OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION
+                  }'`,
                   error,
                 );
               });
@@ -1665,8 +1650,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       const reservation = chargingStation.getReservationBy('reservationId', reservationId);
       if (isUndefined(reservation)) {
         logger.debug(
-          `${chargingStation.logPrefix()} Reservation with id ${reservationId}
-            does not exist on charging station`,
+          `${chargingStation.logPrefix()} Reservation with id ${reservationId} does not exist on charging station`,
         );
         return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED;
       }
