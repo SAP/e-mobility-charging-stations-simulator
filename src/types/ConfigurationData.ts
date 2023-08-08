@@ -82,6 +82,7 @@ export interface ConfigurationData {
   worker?: WorkerConfiguration;
   uiServer?: UIServerConfiguration;
   performanceStorage?: StorageConfiguration;
+  /** @deprecated Moved to charging station template */
   autoReconnectMaxRetries?: number;
   /** @deprecated Moved to worker configuration section. */
   workerProcess?: WorkerProcessType;
