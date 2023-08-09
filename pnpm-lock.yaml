@@ -59,8 +59,8 @@ dependencies:
     specifier: ^5.7.0
     version: 5.7.0
   poolifier:
-    specifier: ^2.6.21
-    version: 2.6.21
+    specifier: ^2.6.22
+    version: 2.6.22
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -4798,7 +4798,7 @@ packages:
     hasBin: true
     dependencies:
       foreground-child: 3.1.1
-      jackspeak: 2.2.2
+      jackspeak: 2.2.3
       minimatch: 9.0.3
       minipass: 7.0.2
       path-scurry: 1.10.1
@@ -5819,8 +5819,8 @@ packages:
       iterate-iterator: 1.0.2
     dev: true
 
-  /jackspeak@2.2.2:
-    resolution: {integrity: sha512-mgNtVv4vUuaKA97yxUHoA3+FkuhtxkjdXEWOyB/N76fjy0FjezEt34oy3epBtvCvS+7DyKwqCFWx/oJLV5+kCg==}
+  /jackspeak@2.2.3:
+    resolution: {integrity: sha512-pF0kfjmg8DJLxDrizHoCZGUFz4P4czQ3HyfW4BU0ffebYkzAVlBywp5zaxW/TM+r0sGbmrQdi8EQQVTJFxnGsQ==}
     engines: {node: '>=14'}
     dependencies:
       '@isaacs/cliui': 8.0.2
@@ -7708,8 +7708,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.21:
-    resolution: {integrity: sha512-TOTocb/Ek8UfZBvoJNWlEWSQJUv6In0GCGwMyI8W+WHfaS2ukkxwfYJE+AcVA9ezPfZTDso+AsqLVrs1acTWDA==}
+  /poolifier@2.6.22:
+    resolution: {integrity: sha512-0pGU1nG8jVEQUb2j1kkiEQ5TdJyHP3a9zFVxF7Q23xHiGM2hpw9BpWvjP0kvE6LmCx0R8ezFDwaXf9nDUOA9gQ==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false

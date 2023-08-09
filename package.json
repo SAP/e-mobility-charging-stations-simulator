@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "e-mobility-charging-stations-simulator",
   "version": "1.2.20",
   "engines": {
@@ -112,7 +113,7 @@
     "logform": "^2.5.1",
     "mnemonist": "^0.39.5",
     "mongodb": "^5.7.0",
-    "poolifier": "^2.6.21",
+    "poolifier": "^2.6.22",
     "source-map-support": "^0.5.21",
     "tar": "^6.1.15",
     "tslib": "^2.6.1",
