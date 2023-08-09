@@ -2073,7 +2073,7 @@ export class ChargingStation {
     return this.stationInfo.autoReconnectMaxRetries ?? -1;
   }
 
-  // 0 for disabling
+  // -1 for unlimited, 0 for disabling
   private getRegistrationMaxRetries(): number | undefined {
     return this.stationInfo.registrationMaxRetries ?? -1;
   }
