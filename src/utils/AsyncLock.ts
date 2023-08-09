@@ -2,6 +2,8 @@
 
 import Queue from 'mnemonist/queue.js';
 
+import { Constants } from './Constants';
+
 export enum AsyncLockType {
   configuration = 'configuration',
   performance = 'performance',
@@ -19,7 +21,15 @@ export class AsyncLock {
     this.resolveQueue = new Queue<ResolveType>();
   }
 
-  public static async acquire(type: AsyncLockType): Promise<void> {
+  public static async runExclusive<T>(type: AsyncLockType, fn: () => T | Promise<T>): Promise<T> {
+    return AsyncLock.acquire(type)
+      .then(fn)
+      .finally(() => {
+        AsyncLock.release(type).catch(Constants.EMPTY_FUNCTION);
+      });
+  }
+
+  private static async acquire(type: AsyncLockType): Promise<void> {
     const asyncLock = AsyncLock.getAsyncLock(type);
     if (!asyncLock.acquired) {
       asyncLock.acquired = true;
@@ -30,7 +40,7 @@ export class AsyncLock {
     });
   }
 
-  public static async release(type: AsyncLockType): Promise<void> {
+  private static async release(type: AsyncLockType): Promise<void> {
     const asyncLock = AsyncLock.getAsyncLock(type);
     if (asyncLock.resolveQueue.size === 0 && asyncLock.acquired) {
       asyncLock.acquired = false;

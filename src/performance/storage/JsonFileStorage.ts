@@ -9,7 +9,6 @@ import { FileType, type Statistics } from '../../types';
 import {
   AsyncLock,
   AsyncLockType,
-  Constants,
   JSONStringifyWithMapSupport,
   handleFileException,
   isNullOrUndefined,
@@ -30,27 +29,22 @@ export class JsonFileStorage extends Storage {
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.checkPerformanceRecordsFile();
-    AsyncLock.acquire(AsyncLockType.performance)
-      .then(() => {
-        JsonFileStorage.performanceRecords.set(performanceStatistics.id, performanceStatistics);
-        writeSync(
-          this.fd!,
-          JSONStringifyWithMapSupport([...JsonFileStorage.performanceRecords.values()], 2),
-          0,
-          'utf8',
-        );
-      })
-      .catch((error) => {
-        handleFileException(
-          this.dbName,
-          FileType.PerformanceRecords,
-          error as NodeJS.ErrnoException,
-          this.logPrefix,
-        );
-      })
-      .finally(() => {
-        AsyncLock.release(AsyncLockType.performance).catch(Constants.EMPTY_FUNCTION);
-      });
+    AsyncLock.runExclusive(AsyncLockType.performance, () => {
+      JsonFileStorage.performanceRecords.set(performanceStatistics.id, performanceStatistics);
+      writeSync(
+        this.fd!,
+        JSONStringifyWithMapSupport([...JsonFileStorage.performanceRecords.values()], 2),
+        0,
+        'utf8',
+      );
+    }).catch((error) => {
+      handleFileException(
+        this.dbName,
+        FileType.PerformanceRecords,
+        error as NodeJS.ErrnoException,
+        this.logPrefix,
+      );
+    });
   }
 
   public open(): void {
@@ -59,7 +53,7 @@ export class JsonFileStorage extends Storage {
         if (!existsSync(dirname(this.dbName))) {
           mkdirSync(dirname(this.dbName), { recursive: true });
         }
-        this.fd = openSync(this.dbName, 'w+');
+        this.fd = openSync(this.dbName, 'w');
       }
     } catch (error) {
       handleFileException(

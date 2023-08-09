@@ -1,15 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import { createHash } from 'node:crypto';
-import {
-  type FSWatcher,
-  closeSync,
-  existsSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { type FSWatcher, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { URL } from 'node:url';
 import { parentPort } from 'node:worker_threads';
@@ -1699,30 +1691,27 @@ export class ChargingStation {
           )
           .digest('hex');
         if (this.configurationFileHash !== configurationHash) {
-          AsyncLock.acquire(AsyncLockType.configuration)
-            .then(() => {
-              configurationData.configurationHash = configurationHash;
-              const measureId = `${FileType.ChargingStationConfiguration} write`;
-              const beginId = PerformanceStatistics.beginMeasure(measureId);
-              const fileDescriptor = openSync(this.configurationFile, 'w');
-              writeFileSync(fileDescriptor, JSON.stringify(configurationData, null, 2), 'utf8');
-              closeSync(fileDescriptor);
-              PerformanceStatistics.endMeasure(measureId, beginId);
-              this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
-              this.sharedLRUCache.setChargingStationConfiguration(configurationData);
-              this.configurationFileHash = configurationHash;
-            })
-            .catch((error) => {
-              handleFileException(
-                this.configurationFile,
-                FileType.ChargingStationConfiguration,
-                error as NodeJS.ErrnoException,
-                this.logPrefix(),
-              );
-            })
-            .finally(() => {
-              AsyncLock.release(AsyncLockType.configuration).catch(Constants.EMPTY_FUNCTION);
-            });
+          AsyncLock.runExclusive(AsyncLockType.configuration, () => {
+            configurationData.configurationHash = configurationHash;
+            const measureId = `${FileType.ChargingStationConfiguration} write`;
+            const beginId = PerformanceStatistics.beginMeasure(measureId);
+            writeFileSync(
+              this.configurationFile,
+              JSON.stringify(configurationData, null, 2),
+              'utf8',
+            );
+            PerformanceStatistics.endMeasure(measureId, beginId);
+            this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
+            this.sharedLRUCache.setChargingStationConfiguration(configurationData);
+            this.configurationFileHash = configurationHash;
+          }).catch((error) => {
+            handleFileException(
+              this.configurationFile,
+              FileType.ChargingStationConfiguration,
+              error as NodeJS.ErrnoException,
+              this.logPrefix(),
+            );
+          });
         } else {
           logger.debug(
             `${this.logPrefix()} Not saving unchanged charging station configuration file ${
