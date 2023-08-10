@@ -29,8 +29,8 @@ export class JsonFileStorage extends Storage {
 
   public storePerformanceStatistics(performanceStatistics: Statistics): void {
     this.checkPerformanceRecordsFile();
+    JsonFileStorage.performanceRecords.set(performanceStatistics.id, performanceStatistics);
     AsyncLock.runExclusive(AsyncLockType.performance, () => {
-      JsonFileStorage.performanceRecords.set(performanceStatistics.id, performanceStatistics);
       writeSync(
         this.fd!,
         JSONStringifyWithMapSupport([...JsonFileStorage.performanceRecords.values()], 2),
