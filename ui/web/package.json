@@ -50,7 +50,7 @@
     "@vue/test-utils": "^2.4.1",
     "@vue/tsconfig": "^0.4.0",
     "cross-env": "^7.0.3",
-    "eslint": "^8.46.0",
+    "eslint": "^8.47.0",
     "eslint-define-config": "^1.23.0",
     "eslint-import-resolver-typescript": "^3.6.0",
     "eslint-plugin-import": "^2.28.0",
