@@ -16,6 +16,7 @@
     "bubbleprof",
     "bufferutil",
     "cacheable",
+    "choco",
     "commitlint",
     "corepack",
     "csms",

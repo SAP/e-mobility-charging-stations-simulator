@@ -59,8 +59,8 @@ dependencies:
     specifier: ^5.7.0
     version: 5.7.0
   poolifier:
-    specifier: ^2.6.26
-    version: 2.6.26
+    specifier: ^2.6.28
+    version: 2.6.28
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -341,8 +341,8 @@ packages:
       chalk: 4.1.2
       lodash.debounce: 4.0.8
       loose-envify: 1.4.0
-      postcss: 8.4.27
-      postcss-import: 13.0.0(postcss@8.4.27)
+      postcss: 8.4.28
+      postcss-import: 13.0.0(postcss@8.4.28)
       stream-template: 0.0.10
       webfontloader: 1.6.28
     dev: true
@@ -4803,7 +4803,7 @@ packages:
     hasBin: true
     dependencies:
       foreground-child: 3.1.1
-      jackspeak: 2.2.3
+      jackspeak: 2.3.0
       minimatch: 9.0.3
       minipass: 7.0.3
       path-scurry: 1.10.1
@@ -5824,8 +5824,8 @@ packages:
       iterate-iterator: 1.0.2
     dev: true
 
-  /jackspeak@2.2.3:
-    resolution: {integrity: sha512-pF0kfjmg8DJLxDrizHoCZGUFz4P4czQ3HyfW4BU0ffebYkzAVlBywp5zaxW/TM+r0sGbmrQdi8EQQVTJFxnGsQ==}
+  /jackspeak@2.3.0:
+    resolution: {integrity: sha512-uKmsITSsF4rUWQHzqaRUuyAir3fZfW3f202Ee34lz/gZCi970CPZwyQXLGNgWJvvZbvFyzeyGq0+4fcG/mBKZg==}
     engines: {node: '>=14'}
     dependencies:
       '@isaacs/cliui': 8.0.2
@@ -7702,19 +7702,19 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.26:
-    resolution: {integrity: sha512-cfcP3oCwtxG5DzxLXicUQjr6ieJzX/5/yT2Nt0tBByhufqtu6V2Son7kJXSHlWrNa08Y39cOaeNrOLCazoJ07w==}
+  /poolifier@2.6.28:
+    resolution: {integrity: sha512-dm3N/BcJ6n1m9aDidXYx53mI7nQc1QvTGdIL0rA29hOjLsfWq6+7pz977vnxvfGxKG5+pCG+VIT7PcJENQSzng==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
 
-  /postcss-import@13.0.0(postcss@8.4.27):
+  /postcss-import@13.0.0(postcss@8.4.28):
     resolution: {integrity: sha512-LPUbm3ytpYopwQQjqgUH4S3EM/Gb9QsaSPP/5vnoi+oKVy3/mIk2sc0Paqw7RL57GpScm9MdIMUypw2znWiBpg==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       postcss: ^8.0.0
     dependencies:
-      postcss: 8.4.27
+      postcss: 8.4.28
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.4
@@ -7724,8 +7724,8 @@ packages:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
     dev: true
 
-  /postcss@8.4.27:
-    resolution: {integrity: sha512-gY/ACJtJPSmUFPDCHtX78+01fHa64FaU4zaaWfuh1MhGJISufJAH4cun6k/8fwsHYeK4UQmENQK+tRLCFJE8JQ==}
+  /postcss@8.4.28:
+    resolution: {integrity: sha512-Z7V5j0cq8oEKyejIKfpD8b4eBy9cwW2JWPk0+fB1HOAMsfHbnAXLLS+PfVWlzMSLQaWttKDt607I0XHmpE67Vw==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
       nanoid: 3.3.6
