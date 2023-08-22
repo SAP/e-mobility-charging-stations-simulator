@@ -163,7 +163,7 @@
     "release-it": "^16.1.5",
     "rimraf": "^5.0.1",
     "robohydra": "^0.6.9",
-    "rollup": "^3.28.0",
+    "rollup": "^3.28.1",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.5.4",
