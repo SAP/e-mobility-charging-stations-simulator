@@ -23,8 +23,8 @@ dependencies:
 
 devDependencies:
   '@tsconfig/node20':
-    specifier: ^20.1.1
-    version: 20.1.1
+    specifier: ^20.1.2
+    version: 20.1.2
   '@types/jsdom':
     specifier: ^21.1.1
     version: 21.1.1
@@ -758,8 +758,8 @@ packages:
     engines: {node: '>= 10'}
     dev: true
 
-  /@tsconfig/node20@20.1.1:
-    resolution: {integrity: sha512-7AuWv3hETpJGJegd0bTdnHIrdT/WuR3UUScGRemxhmH0vhbTTGKFZvY8DHZOqIECNdiIy6iFLh52E6Op9YrFiA==}
+  /@tsconfig/node20@20.1.2:
+    resolution: {integrity: sha512-madaWq2k+LYMEhmcp0fs+OGaLFk0OenpHa4gmI4VEmCKX4PJntQ6fnnGADVFrVkBj0wIdAlQnK/MrlYTHsa1gQ==}
     dev: true
 
   /@types/chai-subset@1.3.3:
