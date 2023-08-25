@@ -217,7 +217,6 @@ export class PerformanceStatistics {
       this.statistics.statisticsData.set(entryName, {});
     }
     // Update current statistics
-    this.statistics.updatedAt = new Date();
     this.statistics.statisticsData.get(entryName)!.timeMeasurementCount =
       (this.statistics.statisticsData.get(entryName)?.timeMeasurementCount ?? 0) + 1;
     this.statistics.statisticsData.get(entryName)!.currentTimeMeasurement = entry.duration;
@@ -240,29 +239,20 @@ export class PerformanceStatistics {
             timestamp: entry.startTime,
             value: entry.duration,
           }));
-    this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement = average(
-      extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
-      ),
+    const timeMeasurementValues = extractTimeSeriesValues(
+      this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
     );
-    this.statistics.statisticsData.get(entryName)!.medTimeMeasurement = median(
-      extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
-      ),
-    );
+    this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement =
+      average(timeMeasurementValues);
+    this.statistics.statisticsData.get(entryName)!.medTimeMeasurement =
+      median(timeMeasurementValues);
     this.statistics.statisticsData.get(entryName)!.ninetyFiveThPercentileTimeMeasurement =
-      nthPercentile(
-        extractTimeSeriesValues(
-          this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
-        ),
-        95,
-      );
+      nthPercentile(timeMeasurementValues, 95);
     this.statistics.statisticsData.get(entryName)!.stdDevTimeMeasurement = stdDeviation(
-      extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
-      ),
+      timeMeasurementValues,
       this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement,
     );
+    this.statistics.updatedAt = new Date();
     if (
       Configuration.getConfigurationSection<StorageConfiguration>(
         ConfigurationSection.performanceStorage,
