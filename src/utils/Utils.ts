@@ -280,12 +280,12 @@ export const insertAt = (str: string, subStr: string, pos: number): string =>
  * Computes the retry delay in milliseconds using an exponential backoff algorithm.
  *
  * @param retryNumber - the number of retries that have already been attempted
- * @param maxDelayRatio - the maximum ratio of the delay that can be randomized
+ * @param delayFactor - the base delay factor in milliseconds
  * @returns delay in milliseconds
  */
-export const exponentialDelay = (retryNumber = 0, maxDelayRatio = 0.2): number => {
-  const delay = Math.pow(2, retryNumber) * 100;
-  const randomSum = delay * maxDelayRatio * secureRandom(); // 0-(maxDelayRatio*100)% of the delay
+export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => {
+  const delay = Math.pow(2, retryNumber) * delayFactor;
+  const randomSum = delay * 0.2 * secureRandom(); // 0-20% of the delay
   return delay + randomSum;
 };
 
