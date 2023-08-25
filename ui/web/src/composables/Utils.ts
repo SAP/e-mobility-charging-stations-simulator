@@ -1,5 +1,3 @@
-import util from 'node:util';
-
 const isUndefined = (value: unknown): boolean => {
   return typeof value === 'undefined';
 };
