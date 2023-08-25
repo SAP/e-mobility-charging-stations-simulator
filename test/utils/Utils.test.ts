@@ -48,8 +48,8 @@ describe('Utils test suite', () => {
   it('Verify sleep()', async () => {
     const start = performance.now();
     await sleep(1000);
-    const end = performance.now();
-    expect(end - start).toBeGreaterThanOrEqual(1000);
+    const stop = performance.now();
+    expect(stop - start).toBeGreaterThanOrEqual(1000);
   });
 
   it('Verify formatDurationMilliSeconds()', () => {
