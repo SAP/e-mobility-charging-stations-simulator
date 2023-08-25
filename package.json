@@ -113,7 +113,7 @@
     "logform": "^2.5.1",
     "mnemonist": "^0.39.5",
     "mongodb": "^5.8.1",
-    "poolifier": "^2.6.34",
+    "poolifier": "^2.6.35",
     "source-map-support": "^0.5.21",
     "tar": "^6.1.15",
     "tslib": "^2.6.2",
