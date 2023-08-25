@@ -64,10 +64,12 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   return sortedDataSet[percentileIndexInteger];
 };
 
-export const stdDeviation = (dataSet: number[], dataSetAverage?: number): number => {
-  dataSetAverage = dataSetAverage ?? average(dataSet);
+export const stdDeviation = (
+  dataSet: number[],
+  dataSetAverage: number = average(dataSet),
+): number => {
   const geometricDeviation = dataSet.reduce((accumulator, nb) => {
-    const deviation = nb - dataSetAverage!;
+    const deviation = nb - dataSetAverage;
     return accumulator + deviation * deviation;
   }, 0);
   return Math.sqrt(geometricDeviation / dataSet.length);
