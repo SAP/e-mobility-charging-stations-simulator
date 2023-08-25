@@ -1,5 +1,29 @@
 import { isEmptyArray, isNullOrUndefined } from './Utils';
 
+/**
+ * Computes the average of the given data set.
+ *
+ * @param dataSet - Data set.
+ * @returns The average of the given data set.
+ * @internal
+ */
+export const average = (dataSet: number[]): number => {
+  if (Array.isArray(dataSet) && dataSet.length === 0) {
+    return 0;
+  }
+  if (Array.isArray(dataSet) && dataSet.length === 1) {
+    return dataSet[0];
+  }
+  return dataSet.reduce((accumulator, nb) => accumulator + nb, 0) / dataSet.length;
+};
+
+/**
+ * Computes the median of the given data set.
+ *
+ * @param dataSet - Data set.
+ * @returns The median of the given data set.
+ * @internal
+ */
 export const median = (dataSet: number[]): number => {
   if (isEmptyArray(dataSet)) {
     return 0;
@@ -40,16 +64,11 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   return sortedDataSet[percentileIndexInteger];
 };
 
-export const stdDeviation = (dataSet: number[]): number => {
-  let totalDataSet = 0;
-  for (const data of dataSet) {
-    totalDataSet += data;
-  }
-  const dataSetMean = totalDataSet / dataSet.length;
-  let totalGeometricDeviation = 0;
-  for (const data of dataSet) {
-    const deviation = data - dataSetMean;
-    totalGeometricDeviation += deviation * deviation;
-  }
-  return Math.sqrt(totalGeometricDeviation / dataSet.length);
+export const stdDeviation = (dataSet: number[], dataSetAverage?: number): number => {
+  dataSetAverage = dataSetAverage ?? average(dataSet);
+  const geometricDeviation = dataSet.reduce((accumulator, nb) => {
+    const deviation = nb - dataSetAverage!;
+    return accumulator + deviation * deviation;
+  }, 0);
+  return Math.sqrt(geometricDeviation / dataSet.length);
 };

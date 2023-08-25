@@ -1,6 +1,6 @@
 import { expect } from 'expect';
 
-import { CircularArray } from '../../src/utils/CircularArray';
+import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../../src/utils/CircularArray';
 
 describe('CircularArray test suite', () => {
   it('Verify that circular array can be instantiated', () => {
@@ -10,7 +10,7 @@ describe('CircularArray test suite', () => {
 
   it('Verify circular array default size at instance creation', () => {
     const circularArray = new CircularArray();
-    expect(circularArray.size).toBe(1024);
+    expect(circularArray.size).toBe(DEFAULT_CIRCULAR_ARRAY_SIZE);
   });
 
   it('Verify that circular array size can be set at instance creation', () => {

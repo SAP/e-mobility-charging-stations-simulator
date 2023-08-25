@@ -55,5 +55,5 @@ export {
   sleep,
   validateUUID,
 } from './Utils';
-export { median, nthPercentile, stdDeviation } from './StatisticUtils';
+export { average, median, nthPercentile, stdDeviation } from './StatisticUtils';
 export { logger } from './Logger';

@@ -1,8 +1,15 @@
 import { expect } from 'expect';
 
-import { median, nthPercentile, stdDeviation } from '../../src/utils/StatisticUtils';
+import { average, median, nthPercentile, stdDeviation } from '../../src/utils/StatisticUtils';
 
 describe('StatisticUtils test suite', () => {
+  it('Verify average()', () => {
+    expect(average([])).toBe(0);
+    expect(average([0.08])).toBe(0.08);
+    expect(average([0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03])).toBe(3.1642857142857146);
+    expect(average([0.25, 4.75, 3.05, 6.04, 1.01, 2.02])).toBe(2.8533333333333335);
+  });
+
   it('Verify median()', () => {
     expect(median([])).toBe(0);
     expect(median([0.08])).toBe(0.08);

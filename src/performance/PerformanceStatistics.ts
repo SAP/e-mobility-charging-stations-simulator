@@ -21,6 +21,7 @@ import {
   Configuration,
   Constants,
   JSONStringifyWithMapSupport,
+  average,
   buildPerformanceStatisticsMessage,
   extractTimeSeriesValues,
   formatDurationSeconds,
@@ -230,9 +231,6 @@ export class PerformanceStatistics {
     );
     this.statistics.statisticsData.get(entryName)!.totalTimeMeasurement =
       (this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ?? 0) + entry.duration;
-    this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement =
-      this.statistics.statisticsData.get(entryName)!.totalTimeMeasurement! /
-      this.statistics.statisticsData.get(entryName)!.timeMeasurementCount!;
     this.statistics.statisticsData.get(entryName)?.measurementTimeSeries instanceof CircularArray
       ? this.statistics.statisticsData
           .get(entryName)
@@ -242,22 +240,28 @@ export class PerformanceStatistics {
             timestamp: entry.startTime,
             value: entry.duration,
           }));
+    this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement = average(
+      extractTimeSeriesValues(
+        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
+      ),
+    );
     this.statistics.statisticsData.get(entryName)!.medTimeMeasurement = median(
       extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries as TimestampedData[],
+        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
       ),
     );
     this.statistics.statisticsData.get(entryName)!.ninetyFiveThPercentileTimeMeasurement =
       nthPercentile(
         extractTimeSeriesValues(
-          this.statistics.statisticsData.get(entryName)!.measurementTimeSeries as TimestampedData[],
+          this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
         ),
         95,
       );
     this.statistics.statisticsData.get(entryName)!.stdDevTimeMeasurement = stdDeviation(
       extractTimeSeriesValues(
-        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries as TimestampedData[],
+        this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
       ),
+      this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement,
     );
     if (
       Configuration.getConfigurationSection<StorageConfiguration>(
