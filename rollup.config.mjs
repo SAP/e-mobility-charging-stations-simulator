@@ -27,11 +27,11 @@ const isAnalyzeBuild = process.env.ANALYZE;
 const sourceMap = !!isDevelopmentBuild;
 
 export default {
-  input: ['src/start.ts', 'src/charging-station/ChargingStationWorker.ts'],
+  input: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
   strictDeprecations: true,
   output: [
     {
-      dir: 'dist',
+      dir: './dist',
       format: 'esm',
       sourcemap: sourceMap,
       plugins: [terser({ maxWorkers: Math.floor(availableParallelism() / 2) })],
@@ -73,23 +73,23 @@ export default {
   plugins: [
     json(),
     typescript({
-      tsconfig: 'tsconfig.json',
+      tsconfig: './tsconfig.json',
       compilerOptions: {
         sourceMap,
       },
     }),
     del({
       targets: [
-        'dist/*',
-        '!dist/assets',
-        'dist/assets/*.json',
-        'dist/assets/json-schemas',
-        'dist/assets/station-templates',
-        'dist/assets/ui-protocol',
+        './dist/*',
+        '!./dist/assets',
+        './dist/assets/*.json',
+        './dist/assets/json-schemas',
+        './dist/assets/station-templates',
+        './dist/assets/ui-protocol',
       ],
     }),
     copy({
-      rootDir: 'src',
+      rootDir: './src',
       patterns: 'assets/**/*.json',
       exclude: [
         'assets/config-template.json',
