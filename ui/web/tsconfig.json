@@ -6,7 +6,7 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "composite": true,
-    "baseUrl": ".",
+    "baseUrl": "./",
     "types": ["node", "jsdom"],
     "paths": {
       "@/*": ["./src/*"]
