@@ -5,6 +5,7 @@ import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 import { copy } from '@web/rollup-plugin-copy';
+import { defineConfig } from 'rollup';
 import analyze from 'rollup-plugin-analyzer';
 import del from 'rollup-plugin-delete';
 
@@ -26,7 +27,7 @@ const isDevelopmentBuild = process.env.BUILD === 'development';
 const isAnalyzeBuild = process.env.ANALYZE;
 const sourceMap = !!isDevelopmentBuild;
 
-export default {
+export default defineConfig({
   input: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
   strictDeprecations: true,
   output: [
@@ -101,4 +102,4 @@ export default {
     }),
     isAnalyzeBuild && analyze(),
   ],
-};
+});
