@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 
-const MongoClient = require('mongodb');
+const { MongoClient } = require('mongodb');
 
 // This script deletes charging stations
 // Filter charging stations by id pattern

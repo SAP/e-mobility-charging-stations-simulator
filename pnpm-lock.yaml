@@ -56,11 +56,11 @@ dependencies:
     specifier: ^0.39.5
     version: 0.39.5
   mongodb:
-    specifier: ^5.8.1
-    version: 5.8.1
+    specifier: ^6.0.0
+    version: 6.0.0
   poolifier:
-    specifier: ^2.6.36
-    version: 2.6.36
+    specifier: ^2.6.37
+    version: 2.6.37
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -169,7 +169,7 @@ devDependencies:
     version: 16.0.2(eslint@8.48.0)
   eslint-plugin-prettier:
     specifier: ^5.0.0
-    version: 5.0.0(eslint-config-prettier@9.0.0)(eslint@8.48.0)(prettier@3.0.2)
+    version: 5.0.0(eslint-config-prettier@9.0.0)(eslint@8.48.0)(prettier@3.0.3)
   eslint-plugin-tsdoc:
     specifier: ^0.2.17
     version: 0.2.17
@@ -189,8 +189,8 @@ devDependencies:
     specifier: ^7.1.3
     version: 7.1.3(mocha@10.2.0)
   prettier:
-    specifier: ^3.0.2
-    version: 3.0.2
+    specifier: ^3.0.3
+    version: 3.0.3
   release-it:
     specifier: ^16.1.5
     version: 16.1.5
@@ -1052,7 +1052,6 @@ packages:
     dependencies:
       sparse-bitfield: 3.0.3
     dev: false
-    optional: true
 
   /@nearform/heap-profiler@2.0.0:
     resolution: {integrity: sha512-846CWyq3Ky5rzcl8Z3S+VT3z6GQSlYD1G/dqbtANu29NUHoCO+W7tOZRK6eA6FjLHnNX0DvP1Mrt2oFBPnkxLw==}
@@ -2461,9 +2460,9 @@ packages:
       xtend: 4.0.2
     dev: true
 
-  /bson@5.4.0:
-    resolution: {integrity: sha512-WRZ5SQI5GfUuKnPTNmAYPiKIof3ORXAF4IRU5UcgmivNIon01rWQlw5RUH954dpu8yGL8T59YShVddIPaU/gFA==}
-    engines: {node: '>=14.20.1'}
+  /bson@6.0.0:
+    resolution: {integrity: sha512-FoWvdELfF2wQaUo8S/a1Rh2BDwJEUancDDnzdTpYymJTZjmvRpLWoqRPelKn+XSeh5D4YddWDG66cLtEhGGvcg==}
+    engines: {node: '>=16.20.1'}
     dev: false
 
   /buffer-equal@0.0.1:
@@ -4067,7 +4066,7 @@ packages:
       is-core-module: 2.13.0
       is-glob: 4.0.3
       minimatch: 3.1.2
-      object.fromentries: 2.0.6
+      object.fromentries: 2.0.7
       object.groupby: 1.0.1
       object.values: 1.1.7
       semver: 7.5.4
@@ -4115,7 +4114,7 @@ packages:
       semver: 7.5.4
     dev: true
 
-  /eslint-plugin-prettier@5.0.0(eslint-config-prettier@9.0.0)(eslint@8.48.0)(prettier@3.0.2):
+  /eslint-plugin-prettier@5.0.0(eslint-config-prettier@9.0.0)(eslint@8.48.0)(prettier@3.0.3):
     resolution: {integrity: sha512-AgaZCVuYDXHUGxj/ZGu1u8H8CYgDY3iG6w5kUFw4AzMVXzB7VvbKgYR4nATIN+OvUrghMbiDLeimVjVY5ilq3w==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
@@ -4131,7 +4130,7 @@ packages:
     dependencies:
       eslint: 8.48.0
       eslint-config-prettier: 9.0.0(eslint@8.48.0)
-      prettier: 3.0.2
+      prettier: 3.0.3
       prettier-linter-helpers: 1.0.0
       synckit: 0.8.5
     dev: true
@@ -6468,7 +6467,6 @@ packages:
     resolution: {integrity: sha512-ZS4Bp4r/Zoeq6+NLJpP+0Zzm0pR8whtGPf1XExKLJBAczGMnSi3It14OiNCStjQjM6NU1okjQGSxgEZN8eBYKg==}
     requiresBuild: true
     dev: false
-    optional: true
 
   /meow@8.1.2:
     resolution: {integrity: sha512-r85E3NdZ+mpYk1C6RjPFEMSE+s1iZMuHtsHAqY0DT3jZczl0diWUZ8g6oU7h0M9cD2EL+PzaYghhCLzR0ZNn5Q==}
@@ -6888,19 +6886,23 @@ packages:
       whatwg-url: 11.0.0
     dev: false
 
-  /mongodb@5.8.1:
-    resolution: {integrity: sha512-wKyh4kZvm6NrCPH8AxyzXm3JBoEf4Xulo0aUWh3hCgwgYJxyQ1KLST86ZZaSWdj6/kxYUA3+YZuyADCE61CMSg==}
-    engines: {node: '>=14.20.1'}
+  /mongodb@6.0.0:
+    resolution: {integrity: sha512-wUIYesF4DTyDccm0noE5TwGi9ISdXUAi9T2cQ4xPc+EUBZG44bfMVt2ecOG5Ypca7eCz3oRpJm6YI6c7jAnuNw==}
+    engines: {node: '>=16.20.1'}
     peerDependencies:
       '@aws-sdk/credential-providers': ^3.188.0
-      '@mongodb-js/zstd': ^1.0.0
-      kerberos: ^1.0.0 || ^2.0.0
-      mongodb-client-encryption: '>=2.3.0 <3'
+      '@mongodb-js/zstd': ^1.1.0
+      gcp-metadata: ^5.2.0
+      kerberos: ^2.0.1
+      mongodb-client-encryption: '>=6.0.0 <7'
       snappy: ^7.2.2
+      socks: ^2.7.1
     peerDependenciesMeta:
       '@aws-sdk/credential-providers':
         optional: true
       '@mongodb-js/zstd':
+        optional: true
+      gcp-metadata:
         optional: true
       kerberos:
         optional: true
@@ -6908,12 +6910,12 @@ packages:
         optional: true
       snappy:
         optional: true
+      socks:
+        optional: true
     dependencies:
-      bson: 5.4.0
-      mongodb-connection-string-url: 2.6.0
-      socks: 2.7.1
-    optionalDependencies:
       '@mongodb-js/saslprep': 1.1.0
+      bson: 6.0.0
+      mongodb-connection-string-url: 2.6.0
     dev: false
 
   /morphdom@2.7.0:
@@ -7272,8 +7274,8 @@ packages:
       object-keys: 1.1.1
     dev: true
 
-  /object.fromentries@2.0.6:
-    resolution: {integrity: sha512-VciD13dswC4j1Xt5394WR4MzmAQmlgN72phd/riNp9vtD7tp4QQWJ0R4wvclXcafgcYK8veHRed2W6XeGBvcfg==}
+  /object.fromentries@2.0.7:
+    resolution: {integrity: sha512-UPbPHML6sL8PI/mOqPwsH4G6iyXcCGzLin8KvEPenOZN5lpCNBZZQ+V62vdjB1mQHrmqGQt5/OJzemUA+KJmEA==}
     engines: {node: '>= 0.4'}
     dependencies:
       call-bind: 1.0.2
@@ -7721,8 +7723,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.36:
-    resolution: {integrity: sha512-tSLLHNk92F54steFNRMuqpYRX03Xty8O5TTzwLvCyzhhoeW3Qe9YGRQaqClRdfAgFuSZR0wStoeZh100+/Sa8w==}
+  /poolifier@2.6.37:
+    resolution: {integrity: sha512-f2LQTGfDxIWFLyXa/Rn/DTJToR0uRrfKNpCEIyPstK2T7OJSXLQ/5LzMBW4CJbiO1th/y/0ePiFdD+EcfGKe1A==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
@@ -7769,8 +7771,8 @@ packages:
       fast-diff: 1.3.0
     dev: true
 
-  /prettier@3.0.2:
-    resolution: {integrity: sha512-o2YR9qtniXvwEZlOKbveKfDQVyqxbEIWn48Z8m3ZJjBjcCmUy3xZGIv+7AkaeuaTr6yPXJjwv07ZWlsWbEy1rQ==}
+  /prettier@3.0.3:
+    resolution: {integrity: sha512-L/4pUDMxcNa8R/EthV08Zt42WBO4h1rarVtK0K+QJG0X187OLo7l699jWw0GKuwzkPQ//jMFA/8Xm6Fh3J/DAg==}
     engines: {node: '>=14'}
     hasBin: true
     dev: true
@@ -8706,7 +8708,6 @@ packages:
     dependencies:
       memory-pager: 1.5.0
     dev: false
-    optional: true
 
   /spdx-correct@3.2.0:
     resolution: {integrity: sha512-kN9dJbvnySHULIluDHy32WHRUu3Og7B9sbY7tsFLctQkIqnMh3hErYgdMjTYuqmcXX+lK5T1lnUt3G7zNswmZA==}
