@@ -219,7 +219,7 @@ devDependencies:
     specifier: ^10.9.1
     version: 10.9.1(@types/node@20.5.7)(typescript@5.2.2)
   typescript:
-    specifier: ^5.2.2
+    specifier: ~5.2.2
     version: 5.2.2
 
 packages:
