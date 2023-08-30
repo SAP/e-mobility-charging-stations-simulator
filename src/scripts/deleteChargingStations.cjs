@@ -14,7 +14,7 @@ const { MongoClient } = require('mongodb');
 const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
 
 // Mongo Connection and Query
-if (config && config.mongoConnectionString) {
+if (config?.mongoConnectionString) {
   MongoClient.connect(config.mongoConnectionString, async function (err, client) {
     const db = client.db();
 
