@@ -144,6 +144,7 @@ import {
   isUndefined,
   logPrefix,
   logger,
+  once,
   roundTo,
   secureRandom,
   sleep,
@@ -1126,7 +1127,8 @@ export class ChargingStation {
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate = this.getTemplateFromFile()!;
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
-    warnTemplateKeysDeprecation(stationTemplate, this.logPrefix(), this.templateFile);
+    const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation, this);
+    warnTemplateKeysDeprecationOnce(stationTemplate, this.logPrefix(), this.templateFile);
     if (stationTemplate?.Connectors) {
       checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile);
     }

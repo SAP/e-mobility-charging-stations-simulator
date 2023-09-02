@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import merge from 'just-merge';
 
 import { Constants } from './Constants';
-import { hasOwnProp, isCFEnvironment, isNotEmptyString, isUndefined } from './Utils';
+import { hasOwnProp, isCFEnvironment, isNotEmptyString, isUndefined, once } from './Utils';
 import {
   ApplicationProtocol,
   type ConfigurationData,
@@ -75,7 +75,11 @@ export class Configuration {
   }
 
   public static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
-    Configuration.checkDeprecatedConfigurationKeys();
+    const checkDeprecatedConfigurationKeysOnce = once(
+      Configuration.checkDeprecatedConfigurationKeys.bind(Configuration),
+      this,
+    );
+    checkDeprecatedConfigurationKeysOnce();
     return Configuration.getConfigurationData()?.stationTemplateUrls;
   }
 

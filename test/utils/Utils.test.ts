@@ -26,6 +26,7 @@ import {
   isObject,
   isUndefined,
   isValidTime,
+  once,
   roundTo,
   secureRandom,
   sleep,
@@ -430,5 +431,20 @@ describe('Utils test suite', () => {
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true);
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false);
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false);
+  });
+
+  it('Verify once()', () => {
+    let called = 0;
+    const fn = () => ++called;
+    const onceFn = once(fn, this);
+    const result1 = onceFn();
+    expect(called).toBe(1);
+    expect(result1).toBe(1);
+    const result2 = onceFn();
+    expect(called).toBe(1);
+    expect(result2).toBe(1);
+    const result3 = onceFn();
+    expect(called).toBe(1);
+    expect(result3).toBe(1);
   });
 });
