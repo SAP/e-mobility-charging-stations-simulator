@@ -77,7 +77,7 @@ export class Configuration {
   public static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
     const checkDeprecatedConfigurationKeysOnce = once(
       Configuration.checkDeprecatedConfigurationKeys.bind(Configuration),
-      this,
+      Configuration,
     );
     checkDeprecatedConfigurationKeysOnce();
     return Configuration.getConfigurationData()?.stationTemplateUrls;
