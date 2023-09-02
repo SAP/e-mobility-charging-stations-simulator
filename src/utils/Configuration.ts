@@ -53,8 +53,6 @@ export class Configuration {
     [ConfigurationSection.uiServer, Configuration.buildUIServerSection()],
   ]);
 
-  private static warnDeprecatedConfigurationKeys = false;
-
   private static configurationChangeCallback?: () => Promise<void>;
 
   private constructor() {
@@ -294,9 +292,6 @@ export class Configuration {
   };
 
   private static checkDeprecatedConfigurationKeys() {
-    if (Configuration.warnDeprecatedConfigurationKeys) {
-      return;
-    }
     // connection timeout
     Configuration.warnDeprecatedConfigurationKey(
       'autoReconnectTimeout',
@@ -471,7 +466,6 @@ export class Configuration {
         )}`,
       );
     }
-    Configuration.warnDeprecatedConfigurationKeys = true;
   }
 
   private static warnDeprecatedConfigurationKey(
