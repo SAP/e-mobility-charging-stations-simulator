@@ -301,7 +301,7 @@ export const promiseWithTimeout = async <T>(
     /* This is intentional */
   },
 ): Promise<T> => {
-  // Create a timeout promise that rejects in timeout milliseconds
+  // Creates a timeout promise that rejects in timeout milliseconds
   const timeoutPromise = new Promise<never>((_, reject) => {
     setTimeout(() => {
       if (isPromisePending(promise)) {
