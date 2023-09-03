@@ -451,6 +451,7 @@ describe('Utils test suite', () => {
   });
 
   it('Verify min()', () => {
+    expect(min()).toBe(Infinity);
     expect(min(0, 1)).toBe(0);
     expect(min(1, 0)).toBe(0);
     expect(min(0, -1)).toBe(-1);
@@ -458,6 +459,7 @@ describe('Utils test suite', () => {
   });
 
   it('Verify max()', () => {
+    expect(max()).toBe(-Infinity);
     expect(max(0, 1)).toBe(1);
     expect(max(1, 0)).toBe(1);
     expect(max(0, -1)).toBe(0);
