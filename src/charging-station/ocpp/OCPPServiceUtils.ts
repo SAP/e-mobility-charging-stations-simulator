@@ -40,6 +40,7 @@ import {
   isNotEmptyString,
   logPrefix,
   logger,
+  min,
 } from '../../utils';
 
 export class OCPPServiceUtils {
@@ -421,7 +422,7 @@ export class OCPPServiceUtils {
     const parsedInt = parseInt(value);
     const numberValue = isNaN(parsedInt) ? Infinity : parsedInt;
     return options?.limitationEnabled
-      ? Math.min(numberValue * options.unitMultiplier!, limit)
+      ? min(numberValue * options.unitMultiplier!, limit)
       : numberValue * options.unitMultiplier!;
   }
 

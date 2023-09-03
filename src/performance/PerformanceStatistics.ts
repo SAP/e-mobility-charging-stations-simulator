@@ -28,7 +28,9 @@ import {
   generateUUID,
   logPrefix,
   logger,
+  max,
   median,
+  min,
   nthPercentile,
   stdDeviation,
 } from '../utils';
@@ -220,11 +222,11 @@ export class PerformanceStatistics {
     this.statistics.statisticsData.get(entryName)!.timeMeasurementCount =
       (this.statistics.statisticsData.get(entryName)?.timeMeasurementCount ?? 0) + 1;
     this.statistics.statisticsData.get(entryName)!.currentTimeMeasurement = entry.duration;
-    this.statistics.statisticsData.get(entryName)!.minTimeMeasurement = Math.min(
+    this.statistics.statisticsData.get(entryName)!.minTimeMeasurement = min(
       entry.duration,
       this.statistics.statisticsData.get(entryName)?.minTimeMeasurement ?? Infinity,
     );
-    this.statistics.statisticsData.get(entryName)!.maxTimeMeasurement = Math.max(
+    this.statistics.statisticsData.get(entryName)!.maxTimeMeasurement = max(
       entry.duration,
       this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ?? -Infinity,
     );

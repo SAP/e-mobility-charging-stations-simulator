@@ -26,6 +26,8 @@ import {
   isObject,
   isUndefined,
   isValidTime,
+  max,
+  min,
   once,
   roundTo,
   secureRandom,
@@ -189,11 +191,11 @@ describe('Utils test suite', () => {
     randomInteger = getRandomInteger(2, 1);
     expect(randomInteger).toBeGreaterThanOrEqual(1);
     expect(randomInteger).toBeLessThanOrEqual(2);
-    const max = 2.2,
-      min = 1.1;
-    randomInteger = getRandomInteger(max, min);
-    expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(min));
-    expect(randomInteger).toBeLessThanOrEqual(Math.floor(max));
+    const maximum = 2.2,
+      minimum = 1.1;
+    randomInteger = getRandomInteger(maximum, minimum);
+    expect(randomInteger).toBeLessThanOrEqual(Math.floor(maximum));
+    expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(minimum));
   });
 
   it('Verify roundTo()', () => {
@@ -446,5 +448,19 @@ describe('Utils test suite', () => {
     const result3 = onceFn();
     expect(called).toBe(1);
     expect(result3).toBe(1);
+  });
+
+  it('Verify min()', () => {
+    expect(min(0, 1)).toBe(0);
+    expect(min(1, 0)).toBe(0);
+    expect(min(0, -1)).toBe(-1);
+    expect(min(-1, 0)).toBe(-1);
+  });
+
+  it('Verify max()', () => {
+    expect(max(0, 1)).toBe(1);
+    expect(max(1, 0)).toBe(1);
+    expect(max(0, -1)).toBe(0);
+    expect(max(-1, 0)).toBe(0);
   });
 });

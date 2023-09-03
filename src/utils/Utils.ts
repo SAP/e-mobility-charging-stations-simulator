@@ -397,3 +397,9 @@ export const once = <T, A extends any[], R>(
     return result;
   };
 };
+
+export const min = (...args: number[]): number =>
+  args.reduce((minimum, num) => (minimum < num ? minimum : num), Infinity);
+
+export const max = (...args: number[]): number =>
+  args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity);

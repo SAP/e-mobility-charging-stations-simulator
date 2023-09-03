@@ -49,6 +49,8 @@ export {
   isUndefined,
   isValidTime,
   logPrefix,
+  max,
+  min,
   once,
   promiseWithTimeout,
   roundTo,

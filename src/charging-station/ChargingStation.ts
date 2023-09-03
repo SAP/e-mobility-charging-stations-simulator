@@ -144,6 +144,7 @@ import {
   isUndefined,
   logPrefix,
   logger,
+  min,
   once,
   roundTo,
   secureRandom,
@@ -380,7 +381,7 @@ export class ChargingStation {
     const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
     const connectorChargingProfilesPowerLimit =
       getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId);
-    return Math.min(
+    return min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
       isNaN(connectorAmperageLimitationPowerLimit!)
         ? Infinity
