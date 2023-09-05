@@ -133,7 +133,7 @@ export class UIHttpServer extends AbstractUIServer {
                 this.buildProtocolRequest(
                   uuid,
                   procedureName,
-                  body ?? Constants.EMPTY_FREEZED_OBJECT,
+                  body ?? Constants.EMPTY_FROZEN_OBJECT,
                 ),
               )
               .then((protocolResponse?: ProtocolResponse) => {

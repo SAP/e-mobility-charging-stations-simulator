@@ -1019,8 +1019,7 @@ export class ChargingStation {
   }
 
   private startReservationExpirationSetInterval(customInterval?: number): void {
-    const interval =
-      customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
+    const interval = customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_INTERVAL;
     if (interval > 0) {
       logger.info(
         `${this.logPrefix()} Reservation expiration date checks started every ${formatDurationMilliSeconds(

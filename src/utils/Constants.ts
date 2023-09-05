@@ -50,12 +50,12 @@ export class Constants {
 
   static readonly STOP_SIMULATOR_TIMEOUT = 120000; // Ms
 
-  static readonly EMPTY_FREEZED_OBJECT = Object.freeze({});
+  static readonly EMPTY_FROZEN_OBJECT = Object.freeze({});
   static readonly EMPTY_FUNCTION = Object.freeze(() => {
     /* This is intentional */
   });
 
-  static readonly DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL = 60000; // Ms
+  static readonly DEFAULT_RESERVATION_EXPIRATION_INTERVAL = 60000; // Ms
 
   private constructor() {
     // This is intentional

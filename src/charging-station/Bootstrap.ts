@@ -187,7 +187,7 @@ export class Bootstrap extends EventEmitter {
           this.uiServer.buildProtocolRequest(
             generateUUID(),
             ProcedureName.STOP_CHARGING_STATION,
-            Constants.EMPTY_FREEZED_OBJECT,
+            Constants.EMPTY_FROZEN_OBJECT,
           ),
         );
         await Promise.race([

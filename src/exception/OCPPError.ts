@@ -24,6 +24,6 @@ export class OCPPError extends BaseError {
 
     this.code = code ?? ErrorType.GENERIC_ERROR;
     this.command = command;
-    this.details = details ?? Constants.EMPTY_FREEZED_OBJECT;
+    this.details = details ?? Constants.EMPTY_FROZEN_OBJECT;
   }
 }
