@@ -1033,7 +1033,7 @@ export class ChargingStation {
   }
 
   private stopReservationExpirationSetInterval(): void {
-    if (this.reservationExpirationSetInterval) {
+    if (!isNullOrUndefined(this.reservationExpirationSetInterval)) {
       clearInterval(this.reservationExpirationSetInterval);
     }
   }
