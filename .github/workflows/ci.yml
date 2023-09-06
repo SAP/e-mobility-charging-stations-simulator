@@ -88,6 +88,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build-docker:
     runs-on: ubuntu-latest
+    name: Build docker image
     steps:
       - uses: actions/checkout@v4
       - name: Setup Docker Buildx
