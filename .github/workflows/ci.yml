@@ -7,7 +7,7 @@ on:
   merge_group:
     branches: [main]
 jobs:
-  build:
+  build-simulator:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
@@ -92,7 +92,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  build-docker:
+  build-docker-image:
     runs-on: ubuntu-latest
     name: Build docker image
     steps:
