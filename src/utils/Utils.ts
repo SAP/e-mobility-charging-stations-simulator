@@ -12,7 +12,6 @@ import {
   minutesToSeconds,
   secondsToMilliseconds,
 } from 'date-fns';
-import deepClone from 'deep-clone';
 
 import { Constants } from './Constants';
 import { type TimestampedData, WebSocketCloseEventStatusString } from '../types';
@@ -215,8 +214,44 @@ type CloneableData =
   | CloneableData[]
   | { [key: string]: CloneableData };
 
+type FormatKey = (key: string) => string;
+
+const deepClone = <I extends CloneableData, O extends CloneableData = I>(
+  value: I,
+  formatKey?: FormatKey,
+  refs: Map<I, O> = new Map<I, O>(),
+): O => {
+  const ref = refs.get(value);
+  if (ref !== undefined) {
+    return ref;
+  }
+  if (Array.isArray(value)) {
+    const clone: CloneableData[] = [];
+    refs.set(value, clone as O);
+    for (let i = 0; i < value.length; i++) {
+      clone[i] = deepClone(value[i], formatKey, refs);
+    }
+    return clone as O;
+  }
+  if (value instanceof Date) {
+    return new Date(value.valueOf()) as O;
+  }
+  if (typeof value !== 'object' || value === null) {
+    return value as unknown as O;
+  }
+  const clone: Record<string, CloneableData> = {};
+  refs.set(value, clone as O);
+  for (const key of Object.keys(value)) {
+    clone[typeof formatKey === 'function' ? formatKey(key) : key] = deepClone(
+      value[key],
+      formatKey,
+      refs,
+    );
+  }
+  return clone as O;
+};
+
 export const cloneObject = <T>(object: T): T => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   return deepClone(object as CloneableData) as T;
 };
 
