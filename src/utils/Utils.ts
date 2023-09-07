@@ -216,11 +216,11 @@ type CloneableData =
 
 type FormatKey = (key: string) => string;
 
-function deepClone<I extends CloneableData, O extends CloneableData = I>(
+const deepClone = <I extends CloneableData, O extends CloneableData = I>(
   value: I,
   formatKey?: FormatKey,
   refs: Map<I, O> = new Map<I, O>(),
-): O {
+): O => {
   const ref = refs.get(value);
   if (ref !== undefined) {
     return ref;
@@ -249,7 +249,7 @@ function deepClone<I extends CloneableData, O extends CloneableData = I>(
     );
   }
   return clone as O;
-}
+};
 
 export const cloneObject = <T>(object: T): T => {
   return deepClone(object as CloneableData) as T;
