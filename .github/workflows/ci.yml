@@ -23,6 +23,7 @@ jobs:
         uses: actions/dependency-review-action@v3
         with:
           base-ref: main
+          head-ref: ${{ github.sha }}
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -68,6 +69,7 @@ jobs:
         uses: actions/dependency-review-action@v3
         with:
           base-ref: main
+          head-ref: ${{ github.sha }}
       - uses: pnpm/action-setup@v2
         with:
           version: 8
