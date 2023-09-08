@@ -112,13 +112,13 @@
     "logform": "^2.5.1",
     "mnemonist": "^0.39.5",
     "mongodb": "^6.0.0",
-    "poolifier": "^2.6.42",
+    "poolifier": "^2.6.44",
     "source-map-support": "^0.5.21",
     "tar": "^6.2.0",
     "tslib": "^2.6.2",
     "winston": "^3.10.0",
     "winston-daily-rotate-file": "^4.7.1",
-    "ws": "^8.14.0"
+    "ws": "^8.14.1"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.7",
