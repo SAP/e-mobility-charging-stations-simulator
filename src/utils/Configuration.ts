@@ -568,21 +568,21 @@ export class Configuration {
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':
-        logMsg = `${fileType} file ${file} not found:`;
+        logMsg = `${fileType} file ${file} not found: `;
         break;
       case 'EEXIST':
-        logMsg = `${fileType} file ${file} already exists:`;
+        logMsg = `${fileType} file ${file} already exists: `;
         break;
       case 'EACCES':
-        logMsg = `${fileType} file ${file} access denied:`;
+        logMsg = `${fileType} file ${file} access denied: `;
         break;
       case 'EPERM':
-        logMsg = `${fileType} file ${file} permission denied:`;
+        logMsg = `${fileType} file ${file} permission denied: `;
         break;
       default:
-        logMsg = `${fileType} file ${file} error:`;
+        logMsg = `${fileType} file ${file} error: `;
     }
-    console.error(`${chalk.green(prefix)}${chalk.red(`${logMsg} `)}`, error);
+    console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error);
     throw error;
   }
 
