@@ -15,5 +15,5 @@ export const defaultExitHandler = (code: number): void => {
 };
 
 export const defaultErrorHandler = (error: Error): void => {
-  console.error(chalk.red('Worker errored: ', error));
+  console.error(chalk.red('Worker errored: '), error);
 };

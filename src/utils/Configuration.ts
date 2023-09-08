@@ -6,7 +6,14 @@ import chalk from 'chalk';
 import merge from 'just-merge';
 
 import { Constants } from './Constants';
-import { hasOwnProp, isCFEnvironment, isNotEmptyString, isUndefined, once } from './Utils';
+import {
+  hasOwnProp,
+  isCFEnvironment,
+  isNotEmptyString,
+  isUndefined,
+  logPrefix,
+  once,
+} from './Utils';
 import {
   ApplicationProtocol,
   type ConfigurationData,
@@ -113,6 +120,10 @@ export class Configuration {
         .processType === WorkerProcessType.dynamicPool
     );
   }
+
+  private static logPrefix = (): string => {
+    return logPrefix(' Simulator configuration |');
+  };
 
   private static isConfigurationSectionCached(sectionName: ConfigurationSection): boolean {
     return Configuration.configurationSectionCache.has(sectionName);
@@ -286,10 +297,6 @@ export class Configuration {
     }
     return workerConfiguration;
   }
-
-  private static logPrefix = (): string => {
-    return `${new Date().toLocaleString()} Simulator configuration |`;
-  };
 
   private static checkDeprecatedConfigurationKeys() {
     // connection timeout
@@ -555,9 +562,9 @@ export class Configuration {
     file: string,
     fileType: FileType,
     error: NodeJS.ErrnoException,
-    logPrefix: string,
+    logPfx: string,
   ): void {
-    const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
+    const prefix = isNotEmptyString(logPfx) ? `${logPfx} ` : '';
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':
