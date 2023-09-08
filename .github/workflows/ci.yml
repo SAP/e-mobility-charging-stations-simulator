@@ -7,7 +7,22 @@ on:
   merge_group:
     branches: [main]
 jobs:
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      sonar-token-exists: ${{ steps.sonar-token.outputs.defined }}
+    steps:
+      - name: Check for SonarCloud Token Availability
+        id: sonar-token
+        shell: bash
+        run: |
+          if [ "${{ secrets.SONAR_TOKEN }}" != '' ]; then
+            echo "defined=true" >> $GITHUB_OUTPUT;
+          else
+            echo "defined=false" >> $GITHUB_OUTPUT;
+          fi
   build-simulator:
+    needs: [check-secrets]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
@@ -48,12 +63,13 @@ jobs:
         if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm coverage
       - name: SonarCloud Scan
-        if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         uses: sonarsource/sonarcloud-github-action@v2.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build-dashboard:
+    needs: [check-secrets]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
@@ -97,7 +113,7 @@ jobs:
         if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm coverage
       - name: SonarCloud Scan
-        if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         uses: sonarsource/sonarcloud-github-action@v2.0.1
         with:
           projectBaseDir: ui/web
