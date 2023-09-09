@@ -99,7 +99,7 @@ export class Bootstrap extends EventEmitter {
         performanceStorageConfiguration.uri!,
         this.logPrefix(),
       ));
-    Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
+    Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart();
   }
 
   public static getInstance(): Bootstrap {
