@@ -42,6 +42,8 @@ type ConfigurationSectionType =
   | UIServerConfiguration;
 
 export class Configuration {
+  public static configurationChangeCallback: () => Promise<void>;
+
   private static configurationFile = join(
     dirname(fileURLToPath(import.meta.url)),
     'assets',
@@ -62,10 +64,6 @@ export class Configuration {
 
   private constructor() {
     // This is intentional
-  }
-
-  public static set configurationChangeCallback(cb: () => Promise<void>) {
-    Configuration.configurationChangeCallback = cb;
   }
 
   public static getConfigurationSection<T extends ConfigurationSectionType>(
