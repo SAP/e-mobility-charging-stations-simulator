@@ -1,4 +1,4 @@
-import { type ThreadPoolOptions, availableParallelism } from 'poolifier';
+import { availableParallelism } from 'poolifier';
 
 import type { WorkerOptions } from './WorkerTypes';
 
@@ -20,10 +20,8 @@ export const DEFAULT_WORKER_OPTIONS: WorkerOptions = Object.freeze({
   poolMinSize: DEFAULT_POOL_MIN_SIZE,
   poolMaxSize: DEFAULT_POOL_MAX_SIZE,
   elementsPerWorker: DEFAULT_ELEMENTS_PER_WORKER,
-  poolOptions: {},
+  poolOptions: {
+    enableEvents: true,
+    restartWorkerOnError: true,
+  },
 });
-
-export const DEFAULT_POOL_OPTIONS: ThreadPoolOptions = {
-  enableEvents: true,
-  restartWorkerOnError: true,
-};

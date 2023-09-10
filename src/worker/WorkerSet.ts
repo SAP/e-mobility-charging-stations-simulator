@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events';
 import { SHARE_ENV, Worker } from 'node:worker_threads';
 
 import { WorkerAbstract } from './WorkerAbstract';
-import { DEFAULT_POOL_OPTIONS, EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants';
+import { EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants';
 import {
   type SetInfo,
   type WorkerData,
@@ -19,6 +19,7 @@ import { sleep } from './WorkerUtils';
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly emitter!: EventEmitter;
   private readonly workerSet: Set<WorkerSetElement>;
+  private started: boolean;
   private workerStartup: boolean;
 
   /**
@@ -41,14 +42,11 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     if (this.workerOptions.elementsPerWorker <= 0) {
       throw new RangeError('Elements per worker must be greater than zero');
     }
-    this.workerOptions.poolOptions = {
-      ...DEFAULT_POOL_OPTIONS,
-      ...this.workerOptions.poolOptions,
-    };
     this.workerSet = new Set<WorkerSetElement>();
     if (this.workerOptions.poolOptions?.enableEvents) {
       this.emitter = new EventEmitter();
     }
+    this.started = false;
     this.workerStartup = false;
   }
 
@@ -79,6 +77,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     this.addWorkerSetElement();
     // Add worker set element sequentially to optimize memory at startup
     this.workerOptions.workerStartDelay! > 0 && (await sleep(this.workerOptions.workerStartDelay!));
+    this.started = true;
   }
 
   /** @inheritDoc */
@@ -92,13 +91,17 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       });
       await worker.terminate();
       await waitWorkerExit;
+      this.started = false;
     }
   }
 
   /** @inheritDoc */
   public async addElement(elementData: WorkerData): Promise<void> {
+    if (!this.started) {
+      throw new Error('Cannot add a WorkerSet element: not started');
+    }
     if (!this.workerSet) {
-      throw new Error("Cannot add a WorkerSet element: workers' set does not exist");
+      throw new Error("Cannot add a WorkerSet element: 'workerSet' property does not exist");
     }
     const workerSetElement = await this.getWorkerSetElement();
     workerSetElement.worker.postMessage({
@@ -132,7 +135,11 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION);
     worker.on('error', (error) => {
       this.emitter?.emit(WorkerSetEvents.error, error);
-      if (this.workerOptions.poolOptions?.restartWorkerOnError && !this.workerStartup) {
+      if (
+        this.workerOptions.poolOptions?.restartWorkerOnError &&
+        this.started &&
+        !this.workerStartup
+      ) {
         this.addWorkerSetElement();
       }
     });
