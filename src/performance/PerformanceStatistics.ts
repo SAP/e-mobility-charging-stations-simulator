@@ -213,46 +213,45 @@ export class PerformanceStatistics {
   }
 
   private addPerformanceEntryToStatistics(entry: PerformanceEntry): void {
-    const entryName = entry.name;
     // Initialize command statistics
-    if (!this.statistics.statisticsData.has(entryName)) {
-      this.statistics.statisticsData.set(entryName, {});
+    if (!this.statistics.statisticsData.has(entry.name)) {
+      this.statistics.statisticsData.set(entry.name, {});
     }
     // Update current statistics
-    this.statistics.statisticsData.get(entryName)!.timeMeasurementCount =
-      (this.statistics.statisticsData.get(entryName)?.timeMeasurementCount ?? 0) + 1;
-    this.statistics.statisticsData.get(entryName)!.currentTimeMeasurement = entry.duration;
-    this.statistics.statisticsData.get(entryName)!.minTimeMeasurement = min(
+    this.statistics.statisticsData.get(entry.name)!.timeMeasurementCount =
+      (this.statistics.statisticsData.get(entry.name)?.timeMeasurementCount ?? 0) + 1;
+    this.statistics.statisticsData.get(entry.name)!.currentTimeMeasurement = entry.duration;
+    this.statistics.statisticsData.get(entry.name)!.minTimeMeasurement = min(
       entry.duration,
-      this.statistics.statisticsData.get(entryName)?.minTimeMeasurement ?? Infinity,
+      this.statistics.statisticsData.get(entry.name)?.minTimeMeasurement ?? Infinity,
     );
-    this.statistics.statisticsData.get(entryName)!.maxTimeMeasurement = max(
+    this.statistics.statisticsData.get(entry.name)!.maxTimeMeasurement = max(
       entry.duration,
-      this.statistics.statisticsData.get(entryName)?.maxTimeMeasurement ?? -Infinity,
+      this.statistics.statisticsData.get(entry.name)?.maxTimeMeasurement ?? -Infinity,
     );
-    this.statistics.statisticsData.get(entryName)!.totalTimeMeasurement =
-      (this.statistics.statisticsData.get(entryName)?.totalTimeMeasurement ?? 0) + entry.duration;
-    this.statistics.statisticsData.get(entryName)?.measurementTimeSeries instanceof CircularArray
+    this.statistics.statisticsData.get(entry.name)!.totalTimeMeasurement =
+      (this.statistics.statisticsData.get(entry.name)?.totalTimeMeasurement ?? 0) + entry.duration;
+    this.statistics.statisticsData.get(entry.name)?.measurementTimeSeries instanceof CircularArray
       ? this.statistics.statisticsData
-          .get(entryName)
+          .get(entry.name)
           ?.measurementTimeSeries?.push({ timestamp: entry.startTime, value: entry.duration })
-      : (this.statistics.statisticsData.get(entryName)!.measurementTimeSeries =
+      : (this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries =
           new CircularArray<TimestampedData>(Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY, {
             timestamp: entry.startTime,
             value: entry.duration,
           }));
     const timeMeasurementValues = extractTimeSeriesValues(
-      this.statistics.statisticsData.get(entryName)!.measurementTimeSeries!,
+      this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries!,
     );
-    this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement =
+    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement =
       average(timeMeasurementValues);
-    this.statistics.statisticsData.get(entryName)!.medTimeMeasurement =
+    this.statistics.statisticsData.get(entry.name)!.medTimeMeasurement =
       median(timeMeasurementValues);
-    this.statistics.statisticsData.get(entryName)!.ninetyFiveThPercentileTimeMeasurement =
+    this.statistics.statisticsData.get(entry.name)!.ninetyFiveThPercentileTimeMeasurement =
       nthPercentile(timeMeasurementValues, 95);
-    this.statistics.statisticsData.get(entryName)!.stdDevTimeMeasurement = stdDeviation(
+    this.statistics.statisticsData.get(entry.name)!.stdDevTimeMeasurement = stdDeviation(
       timeMeasurementValues,
-      this.statistics.statisticsData.get(entryName)!.avgTimeMeasurement,
+      this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement,
     );
     this.statistics.updatedAt = new Date();
     if (
