@@ -14,7 +14,7 @@ import {
   type WorkerSetElement,
   WorkerSetEvents,
 } from './WorkerTypes';
-import { sleep } from './WorkerUtils';
+import { randomizeDelay, sleep } from './WorkerUtils';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly emitter!: EventEmitter;
@@ -76,7 +76,8 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   public async start(): Promise<void> {
     this.addWorkerSetElement();
     // Add worker set element sequentially to optimize memory at startup
-    this.workerOptions.workerStartDelay! > 0 && (await sleep(this.workerOptions.workerStartDelay!));
+    this.workerOptions.workerStartDelay! > 0 &&
+      (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)));
     this.started = true;
   }
 
@@ -111,7 +112,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     ++workerSetElement.numberOfWorkerElements;
     // Add element sequentially to optimize memory at startup
     if (this.workerOptions.elementStartDelay! > 0) {
-      await sleep(this.workerOptions.elementStartDelay!);
+      await sleep(randomizeDelay(this.workerOptions.elementStartDelay!));
     }
   }
 
@@ -170,7 +171,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       chosenWorkerSetElement = this.addWorkerSetElement();
       // Add worker set element sequentially to optimize memory at startup
       this.workerOptions.workerStartDelay! > 0 &&
-        (await sleep(this.workerOptions.workerStartDelay!));
+        (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)));
     }
     return chosenWorkerSetElement;
   }

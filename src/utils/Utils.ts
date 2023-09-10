@@ -1,4 +1,4 @@
-import { randomBytes, randomInt, randomUUID } from 'node:crypto';
+import { randomBytes, randomInt, randomUUID, webcrypto } from 'node:crypto';
 import { inspect } from 'node:util';
 
 import {
@@ -354,10 +354,10 @@ export const promiseWithTimeout = async <T>(
 /**
  * Generates a cryptographically secure random number in the [0,1[ range
  *
- * @returns
+ * @returns A number in the [0,1[ range
  */
 export const secureRandom = (): number => {
-  return randomBytes(4).readUInt32LE() / 0x100000000;
+  return webcrypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000;
 };
 
 export const JSONStringifyWithMapSupport = (

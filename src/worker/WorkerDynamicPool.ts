@@ -2,7 +2,7 @@ import { DynamicThreadPool, type PoolEmitter, type PoolInfo } from 'poolifier';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
-import { sleep } from './WorkerUtils';
+import { randomizeDelay, sleep } from './WorkerUtils';
 
 export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   private readonly pool: DynamicThreadPool<WorkerData>;
@@ -54,6 +54,6 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
     await this.pool.execute(elementData);
     // Start element sequentially to optimize memory at startup
     this.workerOptions.elementStartDelay! > 0 &&
-      (await sleep(this.workerOptions.elementStartDelay!));
+      (await sleep(randomizeDelay(this.workerOptions.elementStartDelay!)));
   }
 }
