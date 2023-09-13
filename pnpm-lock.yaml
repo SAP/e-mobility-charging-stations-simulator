@@ -21,8 +21,8 @@ dependencies:
     specifier: ^5.8.0
     version: 5.8.0(@mikro-orm/core@5.8.0)
   '@mikro-orm/reflection':
-    specifier: ^5.8.0
-    version: 5.8.0(@mikro-orm/core@5.8.0)
+    specifier: ^5.8.1
+    version: 5.8.1(@mikro-orm/core@5.8.0)
   '@mikro-orm/sqlite':
     specifier: ^5.8.0
     version: 5.8.0(@mikro-orm/core@5.8.0)
@@ -1000,8 +1000,8 @@ packages:
       - supports-color
       - tedious
 
-  /@mikro-orm/reflection@5.8.0(@mikro-orm/core@5.8.0):
-    resolution: {integrity: sha512-gQ3w6nWGHGzPh4J+TEMpZS/PeEbB/97CW48KJuKJOwq5bU+2PbqkDIaDiSVkVTr+7jmaVrZ3UXNzbcpip97VQA==}
+  /@mikro-orm/reflection@5.8.1(@mikro-orm/core@5.8.0):
+    resolution: {integrity: sha512-luSDZg0OicZq5JjxXwogtPRRFE1DITHG4NPP10uOzgpZDehrE+IE2ZqAifDwzhWDk1nEy66qNNdrv0xCERGgbQ==}
     engines: {node: '>= 14.0.0'}
     peerDependencies:
       '@mikro-orm/core': ^5.0.0
