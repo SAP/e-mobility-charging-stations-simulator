@@ -56,10 +56,11 @@ export const handleFileException = (
       logMsg = `${fileType} file ${file} error:`;
   }
   if (params?.consoleOut === true) {
+    logMsg = `${logMsg} `;
     if (params?.throwError) {
-      console.error(`${chalk.green(prefix)}${chalk.red(`${logMsg} `)}`, error);
+      console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error);
     } else {
-      console.warn(`${chalk.green(prefix)}${chalk.yellow(`${logMsg} `)}`, error);
+      console.warn(`${chalk.green(prefix)}${chalk.yellow(logMsg)}`, error);
     }
   } else if (params?.consoleOut === false) {
     if (params?.throwError) {

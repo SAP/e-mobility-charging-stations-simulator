@@ -15,10 +15,7 @@ import {
 } from '../../utils';
 
 export class JsonFileStorage extends Storage {
-  private static readonly performanceRecords: Map<string, Statistics> = new Map<
-    string,
-    Statistics
-  >();
+  private static performanceRecords: Map<string, Statistics>;
 
   private fd?: number;
 
@@ -48,6 +45,7 @@ export class JsonFileStorage extends Storage {
   }
 
   public open(): void {
+    JsonFileStorage.performanceRecords = new Map<string, Statistics>();
     try {
       if (isNullOrUndefined(this?.fd)) {
         if (!existsSync(dirname(this.dbName))) {
@@ -66,6 +64,7 @@ export class JsonFileStorage extends Storage {
   }
 
   public close(): void {
+    JsonFileStorage.performanceRecords.clear();
     try {
       if (this?.fd) {
         closeSync(this.fd);

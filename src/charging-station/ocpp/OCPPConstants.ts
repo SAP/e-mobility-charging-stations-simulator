@@ -24,8 +24,8 @@ export class OCPPConstants {
     MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
   ]);
 
-  static readonly OCPP_REQUEST_EMPTY = Constants.EMPTY_FREEZED_OBJECT;
-  static readonly OCPP_RESPONSE_EMPTY = Constants.EMPTY_FREEZED_OBJECT;
+  static readonly OCPP_REQUEST_EMPTY = Constants.EMPTY_FROZEN_OBJECT;
+  static readonly OCPP_RESPONSE_EMPTY = Constants.EMPTY_FROZEN_OBJECT;
   static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.Accepted });
   static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: GenericStatus.Rejected });
 

@@ -1,4 +1,4 @@
-name: GitHub Clone Count Update Everyday
+name: GitHub Clone Count Update
 
 on:
   schedule:
@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  clone-count:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: gh login
         run: echo "${{ secrets.SECRET_TOKEN }}" | gh auth login --with-token
@@ -23,7 +23,7 @@ jobs:
             > clone.json
 
       - name: create gist and download previous count
-        id: set_id
+        id: set-gist
         run: |
           if gh secret list | grep -q "GIST_ID"
           then
@@ -58,11 +58,11 @@ jobs:
           curl -s -X PATCH \
             --user "${{ github.actor }}:${{ secrets.SECRET_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d @post_clone.json https://api.github.com/gists/${{ steps.set_id.outputs.GIST }} > /dev/null 2>&1
+            -d @post_clone.json https://api.github.com/gists/${{ steps.set-gist.outputs.GIST }} > /dev/null 2>&1
 
           if [ ! -f CLONE.md ]; then
             shields="https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url="
-            url="https://gist.githubusercontent.com/${{ github.actor }}/${{ steps.set_id.outputs.GIST }}/raw/clone.json"
+            url="https://gist.githubusercontent.com/${{ github.actor }}/${{ steps.set-gist.outputs.GIST }}/raw/clone.json"
             repo="https://github.com/MShawon/github-clone-count-badge"
             echo ''> CLONE.md
             echo '
@@ -84,7 +84,7 @@ jobs:
             git commit -m "create clone count badge"
           fi
 
-      - name: Push
+      - name: push
         uses: CasperWA/push-protected@v2
         with:
           token: ${{ secrets.SECRET_TOKEN }}

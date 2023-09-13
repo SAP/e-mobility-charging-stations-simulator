@@ -33,7 +33,7 @@ brew install node
 
 ### GNU/Linux
 
-- [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for version >= 16.X
+- [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for all supported versions.
 
 ## Installation
 

@@ -144,6 +144,8 @@ import {
   isUndefined,
   logPrefix,
   logger,
+  min,
+  once,
   roundTo,
   secureRandom,
   sleep,
@@ -379,7 +381,7 @@ export class ChargingStation {
     const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
     const connectorChargingProfilesPowerLimit =
       getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId);
-    return Math.min(
+    return min(
       isNaN(connectorMaximumPower) ? Infinity : connectorMaximumPower,
       isNaN(connectorAmperageLimitationPowerLimit!)
         ? Infinity
@@ -1017,8 +1019,7 @@ export class ChargingStation {
   }
 
   private startReservationExpirationSetInterval(customInterval?: number): void {
-    const interval =
-      customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_OBSERVATION_INTERVAL;
+    const interval = customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_INTERVAL;
     if (interval > 0) {
       logger.info(
         `${this.logPrefix()} Reservation expiration date checks started every ${formatDurationMilliSeconds(
@@ -1032,7 +1033,7 @@ export class ChargingStation {
   }
 
   private stopReservationExpirationSetInterval(): void {
-    if (this.reservationExpirationSetInterval) {
+    if (!isNullOrUndefined(this.reservationExpirationSetInterval)) {
       clearInterval(this.reservationExpirationSetInterval);
     }
   }
@@ -1126,7 +1127,8 @@ export class ChargingStation {
   private getStationInfoFromTemplate(): ChargingStationInfo {
     const stationTemplate: ChargingStationTemplate = this.getTemplateFromFile()!;
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile);
-    warnTemplateKeysDeprecation(stationTemplate, this.logPrefix(), this.templateFile);
+    const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation, this);
+    warnTemplateKeysDeprecationOnce(stationTemplate, this.logPrefix(), this.templateFile);
     if (stationTemplate?.Connectors) {
       checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile);
     }

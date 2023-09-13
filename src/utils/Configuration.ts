@@ -6,7 +6,14 @@ import chalk from 'chalk';
 import merge from 'just-merge';
 
 import { Constants } from './Constants';
-import { hasOwnProp, isCFEnvironment, isNotEmptyString, isUndefined } from './Utils';
+import {
+  hasOwnProp,
+  isCFEnvironment,
+  isNotEmptyString,
+  isUndefined,
+  logPrefix,
+  once,
+} from './Utils';
 import {
   ApplicationProtocol,
   type ConfigurationData,
@@ -35,6 +42,8 @@ type ConfigurationSectionType =
   | UIServerConfiguration;
 
 export class Configuration {
+  public static configurationChangeCallback: () => Promise<void>;
+
   private static configurationFile = join(
     dirname(fileURLToPath(import.meta.url)),
     'assets',
@@ -53,16 +62,8 @@ export class Configuration {
     [ConfigurationSection.uiServer, Configuration.buildUIServerSection()],
   ]);
 
-  private static warnDeprecatedConfigurationKeys = false;
-
-  private static configurationChangeCallback?: () => Promise<void>;
-
   private constructor() {
     // This is intentional
-  }
-
-  public static setConfigurationChangeCallback(cb: () => Promise<void>): void {
-    Configuration.configurationChangeCallback = cb;
   }
 
   public static getConfigurationSection<T extends ConfigurationSectionType>(
@@ -75,7 +76,11 @@ export class Configuration {
   }
 
   public static getStationTemplateUrls(): StationTemplateUrl[] | undefined {
-    Configuration.checkDeprecatedConfigurationKeys();
+    const checkDeprecatedConfigurationKeysOnce = once(
+      Configuration.checkDeprecatedConfigurationKeys.bind(Configuration),
+      Configuration,
+    );
+    checkDeprecatedConfigurationKeysOnce();
     return Configuration.getConfigurationData()?.stationTemplateUrls;
   }
 
@@ -111,6 +116,10 @@ export class Configuration {
         .processType === WorkerProcessType.dynamicPool
     );
   }
+
+  private static logPrefix = (): string => {
+    return logPrefix(' Simulator configuration |');
+  };
 
   private static isConfigurationSectionCached(sectionName: ConfigurationSection): boolean {
     return Configuration.configurationSectionCache.has(sectionName);
@@ -285,14 +294,7 @@ export class Configuration {
     return workerConfiguration;
   }
 
-  private static logPrefix = (): string => {
-    return `${new Date().toLocaleString()} Simulator configuration |`;
-  };
-
   private static checkDeprecatedConfigurationKeys() {
-    if (Configuration.warnDeprecatedConfigurationKeys) {
-      return;
-    }
     // connection timeout
     Configuration.warnDeprecatedConfigurationKey(
       'autoReconnectTimeout',
@@ -467,7 +469,6 @@ export class Configuration {
         )}`,
       );
     }
-    Configuration.warnDeprecatedConfigurationKeys = true;
   }
 
   private static warnDeprecatedConfigurationKey(
@@ -537,7 +538,7 @@ export class Configuration {
           delete Configuration.configurationData;
           Configuration.configurationSectionCache.clear();
           if (!isUndefined(Configuration.configurationChangeCallback)) {
-            Configuration.configurationChangeCallback!().catch((error) => {
+            Configuration.configurationChangeCallback().catch((error) => {
               throw typeof error === 'string' ? new Error(error) : error;
             });
           }
@@ -557,27 +558,27 @@ export class Configuration {
     file: string,
     fileType: FileType,
     error: NodeJS.ErrnoException,
-    logPrefix: string,
+    logPfx: string,
   ): void {
-    const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : '';
+    const prefix = isNotEmptyString(logPfx) ? `${logPfx} ` : '';
     let logMsg: string;
     switch (error.code) {
       case 'ENOENT':
-        logMsg = `${fileType} file ${file} not found:`;
+        logMsg = `${fileType} file ${file} not found: `;
         break;
       case 'EEXIST':
-        logMsg = `${fileType} file ${file} already exists:`;
+        logMsg = `${fileType} file ${file} already exists: `;
         break;
       case 'EACCES':
-        logMsg = `${fileType} file ${file} access denied:`;
+        logMsg = `${fileType} file ${file} access denied: `;
         break;
       case 'EPERM':
-        logMsg = `${fileType} file ${file} permission denied:`;
+        logMsg = `${fileType} file ${file} permission denied: `;
         break;
       default:
-        logMsg = `${fileType} file ${file} error:`;
+        logMsg = `${fileType} file ${file} error: `;
     }
-    console.error(`${chalk.green(prefix)}${chalk.red(`${logMsg} `)}`, error);
+    console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error);
     throw error;
   }
 

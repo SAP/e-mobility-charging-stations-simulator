@@ -1,4 +1,4 @@
-import { randomBytes, randomInt, randomUUID } from 'node:crypto';
+import { randomBytes, randomInt, randomUUID, webcrypto } from 'node:crypto';
 import { inspect } from 'node:util';
 
 import {
@@ -12,7 +12,6 @@ import {
   minutesToSeconds,
   secondsToMilliseconds,
 } from 'date-fns';
-import deepClone from 'deep-clone';
 
 import { Constants } from './Constants';
 import { type TimestampedData, WebSocketCloseEventStatusString } from '../types';
@@ -215,8 +214,44 @@ type CloneableData =
   | CloneableData[]
   | { [key: string]: CloneableData };
 
+type FormatKey = (key: string) => string;
+
+const deepClone = <I extends CloneableData, O extends CloneableData = I>(
+  value: I,
+  formatKey?: FormatKey,
+  refs: Map<I, O> = new Map<I, O>(),
+): O => {
+  const ref = refs.get(value);
+  if (ref !== undefined) {
+    return ref;
+  }
+  if (Array.isArray(value)) {
+    const clone: CloneableData[] = [];
+    refs.set(value, clone as O);
+    for (let i = 0; i < value.length; i++) {
+      clone[i] = deepClone(value[i], formatKey, refs);
+    }
+    return clone as O;
+  }
+  if (value instanceof Date) {
+    return new Date(value.valueOf()) as O;
+  }
+  if (typeof value !== 'object' || value === null) {
+    return value as unknown as O;
+  }
+  const clone: Record<string, CloneableData> = {};
+  refs.set(value, clone as O);
+  for (const key of Object.keys(value)) {
+    clone[typeof formatKey === 'function' ? formatKey(key) : key] = deepClone(
+      value[key],
+      formatKey,
+      refs,
+    );
+  }
+  return clone as O;
+};
+
 export const cloneObject = <T>(object: T): T => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   return deepClone(object as CloneableData) as T;
 };
 
@@ -301,7 +336,7 @@ export const promiseWithTimeout = async <T>(
     /* This is intentional */
   },
 ): Promise<T> => {
-  // Create a timeout promise that rejects in timeout milliseconds
+  // Creates a timeout promise that rejects in timeout milliseconds
   const timeoutPromise = new Promise<never>((_, reject) => {
     setTimeout(() => {
       if (isPromisePending(promise)) {
@@ -319,10 +354,10 @@ export const promiseWithTimeout = async <T>(
 /**
  * Generates a cryptographically secure random number in the [0,1[ range
  *
- * @returns
+ * @returns A number in the [0,1[ range
  */
 export const secureRandom = (): number => {
-  return randomBytes(4).readUInt32LE() / 0x100000000;
+  return webcrypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000;
 };
 
 export const JSONStringifyWithMapSupport = (
@@ -382,3 +417,24 @@ export const isArraySorted = <T>(array: T[], compareFn: (a: T, b: T) => number):
   }
   return true;
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const once = <T, A extends any[], R>(
+  fn: (...args: A) => R,
+  context: T,
+): ((...args: A) => R) => {
+  let result: R;
+  return (...args: A) => {
+    if (fn) {
+      result = fn.apply<T, A, R>(context, args);
+      (fn as unknown as undefined) = (context as unknown as undefined) = undefined;
+    }
+    return result;
+  };
+};
+
+export const min = (...args: number[]): number =>
+  args.reduce((minimum, num) => (minimum < num ? minimum : num), Infinity);
+
+export const max = (...args: number[]): number =>
+  args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity);

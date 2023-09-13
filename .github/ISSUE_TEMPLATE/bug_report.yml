@@ -22,6 +22,8 @@ body:
     attributes:
       label: Description
       description: Description of the bug.
+      placeholder: |
+        - Please include error outputs in the 'Actual result' input field from 'pnpm start:dev', if any
   - type: input
     attributes:
       label: e-mobility-charging-stations-simulator version

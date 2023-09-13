@@ -26,6 +26,9 @@ import {
   isObject,
   isUndefined,
   isValidTime,
+  max,
+  min,
+  once,
   roundTo,
   secureRandom,
   sleep,
@@ -188,11 +191,11 @@ describe('Utils test suite', () => {
     randomInteger = getRandomInteger(2, 1);
     expect(randomInteger).toBeGreaterThanOrEqual(1);
     expect(randomInteger).toBeLessThanOrEqual(2);
-    const max = 2.2,
-      min = 1.1;
-    randomInteger = getRandomInteger(max, min);
-    expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(min));
-    expect(randomInteger).toBeLessThanOrEqual(Math.floor(max));
+    const maximum = 2.2,
+      minimum = 1.1;
+    randomInteger = getRandomInteger(maximum, minimum);
+    expect(randomInteger).toBeLessThanOrEqual(Math.floor(maximum));
+    expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(minimum));
   });
 
   it('Verify roundTo()', () => {
@@ -430,5 +433,36 @@ describe('Utils test suite', () => {
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true);
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false);
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false);
+  });
+
+  it('Verify once()', () => {
+    let called = 0;
+    const fn = () => ++called;
+    const onceFn = once(fn, this);
+    const result1 = onceFn();
+    expect(called).toBe(1);
+    expect(result1).toBe(1);
+    const result2 = onceFn();
+    expect(called).toBe(1);
+    expect(result2).toBe(1);
+    const result3 = onceFn();
+    expect(called).toBe(1);
+    expect(result3).toBe(1);
+  });
+
+  it('Verify min()', () => {
+    expect(min()).toBe(Infinity);
+    expect(min(0, 1)).toBe(0);
+    expect(min(1, 0)).toBe(0);
+    expect(min(0, -1)).toBe(-1);
+    expect(min(-1, 0)).toBe(-1);
+  });
+
+  it('Verify max()', () => {
+    expect(max()).toBe(-Infinity);
+    expect(max(0, 1)).toBe(1);
+    expect(max(1, 0)).toBe(1);
+    expect(max(0, -1)).toBe(0);
+    expect(max(-1, 0)).toBe(0);
   });
 });

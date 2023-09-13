@@ -7,16 +7,41 @@ on:
   merge_group:
     branches: [main]
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      sonar-token-exists: ${{ steps.sonar-token.outputs.defined }}
+    steps:
+      - name: Check for SonarCloud Token Availability
+        id: sonar-token
+        shell: bash
+        run: |
+          if [ "${{ secrets.SONAR_TOKEN }}" != '' ]; then
+            echo "defined=true" >> $GITHUB_OUTPUT;
+          else
+            echo "defined=false" >> $GITHUB_OUTPUT;
+          fi
+  build-simulator:
+    needs: [check-secrets]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-        node: ['16.x', '18.x', '20.x']
+        node: ['18.x', '20.x']
+    name: Build simulator with Node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Dependency Review
+        if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        uses: actions/dependency-review-action@v3
+        with:
+          base-ref: ${{ github.ref_name }}
+          head-ref: ${{ github.sha }}
+      - name: Pull Request Dependency Review
+        if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        uses: actions/dependency-review-action@v3
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -26,7 +51,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
       - name: pnpm install
-        run: pnpm install
+        run: pnpm install --ignore-scripts
       - name: pnpm lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm lint
@@ -38,24 +63,35 @@ jobs:
         if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm coverage
       - name: SonarCloud Scan
-        if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
-        uses: sonarsource/sonarcloud-github-action@v2.0.0
+        if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        uses: sonarsource/sonarcloud-github-action@v2.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build-dashboard:
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: ui/web
+    needs: [check-secrets]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
         node: ['16.x', '18.x', '20.x']
+    name: Build dashboard with Node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ui/web
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Dependency Review
+        if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        uses: actions/dependency-review-action@v3
+        with:
+          base-ref: ${{ github.ref_name }}
+          head-ref: ${{ github.sha }}
+      - name: Pull Request Dependency Review
+        if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        uses: actions/dependency-review-action@v3
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -65,7 +101,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
       - name: pnpm install
-        run: pnpm install
+        run: pnpm install --ignore-scripts
       - name: pnpm lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm lint
@@ -77,20 +113,21 @@ jobs:
         if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
         run: pnpm coverage
       - name: SonarCloud Scan
-        if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
-        uses: sonarsource/sonarcloud-github-action@v2.0.0
+        if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '18.x' }}
+        uses: sonarsource/sonarcloud-github-action@v2.0.2
         with:
           projectBaseDir: ui/web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  build-docker:
+  build-docker-image:
     runs-on: ubuntu-latest
+    name: Build docker image
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Build docker image
         run: |
           cd docker

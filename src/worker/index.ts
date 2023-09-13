@@ -4,7 +4,6 @@ export {
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
   DEFAULT_WORKER_START_DELAY,
-  POOL_MAX_INACTIVE_TIME,
 } from './WorkerConstants';
 export { WorkerFactory } from './WorkerFactory';
 export {

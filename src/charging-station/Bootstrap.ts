@@ -45,8 +45,10 @@ import { type WorkerAbstract, WorkerFactory } from '../worker';
 const moduleName = 'Bootstrap';
 
 enum exitCodes {
+  succeeded = 0,
   missingChargingStationsConfiguration = 1,
   noChargingStationTemplates = 2,
+  gracefulShutdownError = 3,
 }
 
 export class Bootstrap extends EventEmitter {
@@ -97,7 +99,7 @@ export class Bootstrap extends EventEmitter {
         performanceStorageConfiguration.uri!,
         this.logPrefix(),
       ));
-    Configuration.setConfigurationChangeCallback(async () => Bootstrap.getInstance().restart());
+    Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart();
   }
 
   public static getInstance(): Bootstrap {
@@ -185,7 +187,7 @@ export class Bootstrap extends EventEmitter {
           this.uiServer.buildProtocolRequest(
             generateUUID(),
             ProcedureName.STOP_CHARGING_STATION,
-            Constants.EMPTY_FREEZED_OBJECT,
+            Constants.EMPTY_FROZEN_OBJECT,
           ),
         );
         await Promise.race([
@@ -389,11 +391,11 @@ export class Bootstrap extends EventEmitter {
     console.info(`${chalk.green('Graceful shutdown')}`);
     this.stop()
       .then(() => {
-        process.exit(0);
+        process.exit(exitCodes.succeeded);
       })
       .catch((error) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error);
-        process.exit(1);
+        process.exit(exitCodes.gracefulShutdownError);
       });
   };
 

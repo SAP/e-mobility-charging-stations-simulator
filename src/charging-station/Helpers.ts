@@ -714,7 +714,7 @@ const warnDeprecatedTemplateKey = (
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
     }`;
     logger.warn(`${logPrefix} ${logMsg}`);
-    console.warn(chalk.yellow(`${logMsg}`));
+    console.warn(`${chalk.green(logPrefix)} ${chalk.yellow(logMsg)}`);
   }
 };
 
