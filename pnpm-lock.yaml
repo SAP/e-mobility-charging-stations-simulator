@@ -21,8 +21,8 @@ dependencies:
     specifier: ^5.8.0
     version: 5.8.0(@mikro-orm/core@5.8.0)
   '@mikro-orm/reflection':
-    specifier: ^5.8.0
-    version: 5.8.0(@mikro-orm/core@5.8.0)
+    specifier: ^5.8.1
+    version: 5.8.1(@mikro-orm/core@5.8.0)
   '@mikro-orm/sqlite':
     specifier: ^5.8.0
     version: 5.8.0(@mikro-orm/core@5.8.0)
@@ -211,8 +211,8 @@ devDependencies:
     specifier: ^7.5.3
     version: 7.5.4
   sinon:
-    specifier: ^15.2.0
-    version: 15.2.0
+    specifier: ^16.0.0
+    version: 16.0.0
   ts-node:
     specifier: ^10.9.1
     version: 10.9.1(@types/node@20.6.0)(typescript@5.2.2)
@@ -1000,8 +1000,8 @@ packages:
       - supports-color
       - tedious
 
-  /@mikro-orm/reflection@5.8.0(@mikro-orm/core@5.8.0):
-    resolution: {integrity: sha512-gQ3w6nWGHGzPh4J+TEMpZS/PeEbB/97CW48KJuKJOwq5bU+2PbqkDIaDiSVkVTr+7jmaVrZ3UXNzbcpip97VQA==}
+  /@mikro-orm/reflection@5.8.1(@mikro-orm/core@5.8.0):
+    resolution: {integrity: sha512-luSDZg0OicZq5JjxXwogtPRRFE1DITHG4NPP10uOzgpZDehrE+IE2ZqAifDwzhWDk1nEy66qNNdrv0xCERGgbQ==}
     engines: {node: '>= 14.0.0'}
     peerDependencies:
       '@mikro-orm/core': ^5.0.0
@@ -8612,8 +8612,8 @@ packages:
       string-width: 1.0.2
     dev: true
 
-  /sinon@15.2.0:
-    resolution: {integrity: sha512-nPS85arNqwBXaIsFCkolHjGIkFo+Oxu9vbgmBJizLAhqe6P2o3Qmj3KCUoRkfhHtvgDhZdWD3risLHAUJ8npjw==}
+  /sinon@16.0.0:
+    resolution: {integrity: sha512-B8AaZZm9CT5pqe4l4uWJztfD/mOTa7dL8Qo0W4+s+t74xECOgSZDDQCBjNgIK3+n4kyxQrSTv2V5ul8K25qkiQ==}
     dependencies:
       '@sinonjs/commons': 3.0.0
       '@sinonjs/fake-timers': 10.3.0
