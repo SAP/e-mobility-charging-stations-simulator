@@ -4,11 +4,11 @@ import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
 import { randomizeDelay, sleep } from './WorkerUtils';
 
-export class WorkerStaticPool extends WorkerAbstract<WorkerData> {
+export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
   private readonly pool: FixedThreadPool<WorkerData>;
 
   /**
-   * Creates a new `WorkerStaticPool`.
+   * Creates a new `WorkerFixedPool`.
    *
    * @param workerScript -
    * @param workerOptions -

@@ -104,7 +104,7 @@ export class Configuration {
   }
 
   public static workerPoolInUse(): boolean {
-    return [WorkerProcessType.dynamicPool, WorkerProcessType.staticPool].includes(
+    return [WorkerProcessType.dynamicPool, WorkerProcessType.fixedPool].includes(
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
         .processType!,
     );
@@ -385,17 +385,17 @@ export class Configuration {
       `Use '${ConfigurationSection.worker}' section to define the worker pool minimum size instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
-      'workerPoolSize;',
+      'workerPoolSize',
       undefined,
       `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
-      'workerPoolMaxSize;',
+      'workerPoolMaxSize',
       undefined,
       `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
     );
     Configuration.warnDeprecatedConfigurationKey(
-      'workerPoolStrategy;',
+      'workerPoolStrategy',
       undefined,
       `Use '${ConfigurationSection.worker}' section to define the worker pool strategy instead`,
     );
@@ -404,6 +404,16 @@ export class Configuration {
       ConfigurationSection.worker,
       'Not publicly exposed to end users',
     );
+    if (
+      Configuration.getConfigurationData()?.worker?.processType ===
+      ('staticPool' as WorkerProcessType)
+    ) {
+      console.error(
+        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+          `Deprecated configuration 'staticPool' value usage in worker section 'processType' field. Use '${WorkerProcessType.fixedPool}' value instead`,
+        )}`,
+      );
+    }
     // log section
     Configuration.warnDeprecatedConfigurationKey(
       'logEnabled',

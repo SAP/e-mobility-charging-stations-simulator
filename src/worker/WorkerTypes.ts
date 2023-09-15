@@ -6,7 +6,7 @@ export enum WorkerProcessType {
   workerSet = 'workerSet',
   /** @experimental */
   dynamicPool = 'dynamicPool',
-  staticPool = 'staticPool',
+  fixedPool = 'fixedPool',
 }
 
 export interface SetInfo {

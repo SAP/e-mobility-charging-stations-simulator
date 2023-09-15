@@ -3,8 +3,8 @@ import { isMainThread } from 'node:worker_threads';
 import type { WorkerAbstract } from './WorkerAbstract';
 import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants';
 import { WorkerDynamicPool } from './WorkerDynamicPool';
+import { WorkerFixedPool } from './WorkerFixedPool';
 import { WorkerSet } from './WorkerSet';
-import { WorkerStaticPool } from './WorkerStaticPool';
 import { type WorkerData, type WorkerOptions, WorkerProcessType } from './WorkerTypes';
 
 export class WorkerFactory {
@@ -26,8 +26,8 @@ export class WorkerFactory {
       case WorkerProcessType.workerSet:
         workerImplementation = new WorkerSet(workerScript, workerOptions);
         break;
-      case WorkerProcessType.staticPool:
-        workerImplementation = new WorkerStaticPool(workerScript, workerOptions);
+      case WorkerProcessType.fixedPool:
+        workerImplementation = new WorkerFixedPool(workerScript, workerOptions);
         break;
       case WorkerProcessType.dynamicPool:
         workerImplementation = new WorkerDynamicPool(workerScript, workerOptions);

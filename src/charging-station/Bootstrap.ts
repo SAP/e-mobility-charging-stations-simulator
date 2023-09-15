@@ -162,7 +162,7 @@ export class Bootstrap extends EventEmitter {
         Configuration.workerDynamicPoolInUse() &&
           console.warn(
             chalk.yellow(
-              'Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using static pool or worker set mode instead',
+              'Charging stations simulator is using dynamic pool mode. This is an experimental feature with known issues.\nPlease consider using fixed pool or worker set mode instead',
             ),
           );
         console.info(chalk.green('Worker set/pool information:'), this.workerImplementation?.info);
