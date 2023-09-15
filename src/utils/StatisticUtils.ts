@@ -68,9 +68,9 @@ export const stdDeviation = (
   dataSet: number[],
   dataSetAverage: number = average(dataSet),
 ): number => {
-  const geometricDeviation = dataSet.reduce((accumulator, nb) => {
-    const deviation = nb - dataSetAverage;
-    return accumulator + deviation * deviation;
-  }, 0);
-  return Math.sqrt(geometricDeviation / dataSet.length);
+  return Math.sqrt(
+    dataSet.reduce((accumulator, num) => {
+      return accumulator + Math.pow(num - dataSetAverage, 2);
+    }, 0) / dataSet.length,
+  );
 };
