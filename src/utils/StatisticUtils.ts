@@ -69,8 +69,7 @@ export const stdDeviation = (
   dataSetAverage: number = average(dataSet),
 ): number => {
   return Math.sqrt(
-    dataSet.reduce((accumulator, num) => {
-      return accumulator + Math.pow(num - dataSetAverage, 2);
-    }, 0) / dataSet.length,
+    dataSet.reduce((accumulator, num) => accumulator + Math.pow(num - dataSetAverage, 2), 0) /
+      dataSet.length,
   );
 };
