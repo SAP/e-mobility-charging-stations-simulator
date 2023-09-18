@@ -78,8 +78,8 @@ jobs:
             echo "<a href='$repo'><img alt='GitHub Clones' src='$shields$url&logo=github'></a>" >> CLONE.md
             echo '```' >> CLONE.md
 
-            git config --global user.name "GitHub Action"
-            git config --global user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git config --local user.email "action@github.com"
             git add CLONE.md
             git commit -m "docs: create clone count badge"
           fi
