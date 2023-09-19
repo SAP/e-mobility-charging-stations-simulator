@@ -57,8 +57,8 @@ dependencies:
     specifier: ^6.1.0
     version: 6.1.0
   poolifier:
-    specifier: ^2.6.45
-    version: 2.6.45
+    specifier: ^2.7.0
+    version: 2.7.0
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -7754,8 +7754,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.6.45:
-    resolution: {integrity: sha512-FiSvj+MsEoBK5M3g+38nhgM17OoeiWIDuOUI7wCSUxCGycvMc43WdIVTiuCX4uMUKVBzXaOOWw4UlEsRvPl6Xw==}
+  /poolifier@2.7.0:
+    resolution: {integrity: sha512-nCfq3L1a6O43P9NfFto/dNmzhiG/vCknNmEtHr4shpFZZ1Z1G8grOhhxv4Dc0GQX8POavUO/VDKKGl4AA4oZzw==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
@@ -8754,7 +8754,7 @@ packages:
     resolution: {integrity: sha512-kN9dJbvnySHULIluDHy32WHRUu3Og7B9sbY7tsFLctQkIqnMh3hErYgdMjTYuqmcXX+lK5T1lnUt3G7zNswmZA==}
     dependencies:
       spdx-expression-parse: 3.0.1
-      spdx-license-ids: 3.0.13
+      spdx-license-ids: 3.0.14
     dev: true
 
   /spdx-exceptions@2.3.0:
@@ -8765,11 +8765,11 @@ packages:
     resolution: {integrity: sha512-cbqHunsQWnJNE6KhVSMsMeH5H/L9EpymbzqTQ3uLwNCLZ1Q481oWaofqH7nO6V07xlXwY6PhQdQ2IedWx/ZK4Q==}
     dependencies:
       spdx-exceptions: 2.3.0
-      spdx-license-ids: 3.0.13
+      spdx-license-ids: 3.0.14
     dev: true
 
-  /spdx-license-ids@3.0.13:
-    resolution: {integrity: sha512-XkD+zwiqXHikFZm4AX/7JSCXA98U5Db4AFd5XUg/+9UNtnH75+Z9KxtpYiJZx36mUDVOwH83pl7yvCer6ewM3w==}
+  /spdx-license-ids@3.0.14:
+    resolution: {integrity: sha512-U0eS5wcpu/O2/QZk6PcAMOA8H3ZuvRe4mFHA3Q+LNl1SRDmfQ+mD3RoD6tItqnvqubJ32m/zV2Z/ikSmxccD1Q==}
     dev: true
 
   /split2@3.2.2:
