@@ -108,7 +108,7 @@
     "basic-ftp": "^5.0.3",
     "chalk": "^5.3.0",
     "date-fns": "^2.30.0",
-    "http-status-codes": "^2.2.0",
+    "http-status-codes": "^2.3.0",
     "just-merge": "^3.2.0",
     "logform": "^2.5.1",
     "mnemonist": "^0.39.5",
