@@ -101,7 +101,7 @@
   "dependencies": {
     "@mikro-orm/core": "^5.8.1",
     "@mikro-orm/mariadb": "^5.8.2",
-    "@mikro-orm/reflection": "^5.8.1",
+    "@mikro-orm/reflection": "^5.8.2",
     "@mikro-orm/sqlite": "^5.8.1",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
@@ -128,7 +128,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.7.1",
     "@commitlint/config-conventional": "^17.7.0",
-    "@mikro-orm/cli": "^5.8.1",
+    "@mikro-orm/cli": "^5.8.2",
     "@release-it/bumper": "^5.1.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^0.4.3",
