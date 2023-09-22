@@ -86,7 +86,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     for (const workerSetElement of this.workerSet) {
       const worker = workerSetElement.worker;
       const waitWorkerExit = new Promise<void>((resolve) => {
-        worker.on('exit', () => {
+        worker.once('exit', () => {
           resolve();
         });
       });
