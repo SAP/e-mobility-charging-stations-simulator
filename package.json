@@ -99,10 +99,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.8.1",
+    "@mikro-orm/core": "^5.8.2",
     "@mikro-orm/mariadb": "^5.8.2",
     "@mikro-orm/reflection": "^5.8.2",
-    "@mikro-orm/sqlite": "^5.8.1",
+    "@mikro-orm/sqlite": "^5.8.2",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.3",
@@ -113,7 +113,7 @@
     "logform": "^2.5.1",
     "mnemonist": "^0.39.5",
     "mongodb": "^6.1.0",
-    "poolifier": "^2.7.0",
+    "poolifier": "^2.7.1",
     "source-map-support": "^0.5.21",
     "tar": "^6.2.0",
     "tslib": "^2.6.2",
