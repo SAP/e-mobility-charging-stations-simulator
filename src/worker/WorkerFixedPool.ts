@@ -1,4 +1,6 @@
-import { FixedThreadPool, type PoolEmitter, type PoolInfo } from 'poolifier';
+import type { EventEmitter } from 'node:events';
+
+import { FixedThreadPool, type PoolInfo } from 'poolifier';
 
 import { WorkerAbstract } from './WorkerAbstract';
 import type { WorkerData, WorkerOptions } from './WorkerTypes';
@@ -34,8 +36,8 @@ export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
     return undefined;
   }
 
-  get emitter(): PoolEmitter | undefined {
-    return this.pool?.emitter;
+  get emitter(): EventEmitter | undefined {
+    return this.pool?.emitter as EventEmitter;
   }
 
   /** @inheritDoc */

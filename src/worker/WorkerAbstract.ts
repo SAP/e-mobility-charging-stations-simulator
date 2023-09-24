@@ -1,7 +1,7 @@
 import type { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
 
-import type { PoolEmitter, PoolInfo } from 'poolifier';
+import type { PoolInfo } from 'poolifier';
 
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes';
 import { defaultErrorHandler, defaultExitHandler } from './WorkerUtils';
@@ -12,7 +12,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
   public abstract readonly info: PoolInfo | SetInfo;
   public abstract readonly size: number;
   public abstract readonly maxElementsPerWorker: number | undefined;
-  public abstract readonly emitter: EventEmitter | PoolEmitter | undefined;
+  public abstract readonly emitter: EventEmitter | undefined;
 
   /**
    * `WorkerAbstract` constructor.
