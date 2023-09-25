@@ -1,3 +1,4 @@
+const { env } = require('node:process');
 const { defineConfig } = require('eslint-define-config');
 
 module.exports = defineConfig({
@@ -30,8 +31,8 @@ module.exports = defineConfig({
   },
 
   rules: {
-    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-console': env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-debugger': env.NODE_ENV === 'production' ? 'warn' : 'off',
     'vue/require-v-for-key': 'off',
     'vue/multi-word-component-names': 'off',
     'sort-imports': [

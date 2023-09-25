@@ -363,6 +363,9 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     delete connectorStatus?.lastRunDate;
     delete connectorStatus?.stopDate;
     delete connectorStatus?.stoppedDate;
+    if (connectorStatus?.start === true) {
+      connectorStatus.start = false;
+    }
     return (
       connectorStatus ?? {
         start: false,

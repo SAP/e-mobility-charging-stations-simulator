@@ -1,5 +1,6 @@
 import { type FSWatcher, readFileSync, watch } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { env } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
@@ -171,7 +172,7 @@ export class Configuration {
     }
     if (isCFEnvironment() === true) {
       delete uiServerConfiguration.options?.host;
-      uiServerConfiguration.options!.port = parseInt(process.env.PORT!);
+      uiServerConfiguration.options!.port = parseInt(env.PORT!);
     }
     return uiServerConfiguration;
   }

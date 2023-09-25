@@ -1,4 +1,5 @@
 import { randomBytes, randomInt, randomUUID, webcrypto } from 'node:crypto';
+import { env } from 'node:process';
 import { inspect } from 'node:util';
 
 import {
@@ -260,7 +261,7 @@ export const hasOwnProp = (object: unknown, property: PropertyKey): boolean => {
 };
 
 export const isCFEnvironment = (): boolean => {
-  return !isNullOrUndefined(process.env.VCAP_APPLICATION);
+  return !isNullOrUndefined(env.VCAP_APPLICATION);
 };
 
 export const isIterable = <T>(obj: T): boolean => {

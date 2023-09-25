@@ -2,6 +2,7 @@
 
 import { EventEmitter } from 'node:events';
 import { dirname, extname, join } from 'node:path';
+import { exit } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
 
@@ -354,13 +355,13 @@ export class Bootstrap extends EventEmitter {
         console.warn(
           chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting"),
         );
-        process.exit(exitCodes.missingChargingStationsConfiguration);
+        exit(exitCodes.missingChargingStationsConfiguration);
       }
       if (this.numberOfChargingStations === 0) {
         console.warn(
           chalk.yellow('No charging station template enabled in configuration, exiting'),
         );
-        process.exit(exitCodes.noChargingStationTemplates);
+        exit(exitCodes.noChargingStationTemplates);
       }
       this.initializedCounters = true;
     }
@@ -391,11 +392,11 @@ export class Bootstrap extends EventEmitter {
     console.info(`${chalk.green('Graceful shutdown')}`);
     this.stop()
       .then(() => {
-        process.exit(exitCodes.succeeded);
+        exit(exitCodes.succeeded);
       })
       .catch((error) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error);
-        process.exit(exitCodes.gracefulShutdownError);
+        exit(exitCodes.gracefulShutdownError);
       });
   };
 

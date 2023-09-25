@@ -1,5 +1,6 @@
 /* eslint-disable n/no-unpublished-import */
 import * as os from 'node:os';
+import { env } from 'node:process';
 
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
@@ -23,8 +24,8 @@ const availableParallelism = () => {
   return availableParallelism;
 };
 
-const isDevelopmentBuild = process.env.BUILD === 'development';
-const isAnalyzeBuild = process.env.ANALYZE;
+const isDevelopmentBuild = env.BUILD === 'development';
+const isAnalyzeBuild = env.ANALYZE;
 const sourceMap = !!isDevelopmentBuild;
 
 export default defineConfig({
@@ -60,6 +61,7 @@ export default defineConfig({
     'node:http2',
     'node:path',
     'node:perf_hooks',
+    'node:process',
     'node:stream',
     'node:url',
     'node:util',

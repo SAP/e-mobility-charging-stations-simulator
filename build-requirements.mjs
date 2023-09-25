@@ -1,20 +1,21 @@
 import chalk from 'chalk';
 import semVer from 'semver';
 import packageJson from './package.json' assert { type: 'json' };
+import { version, exit } from 'node:process';
 
 /**
  * Check if the current node version match the required engines version.
  */
 export function checkNodeVersion() {
   const enginesNodeVersion = packageJson.engines.node;
-  if (semVer.satisfies(process.version, enginesNodeVersion) === false) {
+  if (semVer.satisfies(version, enginesNodeVersion) === false) {
     console.error(
       chalk.red(
-        `Required node version ${enginesNodeVersion} not satisfied with current version ${process.version}.`,
+        `Required node version ${enginesNodeVersion} not satisfied with current version ${version}.`,
       ),
     );
     // eslint-disable-next-line n/no-process-exit
-    process.exit(1);
+    exit(1);
   }
 }
 
