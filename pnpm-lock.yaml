@@ -57,8 +57,8 @@ dependencies:
     specifier: ^6.1.0
     version: 6.1.0
   poolifier:
-    specifier: ^2.7.3
-    version: 2.7.3
+    specifier: ^2.7.4
+    version: 2.7.4
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -124,8 +124,8 @@ devDependencies:
     specifier: ^6.1.6
     version: 6.1.6
   '@types/ws':
-    specifier: ^8.5.5
-    version: 8.5.5
+    specifier: ^8.5.6
+    version: 8.5.6
   '@typescript-eslint/eslint-plugin':
     specifier: ^6.7.2
     version: 6.7.2(@typescript-eslint/parser@6.7.2)(eslint@8.50.0)(typescript@5.2.2)
@@ -1576,8 +1576,8 @@ packages:
       '@types/webidl-conversions': 7.0.0
     dev: false
 
-  /@types/ws@8.5.5:
-    resolution: {integrity: sha512-lwhs8hktwxSjf9UaZ9tG5M03PGogvFaH8gUgLNbN9HKIg0dvv6q+gkSuJ8HN4/VbyxkuLzCjlN7GquQ0gUJfIg==}
+  /@types/ws@8.5.6:
+    resolution: {integrity: sha512-8B5EO9jLVCy+B58PLHvLDuOD8DRVMgQzq8d55SjLCOn9kqGyqOvy27exVaTio1q1nX5zLu8/6N0n2ThSxOM6tg==}
     dependencies:
       '@types/node': 20.6.5
     dev: true
@@ -7744,8 +7744,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.7.3:
-    resolution: {integrity: sha512-s3O4womlvc3OSGEPBjJcPoIGczSxOMXaRfcnNzvbKWKg12PZtjONC2oacjxOIHxBzinY1gc6W7akwrqR4qPgxA==}
+  /poolifier@2.7.4:
+    resolution: {integrity: sha512-Rkw7M1reDRWPLnPtS8+DFcv8IQIie44TBQ4CgQMSghu2YZ4Gip1VwbTw9t+SEgiLbIe6+cSTdlYAGtQ81DD67A==}
     engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
