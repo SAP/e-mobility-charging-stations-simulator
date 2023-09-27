@@ -134,7 +134,7 @@
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.4",
     "@types/mocha": "^10.0.1",
-    "@types/mochawesome": "^6.2.1",
+    "@types/mochawesome": "^6.2.2",
     "@types/node": "^20.7.0",
     "@types/sinon": "^10.0.17",
     "@types/tar": "^6.1.6",
