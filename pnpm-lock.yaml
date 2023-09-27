@@ -111,9 +111,6 @@ devDependencies:
   '@types/mocha':
     specifier: ^10.0.2
     version: 10.0.2
-  '@types/mochawesome':
-    specifier: ^6.2.2
-    version: 6.2.2
   '@types/node':
     specifier: ^20.7.0
     version: 20.7.0
@@ -1502,12 +1499,6 @@ packages:
 
   /@types/mocha@10.0.2:
     resolution: {integrity: sha512-NaHL0+0lLNhX6d9rs+NSt97WH/gIlRHmszXbQ/8/MV/eVcFNdeJ/GYhrFuUc8K7WuPhRhTSdMkCp8VMzhUq85w==}
-    dev: true
-
-  /@types/mochawesome@6.2.2:
-    resolution: {integrity: sha512-UqE7Mbw6Z2Nk3gXjbAM43p+Z3LpfH4624JtihzsR17sRlZo1UFBT0/zznE82wXvnI4gB/xWz0BxfwQpP0qB3Uw==}
-    dependencies:
-      '@types/mocha': 10.0.2
     dev: true
 
   /@types/node@17.0.45:
