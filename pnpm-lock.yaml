@@ -109,8 +109,8 @@ devDependencies:
     specifier: ^11.1.4
     version: 11.1.4(rollup@3.29.3)(tslib@2.6.2)(typescript@5.2.2)
   '@types/mocha':
-    specifier: ^10.0.1
-    version: 10.0.1
+    specifier: ^10.0.2
+    version: 10.0.2
   '@types/mochawesome':
     specifier: ^6.2.1
     version: 6.2.1
@@ -1500,14 +1500,14 @@ packages:
     resolution: {integrity: sha512-jhuKLIRrhvCPLqwPcx6INqmKeiA5EWrsCOPhrlFSrbrmU4ZMPjj5Ul/oLCMDO98XRUIwVm78xICz4EPCektzeQ==}
     dev: true
 
-  /@types/mocha@10.0.1:
-    resolution: {integrity: sha512-/fvYntiO1GeICvqbQ3doGDIP97vWmvFt83GKguJ6prmQM2iXZfFcq6YE8KteFyRtX2/h5Hf91BYvPodJKFYv5Q==}
+  /@types/mocha@10.0.2:
+    resolution: {integrity: sha512-NaHL0+0lLNhX6d9rs+NSt97WH/gIlRHmszXbQ/8/MV/eVcFNdeJ/GYhrFuUc8K7WuPhRhTSdMkCp8VMzhUq85w==}
     dev: true
 
   /@types/mochawesome@6.2.1:
     resolution: {integrity: sha512-AhQdBkT/CBdx3sI9ATeljqa5uJ3dGNKEJnsgzw9IkPeg9d9Lzxsz1eKFnenxq1qQojIW0XkIsCgdheRRXP2SQA==}
     dependencies:
-      '@types/mocha': 10.0.1
+      '@types/mocha': 10.0.2
     dev: true
 
   /@types/node@17.0.45:
