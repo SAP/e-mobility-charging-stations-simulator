@@ -98,7 +98,7 @@ devDependencies:
     version: 5.8.3(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3)
   '@release-it/bumper':
     specifier: ^5.1.0
-    version: 5.1.0(release-it@16.2.0)
+    version: 5.1.0(release-it@16.2.1)
   '@rollup/plugin-json':
     specifier: ^6.0.0
     version: 6.0.0(rollup@3.29.3)
@@ -109,11 +109,11 @@ devDependencies:
     specifier: ^11.1.4
     version: 11.1.4(rollup@3.29.3)(tslib@2.6.2)(typescript@5.2.2)
   '@types/mocha':
-    specifier: ^10.0.1
-    version: 10.0.1
+    specifier: ^10.0.2
+    version: 10.0.2
   '@types/mochawesome':
-    specifier: ^6.2.1
-    version: 6.2.1
+    specifier: ^6.2.2
+    version: 6.2.2
   '@types/node':
     specifier: ^20.7.0
     version: 20.7.0
@@ -190,8 +190,8 @@ devDependencies:
     specifier: ^3.0.3
     version: 3.0.3
   release-it:
-    specifier: ^16.2.0
-    version: 16.2.0(typescript@5.2.2)
+    specifier: ^16.2.1
+    version: 16.2.1(typescript@5.2.2)
   rimraf:
     specifier: ^5.0.5
     version: 5.0.5
@@ -1259,7 +1259,7 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/bumper@5.1.0(release-it@16.2.0):
+  /@release-it/bumper@5.1.0(release-it@16.2.1):
     resolution: {integrity: sha512-mnM5QQJvK+4sqLpU7vkDbGMGh1QNwdnWNPqrkfOCyr/cKgRDvb8e+nbiNZzyI/1XsxSjnfLHDecRVuqucwE6BQ==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -1271,7 +1271,7 @@ packages:
       ini: 4.1.1
       js-yaml: 4.1.0
       lodash-es: 4.17.21
-      release-it: 16.2.0(typescript@5.2.2)
+      release-it: 16.2.1(typescript@5.2.2)
       semver: 7.5.4
     dev: true
 
@@ -1496,18 +1496,18 @@ packages:
     resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
     dev: true
 
-  /@types/minimist@1.2.2:
-    resolution: {integrity: sha512-jhuKLIRrhvCPLqwPcx6INqmKeiA5EWrsCOPhrlFSrbrmU4ZMPjj5Ul/oLCMDO98XRUIwVm78xICz4EPCektzeQ==}
+  /@types/minimist@1.2.3:
+    resolution: {integrity: sha512-ZYFzrvyWUNhaPomn80dsMNgMeXxNWZBdkuG/hWlUvXvbdUH8ZERNBGXnU87McuGcWDsyzX2aChCv/SVN348k3A==}
     dev: true
 
-  /@types/mocha@10.0.1:
-    resolution: {integrity: sha512-/fvYntiO1GeICvqbQ3doGDIP97vWmvFt83GKguJ6prmQM2iXZfFcq6YE8KteFyRtX2/h5Hf91BYvPodJKFYv5Q==}
+  /@types/mocha@10.0.2:
+    resolution: {integrity: sha512-NaHL0+0lLNhX6d9rs+NSt97WH/gIlRHmszXbQ/8/MV/eVcFNdeJ/GYhrFuUc8K7WuPhRhTSdMkCp8VMzhUq85w==}
     dev: true
 
-  /@types/mochawesome@6.2.1:
-    resolution: {integrity: sha512-AhQdBkT/CBdx3sI9ATeljqa5uJ3dGNKEJnsgzw9IkPeg9d9Lzxsz1eKFnenxq1qQojIW0XkIsCgdheRRXP2SQA==}
+  /@types/mochawesome@6.2.2:
+    resolution: {integrity: sha512-UqE7Mbw6Z2Nk3gXjbAM43p+Z3LpfH4624JtihzsR17sRlZo1UFBT0/zznE82wXvnI4gB/xWz0BxfwQpP0qB3Uw==}
     dependencies:
-      '@types/mocha': 10.0.1
+      '@types/mocha': 10.0.2
     dev: true
 
   /@types/node@17.0.45:
@@ -4826,7 +4826,7 @@ packages:
     hasBin: true
     dependencies:
       foreground-child: 3.1.1
-      jackspeak: 2.3.5
+      jackspeak: 2.3.6
       minimatch: 9.0.3
       minipass: 7.0.3
       path-scurry: 1.10.1
@@ -5850,8 +5850,8 @@ packages:
       iterate-iterator: 1.0.2
     dev: true
 
-  /jackspeak@2.3.5:
-    resolution: {integrity: sha512-Ratx+B8WeXLAtRJn26hrhY8S1+Jz6pxPMrkrdkgb/NstTNiqMhX0/oFVu5wX+g5n6JlEu2LPsDJmY8nRP4+alw==}
+  /jackspeak@2.3.6:
+    resolution: {integrity: sha512-N3yCS/NegsOBokc8GAdM8UcmfsKiSS8cipheD/nivzr700H+nsMOxJjQnvwOcRYVuFkdH0wGUvW2WbXGmrZGbQ==}
     engines: {node: '>=14'}
     dependencies:
       '@isaacs/cliui': 8.0.2
@@ -6492,7 +6492,7 @@ packages:
     resolution: {integrity: sha512-r85E3NdZ+mpYk1C6RjPFEMSE+s1iZMuHtsHAqY0DT3jZczl0diWUZ8g6oU7h0M9cD2EL+PzaYghhCLzR0ZNn5Q==}
     engines: {node: '>=10'}
     dependencies:
-      '@types/minimist': 1.2.2
+      '@types/minimist': 1.2.3
       camelcase-keys: 6.2.2
       decamelize-keys: 1.1.1
       hard-rejection: 2.1.0
@@ -8179,8 +8179,8 @@ packages:
     resolution: {integrity: sha512-QIRet3SYrGp0HUHO88jVskiG6seqUGC5iAG7AwI/BV4ypGcuqk9Du6YQBUOUqm9c8pw1eyLoIaONifRua1lsEQ==}
     dev: true
 
-  /release-it@16.2.0(typescript@5.2.2):
-    resolution: {integrity: sha512-cemAN6GVk7RBhZiOCcxv/qJky5wTqxbZjQlfotgPnKlGQjugoJvsIpILtgbhITpYlUxQTgx3ddizY7YeaIqt6Q==}
+  /release-it@16.2.1(typescript@5.2.2):
+    resolution: {integrity: sha512-+bHiKPqkpld+NaiW+K/2WsjaHgfPB00J6uk8a+g8QyuBtzfFoMVe+GKsfaDO5ztEHRrSg+7luoXzd8IfvPNPig==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
