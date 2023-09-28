@@ -94,8 +94,8 @@ devDependencies:
     specifier: ^17.7.0
     version: 17.7.0
   '@mikro-orm/cli':
-    specifier: ^5.8.3
-    version: 5.8.3(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3)
+    specifier: ^5.8.4
+    version: 5.8.4(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3)
   '@release-it/bumper':
     specifier: ^5.1.0
     version: 5.1.0(release-it@16.2.1)
@@ -823,8 +823,8 @@ packages:
     resolution: {integrity: sha512-9b8mPpKrfeGRuhFH5iO1iwCLeIIsV6+H1sRfxbkoGXIyQE2BTsPd9zqSqQJ+pv5sJ/hT5M1zvOFL02MnEezFug==}
     dev: true
 
-  /@mikro-orm/cli@5.8.3(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3):
-    resolution: {integrity: sha512-79q8Cn9g5H21F/XjE6of/zXWsSBBFdSJzmqBHCmxN5cNXCYFNNYZZY8/EfqNCmgF6hxjRjp7j4GtpSuXxTbyFg==}
+  /@mikro-orm/cli@5.8.4(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3):
+    resolution: {integrity: sha512-NK+xtLAJW78DaH8UDS9ef0roe72sJCEJF5cFByKGyfdFMrDWES3nhWZSkCLXErcsUeByoSYg8ZnkTtyxwjN2Ig==}
     engines: {node: '>= 14.0.0'}
     hasBin: true
     peerDependencies:
@@ -861,8 +861,8 @@ packages:
         optional: true
     dependencies:
       '@jercle/yargonaut': 1.1.5
-      '@mikro-orm/core': 5.8.3(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3)
-      '@mikro-orm/knex': 5.8.3(@mikro-orm/core@5.8.3)(sqlite3@5.1.6)
+      '@mikro-orm/core': 5.8.4(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3)
+      '@mikro-orm/knex': 5.8.4(@mikro-orm/core@5.8.4)
       '@mikro-orm/mariadb': 5.8.3(@mikro-orm/core@5.8.3)
       '@mikro-orm/sqlite': 5.8.3(@mikro-orm/core@5.8.3)
       fs-extra: 11.1.1
@@ -926,6 +926,53 @@ packages:
       mikro-orm: 5.8.3
       reflect-metadata: 0.1.13
 
+  /@mikro-orm/core@5.8.4(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3):
+    resolution: {integrity: sha512-yRrqnF5nKy3ymeY9jq9AxnzZHnfqVNIQmXwhoeMzCZmYpV2WrVtYw3EEZwpN5ANe1qvlQakgJ/qdGjyqB19Dyg==}
+    engines: {node: '>= 14.0.0'}
+    peerDependencies:
+      '@mikro-orm/better-sqlite': ^5.0.0
+      '@mikro-orm/entity-generator': ^5.0.0
+      '@mikro-orm/mariadb': ^5.0.0
+      '@mikro-orm/migrations': ^5.0.0
+      '@mikro-orm/migrations-mongodb': ^5.0.0
+      '@mikro-orm/mongodb': ^5.0.0
+      '@mikro-orm/mysql': ^5.0.0
+      '@mikro-orm/postgresql': ^5.0.0
+      '@mikro-orm/seeder': ^5.0.0
+      '@mikro-orm/sqlite': ^5.0.0
+    peerDependenciesMeta:
+      '@mikro-orm/better-sqlite':
+        optional: true
+      '@mikro-orm/entity-generator':
+        optional: true
+      '@mikro-orm/mariadb':
+        optional: true
+      '@mikro-orm/migrations':
+        optional: true
+      '@mikro-orm/migrations-mongodb':
+        optional: true
+      '@mikro-orm/mongodb':
+        optional: true
+      '@mikro-orm/mysql':
+        optional: true
+      '@mikro-orm/postgresql':
+        optional: true
+      '@mikro-orm/seeder':
+        optional: true
+      '@mikro-orm/sqlite':
+        optional: true
+    dependencies:
+      '@mikro-orm/mariadb': 5.8.3(@mikro-orm/core@5.8.3)
+      '@mikro-orm/sqlite': 5.8.3(@mikro-orm/core@5.8.3)
+      acorn-loose: 8.3.0
+      acorn-walk: 8.2.0
+      dotenv: 16.3.1
+      fs-extra: 11.1.1
+      globby: 11.1.0
+      mikro-orm: 5.8.4
+      reflect-metadata: 0.1.13
+    dev: true
+
   /@mikro-orm/knex@5.8.3(@mikro-orm/core@5.8.3)(sqlite3@5.1.6):
     resolution: {integrity: sha512-+fQ/Cl8wLJjmHUHPPRtnf5rwAGKW+reVIZe5qER7W7UIc2ZiGS0tTldKM9r4bWBme/+mppaK8lv1qwb8WikkoQ==}
     engines: {node: '>= 14.0.0'}
@@ -966,6 +1013,47 @@ packages:
       - pg-native
       - supports-color
       - tedious
+
+  /@mikro-orm/knex@5.8.4(@mikro-orm/core@5.8.4):
+    resolution: {integrity: sha512-D0J0ZPLMFQWu/5dCOjtFDVABqv7cEfnGfNT0PH2Q/Qwv0FETV7jjLS1GQk/ixDmgXZ5YBFbx95/6HJ3NuLMW0Q==}
+    engines: {node: '>= 14.0.0'}
+    peerDependencies:
+      '@mikro-orm/core': ^5.0.0
+      '@mikro-orm/entity-generator': ^5.0.0
+      '@mikro-orm/migrations': ^5.0.0
+      better-sqlite3: '*'
+      mssql: '*'
+      mysql: '*'
+      mysql2: '*'
+      pg: '*'
+      sqlite3: '*'
+    peerDependenciesMeta:
+      '@mikro-orm/entity-generator':
+        optional: true
+      '@mikro-orm/migrations':
+        optional: true
+      better-sqlite3:
+        optional: true
+      mssql:
+        optional: true
+      mysql:
+        optional: true
+      mysql2:
+        optional: true
+      pg:
+        optional: true
+      sqlite3:
+        optional: true
+    dependencies:
+      '@mikro-orm/core': 5.8.4(@mikro-orm/mariadb@5.8.3)(@mikro-orm/sqlite@5.8.3)
+      fs-extra: 11.1.1
+      knex: 2.5.1(sqlite3@5.1.6)
+      sqlstring: 2.3.3
+    transitivePeerDependencies:
+      - pg-native
+      - supports-color
+      - tedious
+    dev: true
 
   /@mikro-orm/mariadb@5.8.3(@mikro-orm/core@5.8.3):
     resolution: {integrity: sha512-SNJStVrYlTHJJFP2h+V6TiYj+YpUIGu+93lHIJg4CNnGlIf/c6tiGCeY4Xs9lKUTwPX+AL2fstS012dFICbKIw==}
@@ -6520,6 +6608,11 @@ packages:
   /mikro-orm@5.8.3:
     resolution: {integrity: sha512-Iitd23Q3ZcT127SUmBPk8j7FHwCjLNDVlY7FSeQ+xwkRD51fLBqXMNjgbXcQtn8EHtWuA52Wzx6R401No/lqng==}
     engines: {node: '>= 14.0.0'}
+
+  /mikro-orm@5.8.4:
+    resolution: {integrity: sha512-iIwDS0Fz7FqO8JUz8CVJBFCg9bhV31LpQPIiODcPK6vWeM+Uh8G5aZz5yEXJhrYFjYMVxCJZbLnbsVLMNKCG0g==}
+    engines: {node: '>= 14.0.0'}
+    dev: true
 
   /miller-rabin@4.0.1:
     resolution: {integrity: sha512-115fLhvZVqWwHPbClyntxEVfVDfl9DLLTuJvq3g2O/Oxi8AiNouAHvDSzHS0viUJc+V5vm3eq91Xwqn9dp4jRA==}

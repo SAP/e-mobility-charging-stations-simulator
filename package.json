@@ -128,7 +128,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.7.1",
     "@commitlint/config-conventional": "^17.7.0",
-    "@mikro-orm/cli": "^5.8.3",
+    "@mikro-orm/cli": "^5.8.4",
     "@release-it/bumper": "^5.1.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^0.4.3",
