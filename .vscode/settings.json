@@ -3,13 +3,6 @@
     "source.fixAll": true
   },
   "testExplorer.useNativeTesting": true,
-  "mochaExplorer.nodeArgv": [
-    "--loader=ts-node/esm",
-    "--no-warnings=ExperimentalWarning",
-    "--experimental-specifier-resolution=node"
-  ],
-  "mochaExplorer.files": ["test/**/*.test.ts"],
-  "mochaExplorer.debuggerConfig": "Debug Simulator Unit Tests",
   "cSpell.words": [
     "backoff",
     "benoit",
@@ -38,7 +31,6 @@
     "measurands",
     "mikro",
     "mnemonist",
-    "mochawesome",
     "ocpp",
     "olivierbagot",
     "parens",
@@ -47,7 +39,6 @@
     "preinstall",
     "Recurrency",
     "RFID",
-    "robohydra",
     "shutdowning",
     "sonarlint",
     "SRPC",

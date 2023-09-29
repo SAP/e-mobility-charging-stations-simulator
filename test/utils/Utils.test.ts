@@ -1,3 +1,5 @@
+import { describe, it } from 'node:test';
+
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns';
 import { expect } from 'expect';
 
@@ -35,8 +37,8 @@ import {
   validateUUID,
 } from '../../src/utils/Utils';
 
-describe('Utils test suite', () => {
-  it('Verify generateUUID()/validateUUID()', () => {
+await describe('Utils test suite', async () => {
+  await it('Verify generateUUID()/validateUUID()', () => {
     const uuid = generateUUID();
     expect(uuid).toBeDefined();
     expect(uuid.length).toEqual(36);
@@ -48,26 +50,26 @@ describe('Utils test suite', () => {
     expect(validateUUID('987FBC9-4BED-3078-CF07A-9141BA07C9F3')).toBe(false);
   });
 
-  it('Verify sleep()', async () => {
+  await it('Verify sleep()', async () => {
     const start = performance.now();
     await sleep(1000);
     const stop = performance.now();
     expect(stop - start).toBeGreaterThanOrEqual(1000);
   });
 
-  it('Verify formatDurationMilliSeconds()', () => {
+  await it('Verify formatDurationMilliSeconds()', () => {
     expect(formatDurationMilliSeconds(0)).toBe('');
     expect(formatDurationMilliSeconds(1000)).toBe('1 second');
     expect(formatDurationMilliSeconds(hoursToMilliseconds(4380))).toBe('182 days 12 hours');
   });
 
-  it('Verify formatDurationSeconds()', () => {
+  await it('Verify formatDurationSeconds()', () => {
     expect(formatDurationSeconds(0)).toBe('');
     expect(formatDurationSeconds(1)).toBe('1 second');
     expect(formatDurationSeconds(hoursToSeconds(4380))).toBe('182 days 12 hours');
   });
 
-  it('Verify isValidTime()', () => {
+  await it('Verify isValidTime()', () => {
     expect(isValidTime(undefined)).toBe(false);
     expect(isValidTime(null)).toBe(false);
     expect(isValidTime('')).toBe(false);
@@ -85,7 +87,7 @@ describe('Utils test suite', () => {
     expect(isValidTime(new Date())).toBe(true);
   });
 
-  it('Verify convertToDate()', () => {
+  await it('Verify convertToDate()', () => {
     expect(convertToDate(undefined)).toBe(undefined);
     expect(() => convertToDate('')).toThrowError(new Error("Cannot convert to date: ''"));
     expect(() => convertToDate('00:70:61')).toThrowError(
@@ -102,7 +104,7 @@ describe('Utils test suite', () => {
     expect(date).toStrictEqual(new Date(dateStr));
   });
 
-  it('Verify convertToInt()', () => {
+  await it('Verify convertToInt()', () => {
     expect(convertToInt(undefined)).toBe(0);
     expect(convertToInt(null)).toBe(0);
     expect(convertToInt(0)).toBe(0);
@@ -123,7 +125,7 @@ describe('Utils test suite', () => {
     }).toThrow("Cannot convert to integer: 'NaN'");
   });
 
-  it('Verify convertToFloat()', () => {
+  await it('Verify convertToFloat()', () => {
     expect(convertToFloat(undefined)).toBe(0);
     expect(convertToFloat(null)).toBe(0);
     expect(convertToFloat(0)).toBe(0);
@@ -144,7 +146,7 @@ describe('Utils test suite', () => {
     }).toThrow("Cannot convert to float: 'NaN'");
   });
 
-  it('Verify convertToBoolean()', () => {
+  await it('Verify convertToBoolean()', () => {
     expect(convertToBoolean(undefined)).toBe(false);
     expect(convertToBoolean(null)).toBe(false);
     expect(convertToBoolean('true')).toBe(true);
@@ -161,14 +163,14 @@ describe('Utils test suite', () => {
     expect(convertToBoolean('NoNBoolean')).toBe(false);
   });
 
-  it('Verify secureRandom()', () => {
+  await it('Verify secureRandom()', () => {
     const random = secureRandom();
     expect(typeof random === 'number').toBe(true);
     expect(random).toBeGreaterThanOrEqual(0);
     expect(random).toBeLessThan(1);
   });
 
-  it('Verify getRandomInteger()', () => {
+  await it('Verify getRandomInteger()', () => {
     let randomInteger = getRandomInteger();
     expect(Number.isSafeInteger(randomInteger)).toBe(true);
     expect(randomInteger).toBeGreaterThanOrEqual(0);
@@ -198,7 +200,7 @@ describe('Utils test suite', () => {
     expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(minimum));
   });
 
-  it('Verify roundTo()', () => {
+  await it('Verify roundTo()', () => {
     expect(roundTo(0, 2)).toBe(0);
     expect(roundTo(0.5, 0)).toBe(1);
     expect(roundTo(0.5, 2)).toBe(0.5);
@@ -213,7 +215,7 @@ describe('Utils test suite', () => {
     expect(roundTo(-5.015, 2)).toBe(-5.02);
   });
 
-  it('Verify getRandomFloat()', () => {
+  await it('Verify getRandomFloat()', () => {
     let randomFloat = getRandomFloat();
     expect(typeof randomFloat === 'number').toBe(true);
     expect(randomFloat).toBeGreaterThanOrEqual(0);
@@ -228,7 +230,7 @@ describe('Utils test suite', () => {
     expect(randomFloat).toBeLessThanOrEqual(0);
   });
 
-  it('Verify extractTimeSeriesValues()', () => {
+  await it('Verify extractTimeSeriesValues()', () => {
     expect(extractTimeSeriesValues([])).toEqual([]);
     expect(extractTimeSeriesValues([{ timestamp: Date.now(), value: 1.1 }])).toEqual([1.1]);
     expect(
@@ -239,7 +241,7 @@ describe('Utils test suite', () => {
     ).toEqual([1.1, 2.2]);
   });
 
-  it('Verify isObject()', () => {
+  await it('Verify isObject()', () => {
     expect(isObject('test')).toBe(false);
     expect(isObject(undefined)).toBe(false);
     expect(isObject(null)).toBe(false);
@@ -256,7 +258,7 @@ describe('Utils test suite', () => {
     expect(isObject(new WeakSet())).toBe(true);
   });
 
-  it('Verify cloneObject()', () => {
+  await it('Verify cloneObject()', () => {
     const obj = { 1: 1 };
     expect(cloneObject(obj)).toStrictEqual(obj);
     expect(cloneObject(obj) === obj).toBe(false);
@@ -285,7 +287,7 @@ describe('Utils test suite', () => {
     expect(cloneObject(weakSet)).toStrictEqual({});
   });
 
-  it('Verify hasOwnProp()', () => {
+  await it('Verify hasOwnProp()', () => {
     expect(hasOwnProp('test', '')).toBe(false);
     expect(hasOwnProp(undefined, '')).toBe(false);
     expect(hasOwnProp(null, '')).toBe(false);
@@ -301,7 +303,7 @@ describe('Utils test suite', () => {
     expect(hasOwnProp({ '1': '1' }, 2)).toBe(false);
   });
 
-  it('Verify isIterable()', () => {
+  await it('Verify isIterable()', () => {
     expect(isIterable('')).toBe(true);
     expect(isIterable(' ')).toBe(true);
     expect(isIterable('test')).toBe(true);
@@ -316,7 +318,7 @@ describe('Utils test suite', () => {
     expect(isIterable(new WeakSet())).toBe(false);
   });
 
-  it('Verify isEmptyString()', () => {
+  await it('Verify isEmptyString()', () => {
     expect(isEmptyString('')).toBe(true);
     expect(isEmptyString(' ')).toBe(true);
     expect(isEmptyString('     ')).toBe(true);
@@ -334,7 +336,7 @@ describe('Utils test suite', () => {
     expect(isEmptyString(new WeakSet())).toBe(false);
   });
 
-  it('Verify isNotEmptyString()', () => {
+  await it('Verify isNotEmptyString()', () => {
     expect(isNotEmptyString('')).toBe(false);
     expect(isNotEmptyString(' ')).toBe(false);
     expect(isNotEmptyString('     ')).toBe(false);
@@ -352,7 +354,7 @@ describe('Utils test suite', () => {
     expect(isNotEmptyString(new WeakSet())).toBe(false);
   });
 
-  it('Verify isUndefined()', () => {
+  await it('Verify isUndefined()', () => {
     expect(isUndefined(undefined)).toBe(true);
     expect(isUndefined(null)).toBe(false);
     expect(isUndefined('')).toBe(false);
@@ -365,7 +367,7 @@ describe('Utils test suite', () => {
     expect(isUndefined(new WeakSet())).toBe(false);
   });
 
-  it('Verify isNullOrUndefined()', () => {
+  await it('Verify isNullOrUndefined()', () => {
     expect(isNullOrUndefined(undefined)).toBe(true);
     expect(isNullOrUndefined(null)).toBe(true);
     expect(isNullOrUndefined('')).toBe(false);
@@ -378,7 +380,7 @@ describe('Utils test suite', () => {
     expect(isNullOrUndefined(new WeakSet())).toBe(false);
   });
 
-  it('Verify isEmptyArray()', () => {
+  await it('Verify isEmptyArray()', () => {
     expect(isEmptyArray([])).toBe(true);
     expect(isEmptyArray([1, 2])).toBe(false);
     expect(isEmptyArray(['1', '2'])).toBe(false);
@@ -394,7 +396,7 @@ describe('Utils test suite', () => {
     expect(isEmptyArray(new WeakSet())).toBe(false);
   });
 
-  it('Verify isNotEmptyArray()', () => {
+  await it('Verify isNotEmptyArray()', () => {
     expect(isNotEmptyArray([])).toBe(false);
     expect(isNotEmptyArray([1, 2])).toBe(true);
     expect(isNotEmptyArray(['1', '2'])).toBe(true);
@@ -410,7 +412,7 @@ describe('Utils test suite', () => {
     expect(isNotEmptyArray(new WeakSet())).toBe(false);
   });
 
-  it('Verify isEmptyObject()', () => {
+  await it('Verify isEmptyObject()', () => {
     expect(isEmptyObject({})).toBe(true);
     expect(isEmptyObject({ 1: 1, 2: 2 })).toBe(false);
     expect(isEmptyObject(new Map())).toBe(false);
@@ -419,7 +421,7 @@ describe('Utils test suite', () => {
     expect(isEmptyObject(new WeakSet())).toBe(false);
   });
 
-  it('Verify isArraySorted()', () => {
+  await it('Verify isArraySorted()', () => {
     expect(
       isArraySorted([], (a, b) => {
         return a - b;
@@ -435,7 +437,7 @@ describe('Utils test suite', () => {
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false);
   });
 
-  it('Verify once()', () => {
+  await it('Verify once()', () => {
     let called = 0;
     const fn = () => ++called;
     const onceFn = once(fn, this);
@@ -450,7 +452,7 @@ describe('Utils test suite', () => {
     expect(result3).toBe(1);
   });
 
-  it('Verify min()', () => {
+  await it('Verify min()', () => {
     expect(min()).toBe(Infinity);
     expect(min(0, 1)).toBe(0);
     expect(min(1, 0)).toBe(0);
@@ -458,7 +460,7 @@ describe('Utils test suite', () => {
     expect(min(-1, 0)).toBe(-1);
   });
 
-  it('Verify max()', () => {
+  await it('Verify max()', () => {
     expect(max()).toBe(-Infinity);
     expect(max(0, 1)).toBe(1);
     expect(max(1, 0)).toBe(1);

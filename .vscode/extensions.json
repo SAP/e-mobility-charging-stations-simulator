@@ -6,7 +6,6 @@
     "dbaeumer.vscode-eslint",
     "eamodio.gitlens",
     "EditorConfig.EditorConfig",
-    "hbenl.vscode-mocha-test-adapter",
     "ms-azuretools.vscode-docker",
     "sonarsource.sonarlint-vscode",
     "streetsidesoftware.code-spell-checker"

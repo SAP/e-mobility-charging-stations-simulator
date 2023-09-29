@@ -1,7 +1,0 @@
-GetDiagnostics:
-  curl -d '[2,"123456789","GetDiagnostics",{"location":"ftp://localhost"}]' -H "Content-Type: application/json" -X POST http://localhost:3000/message
-TriggerMessage:
-  curl -d '[2,"123456789","TriggerMessage",{"requestedMessage":"BootNotification"}]' -H "Content-Type: application/json" -X POST http://localhost:3000/message
-  curl -d '[2,"123456789","TriggerMessage",{"requestedMessage":"HeartBeat"}]' -H "Content-Type: application/json" -X POST http://localhost:3000/message
-UpdateFirmware:
-  curl -d '[2,"123456789","UpdateFirmware",{"location":"ftp://localhost","retrieveDate":"2019-01-01T00:00:00.000Z"}]' -H "Content-Type: application/json" -X POST http://localhost:3000/message

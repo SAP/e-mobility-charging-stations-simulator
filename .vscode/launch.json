@@ -22,10 +22,7 @@
       "continueOnAttach": true,
       "autoAttachChildProcesses": false,
       "timeout": 30000,
-      "resolveSourceMapLocations": [
-        "!**/node_modules/**",
-        "!**/.vscode/extensions/hbenl.vscode-mocha-test-adapter-*/**"
-      ],
+      "resolveSourceMapLocations": ["!**/node_modules/**"],
       "skipFiles": ["<node_internals>/**"]
     }
   ]

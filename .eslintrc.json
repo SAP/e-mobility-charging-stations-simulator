@@ -3,8 +3,7 @@
   "root": true,
   "env": {
     "es2022": true,
-    "node": true,
-    "mocha": true
+    "node": true
   },
   "parserOptions": {
     "ecmaVersion": 2022,
