@@ -80,10 +80,6 @@
     "coverage": "c8 report --reporter=lcov",
     "coverage:html": "c8 report --reporter=html",
     "clinic:clean": "clinic clean",
-    "git:sinit": "git submodule update --init --recursive --force",
-    "git:sdiff": "git diff && git submodule foreach 'git diff'",
-    "git:supdate": "git submodule update --remote --recursive --merge",
-    "git:spush": "git push --recurse-submodules=on-demand",
     "release": "release-it"
   },
   "pnpm": {
