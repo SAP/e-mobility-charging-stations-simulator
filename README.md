@@ -340,13 +340,13 @@ The syntax is similar to the charging station configuration template 'AutomaticT
 
 In the [docker](./docker) folder:
 
-```bash
+```shell
 make
 ```
 
 <!-- Or with the optional git submodules:
 
-```bash
+```shell
 make SUBMODULES_INIT=true
 ``` -->
 
