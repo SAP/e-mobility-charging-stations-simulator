@@ -168,6 +168,9 @@ devDependencies:
   expect:
     specifier: ^29.7.0
     version: 29.7.0
+  glob:
+    specifier: ^10.3.10
+    version: 10.3.10
   husky:
     specifier: ^8.0.3
     version: 8.0.3
