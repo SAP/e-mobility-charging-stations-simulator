@@ -132,7 +132,7 @@
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.4",
-    "@types/node": "^20.7.1",
+    "@types/node": "^20.7.2",
     "@types/sinon": "^10.0.17",
     "@types/tar": "^6.1.6",
     "@types/ws": "^8.5.6",
@@ -162,6 +162,7 @@
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.5.4",
     "sinon": "^16.0.0",
+    "ts-node": "^10.9.1",
     "tsx": "^3.13.0",
     "typescript": "~5.2.2"
   }
