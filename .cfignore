@@ -61,7 +61,7 @@ mta.yaml
 mta_archives
 docker
 src
-test
+tests
 ui
 temp
 outputs
