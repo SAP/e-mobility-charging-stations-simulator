@@ -161,7 +161,7 @@ export class ChargingStation {
   public idTagsCache: IdTagsCache;
   public automaticTransactionGenerator!: AutomaticTransactionGenerator | undefined;
   public ocppConfiguration!: ChargingStationOcppConfiguration | undefined;
-  public wsConnection!: WebSocket | null;
+  public wsConnection: WebSocket | null;
   public readonly connectors: Map<number, ConnectorStatus>;
   public readonly evses: Map<number, EvseStatus>;
   public readonly requests: Map<string, CachedRequest>;
@@ -193,6 +193,7 @@ export class ChargingStation {
     this.started = false;
     this.starting = false;
     this.stopping = false;
+    this.wsConnection = null;
     this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
     this.index = index;
@@ -1699,7 +1700,7 @@ export class ChargingStation {
             const beginId = PerformanceStatistics.beginMeasure(measureId);
             writeFileSync(
               this.configurationFile,
-              JSON.stringify(configurationData, null, 2),
+              JSON.stringify(configurationData, undefined, 2),
               'utf8',
             );
             PerformanceStatistics.endMeasure(measureId, beginId);

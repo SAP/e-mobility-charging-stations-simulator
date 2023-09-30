@@ -259,7 +259,7 @@ export class Bootstrap extends EventEmitter {
     // logger.debug(
     //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
     //     msg,
-    //     null,
+    //     undefined,
     //     2,
     //   )}`,
     // );
@@ -297,7 +297,7 @@ export class Bootstrap extends EventEmitter {
           throw new BaseError(
             `Unknown charging station worker event: '${
               msg.event
-            }' received with data: ${JSON.stringify(msg.data, null, 2)}`,
+            }' received with data: ${JSON.stringify(msg.data, undefined, 2)}`,
           );
       }
     } catch (error) {

@@ -103,7 +103,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors!),
       'Incoming request PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, null, 2),
+      JSON.stringify(validate.errors, undefined, 2),
     );
   }
 

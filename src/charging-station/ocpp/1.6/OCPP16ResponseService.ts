@@ -366,7 +366,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           ErrorType.NOT_IMPLEMENTED,
           `${commandName} is not implemented to handle response PDU ${JSON.stringify(
             payload,
-            null,
+            undefined,
             2,
           )}`,
           commandName,
@@ -378,7 +378,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         ErrorType.SECURITY_ERROR,
         `${commandName} cannot be issued to handle response PDU ${JSON.stringify(
           payload,
-          null,
+          undefined,
           2,
         )} while the charging station is not registered on the central server.`,
         commandName,
