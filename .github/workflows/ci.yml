@@ -51,7 +51,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
       - name: pnpm install
-        run: pnpm install --ignore-scripts
+        run: pnpm install --ignore-scripts --frozen-lockfile
       - name: pnpm lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         run: pnpm lint
@@ -101,7 +101,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
       - name: pnpm install
-        run: pnpm install --ignore-scripts
+        run: pnpm install --ignore-scripts --frozen-lockfile
       - name: pnpm lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         run: pnpm lint

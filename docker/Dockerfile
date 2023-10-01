@@ -12,7 +12,7 @@ RUN set -ex \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
-  && pnpm install --ignore-scripts \
+  && pnpm install --ignore-scripts --frozen-lockfile \
   && pnpm build \
   && apk del .gyp
 
@@ -24,7 +24,7 @@ RUN set -ex \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
-  && pnpm install --ignore-scripts \
+  && pnpm install --ignore-scripts --frozen-lockfile \
   && pnpm build
 
 FROM node:lts-alpine
