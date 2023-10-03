@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { EventEmitter } from 'node:events';
+import { EventEmitterAsyncResource } from 'node:events';
 import { SHARE_ENV, Worker } from 'node:worker_threads';
 
 import { WorkerAbstract } from './WorkerAbstract';
@@ -17,7 +17,7 @@ import {
 import { randomizeDelay, sleep } from './WorkerUtils';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
-  public readonly emitter!: EventEmitter;
+  public readonly emitter: EventEmitterAsyncResource | undefined;
   private readonly workerSet: Set<WorkerSetElement>;
   private started: boolean;
   private workerStartup: boolean;
@@ -44,7 +44,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     }
     this.workerSet = new Set<WorkerSetElement>();
     if (this.workerOptions.poolOptions?.enableEvents) {
-      this.emitter = new EventEmitter();
+      this.emitter = new EventEmitterAsyncResource({ name: 'workerset' });
     }
     this.started = false;
     this.workerStartup = false;
@@ -92,6 +92,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       });
       await worker.terminate();
       await waitWorkerExit;
+      this.emitter?.emitDestroy();
       this.started = false;
     }
   }

@@ -1,4 +1,4 @@
-import type { EventEmitter } from 'node:events';
+import type { EventEmitterAsyncResource } from 'node:events';
 import { existsSync } from 'node:fs';
 
 import type { PoolInfo } from 'poolifier';
@@ -12,7 +12,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
   public abstract readonly info: PoolInfo | SetInfo;
   public abstract readonly size: number;
   public abstract readonly maxElementsPerWorker: number | undefined;
-  public abstract readonly emitter: EventEmitter | undefined;
+  public abstract readonly emitter: EventEmitterAsyncResource | undefined;
 
   /**
    * `WorkerAbstract` constructor.
