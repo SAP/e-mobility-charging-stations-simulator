@@ -78,6 +78,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     // Add worker set element sequentially to optimize memory at startup
     this.workerOptions.workerStartDelay! > 0 &&
       (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)));
+    this.emitter?.emit(WorkerSetEvents.started, this.info);
     this.started = true;
   }
 
@@ -92,6 +93,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       });
       await worker.terminate();
       await waitWorkerExit;
+      this.emitter?.emit(WorkerSetEvents.stopped, this.info);
       this.emitter?.emitDestroy();
       this.started = false;
     }
