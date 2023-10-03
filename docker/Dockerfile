@@ -2,7 +2,7 @@ FROM node:lts-alpine AS builder
 
 # Build simulator
 WORKDIR /usr/builder
-COPY .npmrc package.json pnpm-lock.yaml tsconfig.json rollup.config.mjs build-requirements.mjs skip-preinstall.cjs prepare.cjs ./
+COPY .npmrc package.json pnpm-lock.yaml tsconfig.json rollup.config.js build-requirements.js skip-preinstall.js prepare.js ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 COPY docker/idtags.json ./src/assets/idtags.json

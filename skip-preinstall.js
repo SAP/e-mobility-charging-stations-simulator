@@ -1,4 +1,4 @@
-const { env, exit } = require('node:process');
+import { env, exit } from 'node:process';
 
 const skipPreinstall = env.SKIP_PREINSTALL || env.VCAP_APPLICATION !== undefined;
 if (skipPreinstall) {
