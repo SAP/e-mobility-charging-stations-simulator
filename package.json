@@ -125,7 +125,7 @@
     "@commitlint/config-conventional": "^17.7.0",
     "@mikro-orm/cli": "^5.8.6",
     "@release-it/bumper": "^5.1.0",
-    "@rollup/plugin-json": "^6.0.0",
+    "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.4",
     "@types/node": "^20.8.2",
