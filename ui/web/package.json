@@ -59,7 +59,7 @@
     "prettier": "^3.0.3",
     "rimraf": "^5.0.5",
     "typescript": "~5.2.2",
-    "vite": "^4.4.9",
+    "vite": "^4.4.11",
     "vitest": "^0.34.6"
   },
   "_id": "webui@0.1.1"

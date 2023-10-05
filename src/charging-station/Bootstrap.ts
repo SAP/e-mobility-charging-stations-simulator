@@ -389,9 +389,9 @@ export class Bootstrap extends EventEmitter {
   }
 
   private gracefulShutdown = (): void => {
-    console.info(`${chalk.green('Graceful shutdown')}`);
     this.stop()
       .then(() => {
+        console.info(`${chalk.green('Graceful shutdown')}`);
         exit(exitCodes.succeeded);
       })
       .catch((error) => {
