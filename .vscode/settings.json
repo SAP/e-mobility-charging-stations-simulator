@@ -2,7 +2,6 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": true
   },
-  "testExplorer.useNativeTesting": true,
   "cSpell.words": [
     "backoff",
     "benoit",
