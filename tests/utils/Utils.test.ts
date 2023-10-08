@@ -89,8 +89,8 @@ await describe('Utils test suite', async () => {
 
   await it('Verify convertToDate()', () => {
     expect(convertToDate(undefined)).toBe(undefined);
-    expect(() => convertToDate('')).toThrowError(new Error("Cannot convert to date: ''"));
-    expect(() => convertToDate('00:70:61')).toThrowError(
+    expect(() => convertToDate('')).toThrow(new Error("Cannot convert to date: ''"));
+    expect(() => convertToDate('00:70:61')).toThrow(
       new Error("Cannot convert to date: '00:70:61'"),
     );
     expect(convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'));
@@ -179,13 +179,13 @@ await describe('Utils test suite', async () => {
     randomInteger = getRandomInteger(0, -Constants.MAX_RANDOM_INTEGER);
     expect(randomInteger).toBeGreaterThanOrEqual(-Constants.MAX_RANDOM_INTEGER);
     expect(randomInteger).toBeLessThanOrEqual(0);
-    expect(() => getRandomInteger(0, 1)).toThrowError(
+    expect(() => getRandomInteger(0, 1)).toThrow(
       'The value of "max" is out of range. It must be greater than the value of "min" (1). Received 1',
     );
-    expect(() => getRandomInteger(-1)).toThrowError(
+    expect(() => getRandomInteger(-1)).toThrow(
       'The value of "max" is out of range. It must be greater than the value of "min" (0). Received 0',
     );
-    expect(() => getRandomInteger(Constants.MAX_RANDOM_INTEGER + 1)).toThrowError(
+    expect(() => getRandomInteger(Constants.MAX_RANDOM_INTEGER + 1)).toThrow(
       `The value of "max" is out of range. It must be <= ${
         Constants.MAX_RANDOM_INTEGER + 1
       }. Received 281_474_976_710_656`,
@@ -221,8 +221,8 @@ await describe('Utils test suite', async () => {
     expect(randomFloat).toBeGreaterThanOrEqual(0);
     expect(randomFloat).toBeLessThanOrEqual(Number.MAX_VALUE);
     expect(randomFloat).not.toEqual(getRandomFloat());
-    expect(() => getRandomFloat(0, 1)).toThrowError(new RangeError('Invalid interval'));
-    expect(() => getRandomFloat(Number.MAX_VALUE, -Number.MAX_VALUE)).toThrowError(
+    expect(() => getRandomFloat(0, 1)).toThrow(new RangeError('Invalid interval'));
+    expect(() => getRandomFloat(Number.MAX_VALUE, -Number.MAX_VALUE)).toThrow(
       new RangeError('Invalid interval'),
     );
     randomFloat = getRandomFloat(0, -Number.MAX_VALUE);
