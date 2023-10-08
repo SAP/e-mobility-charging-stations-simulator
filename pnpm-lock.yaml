@@ -57,8 +57,8 @@ dependencies:
     specifier: ^6.1.0
     version: 6.1.0
   poolifier:
-    specifier: ^2.7.5
-    version: 2.7.5
+    specifier: ^3.0.0
+    version: 3.0.0
   source-map-support:
     specifier: ^0.5.21
     version: 0.5.21
@@ -69,11 +69,11 @@ dependencies:
     specifier: ^2.6.2
     version: 2.6.2
   winston:
-    specifier: ^3.10.0
-    version: 3.10.0
+    specifier: ^3.11.0
+    version: 3.11.0
   winston-daily-rotate-file:
     specifier: ^4.7.1
-    version: 4.7.1(winston@3.10.0)
+    version: 4.7.1(winston@3.11.0)
   ws:
     specifier: ^8.14.2
     version: 8.14.2(bufferutil@4.0.7)(utf-8-validate@6.0.3)
@@ -428,6 +428,11 @@ packages:
   /@colors/colors@1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
+
+  /@colors/colors@1.6.0:
+    resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
+    engines: {node: '>=0.1.90'}
+    dev: false
 
   /@commitlint/cli@17.7.2:
     resolution: {integrity: sha512-t3N7TZq7lOeqTOyEgfGcaltHqEJf7YDlPg75MldeVPPyz14jZq/+mbGF9tueDLFX8R6RwdymrN6D+U5XwZ8Iwg==}
@@ -2840,7 +2845,7 @@ packages:
       '@types/http-cache-semantics': 4.0.2
       get-stream: 6.0.1
       http-cache-semantics: 4.1.1
-      keyv: 4.5.3
+      keyv: 4.5.4
       mimic-response: 4.0.0
       normalize-url: 8.0.0
       responselike: 3.0.0
@@ -4750,7 +4755,7 @@ packages:
     engines: {node: '>=12.0.0'}
     dependencies:
       flatted: 3.2.9
-      keyv: 4.5.3
+      keyv: 4.5.4
       rimraf: 3.0.2
     dev: true
 
@@ -6220,8 +6225,8 @@ packages:
     resolution: {integrity: sha512-cNh5FWt44hx4SpQS1xZU8Tzr/fQA69pqCdjbwxmaYYIOuRfA8EIg+dn1bGmIW03ZUtR2vkMOCjWKc+jIbpauSw==}
     dev: false
 
-  /keyv@4.5.3:
-    resolution: {integrity: sha512-QCiSav9WaX1PgETJ+SpNnx2PRRapJ/oRSXM4VO5OGYGSjrxbKPVFVhB3l2OCbLCk329N8qyAtsJjSjvVBWzEug==}
+  /keyv@4.5.4:
+    resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
     dependencies:
       json-buffer: 3.0.1
     dev: true
@@ -7811,9 +7816,9 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@2.7.5:
-    resolution: {integrity: sha512-JU12qU1IpW2abb5N6YTBPbnQL6wYX3hdjUy/jR+2VIZI97R/20GwuVwZxkQTyt+IsZBneEpqz3/ym1fOeorZAQ==}
-    engines: {node: '>=16.14.0', pnpm: '>=8.6.0'}
+  /poolifier@3.0.0:
+    resolution: {integrity: sha512-Jp5xkqNNhswcOuCisP03hjfi4KXIzNy73e/EcGupI4sbeQMTOKgcRiW1VCfg2Mq29ldkf6sMm79HI5WovaUV/A==}
+    engines: {node: '>=18.0.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
 
@@ -9956,7 +9961,7 @@ packages:
       execa: 5.1.1
     dev: true
 
-  /winston-daily-rotate-file@4.7.1(winston@3.10.0):
+  /winston-daily-rotate-file@4.7.1(winston@3.11.0):
     resolution: {integrity: sha512-7LGPiYGBPNyGHLn9z33i96zx/bd71pjBn9tqQzO3I4Tayv94WPmBNwKC7CO1wPHdP9uvu+Md/1nr6VSH9h0iaA==}
     engines: {node: '>=8'}
     peerDependencies:
@@ -9965,7 +9970,7 @@ packages:
       file-stream-rotator: 0.6.1
       object-hash: 2.2.0
       triple-beam: 1.4.1
-      winston: 3.10.0
+      winston: 3.11.0
       winston-transport: 4.5.0
     dev: false
 
@@ -9978,11 +9983,11 @@ packages:
       triple-beam: 1.4.1
     dev: false
 
-  /winston@3.10.0:
-    resolution: {integrity: sha512-nT6SIDaE9B7ZRO0u3UvdrimG0HkB7dSTAgInQnNR2SOPJ4bvq5q79+pXLftKmP52lJGW15+H5MCK0nM9D3KB/g==}
+  /winston@3.11.0:
+    resolution: {integrity: sha512-L3yR6/MzZAOl0DsysUXHVjOwv8mKZ71TrA/41EIduGpOOV5LQVodqN+QdQ6BS6PJ/RdIshZhq84P/fStEZkk7g==}
     engines: {node: '>= 12.0.0'}
     dependencies:
-      '@colors/colors': 1.5.0
+      '@colors/colors': 1.6.0
       '@dabh/diagnostics': 2.0.3
       async: 3.2.4
       is-stream: 2.0.1
