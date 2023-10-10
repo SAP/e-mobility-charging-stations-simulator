@@ -1,5 +1,6 @@
 import { type FSWatcher, readFileSync, watch } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { env } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
@@ -40,6 +41,11 @@ type ConfigurationSectionType =
   | StorageConfiguration
   | WorkerConfiguration
   | UIServerConfiguration;
+
+// Avoid ESM race condition at class initialization
+const configurationLogPrefix = (): string => {
+  return logPrefix(' Simulator configuration |');
+};
 
 export class Configuration {
   public static configurationChangeCallback: () => Promise<void>;
@@ -117,10 +123,6 @@ export class Configuration {
     );
   }
 
-  private static logPrefix = (): string => {
-    return logPrefix(' Simulator configuration |');
-  };
-
   private static isConfigurationSectionCached(sectionName: ConfigurationSection): boolean {
     return Configuration.configurationSectionCache.has(sectionName);
   }
@@ -171,7 +173,7 @@ export class Configuration {
     }
     if (isCFEnvironment() === true) {
       delete uiServerConfiguration.options?.host;
-      uiServerConfiguration.options!.port = parseInt(process.env.PORT!);
+      uiServerConfiguration.options!.port = parseInt(env.PORT!);
     }
     return uiServerConfiguration;
   }
@@ -329,7 +331,7 @@ export class Configuration {
       (stationTemplateUrl: StationTemplateUrl) => {
         if (!isUndefined(stationTemplateUrl?.['numberOfStation' as keyof StationTemplateUrl])) {
           console.error(
-            `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+            `${chalk.green(configurationLogPrefix())} ${chalk.red(
               `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`,
             )}`,
           );
@@ -409,7 +411,7 @@ export class Configuration {
       ('staticPool' as WorkerProcessType)
     ) {
       console.error(
-        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+        `${chalk.green(configurationLogPrefix())} ${chalk.red(
           `Deprecated configuration 'staticPool' value usage in worker section 'processType' field. Use '${WorkerProcessType.fixedPool}' value instead`,
         )}`,
       );
@@ -474,7 +476,7 @@ export class Configuration {
     // uiServer section
     if (hasOwnProp(Configuration.getConfigurationData(), 'uiWebSocketServer')) {
       console.error(
-        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+        `${chalk.green(configurationLogPrefix())} ${chalk.red(
           `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`,
         )}`,
       );
@@ -501,7 +503,7 @@ export class Configuration {
       )
     ) {
       console.error(
-        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+        `${chalk.green(configurationLogPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage in section '${sectionName}'${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
           }`,
@@ -511,7 +513,7 @@ export class Configuration {
       !isUndefined(Configuration.getConfigurationData()?.[key as keyof ConfigurationData])
     ) {
       console.error(
-        `${chalk.green(Configuration.logPrefix())} ${chalk.red(
+        `${chalk.green(configurationLogPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
           }`,
@@ -534,7 +536,7 @@ export class Configuration {
           Configuration.configurationFile,
           FileType.Configuration,
           error as NodeJS.ErrnoException,
-          Configuration.logPrefix(),
+          configurationLogPrefix(),
         );
       }
     }
@@ -559,7 +561,7 @@ export class Configuration {
         Configuration.configurationFile,
         FileType.Configuration,
         error as NodeJS.ErrnoException,
-        Configuration.logPrefix(),
+        configurationLogPrefix(),
       );
     }
   }

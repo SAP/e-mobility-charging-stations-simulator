@@ -1,10 +1,11 @@
-const http = require('http'),
-  path = require('path'),
+const http = require('node:http'),
+  path = require('node:path'),
+  { env } = require('node:process'),
   finalhandler = require('finalhandler'),
   serveStatic = require('serve-static');
 
-const isCFEnvironment = process.env.VCAP_APPLICATION !== undefined,
-  PORT = isCFEnvironment ? parseInt(process.env.PORT) : 3030,
+const isCFEnvironment = env.VCAP_APPLICATION !== undefined,
+  PORT = isCFEnvironment ? parseInt(env.PORT) : 3030,
   uiPath = path.join(__dirname, './dist');
 
 const serve = serveStatic(uiPath);

@@ -22,7 +22,6 @@
 .nycrc.json
 .nyc_output
 .reuse
-.mocharc.json
 .release-it.json
 .xmake.cfg
 # Logs
@@ -62,7 +61,7 @@ mta.yaml
 mta_archives
 docker
 src
-test
+tests
 ui
 temp
 outputs

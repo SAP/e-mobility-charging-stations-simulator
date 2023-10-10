@@ -8,6 +8,7 @@
     "EditorConfig.EditorConfig",
     "sonarsource.sonarlint-vscode",
     "streetsidesoftware.code-spell-checker",
-    "Vue.volar"
+    "Vue.volar",
+    "zixuanchen.vitest-explorer"
   ]
 }

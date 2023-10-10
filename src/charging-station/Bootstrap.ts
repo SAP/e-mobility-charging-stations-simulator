@@ -2,6 +2,7 @@
 
 import { EventEmitter } from 'node:events';
 import { dirname, extname, join } from 'node:path';
+import { exit } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
 
@@ -258,7 +259,7 @@ export class Bootstrap extends EventEmitter {
     // logger.debug(
     //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
     //     msg,
-    //     null,
+    //     undefined,
     //     2,
     //   )}`,
     // );
@@ -296,7 +297,7 @@ export class Bootstrap extends EventEmitter {
           throw new BaseError(
             `Unknown charging station worker event: '${
               msg.event
-            }' received with data: ${JSON.stringify(msg.data, null, 2)}`,
+            }' received with data: ${JSON.stringify(msg.data, undefined, 2)}`,
           );
       }
     } catch (error) {
@@ -354,13 +355,13 @@ export class Bootstrap extends EventEmitter {
         console.warn(
           chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting"),
         );
-        process.exit(exitCodes.missingChargingStationsConfiguration);
+        exit(exitCodes.missingChargingStationsConfiguration);
       }
       if (this.numberOfChargingStations === 0) {
         console.warn(
           chalk.yellow('No charging station template enabled in configuration, exiting'),
         );
-        process.exit(exitCodes.noChargingStationTemplates);
+        exit(exitCodes.noChargingStationTemplates);
       }
       this.initializedCounters = true;
     }
@@ -388,14 +389,14 @@ export class Bootstrap extends EventEmitter {
   }
 
   private gracefulShutdown = (): void => {
-    console.info(`${chalk.green('Graceful shutdown')}`);
     this.stop()
       .then(() => {
-        process.exit(exitCodes.succeeded);
+        console.info(`${chalk.green('Graceful shutdown')}`);
+        exit(exitCodes.succeeded);
       })
       .catch((error) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error);
-        process.exit(exitCodes.gracefulShutdownError);
+        exit(exitCodes.gracefulShutdownError);
       });
   };
 

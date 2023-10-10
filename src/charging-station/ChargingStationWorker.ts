@@ -52,7 +52,7 @@ class ChargingStationWorker extends AsyncResource {
           throw new BaseError(
             `Unknown worker event: '${message.event}' received with data: '${JSON.stringify(
               message.data,
-              null,
+              undefined,
               2,
             )}'`,
           );

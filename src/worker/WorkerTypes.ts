@@ -19,6 +19,8 @@ export interface SetInfo {
 }
 
 export enum WorkerSetEvents {
+  started = 'started',
+  stopped = 'stopped',
   error = 'error',
   elementStarted = 'elementStarted',
   elementError = 'elementError',

@@ -349,7 +349,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ErrorType.SECURITY_ERROR,
         `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
-          null,
+          undefined,
           2,
         )} while the charging station is in pending state on the central server`,
         commandName,
@@ -386,7 +386,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           ErrorType.NOT_IMPLEMENTED,
           `${commandName} is not implemented to handle request PDU ${JSON.stringify(
             commandPayload,
-            null,
+            undefined,
             2,
           )}`,
           commandName,
@@ -398,7 +398,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ErrorType.SECURITY_ERROR,
         `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
-          null,
+          undefined,
           2,
         )} while the charging station is not registered on the central server.`,
         commandName,
@@ -1456,7 +1456,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<OCPP16HeartbeatRequest, OCPP16HeartbeatResponse>(
                 chargingStation,
                 OCPP16RequestCommand.HEARTBEAT,
-                null,
+                undefined,
                 {
                   triggerMessage: true,
                 },

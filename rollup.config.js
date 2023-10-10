@@ -1,5 +1,6 @@
 /* eslint-disable n/no-unpublished-import */
 import * as os from 'node:os';
+import { env } from 'node:process';
 
 import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
@@ -23,9 +24,9 @@ const availableParallelism = () => {
   return availableParallelism;
 };
 
-const isDevelopmentBuild = process.env.BUILD === 'development';
-const isAnalyzeBuild = process.env.ANALYZE;
-const sourceMap = !!isDevelopmentBuild;
+const isDevelopmentBuild = env.BUILD === 'development';
+const isAnalyzeBuild = env.ANALYZE;
+const sourcemap = !!isDevelopmentBuild;
 
 export default defineConfig({
   input: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
@@ -34,7 +35,7 @@ export default defineConfig({
     {
       dir: './dist',
       format: 'esm',
-      sourcemap: sourceMap,
+      sourcemap,
       plugins: [terser({ maxWorkers: Math.floor(availableParallelism() / 2) })],
     },
   ],
@@ -60,6 +61,7 @@ export default defineConfig({
     'node:http2',
     'node:path',
     'node:perf_hooks',
+    'node:process',
     'node:stream',
     'node:url',
     'node:util',
@@ -76,7 +78,7 @@ export default defineConfig({
     typescript({
       tsconfig: './tsconfig.json',
       compilerOptions: {
-        sourceMap,
+        sourceMap: sourcemap,
       },
     }),
     del({

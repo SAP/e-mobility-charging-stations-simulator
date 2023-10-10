@@ -84,7 +84,7 @@ export abstract class AbstractUIService {
         throw new BaseError(
           `${command} is not implemented to handle message payload ${JSON.stringify(
             requestPayload,
-            null,
+            undefined,
             2,
           )}`,
         );

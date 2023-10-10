@@ -2,7 +2,7 @@ FROM node:lts-alpine AS builder
 
 # Build simulator
 WORKDIR /usr/builder
-COPY .npmrc package.json pnpm-lock.yaml tsconfig.json rollup.config.mjs build-requirements.mjs skip-preinstall.cjs prepare.cjs ./
+COPY package.json pnpm-lock.yaml tsconfig.json rollup.config.js build-requirements.js skip-preinstall.js prepare.js ./
 COPY src ./src
 COPY docker/config.json ./src/assets/config.json
 COPY docker/idtags.json ./src/assets/idtags.json
@@ -12,7 +12,7 @@ RUN set -ex \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
-  && pnpm install --ignore-scripts \
+  && pnpm install --ignore-scripts --frozen-lockfile \
   && pnpm build \
   && apk del .gyp
 
@@ -24,7 +24,7 @@ RUN set -ex \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
-  && pnpm install --ignore-scripts \
+  && pnpm install --ignore-scripts --frozen-lockfile \
   && pnpm build
 
 FROM node:lts-alpine
