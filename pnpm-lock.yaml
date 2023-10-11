@@ -118,8 +118,8 @@ devDependencies:
     specifier: ^6.1.6
     version: 6.1.6
   '@types/ws':
-    specifier: ^8.5.6
-    version: 8.5.6
+    specifier: ^8.5.7
+    version: 8.5.7
   '@typescript-eslint/eslint-plugin':
     specifier: ^6.7.5
     version: 6.7.5(@typescript-eslint/parser@6.7.5)(eslint@8.51.0)(typescript@5.2.2)
@@ -1858,8 +1858,8 @@ packages:
       '@types/webidl-conversions': 7.0.1
     dev: false
 
-  /@types/ws@8.5.6:
-    resolution: {integrity: sha512-8B5EO9jLVCy+B58PLHvLDuOD8DRVMgQzq8d55SjLCOn9kqGyqOvy27exVaTio1q1nX5zLu8/6N0n2ThSxOM6tg==}
+  /@types/ws@8.5.7:
+    resolution: {integrity: sha512-6UrLjiDUvn40CMrAubXuIVtj2PEfKDffJS7ychvnPU44j+KVeXmdHHTgqcM/dxLUTHxlXHiFM8Skmb8ozGdTnQ==}
     dependencies:
       '@types/node': 20.8.4
     dev: true
