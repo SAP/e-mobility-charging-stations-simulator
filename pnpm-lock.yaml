@@ -157,8 +157,8 @@ devDependencies:
     specifier: ^46.8.2
     version: 46.8.2(eslint@8.51.0)
   eslint-plugin-n:
-    specifier: ^16.1.0
-    version: 16.1.0(eslint@8.51.0)
+    specifier: ^16.2.0
+    version: 16.2.0(eslint@8.51.0)
   eslint-plugin-prettier:
     specifier: ^5.0.1
     version: 5.0.1(eslint-config-prettier@9.0.0)(eslint@8.51.0)(prettier@3.0.3)
@@ -4358,8 +4358,8 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-plugin-n@16.1.0(eslint@8.51.0):
-    resolution: {integrity: sha512-3wv/TooBst0N4ND+pnvffHuz9gNPmk/NkLwAxOt2JykTl/hcuECe6yhTtLJcZjIxtZwN+GX92ACp/QTLpHA3Hg==}
+  /eslint-plugin-n@16.2.0(eslint@8.51.0):
+    resolution: {integrity: sha512-AQER2jEyQOt1LG6JkGJCCIFotzmlcCZFur2wdKrp1JX2cNotC7Ae0BcD/4lLv3lUAArM9uNS8z/fsvXTd0L71g==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       eslint: '>=7.0.0'
