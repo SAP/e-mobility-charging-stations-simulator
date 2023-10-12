@@ -38,7 +38,7 @@ WORKDIR /usr/app
 COPY --from=builder /usr/builder/webui ./webui
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist
-COPY README.md LICENSE package.json ./
+COPY package.json README.md LICENSE ./
 COPY docker/start.sh /start.sh
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN set -ex \
