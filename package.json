@@ -117,7 +117,7 @@
     "ws": "^8.14.2"
   },
   "optionalDependencies": {
-    "bufferutil": "^4.0.7",
+    "bufferutil": "^4.0.8",
     "utf-8-validate": "^6.0.3"
   },
   "devDependencies": {
@@ -150,11 +150,11 @@
     "expect": "^29.7.0",
     "glob": "^10.3.10",
     "husky": "^8.0.3",
-    "lint-staged": "^14.0.1",
+    "lint-staged": "^15.0.1",
     "prettier": "^3.0.3",
     "release-it": "^16.2.1",
     "rimraf": "^5.0.5",
-    "rollup": "^4.1.0",
+    "rollup": "^4.1.1",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.5.4",
