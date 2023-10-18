@@ -7,8 +7,8 @@
     "pnpm": ">=8.6.0"
   },
   "volta": {
-    "node": "20.8.0",
-    "pnpm": "8.9.0"
+    "node": "20.8.1",
+    "pnpm": "8.9.2"
   },
   "repository": {
     "type": "git",
@@ -94,10 +94,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^5.8.8",
-    "@mikro-orm/mariadb": "^5.8.8",
-    "@mikro-orm/reflection": "^5.8.8",
-    "@mikro-orm/sqlite": "^5.8.8",
+    "@mikro-orm/core": "^5.8.9",
+    "@mikro-orm/mariadb": "^5.8.9",
+    "@mikro-orm/reflection": "^5.8.9",
+    "@mikro-orm/sqlite": "^5.8.9",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.3",
@@ -105,7 +105,7 @@
     "date-fns": "^2.30.0",
     "http-status-codes": "^2.3.0",
     "just-merge": "^3.2.0",
-    "logform": "^2.5.1",
+    "logform": "^2.6.0",
     "mnemonist": "^0.39.5",
     "mongodb": "^6.1.0",
     "poolifier": "^3.0.0",
@@ -117,22 +117,22 @@
     "ws": "^8.14.2"
   },
   "optionalDependencies": {
-    "bufferutil": "^4.0.7",
+    "bufferutil": "^4.0.8",
     "utf-8-validate": "^6.0.3"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.7.2",
-    "@commitlint/config-conventional": "^17.7.0",
-    "@mikro-orm/cli": "^5.8.8",
+    "@commitlint/cli": "^17.8.0",
+    "@commitlint/config-conventional": "^17.8.0",
+    "@mikro-orm/cli": "^5.8.9",
     "@release-it/bumper": "^5.1.0",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.5",
-    "@types/node": "^20.8.5",
+    "@types/node": "^20.8.6",
     "@types/sinon": "^10.0.19",
     "@types/tar": "^6.1.6",
     "@types/ws": "^8.5.7",
-    "@typescript-eslint/eslint-plugin": "^6.7.5",
+    "@typescript-eslint/eslint-plugin": "^6.8.0",
     "@typescript-eslint/parser": "^6.7.5",
     "@web/rollup-plugin-copy": "^0.4.0",
     "auto-changelog": "^2.4.0",
@@ -150,11 +150,11 @@
     "expect": "^29.7.0",
     "glob": "^10.3.10",
     "husky": "^8.0.3",
-    "lint-staged": "^14.0.1",
+    "lint-staged": "^15.0.1",
     "prettier": "^3.0.3",
     "release-it": "^16.2.1",
     "rimraf": "^5.0.5",
-    "rollup": "^4.0.2",
+    "rollup": "^4.1.4",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.0.0",
     "semver": "^7.5.4",
