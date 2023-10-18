@@ -196,7 +196,7 @@ devDependencies:
     specifier: ^2.0.0
     version: 2.0.0
   semver:
-    specifier: ^7.5.3
+    specifier: ^7.5.4
     version: 7.5.4
   sinon:
     specifier: ^16.1.1

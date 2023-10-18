@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-        node: ['20.x']
+        node: ['20.x', '21.x']
     name: Build simulator with Node ${{ matrix.node }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -73,7 +73,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-        node: ['18.x', '20.x']
+        node: ['18.x', '20.x', '21.x']
     name: Build dashboard with Node ${{ matrix.node }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     defaults:
