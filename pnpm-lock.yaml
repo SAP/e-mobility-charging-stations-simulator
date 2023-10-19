@@ -127,8 +127,8 @@ devDependencies:
     specifier: ^6.8.0
     version: 6.8.0(eslint@8.51.0)(typescript@5.2.2)
   '@web/rollup-plugin-copy':
-    specifier: ^0.4.0
-    version: 0.4.0
+    specifier: ^0.4.1
+    version: 0.4.1
   auto-changelog:
     specifier: ^2.4.0
     version: 2.4.0
@@ -2010,8 +2010,8 @@ packages:
       eslint-visitor-keys: 3.4.3
     dev: true
 
-  /@web/rollup-plugin-copy@0.4.0:
-    resolution: {integrity: sha512-CSSx4j+WR0UNgT8GX8OTkLGOxWsCOxRDYHVo0WFqOwCnAeLtWJNQI0YamBEk9ozYSm9AW1YxKUBA79Rf+05tLQ==}
+  /@web/rollup-plugin-copy@0.4.1:
+    resolution: {integrity: sha512-2ewl0D/5zk/VSBcglbH7HCcvTys3GNcBCerNC/e3iFjFMjgpxLhys8UlfwNJ7L76qWem6RHGaSgXGXBr1VL0jw==}
     engines: {node: '>=16.0.0'}
     dependencies:
       glob: 7.2.3
