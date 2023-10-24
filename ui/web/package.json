@@ -39,7 +39,7 @@
   "devDependencies": {
     "@tsconfig/node20": "^20.1.2",
     "@types/jsdom": "^21.1.4",
-    "@types/node": "^20.8.7",
+    "@types/node": "^20.8.8",
     "@typescript-eslint/eslint-plugin": "^6.9.0",
     "@typescript-eslint/parser": "^6.8.0",
     "@vitejs/plugin-vue": "^4.4.0",
