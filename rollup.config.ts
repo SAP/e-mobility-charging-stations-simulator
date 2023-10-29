@@ -1,4 +1,3 @@
-/* eslint-disable n/no-unpublished-import */
 import * as os from 'node:os';
 import { env } from 'node:process';
 
@@ -10,8 +9,8 @@ import { defineConfig } from 'rollup';
 import analyze from 'rollup-plugin-analyzer';
 import del from 'rollup-plugin-delete';
 
-const availableParallelism = () => {
-  // eslint-disable-next-line no-shadow
+const availableParallelism = (): number => {
+  // eslint-disable-next-line @typescript-eslint/no-shadow
   let availableParallelism = 1;
   try {
     availableParallelism = os.availableParallelism();
@@ -102,6 +101,6 @@ export default defineConfig({
         'assets/ui-protocol/**/*',
       ],
     }),
-    isAnalyzeBuild && analyze(),
+    Boolean(isAnalyzeBuild) && analyze(),
   ],
 });
