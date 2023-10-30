@@ -17,7 +17,11 @@ const sourcemap = !!isDevelopmentBuild;
     external: ['@mikro-orm/*'],
     minify: true,
     sourcemap,
+    entryNames: '[name]',
     outdir: './dist',
+    banner: {
+      js: "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
+    },
     plugins: [
       clean({
         patterns: [
