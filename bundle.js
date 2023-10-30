@@ -1,6 +1,7 @@
 /* eslint-disable n/no-unpublished-import */
 import { env } from 'node:process';
 
+import chalk from 'chalk';
 import { build } from 'esbuild';
 import { clean } from 'esbuild-plugin-clean';
 import { copy } from 'esbuild-plugin-copy';
@@ -8,6 +9,8 @@ import { copy } from 'esbuild-plugin-copy';
 const isDevelopmentBuild = env.BUILD === 'development';
 const sourcemap = !!isDevelopmentBuild;
 
+console.info(chalk.green(`Building in ${isDevelopmentBuild ? 'development' : 'production'} mode`));
+console.time('Build time');
 (async () => {
   await build({
     entryPoints: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
@@ -75,3 +78,4 @@ const sourcemap = !!isDevelopmentBuild;
     ],
   });
 })();
+console.timeEnd('Build time');
