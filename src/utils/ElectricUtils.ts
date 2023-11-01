@@ -12,8 +12,8 @@ export class ACElectricUtils {
     // This is intentional
   }
 
-  static amperageTotal(nbOfPhases: number, Iph: number): number {
-    return nbOfPhases * Iph;
+  static powerTotal(nbOfPhases: number, V: number, Iph: number, cosPhi = 1): number {
+    return nbOfPhases * ACElectricUtils.powerPerPhase(V, Iph, cosPhi);
   }
 
   static powerPerPhase(V: number, Iph: number, cosPhi = 1): number {
@@ -24,8 +24,8 @@ export class ACElectricUtils {
     return Math.round(powerPerPhase);
   }
 
-  static powerTotal(nbOfPhases: number, V: number, Iph: number, cosPhi = 1): number {
-    return nbOfPhases * ACElectricUtils.powerPerPhase(V, Iph, cosPhi);
+  static amperageTotal(nbOfPhases: number, Iph: number): number {
+    return nbOfPhases * Iph;
   }
 
   static amperageTotalFromPower(P: number, V: number, cosPhi = 1): number {
