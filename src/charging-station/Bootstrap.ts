@@ -12,7 +12,7 @@ import { availableParallelism } from 'poolifier';
 import { waitChargingStationEvents } from './Helpers';
 import type { AbstractUIServer } from './ui-server/AbstractUIServer';
 import { UIServerFactory } from './ui-server/UIServerFactory';
-import { version } from '../../package.json' assert { type: 'json' };
+import { version } from '../../package.json';
 import { BaseError } from '../exception';
 import { type Storage, StorageFactory } from '../performance';
 import {

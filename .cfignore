@@ -54,8 +54,7 @@ manifest-*.yml
 *.mta
 commitlint.config.js
 commitlint.config.cjs
-rollup.config.js
-rollup.config.mjs
+bundle.js
 mikro-orm.config.ts
 mta.yaml
 mta_archives
