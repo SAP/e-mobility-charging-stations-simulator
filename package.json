@@ -56,7 +56,7 @@
     "preinstall": "node skip-preinstall.js || npx --yes only-allow pnpm",
     "prepare": "node prepare.js",
     "build-requirements": "node --no-warnings build-requirements.js",
-    "start": "pnpm build && cross-env NODE_ENV=production node --enable-source-maps dist/start.js",
+    "start": "pnpm build && cross-env NODE_ENV=production node dist/start.js",
     "start:dev": "pnpm build:dev && cross-env NODE_ENV=development node --enable-source-maps dist/start.js",
     "start:dev:debug": "pnpm build:dev && cross-env NODE_ENV=development node --enable-source-maps --inspect dist/start.js",
     "start:prof": "cross-env NODE_ENV=production node --enable-source-maps --prof dist/start.js",
