@@ -199,9 +199,9 @@ export class Bootstrap extends EventEmitter {
           ),
           new Promise<string>((resolve) => {
             setTimeout(() => {
-              const message = `Timeout reached ${formatDurationMilliSeconds(
+              const message = `Timeout ${formatDurationMilliSeconds(
                 Constants.STOP_SIMULATOR_TIMEOUT,
-              )} at stopping charging stations simulator`;
+              )} reached at stopping charging stations simulator`;
               console.warn(chalk.yellow(message));
               resolve(message);
             }, Constants.STOP_SIMULATOR_TIMEOUT);

@@ -18,10 +18,6 @@ export const ifUndefined = <T>(value: T | undefined, isValue: T): T => {
 //   if (isIterable(obj) === false) cb();
 // };
 
-const isPromisePending = (promise: Promise<unknown>): boolean => {
-  return util.inspect(promise).includes('pending');
-};
-
 export const promiseWithTimeout = <T>(
   promise: Promise<T>,
   timeoutMs: number,
@@ -33,10 +29,9 @@ export const promiseWithTimeout = <T>(
   // Create a timeout promise that rejects in timeout milliseconds
   const timeoutPromise = new Promise<never>((_, reject) => {
     setTimeout(() => {
-      if (isPromisePending(promise)) {
-        timeoutCallback();
-        // FIXME: The original promise shall be canceled
-      }
+      // FIXME: The original promise state shall be checked
+      timeoutCallback();
+      // FIXME: The original promise shall be canceled
       reject(timeoutError);
     }, timeoutMs);
   });
