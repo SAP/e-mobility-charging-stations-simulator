@@ -569,6 +569,8 @@ export class Configuration {
               .finally(() => {
                 Configuration.configurationFileReloading = false;
               });
+          } else {
+            Configuration.configurationFileReloading = false;
           }
         }
       });
