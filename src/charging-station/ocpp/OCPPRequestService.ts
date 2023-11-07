@@ -1,4 +1,4 @@
-import Ajv, { type JSONSchemaType } from 'ajv';
+import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
 import { OCPPConstants } from './OCPPConstants';
@@ -44,6 +44,7 @@ export abstract class OCPPRequestService {
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
   private readonly ocppResponseService: OCPPResponseService;
+  private readonly jsonValidateFunctions: Map<RequestCommand, ValidateFunction<JsonObject>>;
   protected abstract jsonSchemas: Map<RequestCommand, JSONSchemaType<JsonObject>>;
 
   protected constructor(version: OCPPVersion, ocppResponseService: OCPPResponseService) {
@@ -53,6 +54,7 @@ export abstract class OCPPRequestService {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
+    this.jsonValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonObject>>();
     this.ocppResponseService = ocppResponseService;
     this.requestHandler = this.requestHandler.bind(this) as <
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -210,7 +212,13 @@ export abstract class OCPPRequestService {
       );
       return true;
     }
-    const validate = this.ajv.compile(this.jsonSchemas.get(commandName as RequestCommand)!);
+    if (this.jsonValidateFunctions.has(commandName as RequestCommand) === false) {
+      this.jsonValidateFunctions.set(
+        commandName as RequestCommand,
+        this.ajv.compile(this.jsonSchemas.get(commandName as RequestCommand)!).bind(this),
+      );
+    }
+    const validate = this.jsonValidateFunctions.get(commandName as RequestCommand)!;
     payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
@@ -247,11 +255,25 @@ export abstract class OCPPRequestService {
       );
       return true;
     }
-    const validate = this.ajv.compile(
-      this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(
+    if (
+      this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.has(
         commandName as IncomingRequestCommand,
-      )!,
-    );
+      ) === false
+    ) {
+      this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.set(
+        commandName as IncomingRequestCommand,
+        this.ajv
+          .compile(
+            this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(
+              commandName as IncomingRequestCommand,
+            )!,
+          )
+          .bind(this),
+      );
+    }
+    const validate = this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.get(
+      commandName as IncomingRequestCommand,
+    )!;
     payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {

@@ -1,4 +1,4 @@
-import Ajv, { type JSONSchemaType } from 'ajv';
+import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
 import { OCPPServiceUtils } from './OCPPServiceUtils';
@@ -17,8 +17,16 @@ const moduleName = 'OCPPResponseService';
 
 export abstract class OCPPResponseService {
   private static instance: OCPPResponseService | null = null;
+
+  public jsonIncomingRequestResponseValidateFunctions: Map<
+    IncomingRequestCommand,
+    ValidateFunction<JsonObject>
+  >;
+
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
+  private jsonRequestValidateFunctions: Map<RequestCommand, ValidateFunction<JsonObject>>;
+
   public abstract jsonIncomingRequestResponseSchemas: Map<
     IncomingRequestCommand,
     JSONSchemaType<JsonObject>
@@ -31,6 +39,11 @@ export abstract class OCPPResponseService {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
+    this.jsonRequestValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonObject>>();
+    this.jsonIncomingRequestResponseValidateFunctions = new Map<
+      IncomingRequestCommand,
+      ValidateFunction<JsonObject>
+    >();
     this.responseHandler = this.responseHandler.bind(this) as <
       ReqType extends JsonType,
       ResType extends JsonType,
@@ -64,7 +77,13 @@ export abstract class OCPPResponseService {
     if (chargingStation.getOcppStrictCompliance() === false) {
       return true;
     }
-    const validate = this.ajv.compile(schema);
+    if (this.jsonRequestValidateFunctions.has(commandName) === false) {
+      this.jsonRequestValidateFunctions.set(
+        commandName,
+        this.ajv.compile<JsonObject>(schema).bind(this),
+      );
+    }
+    const validate = this.jsonRequestValidateFunctions.get(commandName)!;
     if (validate(payload)) {
       return true;
     }
