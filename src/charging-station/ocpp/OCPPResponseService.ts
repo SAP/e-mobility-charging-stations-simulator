@@ -72,10 +72,7 @@ export abstract class OCPPResponseService {
       return true;
     }
     if (this.jsonRequestValidateFunctions.has(commandName) === false) {
-      this.jsonRequestValidateFunctions.set(
-        commandName,
-        this.ajv.compile<JsonType>(schema).bind(this),
-      );
+      this.jsonRequestValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
     }
     const validate = this.jsonRequestValidateFunctions.get(commandName)!;
     if (validate(payload)) {
