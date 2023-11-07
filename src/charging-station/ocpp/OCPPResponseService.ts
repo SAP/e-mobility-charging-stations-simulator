@@ -4,13 +4,7 @@ import ajvFormats from 'ajv-formats';
 import { OCPPServiceUtils } from './OCPPServiceUtils';
 import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
-import type {
-  IncomingRequestCommand,
-  JsonObject,
-  JsonType,
-  OCPPVersion,
-  RequestCommand,
-} from '../../types';
+import type { IncomingRequestCommand, JsonType, OCPPVersion, RequestCommand } from '../../types';
 import { logger } from '../../utils';
 
 const moduleName = 'OCPPResponseService';
@@ -20,16 +14,16 @@ export abstract class OCPPResponseService {
 
   public jsonIncomingRequestResponseValidateFunctions: Map<
     IncomingRequestCommand,
-    ValidateFunction<JsonObject>
+    ValidateFunction<JsonType>
   >;
 
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
-  private jsonRequestValidateFunctions: Map<RequestCommand, ValidateFunction<JsonObject>>;
+  private jsonRequestValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>;
 
   public abstract jsonIncomingRequestResponseSchemas: Map<
     IncomingRequestCommand,
-    JSONSchemaType<JsonObject>
+    JSONSchemaType<JsonType>
   >;
 
   protected constructor(version: OCPPVersion) {
@@ -39,10 +33,10 @@ export abstract class OCPPResponseService {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.jsonRequestValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonObject>>();
+    this.jsonRequestValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonType>>();
     this.jsonIncomingRequestResponseValidateFunctions = new Map<
       IncomingRequestCommand,
-      ValidateFunction<JsonObject>
+      ValidateFunction<JsonType>
     >();
     this.responseHandler = this.responseHandler.bind(this) as <
       ReqType extends JsonType,
@@ -80,7 +74,7 @@ export abstract class OCPPResponseService {
     if (this.jsonRequestValidateFunctions.has(commandName) === false) {
       this.jsonRequestValidateFunctions.set(
         commandName,
-        this.ajv.compile<JsonObject>(schema).bind(this),
+        this.ajv.compile<JsonType>(schema).bind(this),
       );
     }
     const validate = this.jsonRequestValidateFunctions.get(commandName)!;

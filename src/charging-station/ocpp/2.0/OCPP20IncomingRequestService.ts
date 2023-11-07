@@ -8,7 +8,6 @@ import { OCPPError } from '../../../exception';
 import {
   ErrorType,
   type IncomingRequestHandler,
-  type JsonObject,
   type JsonType,
   type OCPP20ClearCacheRequest,
   OCPP20IncomingRequestCommand,
@@ -20,7 +19,7 @@ import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
 const moduleName = 'OCPP20IncomingRequestService';
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
-  protected jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>;
+  protected jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonType>>;
   private incomingRequestHandlers: Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>;
 
   public constructor() {
@@ -31,7 +30,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],
     ]);
-    this.jsonSchemas = new Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonObject>>([
+    this.jsonSchemas = new Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonType>>([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(

@@ -7,7 +7,6 @@ import { type ChargingStation, addConfigurationKey } from '../../../charging-sta
 import { OCPPError } from '../../../exception';
 import {
   ErrorType,
-  type JsonObject,
   type JsonType,
   type OCPP20BootNotificationResponse,
   type OCPP20ClearCacheResponse,
@@ -28,11 +27,11 @@ const moduleName = 'OCPP20ResponseService';
 export class OCPP20ResponseService extends OCPPResponseService {
   public jsonIncomingRequestResponseSchemas: Map<
     OCPP20IncomingRequestCommand,
-    JSONSchemaType<JsonObject>
+    JSONSchemaType<JsonType>
   >;
 
   private responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>;
-  private jsonSchemas: Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>;
+  private jsonSchemas: Map<OCPP20RequestCommand, JSONSchemaType<JsonType>>;
 
   public constructor() {
     // if (new.target?.name === moduleName) {
@@ -50,7 +49,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.emptyResponseHandler.bind(this) as ResponseHandler,
       ],
     ]);
-    this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonObject>>([
+    this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(

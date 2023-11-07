@@ -35,7 +35,6 @@ import {
   type GetDiagnosticsRequest,
   type GetDiagnosticsResponse,
   type IncomingRequestHandler,
-  type JsonObject,
   type JsonType,
   OCPP16AuthorizationStatus,
   OCPP16AvailabilityType,
@@ -109,7 +108,7 @@ import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
 const moduleName = 'OCPP16IncomingRequestService';
 
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
-  protected jsonSchemas: Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>;
+  protected jsonSchemas: Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonType>>;
   private incomingRequestHandlers: Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>;
 
   public constructor() {
@@ -187,7 +186,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         this.handleRequestCancelReservation.bind(this) as unknown as IncomingRequestHandler,
       ],
     ]);
-    this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonObject>>([
+    this.jsonSchemas = new Map<OCPP16IncomingRequestCommand, JSONSchemaType<JsonType>>([
       [
         OCPP16IncomingRequestCommand.RESET,
         OCPP16ServiceUtils.parseJsonSchemaFile<ResetRequest>(

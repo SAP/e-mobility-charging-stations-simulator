@@ -21,7 +21,6 @@ import {
   type GenericResponse,
   type GetConfigurationResponse,
   type GetDiagnosticsResponse,
-  type JsonObject,
   type JsonType,
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
@@ -68,11 +67,11 @@ const moduleName = 'OCPP16ResponseService';
 export class OCPP16ResponseService extends OCPPResponseService {
   public jsonIncomingRequestResponseSchemas: Map<
     OCPP16IncomingRequestCommand,
-    JSONSchemaType<JsonObject>
+    JSONSchemaType<JsonType>
   >;
 
   private responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>;
-  private jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
+  private jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonType>>;
 
   public constructor() {
     // if (new.target?.name === moduleName) {
@@ -109,7 +108,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         this.emptyResponseHandler.bind(this) as ResponseHandler,
       ],
     ]);
-    this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
+    this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonType>>([
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationResponse>(

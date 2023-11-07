@@ -11,7 +11,6 @@ import type {
   ClearCacheResponse,
   HandleErrorParams,
   IncomingRequestCommand,
-  JsonObject,
   JsonType,
   OCPPVersion,
 } from '../../types';
@@ -23,8 +22,8 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
   private static instance: OCPPIncomingRequestService | null = null;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
-  private jsonValidateFunctions: Map<IncomingRequestCommand, ValidateFunction<JsonObject>>;
-  protected abstract jsonSchemas: Map<IncomingRequestCommand, JSONSchemaType<JsonObject>>;
+  private jsonValidateFunctions: Map<IncomingRequestCommand, ValidateFunction<JsonType>>;
+  protected abstract jsonSchemas: Map<IncomingRequestCommand, JSONSchemaType<JsonType>>;
 
   protected constructor(version: OCPPVersion) {
     super(moduleName);
@@ -34,7 +33,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.jsonValidateFunctions = new Map<IncomingRequestCommand, ValidateFunction<JsonObject>>();
+    this.jsonValidateFunctions = new Map<IncomingRequestCommand, ValidateFunction<JsonType>>();
     this.incomingRequestHandler = this.incomingRequestHandler.bind(this) as <
       ReqType extends JsonType,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -94,7 +93,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       return true;
     }
     if (this.jsonValidateFunctions.has(commandName) === false) {
-      this.jsonValidateFunctions.set(commandName, this.ajv.compile<JsonObject>(schema).bind(this));
+      this.jsonValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
     }
     const validate = this.jsonValidateFunctions.get(commandName)!;
     if (validate(payload)) {

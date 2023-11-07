@@ -32,14 +32,14 @@ import type { OCPPResponseService } from '../OCPPResponseService';
 const moduleName = 'OCPP16RequestService';
 
 export class OCPP16RequestService extends OCPPRequestService {
-  protected jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>;
+  protected jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonType>>;
 
   public constructor(ocppResponseService: OCPPResponseService) {
     // if (new.target?.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
     // }
     super(OCPPVersion.VERSION_16, ocppResponseService);
-    this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonObject>>([
+    this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonType>>([
       [
         OCPP16RequestCommand.AUTHORIZE,
         OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeRequest>(

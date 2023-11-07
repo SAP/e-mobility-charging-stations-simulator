@@ -44,8 +44,8 @@ export abstract class OCPPRequestService {
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
   private readonly ocppResponseService: OCPPResponseService;
-  private readonly jsonValidateFunctions: Map<RequestCommand, ValidateFunction<JsonObject>>;
-  protected abstract jsonSchemas: Map<RequestCommand, JSONSchemaType<JsonObject>>;
+  private readonly jsonValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>;
+  protected abstract jsonSchemas: Map<RequestCommand, JSONSchemaType<JsonType>>;
 
   protected constructor(version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version;
@@ -54,7 +54,7 @@ export abstract class OCPPRequestService {
       multipleOfPrecision: 2,
     });
     ajvFormats(this.ajv);
-    this.jsonValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonObject>>();
+    this.jsonValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonType>>();
     this.ocppResponseService = ocppResponseService;
     this.requestHandler = this.requestHandler.bind(this) as <
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -102,14 +102,14 @@ export abstract class OCPPRequestService {
       responseCallback: ResponseCallback,
       errorCallback: ErrorCallback,
     ) => string;
-    this.validateRequestPayload = this.validateRequestPayload.bind(this) as <T extends JsonObject>(
+    this.validateRequestPayload = this.validateRequestPayload.bind(this) as <T extends JsonType>(
       chargingStation: ChargingStation,
       commandName: RequestCommand | IncomingRequestCommand,
       payload: T,
     ) => boolean;
     this.validateIncomingRequestResponsePayload = this.validateIncomingRequestResponsePayload.bind(
       this,
-    ) as <T extends JsonObject>(
+    ) as <T extends JsonType>(
       chargingStation: ChargingStation,
       commandName: RequestCommand | IncomingRequestCommand,
       payload: T,
@@ -198,7 +198,7 @@ export abstract class OCPPRequestService {
     }
   }
 
-  private validateRequestPayload<T extends JsonObject>(
+  private validateRequestPayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T,
@@ -215,7 +215,7 @@ export abstract class OCPPRequestService {
     if (this.jsonValidateFunctions.has(commandName as RequestCommand) === false) {
       this.jsonValidateFunctions.set(
         commandName as RequestCommand,
-        this.ajv.compile(this.jsonSchemas.get(commandName as RequestCommand)!).bind(this),
+        this.ajv.compile<T>(this.jsonSchemas.get(commandName as RequestCommand)!).bind(this),
       );
     }
     const validate = this.jsonValidateFunctions.get(commandName as RequestCommand)!;
@@ -237,7 +237,7 @@ export abstract class OCPPRequestService {
     );
   }
 
-  private validateIncomingRequestResponsePayload<T extends JsonObject>(
+  private validateIncomingRequestResponsePayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T,
@@ -263,7 +263,7 @@ export abstract class OCPPRequestService {
       this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.set(
         commandName as IncomingRequestCommand,
         this.ajv
-          .compile(
+          .compile<T>(
             this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(
               commandName as IncomingRequestCommand,
             )!,
@@ -475,7 +475,7 @@ export abstract class OCPPRequestService {
       // Request
       case MessageType.CALL_MESSAGE:
         // Build request
-        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonObject);
+        this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonType);
         chargingStation.requests.set(messageId, [
           responseCallback,
           errorCallback,
@@ -495,7 +495,7 @@ export abstract class OCPPRequestService {
         this.validateIncomingRequestResponsePayload(
           chargingStation,
           commandName,
-          messagePayload as JsonObject,
+          messagePayload as JsonType,
         );
         messageToSend = JSON.stringify([messageType, messageId, messagePayload] as Response);
         break;
