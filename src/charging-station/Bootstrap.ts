@@ -4,7 +4,6 @@ import { EventEmitter } from 'node:events';
 import { dirname, extname, join } from 'node:path';
 import { exit } from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { isMainThread } from 'node:worker_threads';
 
 import chalk from 'chalk';
 import { availableParallelism } from 'poolifier';
@@ -111,9 +110,6 @@ export class Bootstrap extends EventEmitter {
   }
 
   public async start(): Promise<void> {
-    if (!isMainThread) {
-      throw new BaseError('Cannot start charging stations simulator from worker thread');
-    }
     if (this.started === false) {
       if (this.starting === false) {
         this.starting = true;
