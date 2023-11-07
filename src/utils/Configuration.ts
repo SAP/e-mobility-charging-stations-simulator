@@ -56,6 +56,7 @@ export class Configuration {
     'config.json',
   );
 
+  private static configurationFileReloading = false;
   private static configurationData?: ConfigurationData;
   private static configurationFileWatcher?: FSWatcher;
   private static configurationSectionCache = new Map<
@@ -546,8 +547,14 @@ export class Configuration {
   private static getConfigurationFileWatcher(): FSWatcher | undefined {
     try {
       return watch(Configuration.configurationFile, (event, filename): void => {
-        if (filename!.trim()!.length > 0 && event === 'change') {
-          console.warn(
+        if (
+          !Configuration.configurationFileReloading &&
+          filename!.trim()!.length > 0 &&
+          event === 'change'
+        ) {
+          Configuration.configurationFileReloading = true;
+          const consoleWarnOnce = once(console.warn, this);
+          consoleWarnOnce(
             `${chalk.green(configurationLogPrefix())} ${chalk.yellow(
               `${FileType.Configuration} ${this.configurationFile} file have changed, reload`,
             )}`,
@@ -555,9 +562,13 @@ export class Configuration {
           delete Configuration.configurationData;
           Configuration.configurationSectionCache.clear();
           if (!isUndefined(Configuration.configurationChangeCallback)) {
-            Configuration.configurationChangeCallback().catch((error) => {
-              throw typeof error === 'string' ? new Error(error) : error;
-            });
+            Configuration.configurationChangeCallback()
+              .catch((error) => {
+                throw typeof error === 'string' ? new Error(error) : error;
+              })
+              .finally(() => {
+                Configuration.configurationFileReloading = false;
+              });
           }
         }
       });
