@@ -178,9 +178,6 @@ export class Bootstrap extends EventEmitter {
   }
 
   public async stop(): Promise<void> {
-    if (!isMainThread) {
-      throw new BaseError('Cannot stop charging stations simulator from worker thread');
-    }
     if (this.started === true) {
       if (this.stopping === false) {
         this.stopping = true;
