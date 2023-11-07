@@ -547,6 +547,11 @@ export class Configuration {
     try {
       return watch(Configuration.configurationFile, (event, filename): void => {
         if (filename!.trim()!.length > 0 && event === 'change') {
+          console.warn(
+            `${chalk.green(configurationLogPrefix())} ${chalk.yellow(
+              `${FileType.Configuration} ${this.configurationFile} file have changed, reload`,
+            )}`,
+          );
           delete Configuration.configurationData;
           Configuration.configurationSectionCache.clear();
           if (!isUndefined(Configuration.configurationChangeCallback)) {

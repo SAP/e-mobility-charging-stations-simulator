@@ -99,7 +99,7 @@ export class Bootstrap extends EventEmitter {
         performanceStorageConfiguration.uri!,
         this.logPrefix(),
       ));
-    Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart();
+    Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart(false);
   }
 
   public static getInstance(): Bootstrap {
@@ -173,7 +173,7 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async stop(): Promise<void> {
+  public async stop(waitChargingStationsStopped = true): Promise<void> {
     if (this.started === true) {
       if (this.stopping === false) {
         this.stopping = true;
@@ -184,22 +184,24 @@ export class Bootstrap extends EventEmitter {
             Constants.EMPTY_FROZEN_OBJECT,
           ),
         );
-        await Promise.race([
-          waitChargingStationEvents(
-            this,
-            ChargingStationWorkerMessageEvents.stopped,
-            this.numberOfChargingStations,
-          ),
-          new Promise<string>((resolve) => {
-            setTimeout(() => {
-              const message = `Timeout ${formatDurationMilliSeconds(
-                Constants.STOP_SIMULATOR_TIMEOUT,
-              )} reached at stopping charging stations simulator`;
-              console.warn(chalk.yellow(message));
-              resolve(message);
-            }, Constants.STOP_SIMULATOR_TIMEOUT);
-          }),
-        ]);
+        if (waitChargingStationsStopped === true) {
+          await Promise.race([
+            waitChargingStationEvents(
+              this,
+              ChargingStationWorkerMessageEvents.stopped,
+              this.numberOfChargingStations,
+            ),
+            new Promise<string>((resolve) => {
+              setTimeout(() => {
+                const message = `Timeout ${formatDurationMilliSeconds(
+                  Constants.STOP_SIMULATOR_TIMEOUT,
+                )} reached at stopping charging stations simulator`;
+                console.warn(chalk.yellow(message));
+                resolve(message);
+              }, Constants.STOP_SIMULATOR_TIMEOUT);
+            }),
+          ]);
+        }
         await this.workerImplementation?.stop();
         this.workerImplementation = null;
         this.uiServer?.stop();
@@ -216,8 +218,8 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async restart(): Promise<void> {
-    await this.stop();
+  public async restart(waitChargingStationsStopped?: boolean): Promise<void> {
+    await this.stop(waitChargingStationsStopped);
     await this.start();
   }
 
