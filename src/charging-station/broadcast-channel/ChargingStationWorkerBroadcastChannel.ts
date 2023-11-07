@@ -87,8 +87,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       ],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-        (requestPayload?: BroadcastChannelRequestPayload) =>
-          this.chargingStation.stopAutomaticTransactionGenerator(requestPayload?.connectorIds),
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.stopAutomaticTransactionGenerator(
+            requestPayload?.connectorIds,
+          ),
       ],
       [
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,

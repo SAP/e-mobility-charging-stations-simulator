@@ -86,7 +86,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     this.starting = false;
   }
 
-  public stop(): void {
+  public async stop(): Promise<void> {
     if (this.started === false) {
       logger.warn(`${this.logPrefix()} is already stopped`);
       return;
@@ -96,7 +96,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       return;
     }
     this.stopping = true;
-    this.stopConnectors();
+    await this.stopConnectors();
     this.started = false;
     this.stopping = false;
   }
@@ -123,13 +123,14 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     }
   }
 
-  public stopConnector(connectorId: number): void {
+  public async stopConnector(connectorId: number): Promise<void> {
     if (this.connectorsStatus.has(connectorId) === false) {
       logger.error(`${this.logPrefix(connectorId)} stopping on non existing connector`);
       throw new BaseError(`Connector ${connectorId} does not exist`);
     }
     if (this.connectorsStatus.get(connectorId)?.start === true) {
       this.connectorsStatus.get(connectorId)!.start = false;
+      await this.stopTransaction(connectorId);
     } else if (this.connectorsStatus.get(connectorId)?.start === false) {
       logger.warn(`${this.logPrefix(connectorId)} is already stopped on connector`);
     }
@@ -160,19 +161,19 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     }
   }
 
-  private stopConnectors(): void {
+  private async stopConnectors(): Promise<void> {
     if (this.chargingStation.hasEvses) {
       for (const [evseId, evseStatus] of this.chargingStation.evses) {
         if (evseId > 0) {
           for (const connectorId of evseStatus.connectors.keys()) {
-            this.stopConnector(connectorId);
+            await this.stopConnector(connectorId);
           }
         }
       }
     } else {
       for (const connectorId of this.chargingStation.connectors.keys()) {
         if (connectorId > 0) {
-          this.stopConnector(connectorId);
+          await this.stopConnector(connectorId);
         }
       }
     }
@@ -190,7 +191,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     );
     while (this.connectorsStatus.get(connectorId)?.start === true) {
       if (!this.canStartConnector(connectorId)) {
-        this.stopConnector(connectorId);
+        await this.stopConnector(connectorId);
         break;
       }
       if (!this.chargingStation?.ocppRequestService) {
@@ -236,13 +237,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
               ?.transactionId} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`,
           );
           await sleep(waitTrxEnd);
-          // Stop transaction
-          logger.info(
-            `${this.logPrefix(
-              connectorId,
-            )} stop transaction with id ${this.chargingStation.getConnectorStatus(connectorId)
-              ?.transactionId}`,
-          );
           await this.stopTransaction(connectorId);
         }
       } else {
@@ -451,6 +445,12 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     const beginId = PerformanceStatistics.beginMeasure(measureId);
     let stopResponse: StopTransactionResponse | undefined;
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId,
+        )} stop transaction with id ${this.chargingStation.getConnectorStatus(connectorId)
+          ?.transactionId}`,
+      );
       stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason);
       ++this.connectorsStatus.get(connectorId)!.stopTransactionRequests!;
       if (stopResponse?.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {

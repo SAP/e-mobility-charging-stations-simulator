@@ -682,7 +682,7 @@ export class ChargingStation {
                 this.initialize();
                 this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo)!);
                 // Restart the ATG
-                this.stopAutomaticTransactionGenerator();
+                this.stopAutomaticTransactionGenerator().catch(() => {});
                 delete this.automaticTransactionGeneratorConfiguration;
                 if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
                   this.startAutomaticTransactionGenerator();
@@ -873,13 +873,13 @@ export class ChargingStation {
     parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
-  public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
+  public async stopAutomaticTransactionGenerator(connectorIds?: number[]): Promise<void> {
     if (isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds!) {
-        this.automaticTransactionGenerator?.stopConnector(connectorId);
+        await this.automaticTransactionGenerator?.stopConnector(connectorId);
       }
     } else {
-      this.automaticTransactionGenerator?.stop();
+      await this.automaticTransactionGenerator?.stop();
     }
     this.saveAutomaticTransactionGeneratorConfiguration();
     parentPort?.postMessage(buildUpdatedMessage(this));
@@ -2171,7 +2171,7 @@ export class ChargingStation {
     this.stopHeartbeat();
     // Stop ongoing transactions
     if (this.automaticTransactionGenerator?.started === true) {
-      this.stopAutomaticTransactionGenerator();
+      await this.stopAutomaticTransactionGenerator();
     } else {
       await this.stopRunningTransactions(reason);
     }
@@ -2318,7 +2318,7 @@ export class ChargingStation {
     this.stopHeartbeat();
     // Stop the ATG if needed
     if (this.getAutomaticTransactionGeneratorConfiguration().stopOnConnectionFailure === true) {
-      this.stopAutomaticTransactionGenerator();
+      await this.stopAutomaticTransactionGenerator();
     }
     if (
       this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries()! ||
