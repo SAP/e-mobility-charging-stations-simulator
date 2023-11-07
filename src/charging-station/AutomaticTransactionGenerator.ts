@@ -460,7 +460,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       }
     } else {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId;
-      logger.warn(
+      logger.debug(
         `${this.logPrefix(connectorId)} stopping a not started transaction${
           !isNullOrUndefined(transactionId) ? ` with id ${transactionId}` : ''
         }`,
