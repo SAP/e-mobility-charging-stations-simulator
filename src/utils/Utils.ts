@@ -37,6 +37,9 @@ export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
 
 export const formatDurationMilliSeconds = (duration: number): string => {
   duration = convertToInt(duration);
+  if (duration < 0) {
+    throw new RangeError('Duration cannot be negative');
+  }
   const days = Math.floor(duration / (24 * 3600 * 1000));
   const hours = Math.floor(millisecondsToHours(duration) - days * 24);
   const minutes = Math.floor(
@@ -48,12 +51,15 @@ export const formatDurationMilliSeconds = (duration: number): string => {
       hoursToSeconds(hours) -
       minutesToSeconds(minutes),
   );
-  return formatDuration({
-    days,
-    hours,
-    minutes,
-    seconds,
-  });
+  return formatDuration(
+    {
+      days,
+      hours,
+      minutes,
+      seconds,
+    },
+    { zero: true },
+  );
 };
 
 export const formatDurationSeconds = (duration: number): string => {
