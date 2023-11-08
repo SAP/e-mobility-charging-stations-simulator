@@ -99,7 +99,8 @@ export class Bootstrap extends EventEmitter {
         performanceStorageConfiguration.uri!,
         this.logPrefix(),
       ));
-    Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart(false);
+    // FIXME: Disabled until the spurious configuration file change detection on MacOS is identified
+    // Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart(false);
   }
 
   public static getInstance(): Bootstrap {
