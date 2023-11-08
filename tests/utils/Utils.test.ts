@@ -58,13 +58,15 @@ await describe('Utils test suite', async () => {
   });
 
   await it('Verify formatDurationMilliSeconds()', () => {
-    expect(formatDurationMilliSeconds(0)).toBe('');
+    expect(formatDurationMilliSeconds(0)).toBe('0 seconds');
+    expect(formatDurationMilliSeconds(900)).toBe('0 seconds');
     expect(formatDurationMilliSeconds(1000)).toBe('1 second');
     expect(formatDurationMilliSeconds(hoursToMilliseconds(4380))).toBe('182 days 12 hours');
   });
 
   await it('Verify formatDurationSeconds()', () => {
-    expect(formatDurationSeconds(0)).toBe('');
+    expect(formatDurationSeconds(0)).toBe('0 seconds');
+    expect(formatDurationSeconds(0.9)).toBe('0 seconds');
     expect(formatDurationSeconds(1)).toBe('1 second');
     expect(formatDurationSeconds(hoursToSeconds(4380))).toBe('182 days 12 hours');
   });

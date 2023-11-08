@@ -51,15 +51,15 @@ export const formatDurationMilliSeconds = (duration: number): string => {
       hoursToSeconds(hours) -
       minutesToSeconds(minutes),
   );
-  return formatDuration(
-    {
-      days,
-      hours,
-      minutes,
-      seconds,
-    },
-    { zero: true },
-  );
+  if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
+    return formatDuration({ seconds }, { zero: true });
+  }
+  return formatDuration({
+    days,
+    hours,
+    minutes,
+    seconds,
+  });
 };
 
 export const formatDurationSeconds = (duration: number): string => {
