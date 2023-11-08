@@ -149,7 +149,7 @@ import {
   roundTo,
   secureRandom,
   sleep,
-  watchJsonFile,
+  // watchJsonFile,
 } from '../utils';
 
 export class ChargingStation {
@@ -664,44 +664,55 @@ export class ChargingStation {
         }
         this.openWSConnection();
         // Monitor charging station template file
-        this.templateFileWatcher = watchJsonFile(
-          this.templateFile,
-          FileType.ChargingStationTemplate,
-          this.logPrefix(),
-          undefined,
-          (event, filename): void => {
-            if (isNotEmptyString(filename) && event === 'change') {
-              try {
-                logger.debug(
-                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
-                    this.templateFile
-                  } file have changed, reload`,
-                );
-                this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
-                // Initialize
-                this.initialize();
-                this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo)!);
-                // Restart the ATG
-                this.stopAutomaticTransactionGenerator().catch(() => {});
-                delete this.automaticTransactionGeneratorConfiguration;
-                if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
-                  this.startAutomaticTransactionGenerator();
-                }
-                if (this.getEnableStatistics() === true) {
-                  this.performanceStatistics?.restart();
-                } else {
-                  this.performanceStatistics?.stop();
-                }
-                // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
-              } catch (error) {
-                logger.error(
-                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
-                  error,
-                );
-              }
-            }
-          },
-        );
+        // FIXME: Disabled until the spurious configuration file change detection is identified
+        // this.templateFileWatcher = watchJsonFile(
+        //   this.templateFile,
+        //   FileType.ChargingStationTemplate,
+        //   this.logPrefix(),
+        //   undefined,
+        //   (event, filename): void => {
+        //     if (isNotEmptyString(filename) && event === 'change') {
+        //       try {
+        //         logger.debug(
+        //           `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
+        //             this.templateFile
+        //           } file have changed, reload`,
+        //         );
+        //         this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
+        //         // Initialize
+        //         this.initialize();
+        //         this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo)!);
+        //         // Restart the ATG
+        //         this.stopAutomaticTransactionGenerator()
+        //           .then(() => {
+        //             delete this.automaticTransactionGeneratorConfiguration;
+        //             if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
+        //               this.startAutomaticTransactionGenerator();
+        //             }
+        //           })
+        //           .catch((err) =>
+        //             logger.error(
+        //               `${this.logPrefix()} failed to stop ATG at ${
+        //                 FileType.ChargingStationTemplate
+        //               } reload`,
+        //               err,
+        //             ),
+        //           );
+        //         if (this.getEnableStatistics() === true) {
+        //           this.performanceStatistics?.restart();
+        //         } else {
+        //           this.performanceStatistics?.stop();
+        //         }
+        //         // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
+        //       } catch (error) {
+        //         logger.error(
+        //           `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
+        //           error,
+        //         );
+        //       }
+        //     }
+        //   },
+        // );
         this.started = true;
         parentPort?.postMessage(buildStartedMessage(this));
         this.starting = false;

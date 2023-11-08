@@ -7,14 +7,14 @@ import {
   handleFileException,
   isNotEmptyString,
   logPrefix,
-  logger,
+  // logger,
   secureRandom,
-  watchJsonFile,
+  // watchJsonFile,
 } from '../utils';
 
 interface IdTagsCacheValueType {
   idTags: string[];
-  idTagsFileWatcher: FSWatcher | undefined;
+  idTagsFileWatcher?: FSWatcher | undefined;
 }
 
 export class IdTagsCache {
@@ -123,33 +123,34 @@ export class IdTagsCache {
   private setIdTagsCache(file: string, idTags: string[]) {
     return this.idTagsCaches.set(file, {
       idTags,
-      idTagsFileWatcher: watchJsonFile(
-        file,
-        FileType.Authorization,
-        this.logPrefix(file),
-        undefined,
-        (event, filename) => {
-          if (isNotEmptyString(filename) && event === 'change') {
-            try {
-              logger.debug(
-                `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`,
-              );
-              this.deleteIdTagsCache(file);
-              this.deleteIdTagsCacheIndexes(file);
-            } catch (error) {
-              handleFileException(
-                file,
-                FileType.Authorization,
-                error as NodeJS.ErrnoException,
-                this.logPrefix(file),
-                {
-                  throwError: false,
-                },
-              );
-            }
-          }
-        },
-      ),
+      // FIXME: Disabled until the spurious configuration file change detection is identified
+      // idTagsFileWatcher: watchJsonFile(
+      //   file,
+      //   FileType.Authorization,
+      //   this.logPrefix(file),
+      //   undefined,
+      //   (event, filename) => {
+      //     if (isNotEmptyString(filename) && event === 'change') {
+      //       try {
+      //         logger.debug(
+      //           `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`,
+      //         );
+      //         this.deleteIdTagsCache(file);
+      //         this.deleteIdTagsCacheIndexes(file);
+      //       } catch (error) {
+      //         handleFileException(
+      //           file,
+      //           FileType.Authorization,
+      //           error as NodeJS.ErrnoException,
+      //           this.logPrefix(file),
+      //           {
+      //             throwError: false,
+      //           },
+      //         );
+      //       }
+      //     }
+      //   },
+      // ),
     });
   }
 
