@@ -1701,6 +1701,10 @@ export class ChargingStation {
               stationInfo: configurationData.stationInfo,
               configurationKey: configurationData.configurationKey,
               automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
+              ...(this.connectors.size > 0 && {
+                connectorsStatus: configurationData.connectorsStatus,
+              }),
+              ...(this.evses.size > 0 && { evsesStatus: configurationData.evsesStatus }),
             } as ChargingStationConfiguration),
           )
           .digest('hex');
