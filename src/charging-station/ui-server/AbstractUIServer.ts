@@ -56,6 +56,7 @@ export abstract class AbstractUIServer {
   }
 
   public stop(): void {
+    this.stopHttpServer();
     this.chargingStations.clear();
   }
 
@@ -91,6 +92,12 @@ export abstract class AbstractUIServer {
       next();
     }
     next();
+  }
+
+  private stopHttpServer(): void {
+    if (this.httpServer.listening === true) {
+      this.httpServer.close();
+    }
   }
 
   private isBasicAuthEnabled(): boolean {

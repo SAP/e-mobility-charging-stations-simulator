@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import chalk from 'chalk';
 
 import { logger } from './Logger';

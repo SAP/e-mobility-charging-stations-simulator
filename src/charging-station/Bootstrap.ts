@@ -2,7 +2,7 @@
 
 import { EventEmitter } from 'node:events';
 import { dirname, extname, join } from 'node:path';
-import { exit } from 'node:process';
+import process, { exit } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
@@ -56,7 +56,7 @@ export class Bootstrap extends EventEmitter {
   public numberOfChargingStations!: number;
   public numberOfChargingStationTemplates!: number;
   private workerImplementation: WorkerAbstract<ChargingStationWorkerData> | null;
-  private readonly uiServer!: AbstractUIServer | null;
+  private readonly uiServer: AbstractUIServer | null;
   private readonly storage!: Storage;
   private numberOfStartedChargingStations!: number;
   private readonly version: string = version;
@@ -69,7 +69,7 @@ export class Bootstrap extends EventEmitter {
   private constructor() {
     super();
     for (const signal of ['SIGINT', 'SIGQUIT', 'SIGTERM']) {
-      process.on(signal, this.gracefulShutdown);
+      process.on(signal, this.gracefulShutdown.bind(this));
     }
     // Enable unconditionally for now
     handleUnhandledRejection();
@@ -84,11 +84,9 @@ export class Bootstrap extends EventEmitter {
       dirname(fileURLToPath(import.meta.url)),
       `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`,
     );
-    const uiServerConfiguration = Configuration.getConfigurationSection<UIServerConfiguration>(
-      ConfigurationSection.uiServer,
+    this.uiServer = UIServerFactory.getUIServerImplementation(
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
     );
-    uiServerConfiguration.enabled === true &&
-      (this.uiServer = UIServerFactory.getUIServerImplementation(uiServerConfiguration));
     const performanceStorageConfiguration =
       Configuration.getConfigurationSection<StorageConfiguration>(
         ConfigurationSection.performanceStorage,
@@ -120,7 +118,8 @@ export class Bootstrap extends EventEmitter {
         this.initializeWorkerImplementation(workerConfiguration);
         await this.workerImplementation?.start();
         await this.storage?.open();
-        this.uiServer?.start();
+        Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+          .enabled === true && this.uiServer?.start();
         // Start ChargingStation object instance in worker thread
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
@@ -173,34 +172,19 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async stop(waitChargingStationsStopped = true): Promise<void> {
+  public async stop(stopChargingStations = true): Promise<void> {
     if (this.started === true) {
       if (this.stopping === false) {
         this.stopping = true;
-        await this.uiServer?.sendInternalRequest(
-          this.uiServer.buildProtocolRequest(
-            generateUUID(),
-            ProcedureName.STOP_CHARGING_STATION,
-            Constants.EMPTY_FROZEN_OBJECT,
-          ),
-        );
-        if (waitChargingStationsStopped === true) {
-          await Promise.race([
-            waitChargingStationEvents(
-              this,
-              ChargingStationWorkerMessageEvents.stopped,
-              this.numberOfChargingStations,
+        if (stopChargingStations === true) {
+          await this.uiServer?.sendInternalRequest(
+            this.uiServer.buildProtocolRequest(
+              generateUUID(),
+              ProcedureName.STOP_CHARGING_STATION,
+              Constants.EMPTY_FROZEN_OBJECT,
             ),
-            new Promise<string>((resolve) => {
-              setTimeout(() => {
-                const message = `Timeout ${formatDurationMilliSeconds(
-                  Constants.STOP_SIMULATOR_TIMEOUT,
-                )} reached at stopping charging stations simulator`;
-                console.warn(chalk.yellow(message));
-                resolve(message);
-              }, Constants.STOP_SIMULATOR_TIMEOUT);
-            }),
-          ]);
+          );
+          await this.waitChargingStationsStopped();
         }
         await this.workerImplementation?.stop();
         this.workerImplementation = null;
@@ -218,9 +202,28 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async restart(waitChargingStationsStopped?: boolean): Promise<void> {
-    await this.stop(waitChargingStationsStopped);
+  public async restart(stopChargingStations?: boolean): Promise<void> {
+    await this.stop(stopChargingStations);
     await this.start();
+  }
+
+  private async waitChargingStationsStopped(): Promise<void> {
+    await Promise.race([
+      waitChargingStationEvents(
+        this,
+        ChargingStationWorkerMessageEvents.stopped,
+        this.numberOfChargingStations,
+      ),
+      new Promise<string>((resolve) => {
+        setTimeout(() => {
+          const message = `Timeout ${formatDurationMilliSeconds(
+            Constants.STOP_SIMULATOR_TIMEOUT,
+          )} reached at stopping charging stations simulator`;
+          console.warn(chalk.yellow(message));
+          resolve(message);
+        }, Constants.STOP_SIMULATOR_TIMEOUT);
+      }),
+    ]);
   }
 
   private initializeWorkerImplementation(workerConfiguration: WorkerConfiguration): void {
@@ -383,17 +386,25 @@ export class Bootstrap extends EventEmitter {
     });
   }
 
-  private gracefulShutdown = (): void => {
+  private gracefulShutdown(): void {
     this.stop()
       .then(() => {
         console.info(`${chalk.green('Graceful shutdown')}`);
-        exit(exitCodes.succeeded);
+        // stop() asks for charging stations to stop by default
+        this.waitChargingStationsStopped()
+          .then(() => {
+            exit(exitCodes.succeeded);
+          })
+          .catch((error) => {
+            console.error(chalk.red('Error while waiting for charging stations to stop: '), error);
+            exit(exitCodes.gracefulShutdownError);
+          });
       })
       .catch((error) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error);
         exit(exitCodes.gracefulShutdownError);
       });
-  };
+  }
 
   private logPrefix = (): string => {
     return logPrefix(' Bootstrap |');
