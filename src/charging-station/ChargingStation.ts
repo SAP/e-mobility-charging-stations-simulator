@@ -697,7 +697,7 @@ export class ChargingStation extends EventEmitter {
                 // Restart the ATG
                 this.stopAutomaticTransactionGenerator();
                 delete this.automaticTransactionGeneratorConfiguration;
-                if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
+                if (this.getAutomaticTransactionGeneratorConfiguration().enable === true) {
                   this.startAutomaticTransactionGenerator();
                 }
                 if (this.getEnableStatistics() === true) {
@@ -849,17 +849,17 @@ export class ChargingStation extends EventEmitter {
       let automaticTransactionGeneratorConfiguration:
         | AutomaticTransactionGeneratorConfiguration
         | undefined;
-      const automaticTransactionGeneratorConfigurationFromFile =
-        this.getConfigurationFromFile()?.automaticTransactionGenerator;
+      const stationTemplate = this.getTemplateFromFile();
+      const stationConfiguration = this.getConfigurationFromFile();
       if (
         this.getAutomaticTransactionGeneratorPersistentConfiguration() &&
-        automaticTransactionGeneratorConfigurationFromFile
+        stationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
+        stationConfiguration?.automaticTransactionGenerator
       ) {
         automaticTransactionGeneratorConfiguration =
-          automaticTransactionGeneratorConfigurationFromFile;
+          stationConfiguration?.automaticTransactionGenerator;
       } else {
-        automaticTransactionGeneratorConfiguration =
-          this.getTemplateFromFile()?.AutomaticTransactionGenerator;
+        automaticTransactionGeneratorConfiguration = stationTemplate?.AutomaticTransactionGenerator;
       }
       this.automaticTransactionGeneratorConfiguration = {
         ...Constants.DEFAULT_ATG_CONFIGURATION,
@@ -1253,13 +1253,13 @@ export class ChargingStation extends EventEmitter {
       dirname(this.templateFile.replace('station-templates', 'configurations')),
       `${getHashId(this.index, stationTemplate)}.json`,
     );
-    const chargingStationConfiguration = this.getConfigurationFromFile();
+    const stationConfiguration = this.getConfigurationFromFile();
     if (
-      chargingStationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
+      stationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-      (chargingStationConfiguration?.connectorsStatus || chargingStationConfiguration?.evsesStatus)
+      (stationConfiguration?.connectorsStatus || stationConfiguration?.evsesStatus)
     ) {
-      this.initializeConnectorsOrEvsesFromFile(chargingStationConfiguration);
+      this.initializeConnectorsOrEvsesFromFile(stationConfiguration);
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
     }
@@ -2175,7 +2175,7 @@ export class ChargingStation extends EventEmitter {
     }
 
     // Start the ATG
-    if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
+    if (this.getAutomaticTransactionGeneratorConfiguration().enable === true) {
       this.startAutomaticTransactionGenerator();
     }
     this.wsConnectionRestarted === true && this.flushMessageBuffer();

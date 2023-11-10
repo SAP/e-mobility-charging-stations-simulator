@@ -356,7 +356,11 @@ export class AutomaticTransactionGenerator extends AsyncResource {
     delete connectorStatus?.lastRunDate;
     delete connectorStatus?.stopDate;
     delete connectorStatus?.stoppedDate;
-    if (!this.started && connectorStatus?.start === true) {
+    if (
+      !this.started &&
+      (connectorStatus?.start === true ||
+        this.chargingStation.getAutomaticTransactionGeneratorConfiguration().enable === false)
+    ) {
       connectorStatus.start = false;
     }
     return (
