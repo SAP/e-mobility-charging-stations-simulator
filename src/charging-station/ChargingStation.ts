@@ -2183,7 +2183,7 @@ export class ChargingStation extends EventEmitter {
 
   private async stopMessageSequence(
     reason?: StopTransactionReason,
-    stopTransactions = true,
+    stopTransactions = this.stationInfo?.stopTransactionsOnStopped ?? true,
   ): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();

@@ -119,6 +119,7 @@ export interface ChargingStationTemplate {
   outOfOrderEndMeterValues?: boolean;
   meteringPerTransaction?: boolean;
   transactionDataMeterValues?: boolean;
+  stopTransactionsOnStopped?: boolean;
   mainVoltageMeterValues?: boolean;
   phaseLineToLineVoltageMeterValues?: boolean;
   customValueLimitationMeterValues?: boolean;
