@@ -48,17 +48,19 @@ export class OCPPServiceUtils {
     // This is intentional
   }
 
-  public static ajvErrorsToErrorType(errors: ErrorObject[]): ErrorType {
-    for (const error of errors as DefinedError[]) {
-      switch (error.keyword) {
-        case 'type':
-          return ErrorType.TYPE_CONSTRAINT_VIOLATION;
-        case 'dependencies':
-        case 'required':
-          return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION;
-        case 'pattern':
-        case 'format':
-          return ErrorType.PROPERTY_CONSTRAINT_VIOLATION;
+  public static ajvErrorsToErrorType(errors: ErrorObject[] | null | undefined): ErrorType {
+    if (isNotEmptyArray(errors) === true) {
+      for (const error of errors as DefinedError[]) {
+        switch (error.keyword) {
+          case 'type':
+            return ErrorType.TYPE_CONSTRAINT_VIOLATION;
+          case 'dependencies':
+          case 'required':
+            return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION;
+          case 'pattern':
+          case 'format':
+            return ErrorType.PROPERTY_CONSTRAINT_VIOLATION;
+        }
       }
     }
     return ErrorType.FORMAT_VIOLATION;

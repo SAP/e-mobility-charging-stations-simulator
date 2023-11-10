@@ -230,7 +230,7 @@ export abstract class OCPPRequestService {
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors!),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, undefined, 2),
@@ -285,7 +285,7 @@ export abstract class OCPPRequestService {
     );
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors!),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Response PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, undefined, 2),

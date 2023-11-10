@@ -83,7 +83,7 @@ export abstract class OCPPResponseService {
       validate.errors,
     );
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors!),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Response PDU is invalid',
       commandName,
       JSON.stringify(validate.errors, undefined, 2),

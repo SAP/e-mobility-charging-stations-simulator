@@ -123,7 +123,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
           }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${socMinimumValue}/${
             meterValue.sampledValue[sampledValuesIndex].value
-          }/${socMaximumValue}}`,
+          }/${socMaximumValue}`,
         );
       }
     }

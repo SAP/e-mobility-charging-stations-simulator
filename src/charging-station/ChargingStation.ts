@@ -724,11 +724,11 @@ export class ChargingStation {
     }
   }
 
-  public async stop(reason?: StopTransactionReason): Promise<void> {
+  public async stop(reason?: StopTransactionReason, stopTransactions?: boolean): Promise<void> {
     if (this.started === true) {
       if (this.stopping === false) {
         this.stopping = true;
-        await this.stopMessageSequence(reason);
+        await this.stopMessageSequence(reason, stopTransactions);
         this.closeWSConnection();
         if (this.getEnableStatistics() === true) {
           this.performanceStatistics?.stop();
@@ -884,13 +884,13 @@ export class ChargingStation {
     parentPort?.postMessage(buildUpdatedMessage(this));
   }
 
-  public async stopAutomaticTransactionGenerator(connectorIds?: number[]): Promise<void> {
+  public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
     if (isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds!) {
-        await this.automaticTransactionGenerator?.stopConnector(connectorId);
+        this.automaticTransactionGenerator?.stopConnector(connectorId);
       }
     } else {
-      await this.automaticTransactionGenerator?.stop();
+      this.automaticTransactionGenerator?.stop();
     }
     this.saveAutomaticTransactionGeneratorConfiguration();
     parentPort?.postMessage(buildUpdatedMessage(this));
@@ -898,7 +898,7 @@ export class ChargingStation {
 
   public async stopTransactionOnConnector(
     connectorId: number,
-    reason = StopTransactionReason.NONE,
+    reason?: StopTransactionReason,
   ): Promise<StopTransactionResponse> {
     const transactionId = this.getConnectorStatus(connectorId)?.transactionId;
     if (
@@ -928,7 +928,7 @@ export class ChargingStation {
       {
         transactionId,
         meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId!, true),
-        reason,
+        ...(isNullOrUndefined(reason) && { reason }),
       },
     );
   }
@@ -2043,7 +2043,7 @@ export class ChargingStation {
     return stationTemplate?.useConnectorId0 ?? true;
   }
 
-  private async stopRunningTransactions(reason = StopTransactionReason.NONE): Promise<void> {
+  private async stopRunningTransactions(reason?: StopTransactionReason): Promise<void> {
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId === 0) {
@@ -2178,17 +2178,18 @@ export class ChargingStation {
   }
 
   private async stopMessageSequence(
-    reason: StopTransactionReason = StopTransactionReason.NONE,
+    reason?: StopTransactionReason,
+    stopTransactions = true,
   ): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
     // Stop heartbeat
     this.stopHeartbeat();
     // Stop ongoing transactions
+    stopTransactions && (await this.stopRunningTransactions(reason));
+    // Stop the ATG
     if (this.automaticTransactionGenerator?.started === true) {
-      await this.stopAutomaticTransactionGenerator();
-    } else {
-      await this.stopRunningTransactions(reason);
+      this.stopAutomaticTransactionGenerator();
     }
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
@@ -2333,7 +2334,7 @@ export class ChargingStation {
     this.stopHeartbeat();
     // Stop the ATG if needed
     if (this.getAutomaticTransactionGeneratorConfiguration().stopOnConnectionFailure === true) {
-      await this.stopAutomaticTransactionGenerator();
+      this.stopAutomaticTransactionGenerator();
     }
     if (
       this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries()! ||
