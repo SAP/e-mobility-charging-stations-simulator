@@ -262,3 +262,4 @@ export {
   type ReservationKey,
   ReservationTerminationReason,
 } from './ocpp/Reservation';
+export { ChargingStationEvents } from './ChargingStation';

@@ -1,6 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
 import { createHash } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import { type FSWatcher, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { URL } from 'node:url';
@@ -67,6 +68,7 @@ import {
   type BootNotificationResponse,
   type CachedRequest,
   type ChargingStationConfiguration,
+  ChargingStationEvents,
   type ChargingStationInfo,
   type ChargingStationOcppConfiguration,
   type ChargingStationTemplate,
@@ -152,7 +154,7 @@ import {
   // watchJsonFile,
 } from '../utils';
 
-export class ChargingStation {
+export class ChargingStation extends EventEmitter {
   public readonly index: number;
   public readonly templateFile: string;
   public stationInfo!: ChargingStationInfo;
@@ -190,6 +192,7 @@ export class ChargingStation {
   private reservationExpirationSetInterval?: NodeJS.Timeout;
 
   constructor(index: number, templateFile: string) {
+    super();
     this.started = false;
     this.starting = false;
     this.stopping = false;
@@ -205,6 +208,16 @@ export class ChargingStation {
     this.sharedLRUCache = SharedLRUCache.getInstance();
     this.idTagsCache = IdTagsCache.getInstance();
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this);
+
+    this.on(ChargingStationEvents.started, () => {
+      parentPort?.postMessage(buildStartedMessage(this));
+    });
+    this.on(ChargingStationEvents.stopped, () => {
+      parentPort?.postMessage(buildStoppedMessage(this));
+    });
+    this.on(ChargingStationEvents.updated, () => {
+      parentPort?.postMessage(buildUpdatedMessage(this));
+    });
 
     this.initialize();
   }
@@ -714,7 +727,7 @@ export class ChargingStation {
         //   },
         // );
         this.started = true;
-        parentPort?.postMessage(buildStartedMessage(this));
+        this.emit(ChargingStationEvents.started);
         this.starting = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already starting...`);
@@ -742,7 +755,7 @@ export class ChargingStation {
         delete this.bootNotificationResponse;
         this.started = false;
         this.saveConfiguration();
-        parentPort?.postMessage(buildStoppedMessage(this));
+        this.emit(ChargingStationEvents.stopped);
         this.stopping = false;
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already stopping...`);
@@ -881,7 +894,7 @@ export class ChargingStation {
       this.automaticTransactionGenerator?.start();
     }
     this.saveAutomaticTransactionGeneratorConfiguration();
-    parentPort?.postMessage(buildUpdatedMessage(this));
+    this.emit(ChargingStationEvents.updated);
   }
 
   public stopAutomaticTransactionGenerator(connectorIds?: number[]): void {
@@ -893,7 +906,7 @@ export class ChargingStation {
       this.automaticTransactionGenerator?.stop();
     }
     this.saveAutomaticTransactionGeneratorConfiguration();
-    parentPort?.postMessage(buildUpdatedMessage(this));
+    this.emit(ChargingStationEvents.updated);
   }
 
   public async stopTransactionOnConnector(
@@ -1803,7 +1816,9 @@ export class ChargingStation {
         );
       }
       if (this.isRegistered() === true) {
+        this.emit(ChargingStationEvents.registered);
         if (this.inAcceptedState() === true) {
+          this.emit(ChargingStationEvents.accepted);
           await this.startMessageSequence();
         }
       } else {
@@ -1813,7 +1828,7 @@ export class ChargingStation {
       }
       this.wsConnectionRestarted = false;
       this.autoReconnectRetryCount = 0;
-      parentPort?.postMessage(buildUpdatedMessage(this));
+      this.emit(ChargingStationEvents.updated);
     } else {
       logger.warn(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`,
@@ -1843,7 +1858,7 @@ export class ChargingStation {
         this.started === true && (await this.reconnect());
         break;
     }
-    parentPort?.postMessage(buildUpdatedMessage(this));
+    this.emit(ChargingStationEvents.updated);
   }
 
   private getCachedRequest(messageType: MessageType, messageId: string): CachedRequest | undefined {
@@ -1954,7 +1969,7 @@ export class ChargingStation {
             logger.error(`${this.logPrefix()} ${errorMsg}`);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errorMsg);
         }
-        parentPort?.postMessage(buildUpdatedMessage(this));
+        this.emit(ChargingStationEvents.updated);
       } else {
         throw new OCPPError(
           ErrorType.PROTOCOL_ERROR,

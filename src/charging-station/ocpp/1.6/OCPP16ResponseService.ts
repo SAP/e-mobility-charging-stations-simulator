@@ -1,7 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { parentPort } from 'node:worker_threads';
-
 import type { JSONSchemaType } from 'ajv';
 import { secondsToMilliseconds } from 'date-fns';
 
@@ -16,6 +14,7 @@ import {
 import { OCPPError } from '../../../exception';
 import {
   type ChangeConfigurationResponse,
+  ChargingStationEvents,
   type ClearChargingProfileResponse,
   ErrorType,
   type GenericResponse,
@@ -53,13 +52,7 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
 } from '../../../types';
-import {
-  Constants,
-  buildUpdatedMessage,
-  convertToInt,
-  isNullOrUndefined,
-  logger,
-} from '../../../utils';
+import { Constants, convertToInt, isNullOrUndefined, logger } from '../../../utils';
 import { OCPPResponseService } from '../OCPPResponseService';
 
 const moduleName = 'OCPP16ResponseService';
@@ -700,7 +693,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ChargePointStatus.Available,
       );
     }
-    parentPort?.postMessage(buildUpdatedMessage(chargingStation));
+    chargingStation.emit(ChargingStationEvents.updated);
   }
 
   private async handleResponseStopTransaction(
@@ -757,7 +750,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId!)!);
     chargingStation.stopMeterValues(transactionConnectorId!);
-    parentPort?.postMessage(buildUpdatedMessage(chargingStation));
+    chargingStation.emit(ChargingStationEvents.updated);
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${
       requestPayload.transactionId
     } STOPPED on ${

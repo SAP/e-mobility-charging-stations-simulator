@@ -1,6 +1,7 @@
 import type { WebSocket } from 'ws';
 
 import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
+import { ChargingStationEvents } from './ChargingStation';
 import type { ChargingStationInfo } from './ChargingStationInfo';
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
 import type { ConnectorStatus } from './ConnectorStatus';
@@ -40,17 +41,18 @@ export interface ChargingStationData extends WorkerData {
 }
 
 enum ChargingStationMessageEvents {
-  started = 'started',
-  stopped = 'stopped',
-  updated = 'updated',
   performanceStatistics = 'performanceStatistics',
 }
 
 export const ChargingStationWorkerMessageEvents = {
   ...WorkerMessageEvents,
+  ...ChargingStationEvents,
   ...ChargingStationMessageEvents,
 } as const;
-export type ChargingStationWorkerMessageEvents = WorkerMessageEvents | ChargingStationMessageEvents;
+export type ChargingStationWorkerMessageEvents =
+  | WorkerMessageEvents
+  | ChargingStationEvents
+  | ChargingStationMessageEvents;
 
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics;
 
