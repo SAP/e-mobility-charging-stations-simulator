@@ -782,7 +782,7 @@ export class ChargingStation extends EventEmitter {
 
     this.wsConnection = new WebSocket(
       this.wsConnectionUrl,
-      `ocpp${this.stationInfo.ocppVersion}`,
+      `ocpp${this.stationInfo?.ocppVersion}`,
       options,
     );
 
@@ -1259,7 +1259,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeOcppServices(): void {
-    const ocppVersion = this.stationInfo.ocppVersion;
+    const ocppVersion = this.stationInfo?.ocppVersion;
     switch (ocppVersion) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
@@ -1756,7 +1756,7 @@ export class ChargingStation extends EventEmitter {
         } while (
           this.isRegistered() === false &&
           (registrationRetryCount <= this.stationInfo.registrationMaxRetries! ||
-            this.stationInfo?.registrationMaxRetries) === -1
+            this.stationInfo?.registrationMaxRetries === -1)
         );
       }
       if (this.isRegistered() === true) {
@@ -1823,7 +1823,7 @@ export class ChargingStation extends EventEmitter {
 
   private async handleIncomingMessage(request: IncomingRequest): Promise<void> {
     const [messageType, messageId, commandName, commandPayload] = request;
-    if (this.stationInfo.enableStatistics === true) {
+    if (this.stationInfo?.enableStatistics === true) {
       this.performanceStatistics?.addRequestStatistic(commandName, messageType);
     }
     logger.debug(
