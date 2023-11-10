@@ -529,10 +529,9 @@ export class Configuration {
         Configuration.configurationData = JSON.parse(
           readFileSync(Configuration.configurationFile, 'utf8'),
         ) as ConfigurationData;
-        // FIXME: Disabled until the spurious configuration file change detection is identified
-        // if (!Configuration.configurationFileWatcher) {
-        //   Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
-        // }
+        if (!Configuration.configurationFileWatcher) {
+          Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
+        }
       } catch (error) {
         Configuration.handleFileException(
           Configuration.configurationFile,
