@@ -175,9 +175,9 @@ export const getPhaseRotationValue = (
   } else if (connectorId > 0 && numberOfPhases === 0) {
     return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`;
     // AC
-  } else if (connectorId > 0 && numberOfPhases === 1) {
+  } else if (connectorId >= 0 && numberOfPhases === 1) {
     return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`;
-  } else if (connectorId > 0 && numberOfPhases === 3) {
+  } else if (connectorId >= 0 && numberOfPhases === 3) {
     return `${connectorId}.${ConnectorPhaseRotation.RST}`;
   }
 };
