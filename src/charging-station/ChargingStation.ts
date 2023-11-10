@@ -228,7 +228,6 @@ export class ChargingStation extends EventEmitter {
 
   public get stationInfo(): ChargingStationInfo {
     return {
-      ...this.internalStationInfo,
       ...{
         enableStatistics: false,
         remoteAuthorization: true,
@@ -252,6 +251,7 @@ export class ChargingStation extends EventEmitter {
         reconnectExponentialDelay: false,
         stopTransactionsOnStopped: true,
       },
+      ...this.internalStationInfo,
     };
   }
 
@@ -1129,6 +1129,7 @@ export class ChargingStation extends EventEmitter {
           ? stationTemplate.power * 1000
           : stationTemplate.power;
     }
+    stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
     stationInfo.firmwareVersionPattern =
       stationTemplate?.firmwareVersionPattern ?? Constants.SEMVER_PATTERN;
     if (
@@ -1153,7 +1154,6 @@ export class ChargingStation extends EventEmitter {
     stationInfo.resetTime = !isNullOrUndefined(stationTemplate?.resetTime)
       ? secondsToMilliseconds(stationTemplate.resetTime!)
       : Constants.CHARGING_STATION_DEFAULT_RESET_TIME;
-    stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo);
     return stationInfo;
   }
 
@@ -2062,7 +2062,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
-    return (stationInfo ?? this.stationInfo).currentOutType!;
+    return (stationInfo ?? this.stationInfo).currentOutType ?? CurrentType.AC;
   }
 
   private getVoltageOut(stationInfo?: ChargingStationInfo): number {
