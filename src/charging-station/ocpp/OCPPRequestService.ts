@@ -203,7 +203,7 @@ export abstract class OCPPRequestService {
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T,
   ): boolean {
-    if (chargingStation.getOcppStrictCompliance() === false) {
+    if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true;
     }
     if (this.jsonSchemas.has(commandName as RequestCommand) === false) {
@@ -242,7 +242,7 @@ export abstract class OCPPRequestService {
     commandName: RequestCommand | IncomingRequestCommand,
     payload: T,
   ): boolean {
-    if (chargingStation.getOcppStrictCompliance() === false) {
+    if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true;
     }
     if (
@@ -307,7 +307,7 @@ export abstract class OCPPRequestService {
     if (
       (chargingStation.inUnknownState() === true &&
         commandName === RequestCommand.BOOT_NOTIFICATION) ||
-      (chargingStation.getOcppStrictCompliance() === false &&
+      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
         chargingStation.inUnknownState() === true) ||
       chargingStation.inAcceptedState() === true ||
       (chargingStation.inPendingState() === true &&
@@ -325,7 +325,7 @@ export abstract class OCPPRequestService {
            * @param requestPayload -
            */
           const responseCallback = (payload: JsonType, requestPayload: JsonType): void => {
-            if (chargingStation.getEnableStatistics() === true) {
+            if (chargingStation.stationInfo?.enableStatistics === true) {
               chargingStation.performanceStatistics?.addRequestStatistic(
                 commandName,
                 MessageType.CALL_RESULT_MESSAGE,
@@ -357,7 +357,10 @@ export abstract class OCPPRequestService {
            * @param requestStatistic -
            */
           const errorCallback = (error: OCPPError, requestStatistic = true): void => {
-            if (requestStatistic === true && chargingStation.getEnableStatistics() === true) {
+            if (
+              requestStatistic === true &&
+              chargingStation.stationInfo?.enableStatistics === true
+            ) {
               chargingStation.performanceStatistics?.addRequestStatistic(
                 commandName,
                 MessageType.CALL_ERROR_MESSAGE,
@@ -374,7 +377,7 @@ export abstract class OCPPRequestService {
             reject(error);
           };
 
-          if (chargingStation.getEnableStatistics() === true) {
+          if (chargingStation.stationInfo?.enableStatistics === true) {
             chargingStation.performanceStatistics?.addRequestStatistic(commandName, messageType);
           }
           const messageToSend = this.buildMessageToSend(

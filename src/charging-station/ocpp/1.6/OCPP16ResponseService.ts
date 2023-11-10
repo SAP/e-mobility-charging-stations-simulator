@@ -516,7 +516,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     if (
       connectorStatus?.transactionRemoteStarted === true &&
       chargingStation.getAuthorizeRemoteTxRequests() === true &&
-      chargingStation.getRemoteAuthorization() === true &&
+      chargingStation.stationInfo?.remoteAuthorization === true &&
       connectorStatus?.idTagLocalAuthorized === false &&
       connectorStatus?.idTagAuthorized === false
     ) {
@@ -629,7 +629,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           ReservationTerminationReason.TRANSACTION_STARTED,
         );
       }
-      chargingStation.getBeginEndMeterValues() &&
+      chargingStation.stationInfo?.beginEndMeterValues &&
         (await chargingStation.ocppRequestService.requestHandler<
           OCPP16MeterValuesRequest,
           OCPP16MeterValuesResponse
@@ -712,9 +712,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       );
       return;
     }
-    chargingStation.getBeginEndMeterValues() === true &&
-      chargingStation.getOcppStrictCompliance() === false &&
-      chargingStation.getOutOfOrderEndMeterValues() === true &&
+    chargingStation.stationInfo?.beginEndMeterValues === true &&
+      chargingStation.stationInfo?.ocppStrictCompliance === false &&
+      chargingStation.stationInfo?.outOfOrderEndMeterValues === true &&
       (await chargingStation.ocppRequestService.requestHandler<
         OCPP16MeterValuesRequest,
         OCPP16MeterValuesResponse

@@ -199,7 +199,7 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...commandParams,
         } as unknown as Request;
       case OCPP16RequestCommand.STOP_TRANSACTION:
-        chargingStation.getTransactionDataMeterValues() &&
+        chargingStation.stationInfo?.transactionDataMeterValues &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams?.transactionId as number,
           )!);
@@ -211,7 +211,7 @@ export class OCPP16RequestService extends OCPPRequestService {
           idTag: chargingStation.getTransactionIdTag(commandParams?.transactionId as number),
           meterStop: energyActiveImportRegister,
           timestamp: new Date(),
-          ...(chargingStation.getTransactionDataMeterValues() && {
+          ...(chargingStation.stationInfo?.transactionDataMeterValues && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               chargingStation.getConnectorStatus(connectorId!)!.transactionBeginMeterValue!,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(

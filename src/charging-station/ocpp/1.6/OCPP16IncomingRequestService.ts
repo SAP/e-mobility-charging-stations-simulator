@@ -339,7 +339,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     let response: ResType;
     if (
-      chargingStation.getOcppStrictCompliance() === true &&
+      chargingStation.stationInfo?.ocppStrictCompliance === true &&
       chargingStation.inPendingState() === true &&
       (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION ||
         commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)
@@ -357,7 +357,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     if (
       chargingStation.isRegistered() === true ||
-      (chargingStation.getOcppStrictCompliance() === false &&
+      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
         chargingStation.inUnknownState() === true)
     ) {
       if (

@@ -173,7 +173,7 @@ export class OCPPServiceUtils {
     status: ConnectorStatusEnum,
     evseId?: number,
   ): StatusNotificationRequest {
-    switch (chargingStation.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16) {
+    switch (chargingStation.stationInfo?.ocppVersion) {
       case OCPPVersion.VERSION_16:
         return {
           connectorId,
@@ -233,7 +233,10 @@ export class OCPPServiceUtils {
     connectorId: number,
     idTag: string,
   ): Promise<boolean> {
-    if (!chargingStation.getLocalAuthListEnabled() && !chargingStation.getRemoteAuthorization()) {
+    if (
+      !chargingStation.getLocalAuthListEnabled() &&
+      !chargingStation.stationInfo?.remoteAuthorization
+    ) {
       logger.warn(
         `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`,
       );
@@ -246,7 +249,7 @@ export class OCPPServiceUtils {
       connectorStatus.localAuthorizeIdTag = idTag;
       connectorStatus.idTagLocalAuthorized = true;
       return true;
-    } else if (chargingStation.getRemoteAuthorization()) {
+    } else if (chargingStation.stationInfo?.remoteAuthorization) {
       return await OCPPServiceUtils.isIdTagRemoteAuthorized(chargingStation, connectorId, idTag);
     }
     return false;
@@ -259,7 +262,7 @@ export class OCPPServiceUtils {
   ): boolean {
     const fromStatus = chargingStation.getConnectorStatus(connectorId)!.status;
     let transitionAllowed = false;
-    switch (chargingStation.stationInfo.ocppVersion) {
+    switch (chargingStation.stationInfo?.ocppVersion) {
       case OCPPVersion.VERSION_16:
         if (
           (connectorId === 0 &&
@@ -292,14 +295,13 @@ export class OCPPServiceUtils {
       default:
         throw new BaseError(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo.ocppVersion} not supported`,
+          `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
         );
     }
     if (transitionAllowed === false) {
       logger.warn(
-        `${chargingStation.logPrefix()} OCPP ${
-          chargingStation.stationInfo.ocppVersion
-        } connector id ${connectorId} status transition from '${
+        `${chargingStation.logPrefix()} OCPP ${chargingStation.stationInfo
+          ?.ocppVersion} connector id ${connectorId} status transition from '${
           chargingStation.getConnectorStatus(connectorId)!.status
         }' to '${status}' is not allowed`,
       );

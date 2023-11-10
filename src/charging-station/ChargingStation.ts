@@ -157,7 +157,6 @@ import {
 export class ChargingStation extends EventEmitter {
   public readonly index: number;
   public readonly templateFile: string;
-  public stationInfo!: ChargingStationInfo;
   public started: boolean;
   public starting: boolean;
   public idTagsCache: IdTagsCache;
@@ -173,6 +172,7 @@ export class ChargingStation extends EventEmitter {
   public bootNotificationRequest!: BootNotificationRequest;
   public bootNotificationResponse!: BootNotificationResponse | undefined;
   public powerDivider!: number;
+  private internalStationInfo!: ChargingStationInfo;
   private stopping: boolean;
   private configurationFile!: string;
   private configurationFileHash!: string;
@@ -226,13 +226,42 @@ export class ChargingStation extends EventEmitter {
     return this.connectors.size === 0 && this.evses.size > 0;
   }
 
+  public get stationInfo(): ChargingStationInfo {
+    return {
+      ...this.internalStationInfo,
+      ...{
+        enableStatistics: false,
+        remoteAuthorization: true,
+        currentOutType: CurrentType.AC,
+        ocppStrictCompliance: true,
+        outOfOrderEndMeterValues: false,
+        beginEndMeterValues: false,
+        meteringPerTransaction: true,
+        transactionDataMeterValues: false,
+        mainVoltageMeterValues: true,
+        phaseLineToLineVoltageMeterValues: false,
+        customValueLimitationMeterValues: true,
+        supervisionUrlOcppConfiguration: false,
+        supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
+        ocppVersion: OCPPVersion.VERSION_16,
+        ocppPersistentConfiguration: true,
+        stationInfoPersistentConfiguration: true,
+        automaticTransactionGeneratorPersistentConfiguration: true,
+        autoReconnectMaxRetries: -1,
+        registrationMaxRetries: -1,
+        reconnectExponentialDelay: false,
+        stopTransactionsOnStopped: true,
+      },
+    };
+  }
+
   private get wsConnectionUrl(): URL {
     return new URL(
       `${
-        this.getSupervisionUrlOcppConfiguration() &&
-        isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
-        isNotEmptyString(getConfigurationKey(this, this.getSupervisionUrlOcppKey())?.value)
-          ? getConfigurationKey(this, this.getSupervisionUrlOcppKey())!.value
+        this.stationInfo?.supervisionUrlOcppConfiguration &&
+        isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
+        isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)?.value)
+          ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)!.value
           : this.configuredSupervisionUrl.href
       }/${this.stationInfo.chargingStationId}`,
     );
@@ -251,14 +280,6 @@ export class ChargingStation extends EventEmitter {
 
   public hasIdTags(): boolean {
     return isNotEmptyArray(this.idTagsCache.getIdTags(getIdTagsFile(this.stationInfo)!));
-  }
-
-  public getEnableStatistics(): boolean {
-    return this.stationInfo.enableStatistics ?? false;
-  }
-
-  public getRemoteAuthorization(): boolean {
-    return this.stationInfo.remoteAuthorization ?? true;
   }
 
   public getNumberOfPhases(stationInfo?: ChargingStationInfo): number {
@@ -354,27 +375,6 @@ export class ChargingStation extends EventEmitter {
     return this.connectors.get(connectorId);
   }
 
-  public getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
-    return (stationInfo ?? this.stationInfo)?.currentOutType ?? CurrentType.AC;
-  }
-
-  public getOcppStrictCompliance(): boolean {
-    return this.stationInfo?.ocppStrictCompliance ?? true;
-  }
-
-  public getVoltageOut(stationInfo?: ChargingStationInfo): number {
-    const defaultVoltageOut = getDefaultVoltageOut(
-      this.getCurrentOutType(stationInfo),
-      this.logPrefix(),
-      this.templateFile,
-    );
-    return (stationInfo ?? this.stationInfo).voltageOut ?? defaultVoltageOut;
-  }
-
-  public getMaximumPower(stationInfo?: ChargingStationInfo): number {
-    return (stationInfo ?? this.stationInfo).maximumPower!;
-  }
-
   public getConnectorMaximumAvailablePower(connectorId: number): number {
     let connectorAmperageLimitationPowerLimit: number | undefined;
     if (
@@ -382,17 +382,17 @@ export class ChargingStation extends EventEmitter {
       this.getAmperageLimitation()! < this.stationInfo.maximumAmperage!
     ) {
       connectorAmperageLimitationPowerLimit =
-        (this.getCurrentOutType() === CurrentType.AC
+        (this.stationInfo?.currentOutType === CurrentType.AC
           ? ACElectricUtils.powerTotal(
               this.getNumberOfPhases(),
-              this.getVoltageOut(),
+              this.stationInfo.voltageOut!,
               this.getAmperageLimitation()! *
                 (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors()),
             )
-          : DCElectricUtils.power(this.getVoltageOut(), this.getAmperageLimitation()!)) /
+          : DCElectricUtils.power(this.stationInfo.voltageOut!, this.getAmperageLimitation()!)) /
         this.powerDivider;
     }
-    const connectorMaximumPower = this.getMaximumPower() / this.powerDivider;
+    const connectorMaximumPower = this.stationInfo.maximumPower! / this.powerDivider;
     const connectorChargingProfilesPowerLimit =
       getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId);
     return min(
@@ -443,34 +443,6 @@ export class ChargingStation extends EventEmitter {
       }
     }
     return numberOfRunningTransactions;
-  }
-
-  public getOutOfOrderEndMeterValues(): boolean {
-    return this.stationInfo?.outOfOrderEndMeterValues ?? false;
-  }
-
-  public getBeginEndMeterValues(): boolean {
-    return this.stationInfo?.beginEndMeterValues ?? false;
-  }
-
-  public getMeteringPerTransaction(): boolean {
-    return this.stationInfo?.meteringPerTransaction ?? true;
-  }
-
-  public getTransactionDataMeterValues(): boolean {
-    return this.stationInfo?.transactionDataMeterValues ?? false;
-  }
-
-  public getMainVoltageMeterValues(): boolean {
-    return this.stationInfo?.mainVoltageMeterValues ?? true;
-  }
-
-  public getPhaseLineToLineVoltageMeterValues(): boolean {
-    return this.stationInfo?.phaseLineToLineVoltageMeterValues ?? false;
-  }
-
-  public getCustomValueLimitationMeterValues(): boolean {
-    return this.stationInfo?.customValueLimitationMeterValues ?? true;
   }
 
   public getConnectorIdByTransactionId(transactionId: number): number | undefined {
@@ -541,10 +513,10 @@ export class ChargingStation extends EventEmitter {
 
   public setSupervisionUrl(url: string): void {
     if (
-      this.getSupervisionUrlOcppConfiguration() &&
-      isNotEmptyString(this.getSupervisionUrlOcppKey())
+      this.stationInfo?.supervisionUrlOcppConfiguration &&
+      isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey)
     ) {
-      setConfigurationKeyValue(this, this.getSupervisionUrlOcppKey(), url);
+      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey!, url);
     } else {
       this.stationInfo.supervisionUrls = url;
       this.saveStationInfo();
@@ -669,7 +641,7 @@ export class ChargingStation extends EventEmitter {
     if (this.started === false) {
       if (this.starting === false) {
         this.starting = true;
-        if (this.getEnableStatistics() === true) {
+        if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.start();
         }
         if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
@@ -700,7 +672,7 @@ export class ChargingStation extends EventEmitter {
                 if (this.getAutomaticTransactionGeneratorConfiguration().enable === true) {
                   this.startAutomaticTransactionGenerator();
                 }
-                if (this.getEnableStatistics() === true) {
+                if (this.stationInfo?.enableStatistics === true) {
                   this.performanceStatistics?.restart();
                 } else {
                   this.performanceStatistics?.stop();
@@ -732,7 +704,7 @@ export class ChargingStation extends EventEmitter {
         this.stopping = true;
         await this.stopMessageSequence(reason, stopTransactions);
         this.closeWSConnection();
-        if (this.getEnableStatistics() === true) {
+        if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.stop();
         }
         if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
@@ -762,7 +734,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public saveOcppConfiguration(): void {
-    if (this.getOcppPersistentConfiguration()) {
+    if (this.stationInfo?.ocppPersistentConfiguration === true) {
       this.saveConfiguration();
     }
   }
@@ -810,7 +782,7 @@ export class ChargingStation extends EventEmitter {
 
     this.wsConnection = new WebSocket(
       this.wsConnectionUrl,
-      `ocpp${this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16}`,
+      `ocpp${this.stationInfo.ocppVersion}`,
       options,
     );
 
@@ -852,7 +824,7 @@ export class ChargingStation extends EventEmitter {
       const stationTemplate = this.getTemplateFromFile();
       const stationConfiguration = this.getConfigurationFromFile();
       if (
-        this.getAutomaticTransactionGeneratorPersistentConfiguration() &&
+        this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration === true &&
         stationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
         stationConfiguration?.automaticTransactionGenerator
       ) {
@@ -904,9 +876,9 @@ export class ChargingStation extends EventEmitter {
   ): Promise<StopTransactionResponse> {
     const transactionId = this.getConnectorStatus(connectorId)?.transactionId;
     if (
-      this.getBeginEndMeterValues() === true &&
-      this.getOcppStrictCompliance() === true &&
-      this.getOutOfOrderEndMeterValues() === false
+      this.stationInfo?.beginEndMeterValues === true &&
+      this.stationInfo?.ocppStrictCompliance === true &&
+      this.stationInfo?.outOfOrderEndMeterValues === false
     ) {
       // FIXME: Implement OCPP version agnostic helpers
       const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
@@ -1103,14 +1075,6 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private getSupervisionUrlOcppConfiguration(): boolean {
-    return this.stationInfo.supervisionUrlOcppConfiguration ?? false;
-  }
-
-  private getSupervisionUrlOcppKey(): string {
-    return this.stationInfo.supervisionUrlOcppKey ?? VendorParametersKey.ConnectionUrl;
-  }
-
   private getTemplateFromFile(): ChargingStationTemplate | undefined {
     let template: ChargingStationTemplate | undefined;
     try {
@@ -1195,7 +1159,7 @@ export class ChargingStation extends EventEmitter {
 
   private getStationInfoFromFile(): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined;
-    if (this.getStationInfoPersistentConfiguration()) {
+    if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo;
       if (stationInfo) {
         delete stationInfo?.infoHash;
@@ -1223,21 +1187,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   private saveStationInfo(): void {
-    if (this.getStationInfoPersistentConfiguration()) {
+    if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
       this.saveConfiguration();
     }
-  }
-
-  private getOcppPersistentConfiguration(): boolean {
-    return this.stationInfo?.ocppPersistentConfiguration ?? true;
-  }
-
-  private getStationInfoPersistentConfiguration(): boolean {
-    return this.stationInfo?.stationInfoPersistentConfiguration ?? true;
-  }
-
-  private getAutomaticTransactionGeneratorPersistentConfiguration(): boolean {
-    return this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration ?? true;
   }
 
   private handleUnsupportedVersion(version: OCPPVersion) {
@@ -1263,7 +1215,7 @@ export class ChargingStation extends EventEmitter {
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
     }
-    this.stationInfo = this.getStationInfo();
+    this.internalStationInfo = this.getStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersion) &&
@@ -1284,7 +1236,7 @@ export class ChargingStation extends EventEmitter {
     }
     this.saveStationInfo();
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
-    if (this.getEnableStatistics() === true) {
+    if (this.stationInfo?.enableStatistics === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
         this.stationInfo.hashId,
         this.stationInfo.chargingStationId!,
@@ -1307,7 +1259,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeOcppServices(): void {
-    const ocppVersion = this.stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
+    const ocppVersion = this.stationInfo.ocppVersion;
     switch (ocppVersion) {
       case OCPPVersion.VERSION_16:
         this.ocppIncomingRequestService =
@@ -1338,22 +1290,22 @@ export class ChargingStation extends EventEmitter {
       addConfigurationKey(this, StandardParametersKey.HeartBeatInterval, '0', { visible: false });
     }
     if (
-      this.getSupervisionUrlOcppConfiguration() &&
-      isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
-      !getConfigurationKey(this, this.getSupervisionUrlOcppKey())
+      this.stationInfo?.supervisionUrlOcppConfiguration &&
+      isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
+      !getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)
     ) {
       addConfigurationKey(
         this,
-        this.getSupervisionUrlOcppKey(),
+        this.stationInfo.supervisionUrlOcppKey!,
         this.configuredSupervisionUrl.href,
         { reboot: true },
       );
     } else if (
-      !this.getSupervisionUrlOcppConfiguration() &&
-      isNotEmptyString(this.getSupervisionUrlOcppKey()) &&
-      getConfigurationKey(this, this.getSupervisionUrlOcppKey())
+      !this.stationInfo?.supervisionUrlOcppConfiguration &&
+      isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
+      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)
     ) {
-      deleteConfigurationKey(this, this.getSupervisionUrlOcppKey(), { save: false });
+      deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!, { save: false });
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
@@ -1644,7 +1596,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private saveAutomaticTransactionGeneratorConfiguration(): void {
-    if (this.getAutomaticTransactionGeneratorPersistentConfiguration()) {
+    if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration === true) {
       this.saveConfiguration();
     }
   }
@@ -1666,12 +1618,15 @@ export class ChargingStation extends EventEmitter {
         let configurationData: ChargingStationConfiguration = this.getConfigurationFromFile()
           ? cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()!)
           : {};
-        if (this.getStationInfoPersistentConfiguration() && this.stationInfo) {
+        if (this.stationInfo?.stationInfoPersistentConfiguration === true && this.stationInfo) {
           configurationData.stationInfo = this.stationInfo;
         } else {
           delete configurationData.stationInfo;
         }
-        if (this.getOcppPersistentConfiguration() && this.ocppConfiguration?.configurationKey) {
+        if (
+          this.stationInfo?.ocppPersistentConfiguration === true &&
+          this.ocppConfiguration?.configurationKey
+        ) {
           configurationData.configurationKey = this.ocppConfiguration.configurationKey;
         } else {
           delete configurationData.configurationKey;
@@ -1681,7 +1636,7 @@ export class ChargingStation extends EventEmitter {
           buildChargingStationAutomaticTransactionGeneratorConfiguration(this),
         );
         if (
-          !this.getAutomaticTransactionGeneratorPersistentConfiguration() ||
+          !this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration ||
           !this.getAutomaticTransactionGeneratorConfiguration()
         ) {
           delete configurationData.automaticTransactionGenerator;
@@ -1760,7 +1715,7 @@ export class ChargingStation extends EventEmitter {
 
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | undefined {
     const configurationKey = this.getConfigurationFromFile()?.configurationKey;
-    if (this.getOcppPersistentConfiguration() === true && configurationKey) {
+    if (this.stationInfo?.ocppPersistentConfiguration === true && configurationKey) {
       return { configurationKey };
     }
     return undefined;
@@ -1791,7 +1746,7 @@ export class ChargingStation extends EventEmitter {
             skipBufferingOnError: true,
           });
           if (this.isRegistered() === false) {
-            this.getRegistrationMaxRetries() !== -1 && ++registrationRetryCount;
+            this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount;
             await sleep(
               this?.bootNotificationResponse?.interval
                 ? secondsToMilliseconds(this.bootNotificationResponse.interval)
@@ -1800,8 +1755,8 @@ export class ChargingStation extends EventEmitter {
           }
         } while (
           this.isRegistered() === false &&
-          (registrationRetryCount <= this.getRegistrationMaxRetries()! ||
-            this.getRegistrationMaxRetries() === -1)
+          (registrationRetryCount <= this.stationInfo.registrationMaxRetries! ||
+            this.stationInfo?.registrationMaxRetries) === -1
         );
       }
       if (this.isRegistered() === true) {
@@ -1812,7 +1767,8 @@ export class ChargingStation extends EventEmitter {
         }
       } else {
         logger.error(
-          `${this.logPrefix()} Registration failure: max retries reached (${this.getRegistrationMaxRetries()}) or retry disabled (${this.getRegistrationMaxRetries()})`,
+          `${this.logPrefix()} Registration failure: max retries reached or retry disabled (${this
+            .stationInfo?.registrationMaxRetries})`,
         );
       }
       this.wsConnectionRestarted = false;
@@ -1867,7 +1823,7 @@ export class ChargingStation extends EventEmitter {
 
   private async handleIncomingMessage(request: IncomingRequest): Promise<void> {
     const [messageType, messageId, commandName, commandPayload] = request;
-    if (this.getEnableStatistics() === true) {
+    if (this.stationInfo.enableStatistics === true) {
       this.performanceStatistics?.addRequestStatistic(commandName, messageType);
     }
     logger.debug(
@@ -2029,7 +1985,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getEnergyActiveImportRegister(connectorStatus: ConnectorStatus, rounded = false): number {
-    if (this.getMeteringPerTransaction() === true) {
+    if (this.stationInfo?.meteringPerTransaction === true) {
       return (
         (rounded === true
           ? Math.round(connectorStatus.transactionEnergyActiveImportRegisterValue!)
@@ -2079,16 +2035,6 @@ export class ChargingStation extends EventEmitter {
     return Constants.DEFAULT_CONNECTION_TIMEOUT;
   }
 
-  // -1 for unlimited, 0 for disabling
-  private getAutoReconnectMaxRetries(): number | undefined {
-    return this.stationInfo.autoReconnectMaxRetries ?? -1;
-  }
-
-  // -1 for unlimited, 0 for disabling
-  private getRegistrationMaxRetries(): number | undefined {
-    return this.stationInfo.registrationMaxRetries ?? -1;
-  }
-
   private getPowerDivider(): number {
     let powerDivider = this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors();
     if (this.stationInfo?.powerSharedByConnectors) {
@@ -2109,6 +2055,23 @@ export class ChargingStation extends EventEmitter {
       case CurrentType.DC:
         return DCElectricUtils.amperage(maximumPower, this.getVoltageOut(stationInfo));
     }
+  }
+
+  private getMaximumPower(stationInfo?: ChargingStationInfo): number {
+    return (stationInfo ?? this.stationInfo).maximumPower!;
+  }
+
+  private getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
+    return (stationInfo ?? this.stationInfo).currentOutType!;
+  }
+
+  private getVoltageOut(stationInfo?: ChargingStationInfo): number {
+    const defaultVoltageOut = getDefaultVoltageOut(
+      this.getCurrentOutType(stationInfo),
+      this.logPrefix(),
+      this.templateFile,
+    );
+    return (stationInfo ?? this.stationInfo).voltageOut ?? defaultVoltageOut;
   }
 
   private getAmperageLimitation(): number | undefined {
@@ -2183,7 +2146,7 @@ export class ChargingStation extends EventEmitter {
 
   private async stopMessageSequence(
     reason?: StopTransactionReason,
-    stopTransactions = this.stationInfo?.stopTransactionsOnStopped ?? true,
+    stopTransactions = this.stationInfo?.stopTransactionsOnStopped,
   ): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
@@ -2327,10 +2290,6 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private getReconnectExponentialDelay(): boolean {
-    return this.stationInfo?.reconnectExponentialDelay ?? false;
-  }
-
   private async reconnect(): Promise<void> {
     // Stop WebSocket ping
     this.stopWebSocketPing();
@@ -2341,13 +2300,14 @@ export class ChargingStation extends EventEmitter {
       this.stopAutomaticTransactionGenerator();
     }
     if (
-      this.autoReconnectRetryCount < this.getAutoReconnectMaxRetries()! ||
-      this.getAutoReconnectMaxRetries() === -1
+      this.autoReconnectRetryCount < this.stationInfo.autoReconnectMaxRetries! ||
+      this.stationInfo?.autoReconnectMaxRetries === -1
     ) {
       ++this.autoReconnectRetryCount;
-      const reconnectDelay = this.getReconnectExponentialDelay()
-        ? exponentialDelay(this.autoReconnectRetryCount)
-        : secondsToMilliseconds(this.getConnectionTimeout());
+      const reconnectDelay =
+        this.stationInfo?.reconnectExponentialDelay === true
+          ? exponentialDelay(this.autoReconnectRetryCount)
+          : secondsToMilliseconds(this.getConnectionTimeout());
       const reconnectDelayWithdraw = 1000;
       const reconnectTimeout =
         reconnectDelay && reconnectDelay - reconnectDelayWithdraw > 0
@@ -2370,11 +2330,11 @@ export class ChargingStation extends EventEmitter {
         { closeOpened: true },
       );
       this.wsConnectionRestarted = true;
-    } else if (this.getAutoReconnectMaxRetries() !== -1) {
+    } else if (this.stationInfo?.autoReconnectMaxRetries !== -1) {
       logger.error(
         `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${
           this.autoReconnectRetryCount
-        }) or retries disabled (${this.getAutoReconnectMaxRetries()})`,
+        }) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries})`,
       );
     }
   }

@@ -68,7 +68,7 @@ export abstract class OCPPResponseService {
     schema: JSONSchemaType<T>,
     payload: T,
   ): boolean {
-    if (chargingStation.getOcppStrictCompliance() === false) {
+    if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true;
     }
     if (this.jsonRequestValidateFunctions.has(commandName) === false) {

@@ -363,7 +363,7 @@ export const createBootNotificationRequest = (
   stationInfo: ChargingStationInfo,
   bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp,
 ): BootNotificationRequest => {
-  const ocppVersion = stationInfo.ocppVersion ?? OCPPVersion.VERSION_16;
+  const ocppVersion = stationInfo.ocppVersion!;
   switch (ocppVersion) {
     case OCPPVersion.VERSION_16:
       return {
@@ -559,14 +559,14 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
     if (!isNullOrUndefined(result)) {
       limit = result?.limit;
       chargingProfile = result?.chargingProfile;
-      switch (chargingStation.getCurrentOutType()) {
+      switch (chargingStation.stationInfo?.currentOutType) {
         case CurrentType.AC:
           limit =
             chargingProfile?.chargingSchedule?.chargingRateUnit === ChargingRateUnitType.WATT
               ? limit
               : ACElectricUtils.powerTotal(
                   chargingStation.getNumberOfPhases(),
-                  chargingStation.getVoltageOut(),
+                  chargingStation.stationInfo.voltageOut!,
                   limit!,
                 );
           break;
@@ -574,10 +574,10 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
           limit =
             chargingProfile?.chargingSchedule?.chargingRateUnit === ChargingRateUnitType.WATT
               ? limit
-              : DCElectricUtils.power(chargingStation.getVoltageOut(), limit!);
+              : DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit!);
       }
       const connectorMaximumPower =
-        chargingStation.getMaximumPower() / chargingStation.powerDivider;
+        chargingStation.stationInfo.maximumPower! / chargingStation.powerDivider;
       if (limit! > connectorMaximumPower) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${chargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
