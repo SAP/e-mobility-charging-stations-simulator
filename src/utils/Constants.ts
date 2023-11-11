@@ -6,6 +6,7 @@ export class Constants {
   static readonly DEFAULT_METER_VALUES_INTERVAL = 60000; // Ms
 
   static readonly CHARGING_STATION_DEFAULT_RESET_TIME = 60000; // Ms
+  static readonly CHARGING_STATION_ATG_AVAILABILITY_TIME = 1000; // Ms
   static readonly CHARGING_STATION_ATG_INITIALIZATION_TIME = 1000; // Ms
 
   static readonly DEFAULT_ATG_CONFIGURATION: AutomaticTransactionGeneratorConfiguration =

@@ -513,7 +513,7 @@ export class ChargingStation extends EventEmitter {
 
   public setSupervisionUrl(url: string): void {
     if (
-      this.stationInfo?.supervisionUrlOcppConfiguration &&
+      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey)
     ) {
       setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey!, url);
@@ -1192,7 +1192,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private handleUnsupportedVersion(version: OCPPVersion) {
+  private handleUnsupportedVersion(version: OCPPVersion | undefined) {
     const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`;
     logger.error(`${this.logPrefix()} ${errorMsg}`);
     throw new BaseError(errorMsg);
@@ -1249,6 +1249,11 @@ export class ChargingStation extends EventEmitter {
     this.ocppConfiguration = this.getOcppConfiguration();
     this.initializeOcppConfiguration();
     this.initializeOcppServices();
+    this.once(ChargingStationEvents.accepted, () => {
+      this.startMessageSequence().catch((error) => {
+        logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error);
+      });
+    });
     if (this.stationInfo?.autoRegister === true) {
       this.bootNotificationResponse = {
         currentTime: new Date(),
@@ -1763,7 +1768,6 @@ export class ChargingStation extends EventEmitter {
         this.emit(ChargingStationEvents.registered);
         if (this.inAcceptedState() === true) {
           this.emit(ChargingStationEvents.accepted);
-          await this.startMessageSequence();
         }
       } else {
         logger.error(
@@ -2152,12 +2156,12 @@ export class ChargingStation extends EventEmitter {
     this.stopWebSocketPing();
     // Stop heartbeat
     this.stopHeartbeat();
-    // Stop ongoing transactions
-    stopTransactions && (await this.stopRunningTransactions(reason));
     // Stop the ATG
     if (this.automaticTransactionGenerator?.started === true) {
       this.stopAutomaticTransactionGenerator();
     }
+    // Stop ongoing transactions
+    stopTransactions && (await this.stopRunningTransactions(reason));
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {

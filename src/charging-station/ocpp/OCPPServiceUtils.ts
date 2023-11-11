@@ -15,6 +15,7 @@ import {
   type AuthorizeRequest,
   type AuthorizeResponse,
   ChargePointErrorCode,
+  ChargingStationEvents,
   type ConnectorStatus,
   type ConnectorStatusEnum,
   ErrorType,
@@ -226,6 +227,10 @@ export class OCPPServiceUtils {
       );
     }
     chargingStation.getConnectorStatus(connectorId)!.status = status;
+    chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
+      connectorId,
+      ...chargingStation.getConnectorStatus(connectorId),
+    });
   }
 
   public static async isIdTagAuthorized(

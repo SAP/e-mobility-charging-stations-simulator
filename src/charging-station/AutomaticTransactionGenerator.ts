@@ -189,19 +189,12 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       )}`,
     );
     while (this.connectorsStatus.get(connectorId)?.start === true) {
+      await this.waitChargingStationServiceInitialization(connectorId);
+      await this.waitChargingStationAvailable(connectorId);
+      await this.waitConnectorAvailable(connectorId);
       if (!this.canStartConnector(connectorId)) {
         this.stopConnector(connectorId);
         break;
-      }
-      if (!this.chargingStation?.ocppRequestService) {
-        logger.info(
-          `${this.logPrefix(
-            connectorId,
-          )} transaction loop waiting for charging station service to be initialized`,
-        );
-        do {
-          await sleep(Constants.CHARGING_STATION_ATG_INITIALIZATION_TIME);
-        } while (!this.chargingStation?.ocppRequestService);
       }
       const wait = secondsToMilliseconds(
         getRandomInteger(
@@ -324,6 +317,45 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       return false;
     }
     return true;
+  }
+
+  private async waitChargingStationServiceInitialization(connectorId: number): Promise<void> {
+    if (!this.chargingStation?.ocppRequestService) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId,
+        )} transaction loop waiting for charging station service to be initialized`,
+      );
+      do {
+        await sleep(Constants.CHARGING_STATION_ATG_INITIALIZATION_TIME);
+      } while (!this.chargingStation?.ocppRequestService);
+    }
+  }
+
+  private async waitChargingStationAvailable(connectorId: number): Promise<void> {
+    if (!this.chargingStation.isChargingStationAvailable()) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId,
+        )} transaction loop waiting for charging station to be available`,
+      );
+      do {
+        await sleep(Constants.CHARGING_STATION_ATG_AVAILABILITY_TIME);
+      } while (!this.chargingStation.isChargingStationAvailable());
+    }
+  }
+
+  private async waitConnectorAvailable(connectorId: number): Promise<void> {
+    if (!this.chargingStation.isConnectorAvailable(connectorId)) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId,
+        )} transaction loop waiting for connector ${connectorId} to be available`,
+      );
+      do {
+        await sleep(Constants.CHARGING_STATION_ATG_AVAILABILITY_TIME);
+      } while (!this.chargingStation.isConnectorAvailable(connectorId));
+    }
   }
 
   private initializeConnectorsStatus(): void {
