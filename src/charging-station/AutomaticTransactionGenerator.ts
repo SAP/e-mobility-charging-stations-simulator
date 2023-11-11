@@ -352,17 +352,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
           this.chargingStation.getAutomaticTransactionGeneratorStatuses()![connectorId],
         )
       : undefined;
-    delete connectorStatus?.startDate;
-    delete connectorStatus?.lastRunDate;
-    delete connectorStatus?.stopDate;
-    delete connectorStatus?.stoppedDate;
-    if (
-      !this.started &&
-      (connectorStatus?.start === true ||
-        this.chargingStation.getAutomaticTransactionGeneratorConfiguration().enable === false)
-    ) {
-      connectorStatus.start = false;
-    }
+    this.resetConnectorStatus(connectorStatus);
     return (
       connectorStatus ?? {
         start: false,
@@ -379,6 +369,20 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         skippedTransactions: 0,
       }
     );
+  }
+
+  private resetConnectorStatus(connectorStatus: Status | undefined): void {
+    delete connectorStatus?.startDate;
+    delete connectorStatus?.lastRunDate;
+    delete connectorStatus?.stopDate;
+    delete connectorStatus?.stoppedDate;
+    if (
+      !this.started &&
+      (connectorStatus?.start === true ||
+        this.chargingStation.getAutomaticTransactionGeneratorConfiguration().enable === false)
+    ) {
+      connectorStatus!.start = false;
+    }
   }
 
   private async startTransaction(
