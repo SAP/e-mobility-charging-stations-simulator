@@ -755,7 +755,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       requestPayload.transactionId
     } STOPPED on ${
       chargingStation.stationInfo.chargingStationId
-    }#${transactionConnectorId} with status '${payload.idTagInfo?.status ?? 'undefined'}'`;
+    }#${transactionConnectorId} with status '${payload.idTagInfo?.status}'`;
     if (
       isNullOrUndefined(payload.idTagInfo) ||
       payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED

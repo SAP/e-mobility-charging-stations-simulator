@@ -2037,7 +2037,7 @@ export class ChargingStation extends EventEmitter {
 
   private getPowerDivider(): number {
     let powerDivider = this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors();
-    if (this.stationInfo?.powerSharedByConnectors) {
+    if (this.stationInfo?.powerSharedByConnectors === true) {
       powerDivider = this.getNumberOfRunningTransactions();
     }
     return powerDivider;
