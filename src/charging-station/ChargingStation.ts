@@ -1735,9 +1735,9 @@ export class ChargingStation extends EventEmitter {
       logger.info(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`,
       );
+      let registrationRetryCount = 0;
       if (this.isRegistered() === false) {
         // Send BootNotification
-        let registrationRetryCount = 0;
         do {
           this.bootNotificationResponse = await this.ocppRequestService.requestHandler<
             BootNotificationRequest,
@@ -1767,7 +1767,7 @@ export class ChargingStation extends EventEmitter {
         }
       } else {
         logger.error(
-          `${this.logPrefix()} Registration failure: max retries reached or retry disabled (${this
+          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${this
             .stationInfo?.registrationMaxRetries})`,
         );
       }
