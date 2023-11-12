@@ -45,7 +45,6 @@ import {
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
   type SampledValueTemplate,
-  Voltage,
 } from '../../../types';
 import {
   ACElectricUtils,
@@ -57,6 +56,7 @@ import {
   getRandomFloatRounded,
   getRandomInteger,
   isNotEmptyArray,
+  isNotEmptyString,
   isNullOrUndefined,
   isUndefined,
   logger,
@@ -102,7 +102,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     if (socSampledValueTemplate) {
       const socMaximumValue = 100;
       const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0;
-      const socSampledValueTemplateValue = socSampledValueTemplate.value
+      const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
         ? getRandomFloatFluctuatedRounded(
             parseInt(socSampledValueTemplate.value),
             socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT,
@@ -134,7 +134,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       OCPP16MeterValueMeasurand.VOLTAGE,
     );
     if (voltageSampledValueTemplate) {
-      const voltageSampledValueTemplateValue = voltageSampledValueTemplate.value
+      const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
         ? parseInt(voltageSampledValueTemplate.value)
         : chargingStation.stationInfo.voltageOut!;
       const fluctuationPercent =
@@ -167,10 +167,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           );
         let voltagePhaseLineToNeutralMeasurandValue: number | undefined;
         if (voltagePhaseLineToNeutralSampledValueTemplate) {
-          const voltagePhaseLineToNeutralSampledValueTemplateValue =
-            voltagePhaseLineToNeutralSampledValueTemplate.value
-              ? parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
-              : chargingStation.stationInfo.voltageOut!;
+          const voltagePhaseLineToNeutralSampledValueTemplateValue = isNotEmptyString(
+            voltagePhaseLineToNeutralSampledValueTemplate.value,
+          )
+            ? parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
+            : chargingStation.stationInfo.voltageOut!;
           const fluctuationPhaseToNeutralPercent =
             voltagePhaseLineToNeutralSampledValueTemplate.fluctuationPercent ??
             Constants.DEFAULT_FLUCTUATION_PERCENT;
@@ -202,10 +203,15 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             );
           let voltagePhaseLineToLineMeasurandValue: number | undefined;
           if (voltagePhaseLineToLineSampledValueTemplate) {
-            const voltagePhaseLineToLineSampledValueTemplateValue =
-              voltagePhaseLineToLineSampledValueTemplate.value
-                ? parseInt(voltagePhaseLineToLineSampledValueTemplate.value)
-                : Voltage.VOLTAGE_400;
+            const voltagePhaseLineToLineSampledValueTemplateValue = isNotEmptyString(
+              voltagePhaseLineToLineSampledValueTemplate.value,
+            )
+              ? parseInt(voltagePhaseLineToLineSampledValueTemplate.value)
+              : roundTo(
+                  Math.sqrt(chargingStation.getNumberOfPhases()) *
+                    chargingStation.stationInfo.voltageOut!,
+                  2,
+                );
             const fluctuationPhaseLineToLinePercent =
               voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ??
               Constants.DEFAULT_FLUCTUATION_PERCENT;
@@ -215,7 +221,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             );
           }
           const defaultVoltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
-            Voltage.VOLTAGE_400,
+            Math.sqrt(chargingStation.getNumberOfPhases()) *
+              chargingStation.stationInfo.voltageOut!,
             fluctuationPercent,
           );
           meterValue.sampledValue.push(
@@ -391,7 +398,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           );
           break;
         case CurrentType.DC:
-          powerMeasurandValues.allPhases = powerSampledValueTemplate.value
+          powerMeasurandValues.allPhases = isNotEmptyString(powerSampledValueTemplate.value)
             ? getRandomFloatFluctuatedRounded(
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerSampledValueTemplate.value,
@@ -608,7 +615,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               (defaultFluctuatedAmperagePerPhase as number) ??
               getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
           } else {
-            currentMeasurandValues.L1 = currentSampledValueTemplate.value
+            currentMeasurandValues.L1 = isNotEmptyString(currentSampledValueTemplate.value)
               ? getRandomFloatFluctuatedRounded(
                   OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                     currentSampledValueTemplate.value,
@@ -636,7 +643,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             connectorMaximumAvailablePower,
             chargingStation.stationInfo.voltageOut!,
           );
-          currentMeasurandValues.allPhases = currentSampledValueTemplate.value
+          currentMeasurandValues.allPhases = isNotEmptyString(currentSampledValueTemplate.value)
             ? getRandomFloatFluctuatedRounded(
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentSampledValueTemplate.value,

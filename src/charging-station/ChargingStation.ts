@@ -114,6 +114,7 @@ import {
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
   VendorParametersKey,
+  Voltage,
   type WSError,
   WebSocketCloseEventStatusCode,
   type WsOptions,
@@ -2070,7 +2071,7 @@ export class ChargingStation extends EventEmitter {
     return (stationInfo ?? this.stationInfo).currentOutType ?? CurrentType.AC;
   }
 
-  private getVoltageOut(stationInfo?: ChargingStationInfo): number {
+  private getVoltageOut(stationInfo?: ChargingStationInfo): Voltage {
     return (
       (stationInfo ?? this.stationInfo).voltageOut ??
       getDefaultVoltageOut(this.getCurrentOutType(stationInfo), this.logPrefix(), this.templateFile)
