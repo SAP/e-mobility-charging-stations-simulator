@@ -2071,12 +2071,10 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getVoltageOut(stationInfo?: ChargingStationInfo): number {
-    const defaultVoltageOut = getDefaultVoltageOut(
-      this.getCurrentOutType(stationInfo),
-      this.logPrefix(),
-      this.templateFile,
+    return (
+      (stationInfo ?? this.stationInfo).voltageOut ??
+      getDefaultVoltageOut(this.getCurrentOutType(stationInfo), this.logPrefix(), this.templateFile)
     );
-    return (stationInfo ?? this.stationInfo).voltageOut ?? defaultVoltageOut;
   }
 
   private getAmperageLimitation(): number | undefined {
