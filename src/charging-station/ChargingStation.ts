@@ -1115,6 +1115,7 @@ export class ChargingStation extends EventEmitter {
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate);
     stationInfo.ocppVersion = stationTemplate?.ocppVersion ?? OCPPVersion.VERSION_16;
     createSerialNumber(stationTemplate, stationInfo);
+    stationInfo.voltageOut = this.getVoltageOut(stationInfo);
     if (isNotEmptyArray(stationTemplate?.power)) {
       stationTemplate.power = stationTemplate.power as number[];
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length);
