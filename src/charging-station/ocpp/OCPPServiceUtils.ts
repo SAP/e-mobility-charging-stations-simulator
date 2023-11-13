@@ -431,8 +431,7 @@ export class OCPPServiceUtils {
     };
     const parsedValue = parseInt(value);
     if (options?.limitationEnabled) {
-      const numberValue = !isNaN(parsedValue) ? parsedValue : Infinity;
-      return min(numberValue * options.unitMultiplier!, limit);
+      return min((!isNaN(parsedValue) ? parsedValue : Infinity) * options.unitMultiplier!, limit);
     }
     return (!isNaN(parsedValue) ? parsedValue : options.defaultValue!) * options.unitMultiplier!;
   }
