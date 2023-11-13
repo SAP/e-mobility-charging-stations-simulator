@@ -740,7 +740,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         (connectorMaximumAvailablePower * interval) / (3600 * 1000),
         2,
       );
-      const energyValueRounded = energySampledValueTemplate.value
+      const energyValueRounded = isNotEmptyString(energySampledValueTemplate.value)
         ? // Cumulate the fluctuated value around the static one
           getRandomFloatFluctuatedRounded(
             OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(

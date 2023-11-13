@@ -12,7 +12,6 @@ import { BaseError } from '../exception';
 import { PerformanceStatistics } from '../performance';
 import {
   AuthorizationStatus,
-  ConnectorStatusEnum,
   RequestCommand,
   type StartTransactionRequest,
   type StartTransactionResponse,
@@ -302,17 +301,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
         `${this.logPrefix(
           connectorId,
         )} entered in transaction loop while the connector ${connectorId} is unavailable`,
-      );
-      return false;
-    }
-    if (
-      this.chargingStation.getConnectorStatus(connectorId)?.status ===
-      ConnectorStatusEnum.Unavailable
-    ) {
-      logger.info(
-        `${this.logPrefix(
-          connectorId,
-        )} entered in transaction loop while the connector ${connectorId} status is unavailable`,
       );
       return false;
     }

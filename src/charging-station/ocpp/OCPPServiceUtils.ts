@@ -419,20 +419,22 @@ export class OCPPServiceUtils {
   protected static getLimitFromSampledValueTemplateCustomValue(
     value: string,
     limit: number,
-    options?: { limitationEnabled?: boolean; unitMultiplier?: number },
+    options?: { limitationEnabled?: boolean; unitMultiplier?: number; defaultValue?: number },
   ): number {
     options = {
       ...{
         limitationEnabled: true,
         unitMultiplier: 1,
+        defaultValue: 0,
       },
       ...options,
     };
-    const parsedInt = parseInt(value);
-    const numberValue = isNaN(parsedInt) ? Infinity : parsedInt;
-    return options?.limitationEnabled
-      ? min(numberValue * options.unitMultiplier!, limit)
-      : numberValue * options.unitMultiplier!;
+    const parsedValue = parseInt(value);
+    if (options?.limitationEnabled) {
+      const numberValue = !isNaN(parsedValue) ? parsedValue : Infinity;
+      return min(numberValue * options.unitMultiplier!, limit);
+    }
+    return (!isNaN(parsedValue) ? parsedValue : options.defaultValue!) * options.unitMultiplier!;
   }
 
   private static isIdTagLocalAuthorized(chargingStation: ChargingStation, idTag: string): boolean {
