@@ -372,7 +372,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 connectorMinimumPowerPerPhase / unitDivider,
               );
           } else {
-            powerMeasurandValues.L1 = powerSampledValueTemplate.value
+            powerMeasurandValues.L1 = isNotEmptyString(powerSampledValueTemplate.value)
               ? getRandomFloatFluctuatedRounded(
                   OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                     powerSampledValueTemplate.value,
