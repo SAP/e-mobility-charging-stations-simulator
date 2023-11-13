@@ -194,6 +194,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               ? (phase + 1) % chargingStation.getNumberOfPhases()
               : chargingStation.getNumberOfPhases()
           }`;
+          const voltagePhaseLineToLineValueRounded = roundTo(
+            Math.sqrt(chargingStation.getNumberOfPhases()) *
+              chargingStation.stationInfo.voltageOut!,
+            2,
+          );
           const voltagePhaseLineToLineSampledValueTemplate =
             OCPP16ServiceUtils.getSampledValueTemplate(
               chargingStation,
@@ -207,11 +212,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               voltagePhaseLineToLineSampledValueTemplate.value,
             )
               ? parseInt(voltagePhaseLineToLineSampledValueTemplate.value)
-              : roundTo(
-                  Math.sqrt(chargingStation.getNumberOfPhases()) *
-                    chargingStation.stationInfo.voltageOut!,
-                  2,
-                );
+              : voltagePhaseLineToLineValueRounded;
             const fluctuationPhaseLineToLinePercent =
               voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ??
               Constants.DEFAULT_FLUCTUATION_PERCENT;
@@ -221,8 +222,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             );
           }
           const defaultVoltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
-            Math.sqrt(chargingStation.getNumberOfPhases()) *
-              chargingStation.stationInfo.voltageOut!,
+            voltagePhaseLineToLineValueRounded,
             fluctuationPercent,
           );
           meterValue.sampledValue.push(
