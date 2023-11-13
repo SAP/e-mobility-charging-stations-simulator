@@ -1,7 +1,7 @@
 import type { WebSocket } from 'ws';
 
 import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
-import { ChargingStationEvents } from './ChargingStation';
+import { ChargingStationEvents } from './ChargingStationEvents';
 import type { ChargingStationInfo } from './ChargingStationInfo';
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
 import type { ConnectorStatus } from './ConnectorStatus';
