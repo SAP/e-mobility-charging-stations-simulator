@@ -1787,7 +1787,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private async onClose(code: number, reason: Buffer): Promise<void> {
+  private async onClose(code: WebSocketCloseEventStatusCode, reason: Buffer): Promise<void> {
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
@@ -1892,7 +1892,7 @@ export class ChargingStation extends EventEmitter {
 
   private async onMessage(data: RawData): Promise<void> {
     let request: IncomingRequest | Response | ErrorResponse | undefined;
-    let messageType: number | undefined;
+    let messageType: MessageType | undefined;
     let errorMsg: string;
     try {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
