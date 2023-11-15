@@ -92,10 +92,7 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true;
     }
-    if (this.jsonValidateFunctions.has(commandName) === false) {
-      this.jsonValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
-    }
-    const validate = this.jsonValidateFunctions.get(commandName)!;
+    const validate = this.getJsonIncomingRequestValidateFunction<T>(commandName, schema);
     if (validate(payload)) {
       return true;
     }
@@ -116,6 +113,16 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
       return OCPPConstants.OCPP_RESPONSE_ACCEPTED;
     }
     return OCPPConstants.OCPP_RESPONSE_REJECTED;
+  }
+
+  private getJsonIncomingRequestValidateFunction<T extends JsonType>(
+    commandName: IncomingRequestCommand,
+    schema: JSONSchemaType<T>,
+  ) {
+    if (this.jsonValidateFunctions.has(commandName) === false) {
+      this.jsonValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
+    }
+    return this.jsonValidateFunctions.get(commandName)!;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

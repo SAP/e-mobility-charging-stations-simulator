@@ -71,10 +71,7 @@ export abstract class OCPPResponseService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true;
     }
-    if (this.jsonRequestValidateFunctions.has(commandName) === false) {
-      this.jsonRequestValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
-    }
-    const validate = this.jsonRequestValidateFunctions.get(commandName)!;
+    const validate = this.getJsonRequestValidateFunction<T>(commandName, schema);
     if (validate(payload)) {
       return true;
     }
@@ -92,6 +89,16 @@ export abstract class OCPPResponseService {
 
   protected emptyResponseHandler() {
     /* This is intentional */
+  }
+
+  private getJsonRequestValidateFunction<T extends JsonType>(
+    commandName: RequestCommand,
+    schema: JSONSchemaType<T>,
+  ) {
+    if (this.jsonRequestValidateFunctions.has(commandName) === false) {
+      this.jsonRequestValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
+    }
+    return this.jsonRequestValidateFunctions.get(commandName)!;
   }
 
   public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(

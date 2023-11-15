@@ -212,13 +212,7 @@ export abstract class OCPPRequestService {
       );
       return true;
     }
-    if (this.jsonValidateFunctions.has(commandName as RequestCommand) === false) {
-      this.jsonValidateFunctions.set(
-        commandName as RequestCommand,
-        this.ajv.compile<T>(this.jsonSchemas.get(commandName as RequestCommand)!).bind(this),
-      );
-    }
-    const validate = this.jsonValidateFunctions.get(commandName as RequestCommand)!;
+    const validate = this.getJsonRequestValidateFunction<T>(commandName as RequestCommand);
     payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
@@ -235,6 +229,16 @@ export abstract class OCPPRequestService {
       commandName,
       JSON.stringify(validate.errors, undefined, 2),
     );
+  }
+
+  private getJsonRequestValidateFunction<T extends JsonType>(commandName: RequestCommand) {
+    if (this.jsonValidateFunctions.has(commandName) === false) {
+      this.jsonValidateFunctions.set(
+        commandName,
+        this.ajv.compile<T>(this.jsonSchemas.get(commandName)!).bind(this),
+      );
+    }
+    return this.jsonValidateFunctions.get(commandName)!;
   }
 
   private validateIncomingRequestResponsePayload<T extends JsonType>(
@@ -255,25 +259,9 @@ export abstract class OCPPRequestService {
       );
       return true;
     }
-    if (
-      this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.has(
-        commandName as IncomingRequestCommand,
-      ) === false
-    ) {
-      this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.set(
-        commandName as IncomingRequestCommand,
-        this.ajv
-          .compile<T>(
-            this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(
-              commandName as IncomingRequestCommand,
-            )!,
-          )
-          .bind(this),
-      );
-    }
-    const validate = this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.get(
+    const validate = this.getJsonRequestResponseValidateFunction<T>(
       commandName as IncomingRequestCommand,
-    )!;
+    );
     payload = cloneObject<T>(payload);
     OCPPServiceUtils.convertDateToISOString<T>(payload);
     if (validate(payload)) {
@@ -290,6 +278,23 @@ export abstract class OCPPRequestService {
       commandName,
       JSON.stringify(validate.errors, undefined, 2),
     );
+  }
+
+  private getJsonRequestResponseValidateFunction<T extends JsonType>(
+    commandName: IncomingRequestCommand,
+  ) {
+    if (
+      this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.has(commandName) ===
+      false
+    ) {
+      this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.set(
+        commandName,
+        this.ajv
+          .compile<T>(this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(commandName)!)
+          .bind(this),
+      );
+    }
+    return this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.get(commandName)!;
   }
 
   private async internalSendMessage(
