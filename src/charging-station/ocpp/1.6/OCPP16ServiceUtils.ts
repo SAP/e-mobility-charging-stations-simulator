@@ -303,6 +303,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumPower / unitDivider,
                   },
                 ) / chargingStation.getNumberOfPhases(),
                 powerSampledValueTemplate.fluctuationPercent ??
@@ -317,6 +318,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumPowerPerPhase / unitDivider,
                   },
                 ),
                 powerPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
@@ -331,6 +333,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumPowerPerPhase / unitDivider,
                   },
                 ),
                 powerPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
@@ -345,6 +348,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumPowerPerPhase / unitDivider,
                   },
                 ),
                 powerPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
@@ -380,6 +384,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                     {
                       limitationEnabled:
                         chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      defaultValue: connectorMinimumPower / unitDivider,
                     },
                   ),
                   powerSampledValueTemplate.fluctuationPercent ??
@@ -406,6 +411,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumPower / unitDivider,
                   },
                 ),
                 powerSampledValueTemplate.fluctuationPercent ??
@@ -555,6 +561,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumAmperage,
                   },
                 ),
                 currentSampledValueTemplate.fluctuationPercent ??
@@ -569,6 +576,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumAmperage,
                   },
                 ),
                 currentPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
@@ -583,6 +591,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumAmperage,
                   },
                 ),
                 currentPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
@@ -597,6 +606,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumAmperage,
                   },
                 ),
                 currentPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
@@ -623,6 +633,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                     {
                       limitationEnabled:
                         chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      defaultValue: connectorMinimumAmperage,
                     },
                   ),
                   currentSampledValueTemplate.fluctuationPercent ??
@@ -651,6 +662,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
+                    defaultValue: connectorMinimumAmperage,
                   },
                 ),
                 currentSampledValueTemplate.fluctuationPercent ??
