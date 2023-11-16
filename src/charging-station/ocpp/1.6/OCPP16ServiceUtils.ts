@@ -1335,7 +1335,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     context?: MeterValueContext,
     phase?: OCPP16MeterValuePhase,
   ): OCPP16SampledValue {
-    const sampledValueValue = value ?? sampledValueTemplate?.value;
     const sampledValueContext = context ?? sampledValueTemplate?.context;
     const sampledValueLocation =
       sampledValueTemplate?.location ??
@@ -1350,7 +1349,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         measurand: sampledValueTemplate.measurand,
       }),
       ...(!isNullOrUndefined(sampledValueLocation) && { location: sampledValueLocation }),
-      ...(!isNullOrUndefined(sampledValueValue) && { value: sampledValueValue.toString() }),
+      ...(!isNullOrUndefined(value) && { value: value.toString() }),
       ...(!isNullOrUndefined(sampledValuePhase) && { phase: sampledValuePhase }),
     } as OCPP16SampledValue;
   }
