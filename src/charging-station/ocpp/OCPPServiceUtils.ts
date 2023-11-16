@@ -418,7 +418,7 @@ export class OCPPServiceUtils {
   }
 
   protected static getLimitFromSampledValueTemplateCustomValue(
-    value: string,
+    value: string | undefined,
     maxLimit: number,
     minLimit: number,
     options?: { limitationEnabled?: boolean; fallbackValue?: number; unitMultiplier?: number },
@@ -431,7 +431,7 @@ export class OCPPServiceUtils {
       },
       ...options,
     };
-    const parsedValue = parseInt(value);
+    const parsedValue = parseInt(value ?? '');
     if (options?.limitationEnabled) {
       return max(
         min((!isNaN(parsedValue) ? parsedValue : Infinity) * options.unitMultiplier!, maxLimit),

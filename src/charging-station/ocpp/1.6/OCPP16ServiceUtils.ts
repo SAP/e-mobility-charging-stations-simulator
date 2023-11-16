@@ -294,87 +294,93 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       switch (chargingStation.stationInfo?.currentOutType) {
         case CurrentType.AC:
           if (chargingStation.getNumberOfPhases() === 3) {
-            const defaultFluctuatedPowerPerPhase =
-              powerSampledValueTemplate.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  powerSampledValueTemplate.value,
-                  connectorMaximumPower / unitDivider,
-                  connectorMinimumPower / unitDivider,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumPower / unitDivider,
-                  },
-                ) / chargingStation.getNumberOfPhases(),
-                powerSampledValueTemplate.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
-            const phase1FluctuatedValue =
-              powerPerPhaseSampledValueTemplates.L1?.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  powerPerPhaseSampledValueTemplates.L1.value,
-                  connectorMaximumPowerPerPhase / unitDivider,
-                  connectorMinimumPowerPerPhase / unitDivider,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
-                  },
-                ),
-                powerPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
-            const phase2FluctuatedValue =
-              powerPerPhaseSampledValueTemplates.L2?.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  powerPerPhaseSampledValueTemplates.L2.value,
-                  connectorMaximumPowerPerPhase / unitDivider,
-                  connectorMinimumPowerPerPhase / unitDivider,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
-                  },
-                ),
-                powerPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
-            const phase3FluctuatedValue =
-              powerPerPhaseSampledValueTemplates.L3?.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  powerPerPhaseSampledValueTemplates.L3.value,
-                  connectorMaximumPowerPerPhase / unitDivider,
-                  connectorMinimumPowerPerPhase / unitDivider,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
-                  },
-                ),
-                powerPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
+            const defaultFluctuatedPowerPerPhase = isNotEmptyString(powerSampledValueTemplate.value)
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    powerSampledValueTemplate.value,
+                    connectorMaximumPower / unitDivider,
+                    connectorMinimumPower / unitDivider,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumPower / unitDivider,
+                    },
+                  ) / chargingStation.getNumberOfPhases(),
+                  powerSampledValueTemplate.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
+            const phase1FluctuatedValue = isNotEmptyString(
+              powerPerPhaseSampledValueTemplates.L1?.value,
+            )
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    powerPerPhaseSampledValueTemplates.L1?.value,
+                    connectorMaximumPowerPerPhase / unitDivider,
+                    connectorMinimumPowerPerPhase / unitDivider,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
+                    },
+                  ),
+                  powerPerPhaseSampledValueTemplates.L1?.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
+            const phase2FluctuatedValue = isNotEmptyString(
+              powerPerPhaseSampledValueTemplates.L2?.value,
+            )
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    powerPerPhaseSampledValueTemplates.L2?.value,
+                    connectorMaximumPowerPerPhase / unitDivider,
+                    connectorMinimumPowerPerPhase / unitDivider,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
+                    },
+                  ),
+                  powerPerPhaseSampledValueTemplates.L2?.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
+            const phase3FluctuatedValue = isNotEmptyString(
+              powerPerPhaseSampledValueTemplates.L3?.value,
+            )
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    powerPerPhaseSampledValueTemplates.L3?.value,
+                    connectorMaximumPowerPerPhase / unitDivider,
+                    connectorMinimumPowerPerPhase / unitDivider,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
+                    },
+                  ),
+                  powerPerPhaseSampledValueTemplates.L3?.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
             powerMeasurandValues.L1 =
-              (phase1FluctuatedValue as number) ??
-              (defaultFluctuatedPowerPerPhase as number) ??
+              phase1FluctuatedValue ??
+              defaultFluctuatedPowerPerPhase ??
               getRandomFloatRounded(
                 connectorMaximumPowerPerPhase / unitDivider,
                 connectorMinimumPowerPerPhase / unitDivider,
               );
             powerMeasurandValues.L2 =
-              (phase2FluctuatedValue as number) ??
-              (defaultFluctuatedPowerPerPhase as number) ??
+              phase2FluctuatedValue ??
+              defaultFluctuatedPowerPerPhase ??
               getRandomFloatRounded(
                 connectorMaximumPowerPerPhase / unitDivider,
                 connectorMinimumPowerPerPhase / unitDivider,
               );
             powerMeasurandValues.L3 =
-              (phase3FluctuatedValue as number) ??
-              (defaultFluctuatedPowerPerPhase as number) ??
+              phase3FluctuatedValue ??
+              defaultFluctuatedPowerPerPhase ??
               getRandomFloatRounded(
                 connectorMaximumPowerPerPhase / unitDivider,
                 connectorMinimumPowerPerPhase / unitDivider,
@@ -467,7 +473,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           OCPP16ServiceUtils.buildSampledValue(
             powerPerPhaseSampledValueTemplates[
               `L${phase}` as keyof MeasurandPerPhaseSampledValueTemplates
-            ]! ?? powerSampledValueTemplate,
+            ] ?? powerSampledValueTemplate,
             powerMeasurandValues[`L${phase}` as keyof MeasurandPerPhaseSampledValueTemplates],
             undefined,
             phaseValue as OCPP16MeterValuePhase,
@@ -558,81 +564,89 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             chargingStation.stationInfo.voltageOut!,
           );
           if (chargingStation.getNumberOfPhases() === 3) {
-            const defaultFluctuatedAmperagePerPhase =
-              currentSampledValueTemplate.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  currentSampledValueTemplate.value,
-                  connectorMaximumAmperage,
-                  connectorMinimumAmperage,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumAmperage,
-                  },
-                ),
-                currentSampledValueTemplate.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
-            const phase1FluctuatedValue =
-              currentPerPhaseSampledValueTemplates.L1?.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  currentPerPhaseSampledValueTemplates.L1.value,
-                  connectorMaximumAmperage,
-                  connectorMinimumAmperage,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumAmperage,
-                  },
-                ),
-                currentPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
-            const phase2FluctuatedValue =
-              currentPerPhaseSampledValueTemplates.L2?.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  currentPerPhaseSampledValueTemplates.L2.value,
-                  connectorMaximumAmperage,
-                  connectorMinimumAmperage,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumAmperage,
-                  },
-                ),
-                currentPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
-            const phase3FluctuatedValue =
-              currentPerPhaseSampledValueTemplates.L3?.value &&
-              getRandomFloatFluctuatedRounded(
-                OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
-                  currentPerPhaseSampledValueTemplates.L3.value,
-                  connectorMaximumAmperage,
-                  connectorMinimumAmperage,
-                  {
-                    limitationEnabled:
-                      chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    fallbackValue: connectorMinimumAmperage,
-                  },
-                ),
-                currentPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
-                  Constants.DEFAULT_FLUCTUATION_PERCENT,
-              );
+            const defaultFluctuatedAmperagePerPhase = isNotEmptyString(
+              currentSampledValueTemplate.value,
+            )
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    currentSampledValueTemplate.value,
+                    connectorMaximumAmperage,
+                    connectorMinimumAmperage,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumAmperage,
+                    },
+                  ),
+                  currentSampledValueTemplate.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
+            const phase1FluctuatedValue = isNotEmptyString(
+              currentPerPhaseSampledValueTemplates.L1?.value,
+            )
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    currentPerPhaseSampledValueTemplates.L1?.value,
+                    connectorMaximumAmperage,
+                    connectorMinimumAmperage,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumAmperage,
+                    },
+                  ),
+                  currentPerPhaseSampledValueTemplates.L1?.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
+            const phase2FluctuatedValue = isNotEmptyString(
+              currentPerPhaseSampledValueTemplates.L2?.value,
+            )
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    currentPerPhaseSampledValueTemplates.L2?.value,
+                    connectorMaximumAmperage,
+                    connectorMinimumAmperage,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumAmperage,
+                    },
+                  ),
+                  currentPerPhaseSampledValueTemplates.L2?.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
+            const phase3FluctuatedValue = isNotEmptyString(
+              currentPerPhaseSampledValueTemplates.L3?.value,
+            )
+              ? getRandomFloatFluctuatedRounded(
+                  OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
+                    currentPerPhaseSampledValueTemplates.L3?.value,
+                    connectorMaximumAmperage,
+                    connectorMinimumAmperage,
+                    {
+                      limitationEnabled:
+                        chargingStation.stationInfo?.customValueLimitationMeterValues,
+                      fallbackValue: connectorMinimumAmperage,
+                    },
+                  ),
+                  currentPerPhaseSampledValueTemplates.L3?.fluctuationPercent ??
+                    Constants.DEFAULT_FLUCTUATION_PERCENT,
+                )
+              : undefined;
             currentMeasurandValues.L1 =
-              (phase1FluctuatedValue as number) ??
-              (defaultFluctuatedAmperagePerPhase as number) ??
+              phase1FluctuatedValue ??
+              defaultFluctuatedAmperagePerPhase ??
               getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
             currentMeasurandValues.L2 =
-              (phase2FluctuatedValue as number) ??
-              (defaultFluctuatedAmperagePerPhase as number) ??
+              phase2FluctuatedValue ??
+              defaultFluctuatedAmperagePerPhase ??
               getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
             currentMeasurandValues.L3 =
-              (phase3FluctuatedValue as number) ??
-              (defaultFluctuatedAmperagePerPhase as number) ??
+              phase3FluctuatedValue ??
+              defaultFluctuatedAmperagePerPhase ??
               getRandomFloatRounded(connectorMaximumAmperage, connectorMinimumAmperage);
           } else {
             currentMeasurandValues.L1 = isNotEmptyString(currentSampledValueTemplate.value)
@@ -719,7 +733,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           OCPP16ServiceUtils.buildSampledValue(
             currentPerPhaseSampledValueTemplates[
               phaseValue as keyof MeasurandPerPhaseSampledValueTemplates
-            ]! ?? currentSampledValueTemplate,
+            ] ?? currentSampledValueTemplate,
             currentMeasurandValues[phaseValue as keyof MeasurandPerPhaseSampledValueTemplates],
             undefined,
             phaseValue as OCPP16MeterValuePhase,
