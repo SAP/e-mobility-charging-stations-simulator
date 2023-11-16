@@ -41,6 +41,7 @@ import {
   isNotEmptyString,
   logPrefix,
   logger,
+  max,
   min,
 } from '../../utils';
 
@@ -418,22 +419,26 @@ export class OCPPServiceUtils {
 
   protected static getLimitFromSampledValueTemplateCustomValue(
     value: string,
-    limit: number,
-    options?: { limitationEnabled?: boolean; unitMultiplier?: number; defaultValue?: number },
+    maxLimit: number,
+    minLimit: number,
+    options?: { limitationEnabled?: boolean; fallbackValue?: number; unitMultiplier?: number },
   ): number {
     options = {
       ...{
         limitationEnabled: true,
         unitMultiplier: 1,
-        defaultValue: 0,
+        fallbackValue: 0,
       },
       ...options,
     };
     const parsedValue = parseInt(value);
     if (options?.limitationEnabled) {
-      return min((!isNaN(parsedValue) ? parsedValue : Infinity) * options.unitMultiplier!, limit);
+      return max(
+        min((!isNaN(parsedValue) ? parsedValue : Infinity) * options.unitMultiplier!, maxLimit),
+        minLimit,
+      );
     }
-    return (!isNaN(parsedValue) ? parsedValue : options.defaultValue!) * options.unitMultiplier!;
+    return (!isNaN(parsedValue) ? parsedValue : options.fallbackValue!) * options.unitMultiplier!;
   }
 
   private static isIdTagLocalAuthorized(chargingStation: ChargingStation, idTag: string): boolean {

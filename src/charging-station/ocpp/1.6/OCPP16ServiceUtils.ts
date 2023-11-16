@@ -287,7 +287,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       const connectorMaximumPowerPerPhase = Math.round(
         connectorMaximumAvailablePower / chargingStation.getNumberOfPhases(),
       );
-      const connectorMinimumPower = Math.round(powerSampledValueTemplate.minimumValue!) ?? 0;
+      const connectorMinimumPower = Math.round(powerSampledValueTemplate.minimumValue ?? 0);
       const connectorMinimumPowerPerPhase = Math.round(
         connectorMinimumPower / chargingStation.getNumberOfPhases(),
       );
@@ -300,10 +300,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerSampledValueTemplate.value,
                   connectorMaximumPower / unitDivider,
+                  connectorMinimumPower / unitDivider,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumPower / unitDivider,
+                    fallbackValue: connectorMinimumPower / unitDivider,
                   },
                 ) / chargingStation.getNumberOfPhases(),
                 powerSampledValueTemplate.fluctuationPercent ??
@@ -315,10 +316,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerPerPhaseSampledValueTemplates.L1.value,
                   connectorMaximumPowerPerPhase / unitDivider,
+                  connectorMinimumPowerPerPhase / unitDivider,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumPowerPerPhase / unitDivider,
+                    fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
                   },
                 ),
                 powerPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
@@ -330,10 +332,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerPerPhaseSampledValueTemplates.L2.value,
                   connectorMaximumPowerPerPhase / unitDivider,
+                  connectorMinimumPowerPerPhase / unitDivider,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumPowerPerPhase / unitDivider,
+                    fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
                   },
                 ),
                 powerPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
@@ -345,10 +348,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerPerPhaseSampledValueTemplates.L3.value,
                   connectorMaximumPowerPerPhase / unitDivider,
+                  connectorMinimumPowerPerPhase / unitDivider,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumPowerPerPhase / unitDivider,
+                    fallbackValue: connectorMinimumPowerPerPhase / unitDivider,
                   },
                 ),
                 powerPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
@@ -381,10 +385,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                     powerSampledValueTemplate.value,
                     connectorMaximumPower / unitDivider,
+                    connectorMinimumPower / unitDivider,
                     {
                       limitationEnabled:
                         chargingStation.stationInfo?.customValueLimitationMeterValues,
-                      defaultValue: connectorMinimumPower / unitDivider,
+                      fallbackValue: connectorMinimumPower / unitDivider,
                     },
                   ),
                   powerSampledValueTemplate.fluctuationPercent ??
@@ -408,10 +413,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   powerSampledValueTemplate.value,
                   connectorMaximumPower / unitDivider,
+                  connectorMinimumPower / unitDivider,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumPower / unitDivider,
+                    fallbackValue: connectorMinimumPower / unitDivider,
                   },
                 ),
                 powerSampledValueTemplate.fluctuationPercent ??
@@ -558,10 +564,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentSampledValueTemplate.value,
                   connectorMaximumAmperage,
+                  connectorMinimumAmperage,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumAmperage,
+                    fallbackValue: connectorMinimumAmperage,
                   },
                 ),
                 currentSampledValueTemplate.fluctuationPercent ??
@@ -573,10 +580,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentPerPhaseSampledValueTemplates.L1.value,
                   connectorMaximumAmperage,
+                  connectorMinimumAmperage,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumAmperage,
+                    fallbackValue: connectorMinimumAmperage,
                   },
                 ),
                 currentPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
@@ -588,10 +596,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentPerPhaseSampledValueTemplates.L2.value,
                   connectorMaximumAmperage,
+                  connectorMinimumAmperage,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumAmperage,
+                    fallbackValue: connectorMinimumAmperage,
                   },
                 ),
                 currentPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
@@ -603,10 +612,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentPerPhaseSampledValueTemplates.L3.value,
                   connectorMaximumAmperage,
+                  connectorMinimumAmperage,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumAmperage,
+                    fallbackValue: connectorMinimumAmperage,
                   },
                 ),
                 currentPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
@@ -630,10 +640,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                     currentSampledValueTemplate.value,
                     connectorMaximumAmperage,
+                    connectorMinimumAmperage,
                     {
                       limitationEnabled:
                         chargingStation.stationInfo?.customValueLimitationMeterValues,
-                      defaultValue: connectorMinimumAmperage,
+                      fallbackValue: connectorMinimumAmperage,
                     },
                   ),
                   currentSampledValueTemplate.fluctuationPercent ??
@@ -659,10 +670,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
                   currentSampledValueTemplate.value,
                   connectorMaximumAmperage,
+                  connectorMinimumAmperage,
                   {
                     limitationEnabled:
                       chargingStation.stationInfo?.customValueLimitationMeterValues,
-                    defaultValue: connectorMinimumAmperage,
+                    fallbackValue: connectorMinimumAmperage,
                   },
                 ),
                 currentSampledValueTemplate.fluctuationPercent ??
@@ -752,20 +764,26 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         (connectorMaximumAvailablePower * interval) / (3600 * 1000),
         2,
       );
+      const connectorMinimumEnergyRounded = roundTo(
+        energySampledValueTemplate.minimumValue ?? 0,
+        2,
+      );
       const energyValueRounded = isNotEmptyString(energySampledValueTemplate.value)
         ? // Cumulate the fluctuated value around the static one
           getRandomFloatFluctuatedRounded(
             OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
               energySampledValueTemplate.value,
               connectorMaximumEnergyRounded,
+              connectorMinimumEnergyRounded,
               {
                 limitationEnabled: chargingStation.stationInfo?.customValueLimitationMeterValues,
                 unitMultiplier: unitDivider,
+                fallbackValue: connectorMinimumEnergyRounded,
               },
             ),
             energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT,
           )
-        : getRandomFloatRounded(connectorMaximumEnergyRounded);
+        : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded);
       // Persist previous value on connector
       if (connector) {
         if (
@@ -792,12 +810,16 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         ),
       );
       const sampledValuesIndex = meterValue.sampledValue.length - 1;
-      if (energyValueRounded > connectorMaximumEnergyRounded || debug) {
+      if (
+        energyValueRounded > connectorMaximumEnergyRounded ||
+        energyValueRounded < connectorMinimumEnergyRounded ||
+        debug
+      ) {
         logger.error(
           `${chargingStation.logPrefix()} MeterValues measurand ${
             meterValue.sampledValue[sampledValuesIndex].measurand ??
             OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${interval}ms`,
+          }: connector id ${connectorId}, transaction id ${connector?.transactionId}, value: ${connectorMinimumEnergyRounded}/${energyValueRounded}/${connectorMaximumEnergyRounded}, duration: ${interval}ms`,
         );
       }
     }
