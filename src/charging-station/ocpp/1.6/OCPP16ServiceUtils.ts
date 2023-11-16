@@ -769,8 +769,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         2,
       );
       const energyValueRounded = isNotEmptyString(energySampledValueTemplate.value)
-        ? // Cumulate the fluctuated value around the static one
-          getRandomFloatFluctuatedRounded(
+        ? getRandomFloatFluctuatedRounded(
             OCPP16ServiceUtils.getLimitFromSampledValueTemplateCustomValue(
               energySampledValueTemplate.value,
               connectorMaximumEnergyRounded,
