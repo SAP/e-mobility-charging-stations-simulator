@@ -1,16 +1,17 @@
-const http = require('node:http'),
-  path = require('node:path'),
-  { env } = require('node:process'),
-  finalhandler = require('finalhandler'),
-  serveStatic = require('serve-static');
+import { createServer } from 'node:http';
+import { dirname, join } from 'node:path';
+import { env } from 'node:process';
+import { fileURLToPath } from 'node:url';
+import finalhandler from 'finalhandler';
+import serveStatic from 'serve-static';
 
 const isCFEnvironment = env.VCAP_APPLICATION !== undefined,
   PORT = isCFEnvironment ? parseInt(env.PORT) : 3030,
-  uiPath = path.join(__dirname, './dist');
+  uiPath = join(dirname(fileURLToPath(import.meta.url)), './dist');
 
 const serve = serveStatic(uiPath);
 
-const server = http.createServer(function onRequest(req, res) {
+const server = createServer(function onRequest(req, res) {
   serve(req, res, finalhandler(req, res));
 });
 
