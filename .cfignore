@@ -7,10 +7,13 @@
 .prettierignore
 .jshintrc
 .eslintrc.json
+.eslintrc.js
+.eslintrc.cjs
 .eslintignore
 .eslintcache
 .lintstagedrc.json
 .lintstagedrc.js
+.lintstagedrc.cjs
 .husky
 .editorconfig
 .vscode
@@ -25,6 +28,7 @@
 .release-it.json
 .xmake.cfg
 # Logs
+logs/
 *.log
 # Winston
 *-audit.json
@@ -67,6 +71,7 @@ outputs
 coverage
 node_modules
 sonar-project.properties
+performance/
 performanceRecords.json
 performanceRecords.json.lock
 tsconfig*.json
