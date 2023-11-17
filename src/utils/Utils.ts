@@ -1,5 +1,5 @@
 import { randomBytes, randomInt, randomUUID, webcrypto } from 'node:crypto';
-import { env } from 'node:process';
+import { env, nextTick } from 'node:process';
 import { inspect } from 'node:util';
 
 import {
@@ -445,3 +445,9 @@ export const min = (...args: number[]): number =>
 
 export const max = (...args: number[]): number =>
   args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity);
+
+export const throwErrorInNextTick = (error: Error): void => {
+  nextTick(() => {
+    throw error;
+  });
+};
