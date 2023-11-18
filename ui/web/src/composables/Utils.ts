@@ -18,28 +18,6 @@ export const ifUndefined = <T>(value: T | undefined, isValue: T): T => {
 //   if (isIterable(obj) === false) cb();
 // };
 
-export const promiseWithTimeout = <T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  timeoutError: Error,
-  timeoutCallback: () => void = () => {
-    /* This is intentional */
-  },
-): Promise<T> => {
-  // Create a timeout promise that rejects in timeout milliseconds
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
-      // FIXME: The original promise state shall be checked
-      timeoutCallback();
-      // FIXME: The original promise shall be canceled
-      reject(timeoutError);
-    }, timeoutMs);
-  });
-
-  // Returns a race between timeout promise and the passed promise
-  return Promise.race<T>([promise, timeoutPromise]);
-};
-
 // export const compose = <T>(...fns: ((arg: T) => T)[]): ((x: T) => T) => {
 //   return (x: T) => fns.reduceRight((y, fn) => fn(y), x);
 // };

@@ -52,7 +52,6 @@ export {
   max,
   min,
   once,
-  promiseWithTimeout,
   roundTo,
   secureRandom,
   sleep,

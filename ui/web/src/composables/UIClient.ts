@@ -1,4 +1,3 @@
-import { promiseWithTimeout } from './Utils';
 import {
   ProcedureName,
   type ProtocolResponse,
@@ -146,28 +145,25 @@ export class UIClient {
     data: RequestPayload,
   ): Promise<ResponsePayload> {
     let uuid: string;
-    return promiseWithTimeout(
-      new Promise<ResponsePayload>((resolve, reject) => {
-        uuid = crypto.randomUUID();
-        const msg = JSON.stringify([uuid, command, data]);
+    return await new Promise<ResponsePayload>((resolve, reject) => {
+      uuid = crypto.randomUUID();
+      const msg = JSON.stringify([uuid, command, data]);
 
-        if (this.ws.readyState !== WebSocket.OPEN) {
-          this.openWS();
-        }
-        if (this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(msg);
-        } else {
-          throw new Error(`Send request '${command}' message: connection not opened`);
-        }
+      if (this.ws.readyState !== WebSocket.OPEN) {
+        this.openWS();
+      }
+      if (this.ws.readyState === WebSocket.OPEN) {
+        setTimeout(() => {
+          this.deleteResponseHandler(uuid);
+          return reject(new Error(`Send request '${command}' message timeout`));
+        }, 60 * 1000);
+        this.ws.send(msg);
+      } else {
+        throw new Error(`Send request '${command}' message: connection not opened`);
+      }
 
-        this.setResponseHandler(uuid, command, resolve, reject);
-      }),
-      120 * 1000,
-      Error(`Send request '${command}' message timeout`),
-      () => {
-        this.responseHandlers.delete(uuid);
-      },
-    );
+      this.setResponseHandler(uuid, command, resolve, reject);
+    });
   }
 
   private responseHandler(messageEvent: MessageEvent<string>): void {

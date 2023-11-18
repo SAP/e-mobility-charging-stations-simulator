@@ -1,6 +1,5 @@
 import { randomBytes, randomInt, randomUUID, webcrypto } from 'node:crypto';
 import { env, nextTick } from 'node:process';
-import { inspect } from 'node:util';
 
 import {
   formatDuration,
@@ -329,33 +328,6 @@ export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => 
   const delay = Math.pow(2, retryNumber) * delayFactor;
   const randomSum = delay * 0.2 * secureRandom(); // 0-20% of the delay
   return delay + randomSum;
-};
-
-const isPromisePending = (promise: Promise<unknown>): boolean => {
-  return inspect(promise).includes('pending');
-};
-
-export const promiseWithTimeout = async <T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  timeoutError: Error,
-  timeoutCallback: () => void = () => {
-    /* This is intentional */
-  },
-): Promise<T> => {
-  // Creates a timeout promise that rejects in timeout milliseconds
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
-      if (isPromisePending(promise)) {
-        timeoutCallback();
-        // FIXME: The original promise shall be canceled
-      }
-      reject(timeoutError);
-    }, timeoutMs);
-  });
-
-  // Returns a race between timeout promise and the passed promise
-  return Promise.race<T>([promise, timeoutPromise]);
 };
 
 /**
