@@ -153,11 +153,17 @@ export class UIClient {
         this.openWS();
       }
       if (this.ws.readyState === WebSocket.OPEN) {
-        setTimeout(() => {
+        const sendTimeout = setTimeout(() => {
           this.deleteResponseHandler(uuid);
           return reject(new Error(`Send request '${command}' message timeout`));
         }, 60 * 1000);
-        this.ws.send(msg);
+        try {
+          this.ws.send(msg);
+        } catch (error) {
+          reject(error);
+        } finally {
+          clearTimeout(sendTimeout);
+        }
       } else {
         throw new Error(`Send request '${command}' message: connection not opened`);
       }
