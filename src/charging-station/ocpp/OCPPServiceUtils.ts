@@ -425,7 +425,7 @@ export class OCPPServiceUtils {
   ): number {
     options = {
       ...{
-        limitationEnabled: true,
+        limitationEnabled: false,
         unitMultiplier: 1,
         fallbackValue: 0,
       },

@@ -790,8 +790,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               connectorMinimumEnergyRounded,
               {
                 limitationEnabled: chargingStation.stationInfo?.customValueLimitationMeterValues,
-                unitMultiplier: unitDivider,
                 fallbackValue: connectorMinimumEnergyRounded,
+                unitMultiplier: unitDivider,
               },
             ),
             energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT,
