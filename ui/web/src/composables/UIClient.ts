@@ -144,9 +144,8 @@ export class UIClient {
     command: ProcedureName,
     data: RequestPayload,
   ): Promise<ResponsePayload> {
-    let uuid: string;
     return new Promise<ResponsePayload>((resolve, reject) => {
-      uuid = crypto.randomUUID();
+      const uuid = crypto.randomUUID();
       const msg = JSON.stringify([uuid, command, data]);
 
       if (this.ws.readyState !== WebSocket.OPEN) {

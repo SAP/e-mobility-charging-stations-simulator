@@ -349,10 +349,10 @@ export abstract class OCPPRequestService {
         /**
          * Function that will receive the request's error response
          *
-         * @param error -
+         * @param ocppError -
          * @param requestStatistic -
          */
-        const errorCallback = (error: OCPPError, requestStatistic = true): void => {
+        const errorCallback = (ocppError: OCPPError, requestStatistic = true): void => {
           if (requestStatistic === true && chargingStation.stationInfo?.enableStatistics === true) {
             chargingStation.performanceStatistics?.addRequestStatistic(
               commandName,
@@ -364,10 +364,19 @@ export abstract class OCPPRequestService {
               messageType,
             )} command ${commandName} with PDU %j:`,
             messagePayload,
-            error,
+            ocppError,
           );
           chargingStation.requests.delete(messageId);
-          reject(error);
+          reject(ocppError);
+        };
+
+        const rejectWithOcppError = (ocppError: OCPPError): void => {
+          // Reject response
+          if (messageType !== MessageType.CALL_MESSAGE) {
+            return reject(ocppError);
+          }
+          // Reject and remove request from the cache
+          return errorCallback(ocppError, false);
         };
 
         if (chargingStation.stationInfo?.enableStatistics === true) {
@@ -384,14 +393,13 @@ export abstract class OCPPRequestService {
         if (chargingStation.isWebSocketConnectionOpened() === true) {
           const beginId = PerformanceStatistics.beginMeasure(commandName);
           const sendTimeout = setTimeout(() => {
-            return errorCallback(
+            return rejectWithOcppError(
               new OCPPError(
                 ErrorType.GENERIC_ERROR,
                 `Timeout for message id '${messageId}'`,
                 commandName,
                 (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
               ),
-              false,
             );
           }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT);
           chargingStation.wsConnection?.send(messageToSend, (error?: Error) => {
@@ -411,12 +419,7 @@ export abstract class OCPPRequestService {
                 // Reject and keep request in the cache
                 return reject(ocppError);
               }
-              // Reject response
-              if (messageType !== MessageType.CALL_MESSAGE) {
-                return reject(ocppError);
-              }
-              // Reject and remove request from the cache
-              return errorCallback(ocppError, false);
+              return rejectWithOcppError(ocppError);
             }
           });
           if (messageType === MessageType.CALL_MESSAGE) {
@@ -436,6 +439,14 @@ export abstract class OCPPRequestService {
           );
           PerformanceStatistics.endMeasure(commandName, beginId);
         } else {
+          const ocppError = new OCPPError(
+            ErrorType.GENERIC_ERROR,
+            `WebSocket closed for ${
+              params?.skipBufferingOnError === false ? '' : 'non '
+            }buffered message id '${messageId}' with content '${messageToSend}'`,
+            commandName,
+            (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
+          );
           if (params?.skipBufferingOnError === false) {
             // Buffer
             chargingStation.bufferMessage(messageToSend);
@@ -449,18 +460,10 @@ export abstract class OCPPRequestService {
                 errorCallback,
               );
             }
+            // Reject and keep request in the cache
+            return reject(ocppError);
           }
-          // Reject and keep request in the cache
-          return reject(
-            new OCPPError(
-              ErrorType.GENERIC_ERROR,
-              `WebSocket closed for ${
-                params?.skipBufferingOnError === false ? '' : 'non '
-              }buffered message id '${messageId}' with content '${messageToSend}'`,
-              commandName,
-              (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
-            ),
-          );
+          return rejectWithOcppError(ocppError);
         }
         // Resolve response
         if (messageType !== MessageType.CALL_MESSAGE) {
