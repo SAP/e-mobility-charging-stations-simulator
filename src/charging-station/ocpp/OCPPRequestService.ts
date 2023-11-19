@@ -423,11 +423,11 @@ export abstract class OCPPRequestService {
           if (messageType === MessageType.CALL_MESSAGE) {
             this.cacheRequestPromise(
               chargingStation,
-              responseCallback,
-              errorCallback,
               messageId,
               messagePayload as JsonType,
               commandName,
+              responseCallback,
+              errorCallback,
             );
           }
           logger.debug(
@@ -443,11 +443,11 @@ export abstract class OCPPRequestService {
             if (messageType === MessageType.CALL_MESSAGE) {
               this.cacheRequestPromise(
                 chargingStation,
-                responseCallback,
-                errorCallback,
                 messageId,
                 messagePayload as JsonType,
                 commandName,
+                responseCallback,
+                errorCallback,
               );
             }
           }
@@ -524,11 +524,11 @@ export abstract class OCPPRequestService {
 
   private cacheRequestPromise(
     chargingStation: ChargingStation,
-    responseCallback: ResponseCallback,
-    errorCallback: ErrorCallback,
     messageId: string,
     messagePayload: JsonType,
     commandName: RequestCommand | IncomingRequestCommand,
+    responseCallback: ResponseCallback,
+    errorCallback: ErrorCallback,
   ): void {
     chargingStation.requests.set(messageId, [
       responseCallback,
