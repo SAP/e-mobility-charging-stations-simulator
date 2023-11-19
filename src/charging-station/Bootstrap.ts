@@ -215,11 +215,11 @@ export class Bootstrap extends EventEmitter {
     return new Promise<string>((resolve, reject) => {
       const waitTimeout = setTimeout(() => {
         const message = `Timeout ${formatDurationMilliSeconds(
-          Constants.STOP_SIMULATOR_TIMEOUT,
+          Constants.STOP_CHARGING_STATIONS_TIMEOUT,
         )} reached at stopping charging stations`;
         console.warn(chalk.yellow(message));
         reject(new Error(message));
-      }, Constants.STOP_SIMULATOR_TIMEOUT);
+      }, Constants.STOP_CHARGING_STATIONS_TIMEOUT);
       waitChargingStationEvents(
         this,
         ChargingStationWorkerMessageEvents.stopped,
