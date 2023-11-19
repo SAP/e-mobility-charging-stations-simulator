@@ -1064,14 +1064,17 @@ export class ChargingStation extends EventEmitter {
           [, , commandName] = JSON.parse(message) as OutgoingRequest;
           beginId = PerformanceStatistics.beginMeasure(commandName);
         }
-        this.wsConnection?.send(message);
-        isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!);
-        logger.debug(
-          `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
-            messageType,
-          )} payload sent: ${message}`,
-        );
-        this.messageBuffer.delete(message);
+        this.wsConnection?.send(message, (error?: Error) => {
+          isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!);
+          if (isNullOrUndefined(error)) {
+            logger.debug(
+              `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
+                messageType,
+              )} payload sent: ${message}`,
+            );
+            this.messageBuffer.delete(message);
+          }
+        });
       }
     }
   }

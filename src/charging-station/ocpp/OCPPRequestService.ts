@@ -23,7 +23,13 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import { Constants, cloneObject, handleSendMessageError, logger } from '../../utils';
+import {
+  Constants,
+  cloneObject,
+  handleSendMessageError,
+  isNullOrUndefined,
+  logger,
+} from '../../utils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -379,6 +385,23 @@ export abstract class OCPPRequestService {
           return errorCallback(ocppError, false);
         };
 
+        const bufferAndRejectWithOcppError = (ocppError: OCPPError): void => {
+          // Buffer
+          chargingStation.bufferMessage(messageToSend);
+          if (messageType === MessageType.CALL_MESSAGE) {
+            this.cacheRequestPromise(
+              chargingStation,
+              messageId,
+              messagePayload as JsonType,
+              commandName,
+              responseCallback,
+              errorCallback,
+            );
+          }
+          // Reject and keep request in the cache
+          return reject(ocppError);
+        };
+
         if (chargingStation.stationInfo?.enableStatistics === true) {
           chargingStation.performanceStatistics?.addRequestStatistic(commandName, messageType);
         }
@@ -403,8 +426,29 @@ export abstract class OCPPRequestService {
             );
           }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT);
           chargingStation.wsConnection?.send(messageToSend, (error?: Error) => {
+            PerformanceStatistics.endMeasure(commandName, beginId);
             clearTimeout(sendTimeout);
-            if (error) {
+            if (isNullOrUndefined(error)) {
+              logger.debug(
+                `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
+                  messageType,
+                )} payload: ${messageToSend}`,
+              );
+              if (messageType === MessageType.CALL_MESSAGE) {
+                this.cacheRequestPromise(
+                  chargingStation,
+                  messageId,
+                  messagePayload as JsonType,
+                  commandName,
+                  responseCallback,
+                  errorCallback,
+                );
+              }
+              // Resolve response
+              if (messageType !== MessageType.CALL_MESSAGE) {
+                return resolve(messagePayload);
+              }
+            } else if (error) {
               const ocppError = new OCPPError(
                 ErrorType.GENERIC_ERROR,
                 `WebSocket errored for ${
@@ -414,30 +458,11 @@ export abstract class OCPPRequestService {
                 { name: error.name, message: error.message, stack: error.stack },
               );
               if (params?.skipBufferingOnError === false) {
-                // Buffer
-                chargingStation.bufferMessage(messageToSend);
-                // Reject and keep request in the cache
-                return reject(ocppError);
+                return bufferAndRejectWithOcppError(ocppError);
               }
               return rejectWithOcppError(ocppError);
             }
           });
-          if (messageType === MessageType.CALL_MESSAGE) {
-            this.cacheRequestPromise(
-              chargingStation,
-              messageId,
-              messagePayload as JsonType,
-              commandName,
-              responseCallback,
-              errorCallback,
-            );
-          }
-          logger.debug(
-            `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
-              messageType,
-            )} payload: ${messageToSend}`,
-          );
-          PerformanceStatistics.endMeasure(commandName, beginId);
         } else {
           const ocppError = new OCPPError(
             ErrorType.GENERIC_ERROR,
@@ -448,26 +473,9 @@ export abstract class OCPPRequestService {
             (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
           );
           if (params?.skipBufferingOnError === false) {
-            // Buffer
-            chargingStation.bufferMessage(messageToSend);
-            if (messageType === MessageType.CALL_MESSAGE) {
-              this.cacheRequestPromise(
-                chargingStation,
-                messageId,
-                messagePayload as JsonType,
-                commandName,
-                responseCallback,
-                errorCallback,
-              );
-            }
-            // Reject and keep request in the cache
-            return reject(ocppError);
+            return bufferAndRejectWithOcppError(ocppError);
           }
           return rejectWithOcppError(ocppError);
-        }
-        // Resolve response
-        if (messageType !== MessageType.CALL_MESSAGE) {
-          return resolve(messagePayload);
         }
       });
     }
