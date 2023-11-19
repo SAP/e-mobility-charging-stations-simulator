@@ -385,21 +385,24 @@ export abstract class OCPPRequestService {
           return errorCallback(ocppError, false);
         };
 
-        const bufferAndRejectWithOcppError = (ocppError: OCPPError): void => {
-          // Buffer
-          chargingStation.bufferMessage(messageToSend);
-          if (messageType === MessageType.CALL_MESSAGE) {
-            this.cacheRequestPromise(
-              chargingStation,
-              messageId,
-              messagePayload as JsonType,
-              commandName,
-              responseCallback,
-              errorCallback,
-            );
+        const handleSendError = (ocppError: OCPPError): void => {
+          if (params?.skipBufferingOnError === false) {
+            // Buffer
+            chargingStation.bufferMessage(messageToSend);
+            if (messageType === MessageType.CALL_MESSAGE) {
+              this.cacheRequestPromise(
+                chargingStation,
+                messageId,
+                messagePayload as JsonType,
+                commandName,
+                responseCallback,
+                errorCallback,
+              );
+            }
+            // Reject and keep request in the cache
+            return reject(ocppError);
           }
-          // Reject and keep request in the cache
-          return reject(ocppError);
+          return rejectWithOcppError(ocppError);
         };
 
         if (chargingStation.stationInfo?.enableStatistics === true) {
@@ -448,33 +451,29 @@ export abstract class OCPPRequestService {
                 return resolve(messagePayload);
               }
             } else if (error) {
-              const ocppError = new OCPPError(
-                ErrorType.GENERIC_ERROR,
-                `WebSocket errored for ${
-                  params?.skipBufferingOnError === false ? '' : 'non '
-                }buffered message id '${messageId}' with content '${messageToSend}'`,
-                commandName,
-                { name: error.name, message: error.message, stack: error.stack },
+              return handleSendError(
+                new OCPPError(
+                  ErrorType.GENERIC_ERROR,
+                  `WebSocket errored for ${
+                    params?.skipBufferingOnError === false ? '' : 'non '
+                  }buffered message id '${messageId}' with content '${messageToSend}'`,
+                  commandName,
+                  { name: error.name, message: error.message, stack: error.stack },
+                ),
               );
-              if (params?.skipBufferingOnError === false) {
-                return bufferAndRejectWithOcppError(ocppError);
-              }
-              return rejectWithOcppError(ocppError);
             }
           });
         } else {
-          const ocppError = new OCPPError(
-            ErrorType.GENERIC_ERROR,
-            `WebSocket closed for ${
-              params?.skipBufferingOnError === false ? '' : 'non '
-            }buffered message id '${messageId}' with content '${messageToSend}'`,
-            commandName,
-            (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
+          return handleSendError(
+            new OCPPError(
+              ErrorType.GENERIC_ERROR,
+              `WebSocket closed for ${
+                params?.skipBufferingOnError === false ? '' : 'non '
+              }buffered message id '${messageId}' with content '${messageToSend}'`,
+              commandName,
+              (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
+            ),
           );
-          if (params?.skipBufferingOnError === false) {
-            return bufferAndRejectWithOcppError(ocppError);
-          }
-          return rejectWithOcppError(ocppError);
         }
       });
     }
