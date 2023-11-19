@@ -145,7 +145,7 @@ export class UIClient {
     data: RequestPayload,
   ): Promise<ResponsePayload> {
     let uuid: string;
-    return await new Promise<ResponsePayload>((resolve, reject) => {
+    return new Promise<ResponsePayload>((resolve, reject) => {
       uuid = crypto.randomUUID();
       const msg = JSON.stringify([uuid, command, data]);
 

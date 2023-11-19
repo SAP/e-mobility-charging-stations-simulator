@@ -184,7 +184,11 @@ export class Bootstrap extends EventEmitter {
               Constants.EMPTY_FROZEN_OBJECT,
             ),
           );
-          await this.waitChargingStationsStopped();
+          try {
+            await this.waitChargingStationsStopped();
+          } catch (error) {
+            console.error(chalk.red('Error while waiting for charging stations to stop: '), error);
+          }
         }
         await this.workerImplementation?.stop();
         this.workerImplementation = null;
@@ -207,23 +211,30 @@ export class Bootstrap extends EventEmitter {
     await this.start();
   }
 
-  private async waitChargingStationsStopped(): Promise<void> {
-    await Promise.race([
+  private async waitChargingStationsStopped(): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const waitTimeout = setTimeout(() => {
+        const message = `Timeout ${formatDurationMilliSeconds(
+          Constants.STOP_SIMULATOR_TIMEOUT,
+        )} reached at stopping charging stations`;
+        console.warn(chalk.yellow(message));
+        reject(new Error(message));
+      }, Constants.STOP_SIMULATOR_TIMEOUT);
       waitChargingStationEvents(
         this,
         ChargingStationWorkerMessageEvents.stopped,
         this.numberOfChargingStations,
-      ),
-      new Promise<string>((resolve) => {
-        setTimeout(() => {
-          const message = `Timeout ${formatDurationMilliSeconds(
-            Constants.STOP_SIMULATOR_TIMEOUT,
-          )} reached at stopping charging stations simulator`;
-          console.warn(chalk.yellow(message));
-          resolve(message);
-        }, Constants.STOP_SIMULATOR_TIMEOUT);
-      }),
-    ]);
+      )
+        .then(() => {
+          resolve('Charging stations stopped');
+        })
+        .catch((error) => {
+          reject(error);
+        })
+        .finally(() => {
+          clearTimeout(waitTimeout);
+        });
+    });
   }
 
   private initializeWorkerImplementation(workerConfiguration: WorkerConfiguration): void {
@@ -395,8 +406,7 @@ export class Bootstrap extends EventEmitter {
           .then(() => {
             exit(exitCodes.succeeded);
           })
-          .catch((error) => {
-            console.error(chalk.red('Error while waiting for charging stations to stop: '), error);
+          .catch(() => {
             exit(exitCodes.gracefulShutdownError);
           });
       })
