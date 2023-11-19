@@ -443,9 +443,8 @@ export abstract class OCPPRequestService {
                   responseCallback,
                   errorCallback,
                 );
-              }
-              // Resolve response
-              if (messageType !== MessageType.CALL_MESSAGE) {
+              } else {
+                // Resolve response
                 return resolve(messagePayload);
               }
             } else if (error) {
