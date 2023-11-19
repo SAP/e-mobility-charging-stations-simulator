@@ -93,8 +93,6 @@ export abstract class OCPPRequestService {
       messagePayload: JsonType | OCPPError,
       messageType: MessageType,
       commandName: RequestCommand | IncomingRequestCommand,
-      responseCallback: ResponseCallback,
-      errorCallback: ErrorCallback,
     ) => string;
     this.validateRequestPayload = this.validateRequestPayload.bind(this) as <T extends JsonType>(
       chargingStation: ChargingStation,
@@ -381,8 +379,6 @@ export abstract class OCPPRequestService {
           messagePayload,
           messageType,
           commandName,
-          responseCallback,
-          errorCallback,
         );
         // Check if wsConnection opened
         if (chargingStation.isWebSocketConnectionOpened() === true) {
@@ -399,27 +395,23 @@ export abstract class OCPPRequestService {
             );
           }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT);
           chargingStation.wsConnection?.send(messageToSend, (error?: Error) => {
-            if (error && params?.skipBufferingOnError === false) {
-              // Buffer
-              chargingStation.bufferMessage(messageToSend);
-              // Reject and keep request in the cache
-              return reject(
-                new OCPPError(
-                  ErrorType.GENERIC_ERROR,
-                  `WebSocket errored for buffered message id '${messageId}' with content '${messageToSend}'`,
-                  commandName,
-                  { name: error.name, message: error.message, stack: error.stack } ??
-                    Constants.EMPTY_FROZEN_OBJECT,
-                ),
-              );
-            } else if (error) {
+            clearTimeout(sendTimeout);
+            if (error) {
               const ocppError = new OCPPError(
                 ErrorType.GENERIC_ERROR,
-                `WebSocket errored for non buffered message id '${messageId}' with content '${messageToSend}'`,
+                `WebSocket errored for ${
+                  params?.skipBufferingOnError === false ? '' : 'non '
+                }buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
                 { name: error.name, message: error.message, stack: error.stack } ??
                   Constants.EMPTY_FROZEN_OBJECT,
               );
+              if (params?.skipBufferingOnError === false) {
+                // Buffer
+                chargingStation.bufferMessage(messageToSend);
+                // Reject and keep request in the cache
+                return reject(ocppError);
+              }
               // Reject response
               if (messageType !== MessageType.CALL_MESSAGE) {
                 return reject(ocppError);
@@ -427,39 +419,49 @@ export abstract class OCPPRequestService {
               // Reject and remove request from the cache
               return errorCallback(ocppError, false);
             }
-            clearTimeout(sendTimeout);
           });
+          if (messageType === MessageType.CALL_MESSAGE) {
+            this.cacheRequestPromise(
+              chargingStation,
+              responseCallback,
+              errorCallback,
+              messageId,
+              messagePayload as JsonType,
+              commandName,
+            );
+          }
           logger.debug(
             `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
               messageType,
             )} payload: ${messageToSend}`,
           );
           PerformanceStatistics.endMeasure(commandName, beginId);
-        } else if (params?.skipBufferingOnError === false) {
-          // Buffer
-          chargingStation.bufferMessage(messageToSend);
+        } else {
+          if (params?.skipBufferingOnError === false) {
+            // Buffer
+            chargingStation.bufferMessage(messageToSend);
+            if (messageType === MessageType.CALL_MESSAGE) {
+              this.cacheRequestPromise(
+                chargingStation,
+                responseCallback,
+                errorCallback,
+                messageId,
+                messagePayload as JsonType,
+                commandName,
+              );
+            }
+          }
           // Reject and keep request in the cache
           return reject(
             new OCPPError(
               ErrorType.GENERIC_ERROR,
-              `WebSocket closed for buffered message id '${messageId}' with content '${messageToSend}'`,
+              `WebSocket closed for ${
+                params?.skipBufferingOnError === false ? '' : 'non '
+              }buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
               (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
             ),
           );
-        } else {
-          const ocppError = new OCPPError(
-            ErrorType.GENERIC_ERROR,
-            `WebSocket closed for non buffered message id '${messageId}' with content '${messageToSend}'`,
-            commandName,
-            (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
-          );
-          // Reject response
-          if (messageType !== MessageType.CALL_MESSAGE) {
-            return reject(ocppError);
-          }
-          // Reject and remove request from the cache
-          return errorCallback(ocppError, false);
         }
         // Resolve response
         if (messageType !== MessageType.CALL_MESSAGE) {
@@ -480,8 +482,6 @@ export abstract class OCPPRequestService {
     messagePayload: JsonType | OCPPError,
     messageType: MessageType,
     commandName: RequestCommand | IncomingRequestCommand,
-    responseCallback: ResponseCallback,
-    errorCallback: ErrorCallback,
   ): string {
     let messageToSend: string;
     // Type of message
@@ -490,12 +490,6 @@ export abstract class OCPPRequestService {
       case MessageType.CALL_MESSAGE:
         // Build request
         this.validateRequestPayload(chargingStation, commandName, messagePayload as JsonType);
-        chargingStation.requests.set(messageId, [
-          responseCallback,
-          errorCallback,
-          commandName,
-          messagePayload as JsonType,
-        ]);
         messageToSend = JSON.stringify([
           messageType,
           messageId,
@@ -526,6 +520,22 @@ export abstract class OCPPRequestService {
         break;
     }
     return messageToSend;
+  }
+
+  private cacheRequestPromise(
+    chargingStation: ChargingStation,
+    responseCallback: ResponseCallback,
+    errorCallback: ErrorCallback,
+    messageId: string,
+    messagePayload: JsonType,
+    commandName: RequestCommand | IncomingRequestCommand,
+  ): void {
+    chargingStation.requests.set(messageId, [
+      responseCallback,
+      errorCallback,
+      commandName,
+      messagePayload,
+    ]);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

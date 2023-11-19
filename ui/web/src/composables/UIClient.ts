@@ -159,7 +159,9 @@ export class UIClient {
         }, 60 * 1000);
         try {
           this.ws.send(msg);
+          this.setResponseHandler(uuid, command, resolve, reject);
         } catch (error) {
+          this.deleteResponseHandler(uuid);
           reject(error);
         } finally {
           clearTimeout(sendTimeout);
@@ -167,8 +169,6 @@ export class UIClient {
       } else {
         throw new Error(`Send request '${command}' message: connection not opened`);
       }
-
-      this.setResponseHandler(uuid, command, resolve, reject);
     });
   }
 
@@ -182,15 +182,18 @@ export class UIClient {
     const [uuid, responsePayload] = response;
 
     if (this.responseHandlers.has(uuid) === true) {
+      const { procedureName, resolve, reject } = this.getResponseHandler(uuid)!;
       switch (responsePayload.status) {
         case ResponseStatus.SUCCESS:
-          this.getResponseHandler(uuid)?.resolve(responsePayload);
+          resolve(responsePayload);
           break;
         case ResponseStatus.FAILURE:
-          this.getResponseHandler(uuid)?.reject(responsePayload);
+          reject(responsePayload);
           break;
         default:
-          console.error(`Response status not supported: ${responsePayload.status}`);
+          console.error(
+            `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`,
+          );
       }
       this.deleteResponseHandler(uuid);
     } else {
