@@ -387,7 +387,10 @@ export abstract class OCPPRequestService {
                 errorCallback,
               );
             }
-          } else if (messageType === MessageType.CALL_MESSAGE) {
+          } else if (
+            params?.skipBufferingOnError === true &&
+            messageType === MessageType.CALL_MESSAGE
+          ) {
             // Remove request from the cache
             chargingStation.requests.delete(messageId);
           }
