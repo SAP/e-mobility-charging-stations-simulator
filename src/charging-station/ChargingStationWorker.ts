@@ -9,29 +9,29 @@ import { ChargingStation } from './ChargingStation';
 import { BaseError } from '../exception';
 import type { ChargingStationWorkerData } from '../types';
 import { Configuration } from '../utils';
-import { type WorkerMessage, WorkerMessageEvents } from '../worker';
+import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker';
 
 const moduleName = 'ChargingStationWorker';
 
 /**
  * Creates and starts a charging station instance
  *
- * @param data - workerData
+ * @param data - data sent to worker
  */
 const startChargingStation = (data?: ChargingStationWorkerData): void => {
   new ChargingStation(data!.index, data!.templateFile).start();
 };
 
-class ChargingStationWorker extends AsyncResource {
+class ChargingStationWorker<Data extends WorkerData> extends AsyncResource {
   constructor() {
     super(moduleName);
     // Add message listener to create and start charging station from the main thread
-    parentPort?.on('message', (message: WorkerMessage<ChargingStationWorkerData>) => {
+    parentPort?.on('message', (message: WorkerMessage<Data>) => {
       switch (message.event) {
         case WorkerMessageEvents.startWorkerElement:
           try {
             this.runInAsyncScope(
-              startChargingStation.bind(this) as (data?: ChargingStationWorkerData) => void,
+              startChargingStation.bind(this) as (data?: Data) => void,
               this,
               message.data,
             );
@@ -61,9 +61,11 @@ class ChargingStationWorker extends AsyncResource {
   }
 }
 
-export let chargingStationWorker: ChargingStationWorker | ThreadWorker<ChargingStationWorkerData>;
+export let chargingStationWorker:
+  | ChargingStationWorker<ChargingStationWorkerData>
+  | ThreadWorker<ChargingStationWorkerData>;
 if (Configuration.workerPoolInUse()) {
   chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation);
 } else {
-  chargingStationWorker = new ChargingStationWorker();
+  chargingStationWorker = new ChargingStationWorker<ChargingStationWorkerData>();
 }
