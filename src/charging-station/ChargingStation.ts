@@ -183,7 +183,6 @@ export class ChargingStation extends EventEmitter {
   private ocppIncomingRequestService!: OCPPIncomingRequestService;
   private readonly messageBuffer: Set<string>;
   private configuredSupervisionUrl!: URL;
-  private wsConnectionRestarted: boolean;
   private autoReconnectRetryCount: number;
   private templateFileWatcher!: FSWatcher | undefined;
   private templateFileHash!: string;
@@ -198,7 +197,6 @@ export class ChargingStation extends EventEmitter {
     this.starting = false;
     this.stopping = false;
     this.wsConnection = null;
-    this.wsConnectionRestarted = false;
     this.autoReconnectRetryCount = 0;
     this.index = index;
     this.templateFile = templateFile;
@@ -1789,7 +1787,6 @@ export class ChargingStation extends EventEmitter {
             .stationInfo?.registrationMaxRetries})`,
         );
       }
-      this.wsConnectionRestarted = false;
       this.autoReconnectRetryCount = 0;
       this.emit(ChargingStationEvents.updated);
     } else {
@@ -2157,7 +2154,7 @@ export class ChargingStation extends EventEmitter {
     if (this.getAutomaticTransactionGeneratorConfiguration().enable === true) {
       this.startAutomaticTransactionGenerator();
     }
-    this.wsConnectionRestarted === true && this.flushMessageBuffer();
+    this.flushMessageBuffer();
   }
 
   private async stopMessageSequence(
@@ -2345,7 +2342,6 @@ export class ChargingStation extends EventEmitter {
         },
         { closeOpened: true },
       );
-      this.wsConnectionRestarted = true;
     } else if (this.stationInfo?.autoReconnectMaxRetries !== -1) {
       logger.error(
         `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${
