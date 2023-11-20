@@ -56,7 +56,7 @@ export type IncomingRequestHandler = (
 
 export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => void;
 
-export type ErrorCallback = (error: OCPPError, requestStatistic?: boolean) => void;
+export type ErrorCallback = (ocppError: OCPPError, requestStatistic?: boolean) => void;
 
 export type CachedRequest = [
   ResponseCallback,
