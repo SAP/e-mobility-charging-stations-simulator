@@ -145,13 +145,12 @@ export class UIClient {
     data: RequestPayload,
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
-      const uuid = crypto.randomUUID();
-      const msg = JSON.stringify([uuid, command, data]);
-
       if (this.ws.readyState !== WebSocket.OPEN) {
         this.openWS();
       }
       if (this.ws.readyState === WebSocket.OPEN) {
+        const uuid = crypto.randomUUID();
+        const msg = JSON.stringify([uuid, command, data]);
         const sendTimeout = setTimeout(() => {
           this.deleteResponseHandler(uuid);
           return reject(new Error(`Send request '${command}' message timeout`));
