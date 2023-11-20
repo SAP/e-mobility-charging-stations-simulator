@@ -344,9 +344,7 @@ export abstract class OCPPRequestService {
             .then(() => {
               resolve(payload);
             })
-            .catch((error) => {
-              reject(error);
-            })
+            .catch(reject)
             .finally(() => {
               chargingStation.requests.delete(messageId);
             });

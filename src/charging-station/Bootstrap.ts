@@ -228,9 +228,7 @@ export class Bootstrap extends EventEmitter {
         .then(() => {
           resolve('Charging stations stopped');
         })
-        .catch((error) => {
-          reject(error);
-        })
+        .catch(reject)
         .finally(() => {
           clearTimeout(waitTimeout);
         });
