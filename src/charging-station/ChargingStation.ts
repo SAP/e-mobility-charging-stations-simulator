@@ -1314,7 +1314,7 @@ export class ChargingStation extends EventEmitter {
     } else if (
       this.stationInfo?.supervisionUrlOcppConfiguration === false &&
       isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
-      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)
+      !isNullOrUndefined(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!))
     ) {
       deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!, { save: false });
     }
