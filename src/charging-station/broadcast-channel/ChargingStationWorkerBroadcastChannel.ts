@@ -194,7 +194,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                   requestPayload!.connectorId!,
                   this.chargingStation.getConnectorStatus(requestPayload!.connectorId!)!
                     .transactionId!,
-                  configuredMeterValueSampleInterval
+                  configuredMeterValueSampleInterval !== undefined
                     ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
                     : Constants.DEFAULT_METER_VALUES_INTERVAL,
                 ),

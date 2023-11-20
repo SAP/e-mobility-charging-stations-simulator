@@ -511,7 +511,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     } else if (isNotEmptyArray(key) === true) {
       for (const k of key!) {
         const keyFound = getConfigurationKey(chargingStation, k, true);
-        if (keyFound) {
+        if (keyFound !== undefined) {
           if (isUndefined(keyFound.visible) === true) {
             keyFound.visible = true;
           }

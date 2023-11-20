@@ -46,13 +46,13 @@ export const addConfigurationKey = (
   };
   params = { ...{ overwrite: false, save: false }, ...params };
   let keyFound = getConfigurationKey(chargingStation, key);
-  if (keyFound && params?.overwrite) {
+  if (keyFound !== undefined && params?.overwrite === true) {
     deleteConfigurationKey(chargingStation, keyFound.key, {
       save: false,
     });
     keyFound = undefined;
   }
-  if (!keyFound) {
+  if (keyFound === undefined) {
     chargingStation.ocppConfiguration?.configurationKey?.push({
       key,
       readonly: options.readonly!,
@@ -76,7 +76,7 @@ export const setConfigurationKeyValue = (
   caseInsensitive = false,
 ): void => {
   const keyFound = getConfigurationKey(chargingStation, key, caseInsensitive);
-  if (keyFound) {
+  if (keyFound !== undefined) {
     chargingStation.ocppConfiguration!.configurationKey![
       chargingStation.ocppConfiguration!.configurationKey!.indexOf(keyFound)
     ].value = value;
@@ -96,7 +96,7 @@ export const deleteConfigurationKey = (
 ): ConfigurationKey[] | undefined => {
   params = { ...{ save: true, caseInsensitive: false }, ...params };
   const keyFound = getConfigurationKey(chargingStation, key, params?.caseInsensitive);
-  if (keyFound) {
+  if (keyFound !== undefined) {
     const deletedConfigurationKey = chargingStation.ocppConfiguration?.configurationKey?.splice(
       chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound),
       1,

@@ -259,7 +259,7 @@ export class ChargingStation extends EventEmitter {
   private get wsConnectionUrl(): URL {
     return new URL(
       `${
-        this.stationInfo?.supervisionUrlOcppConfiguration &&
+        this.stationInfo?.supervisionUrlOcppConfiguration === true &&
         isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
         isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)?.value)
           ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)!.value
@@ -287,7 +287,7 @@ export class ChargingStation extends EventEmitter {
     const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo;
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
-        return !isUndefined(localStationInfo.numberOfPhases) ? localStationInfo.numberOfPhases! : 3;
+        return localStationInfo.numberOfPhases ?? 3;
       case CurrentType.DC:
         return 0;
     }
@@ -483,7 +483,9 @@ export class ChargingStation extends EventEmitter {
       this,
       StandardParametersKey.AuthorizeRemoteTxRequests,
     );
-    return authorizeRemoteTxRequests ? convertToBoolean(authorizeRemoteTxRequests.value) : false;
+    return authorizeRemoteTxRequests !== undefined
+      ? convertToBoolean(authorizeRemoteTxRequests.value)
+      : false;
   }
 
   public getLocalAuthListEnabled(): boolean {
@@ -491,16 +493,18 @@ export class ChargingStation extends EventEmitter {
       this,
       StandardParametersKey.LocalAuthListEnabled,
     );
-    return localAuthListEnabled ? convertToBoolean(localAuthListEnabled.value) : false;
+    return localAuthListEnabled !== undefined
+      ? convertToBoolean(localAuthListEnabled.value)
+      : false;
   }
 
   public getHeartbeatInterval(): number {
     const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval);
-    if (HeartbeatInterval) {
+    if (HeartbeatInterval !== undefined) {
       return secondsToMilliseconds(convertToInt(HeartbeatInterval.value));
     }
     const HeartBeatInterval = getConfigurationKey(this, StandardParametersKey.HeartBeatInterval);
-    if (HeartBeatInterval) {
+    if (HeartBeatInterval !== undefined) {
       return secondsToMilliseconds(convertToInt(HeartBeatInterval.value));
     }
     this.stationInfo?.autoRegister === false &&
@@ -916,11 +920,8 @@ export class ChargingStation extends EventEmitter {
 
   public async addReservation(reservation: Reservation): Promise<void> {
     const reservationFound = this.getReservationBy('reservationId', reservation.reservationId);
-    if (!isUndefined(reservationFound)) {
-      await this.removeReservation(
-        reservationFound!,
-        ReservationTerminationReason.REPLACE_EXISTING,
-      );
+    if (reservationFound !== undefined) {
+      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING);
     }
     this.getConnectorStatus(reservation.connectorId)!.reservation = reservation;
     await OCPPServiceUtils.sendAndSetConnectorStatus(
@@ -1293,16 +1294,16 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeOcppConfiguration(): void {
-    if (!getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)) {
+    if (isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.HeartbeatInterval))) {
       addConfigurationKey(this, StandardParametersKey.HeartbeatInterval, '0');
     }
-    if (!getConfigurationKey(this, StandardParametersKey.HeartBeatInterval)) {
+    if (isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.HeartBeatInterval))) {
       addConfigurationKey(this, StandardParametersKey.HeartBeatInterval, '0', { visible: false });
     }
     if (
-      this.stationInfo?.supervisionUrlOcppConfiguration &&
+      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
-      !getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)
+      isNullOrUndefined(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!))
     ) {
       addConfigurationKey(
         this,
@@ -1311,7 +1312,7 @@ export class ChargingStation extends EventEmitter {
         { reboot: true },
       );
     } else if (
-      !this.stationInfo?.supervisionUrlOcppConfiguration &&
+      this.stationInfo?.supervisionUrlOcppConfiguration === false &&
       isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
       getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)
     ) {
@@ -1319,7 +1320,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      !getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!)
+      isNullOrUndefined(getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!))
     ) {
       addConfigurationKey(
         this,
@@ -1329,7 +1330,9 @@ export class ChargingStation extends EventEmitter {
         ).toString(),
       );
     }
-    if (!getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles)) {
+    if (
+      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles))
+    ) {
       addConfigurationKey(
         this,
         StandardParametersKey.SupportedFeatureProfiles,
@@ -1343,14 +1346,18 @@ export class ChargingStation extends EventEmitter {
       { readonly: true },
       { overwrite: true },
     );
-    if (!getConfigurationKey(this, StandardParametersKey.MeterValuesSampledData)) {
+    if (
+      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.MeterValuesSampledData))
+    ) {
       addConfigurationKey(
         this,
         StandardParametersKey.MeterValuesSampledData,
         MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
       );
     }
-    if (!getConfigurationKey(this, StandardParametersKey.ConnectorPhaseRotation)) {
+    if (
+      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.ConnectorPhaseRotation))
+    ) {
       const connectorsPhaseRotation: string[] = [];
       if (this.hasEvses) {
         for (const evseStatus of this.evses.values()) {
@@ -1373,18 +1380,20 @@ export class ChargingStation extends EventEmitter {
         connectorsPhaseRotation.toString(),
       );
     }
-    if (!getConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests)) {
+    if (
+      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests))
+    ) {
       addConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests, 'true');
     }
     if (
-      !getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled) &&
+      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled)) &&
       getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles)?.value?.includes(
         SupportedFeatureProfiles.LocalAuthListManagement,
       )
     ) {
       addConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled, 'false');
     }
-    if (!getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)) {
+    if (isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut))) {
       addConfigurationKey(
         this,
         StandardParametersKey.ConnectionTimeOut,
@@ -2035,10 +2044,10 @@ export class ChargingStation extends EventEmitter {
 
   // 0 for disabling
   private getConnectionTimeout(): number {
-    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)) {
-      return (
-        parseInt(getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)!.value!) ??
-        Constants.DEFAULT_CONNECTION_TIMEOUT
+    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) !== undefined) {
+      return convertToInt(
+        getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)!.value! ??
+          Constants.DEFAULT_CONNECTION_TIMEOUT,
       );
     }
     return Constants.DEFAULT_CONNECTION_TIMEOUT;
@@ -2084,7 +2093,7 @@ export class ChargingStation extends EventEmitter {
   private getAmperageLimitation(): number | undefined {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!)
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!) !== undefined
     ) {
       return (
         convertToInt(
@@ -2208,12 +2217,12 @@ export class ChargingStation extends EventEmitter {
   }
 
   private startWebSocketPing(): void {
-    const webSocketPingInterval: number = getConfigurationKey(
-      this,
-      StandardParametersKey.WebSocketPingInterval,
-    )
-      ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
-      : 0;
+    const webSocketPingInterval: number =
+      getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) !== undefined
+        ? convertToInt(
+            getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value,
+          )
+        : 0;
     if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
       this.webSocketPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened() === true) {

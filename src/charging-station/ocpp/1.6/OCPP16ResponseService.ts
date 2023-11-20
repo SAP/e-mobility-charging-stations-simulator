@@ -657,7 +657,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       );
       chargingStation.startMeterValues(
         connectorId,
-        configuredMeterValueSampleInterval
+        configuredMeterValueSampleInterval !== undefined
           ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
           : Constants.DEFAULT_METER_VALUES_INTERVAL,
       );
