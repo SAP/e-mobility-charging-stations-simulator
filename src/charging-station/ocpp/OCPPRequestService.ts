@@ -12,7 +12,6 @@ import {
   type ErrorResponse,
   ErrorType,
   type IncomingRequestCommand,
-  type JsonObject,
   type JsonType,
   MessageType,
   type OCPPVersion,
@@ -462,7 +461,7 @@ export abstract class OCPPRequestService {
                 params?.skipBufferingOnError === false ? '' : 'non '
               }buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
-              (messagePayload as JsonObject).details,
+              (messagePayload as OCPPError).details,
             ),
           );
         }
