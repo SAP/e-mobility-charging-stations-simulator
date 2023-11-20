@@ -22,7 +22,13 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import { cloneObject, handleSendMessageError, isNullOrUndefined, logger } from '../../utils';
+import {
+  cloneObject,
+  formatDurationMilliSeconds,
+  handleSendMessageError,
+  isNullOrUndefined,
+  logger,
+} from '../../utils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -367,14 +373,6 @@ export abstract class OCPPRequestService {
           reject(ocppError);
         };
 
-        const rejectAndCleanRequestsCache = (ocppError: OCPPError): void => {
-          // Remove request from the cache
-          if (messageType === MessageType.CALL_MESSAGE) {
-            chargingStation.requests.delete(messageId);
-          }
-          return reject(ocppError);
-        };
-
         const handleSendError = (ocppError: OCPPError): void => {
           if (params?.skipBufferingOnError === false) {
             // Buffer
@@ -389,10 +387,11 @@ export abstract class OCPPRequestService {
                 errorCallback,
               );
             }
-            // Reject and keep request in the cache
-            return reject(ocppError);
+          } else if (messageType === MessageType.CALL_MESSAGE) {
+            // Remove request from the cache
+            chargingStation.requests.delete(messageId);
           }
-          return rejectAndCleanRequestsCache(ocppError);
+          return reject(ocppError);
         };
 
         if (chargingStation.stationInfo?.enableStatistics === true) {
@@ -409,10 +408,14 @@ export abstract class OCPPRequestService {
         if (chargingStation.isWebSocketConnectionOpened() === true) {
           const beginId = PerformanceStatistics.beginMeasure(commandName);
           const sendTimeout = setTimeout(() => {
-            return rejectAndCleanRequestsCache(
+            return handleSendError(
               new OCPPError(
                 ErrorType.GENERIC_ERROR,
-                `Timeout for message id '${messageId}'`,
+                `Timeout ${formatDurationMilliSeconds(
+                  OCPPConstants.OCPP_WEBSOCKET_TIMEOUT,
+                )} reached for ${
+                  params?.skipBufferingOnError === false ? '' : 'non '
+                }buffered message id '${messageId}' with content '${messageToSend}`,
                 commandName,
                 (messagePayload as OCPPError).details,
               ),
