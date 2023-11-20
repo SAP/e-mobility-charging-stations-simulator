@@ -293,8 +293,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         command,
         requestPayload,
         commandResponse: commandResponse as CommandResponse,
-        errorMessage: (error as Error).message,
-        errorStack: (error as Error).stack,
+        errorMessage: (error as OCPPError).message,
+        errorStack: (error as OCPPError).stack,
         errorDetails: (error as OCPPError).details,
       };
     } finally {

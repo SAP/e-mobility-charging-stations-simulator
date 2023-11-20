@@ -105,8 +105,8 @@ export abstract class AbstractUIService {
         command,
         requestPayload,
         responsePayload,
-        errorMessage: (error as Error).message,
-        errorStack: (error as Error).stack,
+        errorMessage: (error as OCPPError).message,
+        errorStack: (error as OCPPError).stack,
         errorDetails: (error as OCPPError).details,
       };
     }

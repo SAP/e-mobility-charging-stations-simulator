@@ -23,13 +23,7 @@ import {
   type ResponseCallback,
   type ResponseType,
 } from '../../types';
-import {
-  Constants,
-  cloneObject,
-  handleSendMessageError,
-  isNullOrUndefined,
-  logger,
-} from '../../utils';
+import { cloneObject, handleSendMessageError, isNullOrUndefined, logger } from '../../utils';
 
 const moduleName = 'OCPPRequestService';
 
@@ -421,7 +415,7 @@ export abstract class OCPPRequestService {
                 ErrorType.GENERIC_ERROR,
                 `Timeout for message id '${messageId}'`,
                 commandName,
-                (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
+                (messagePayload as OCPPError).details,
               ),
             );
           }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT);
@@ -468,7 +462,7 @@ export abstract class OCPPRequestService {
                 params?.skipBufferingOnError === false ? '' : 'non '
               }buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
-              (messagePayload as JsonObject)?.details ?? Constants.EMPTY_FROZEN_OBJECT,
+              (messagePayload as JsonObject).details,
             ),
           );
         }
@@ -518,9 +512,11 @@ export abstract class OCPPRequestService {
         messageToSend = JSON.stringify([
           messageType,
           messageId,
-          (messagePayload as OCPPError)?.code ?? ErrorType.GENERIC_ERROR,
-          (messagePayload as OCPPError)?.message ?? '',
-          (messagePayload as OCPPError)?.details ?? { commandName },
+          (messagePayload as OCPPError).code,
+          (messagePayload as OCPPError).message,
+          (messagePayload as OCPPError).details ?? {
+            command: (messagePayload as OCPPError).command ?? commandName,
+          },
         ] as ErrorResponse);
         break;
     }
