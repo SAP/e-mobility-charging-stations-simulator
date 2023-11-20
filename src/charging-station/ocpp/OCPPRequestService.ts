@@ -418,7 +418,7 @@ export abstract class OCPPRequestService {
                   OCPPConstants.OCPP_WEBSOCKET_TIMEOUT,
                 )} reached for ${
                   params?.skipBufferingOnError === false ? '' : 'non '
-                }buffered message id '${messageId}' with content '${messageToSend}`,
+                }buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
                 (messagePayload as OCPPError).details,
               ),
