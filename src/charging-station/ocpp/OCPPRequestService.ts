@@ -374,13 +374,12 @@ export abstract class OCPPRequestService {
           reject(ocppError);
         };
 
-        const rejectWithOcppError = (ocppError: OCPPError): void => {
-          // Reject response
-          if (messageType !== MessageType.CALL_MESSAGE) {
-            return reject(ocppError);
+        const rejectAndCleanRequestsCache = (ocppError: OCPPError): void => {
+          // Remove request from the cache
+          if (messageType === MessageType.CALL_MESSAGE) {
+            chargingStation.requests.delete(messageId);
           }
-          // Reject and remove request from the cache
-          return errorCallback(ocppError, false);
+          return reject(ocppError);
         };
 
         const handleSendError = (ocppError: OCPPError): void => {
@@ -400,7 +399,7 @@ export abstract class OCPPRequestService {
             // Reject and keep request in the cache
             return reject(ocppError);
           }
-          return rejectWithOcppError(ocppError);
+          return rejectAndCleanRequestsCache(ocppError);
         };
 
         if (chargingStation.stationInfo?.enableStatistics === true) {
@@ -417,7 +416,7 @@ export abstract class OCPPRequestService {
         if (chargingStation.isWebSocketConnectionOpened() === true) {
           const beginId = PerformanceStatistics.beginMeasure(commandName);
           const sendTimeout = setTimeout(() => {
-            return rejectWithOcppError(
+            return rejectAndCleanRequestsCache(
               new OCPPError(
                 ErrorType.GENERIC_ERROR,
                 `Timeout for message id '${messageId}'`,
