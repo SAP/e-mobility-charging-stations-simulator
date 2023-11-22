@@ -1853,6 +1853,7 @@ export class ChargingStation extends EventEmitter {
       commandName,
       commandPayload,
     );
+    this.emit(ChargingStationEvents.updated);
   }
 
   private handleResponseMessage(response: Response): void {
@@ -1929,7 +1930,6 @@ export class ChargingStation extends EventEmitter {
             logger.error(`${this.logPrefix()} ${errorMsg}`);
             throw new OCPPError(ErrorType.PROTOCOL_ERROR, errorMsg);
         }
-        this.emit(ChargingStationEvents.updated);
       } else {
         throw new OCPPError(
           ErrorType.PROTOCOL_ERROR,

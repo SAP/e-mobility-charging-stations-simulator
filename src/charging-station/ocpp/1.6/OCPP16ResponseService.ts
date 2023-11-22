@@ -14,7 +14,6 @@ import {
 import { OCPPError } from '../../../exception';
 import {
   type ChangeConfigurationResponse,
-  ChargingStationEvents,
   type ClearChargingProfileResponse,
   ErrorType,
   type GenericResponse,
@@ -693,7 +692,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ChargePointStatus.Available,
       );
     }
-    chargingStation.emit(ChargingStationEvents.updated);
   }
 
   private async handleResponseStopTransaction(
@@ -750,7 +748,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId!)!);
     chargingStation.stopMeterValues(transactionConnectorId!);
-    chargingStation.emit(ChargingStationEvents.updated);
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${
       requestPayload.transactionId
     } STOPPED on ${

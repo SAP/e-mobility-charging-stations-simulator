@@ -8,6 +8,7 @@ import type { ChargingStation } from '../../charging-station';
 import { OCPPError } from '../../exception';
 import { PerformanceStatistics } from '../../performance';
 import {
+  ChargingStationEvents,
   type ErrorCallback,
   type ErrorResponse,
   ErrorType,
@@ -346,6 +347,7 @@ export abstract class OCPPRequestService {
             .catch(reject)
             .finally(() => {
               chargingStation.requests.delete(messageId);
+              chargingStation.emit(ChargingStationEvents.updated);
             });
         };
 
@@ -370,6 +372,7 @@ export abstract class OCPPRequestService {
             ocppError,
           );
           chargingStation.requests.delete(messageId);
+          chargingStation.emit(ChargingStationEvents.updated);
           reject(ocppError);
         };
 
