@@ -42,6 +42,7 @@ class ChargingStationWorker<Data extends WorkerData> extends AsyncResource {
             parentPort?.postMessage({
               event: WorkerMessageEvents.startWorkerElementError,
               data: {
+                name: (error as Error).name,
                 message: (error as Error).message,
                 stack: (error as Error).stack,
               },
