@@ -1103,7 +1103,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_EMPTY;
     }
     let { retrieveDate } = commandPayload;
-    if (chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed) {
+    if (
+      !isNullOrUndefined(chargingStation.stationInfo.firmwareStatus) &&
+      chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed
+    ) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`,
       );

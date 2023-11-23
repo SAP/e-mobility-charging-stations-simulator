@@ -158,6 +158,7 @@ import {
 export class ChargingStation extends EventEmitter {
   public readonly index: number;
   public readonly templateFile: string;
+  public stationInfo!: ChargingStationInfo;
   public started: boolean;
   public starting: boolean;
   public idTagsCache: IdTagsCache;
@@ -173,7 +174,6 @@ export class ChargingStation extends EventEmitter {
   public bootNotificationRequest!: BootNotificationRequest;
   public bootNotificationResponse!: BootNotificationResponse | undefined;
   public powerDivider!: number;
-  private internalStationInfo!: ChargingStationInfo;
   private stopping: boolean;
   private configurationFile!: string;
   private configurationFileHash!: string;
@@ -223,60 +223,6 @@ export class ChargingStation extends EventEmitter {
 
   public get hasEvses(): boolean {
     return this.connectors.size === 0 && this.evses.size > 0;
-  }
-
-  public get stationInfo(): ChargingStationInfo {
-    const stationInfo = {
-      ...{
-        enableStatistics: false,
-        remoteAuthorization: true,
-        currentOutType: CurrentType.AC,
-        mainVoltageMeterValues: true,
-        phaseLineToLineVoltageMeterValues: false,
-        customValueLimitationMeterValues: true,
-        ocppStrictCompliance: true,
-        outOfOrderEndMeterValues: false,
-        beginEndMeterValues: false,
-        meteringPerTransaction: true,
-        transactionDataMeterValues: false,
-        supervisionUrlOcppConfiguration: false,
-        supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
-        ocppVersion: OCPPVersion.VERSION_16,
-        ocppPersistentConfiguration: true,
-        stationInfoPersistentConfiguration: true,
-        automaticTransactionGeneratorPersistentConfiguration: true,
-        autoReconnectMaxRetries: -1,
-        registrationMaxRetries: -1,
-        reconnectExponentialDelay: false,
-        stopTransactionsOnStopped: true,
-      },
-      ...this.internalStationInfo,
-    };
-    Object.defineProperty(stationInfo, 'supervisionUrls', {
-      set: (supervisionUrls: string | string[]) => {
-        this.internalStationInfo.supervisionUrls = supervisionUrls;
-      },
-      get: () => {
-        return this.internalStationInfo.supervisionUrls;
-      },
-    });
-    Object.defineProperty(stationInfo, 'firmwareVersion', {
-      set: (firmwareVersion: string) => {
-        this.internalStationInfo.firmwareVersion = firmwareVersion;
-      },
-      get: () => {
-        return this.internalStationInfo.firmwareVersion;
-      },
-    });
-    Object.defineProperty(stationInfo, 'firmwareStatus', {
-      set: (firmwareStatus: FirmwareStatus) => {
-        this.internalStationInfo.firmwareStatus = firmwareStatus;
-      },
-      get: () => {
-        return this.internalStationInfo.firmwareStatus;
-      },
-    });
-    return stationInfo;
   }
 
   private get wsConnectionUrl(): URL {
@@ -1197,14 +1143,37 @@ export class ChargingStation extends EventEmitter {
     return stationInfo;
   }
 
-  private getInternalStationInfo(): ChargingStationInfo {
+  private getStationInfo(): ChargingStationInfo {
+    const defaultStationInfo: Partial<ChargingStationInfo> = {
+      enableStatistics: false,
+      remoteAuthorization: true,
+      currentOutType: CurrentType.AC,
+      mainVoltageMeterValues: true,
+      phaseLineToLineVoltageMeterValues: false,
+      customValueLimitationMeterValues: true,
+      ocppStrictCompliance: true,
+      outOfOrderEndMeterValues: false,
+      beginEndMeterValues: false,
+      meteringPerTransaction: true,
+      transactionDataMeterValues: false,
+      supervisionUrlOcppConfiguration: false,
+      supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
+      ocppVersion: OCPPVersion.VERSION_16,
+      ocppPersistentConfiguration: true,
+      stationInfoPersistentConfiguration: true,
+      automaticTransactionGeneratorPersistentConfiguration: true,
+      autoReconnectMaxRetries: -1,
+      registrationMaxRetries: -1,
+      reconnectExponentialDelay: false,
+      stopTransactionsOnStopped: true,
+    };
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
     const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile();
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
-      return stationInfoFromFile!;
+      return { ...defaultStationInfo, ...stationInfoFromFile! };
     }
     stationInfoFromFile &&
       propagateSerialNumber(
@@ -1212,7 +1181,7 @@ export class ChargingStation extends EventEmitter {
         stationInfoFromFile,
         stationInfoFromTemplate,
       );
-    return stationInfoFromTemplate;
+    return { ...defaultStationInfo, ...stationInfoFromTemplate };
   }
 
   private saveStationInfo(): void {
@@ -1244,7 +1213,7 @@ export class ChargingStation extends EventEmitter {
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
     }
-    this.internalStationInfo = this.getInternalStationInfo();
+    this.stationInfo = this.getStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersion) &&
