@@ -1132,9 +1132,11 @@ export class ChargingStation extends EventEmitter {
     return stationInfo;
   }
 
-  private getStationInfoFromFile(): ChargingStationInfo | undefined {
+  private getStationInfoFromFile(
+    stationInfoPersistentConfiguration: boolean,
+  ): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined;
-    if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
+    if (stationInfoPersistentConfiguration === true) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo;
       if (stationInfo) {
         delete stationInfo?.infoHash;
@@ -1168,7 +1170,9 @@ export class ChargingStation extends EventEmitter {
       stopTransactionsOnStopped: true,
     };
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
-    const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile();
+    const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile(
+      stationInfoFromTemplate?.stationInfoPersistentConfiguration ?? true,
+    );
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
