@@ -226,7 +226,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public get stationInfo(): ChargingStationInfo {
-    return {
+    const stationInfo = {
       ...{
         enableStatistics: false,
         remoteAuthorization: true,
@@ -252,6 +252,31 @@ export class ChargingStation extends EventEmitter {
       },
       ...this.internalStationInfo,
     };
+    Object.defineProperty(stationInfo, 'supervisionUrls', {
+      set: (supervisionUrls: string | string[]) => {
+        this.internalStationInfo.supervisionUrls = supervisionUrls;
+      },
+      get: () => {
+        return this.internalStationInfo.supervisionUrls;
+      },
+    });
+    Object.defineProperty(stationInfo, 'firmwareVersion', {
+      set: (firmwareVersion: string) => {
+        this.internalStationInfo.firmwareVersion = firmwareVersion;
+      },
+      get: () => {
+        return this.internalStationInfo.firmwareVersion;
+      },
+    });
+    Object.defineProperty(stationInfo, 'firmwareStatus', {
+      set: (firmwareStatus: FirmwareStatus) => {
+        this.internalStationInfo.firmwareStatus = firmwareStatus;
+      },
+      get: () => {
+        return this.internalStationInfo.firmwareStatus;
+      },
+    });
+    return stationInfo;
   }
 
   private get wsConnectionUrl(): URL {
@@ -1172,7 +1197,7 @@ export class ChargingStation extends EventEmitter {
     return stationInfo;
   }
 
-  private getStationInfo(): ChargingStationInfo {
+  private getInternalStationInfo(): ChargingStationInfo {
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
     const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile();
     // Priority:
@@ -1219,7 +1244,7 @@ export class ChargingStation extends EventEmitter {
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
     }
-    this.internalStationInfo = this.getStationInfo();
+    this.internalStationInfo = this.getInternalStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersion) &&
@@ -1732,7 +1757,7 @@ export class ChargingStation extends EventEmitter {
 
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | undefined {
     const configurationKey = this.getConfigurationFromFile()?.configurationKey;
-    if (this.stationInfo?.ocppPersistentConfiguration === true && configurationKey) {
+    if (this.stationInfo?.ocppPersistentConfiguration === true && Array.isArray(configurationKey)) {
       return { configurationKey };
     }
     return undefined;
@@ -2140,7 +2165,7 @@ export class ChargingStation extends EventEmitter {
         }
       }
     }
-    if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
+    if (this.stationInfo.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
         FirmwareStatusNotificationRequest,
         FirmwareStatusNotificationResponse
