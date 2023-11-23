@@ -1133,7 +1133,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfoFromFile(
-    stationInfoPersistentConfiguration: boolean,
+    stationInfoPersistentConfiguration = true,
   ): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined;
     if (stationInfoPersistentConfiguration === true) {
@@ -1171,7 +1171,7 @@ export class ChargingStation extends EventEmitter {
     };
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
     const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile(
-      stationInfoFromTemplate?.stationInfoPersistentConfiguration ?? true,
+      stationInfoFromTemplate?.stationInfoPersistentConfiguration,
     );
     // Priority:
     // 1. charging station info from template
