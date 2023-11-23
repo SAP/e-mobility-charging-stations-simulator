@@ -1640,9 +1640,9 @@ export class ChargingStation extends EventEmitter {
         }
         if (
           this.stationInfo?.ocppPersistentConfiguration === true &&
-          this.ocppConfiguration?.configurationKey
+          Array.isArray(this.ocppConfiguration?.configurationKey)
         ) {
-          configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+          configurationData.configurationKey = this.ocppConfiguration?.configurationKey;
         } else {
           delete configurationData.configurationKey;
         }
