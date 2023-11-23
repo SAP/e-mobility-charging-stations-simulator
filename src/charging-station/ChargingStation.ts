@@ -2056,8 +2056,8 @@ export class ChargingStation extends EventEmitter {
     return powerDivider;
   }
 
-  private getMaximumAmperage(stationInfo: ChargingStationInfo): number | undefined {
-    const maximumPower = this.getMaximumPower(stationInfo);
+  private getMaximumAmperage(stationInfo?: ChargingStationInfo): number | undefined {
+    const maximumPower = (stationInfo ?? this.stationInfo).maximumPower!;
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
@@ -2068,10 +2068,6 @@ export class ChargingStation extends EventEmitter {
       case CurrentType.DC:
         return DCElectricUtils.amperage(maximumPower, this.getVoltageOut(stationInfo));
     }
-  }
-
-  private getMaximumPower(stationInfo?: ChargingStationInfo): number {
-    return (stationInfo ?? this.stationInfo).maximumPower!;
   }
 
   private getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
