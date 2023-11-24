@@ -37,11 +37,9 @@ import {
   getMaxNumberOfEvses,
   getNumberOfReservableConnectors,
   getPhaseRotationValue,
-  hasFeatureProfile,
   hasReservationExpired,
   initializeConnectorsMapStatus,
   propagateSerialNumber,
-  removeExpiredReservations,
   stationTemplateToStationInfo,
   warnTemplateKeysDeprecation,
 } from './Helpers';
@@ -189,7 +187,7 @@ export class ChargingStation extends EventEmitter {
   private readonly sharedLRUCache: SharedLRUCache;
   private webSocketPingSetInterval?: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
-  private reservationExpirationSetInterval?: NodeJS.Timeout;
+  private flushMessageBufferSetInterval?: NodeJS.Timeout;
 
   constructor(index: number, templateFile: string) {
     super();
@@ -618,9 +616,6 @@ export class ChargingStation extends EventEmitter {
         if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.start();
         }
-        if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
-          this.startReservationExpirationSetInterval();
-        }
         this.openWSConnection();
         // Monitor charging station template file
         this.templateFileWatcher = watchJsonFile(
@@ -681,9 +676,6 @@ export class ChargingStation extends EventEmitter {
         if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.stop();
         }
-        if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
-          this.stopReservationExpirationSetInterval();
-        }
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
         this.templateFileWatcher?.close();
         this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
@@ -715,6 +707,17 @@ export class ChargingStation extends EventEmitter {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
+    if (this.flushMessageBufferSetInterval === undefined) {
+      this.flushMessageBufferSetInterval = setInterval(() => {
+        if (this.isWebSocketConnectionOpened() === true && this.inAcceptedState() === true) {
+          this.flushMessageBuffer();
+        }
+        if (this.flushMessageBufferSetInterval !== undefined && this.messageBuffer.size === 0) {
+          clearInterval(this.flushMessageBufferSetInterval);
+          delete this.flushMessageBufferSetInterval;
+        }
+      }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL);
+    }
   }
 
   public openWSConnection(
@@ -974,31 +977,6 @@ export class ChargingStation extends EventEmitter {
     }
     return false;
   }
-
-  private startReservationExpirationSetInterval(customInterval?: number): void {
-    const interval = customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_INTERVAL;
-    if (interval > 0) {
-      logger.info(
-        `${this.logPrefix()} Reservation expiration date checks started every ${formatDurationMilliSeconds(
-          interval,
-        )}`,
-      );
-      this.reservationExpirationSetInterval = setInterval((): void => {
-        removeExpiredReservations(this).catch(Constants.EMPTY_FUNCTION);
-      }, interval);
-    }
-  }
-
-  private stopReservationExpirationSetInterval(): void {
-    if (!isNullOrUndefined(this.reservationExpirationSetInterval)) {
-      clearInterval(this.reservationExpirationSetInterval);
-    }
-  }
-
-  // private restartReservationExpiryDateSetInterval(): void {
-  //   this.stopReservationExpirationSetInterval();
-  //   this.startReservationExpirationSetInterval();
-  // }
 
   private getNumberOfReservableConnectors(): number {
     let numberOfReservableConnectors = 0;
@@ -2214,7 +2192,7 @@ export class ChargingStation extends EventEmitter {
             getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value,
           )
         : 0;
-    if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
+    if (webSocketPingInterval > 0 && this.webSocketPingSetInterval === undefined) {
       this.webSocketPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened() === true) {
           this.wsConnection?.ping();
@@ -2225,7 +2203,7 @@ export class ChargingStation extends EventEmitter {
           webSocketPingInterval,
         )}`,
       );
-    } else if (this.webSocketPingSetInterval) {
+    } else if (this.webSocketPingSetInterval !== undefined) {
       logger.info(
         `${this.logPrefix()} WebSocket ping already started every ${formatDurationSeconds(
           webSocketPingInterval,
@@ -2239,7 +2217,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private stopWebSocketPing(): void {
-    if (this.webSocketPingSetInterval) {
+    if (this.webSocketPingSetInterval !== undefined) {
       clearInterval(this.webSocketPingSetInterval);
       delete this.webSocketPingSetInterval;
     }
