@@ -264,10 +264,6 @@ export class ChargingStation extends EventEmitter {
     return this?.wsConnection?.readyState === WebSocket.OPEN;
   }
 
-  public getRegistrationStatus(): RegistrationStatusEnumType | undefined {
-    return this?.bootNotificationResponse?.status;
-  }
-
   public inUnknownState(): boolean {
     return isNullOrUndefined(this?.bootNotificationResponse?.status);
   }
