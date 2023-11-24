@@ -14,6 +14,21 @@ export type ChargingStationData = {
   automaticTransactionGenerator?: Status[];
 };
 
+export enum OCPP16FirmwareStatus {
+  Downloaded = 'Downloaded',
+  DownloadFailed = 'DownloadFailed',
+  Downloading = 'Downloading',
+  Idle = 'Idle',
+  InstallationFailed = 'InstallationFailed',
+  Installing = 'Installing',
+  Installed = 'Installed',
+}
+
+export const FirmwareStatus = {
+  ...OCPP16FirmwareStatus,
+} as const;
+export type FirmwareStatus = OCPP16FirmwareStatus;
+
 export type ChargingStationInfo = {
   hashId: string;
   chargingStationId?: string;
@@ -21,6 +36,7 @@ export type ChargingStationInfo = {
   chargePointVendor: string;
   firmwareVersionPattern?: string;
   firmwareVersion?: string;
+  firmwareStatus?: FirmwareStatus;
   numberOfConnectors?: number | number[];
   baseName: string;
   templateHash?: string;
@@ -189,14 +205,11 @@ export type EvseStatus = {
   connectors?: ConnectorStatus[];
 };
 
-export type AvailabilityType = OCPP16AvailabilityType;
-
 export enum OCPP16AvailabilityType {
   INOPERATIVE = 'Inoperative',
   OPERATIVE = 'Operative',
 }
-
-export type ChargePointStatus = OCPP16ChargePointStatus;
+export type AvailabilityType = OCPP16AvailabilityType;
 
 export enum OCPP16ChargePointStatus {
   AVAILABLE = 'Available',
@@ -210,6 +223,7 @@ export enum OCPP16ChargePointStatus {
   UNAVAILABLE = 'Unavailable',
   FAULTED = 'Faulted',
 }
+export type ChargePointStatus = OCPP16ChargePointStatus;
 
 export type Status = {
   start?: boolean;
