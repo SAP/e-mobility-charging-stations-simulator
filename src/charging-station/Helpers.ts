@@ -74,15 +74,18 @@ const moduleName = 'Helpers';
 
 export const getChargingStationId = (
   index: number,
-  stationTemplate: ChargingStationTemplate,
+  stationTemplate: ChargingStationTemplate | undefined,
 ): string => {
+  if (isUndefined(stationTemplate)) {
+    return "Unknown 'chargingStationId'";
+  }
   // In case of multiple instances: add instance index to charging station id
   const instanceIndex = env.CF_INSTANCE_INDEX ?? 0;
   const idSuffix = stationTemplate?.nameSuffix ?? '';
   const idStr = `000000000${index.toString()}`;
   return stationTemplate?.fixedName
     ? stationTemplate.baseName
-    : `${stationTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
+    : `${stationTemplate?.baseName}-${instanceIndex.toString()}${idStr.substring(
         idStr.length - 4,
       )}${idSuffix}`;
 };

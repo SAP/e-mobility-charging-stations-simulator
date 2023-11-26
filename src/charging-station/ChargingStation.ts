@@ -236,14 +236,18 @@ export class ChargingStation extends EventEmitter {
   }
 
   public logPrefix = (): string => {
-    return logPrefix(
-      ` ${
-        (isNotEmptyString(this?.stationInfo?.chargingStationId)
-          ? this?.stationInfo?.chargingStationId
-          : getChargingStationId(this.index, this.getTemplateFromFile()!)) ??
-        'Error at building log prefix'
-      } |`,
-    );
+    if (isNotEmptyString(this?.stationInfo?.chargingStationId)) {
+      return logPrefix(` ${this?.stationInfo?.chargingStationId} |`);
+    }
+    let stationTemplate: ChargingStationTemplate | undefined;
+    try {
+      stationTemplate = JSON.parse(
+        readFileSync(this.templateFile, 'utf8'),
+      ) as ChargingStationTemplate;
+    } catch {
+      stationTemplate = undefined;
+    }
+    return logPrefix(` ${getChargingStationId(this.index, stationTemplate)} |`);
   };
 
   public hasIdTags(): boolean {
