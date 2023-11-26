@@ -57,8 +57,8 @@ dependencies:
     specifier: ^6.3.0
     version: 6.3.0
   poolifier:
-    specifier: ^3.0.5
-    version: 3.0.5
+    specifier: ^3.0.9
+    version: 3.0.9
   tar:
     specifier: ^6.2.0
     version: 6.2.0
@@ -181,8 +181,8 @@ devDependencies:
     specifier: ^7.5.3
     version: 7.5.4
   tsx:
-    specifier: ^4.4.0
-    version: 4.4.0
+    specifier: ^4.5.0
+    version: 4.5.0
   typescript:
     specifier: ~5.3.2
     version: 5.3.2
@@ -2924,8 +2924,8 @@ packages:
       restore-cursor: 4.0.0
     dev: true
 
-  /cli-spinners@2.9.1:
-    resolution: {integrity: sha512-jHgecW0pxkonBJdrKsqxgRX9AcG+u/5k0Q7WPDfi8AogLAdwxEkyYYNWwZ5GvVFoFx2uiY1eNcSK00fh+1+FyQ==}
+  /cli-spinners@2.9.2:
+    resolution: {integrity: sha512-ywqV+5MmyL4E7ybXgKys4DugZbX0FC6LnwrhjuykIjnK9k8OQacQ7axGKnjDXWNhns0xot3bZI5h55H8yo9cJg==}
     engines: {node: '>=6'}
     dev: true
 
@@ -7470,7 +7470,7 @@ packages:
       bl: 4.1.0
       chalk: 4.1.2
       cli-cursor: 3.1.0
-      cli-spinners: 2.9.1
+      cli-spinners: 2.9.2
       is-interactive: 1.0.0
       is-unicode-supported: 0.1.0
       log-symbols: 4.1.0
@@ -7484,7 +7484,7 @@ packages:
     dependencies:
       chalk: 5.3.0
       cli-cursor: 4.0.0
-      cli-spinners: 2.9.1
+      cli-spinners: 2.9.2
       is-interactive: 2.0.0
       is-unicode-supported: 1.3.0
       log-symbols: 5.1.0
@@ -7776,8 +7776,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@3.0.5:
-    resolution: {integrity: sha512-nz8ya6Pr7dCumZku2Y76cqMZ4jw1hVL+udefecuGO1UycuizZpBE1d4u0XZt8NH0YqJ57eVQf95lErD0+bif3A==}
+  /poolifier@3.0.9:
+    resolution: {integrity: sha512-Ky6KC8D8h6xn8z1AsgAdw8n8bra6i6uzT7bJ5jsUauW0VSZatk3SV3Rm/qi710V8Dkbg2p0qg4aRI1a+BDp1MA==}
     engines: {node: '>=18.0.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
@@ -9305,8 +9305,8 @@ packages:
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
-  /tsx@4.4.0:
-    resolution: {integrity: sha512-4fwcEjRUxW20ciSaMB8zkpGwCPxuRGnadDuj/pBk5S9uT29zvWz15PK36GrKJo45mSJomDxVejZ73c6lr3811Q==}
+  /tsx@4.5.0:
+    resolution: {integrity: sha512-hgxdziy9KLaHh9KE+a6tIZFP6kb0MLq/1D0sJVifbGP4QVEYhy6+2FNn7MyCm1pMc63p9CW/L1OzdqTNPxs6rg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     dependencies:
