@@ -76,7 +76,7 @@ export const getChargingStationId = (
   index: number,
   stationTemplate: ChargingStationTemplate | undefined,
 ): string => {
-  if (isUndefined(stationTemplate)) {
+  if (stationTemplate === undefined) {
     return "Unknown 'chargingStationId'";
   }
   // In case of multiple instances: add instance index to charging station id
@@ -85,7 +85,7 @@ export const getChargingStationId = (
   const idStr = `000000000${index.toString()}`;
   return stationTemplate?.fixedName
     ? stationTemplate.baseName
-    : `${stationTemplate?.baseName}-${instanceIndex.toString()}${idStr.substring(
+    : `${stationTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
         idStr.length - 4,
       )}${idSuffix}`;
 };
