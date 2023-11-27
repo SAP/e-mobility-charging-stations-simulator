@@ -1,5 +1,7 @@
 # Web UI
 
+The Web UI code and configuration is in the repository directory [ui/web](./ui/web). Commands execution is relative to that directory.
+
 ## Project setup
 
 ```shell
