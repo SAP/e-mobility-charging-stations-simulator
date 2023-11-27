@@ -16,12 +16,12 @@ export class WorkerFactory {
     workerScript: string,
     workerProcessType: WorkerProcessType,
     workerOptions?: WorkerOptions,
-  ): WorkerAbstract<T> | null {
+  ): WorkerAbstract<T> | undefined {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread');
     }
     workerOptions = { ...DEFAULT_WORKER_OPTIONS, ...workerOptions };
-    let workerImplementation: WorkerAbstract<T> | null = null;
+    let workerImplementation: WorkerAbstract<T>;
     switch (workerProcessType) {
       case WorkerProcessType.workerSet:
         workerImplementation = new WorkerSet(workerScript, workerOptions);

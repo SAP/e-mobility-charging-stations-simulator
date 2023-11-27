@@ -13,8 +13,12 @@ export class StorageFactory {
     // This is intentional
   }
 
-  public static getStorage(type: StorageType, connectionUri: string, logPrefix: string): Storage {
-    let storageInstance: Storage | null = null;
+  public static getStorage(
+    type: StorageType,
+    connectionUri: string,
+    logPrefix: string,
+  ): Storage | undefined {
+    let storageInstance: Storage;
     switch (type) {
       case StorageType.JSON_FILE:
         storageInstance = new JsonFileStorage(connectionUri, logPrefix);
