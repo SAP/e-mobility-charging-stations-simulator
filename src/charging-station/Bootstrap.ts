@@ -55,7 +55,6 @@ export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null;
   public numberOfChargingStations!: number;
   public numberOfChargingStationTemplates!: number;
-  private workerConfiguration?: WorkerConfiguration;
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>;
   private readonly uiServer?: AbstractUIServer;
   private storage?: Storage;
@@ -104,10 +103,10 @@ export class Bootstrap extends EventEmitter {
       if (this.starting === false) {
         this.starting = true;
         this.initializeCounters();
-        this.workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
+        const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
           ConfigurationSection.worker,
         );
-        this.initializeWorkerImplementation(this.workerConfiguration);
+        this.initializeWorkerImplementation(workerConfiguration);
         await this.workerImplementation?.start();
         const performanceStorageConfiguration =
           Configuration.getConfigurationSection<StorageConfiguration>(
@@ -145,13 +144,13 @@ export class Bootstrap extends EventEmitter {
               this.version
             } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
               Configuration.workerDynamicPoolInUse()
-                ? `${this.workerConfiguration.poolMinSize?.toString()}/`
+                ? `${workerConfiguration.poolMinSize?.toString()}/`
                 : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse()
-                ? `/${this.workerConfiguration.poolMaxSize?.toString()}`
+                ? `/${workerConfiguration.poolMaxSize?.toString()}`
                 : ''
-            } worker(s) concurrently running in '${this.workerConfiguration.processType}' mode${
+            } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
               !isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
                 ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
@@ -195,7 +194,6 @@ export class Bootstrap extends EventEmitter {
         }
         await this.workerImplementation?.stop();
         delete this.workerImplementation;
-        delete this.workerConfiguration;
         this.uiServer?.stop();
         await this.storage?.close();
         delete this.storage;

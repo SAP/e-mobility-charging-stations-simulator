@@ -181,8 +181,8 @@ devDependencies:
     specifier: ^7.5.3
     version: 7.5.4
   tsx:
-    specifier: ^4.5.0
-    version: 4.5.0
+    specifier: ^4.6.0
+    version: 4.6.0
   typescript:
     specifier: ~5.3.2
     version: 5.3.2
@@ -377,7 +377,7 @@ packages:
       d3-array: 2.12.1
       d3-fg: 6.14.0
       d3-selection: 1.4.2
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       lodash.debounce: 4.0.8
       on-net-listen: 1.1.2
       pump: 3.0.0
@@ -530,7 +530,7 @@ packages:
     dependencies:
       '@commitlint/top-level': 18.4.3
       '@commitlint/types': 18.4.3
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       git-raw-commits: 2.0.11
       minimist: 1.2.8
     dev: true
@@ -1447,8 +1447,8 @@ packages:
       universal-user-agent: 6.0.1
     dev: true
 
-  /@octokit/endpoint@9.0.3:
-    resolution: {integrity: sha512-TXVX57fJV7SA6LvRkeXPIOBr8AKvKDlhwNVBP/26O9DjIFi+CkYZGFLP9WtPdVOicRIhqGHxBCC6Fdj5AWWGgQ==}
+  /@octokit/endpoint@9.0.4:
+    resolution: {integrity: sha512-DWPLtr1Kz3tv8L0UvXTDP1fNwM0S+z6EJpRcvH66orY6Eld4XBMCSYsaWp4xIm61jTWxK68BrR7ibO+vSDnZqw==}
     engines: {node: '>= 18'}
     dependencies:
       '@octokit/types': 12.3.0
@@ -1510,7 +1510,7 @@ packages:
     resolution: {integrity: sha512-YhPaGml3ncZC1NfXpP3WZ7iliL1ap6tLkAp6MvbK2fTTPytzVUyUesBBogcdMm86uRYO5rHaM1xIWxigWZ17MQ==}
     engines: {node: '>= 18'}
     dependencies:
-      '@octokit/endpoint': 9.0.3
+      '@octokit/endpoint': 9.0.4
       '@octokit/request-error': 5.0.1
       '@octokit/types': 12.3.0
       universal-user-agent: 6.0.1
@@ -4838,6 +4838,15 @@ packages:
       graceful-fs: 4.2.11
       jsonfile: 6.1.0
       universalify: 2.0.1
+
+  /fs-extra@11.2.0:
+    resolution: {integrity: sha512-PmDi3uwK5nFuXh7XDTlVnS17xJS7vW36is2+w3xcv8SVxiB4NyATf4ctkVY5bkSjX0Y4nbvZCq1/EjtEyr9ktw==}
+    engines: {node: '>=14.14'}
+    dependencies:
+      graceful-fs: 4.2.11
+      jsonfile: 6.1.0
+      universalify: 2.0.1
+    dev: true
 
   /fs-extra@8.1.0:
     resolution: {integrity: sha512-yhlQgA6mnOJUKOsRUFsgJdQCvkKhcz8tlZG5HBQfReYZy46OwLcY+Zia0mtdHsOo9y/hP+CxMN0TU9QxoOtG4g==}
@@ -9305,8 +9314,8 @@ packages:
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
-  /tsx@4.5.0:
-    resolution: {integrity: sha512-hgxdziy9KLaHh9KE+a6tIZFP6kb0MLq/1D0sJVifbGP4QVEYhy6+2FNn7MyCm1pMc63p9CW/L1OzdqTNPxs6rg==}
+  /tsx@4.6.0:
+    resolution: {integrity: sha512-HLHaDQ78mly4Pd5co6tWQOiNVYoYYAPUcwSSZK4bcs3zSEsg+/67LS/ReHook0E7DKPfe1J5jc0ocIhUrnaR4w==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     dependencies:
