@@ -1,4 +1,5 @@
 import type { ListenOptions } from 'node:net';
+import type { ResourceLimits } from 'node:worker_threads';
 
 import type { WorkerChoiceStrategy } from 'poolifier';
 
@@ -66,12 +67,11 @@ export interface StorageConfiguration {
 export interface WorkerConfiguration {
   processType?: WorkerProcessType;
   startDelay?: number;
-  elementsPerWorker?: number | 'auto';
+  elementsPerWorker?: number | 'auto' | 'single';
   elementStartDelay?: number;
   poolMinSize?: number;
   poolMaxSize?: number;
-  /** @deprecated Not publicly exposed to end users. */
-  poolStrategy?: WorkerChoiceStrategy;
+  resourceLimits?: ResourceLimits;
 }
 
 export interface ConfigurationData {
