@@ -1,5 +1,7 @@
 # Web UI
 
+The Web UI code and configuration is in the repository directory [ui/web](./../../ui/web/). Commands execution is relative to that directory.
+
 ## Project setup
 
 ```shell
@@ -23,7 +25,7 @@ The simulator UI server must be enabled, use WebSocket and disable authenticatio
   },
 ```
 
-See [here](../../README.md#charging-stations-simulator-configuration) for more details.
+See [here](./../../README.md#charging-stations-simulator-configuration) for more details.
 
 ### Run
 

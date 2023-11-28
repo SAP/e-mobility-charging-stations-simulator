@@ -6,7 +6,7 @@ import { version, exit } from 'node:process';
 /**
  * Check if the current node version match the required engines version.
  */
-export function checkNodeVersion() {
+export const checkNodeVersion = () => {
   const enginesNodeVersion = packageJson.engines.node;
   if (semVer.satisfies(version, enginesNodeVersion) === false) {
     console.error(
@@ -17,6 +17,6 @@ export function checkNodeVersion() {
     // eslint-disable-next-line n/no-process-exit
     exit(1);
   }
-}
+};
 
 checkNodeVersion();

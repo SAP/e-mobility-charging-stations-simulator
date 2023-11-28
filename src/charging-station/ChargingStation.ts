@@ -37,11 +37,9 @@ import {
   getMaxNumberOfEvses,
   getNumberOfReservableConnectors,
   getPhaseRotationValue,
-  hasFeatureProfile,
   hasReservationExpired,
   initializeConnectorsMapStatus,
   propagateSerialNumber,
-  removeExpiredReservations,
   stationTemplateToStationInfo,
   warnTemplateKeysDeprecation,
 } from './Helpers';
@@ -158,6 +156,7 @@ import {
 export class ChargingStation extends EventEmitter {
   public readonly index: number;
   public readonly templateFile: string;
+  public stationInfo!: ChargingStationInfo;
   public started: boolean;
   public starting: boolean;
   public idTagsCache: IdTagsCache;
@@ -173,7 +172,6 @@ export class ChargingStation extends EventEmitter {
   public bootNotificationRequest!: BootNotificationRequest;
   public bootNotificationResponse!: BootNotificationResponse | undefined;
   public powerDivider!: number;
-  private internalStationInfo!: ChargingStationInfo;
   private stopping: boolean;
   private configurationFile!: string;
   private configurationFileHash!: string;
@@ -189,7 +187,7 @@ export class ChargingStation extends EventEmitter {
   private readonly sharedLRUCache: SharedLRUCache;
   private webSocketPingSetInterval?: NodeJS.Timeout;
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel;
-  private reservationExpirationSetInterval?: NodeJS.Timeout;
+  private flushMessageBufferSetInterval?: NodeJS.Timeout;
 
   constructor(index: number, templateFile: string) {
     super();
@@ -225,35 +223,6 @@ export class ChargingStation extends EventEmitter {
     return this.connectors.size === 0 && this.evses.size > 0;
   }
 
-  public get stationInfo(): ChargingStationInfo {
-    return {
-      ...{
-        enableStatistics: false,
-        remoteAuthorization: true,
-        currentOutType: CurrentType.AC,
-        mainVoltageMeterValues: true,
-        phaseLineToLineVoltageMeterValues: false,
-        customValueLimitationMeterValues: true,
-        ocppStrictCompliance: true,
-        outOfOrderEndMeterValues: false,
-        beginEndMeterValues: false,
-        meteringPerTransaction: true,
-        transactionDataMeterValues: false,
-        supervisionUrlOcppConfiguration: false,
-        supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
-        ocppVersion: OCPPVersion.VERSION_16,
-        ocppPersistentConfiguration: true,
-        stationInfoPersistentConfiguration: true,
-        automaticTransactionGeneratorPersistentConfiguration: true,
-        autoReconnectMaxRetries: -1,
-        registrationMaxRetries: -1,
-        reconnectExponentialDelay: false,
-        stopTransactionsOnStopped: true,
-      },
-      ...this.internalStationInfo,
-    };
-  }
-
   private get wsConnectionUrl(): URL {
     return new URL(
       `${
@@ -267,14 +236,18 @@ export class ChargingStation extends EventEmitter {
   }
 
   public logPrefix = (): string => {
-    return logPrefix(
-      ` ${
-        (isNotEmptyString(this?.stationInfo?.chargingStationId)
-          ? this?.stationInfo?.chargingStationId
-          : getChargingStationId(this.index, this.getTemplateFromFile()!)) ??
-        'Error at building log prefix'
-      } |`,
-    );
+    if (isNotEmptyString(this?.stationInfo?.chargingStationId)) {
+      return logPrefix(` ${this?.stationInfo?.chargingStationId} |`);
+    }
+    let stationTemplate: ChargingStationTemplate | undefined;
+    try {
+      stationTemplate = JSON.parse(
+        readFileSync(this.templateFile, 'utf8'),
+      ) as ChargingStationTemplate;
+    } catch {
+      stationTemplate = undefined;
+    }
+    return logPrefix(` ${getChargingStationId(this.index, stationTemplate)} |`);
   };
 
   public hasIdTags(): boolean {
@@ -293,10 +266,6 @@ export class ChargingStation extends EventEmitter {
 
   public isWebSocketConnectionOpened(): boolean {
     return this?.wsConnection?.readyState === WebSocket.OPEN;
-  }
-
-  public getRegistrationStatus(): RegistrationStatusEnumType | undefined {
-    return this?.bootNotificationResponse?.status;
   }
 
   public inUnknownState(): boolean {
@@ -647,9 +616,6 @@ export class ChargingStation extends EventEmitter {
         if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.start();
         }
-        if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
-          this.startReservationExpirationSetInterval();
-        }
         this.openWSConnection();
         // Monitor charging station template file
         this.templateFileWatcher = watchJsonFile(
@@ -710,9 +676,6 @@ export class ChargingStation extends EventEmitter {
         if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.stop();
         }
-        if (hasFeatureProfile(this, SupportedFeatureProfiles.Reservation)) {
-          this.stopReservationExpirationSetInterval();
-        }
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash);
         this.templateFileWatcher?.close();
         this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash);
@@ -744,6 +707,17 @@ export class ChargingStation extends EventEmitter {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
+    if (this.flushMessageBufferSetInterval === undefined) {
+      this.flushMessageBufferSetInterval = setInterval(() => {
+        if (this.isWebSocketConnectionOpened() === true && this.inAcceptedState() === true) {
+          this.flushMessageBuffer();
+        }
+        if (this.flushMessageBufferSetInterval !== undefined && this.messageBuffer.size === 0) {
+          clearInterval(this.flushMessageBufferSetInterval);
+          delete this.flushMessageBufferSetInterval;
+        }
+      }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL);
+    }
   }
 
   public openWSConnection(
@@ -1004,31 +978,6 @@ export class ChargingStation extends EventEmitter {
     return false;
   }
 
-  private startReservationExpirationSetInterval(customInterval?: number): void {
-    const interval = customInterval ?? Constants.DEFAULT_RESERVATION_EXPIRATION_INTERVAL;
-    if (interval > 0) {
-      logger.info(
-        `${this.logPrefix()} Reservation expiration date checks started every ${formatDurationMilliSeconds(
-          interval,
-        )}`,
-      );
-      this.reservationExpirationSetInterval = setInterval((): void => {
-        removeExpiredReservations(this).catch(Constants.EMPTY_FUNCTION);
-      }, interval);
-    }
-  }
-
-  private stopReservationExpirationSetInterval(): void {
-    if (!isNullOrUndefined(this.reservationExpirationSetInterval)) {
-      clearInterval(this.reservationExpirationSetInterval);
-    }
-  }
-
-  // private restartReservationExpiryDateSetInterval(): void {
-  //   this.stopReservationExpirationSetInterval();
-  //   this.startReservationExpirationSetInterval();
-  // }
-
   private getNumberOfReservableConnectors(): number {
     let numberOfReservableConnectors = 0;
     if (this.hasEvses) {
@@ -1161,9 +1110,11 @@ export class ChargingStation extends EventEmitter {
     return stationInfo;
   }
 
-  private getStationInfoFromFile(): ChargingStationInfo | undefined {
+  private getStationInfoFromFile(
+    stationInfoPersistentConfiguration = true,
+  ): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined;
-    if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
+    if (stationInfoPersistentConfiguration === true) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo;
       if (stationInfo) {
         delete stationInfo?.infoHash;
@@ -1173,13 +1124,38 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfo(): ChargingStationInfo {
+    const defaultStationInfo: Partial<ChargingStationInfo> = {
+      enableStatistics: false,
+      remoteAuthorization: true,
+      currentOutType: CurrentType.AC,
+      mainVoltageMeterValues: true,
+      phaseLineToLineVoltageMeterValues: false,
+      customValueLimitationMeterValues: true,
+      ocppStrictCompliance: true,
+      outOfOrderEndMeterValues: false,
+      beginEndMeterValues: false,
+      meteringPerTransaction: true,
+      transactionDataMeterValues: false,
+      supervisionUrlOcppConfiguration: false,
+      supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
+      ocppVersion: OCPPVersion.VERSION_16,
+      ocppPersistentConfiguration: true,
+      stationInfoPersistentConfiguration: true,
+      automaticTransactionGeneratorPersistentConfiguration: true,
+      autoReconnectMaxRetries: -1,
+      registrationMaxRetries: -1,
+      reconnectExponentialDelay: false,
+      stopTransactionsOnStopped: true,
+    };
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
-    const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile();
+    const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile(
+      stationInfoFromTemplate?.stationInfoPersistentConfiguration,
+    );
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
     if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
-      return stationInfoFromFile!;
+      return { ...defaultStationInfo, ...stationInfoFromFile! };
     }
     stationInfoFromFile &&
       propagateSerialNumber(
@@ -1187,7 +1163,7 @@ export class ChargingStation extends EventEmitter {
         stationInfoFromFile,
         stationInfoFromTemplate,
       );
-    return stationInfoFromTemplate;
+    return { ...defaultStationInfo, ...stationInfoFromTemplate };
   }
 
   private saveStationInfo(): void {
@@ -1219,7 +1195,7 @@ export class ChargingStation extends EventEmitter {
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
     }
-    this.internalStationInfo = this.getStationInfo();
+    this.stationInfo = this.getStationInfo();
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersion) &&
@@ -1642,9 +1618,9 @@ export class ChargingStation extends EventEmitter {
         }
         if (
           this.stationInfo?.ocppPersistentConfiguration === true &&
-          this.ocppConfiguration?.configurationKey
+          Array.isArray(this.ocppConfiguration?.configurationKey)
         ) {
-          configurationData.configurationKey = this.ocppConfiguration.configurationKey;
+          configurationData.configurationKey = this.ocppConfiguration?.configurationKey;
         } else {
           delete configurationData.configurationKey;
         }
@@ -1732,7 +1708,7 @@ export class ChargingStation extends EventEmitter {
 
   private getOcppConfigurationFromFile(): ChargingStationOcppConfiguration | undefined {
     const configurationKey = this.getConfigurationFromFile()?.configurationKey;
-    if (this.stationInfo?.ocppPersistentConfiguration === true && configurationKey) {
+    if (this.stationInfo?.ocppPersistentConfiguration === true && Array.isArray(configurationKey)) {
       return { configurationKey };
     }
     return undefined;
@@ -2058,8 +2034,8 @@ export class ChargingStation extends EventEmitter {
     return powerDivider;
   }
 
-  private getMaximumAmperage(stationInfo: ChargingStationInfo): number | undefined {
-    const maximumPower = this.getMaximumPower(stationInfo);
+  private getMaximumAmperage(stationInfo?: ChargingStationInfo): number | undefined {
+    const maximumPower = (stationInfo ?? this.stationInfo).maximumPower!;
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
         return ACElectricUtils.amperagePerPhaseFromPower(
@@ -2070,10 +2046,6 @@ export class ChargingStation extends EventEmitter {
       case CurrentType.DC:
         return DCElectricUtils.amperage(maximumPower, this.getVoltageOut(stationInfo));
     }
-  }
-
-  private getMaximumPower(stationInfo?: ChargingStationInfo): number {
-    return (stationInfo ?? this.stationInfo).maximumPower!;
   }
 
   private getCurrentOutType(stationInfo?: ChargingStationInfo): CurrentType {
@@ -2140,7 +2112,7 @@ export class ChargingStation extends EventEmitter {
         }
       }
     }
-    if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
+    if (this.stationInfo.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
         FirmwareStatusNotificationRequest,
         FirmwareStatusNotificationResponse
@@ -2220,7 +2192,7 @@ export class ChargingStation extends EventEmitter {
             getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value,
           )
         : 0;
-    if (webSocketPingInterval > 0 && !this.webSocketPingSetInterval) {
+    if (webSocketPingInterval > 0 && this.webSocketPingSetInterval === undefined) {
       this.webSocketPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened() === true) {
           this.wsConnection?.ping();
@@ -2231,7 +2203,7 @@ export class ChargingStation extends EventEmitter {
           webSocketPingInterval,
         )}`,
       );
-    } else if (this.webSocketPingSetInterval) {
+    } else if (this.webSocketPingSetInterval !== undefined) {
       logger.info(
         `${this.logPrefix()} WebSocket ping already started every ${formatDurationSeconds(
           webSocketPingInterval,
@@ -2245,7 +2217,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private stopWebSocketPing(): void {
-    if (this.webSocketPingSetInterval) {
+    if (this.webSocketPingSetInterval !== undefined) {
       clearInterval(this.webSocketPingSetInterval);
       delete this.webSocketPingSetInterval;
     }
