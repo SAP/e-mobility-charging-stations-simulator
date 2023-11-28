@@ -17,7 +17,7 @@ export class UIServerFactory {
 
   public static getUIServerImplementation(
     uiServerConfiguration: UIServerConfiguration,
-  ): AbstractUIServer | null {
+  ): AbstractUIServer | undefined {
     if (UIServerUtils.isLoopback(uiServerConfiguration.options!.host!) === false) {
       console.warn(
         chalk.yellow(
@@ -45,8 +45,6 @@ export class UIServerFactory {
         return new UIWebSocketServer(uiServerConfiguration);
       case ApplicationProtocol.HTTP:
         return new UIHttpServer(uiServerConfiguration);
-      default:
-        return null;
     }
   }
 }
