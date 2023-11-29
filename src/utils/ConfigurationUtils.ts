@@ -68,12 +68,12 @@ export const checkWorkerProcessType = (workerProcessType: WorkerProcessType): vo
 };
 
 export const checkWorkerElementsPerWorker = (
-  elementsPerWorker: number | 'auto' | 'single' | undefined,
+  elementsPerWorker: number | 'auto' | 'all' | undefined,
 ): void => {
   if (
     elementsPerWorker !== undefined &&
     elementsPerWorker !== 'auto' &&
-    elementsPerWorker !== 'single' &&
+    elementsPerWorker !== 'all' &&
     !Number.isSafeInteger(elementsPerWorker)
   ) {
     throw new SyntaxError(

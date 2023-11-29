@@ -248,7 +248,7 @@ export class Bootstrap extends EventEmitter {
             ? Math.round(this.numberOfChargingStations / (availableParallelism() * 1.5))
             : 1;
         break;
-      case 'single':
+      case 'all':
         elementsPerWorker = this.numberOfChargingStations;
         break;
     }

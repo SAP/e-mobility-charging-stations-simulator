@@ -67,7 +67,7 @@ export interface StorageConfiguration {
 export interface WorkerConfiguration {
   processType?: WorkerProcessType;
   startDelay?: number;
-  elementsPerWorker?: number | 'auto' | 'single';
+  elementsPerWorker?: number | 'auto' | 'all';
   elementStartDelay?: number;
   poolMinSize?: number;
   poolMaxSize?: number;
