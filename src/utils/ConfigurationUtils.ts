@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import { Constants } from './Constants';
 import { isNotEmptyString, logPrefix as utilsLogPrefix } from './Utils';
 import { FileType, StorageType } from '../types';
+import type { elementsPerWorkerType } from '../types/ConfigurationData';
 import { WorkerProcessType } from '../worker';
 
 export const logPrefix = (): string => {
@@ -68,7 +69,7 @@ export const checkWorkerProcessType = (workerProcessType: WorkerProcessType): vo
 };
 
 export const checkWorkerElementsPerWorker = (
-  elementsPerWorker: number | 'auto' | 'all' | undefined,
+  elementsPerWorker: elementsPerWorkerType | undefined,
 ): void => {
   if (
     elementsPerWorker !== undefined &&
