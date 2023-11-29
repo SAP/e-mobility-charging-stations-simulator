@@ -497,7 +497,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public startHeartbeat(): void {
-    if (this.getHeartbeatInterval() > 0 && !this.heartbeatSetInterval) {
+    if (this.getHeartbeatInterval() > 0 && this.heartbeatSetInterval === undefined) {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
@@ -513,7 +513,7 @@ export class ChargingStation extends EventEmitter {
           this.getHeartbeatInterval(),
         )}`,
       );
-    } else if (this.heartbeatSetInterval) {
+    } else if (this.heartbeatSetInterval !== undefined) {
       logger.info(
         `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
           this.getHeartbeatInterval(),
@@ -604,7 +604,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public stopMeterValues(connectorId: number) {
-    if (this.getConnectorStatus(connectorId)?.transactionSetInterval) {
+    if (this.getConnectorStatus(connectorId)?.transactionSetInterval !== undefined) {
       clearInterval(this.getConnectorStatus(connectorId)?.transactionSetInterval);
     }
   }
@@ -707,17 +707,7 @@ export class ChargingStation extends EventEmitter {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
-    if (this.flushMessageBufferSetInterval === undefined) {
-      this.flushMessageBufferSetInterval = setInterval(() => {
-        if (this.isWebSocketConnectionOpened() === true && this.inAcceptedState() === true) {
-          this.flushMessageBuffer();
-        }
-        if (this.flushMessageBufferSetInterval !== undefined && this.messageBuffer.size === 0) {
-          clearInterval(this.flushMessageBufferSetInterval);
-          delete this.flushMessageBufferSetInterval;
-        }
-      }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL);
-    }
+    this.setIntervalFlushMessageBuffer();
   }
 
   public openWSConnection(
@@ -976,6 +966,26 @@ export class ChargingStation extends EventEmitter {
       );
     }
     return false;
+  }
+
+  private setIntervalFlushMessageBuffer(): void {
+    if (this.flushMessageBufferSetInterval === undefined) {
+      this.flushMessageBufferSetInterval = setInterval(() => {
+        if (this.isWebSocketConnectionOpened() === true && this.inAcceptedState() === true) {
+          this.flushMessageBuffer();
+        }
+        if (this.messageBuffer.size === 0) {
+          this.clearIntervalFlushMessageBuffer();
+        }
+      }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL);
+    }
+  }
+
+  private clearIntervalFlushMessageBuffer() {
+    if (this.flushMessageBufferSetInterval !== undefined) {
+      clearInterval(this.flushMessageBufferSetInterval);
+      delete this.flushMessageBufferSetInterval;
+    }
   }
 
   private getNumberOfReservableConnectors(): number {
@@ -2262,7 +2272,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private stopHeartbeat(): void {
-    if (this.heartbeatSetInterval) {
+    if (this.heartbeatSetInterval !== undefined) {
       clearInterval(this.heartbeatSetInterval);
       delete this.heartbeatSetInterval;
     }

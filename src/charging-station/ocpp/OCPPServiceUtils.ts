@@ -196,7 +196,7 @@ export class OCPPServiceUtils {
   }
 
   public static startHeartbeatInterval(chargingStation: ChargingStation, interval: number): void {
-    if (!chargingStation.heartbeatSetInterval) {
+    if (chargingStation.heartbeatSetInterval === undefined) {
       chargingStation.startHeartbeat();
     } else if (chargingStation.getHeartbeatInterval() !== interval) {
       chargingStation.restartHeartbeat();
