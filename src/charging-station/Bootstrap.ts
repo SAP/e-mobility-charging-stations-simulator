@@ -194,6 +194,7 @@ export class Bootstrap extends EventEmitter {
         }
         await this.workerImplementation?.stop();
         delete this.workerImplementation;
+        this.removeAllListeners();
         this.uiServer?.stop();
         await this.storage?.close();
         delete this.storage;
@@ -229,7 +230,6 @@ export class Bootstrap extends EventEmitter {
         this.numberOfChargingStations,
       )
         .then(() => {
-          this.removeAllListeners();
           resolve('Charging stations stopped');
         })
         .catch(reject)
