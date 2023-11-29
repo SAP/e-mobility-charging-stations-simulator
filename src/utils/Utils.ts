@@ -1,4 +1,4 @@
-import { randomBytes, randomInt, randomUUID, webcrypto } from 'node:crypto';
+import { getRandomValues, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { env, nextTick } from 'node:process';
 
 import {
@@ -336,7 +336,7 @@ export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => 
  * @returns A number in the [0,1[ range
  */
 export const secureRandom = (): number => {
-  return webcrypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000;
+  return getRandomValues(new Uint32Array(1))[0] / 0x100000000;
 };
 
 export const JSONStringifyWithMapSupport = (

@@ -1,4 +1,4 @@
-import { webcrypto } from 'node:crypto';
+import { getRandomValues } from 'node:crypto';
 
 import chalk from 'chalk';
 
@@ -34,5 +34,5 @@ export const randomizeDelay = (delay: number): number => {
  * @internal
  */
 const secureRandom = (): number => {
-  return webcrypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000;
+  return getRandomValues(new Uint32Array(1))[0] / 0x100000000;
 };
