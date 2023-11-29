@@ -78,7 +78,15 @@ export class PerformanceStatistics {
   }
 
   public static endMeasure(name: string, markId: string): void {
-    performance.measure(name, markId);
+    try {
+      performance.measure(name, markId);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('performance mark has not been set')) {
+        /** Ignore */
+      } else {
+        throw error;
+      }
+    }
     performance.clearMarks(markId);
     performance.clearMeasures(name);
   }
