@@ -81,13 +81,6 @@ export class Bootstrap extends EventEmitter {
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
     );
-    this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted);
-    this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped);
-    this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated);
-    this.on(
-      ChargingStationWorkerMessageEvents.performanceStatistics,
-      this.workerEventPerformanceStatistics,
-    );
     Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart(false);
   }
 
@@ -102,6 +95,13 @@ export class Bootstrap extends EventEmitter {
     if (this.started === false) {
       if (this.starting === false) {
         this.starting = true;
+        this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted);
+        this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped);
+        this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated);
+        this.on(
+          ChargingStationWorkerMessageEvents.performanceStatistics,
+          this.workerEventPerformanceStatistics,
+        );
         this.initializeCounters();
         const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
           ConfigurationSection.worker,
@@ -229,6 +229,7 @@ export class Bootstrap extends EventEmitter {
         this.numberOfChargingStations,
       )
         .then(() => {
+          this.removeAllListeners();
           resolve('Charging stations stopped');
         })
         .catch(reject)
