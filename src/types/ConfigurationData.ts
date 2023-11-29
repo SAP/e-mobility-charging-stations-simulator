@@ -64,12 +64,12 @@ export interface StorageConfiguration {
   uri?: string;
 }
 
-export type elementsPerWorkerType = number | 'auto' | 'all';
+export type ElementsPerWorkerType = number | 'auto' | 'all';
 
 export interface WorkerConfiguration {
   processType?: WorkerProcessType;
   startDelay?: number;
-  elementsPerWorker?: elementsPerWorkerType;
+  elementsPerWorker?: ElementsPerWorkerType;
   elementStartDelay?: number;
   poolMinSize?: number;
   poolMaxSize?: number;
