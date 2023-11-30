@@ -70,31 +70,31 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       status: responsesStatus,
       hashIdsSucceeded: this.responses
         .get(uuid)
-        ?.responses.filter(({ hashId }) => !isNullOrUndefined(hashId))
-        .map(({ status, hashId }) => {
-          if (status === ResponseStatus.SUCCESS) {
+        ?.responses.map(({ status, hashId }) => {
+          if (hashId !== undefined && status === ResponseStatus.SUCCESS) {
             return hashId;
           }
-        }) as string[],
+        })
+        .filter((hashId) => !isNullOrUndefined(hashId)) as string[],
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: this.responses
           .get(uuid)
-          ?.responses.filter(({ hashId }) => !isNullOrUndefined(hashId))
-          .map(({ status, hashId }) => {
-            if (status === ResponseStatus.FAILURE) {
+          ?.responses.map(({ status, hashId }) => {
+            if (hashId !== undefined && status === ResponseStatus.FAILURE) {
               return hashId;
             }
-          }) as string[],
+          })
+          .filter((hashId) => !isNullOrUndefined(hashId)) as string[],
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: this.responses
           .get(uuid)
-          ?.responses.filter((response) => !isNullOrUndefined(response))
-          .map((response) => {
-            if (response.status === ResponseStatus.FAILURE) {
+          ?.responses.map((response) => {
+            if (response !== undefined && response.status === ResponseStatus.FAILURE) {
               return response;
             }
-          }) as BroadcastChannelResponsePayload[],
+          })
+          .filter((response) => !isNullOrUndefined(response)) as BroadcastChannelResponsePayload[],
       }),
     };
   }
