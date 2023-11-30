@@ -398,16 +398,19 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private resetConnectorStatus(connectorStatus: Status | undefined): void {
+    if (connectorStatus === undefined) {
+      return;
+    }
     delete connectorStatus?.startDate;
     delete connectorStatus?.lastRunDate;
     delete connectorStatus?.stopDate;
     delete connectorStatus?.stoppedDate;
     if (
       !this.started &&
-      (connectorStatus?.start === true ||
+      (connectorStatus.start === true ||
         this.chargingStation.getAutomaticTransactionGeneratorConfiguration().enable === false)
     ) {
-      connectorStatus!.start = false;
+      connectorStatus.start = false;
     }
   }
 
