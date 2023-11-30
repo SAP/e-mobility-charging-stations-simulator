@@ -22,6 +22,7 @@ import {
 import {
   buildConnectorsMap,
   checkChargingStation,
+  checkConfiguration,
   checkConnectorsConfiguration,
   checkStationInfoConnectorStatus,
   checkTemplate,
@@ -1201,6 +1202,7 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       (stationConfiguration?.connectorsStatus || stationConfiguration?.evsesStatus)
     ) {
+      checkConfiguration(stationConfiguration, this.logPrefix(), this.configurationFile);
       this.initializeConnectorsOrEvsesFromFile(stationConfiguration);
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);

@@ -195,7 +195,6 @@ export class Bootstrap extends EventEmitter {
         await this.workerImplementation?.stop();
         delete this.workerImplementation;
         this.removeAllListeners();
-        this.uiServer?.stop();
         await this.storage?.close();
         delete this.storage;
         this.resetCounters();
@@ -212,6 +211,8 @@ export class Bootstrap extends EventEmitter {
 
   public async restart(stopChargingStations?: boolean): Promise<void> {
     await this.stop(stopChargingStations);
+    Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+      .enabled === false && this.uiServer?.stop();
     await this.start();
   }
 
@@ -407,6 +408,7 @@ export class Bootstrap extends EventEmitter {
     this.stop()
       .then(() => {
         console.info(`${chalk.green('Graceful shutdown')}`);
+        this.uiServer?.stop();
         // stop() asks for charging stations to stop by default
         this.waitChargingStationsStopped()
           .then(() => {
