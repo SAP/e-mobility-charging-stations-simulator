@@ -162,18 +162,21 @@ export abstract class AbstractUIService {
   ): void {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
-        ?.filter((hashId) => !isNullOrUndefined(hashId))
         ?.map((hashId) => {
           if (this.uiServer.chargingStations.has(hashId) === true) {
             return hashId;
           }
-          logger.warn(
-            `${this.logPrefix(
-              moduleName,
-              'sendBroadcastChannelRequest',
-            )} Charging station with hashId '${hashId}' not found`,
-          );
-        }) as string[];
+          const msg = `${this.logPrefix(
+            moduleName,
+            'sendBroadcastChannelRequest',
+          )} Charging station with hashId '${hashId}' not found`;
+          if (payload.hashIds?.length === 1) {
+            throw new BaseError(msg);
+          } else {
+            logger.warn(msg);
+          }
+        })
+        ?.filter((hashId) => !isNullOrUndefined(hashId)) as string[];
     }
     const expectedNumberOfResponses = isNotEmptyArray(payload.hashIds)
       ? payload.hashIds!.length
