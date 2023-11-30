@@ -1,6 +1,18 @@
 # Changelog
 
-## [v1.2.27](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.26...v1.2.27)
+## [v1.2.28](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.27...v1.2.28)
+
+- build(deps-dev): apply updates [`ea9eb85`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ea9eb85a00bc56cb956df74d250989a7bcb09a04)
+- refactor: cleanup buffered messages handling code [`2a2ad81`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2a2ad81b23c64c05c93a16e0e255ae1350a5c862)
+- fix: ensure no null serialized values end in UI server response payload [`31fdd91`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/31fdd918e146f6d4f534ea3df5b3ceace0e23cfc)
+- fix: ensure UI server remains active at simulator stop [`73edcc9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/73edcc9405a412de91008d2926112c4b8ada3607)
+- fix: handle not found hashId in UI server [`f12cf7e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f12cf7ef207d1e1b243c45b1eecf5d89d8ec772d)
+- refactor: cleanup ElementsPerWorkerType type definition [`65a1157`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/65a1157a0c0f0a7b23b7a6fc23432f2c3e7cb735)
+- refactor: cleanup crypto import [`7cd0a62`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7cd0a6218a4110e12fe8bc408492913da7259f8b)
+- fix: only reset defined ATG connector status [`37e207d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/37e207d110f051eac4228f604d0b4e7b14764457)
+- refactor: add type for worker configuration attribute [`47fb5f8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/47fb5f8f8370c85553eb65f8e4bfbbc233967682)
+
+## [v1.2.27](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.26...v1.2.27) (2023-11-29)
 
 - Combined PRs [`#858`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/858)
 - docs: refine Web UI usage path [`#860`](https://github.com/sap/e-mobility-charging-stations-simulator/issues/860)
@@ -13,6 +25,7 @@
 - fix: fix performance configuration change at runtime [`6d2b7d0`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6d2b7d0121fa6ab41272ed8f4f0d7fd2ce3e8c7d)
 - perf: allow to fine tune worker_threads ressource configuration [`487f0df`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/487f0dfd58d97d4755718793e313f02aaddb1a6d)
 - perf(simulator): remove worker configuration attribute from Bootstrap [`5b373a2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/5b373a2392b4615ba29bb13f3b312eccf7ae8d49)
+- chore: version 1.2.27 [`10f1514`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/10f1514af1ecf9f3f27f1d183d615df39dba46c6)
 - fix: fix recursion loop getTemplateFromFile -&gt; logPrefix -&gt; getTemplateFromFile [`c1f16af`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c1f16afd333f0fc8a6a02b9baa0aff23dbd18580)
 - refactor: rename elementsPerWorkers 'single' -&gt; 'all [`c20d5d7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c20d5d72396a96028bee5492fa7ea2475b8a109e)
 - refactor(ui): add firmware status to UI types [`2a52615`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2a5261571579826e71b40f51cb06dd842af19477)
