@@ -6,7 +6,14 @@ import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
-import { addSeconds, differenceInSeconds, isDate, maxTime, secondsToMilliseconds } from 'date-fns';
+import {
+  type Interval,
+  addSeconds,
+  differenceInSeconds,
+  isDate,
+  maxTime,
+  secondsToMilliseconds,
+} from 'date-fns';
 import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';

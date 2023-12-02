@@ -2,6 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv';
 import {
+  type Interval,
   addSeconds,
   areIntervalsOverlapping,
   differenceInSeconds,

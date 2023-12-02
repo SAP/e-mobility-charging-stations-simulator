@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
 import {
+  type Interval,
   addDays,
   addSeconds,
   addWeeks,

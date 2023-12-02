@@ -70,7 +70,7 @@ export const isValidTime = (date: unknown): boolean => {
   if (typeof date === 'number') {
     return !isNaN(date);
   } else if (isDate(date)) {
-    return !isNaN((date as Date).getTime());
+    return !isNaN(date.getTime());
   }
   return false;
 };
@@ -80,12 +80,12 @@ export const convertToDate = (value: Date | string | number | undefined): Date |
     return value as undefined;
   }
   if (isDate(value)) {
-    return value as Date;
+    return value;
   }
   if (isString(value) || typeof value === 'number') {
-    const valueToDate = new Date(value as string | number);
+    const valueToDate = new Date(value!);
     if (isNaN(valueToDate.getTime())) {
-      throw new Error(`Cannot convert to date: '${value as string | number}'`);
+      throw new Error(`Cannot convert to date: '${value!}'`);
     }
     return valueToDate;
   }
