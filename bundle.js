@@ -9,8 +9,10 @@ import { copy } from 'esbuild-plugin-copy';
 const isDevelopmentBuild = env.BUILD === 'development';
 const sourcemap = !!isDevelopmentBuild;
 
-console.info(chalk.green(`Building in ${isDevelopmentBuild ? 'development' : 'production'} mode`));
 (async () => {
+  console.info(
+    chalk.green(`Building in ${isDevelopmentBuild ? 'development' : 'production'} mode`),
+  );
   console.time('Build time');
   await build({
     entryPoints: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
