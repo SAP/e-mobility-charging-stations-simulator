@@ -39,8 +39,8 @@ dependencies:
     specifier: ^5.3.0
     version: 5.3.0
   date-fns:
-    specifier: 3.0.0-alpha.2
-    version: 3.0.0-alpha.2
+    specifier: 3.0.0-rc.2
+    version: 3.0.0-rc.2
   http-status-codes:
     specifier: ^2.3.0
     version: 2.3.0
@@ -3524,8 +3524,8 @@ packages:
     engines: {node: '>= 14'}
     dev: true
 
-  /date-fns@3.0.0-alpha.2:
-    resolution: {integrity: sha512-iyiPe3OJNTaiSSH0tZmQuXL0EK5hWzh+eHewYZzL9KzGKSgwt0yszO7BRMxgE35f0/iC+g3NxCXDM0WwP2yB5g==}
+  /date-fns@3.0.0-rc.2:
+    resolution: {integrity: sha512-3MAy/Mc7i7LVIayaPnHCNhah7Zaj9/9G9v4pmdJNvMJ+mPahQtrQ4DWm6YxkQjvhRB4gBnjV5UB1ll5ZQxE31w==}
     dev: false
 
   /debounce-fn@4.0.0:
