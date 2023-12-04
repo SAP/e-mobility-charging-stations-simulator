@@ -8,4 +8,9 @@ export { OCPP20RequestService } from './2.0/OCPP20RequestService';
 export { OCPP20ResponseService } from './2.0/OCPP20ResponseService';
 export { OCPPIncomingRequestService } from './OCPPIncomingRequestService';
 export { OCPPRequestService } from './OCPPRequestService';
-export { OCPPServiceUtils } from './OCPPServiceUtils';
+export {
+  buildStatusNotificationRequest,
+  getMessageTypeString,
+  isIdTagAuthorized,
+  sendAndSetConnectorStatus,
+} from './OCPPServiceUtils';

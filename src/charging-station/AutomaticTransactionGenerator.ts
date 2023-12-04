@@ -7,7 +7,7 @@ import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns';
 import type { ChargingStation } from './ChargingStation';
 import { checkChargingStation } from './Helpers';
 import { IdTagsCache } from './IdTagsCache';
-import { OCPPServiceUtils } from './ocpp';
+import { isIdTagAuthorized } from './ocpp';
 import { BaseError } from '../exception';
 import { PerformanceStatistics } from '../performance';
 import {
@@ -431,7 +431,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       )} start transaction with an idTag '${idTag}'`;
       if (this.getRequireAuthorize()) {
         ++this.connectorsStatus.get(connectorId)!.authorizeRequests!;
-        if (await OCPPServiceUtils.isIdTagAuthorized(this.chargingStation, connectorId, idTag)) {
+        if (await isIdTagAuthorized(this.chargingStation, connectorId, idTag)) {
           ++this.connectorsStatus.get(connectorId)!.acceptedAuthorizeRequests!;
           logger.info(startTransactionLogMsg);
           // Start transaction

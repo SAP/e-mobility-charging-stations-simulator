@@ -55,7 +55,9 @@ import {
   OCPP20ResponseService,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
-  OCPPServiceUtils,
+  buildStatusNotificationRequest,
+  getMessageTypeString,
+  sendAndSetConnectorStatus,
 } from './ocpp';
 import { SharedLRUCache } from './SharedLRUCache';
 import { BaseError, OCPPError } from '../exception';
@@ -887,7 +889,7 @@ export class ChargingStation extends EventEmitter {
       await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING);
     }
     this.getConnectorStatus(reservation.connectorId)!.reservation = reservation;
-    await OCPPServiceUtils.sendAndSetConnectorStatus(
+    await sendAndSetConnectorStatus(
       this,
       reservation.connectorId,
       ConnectorStatusEnum.Reserved,
@@ -909,7 +911,7 @@ export class ChargingStation extends EventEmitter {
       case ReservationTerminationReason.RESERVATION_CANCELED:
       case ReservationTerminationReason.REPLACE_EXISTING:
       case ReservationTerminationReason.EXPIRED:
-        await OCPPServiceUtils.sendAndSetConnectorStatus(
+        await sendAndSetConnectorStatus(
           this,
           reservation.connectorId,
           ConnectorStatusEnum.Available,
@@ -1027,11 +1029,18 @@ export class ChargingStation extends EventEmitter {
           isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!);
           if (isNullOrUndefined(error)) {
             logger.debug(
-              `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
+              `${this.logPrefix()} >> Buffered ${getMessageTypeString(
                 messageType,
-              )} payload sent: ${message}`,
+              )} OCPP message sent '${JSON.stringify(message)}'`,
             );
             this.messageBuffer.delete(message);
+          } else {
+            logger.debug(
+              `${this.logPrefix()} >> Buffered ${getMessageTypeString(
+                messageType,
+              )} OCPP message '${JSON.stringify(message)}' send failed:`,
+              error,
+            );
           }
         });
       }
@@ -1816,7 +1825,7 @@ export class ChargingStation extends EventEmitter {
     }
     throw new OCPPError(
       ErrorType.PROTOCOL_ERROR,
-      `Cached request for message id ${messageId} ${OCPPServiceUtils.getMessageTypeString(
+      `Cached request for message id ${messageId} ${getMessageTypeString(
         messageType,
       )} is not an array`,
       undefined,
@@ -2103,12 +2112,7 @@ export class ChargingStation extends EventEmitter {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
             const connectorBootStatus = getBootConnectorStatus(this, connectorId, connectorStatus);
-            await OCPPServiceUtils.sendAndSetConnectorStatus(
-              this,
-              connectorId,
-              connectorBootStatus,
-              evseId,
-            );
+            await sendAndSetConnectorStatus(this, connectorId, connectorBootStatus, evseId);
           }
         }
       }
@@ -2120,7 +2124,7 @@ export class ChargingStation extends EventEmitter {
             connectorId,
             this.getConnectorStatus(connectorId)!,
           );
-          await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
+          await sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
         }
       }
     }
@@ -2165,7 +2169,7 @@ export class ChargingStation extends EventEmitter {
             >(
               this,
               RequestCommand.STATUS_NOTIFICATION,
-              OCPPServiceUtils.buildStatusNotificationRequest(
+              buildStatusNotificationRequest(
                 this,
                 connectorId,
                 ConnectorStatusEnum.Unavailable,
@@ -2185,11 +2189,7 @@ export class ChargingStation extends EventEmitter {
           >(
             this,
             RequestCommand.STATUS_NOTIFICATION,
-            OCPPServiceUtils.buildStatusNotificationRequest(
-              this,
-              connectorId,
-              ConnectorStatusEnum.Unavailable,
-            ),
+            buildStatusNotificationRequest(this, connectorId, ConnectorStatusEnum.Unavailable),
           );
           delete this.getConnectorStatus(connectorId)?.status;
         }

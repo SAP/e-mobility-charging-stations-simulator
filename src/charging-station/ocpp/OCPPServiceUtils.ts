@@ -45,7 +45,187 @@ import {
   min,
 } from '../../utils';
 
+export const getMessageTypeString = (messageType: MessageType): string => {
+  switch (messageType) {
+    case MessageType.CALL_MESSAGE:
+      return 'request';
+    case MessageType.CALL_RESULT_MESSAGE:
+      return 'response';
+    case MessageType.CALL_ERROR_MESSAGE:
+      return 'error';
+    default:
+      return 'unknown';
+  }
+};
+
+export const buildStatusNotificationRequest = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  status: ConnectorStatusEnum,
+  evseId?: number,
+): StatusNotificationRequest => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      return {
+        connectorId,
+        status,
+        errorCode: ChargePointErrorCode.NO_ERROR,
+      } as OCPP16StatusNotificationRequest;
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      return {
+        timestamp: new Date(),
+        connectorStatus: status,
+        connectorId,
+        evseId,
+      } as OCPP20StatusNotificationRequest;
+    default:
+      throw new BaseError('Cannot build status notification payload: OCPP version not supported');
+  }
+};
+
+export const isIdTagAuthorized = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  idTag: string,
+): Promise<boolean> => {
+  if (
+    !chargingStation.getLocalAuthListEnabled() &&
+    !chargingStation.stationInfo?.remoteAuthorization
+  ) {
+    logger.warn(
+      `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`,
+    );
+  }
+  if (
+    chargingStation.getLocalAuthListEnabled() === true &&
+    isIdTagLocalAuthorized(chargingStation, idTag)
+  ) {
+    const connectorStatus: ConnectorStatus = chargingStation.getConnectorStatus(connectorId)!;
+    connectorStatus.localAuthorizeIdTag = idTag;
+    connectorStatus.idTagLocalAuthorized = true;
+    return true;
+  } else if (chargingStation.stationInfo?.remoteAuthorization) {
+    return await isIdTagRemoteAuthorized(chargingStation, connectorId, idTag);
+  }
+  return false;
+};
+
+const isIdTagLocalAuthorized = (chargingStation: ChargingStation, idTag: string): boolean => {
+  return (
+    chargingStation.hasIdTags() === true &&
+    isNotEmptyString(
+      chargingStation.idTagsCache
+        .getIdTags(getIdTagsFile(chargingStation.stationInfo)!)
+        ?.find((tag) => tag === idTag),
+    )
+  );
+};
+
+const isIdTagRemoteAuthorized = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  idTag: string,
+): Promise<boolean> => {
+  chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag;
+  return (
+    (
+      await chargingStation.ocppRequestService.requestHandler<AuthorizeRequest, AuthorizeResponse>(
+        chargingStation,
+        RequestCommand.AUTHORIZE,
+        {
+          idTag,
+        },
+      )
+    )?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
+  );
+};
+
+export const sendAndSetConnectorStatus = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  status: ConnectorStatusEnum,
+  evseId?: number,
+  options?: { send: boolean },
+): Promise<void> => {
+  options = { send: true, ...options };
+  if (options.send) {
+    checkConnectorStatusTransition(chargingStation, connectorId, status);
+    await chargingStation.ocppRequestService.requestHandler<
+      StatusNotificationRequest,
+      StatusNotificationResponse
+    >(
+      chargingStation,
+      RequestCommand.STATUS_NOTIFICATION,
+      buildStatusNotificationRequest(chargingStation, connectorId, status, evseId),
+    );
+  }
+  chargingStation.getConnectorStatus(connectorId)!.status = status;
+  chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
+    connectorId,
+    ...chargingStation.getConnectorStatus(connectorId),
+  });
+};
+
+const checkConnectorStatusTransition = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  status: ConnectorStatusEnum,
+): boolean => {
+  const fromStatus = chargingStation.getConnectorStatus(connectorId)!.status;
+  let transitionAllowed = false;
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      if (
+        (connectorId === 0 &&
+          OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status,
+          ) !== -1) ||
+        (connectorId > 0 &&
+          OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status,
+          ) !== -1)
+      ) {
+        transitionAllowed = true;
+      }
+      break;
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      if (
+        (connectorId === 0 &&
+          OCPP20Constants.ChargingStationStatusTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status,
+          ) !== -1) ||
+        (connectorId > 0 &&
+          OCPP20Constants.ConnectorStatusTransitions.findIndex(
+            (transition) => transition.from === fromStatus && transition.to === status,
+          ) !== -1)
+      ) {
+        transitionAllowed = true;
+      }
+      break;
+    default:
+      throw new BaseError(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+      );
+  }
+  if (transitionAllowed === false) {
+    logger.warn(
+      `${chargingStation.logPrefix()} OCPP ${chargingStation.stationInfo
+        ?.ocppVersion} connector id ${connectorId} status transition from '${
+        chargingStation.getConnectorStatus(connectorId)!.status
+      }' to '${status}' is not allowed`,
+    );
+  }
+  return transitionAllowed;
+};
+
 export class OCPPServiceUtils {
+  public static getMessageTypeString = getMessageTypeString;
+  public static sendAndSetConnectorStatus = sendAndSetConnectorStatus;
+  public static isIdTagAuthorized = isIdTagAuthorized;
+
   protected constructor() {
     // This is intentional
   }
@@ -66,19 +246,6 @@ export class OCPPServiceUtils {
       }
     }
     return ErrorType.FORMAT_VIOLATION;
-  }
-
-  public static getMessageTypeString(messageType: MessageType): string {
-    switch (messageType) {
-      case MessageType.CALL_MESSAGE:
-        return 'request';
-      case MessageType.CALL_RESULT_MESSAGE:
-        return 'response';
-      case MessageType.CALL_ERROR_MESSAGE:
-        return 'error';
-      default:
-        return 'unknown';
-    }
   }
 
   public static isRequestCommandSupported(
@@ -169,150 +336,12 @@ export class OCPPServiceUtils {
     }
   }
 
-  public static buildStatusNotificationRequest(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    status: ConnectorStatusEnum,
-    evseId?: number,
-  ): StatusNotificationRequest {
-    switch (chargingStation.stationInfo?.ocppVersion) {
-      case OCPPVersion.VERSION_16:
-        return {
-          connectorId,
-          status,
-          errorCode: ChargePointErrorCode.NO_ERROR,
-        } as OCPP16StatusNotificationRequest;
-      case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201:
-        return {
-          timestamp: new Date(),
-          connectorStatus: status,
-          connectorId,
-          evseId,
-        } as OCPP20StatusNotificationRequest;
-      default:
-        throw new BaseError('Cannot build status notification payload: OCPP version not supported');
-    }
-  }
-
   public static startHeartbeatInterval(chargingStation: ChargingStation, interval: number): void {
     if (chargingStation.heartbeatSetInterval === undefined) {
       chargingStation.startHeartbeat();
     } else if (chargingStation.getHeartbeatInterval() !== interval) {
       chargingStation.restartHeartbeat();
     }
-  }
-
-  public static async sendAndSetConnectorStatus(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    status: ConnectorStatusEnum,
-    evseId?: number,
-    options?: { send: boolean },
-  ) {
-    options = { send: true, ...options };
-    if (options.send) {
-      OCPPServiceUtils.checkConnectorStatusTransition(chargingStation, connectorId, status);
-      await chargingStation.ocppRequestService.requestHandler<
-        StatusNotificationRequest,
-        StatusNotificationResponse
-      >(
-        chargingStation,
-        RequestCommand.STATUS_NOTIFICATION,
-        OCPPServiceUtils.buildStatusNotificationRequest(
-          chargingStation,
-          connectorId,
-          status,
-          evseId,
-        ),
-      );
-    }
-    chargingStation.getConnectorStatus(connectorId)!.status = status;
-    chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
-      connectorId,
-      ...chargingStation.getConnectorStatus(connectorId),
-    });
-  }
-
-  public static async isIdTagAuthorized(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    idTag: string,
-  ): Promise<boolean> {
-    if (
-      !chargingStation.getLocalAuthListEnabled() &&
-      !chargingStation.stationInfo?.remoteAuthorization
-    ) {
-      logger.warn(
-        `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`,
-      );
-    }
-    if (
-      chargingStation.getLocalAuthListEnabled() === true &&
-      OCPPServiceUtils.isIdTagLocalAuthorized(chargingStation, idTag)
-    ) {
-      const connectorStatus: ConnectorStatus = chargingStation.getConnectorStatus(connectorId)!;
-      connectorStatus.localAuthorizeIdTag = idTag;
-      connectorStatus.idTagLocalAuthorized = true;
-      return true;
-    } else if (chargingStation.stationInfo?.remoteAuthorization) {
-      return await OCPPServiceUtils.isIdTagRemoteAuthorized(chargingStation, connectorId, idTag);
-    }
-    return false;
-  }
-
-  protected static checkConnectorStatusTransition(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    status: ConnectorStatusEnum,
-  ): boolean {
-    const fromStatus = chargingStation.getConnectorStatus(connectorId)!.status;
-    let transitionAllowed = false;
-    switch (chargingStation.stationInfo?.ocppVersion) {
-      case OCPPVersion.VERSION_16:
-        if (
-          (connectorId === 0 &&
-            OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status,
-            ) !== -1) ||
-          (connectorId > 0 &&
-            OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status,
-            ) !== -1)
-        ) {
-          transitionAllowed = true;
-        }
-        break;
-      case OCPPVersion.VERSION_20:
-      case OCPPVersion.VERSION_201:
-        if (
-          (connectorId === 0 &&
-            OCPP20Constants.ChargingStationStatusTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status,
-            ) !== -1) ||
-          (connectorId > 0 &&
-            OCPP20Constants.ConnectorStatusTransitions.findIndex(
-              (transition) => transition.from === fromStatus && transition.to === status,
-            ) !== -1)
-        ) {
-          transitionAllowed = true;
-        }
-        break;
-      default:
-        throw new BaseError(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
-        );
-    }
-    if (transitionAllowed === false) {
-      logger.warn(
-        `${chargingStation.logPrefix()} OCPP ${chargingStation.stationInfo
-          ?.ocppVersion} connector id ${connectorId} status transition from '${
-          chargingStation.getConnectorStatus(connectorId)!.status
-        }' to '${status}' is not allowed`,
-      );
-    }
-    return transitionAllowed;
   }
 
   protected static parseJsonSchemaFile<T extends JsonType>(
@@ -439,35 +468,6 @@ export class OCPPServiceUtils {
       );
     }
     return (!isNaN(parsedValue) ? parsedValue : options.fallbackValue!) * options.unitMultiplier!;
-  }
-
-  private static isIdTagLocalAuthorized(chargingStation: ChargingStation, idTag: string): boolean {
-    return (
-      chargingStation.hasIdTags() === true &&
-      isNotEmptyString(
-        chargingStation.idTagsCache
-          .getIdTags(getIdTagsFile(chargingStation.stationInfo)!)
-          ?.find((tag) => tag === idTag),
-      )
-    );
-  }
-
-  private static async isIdTagRemoteAuthorized(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    idTag: string,
-  ): Promise<boolean> {
-    chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag;
-    return (
-      (
-        await chargingStation.ocppRequestService.requestHandler<
-          AuthorizeRequest,
-          AuthorizeResponse
-        >(chargingStation, RequestCommand.AUTHORIZE, {
-          idTag,
-        })
-      )?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
-    );
   }
 
   private static logPrefix = (
