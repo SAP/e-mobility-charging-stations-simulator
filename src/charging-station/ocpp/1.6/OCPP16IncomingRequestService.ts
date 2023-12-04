@@ -11,9 +11,9 @@ import {
   addSeconds,
   differenceInSeconds,
   isDate,
-  maxTime,
   secondsToMilliseconds,
 } from 'date-fns';
+import { maxTime } from 'date-fns/constants';
 import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';

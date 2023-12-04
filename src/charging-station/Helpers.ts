@@ -18,9 +18,9 @@ import {
   isDate,
   isPast,
   isWithinInterval,
-  maxTime,
   toDate,
 } from 'date-fns';
+import { maxTime } from 'date-fns/constants';
 
 import type { ChargingStation } from './ChargingStation';
 import { getConfigurationKey } from './ConfigurationKeyUtils';
