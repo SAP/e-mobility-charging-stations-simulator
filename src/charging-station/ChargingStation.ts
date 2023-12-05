@@ -93,7 +93,6 @@ import {
   type IncomingRequestCommand,
   type JsonType,
   MessageType,
-  type MeterValue,
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
@@ -574,7 +573,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (interval > 0) {
       this.getConnectorStatus(connectorId)!.transactionSetInterval = setInterval(() => {
-        const meterValue: MeterValue = buildMeterValue(
+        const meterValue = buildMeterValue(
           this,
           connectorId,
           this.getConnectorStatus(connectorId)!.transactionId!,
