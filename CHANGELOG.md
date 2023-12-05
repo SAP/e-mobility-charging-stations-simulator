@@ -1,11 +1,28 @@
 # Changelog
 
-## [v1.2.28](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.27...v1.2.28)
+## [v1.2.29](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.28...v1.2.29)
+
+- build(deps-dev): Bump @vitejs/plugin-vue from 4.5.0 to 4.5.1 in /ui/web [`#872`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/872)
+- perf: minimize OCPPUtils exports [`41f3983`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/41f3983a4f934199769f9ef1c46bfae2adc22b56)
+- build(deps): apply updates [`a735b67`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a735b6738fbd7325c9482291e73dd018cd03be0a)
+- build(deps-dev): apply updates [`5927293`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/592729336b4ca314ea9199f63229c5bc9432dc25)
+- perf: reduce OCPPUtils memory usage [`041365b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/041365be4e6cfcec381c895a203815dd933afff5)
+- build(deps-dev): apply updates [`69b30c7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/69b30c7e29342d1f3cfb75f4687c517688db61e7)
+- fix: handle invalid hashIds in UI server payload [`3a6ef20`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3a6ef20ab4c64999fb15ba8df7422bc15c595200)
+- build(ci): fix linter errors [`f1e3871`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f1e3871b2a063e5ee0fddbf597df76d02f81e332)
+- build(deps-dev): apply updates [`44337ae`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/44337ae065eac340a1904afad7bd2ef9fe1e6368)
+- build: fix import issue with date-fns [`c7c86b6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c7c86b6f88b204031c77b5106a1cf2551359ff52)
+- build: fix console printing ordering [`fc04731`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/fc04731e85d07c46ad4e2146d3d2652deb05b246)
+- build: properly account build time [`ce1b06a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ce1b06a72900f8c7a22db904ccc922452f5cdf88)
+- refactor: cleanup types import [`6a5f590`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6a5f5908423693496fbafa5a83d4c40d8228981d)
+
+## [v1.2.28](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.27...v1.2.28) (2023-11-30)
 
 - build(deps-dev): apply updates [`ea9eb85`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ea9eb85a00bc56cb956df74d250989a7bcb09a04)
 - refactor: cleanup buffered messages handling code [`2a2ad81`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2a2ad81b23c64c05c93a16e0e255ae1350a5c862)
 - fix: ensure no null serialized values end in UI server response payload [`31fdd91`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/31fdd918e146f6d4f534ea3df5b3ceace0e23cfc)
 - fix: ensure UI server remains active at simulator stop [`73edcc9`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/73edcc9405a412de91008d2926112c4b8ada3607)
+- chore: version 1.2.28 [`52e0e69`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/52e0e695165cc56ab4b58e2db6a0988228b797a4)
 - fix: handle not found hashId in UI server [`f12cf7e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/f12cf7ef207d1e1b243c45b1eecf5d89d8ec772d)
 - refactor: cleanup ElementsPerWorkerType type definition [`65a1157`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/65a1157a0c0f0a7b23b7a6fc23432f2c3e7cb735)
 - refactor: cleanup crypto import [`7cd0a62`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7cd0a6218a4110e12fe8bc408492913da7259f8b)
