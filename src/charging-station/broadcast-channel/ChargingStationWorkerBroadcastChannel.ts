@@ -40,7 +40,7 @@ import {
 import { Constants, convertToInt, isEmptyObject, isNullOrUndefined, logger } from '../../utils';
 import type { ChargingStation } from '../ChargingStation';
 import { getConfigurationKey } from '../ConfigurationKeyUtils';
-import { OCPP16ServiceUtils } from '../ocpp';
+import { buildMeterValue } from '../ocpp';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 
@@ -188,8 +188,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             RequestCommand.METER_VALUES,
             {
               meterValue: [
-                // FIXME: Implement OCPP version agnostic helpers
-                OCPP16ServiceUtils.buildMeterValue(
+                buildMeterValue(
                   this.chargingStation,
                   requestPayload!.connectorId!,
                   this.chargingStation.getConnectorStatus(requestPayload!.connectorId!)!

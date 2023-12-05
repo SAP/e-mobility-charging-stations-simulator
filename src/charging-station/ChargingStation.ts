@@ -49,13 +49,14 @@ import {
   OCPP16IncomingRequestService,
   OCPP16RequestService,
   OCPP16ResponseService,
-  OCPP16ServiceUtils,
   OCPP20IncomingRequestService,
   OCPP20RequestService,
   OCPP20ResponseService,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
+  buildMeterValue,
   buildStatusNotificationRequest,
+  buildTransactionEndMeterValue,
   getMessageTypeString,
   sendAndSetConnectorStatus,
 } from './ocpp';
@@ -573,8 +574,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (interval > 0) {
       this.getConnectorStatus(connectorId)!.transactionSetInterval = setInterval(() => {
-        // FIXME: Implement OCPP version agnostic helpers
-        const meterValue: MeterValue = OCPP16ServiceUtils.buildMeterValue(
+        const meterValue: MeterValue = buildMeterValue(
           this,
           connectorId,
           this.getConnectorStatus(connectorId)!.transactionId!,
@@ -850,8 +850,7 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo?.ocppStrictCompliance === true &&
       this.stationInfo?.outOfOrderEndMeterValues === false
     ) {
-      // FIXME: Implement OCPP version agnostic helpers
-      const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+      const transactionEndMeterValue = buildTransactionEndMeterValue(
         this,
         connectorId,
         this.getEnergyActiveImportRegisterByTransactionId(transactionId!),

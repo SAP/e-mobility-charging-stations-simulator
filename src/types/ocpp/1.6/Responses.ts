@@ -74,7 +74,7 @@ export enum OCPP16ClearChargingProfileStatus {
   UNKNOWN = 'Unknown',
 }
 
-export interface ClearChargingProfileResponse extends JsonObject {
+export interface OCPP16ClearChargingProfileResponse extends JsonObject {
   status: OCPP16ClearChargingProfileStatus;
 }
 

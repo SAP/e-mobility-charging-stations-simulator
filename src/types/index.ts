@@ -81,7 +81,6 @@ export {
 } from './WorkerBroadcastChannel';
 export {
   type ChangeConfigurationRequest,
-  type ClearChargingProfileRequest,
   type GetConfigurationRequest,
   type GetDiagnosticsRequest,
   OCPP16AvailabilityType,
@@ -89,6 +88,7 @@ export {
   type OCPP16CancelReservationRequest,
   type OCPP16ChangeAvailabilityRequest,
   type OCPP16ClearCacheRequest,
+  type OCPP16ClearChargingProfileRequest,
   type OCPP16DataTransferRequest,
   OCPP16DataTransferVendorId,
   type OCPP16DiagnosticsStatusNotificationRequest,
@@ -111,11 +111,11 @@ export {
 } from './ocpp/1.6/Requests';
 export {
   type ChangeConfigurationResponse,
-  type ClearChargingProfileResponse,
   type GetConfigurationResponse,
   type GetDiagnosticsResponse,
   type OCPP16BootNotificationResponse,
   type OCPP16ChangeAvailabilityResponse,
+  type OCPP16ClearChargingProfileResponse,
   type OCPP16DataTransferResponse,
   OCPP16DataTransferStatus,
   type OCPP16DiagnosticsStatusNotificationResponse,
@@ -198,14 +198,22 @@ export type {
 } from './MeasurandPerPhaseSampledValueTemplates';
 export type { MeasurandValues } from './MeasurandValues';
 export { MessageType } from './ocpp/MessageType';
-export { type MeterValue, MeterValueMeasurand, MeterValuePhase } from './ocpp/MeterValues';
 export {
+  type MeterValue,
   MeterValueContext,
   MeterValueLocation,
+  MeterValueMeasurand,
+  MeterValuePhase,
   MeterValueUnit,
+  type SampledValue,
+} from './ocpp/MeterValues';
+export {
   type OCPP16MeterValue,
+  OCPP16MeterValueContext,
+  OCPP16MeterValueLocation,
   OCPP16MeterValueMeasurand,
   OCPP16MeterValuePhase,
+  OCPP16MeterValueUnit,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   type OCPP16SampledValue,
