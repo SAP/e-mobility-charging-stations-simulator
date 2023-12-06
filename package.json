@@ -152,6 +152,6 @@
     "rimraf": "^5.0.5",
     "semver": "^7.5.4",
     "tsx": "^4.6.2",
-    "typescript": "~5.3.2"
+    "typescript": "~5.3.3"
   }
 }
