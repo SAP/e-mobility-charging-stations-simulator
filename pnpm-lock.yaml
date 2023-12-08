@@ -95,7 +95,7 @@ devDependencies:
     version: 5.9.4(@mikro-orm/mariadb@5.9.4)(@mikro-orm/sqlite@5.9.4)
   '@release-it/bumper':
     specifier: ^6.0.1
-    version: 6.0.1(release-it@17.0.0)
+    version: 6.0.1(release-it@17.0.1)
   '@types/node':
     specifier: ^20.10.4
     version: 20.10.4
@@ -172,8 +172,8 @@ devDependencies:
     specifier: ^3.1.0
     version: 3.1.0
   release-it:
-    specifier: ^17.0.0
-    version: 17.0.0(typescript@5.3.3)
+    specifier: ^17.0.1
+    version: 17.0.1(typescript@5.3.3)
   rimraf:
     specifier: ^5.0.5
     version: 5.0.5
@@ -1565,7 +1565,7 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/bumper@6.0.1(release-it@17.0.0):
+  /@release-it/bumper@6.0.1(release-it@17.0.1):
     resolution: {integrity: sha512-yeQsbGNMzzN0c/5JV1awXP6UHX/kJamXCKR6/daS0YQfj98SZXAcLn3JEq+qfK/Jq/cnATnlz5r6UY0cfBkm1A==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -1577,7 +1577,7 @@ packages:
       ini: 4.1.1
       js-yaml: 4.1.0
       lodash-es: 4.17.21
-      release-it: 17.0.0(typescript@5.3.3)
+      release-it: 17.0.1(typescript@5.3.3)
       semver: 7.5.4
     dev: true
 
@@ -8206,8 +8206,8 @@ packages:
     resolution: {integrity: sha512-QIRet3SYrGp0HUHO88jVskiG6seqUGC5iAG7AwI/BV4ypGcuqk9Du6YQBUOUqm9c8pw1eyLoIaONifRua1lsEQ==}
     dev: true
 
-  /release-it@17.0.0(typescript@5.3.3):
-    resolution: {integrity: sha512-1A1sSQy8VXuAJcslZGhKtOD/LVBuf1sH4XqhKsQuh+2EIksC2STx/MdKmVE86jFd/zorHTXOpl7Lr/isD0dDrg==}
+  /release-it@17.0.1(typescript@5.3.3):
+    resolution: {integrity: sha512-XHeirIW8ptkkrH1+uCg+ditclZJbSKeovrtIb42v3s2S/icF2xCTwFHpbvAKQGqBVJ5Zm49If8bwsryi247KdQ==}
     engines: {node: '>=18'}
     hasBin: true
     dependencies:
