@@ -91,7 +91,6 @@ import {
   type HeartbeatResponse,
   type IncomingRequest,
   type IncomingRequestCommand,
-  type JsonType,
   MessageType,
   MeterValueMeasurand,
   type MeterValuesRequest,
@@ -1827,7 +1826,7 @@ export class ChargingStation extends EventEmitter {
         messageType,
       )} is not an array`,
       undefined,
-      cachedRequest as JsonType,
+      cachedRequest,
     );
   }
 
