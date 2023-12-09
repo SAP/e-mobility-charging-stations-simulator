@@ -1199,8 +1199,8 @@ export class ChargingStation extends EventEmitter {
       const patternGroup: number | undefined =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
         this.stationInfo.firmwareVersion?.split('.').length;
-      const match = this.stationInfo
-        .firmwareVersion!.match(new RegExp(this.stationInfo.firmwareVersionPattern!))!
+      const match = new RegExp(this.stationInfo.firmwareVersionPattern!)
+        .exec(this.stationInfo.firmwareVersion!)!
         .slice(1, patternGroup! + 1);
       const patchLevelIndex = match.length - 1;
       match[patchLevelIndex] = (
