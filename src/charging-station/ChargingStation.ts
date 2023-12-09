@@ -1200,14 +1200,16 @@ export class ChargingStation extends EventEmitter {
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
         this.stationInfo.firmwareVersion?.split('.').length;
       const match = new RegExp(this.stationInfo.firmwareVersionPattern!)
-        .exec(this.stationInfo.firmwareVersion!)!
-        .slice(1, patternGroup! + 1);
-      const patchLevelIndex = match.length - 1;
-      match[patchLevelIndex] = (
-        convertToInt(match[patchLevelIndex]) +
-        this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!
-      ).toString();
-      this.stationInfo.firmwareVersion = match?.join('.');
+        .exec(this.stationInfo.firmwareVersion!)
+        ?.slice(1, patternGroup! + 1);
+      if (!isNullOrUndefined(match)) {
+        const patchLevelIndex = match!.length - 1;
+        match![patchLevelIndex] = (
+          convertToInt(match![patchLevelIndex]) +
+          this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!
+        ).toString();
+        this.stationInfo.firmwareVersion = match!.join('.');
+      }
     }
     this.saveStationInfo();
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
