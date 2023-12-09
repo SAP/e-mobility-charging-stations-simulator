@@ -113,7 +113,6 @@ import {
   type StopTransactionResponse,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
-  VendorParametersKey,
   Voltage,
   type WSError,
   WebSocketCloseEventStatusCode,
@@ -1141,29 +1140,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfo(): ChargingStationInfo {
-    const defaultStationInfo: Partial<ChargingStationInfo> = {
-      enableStatistics: false,
-      remoteAuthorization: true,
-      currentOutType: CurrentType.AC,
-      mainVoltageMeterValues: true,
-      phaseLineToLineVoltageMeterValues: false,
-      customValueLimitationMeterValues: true,
-      ocppStrictCompliance: true,
-      outOfOrderEndMeterValues: false,
-      beginEndMeterValues: false,
-      meteringPerTransaction: true,
-      transactionDataMeterValues: false,
-      supervisionUrlOcppConfiguration: false,
-      supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
-      ocppVersion: OCPPVersion.VERSION_16,
-      ocppPersistentConfiguration: true,
-      stationInfoPersistentConfiguration: true,
-      automaticTransactionGeneratorPersistentConfiguration: true,
-      autoReconnectMaxRetries: -1,
-      registrationMaxRetries: -1,
-      reconnectExponentialDelay: false,
-      stopTransactionsOnStopped: true,
-    };
+    const defaultStationInfo = Constants.DEFAULT_STATION_INFO;
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
     const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile(
       stationInfoFromTemplate?.stationInfoPersistentConfiguration,
