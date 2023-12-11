@@ -79,7 +79,7 @@ export const convertToDate = (
   value: Date | string | number | null | undefined,
 ): Date | null | undefined => {
   if (isNullOrUndefined(value)) {
-    return value as undefined;
+    return value as null | undefined;
   }
   if (isDate(value)) {
     return value;
