@@ -75,7 +75,9 @@ export const isValidTime = (date: unknown): boolean => {
   return false;
 };
 
-export const convertToDate = (value: Date | string | number | undefined): Date | undefined => {
+export const convertToDate = (
+  value: Date | string | number | null | undefined,
+): Date | null | undefined => {
   if (isNullOrUndefined(value)) {
     return value as undefined;
   }
@@ -127,7 +129,7 @@ export const convertToFloat = (value: unknown): number => {
 
 export const convertToBoolean = (value: unknown): boolean => {
   let result = false;
-  if (value) {
+  if (value != null) {
     // Check the type
     if (typeof value === 'boolean') {
       return value;
@@ -290,7 +292,6 @@ export const isUndefined = (value: unknown): boolean => {
 };
 
 export const isNullOrUndefined = (value: unknown): boolean => {
-  // eslint-disable-next-line eqeqeq, no-eq-null
   return value == null;
 };
 

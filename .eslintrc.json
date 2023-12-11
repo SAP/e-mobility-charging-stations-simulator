@@ -23,9 +23,7 @@
     "space-before-blocks": ["error", "always"],
     "curly": ["error", "all"],
     "brace-style": "error",
-    "eqeqeq": ["error", "always"],
     "no-else-return": "error",
-    "no-eq-null": "error",
     "no-extra-bind": "error",
     "no-lone-blocks": "error",
     "no-multi-spaces": "error",
@@ -41,14 +39,6 @@
       }
     ],
     "block-spacing": "error",
-    // "capitalized-comments": [
-    //   "error",
-    //   "always",
-    //   {
-    //     "ignoreConsecutiveComments": true,
-    //     "ignorePattern": "pragma|ignored"
-    //   }
-    // ],
     "eol-last": ["error", "always"],
     "consistent-this": ["error", "self"],
     "func-call-spacing": ["error", "never"],

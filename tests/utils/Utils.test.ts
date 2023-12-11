@@ -91,6 +91,7 @@ await describe('Utils test suite', async () => {
 
   await it('Verify convertToDate()', () => {
     expect(convertToDate(undefined)).toBe(undefined);
+    expect(convertToDate(null)).toBe(null);
     expect(() => convertToDate('')).toThrow(new Error("Cannot convert to date: ''"));
     expect(() => convertToDate('00:70:61')).toThrow(
       new Error("Cannot convert to date: '00:70:61'"),
