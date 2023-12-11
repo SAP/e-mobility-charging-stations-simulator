@@ -1,7 +1,5 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { AsyncResource } from 'node:async_hooks';
-
 import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
@@ -31,9 +29,7 @@ import {
   sleep,
 } from '../utils';
 
-const moduleName = 'AutomaticTransactionGenerator';
-
-export class AutomaticTransactionGenerator extends AsyncResource {
+export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
     string,
     AutomaticTransactionGenerator
@@ -46,7 +42,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   private readonly chargingStation: ChargingStation;
 
   private constructor(chargingStation: ChargingStation) {
-    super(moduleName);
     this.started = false;
     this.starting = false;
     this.stopping = false;
@@ -109,14 +104,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       throw new BaseError(`Connector ${connectorId} does not exist`);
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
-      this.runInAsyncScope(
-        this.internalStartConnector.bind(this) as (
-          this: AutomaticTransactionGenerator,
-          ...args: unknown[]
-        ) => Promise<void>,
-        this,
-        connectorId,
-      ).catch(Constants.EMPTY_FUNCTION);
+      this.internalStartConnector(connectorId).catch(Constants.EMPTY_FUNCTION);
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(`${this.logPrefix(connectorId)} is already started on connector`);
     }
