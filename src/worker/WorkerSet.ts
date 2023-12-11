@@ -95,6 +95,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       await waitWorkerExit;
       this.emitter?.emit(WorkerSetEvents.stopped, this.info);
       this.emitter?.emitDestroy();
+      this.emitter?.removeAllListeners();
       this.started = false;
     }
   }
