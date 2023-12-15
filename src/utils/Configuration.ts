@@ -1,20 +1,21 @@
 import { type FSWatcher, readFileSync, watch } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { env } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
 import merge from 'just-merge';
 
-import { Constants } from './Constants';
 import {
-  hasOwnProp,
-  isCFEnvironment,
-  isNotEmptyString,
-  isUndefined,
+  buildPerformanceUriFilePath,
+  checkWorkerElementsPerWorker,
+  checkWorkerProcessType,
+  getDefaultPerformanceStorageUri,
+  handleFileException,
   logPrefix,
-  once,
-} from './Utils';
+} from './ConfigurationUtils';
+import { Constants } from './Constants';
+import { hasOwnProp, isCFEnvironment, isUndefined, once } from './Utils';
 import {
   ApplicationProtocol,
   type ConfigurationData,
@@ -41,11 +42,6 @@ type ConfigurationSectionType =
   | StorageConfiguration
   | WorkerConfiguration
   | UIServerConfiguration;
-
-// Avoid ESM race condition at class initialization
-const configurationLogPrefix = (): string => {
-  return logPrefix(' Simulator configuration |');
-};
 
 export class Configuration {
   public static configurationChangeCallback: () => Promise<void>;
@@ -183,7 +179,7 @@ export class Configuration {
     let storageConfiguration: StorageConfiguration = {
       enabled: false,
       type: StorageType.JSON_FILE,
-      uri: Configuration.getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
+      uri: getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
     };
     if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
       storageConfiguration = {
@@ -192,7 +188,7 @@ export class Configuration {
         ...(Configuration.getConfigurationData()?.performanceStorage?.type ===
           StorageType.JSON_FILE &&
           Configuration.getConfigurationData()?.performanceStorage?.uri && {
-            uri: Configuration.buildPerformanceUriFilePath(
+            uri: buildPerformanceUriFilePath(
               new URL(Configuration.getConfigurationData()!.performanceStorage!.uri!).pathname,
             ),
           }),
@@ -289,11 +285,8 @@ export class Configuration {
       ...(hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.worker) &&
         Configuration.getConfigurationData()?.worker),
     };
-    if (!Object.values(WorkerProcessType).includes(workerConfiguration.processType!)) {
-      throw new SyntaxError(
-        `Invalid worker process type '${workerConfiguration.processType}' defined in configuration`,
-      );
-    }
+    checkWorkerProcessType(workerConfiguration.processType!);
+    checkWorkerElementsPerWorker(workerConfiguration.elementsPerWorker);
     return workerConfiguration;
   }
 
@@ -332,7 +325,7 @@ export class Configuration {
       (stationTemplateUrl: StationTemplateUrl) => {
         if (!isUndefined(stationTemplateUrl?.['numberOfStation' as keyof StationTemplateUrl])) {
           console.error(
-            `${chalk.green(configurationLogPrefix())} ${chalk.red(
+            `${chalk.green(logPrefix())} ${chalk.red(
               `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`,
             )}`,
           );
@@ -412,7 +405,7 @@ export class Configuration {
       ('staticPool' as WorkerProcessType)
     ) {
       console.error(
-        `${chalk.green(configurationLogPrefix())} ${chalk.red(
+        `${chalk.green(logPrefix())} ${chalk.red(
           `Deprecated configuration 'staticPool' value usage in worker section 'processType' field. Use '${WorkerProcessType.fixedPool}' value instead`,
         )}`,
       );
@@ -477,7 +470,7 @@ export class Configuration {
     // uiServer section
     if (hasOwnProp(Configuration.getConfigurationData(), 'uiWebSocketServer')) {
       console.error(
-        `${chalk.green(configurationLogPrefix())} ${chalk.red(
+        `${chalk.green(logPrefix())} ${chalk.red(
           `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`,
         )}`,
       );
@@ -504,7 +497,7 @@ export class Configuration {
       )
     ) {
       console.error(
-        `${chalk.green(configurationLogPrefix())} ${chalk.red(
+        `${chalk.green(logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage in section '${sectionName}'${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
           }`,
@@ -514,7 +507,7 @@ export class Configuration {
       !isUndefined(Configuration.getConfigurationData()?.[key as keyof ConfigurationData])
     ) {
       console.error(
-        `${chalk.green(configurationLogPrefix())} ${chalk.red(
+        `${chalk.green(logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
           }`,
@@ -533,11 +526,11 @@ export class Configuration {
           Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher();
         }
       } catch (error) {
-        Configuration.handleFileException(
+        handleFileException(
           Configuration.configurationFile,
           FileType.Configuration,
           error as NodeJS.ErrnoException,
-          configurationLogPrefix(),
+          logPrefix(),
         );
       }
     }
@@ -555,7 +548,7 @@ export class Configuration {
           Configuration.configurationFileReloading = true;
           const consoleWarnOnce = once(console.warn, this);
           consoleWarnOnce(
-            `${chalk.green(configurationLogPrefix())} ${chalk.yellow(
+            `${chalk.green(logPrefix())} ${chalk.yellow(
               `${FileType.Configuration} ${this.configurationFile} file have changed, reload`,
             )}`,
           );
@@ -575,59 +568,12 @@ export class Configuration {
         }
       });
     } catch (error) {
-      Configuration.handleFileException(
+      handleFileException(
         Configuration.configurationFile,
         FileType.Configuration,
         error as NodeJS.ErrnoException,
-        configurationLogPrefix(),
+        logPrefix(),
       );
     }
-  }
-
-  private static handleFileException(
-    file: string,
-    fileType: FileType,
-    error: NodeJS.ErrnoException,
-    logPfx: string,
-  ): void {
-    const prefix = isNotEmptyString(logPfx) ? `${logPfx} ` : '';
-    let logMsg: string;
-    switch (error.code) {
-      case 'ENOENT':
-        logMsg = `${fileType} file ${file} not found: `;
-        break;
-      case 'EEXIST':
-        logMsg = `${fileType} file ${file} already exists: `;
-        break;
-      case 'EACCES':
-        logMsg = `${fileType} file ${file} access denied: `;
-        break;
-      case 'EPERM':
-        logMsg = `${fileType} file ${file} permission denied: `;
-        break;
-      default:
-        logMsg = `${fileType} file ${file} error: `;
-    }
-    console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error);
-    throw error;
-  }
-
-  private static getDefaultPerformanceStorageUri(storageType: StorageType) {
-    switch (storageType) {
-      case StorageType.JSON_FILE:
-        return Configuration.buildPerformanceUriFilePath(
-          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_FILENAME}`,
-        );
-      case StorageType.SQLITE:
-        return Configuration.buildPerformanceUriFilePath(
-          `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`,
-        );
-      default:
-        throw new Error(`Unsupported storage type '${storageType}'`);
-    }
-  }
-
-  private static buildPerformanceUriFilePath(file: string) {
-    return `file://${join(resolve(dirname(fileURLToPath(import.meta.url)), '../'), file)}`;
   }
 }

@@ -33,6 +33,6 @@ await describe('StatisticUtils test suite', async () => {
   });
 
   await it('Verify stdDeviation()', () => {
-    expect(stdDeviation([0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03])).toBe(2.0256064851429216);
+    expect(stdDeviation([0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03])).toBe(2.1879050645374383);
   });
 });

@@ -12,4 +12,4 @@ applications:
     command: node dist/start.js
     env:
       # OPTIMIZE_MEMORY: true
-      NODE_OPTIONS: --enable-source-maps --stack-trace-limit=1024 --max-old-space-size=768
+      NODE_OPTIONS: --enable-source-maps --max-old-space-size=768

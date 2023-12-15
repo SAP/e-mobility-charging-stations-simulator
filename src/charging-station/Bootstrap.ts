@@ -55,7 +55,6 @@ export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null;
   public numberOfChargingStations!: number;
   public numberOfChargingStationTemplates!: number;
-  private workerConfiguration?: WorkerConfiguration;
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>;
   private readonly uiServer?: AbstractUIServer;
   private storage?: Storage;
@@ -82,13 +81,6 @@ export class Bootstrap extends EventEmitter {
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer),
     );
-    this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted);
-    this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped);
-    this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated);
-    this.on(
-      ChargingStationWorkerMessageEvents.performanceStatistics,
-      this.workerEventPerformanceStatistics,
-    );
     Configuration.configurationChangeCallback = async () => Bootstrap.getInstance().restart(false);
   }
 
@@ -103,11 +95,18 @@ export class Bootstrap extends EventEmitter {
     if (this.started === false) {
       if (this.starting === false) {
         this.starting = true;
+        this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted);
+        this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped);
+        this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated);
+        this.on(
+          ChargingStationWorkerMessageEvents.performanceStatistics,
+          this.workerEventPerformanceStatistics,
+        );
         this.initializeCounters();
-        this.workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
+        const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
           ConfigurationSection.worker,
         );
-        this.initializeWorkerImplementation(this.workerConfiguration);
+        this.initializeWorkerImplementation(workerConfiguration);
         await this.workerImplementation?.start();
         const performanceStorageConfiguration =
           Configuration.getConfigurationSection<StorageConfiguration>(
@@ -145,13 +144,13 @@ export class Bootstrap extends EventEmitter {
               this.version
             } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
               Configuration.workerDynamicPoolInUse()
-                ? `${this.workerConfiguration.poolMinSize?.toString()}/`
+                ? `${workerConfiguration.poolMinSize?.toString()}/`
                 : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse()
-                ? `/${this.workerConfiguration.poolMaxSize?.toString()}`
+                ? `/${workerConfiguration.poolMaxSize?.toString()}`
                 : ''
-            } worker(s) concurrently running in '${this.workerConfiguration.processType}' mode${
+            } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
               !isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
                 ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
@@ -195,8 +194,7 @@ export class Bootstrap extends EventEmitter {
         }
         await this.workerImplementation?.stop();
         delete this.workerImplementation;
-        delete this.workerConfiguration;
-        this.uiServer?.stop();
+        this.removeAllListeners();
         await this.storage?.close();
         delete this.storage;
         this.resetCounters();
@@ -213,6 +211,8 @@ export class Bootstrap extends EventEmitter {
 
   public async restart(stopChargingStations?: boolean): Promise<void> {
     await this.stop(stopChargingStations);
+    Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+      .enabled === false && this.uiServer?.stop();
     await this.start();
   }
 
@@ -242,11 +242,16 @@ export class Bootstrap extends EventEmitter {
 
   private initializeWorkerImplementation(workerConfiguration: WorkerConfiguration): void {
     let elementsPerWorker: number | undefined;
-    if (workerConfiguration?.elementsPerWorker === 'auto') {
-      elementsPerWorker =
-        this.numberOfChargingStations > availableParallelism()
-          ? Math.round(this.numberOfChargingStations / (availableParallelism() * 1.5))
-          : 1;
+    switch (workerConfiguration?.elementsPerWorker) {
+      case 'auto':
+        elementsPerWorker =
+          this.numberOfChargingStations > availableParallelism()
+            ? Math.round(this.numberOfChargingStations / (availableParallelism() * 1.5))
+            : 1;
+        break;
+      case 'all':
+        elementsPerWorker = this.numberOfChargingStations;
+        break;
     }
     this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
       join(
@@ -262,6 +267,7 @@ export class Bootstrap extends EventEmitter {
         elementsPerWorker: elementsPerWorker ?? (workerConfiguration.elementsPerWorker as number),
         poolOptions: {
           messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
+          workerOptions: { resourceLimits: workerConfiguration.resourceLimits },
         },
       },
     );
@@ -402,6 +408,7 @@ export class Bootstrap extends EventEmitter {
     this.stop()
       .then(() => {
         console.info(`${chalk.green('Graceful shutdown')}`);
+        this.uiServer?.stop();
         // stop() asks for charging stations to stop by default
         this.waitChargingStationsStopped()
           .then(() => {

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
 import {
+  type Interval,
   addDays,
   addSeconds,
   addWeeks,
@@ -17,9 +18,9 @@ import {
   isDate,
   isPast,
   isWithinInterval,
-  maxTime,
   toDate,
 } from 'date-fns';
+import { maxTime } from 'date-fns/constants';
 
 import type { ChargingStation } from './ChargingStation';
 import { getConfigurationKey } from './ConfigurationKeyUtils';
@@ -33,6 +34,7 @@ import {
   ChargingProfileKindType,
   ChargingRateUnitType,
   type ChargingSchedulePeriod,
+  type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationTemplate,
   ChargingStationWorkerMessageEvents,
@@ -250,6 +252,23 @@ export const checkTemplate = (
     logger.warn(
       `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`,
     );
+  }
+};
+
+export const checkConfiguration = (
+  stationConfiguration: ChargingStationConfiguration | undefined,
+  logPrefix: string,
+  configurationFile: string,
+): void => {
+  if (isNullOrUndefined(stationConfiguration)) {
+    const errorMsg = `Failed to read charging station configuration file ${configurationFile}`;
+    logger.error(`${logPrefix} ${errorMsg}`);
+    throw new BaseError(errorMsg);
+  }
+  if (isEmptyObject(stationConfiguration!)) {
+    const errorMsg = `Empty charging station configuration from file ${configurationFile}`;
+    logger.error(`${logPrefix} ${errorMsg}`);
+    throw new BaseError(errorMsg);
   }
 };
 

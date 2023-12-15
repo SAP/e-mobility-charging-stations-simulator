@@ -1,5 +1,3 @@
-import { AsyncResource } from 'node:async_hooks';
-
 import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
@@ -18,7 +16,7 @@ import { logger, setDefaultErrorParams } from '../../utils';
 
 const moduleName = 'OCPPIncomingRequestService';
 
-export abstract class OCPPIncomingRequestService extends AsyncResource {
+export abstract class OCPPIncomingRequestService {
   private static instance: OCPPIncomingRequestService | null = null;
   private readonly version: OCPPVersion;
   private readonly ajv: Ajv;
@@ -26,7 +24,6 @@ export abstract class OCPPIncomingRequestService extends AsyncResource {
   protected abstract jsonSchemas: Map<IncomingRequestCommand, JSONSchemaType<JsonType>>;
 
   protected constructor(version: OCPPVersion) {
-    super(moduleName);
     this.version = version;
     this.ajv = new Ajv({
       keywords: ['javaType'],

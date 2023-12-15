@@ -1,7 +1,7 @@
 import type { EmptyObject } from '../../EmptyObject';
 import type { JsonObject } from '../../JsonType';
 
-export enum MeterValueUnit {
+export enum OCPP16MeterValueUnit {
   WATT_HOUR = 'Wh',
   KILO_WATT_HOUR = 'kWh',
   VAR_HOUR = 'varh',
@@ -20,7 +20,7 @@ export enum MeterValueUnit {
   PERCENT = 'Percent',
 }
 
-export enum MeterValueContext {
+export enum OCPP16MeterValueContext {
   INTERRUPTION_BEGIN = 'Interruption.Begin',
   INTERRUPTION_END = 'Interruption.End',
   OTHER = 'Other',
@@ -56,7 +56,7 @@ export enum OCPP16MeterValueMeasurand {
   VOLTAGE = 'Voltage',
 }
 
-export enum MeterValueLocation {
+export enum OCPP16MeterValueLocation {
   BODY = 'Body',
   CABLE = 'Cable',
   EV = 'EV',
@@ -77,19 +77,19 @@ export enum OCPP16MeterValuePhase {
   L3_L1 = 'L3-L1',
 }
 
-enum MeterValueFormat {
+enum OCPP16MeterValueFormat {
   RAW = 'Raw',
   SIGNED_DATA = 'SignedData',
 }
 
 export interface OCPP16SampledValue extends JsonObject {
   value: string;
-  unit?: MeterValueUnit;
-  context?: MeterValueContext;
+  unit?: OCPP16MeterValueUnit;
+  context?: OCPP16MeterValueContext;
   measurand?: OCPP16MeterValueMeasurand;
   phase?: OCPP16MeterValuePhase;
-  location?: MeterValueLocation;
-  format?: MeterValueFormat;
+  location?: OCPP16MeterValueLocation;
+  format?: OCPP16MeterValueFormat;
 }
 
 export interface OCPP16MeterValue extends JsonObject {

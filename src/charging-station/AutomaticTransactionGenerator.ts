@@ -1,13 +1,11 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { AsyncResource } from 'node:async_hooks';
-
 import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns';
 
 import type { ChargingStation } from './ChargingStation';
 import { checkChargingStation } from './Helpers';
 import { IdTagsCache } from './IdTagsCache';
-import { OCPPServiceUtils } from './ocpp';
+import { isIdTagAuthorized } from './ocpp';
 import { BaseError } from '../exception';
 import { PerformanceStatistics } from '../performance';
 import {
@@ -31,9 +29,7 @@ import {
   sleep,
 } from '../utils';
 
-const moduleName = 'AutomaticTransactionGenerator';
-
-export class AutomaticTransactionGenerator extends AsyncResource {
+export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
     string,
     AutomaticTransactionGenerator
@@ -46,7 +42,6 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   private readonly chargingStation: ChargingStation;
 
   private constructor(chargingStation: ChargingStation) {
-    super(moduleName);
     this.started = false;
     this.starting = false;
     this.stopping = false;
@@ -109,14 +104,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       throw new BaseError(`Connector ${connectorId} does not exist`);
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
-      this.runInAsyncScope(
-        this.internalStartConnector.bind(this) as (
-          this: AutomaticTransactionGenerator,
-          ...args: unknown[]
-        ) => Promise<void>,
-        this,
-        connectorId,
-      ).catch(Constants.EMPTY_FUNCTION);
+      this.internalStartConnector(connectorId).catch(Constants.EMPTY_FUNCTION);
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(`${this.logPrefix(connectorId)} is already started on connector`);
     }
@@ -398,16 +386,19 @@ export class AutomaticTransactionGenerator extends AsyncResource {
   }
 
   private resetConnectorStatus(connectorStatus: Status | undefined): void {
+    if (connectorStatus === undefined) {
+      return;
+    }
     delete connectorStatus?.startDate;
     delete connectorStatus?.lastRunDate;
     delete connectorStatus?.stopDate;
     delete connectorStatus?.stoppedDate;
     if (
       !this.started &&
-      (connectorStatus?.start === true ||
+      (connectorStatus.start === true ||
         this.chargingStation.getAutomaticTransactionGeneratorConfiguration().enable === false)
     ) {
-      connectorStatus!.start = false;
+      connectorStatus.start = false;
     }
   }
 
@@ -428,7 +419,7 @@ export class AutomaticTransactionGenerator extends AsyncResource {
       )} start transaction with an idTag '${idTag}'`;
       if (this.getRequireAuthorize()) {
         ++this.connectorsStatus.get(connectorId)!.authorizeRequests!;
-        if (await OCPPServiceUtils.isIdTagAuthorized(this.chargingStation, connectorId, idTag)) {
+        if (await isIdTagAuthorized(this.chargingStation, connectorId, idTag)) {
           ++this.connectorsStatus.get(connectorId)!.acceptedAuthorizeRequests!;
           logger.info(startTransactionLogMsg);
           // Start transaction

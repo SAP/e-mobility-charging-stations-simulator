@@ -1,6 +1,36 @@
-import type { AutomaticTransactionGeneratorConfiguration } from '../types';
+import {
+  type AutomaticTransactionGeneratorConfiguration,
+  type ChargingStationInfo,
+  CurrentType,
+  OCPPVersion,
+  VendorParametersKey,
+} from '../types';
 
 export class Constants {
+  static readonly DEFAULT_STATION_INFO: Partial<ChargingStationInfo> = Object.freeze({
+    enableStatistics: false,
+    remoteAuthorization: true,
+    currentOutType: CurrentType.AC,
+    mainVoltageMeterValues: true,
+    phaseLineToLineVoltageMeterValues: false,
+    customValueLimitationMeterValues: true,
+    ocppStrictCompliance: true,
+    outOfOrderEndMeterValues: false,
+    beginEndMeterValues: false,
+    meteringPerTransaction: true,
+    transactionDataMeterValues: false,
+    supervisionUrlOcppConfiguration: false,
+    supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
+    ocppVersion: OCPPVersion.VERSION_16,
+    ocppPersistentConfiguration: true,
+    stationInfoPersistentConfiguration: true,
+    automaticTransactionGeneratorPersistentConfiguration: true,
+    autoReconnectMaxRetries: -1,
+    registrationMaxRetries: -1,
+    reconnectExponentialDelay: false,
+    stopTransactionsOnStopped: true,
+  });
+
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000; // Ms
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000; // Ms
   static readonly DEFAULT_METER_VALUES_INTERVAL = 60000; // Ms

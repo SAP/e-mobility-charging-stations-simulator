@@ -1,4 +1,4 @@
-import { randomBytes, randomInt, randomUUID, webcrypto } from 'node:crypto';
+import { getRandomValues, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { env, nextTick } from 'node:process';
 
 import {
@@ -70,22 +70,24 @@ export const isValidTime = (date: unknown): boolean => {
   if (typeof date === 'number') {
     return !isNaN(date);
   } else if (isDate(date)) {
-    return !isNaN((date as Date).getTime());
+    return !isNaN(date.getTime());
   }
   return false;
 };
 
-export const convertToDate = (value: Date | string | number | undefined): Date | undefined => {
+export const convertToDate = (
+  value: Date | string | number | null | undefined,
+): Date | null | undefined => {
   if (isNullOrUndefined(value)) {
-    return value as undefined;
+    return value as null | undefined;
   }
   if (isDate(value)) {
-    return value as Date;
+    return value;
   }
   if (isString(value) || typeof value === 'number') {
-    const valueToDate = new Date(value as string | number);
+    const valueToDate = new Date(value!);
     if (isNaN(valueToDate.getTime())) {
-      throw new Error(`Cannot convert to date: '${value as string | number}'`);
+      throw new Error(`Cannot convert to date: '${value!}'`);
     }
     return valueToDate;
   }
@@ -127,7 +129,7 @@ export const convertToFloat = (value: unknown): number => {
 
 export const convertToBoolean = (value: unknown): boolean => {
   let result = false;
-  if (value) {
+  if (value != null) {
     // Check the type
     if (typeof value === 'boolean') {
       return value;
@@ -290,7 +292,6 @@ export const isUndefined = (value: unknown): boolean => {
 };
 
 export const isNullOrUndefined = (value: unknown): boolean => {
-  // eslint-disable-next-line eqeqeq, no-eq-null
   return value == null;
 };
 
@@ -336,7 +337,7 @@ export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => 
  * @returns A number in the [0,1[ range
  */
 export const secureRandom = (): number => {
-  return webcrypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000;
+  return getRandomValues(new Uint32Array(1))[0] / 0x100000000;
 };
 
 export const JSONStringifyWithMapSupport = (

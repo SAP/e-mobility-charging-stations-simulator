@@ -124,7 +124,7 @@ export interface OCPP16ChangeAvailabilityRequest extends JsonObject {
   type: OCPP16AvailabilityType;
 }
 
-export interface ClearChargingProfileRequest extends JsonObject {
+export interface OCPP16ClearChargingProfileRequest extends JsonObject {
   id?: number;
   connectorId?: number;
   chargingProfilePurpose?: OCPP16ChargingProfilePurposeType;

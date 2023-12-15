@@ -95,6 +95,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       await waitWorkerExit;
       this.emitter?.emit(WorkerSetEvents.stopped, this.info);
       this.emitter?.emitDestroy();
+      this.emitter?.removeAllListeners();
       this.started = false;
     }
   }
@@ -104,7 +105,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     if (!this.started) {
       throw new Error('Cannot add a WorkerSet element: not started');
     }
-    if (!this.workerSet) {
+    if (this.workerSet == null) {
       throw new Error("Cannot add a WorkerSet element: 'workerSet' property does not exist");
     }
     const workerSetElement = await this.getWorkerSetElement();

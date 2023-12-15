@@ -14,7 +14,6 @@ import {
 import { OCPPError } from '../../../exception';
 import {
   type ChangeConfigurationResponse,
-  type ClearChargingProfileResponse,
   ErrorType,
   type GenericResponse,
   type GetConfigurationResponse,
@@ -26,6 +25,7 @@ import {
   type OCPP16BootNotificationResponse,
   type OCPP16ChangeAvailabilityResponse,
   OCPP16ChargePointStatus,
+  type OCPP16ClearChargingProfileResponse,
   type OCPP16DataTransferResponse,
   type OCPP16DiagnosticsStatusNotificationResponse,
   type OCPP16FirmwareStatusNotificationResponse,
@@ -249,7 +249,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        OCPP16ServiceUtils.parseJsonSchemaFile<ClearChargingProfileResponse>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearChargingProfileResponse>(
           'assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json',
           moduleName,
           'constructor',

@@ -64,12 +64,27 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   return sortedDataSet[percentileIndexInteger];
 };
 
+/**
+ * Computes the sample standard deviation of the given data set.
+ *
+ * @param dataSet - Data set.
+ * @param dataSetAverage - Average of the data set.
+ * @returns The sample standard deviation of the given data set.
+ * @see https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
+ * @internal
+ */
 export const stdDeviation = (
   dataSet: number[],
   dataSetAverage: number = average(dataSet),
 ): number => {
+  if (isEmptyArray(dataSet)) {
+    return 0;
+  }
+  if (Array.isArray(dataSet) && dataSet.length === 1) {
+    return 0;
+  }
   return Math.sqrt(
     dataSet.reduce((accumulator, num) => accumulator + Math.pow(num - dataSetAverage, 2), 0) /
-      dataSet.length,
+      (dataSet.length - 1),
   );
 };

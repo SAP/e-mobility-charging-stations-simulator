@@ -22,6 +22,7 @@ import {
 import {
   buildConnectorsMap,
   checkChargingStation,
+  checkConfiguration,
   checkConnectorsConfiguration,
   checkStationInfoConnectorStatus,
   checkTemplate,
@@ -48,13 +49,16 @@ import {
   OCPP16IncomingRequestService,
   OCPP16RequestService,
   OCPP16ResponseService,
-  OCPP16ServiceUtils,
   OCPP20IncomingRequestService,
   OCPP20RequestService,
   OCPP20ResponseService,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
-  OCPPServiceUtils,
+  buildMeterValue,
+  buildStatusNotificationRequest,
+  buildTransactionEndMeterValue,
+  getMessageTypeString,
+  sendAndSetConnectorStatus,
 } from './ocpp';
 import { SharedLRUCache } from './SharedLRUCache';
 import { BaseError, OCPPError } from '../exception';
@@ -87,9 +91,7 @@ import {
   type HeartbeatResponse,
   type IncomingRequest,
   type IncomingRequestCommand,
-  type JsonType,
   MessageType,
-  type MeterValue,
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
@@ -111,7 +113,6 @@ import {
   type StopTransactionResponse,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
-  VendorParametersKey,
   Voltage,
   type WSError,
   WebSocketCloseEventStatusCode,
@@ -497,7 +498,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public startHeartbeat(): void {
-    if (this.getHeartbeatInterval() > 0 && !this.heartbeatSetInterval) {
+    if (this.getHeartbeatInterval() > 0 && this.heartbeatSetInterval === undefined) {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
@@ -513,7 +514,7 @@ export class ChargingStation extends EventEmitter {
           this.getHeartbeatInterval(),
         )}`,
       );
-    } else if (this.heartbeatSetInterval) {
+    } else if (this.heartbeatSetInterval !== undefined) {
       logger.info(
         `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
           this.getHeartbeatInterval(),
@@ -570,8 +571,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (interval > 0) {
       this.getConnectorStatus(connectorId)!.transactionSetInterval = setInterval(() => {
-        // FIXME: Implement OCPP version agnostic helpers
-        const meterValue: MeterValue = OCPP16ServiceUtils.buildMeterValue(
+        const meterValue = buildMeterValue(
           this,
           connectorId,
           this.getConnectorStatus(connectorId)!.transactionId!,
@@ -604,7 +604,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public stopMeterValues(connectorId: number) {
-    if (this.getConnectorStatus(connectorId)?.transactionSetInterval) {
+    if (this.getConnectorStatus(connectorId)?.transactionSetInterval !== undefined) {
       clearInterval(this.getConnectorStatus(connectorId)?.transactionSetInterval);
     }
   }
@@ -707,17 +707,7 @@ export class ChargingStation extends EventEmitter {
 
   public bufferMessage(message: string): void {
     this.messageBuffer.add(message);
-    if (this.flushMessageBufferSetInterval === undefined) {
-      this.flushMessageBufferSetInterval = setInterval(() => {
-        if (this.isWebSocketConnectionOpened() === true && this.inAcceptedState() === true) {
-          this.flushMessageBuffer();
-        }
-        if (this.flushMessageBufferSetInterval !== undefined && this.messageBuffer.size === 0) {
-          clearInterval(this.flushMessageBufferSetInterval);
-          delete this.flushMessageBufferSetInterval;
-        }
-      }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL);
-    }
+    this.setIntervalFlushMessageBuffer();
   }
 
   public openWSConnection(
@@ -857,8 +847,7 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo?.ocppStrictCompliance === true &&
       this.stationInfo?.outOfOrderEndMeterValues === false
     ) {
-      // FIXME: Implement OCPP version agnostic helpers
-      const transactionEndMeterValue = OCPP16ServiceUtils.buildTransactionEndMeterValue(
+      const transactionEndMeterValue = buildTransactionEndMeterValue(
         this,
         connectorId,
         this.getEnergyActiveImportRegisterByTransactionId(transactionId!),
@@ -896,7 +885,7 @@ export class ChargingStation extends EventEmitter {
       await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING);
     }
     this.getConnectorStatus(reservation.connectorId)!.reservation = reservation;
-    await OCPPServiceUtils.sendAndSetConnectorStatus(
+    await sendAndSetConnectorStatus(
       this,
       reservation.connectorId,
       ConnectorStatusEnum.Reserved,
@@ -918,7 +907,7 @@ export class ChargingStation extends EventEmitter {
       case ReservationTerminationReason.RESERVATION_CANCELED:
       case ReservationTerminationReason.REPLACE_EXISTING:
       case ReservationTerminationReason.EXPIRED:
-        await OCPPServiceUtils.sendAndSetConnectorStatus(
+        await sendAndSetConnectorStatus(
           this,
           reservation.connectorId,
           ConnectorStatusEnum.Available,
@@ -978,6 +967,26 @@ export class ChargingStation extends EventEmitter {
     return false;
   }
 
+  private setIntervalFlushMessageBuffer(): void {
+    if (this.flushMessageBufferSetInterval === undefined) {
+      this.flushMessageBufferSetInterval = setInterval(() => {
+        if (this.isWebSocketConnectionOpened() === true && this.inAcceptedState() === true) {
+          this.flushMessageBuffer();
+        }
+        if (this.messageBuffer.size === 0) {
+          this.clearIntervalFlushMessageBuffer();
+        }
+      }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL);
+    }
+  }
+
+  private clearIntervalFlushMessageBuffer() {
+    if (this.flushMessageBufferSetInterval !== undefined) {
+      clearInterval(this.flushMessageBufferSetInterval);
+      delete this.flushMessageBufferSetInterval;
+    }
+  }
+
   private getNumberOfReservableConnectors(): number {
     let numberOfReservableConnectors = 0;
     if (this.hasEvses) {
@@ -1016,11 +1025,18 @@ export class ChargingStation extends EventEmitter {
           isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!);
           if (isNullOrUndefined(error)) {
             logger.debug(
-              `${this.logPrefix()} >> Buffered ${OCPPServiceUtils.getMessageTypeString(
+              `${this.logPrefix()} >> Buffered ${getMessageTypeString(
                 messageType,
-              )} payload sent: ${message}`,
+              )} OCPP message sent '${JSON.stringify(message)}'`,
             );
             this.messageBuffer.delete(message);
+          } else {
+            logger.debug(
+              `${this.logPrefix()} >> Buffered ${getMessageTypeString(
+                messageType,
+              )} OCPP message '${JSON.stringify(message)}' send failed:`,
+              error,
+            );
           }
         });
       }
@@ -1124,29 +1140,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfo(): ChargingStationInfo {
-    const defaultStationInfo: Partial<ChargingStationInfo> = {
-      enableStatistics: false,
-      remoteAuthorization: true,
-      currentOutType: CurrentType.AC,
-      mainVoltageMeterValues: true,
-      phaseLineToLineVoltageMeterValues: false,
-      customValueLimitationMeterValues: true,
-      ocppStrictCompliance: true,
-      outOfOrderEndMeterValues: false,
-      beginEndMeterValues: false,
-      meteringPerTransaction: true,
-      transactionDataMeterValues: false,
-      supervisionUrlOcppConfiguration: false,
-      supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
-      ocppVersion: OCPPVersion.VERSION_16,
-      ocppPersistentConfiguration: true,
-      stationInfoPersistentConfiguration: true,
-      automaticTransactionGeneratorPersistentConfiguration: true,
-      autoReconnectMaxRetries: -1,
-      registrationMaxRetries: -1,
-      reconnectExponentialDelay: false,
-      stopTransactionsOnStopped: true,
-    };
+    const defaultStationInfo = Constants.DEFAULT_STATION_INFO;
     const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate();
     const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile(
       stationInfoFromTemplate?.stationInfoPersistentConfiguration,
@@ -1191,6 +1185,7 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       (stationConfiguration?.connectorsStatus || stationConfiguration?.evsesStatus)
     ) {
+      checkConfiguration(stationConfiguration, this.logPrefix(), this.configurationFile);
       this.initializeConnectorsOrEvsesFromFile(stationConfiguration);
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate);
@@ -1204,15 +1199,17 @@ export class ChargingStation extends EventEmitter {
       const patternGroup: number | undefined =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
         this.stationInfo.firmwareVersion?.split('.').length;
-      const match = this.stationInfo
-        .firmwareVersion!.match(new RegExp(this.stationInfo.firmwareVersionPattern!))!
-        .slice(1, patternGroup! + 1);
-      const patchLevelIndex = match.length - 1;
-      match[patchLevelIndex] = (
-        convertToInt(match[patchLevelIndex]) +
-        this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!
-      ).toString();
-      this.stationInfo.firmwareVersion = match?.join('.');
+      const match = new RegExp(this.stationInfo.firmwareVersionPattern!)
+        .exec(this.stationInfo.firmwareVersion!)
+        ?.slice(1, patternGroup! + 1);
+      if (!isNullOrUndefined(match)) {
+        const patchLevelIndex = match!.length - 1;
+        match![patchLevelIndex] = (
+          convertToInt(match![patchLevelIndex]) +
+          this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!
+        ).toString();
+        this.stationInfo.firmwareVersion = match!.join('.');
+      }
     }
     this.saveStationInfo();
     this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl();
@@ -1804,11 +1801,11 @@ export class ChargingStation extends EventEmitter {
     }
     throw new OCPPError(
       ErrorType.PROTOCOL_ERROR,
-      `Cached request for message id ${messageId} ${OCPPServiceUtils.getMessageTypeString(
+      `Cached request for message id ${messageId} ${getMessageTypeString(
         messageType,
       )} is not an array`,
       undefined,
-      cachedRequest as JsonType,
+      cachedRequest,
     );
   }
 
@@ -2091,12 +2088,7 @@ export class ChargingStation extends EventEmitter {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
             const connectorBootStatus = getBootConnectorStatus(this, connectorId, connectorStatus);
-            await OCPPServiceUtils.sendAndSetConnectorStatus(
-              this,
-              connectorId,
-              connectorBootStatus,
-              evseId,
-            );
+            await sendAndSetConnectorStatus(this, connectorId, connectorBootStatus, evseId);
           }
         }
       }
@@ -2108,7 +2100,7 @@ export class ChargingStation extends EventEmitter {
             connectorId,
             this.getConnectorStatus(connectorId)!,
           );
-          await OCPPServiceUtils.sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
+          await sendAndSetConnectorStatus(this, connectorId, connectorBootStatus);
         }
       }
     }
@@ -2153,7 +2145,7 @@ export class ChargingStation extends EventEmitter {
             >(
               this,
               RequestCommand.STATUS_NOTIFICATION,
-              OCPPServiceUtils.buildStatusNotificationRequest(
+              buildStatusNotificationRequest(
                 this,
                 connectorId,
                 ConnectorStatusEnum.Unavailable,
@@ -2173,11 +2165,7 @@ export class ChargingStation extends EventEmitter {
           >(
             this,
             RequestCommand.STATUS_NOTIFICATION,
-            OCPPServiceUtils.buildStatusNotificationRequest(
-              this,
-              connectorId,
-              ConnectorStatusEnum.Unavailable,
-            ),
+            buildStatusNotificationRequest(this, connectorId, ConnectorStatusEnum.Unavailable),
           );
           delete this.getConnectorStatus(connectorId)?.status;
         }
@@ -2262,7 +2250,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private stopHeartbeat(): void {
-    if (this.heartbeatSetInterval) {
+    if (this.heartbeatSetInterval !== undefined) {
       clearInterval(this.heartbeatSetInterval);
       delete this.heartbeatSetInterval;
     }

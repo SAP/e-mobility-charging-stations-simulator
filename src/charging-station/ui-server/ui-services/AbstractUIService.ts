@@ -140,7 +140,7 @@ export abstract class AbstractUIService {
   }
 
   public getBroadcastChannelExpectedResponses(uuid: string): number {
-    return this.broadcastChannelRequests.get(uuid) ?? 0;
+    return this.broadcastChannelRequests.get(uuid)!;
   }
 
   protected handleProtocolRequest(
@@ -162,9 +162,8 @@ export abstract class AbstractUIService {
   ): void {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
-        ?.filter((hashId) => !isNullOrUndefined(hashId))
         ?.map((hashId) => {
-          if (this.uiServer.chargingStations.has(hashId) === true) {
+          if (hashId !== undefined && this.uiServer.chargingStations.has(hashId) === true) {
             return hashId;
           }
           logger.warn(
@@ -173,11 +172,19 @@ export abstract class AbstractUIService {
               'sendBroadcastChannelRequest',
             )} Charging station with hashId '${hashId}' not found`,
           );
-        }) as string[];
+        })
+        ?.filter((hashId) => !isNullOrUndefined(hashId)) as string[];
+    } else {
+      delete payload.hashIds;
     }
-    const expectedNumberOfResponses = isNotEmptyArray(payload.hashIds)
-      ? payload.hashIds!.length
+    const expectedNumberOfResponses = Array.isArray(payload.hashIds)
+      ? payload.hashIds.length
       : this.uiServer.chargingStations.size;
+    if (expectedNumberOfResponses === 0) {
+      throw new BaseError(
+        'hashIds array in the request payload does not contain any valid charging station hashId',
+      );
+    }
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);
     this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);
   }

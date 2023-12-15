@@ -21,7 +21,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
    * @param workerOptions -
    */
   constructor(workerScript: string, workerOptions: WorkerOptions) {
-    if (workerScript === null || workerScript === undefined) {
+    if (workerScript == null) {
       throw new Error('Worker script is not defined');
     }
     if (typeof workerScript === 'string' && workerScript.trim().length === 0) {

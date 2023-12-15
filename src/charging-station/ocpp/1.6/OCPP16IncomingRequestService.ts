@@ -6,7 +6,14 @@ import { URL, fileURLToPath } from 'node:url';
 
 import type { JSONSchemaType } from 'ajv';
 import { Client, type FTPResponse } from 'basic-ftp';
-import { addSeconds, differenceInSeconds, isDate, maxTime, secondsToMilliseconds } from 'date-fns';
+import {
+  type Interval,
+  addSeconds,
+  differenceInSeconds,
+  isDate,
+  secondsToMilliseconds,
+} from 'date-fns';
+import { maxTime } from 'date-fns/constants';
 import { create } from 'tar';
 
 import { OCPP16Constants } from './OCPP16Constants';
@@ -25,8 +32,6 @@ import { OCPPError } from '../../../exception';
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
-  type ClearChargingProfileRequest,
-  type ClearChargingProfileResponse,
   ErrorType,
   type GenericResponse,
   GenericStatus,
@@ -49,6 +54,8 @@ import {
   OCPP16ChargingProfilePurposeType,
   type OCPP16ChargingSchedule,
   type OCPP16ClearCacheRequest,
+  type OCPP16ClearChargingProfileRequest,
+  type OCPP16ClearChargingProfileResponse,
   type OCPP16DataTransferRequest,
   type OCPP16DataTransferResponse,
   OCPP16DataTransferVendorId,
@@ -253,7 +260,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        OCPP16ServiceUtils.parseJsonSchemaFile<ClearChargingProfileRequest>(
+        OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearChargingProfileRequest>(
           'assets/json-schemas/ocpp/1.6/ClearChargingProfile.json',
           moduleName,
           'constructor',
@@ -438,14 +445,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: ResetRequest,
   ): GenericResponse {
     const { type } = commandPayload;
-    this.runInAsyncScope(
-      chargingStation.reset.bind(chargingStation) as (
-        this: ChargingStation,
-        ...args: unknown[]
-      ) => Promise<void>,
-      chargingStation,
-      `${type}Reset` as OCPP16StopTransactionReason,
-    ).catch(Constants.EMPTY_FUNCTION);
+    chargingStation
+      .reset(`${type}Reset` as OCPP16StopTransactionReason)
+      .catch(Constants.EMPTY_FUNCTION);
     logger.info(
       `${chargingStation.logPrefix()} ${type} reset command received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
         chargingStation.stationInfo.resetTime!,
@@ -791,8 +793,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
 
   private handleRequestClearChargingProfile(
     chargingStation: ChargingStation,
-    commandPayload: ClearChargingProfileRequest,
-  ): ClearChargingProfileResponse {
+    commandPayload: OCPP16ClearChargingProfileRequest,
+  ): OCPP16ClearChargingProfileResponse {
     if (
       OCPP16ServiceUtils.checkFeatureProfile(
         chargingStation,
@@ -1115,25 +1117,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     retrieveDate = convertToDate(retrieveDate)!;
     const now = Date.now();
     if (retrieveDate?.getTime() <= now) {
-      this.runInAsyncScope(
-        this.updateFirmwareSimulation.bind(this) as (
-          this: OCPP16IncomingRequestService,
-          ...args: unknown[]
-        ) => Promise<void>,
-        this,
-        chargingStation,
-      ).catch(Constants.EMPTY_FUNCTION);
+      this.updateFirmwareSimulation(chargingStation).catch(Constants.EMPTY_FUNCTION);
     } else {
       setTimeout(
         () => {
-          this.runInAsyncScope(
-            this.updateFirmwareSimulation.bind(this) as (
-              this: OCPP16IncomingRequestService,
-              ...args: unknown[]
-            ) => Promise<void>,
-            this,
-            chargingStation,
-          ).catch(Constants.EMPTY_FUNCTION);
+          this.updateFirmwareSimulation(chargingStation).catch(Constants.EMPTY_FUNCTION);
         },
         retrieveDate?.getTime() - now,
       );
