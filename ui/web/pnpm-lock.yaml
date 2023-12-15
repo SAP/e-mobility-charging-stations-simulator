@@ -56,8 +56,8 @@ devDependencies:
     specifier: ^2.4.3
     version: 2.4.3(vue@3.3.11)
   '@vue/tsconfig':
-    specifier: ^0.4.0
-    version: 0.4.0
+    specifier: ^0.5.0
+    version: 0.5.0
   cross-env:
     specifier: ^7.0.3
     version: 7.0.3
@@ -1267,8 +1267,8 @@ packages:
       vue-component-type-helpers: 1.8.25
     dev: true
 
-  /@vue/tsconfig@0.4.0:
-    resolution: {integrity: sha512-CPuIReonid9+zOG/CGTT05FXrPYATEqoDGNrEaqS4hwcw5BUNM2FguC0mOwJD4Jr16UpRVl9N0pY3P+srIbqmg==}
+  /@vue/tsconfig@0.5.0:
+    resolution: {integrity: sha512-vRNRhhZfoJganWuqWuePo7ol2MaG9XkQD3jVJy2WuZOWWa5LAjJqnBSBsTGKvCrcrVMe5nPM9Intp7o3ekRjUw==}
     dev: true
 
   /abbrev@2.0.0:
