@@ -54,7 +54,7 @@
     "eslint": "^8.55.0",
     "eslint-define-config": "^2.0.0",
     "eslint-import-resolver-typescript": "^3.6.1",
-    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-vue": "^9.19.2",
     "jsdom": "^23.0.1",
     "prettier": "^3.1.1",
