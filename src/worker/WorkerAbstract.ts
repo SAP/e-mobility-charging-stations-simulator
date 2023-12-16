@@ -22,10 +22,13 @@ export abstract class WorkerAbstract<T extends WorkerData> {
    */
   constructor(workerScript: string, workerOptions: WorkerOptions) {
     if (workerScript == null) {
-      throw new Error('Worker script is not defined');
+      throw new TypeError('Worker script is not defined');
     }
-    if (typeof workerScript === 'string' && workerScript.trim().length === 0) {
-      throw new Error('Worker script is empty');
+    if (typeof workerScript !== 'string') {
+      throw new TypeError('Worker script must be a string');
+    }
+    if (workerScript.trim().length === 0) {
+      throw new Error('Worker script is an empty string');
     }
     if (!existsSync(workerScript)) {
       throw new Error('Worker script file does not exist');
