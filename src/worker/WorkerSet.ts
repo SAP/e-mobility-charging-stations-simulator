@@ -30,10 +30,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
    */
   constructor(workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions);
-    if (
-      this.workerOptions.elementsPerWorker === null ||
-      this.workerOptions.elementsPerWorker === undefined
-    ) {
+    if (this.workerOptions.elementsPerWorker == null) {
       throw new TypeError('Elements per worker is not defined');
     }
     if (!Number.isSafeInteger(this.workerOptions.elementsPerWorker)) {
