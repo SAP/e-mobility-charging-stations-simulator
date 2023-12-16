@@ -1,6 +1,6 @@
 import type { Worker } from 'node:worker_threads';
 
-import { type PoolEvent, PoolEvents, type ThreadPoolOptions } from 'poolifier';
+import { type PoolEvent, PoolEvents, type PoolOptions } from 'poolifier';
 
 export enum WorkerProcessType {
   workerSet = 'workerSet',
@@ -38,7 +38,7 @@ export interface WorkerOptions {
   poolMaxSize: number;
   poolMinSize: number;
   elementsPerWorker?: number;
-  poolOptions?: ThreadPoolOptions;
+  poolOptions?: PoolOptions<Worker>;
 }
 
 export type WorkerData = Record<string, unknown>;
