@@ -649,6 +649,7 @@ export const waitChargingStationEvents = async (
     let events = 0;
     if (eventsToWait === 0) {
       resolve(events);
+      return;
     }
     emitter.on(event, () => {
       ++events;
