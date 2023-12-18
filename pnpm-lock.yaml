@@ -57,8 +57,8 @@ dependencies:
     specifier: ^6.3.0
     version: 6.3.0
   poolifier:
-    specifier: ^3.1.2
-    version: 3.1.2
+    specifier: ^3.1.4
+    version: 3.1.4
   tar:
     specifier: ^6.2.0
     version: 6.2.0
@@ -7787,8 +7787,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@3.1.2:
-    resolution: {integrity: sha512-AmNX99iH34/K9gWmQNC6MlyJ7khWWcapkySWbpKT0LHtKgrvT0vhuIAXyNP1sCbIbaxVurJDYnYlA2N+DjtHsw==}
+  /poolifier@3.1.4:
+    resolution: {integrity: sha512-G/ZYTWlxv/GY4pVploCMFVm/cK98J36d6NevjaVb/XJWe04CXY2J6yjcVFA4Uvf2XtTSsLVS17cmu4vwxP/+Bw==}
     engines: {node: '>=18.0.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
