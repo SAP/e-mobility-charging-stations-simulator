@@ -44,8 +44,8 @@ devDependencies:
     specifier: ^3.1.0
     version: 3.1.0(vite@5.0.10)(vue@3.3.12)
   '@vitest/coverage-v8':
-    specifier: ^1.0.4
-    version: 1.0.4(vitest@1.0.4)
+    specifier: ^1.1.0
+    version: 1.1.0(vitest@1.0.4)
   '@vue/eslint-config-prettier':
     specifier: ^8.0.0
     version: 8.0.0(eslint@8.56.0)(prettier@3.1.1)
@@ -1057,8 +1057,8 @@ packages:
       vue: 3.3.12(typescript@5.3.3)
     dev: true
 
-  /@vitest/coverage-v8@1.0.4(vitest@1.0.4):
-    resolution: {integrity: sha512-xD6Yuql6RW0Ir/JJIs6rVrmnG2/KOWJF+IRX1oJQk5wGKGxbtdrYPbl+WTUn/4ICCQ2G20zbE1e8/nPNyAG5Vg==}
+  /@vitest/coverage-v8@1.1.0(vitest@1.0.4):
+    resolution: {integrity: sha512-kHQRk70vTdXAyQY2C0vKOHPyQD/R6IUzcGdO4vCuyr4alE5Yg1+Sk2jSdjlIrTTXdcNEs+ReWVM09mmSFJpzyQ==}
     peerDependencies:
       vitest: ^1.0.0
     dependencies:
