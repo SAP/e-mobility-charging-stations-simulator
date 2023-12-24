@@ -57,8 +57,8 @@ dependencies:
     specifier: ^6.3.0
     version: 6.3.0
   poolifier:
-    specifier: ^3.1.10
-    version: 3.1.10
+    specifier: ^3.1.11
+    version: 3.1.11
   tar:
     specifier: ^6.2.0
     version: 6.2.0
@@ -151,8 +151,8 @@ devDependencies:
     specifier: ^16.5.0
     version: 16.5.0(eslint@8.56.0)
   eslint-plugin-prettier:
-    specifier: ^5.1.1
-    version: 5.1.1(eslint-config-prettier@9.1.0)(eslint@8.56.0)(prettier@3.1.1)
+    specifier: ^5.1.2
+    version: 5.1.2(eslint-config-prettier@9.1.0)(eslint@8.56.0)(prettier@3.1.1)
   eslint-plugin-tsdoc:
     specifier: ^0.2.17
     version: 0.2.17
@@ -4116,8 +4116,8 @@ packages:
       semver: 7.5.4
     dev: true
 
-  /eslint-plugin-prettier@5.1.1(eslint-config-prettier@9.1.0)(eslint@8.56.0)(prettier@3.1.1):
-    resolution: {integrity: sha512-WQpV3mSmIobb77s4qiCZu3dBrZZ0rj8ckSfBtRrgNK9Wnh2s3eiaxNTWloz1LJ1WtvqZES/PAI7PLvsrGt/CEA==}
+  /eslint-plugin-prettier@5.1.2(eslint-config-prettier@9.1.0)(eslint@8.56.0)(prettier@3.1.1):
+    resolution: {integrity: sha512-dhlpWc9vOwohcWmClFcA+HjlvUpuyynYs0Rf+L/P6/0iQE6vlHW9l5bkfzN62/Stm9fbq8ku46qzde76T1xlSg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       '@types/eslint': '>=8.0.0'
@@ -7569,8 +7569,8 @@ packages:
     dependencies:
       semver-compare: 1.0.0
 
-  /poolifier@3.1.10:
-    resolution: {integrity: sha512-vKo9ph4mnKdd6ZfHBxE1CkVZMGXbZKnL6c/4yHyVM8O/OfEZ5ilb72/8oL0Ybp4wvhUBAtPHstz3f3r1aaiS2Q==}
+  /poolifier@3.1.11:
+    resolution: {integrity: sha512-yf0i22IiAmjAKehgT102RKHqcHnU8aluSfethe3AoO7oJPYVmlERGgVbHK6W3cqSnA0XQspc0s59+TDs04zDsg==}
     engines: {node: '>=18.0.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
