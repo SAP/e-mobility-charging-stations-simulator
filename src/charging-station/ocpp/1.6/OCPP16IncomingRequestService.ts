@@ -16,8 +16,8 @@ import {
 import { maxTime } from 'date-fns/constants';
 import { create } from 'tar';
 
-import { OCPP16Constants } from './OCPP16Constants';
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
+import { OCPP16Constants } from './OCPP16Constants.js';
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js';
 import {
   type ChargingStation,
   canProceedChargingProfile,
@@ -27,8 +27,8 @@ import {
   prepareChargingProfileKind,
   removeExpiredReservations,
   setConfigurationKeyValue,
-} from '../../../charging-station';
-import { OCPPError } from '../../../exception';
+} from '../../../charging-station/index.js';
+import { OCPPError } from '../../../exception/index.js';
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
@@ -95,7 +95,7 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorRequest,
   type UnlockConnectorResponse,
-} from '../../../types';
+} from '../../../types/index.js';
 import {
   Constants,
   convertToDate,
@@ -109,8 +109,8 @@ import {
   isUndefined,
   logger,
   sleep,
-} from '../../../utils';
-import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
+} from '../../../utils/index.js';
+import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js';
 
 const moduleName = 'OCPP16IncomingRequestService';
 

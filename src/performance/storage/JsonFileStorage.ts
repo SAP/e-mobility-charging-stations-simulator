@@ -3,16 +3,16 @@
 import { closeSync, existsSync, mkdirSync, openSync, writeSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { Storage } from './Storage';
-import { BaseError } from '../../exception';
-import { FileType, type Statistics } from '../../types';
+import { Storage } from './Storage.js';
+import { BaseError } from '../../exception/index.js';
+import { FileType, type Statistics } from '../../types/index.js';
 import {
   AsyncLock,
   AsyncLockType,
   JSONStringifyWithMapSupport,
   handleFileException,
   isNullOrUndefined,
-} from '../../utils';
+} from '../../utils/index.js';
 
 export class JsonFileStorage extends Storage {
   private static performanceRecords: Map<string, Statistics>;

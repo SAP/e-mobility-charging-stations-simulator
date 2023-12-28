@@ -1,5 +1,8 @@
-import { type ConnectorStatusTransition, OCPP20ConnectorStatusEnumType } from '../../../types';
-import { OCPPConstants } from '../OCPPConstants';
+import {
+  type ConnectorStatusTransition,
+  OCPP20ConnectorStatusEnumType,
+} from '../../../types/index.js';
+import { OCPPConstants } from '../OCPPConstants.js';
 
 export class OCPP20Constants extends OCPPConstants {
   static readonly ChargingStationStatusTransitions: Readonly<ConnectorStatusTransition[]> =

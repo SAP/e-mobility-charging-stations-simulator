@@ -22,9 +22,9 @@ import {
 } from 'date-fns';
 import { maxTime } from 'date-fns/constants';
 
-import type { ChargingStation } from './ChargingStation';
-import { getConfigurationKey } from './ConfigurationKeyUtils';
-import { BaseError } from '../exception';
+import type { ChargingStation } from './ChargingStation.js';
+import { getConfigurationKey } from './ConfigurationKeyUtils.js';
+import { BaseError } from '../exception/index.js';
 import {
   AmpereUnits,
   AvailabilityType,
@@ -52,7 +52,7 @@ import {
   StandardParametersKey,
   SupportedFeatureProfiles,
   Voltage,
-} from '../types';
+} from '../types/index.js';
 import {
   ACElectricUtils,
   Constants,
@@ -70,7 +70,7 @@ import {
   isValidTime,
   logger,
   secureRandom,
-} from '../utils';
+} from '../utils/index.js';
 
 const moduleName = 'Helpers';
 

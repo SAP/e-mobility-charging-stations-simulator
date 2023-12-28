@@ -15,7 +15,7 @@ import {
   type Statistics,
   type StorageConfiguration,
   type TimestampedData,
-} from '../types';
+} from '../types/index.js';
 import {
   CircularArray,
   Configuration,
@@ -33,7 +33,7 @@ import {
   min,
   nthPercentile,
   stdDeviation,
-} from '../utils';
+} from '../utils/index.js';
 
 export class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<

@@ -2,10 +2,10 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { OCPP20Constants } from './OCPP20Constants';
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import type { ChargingStation } from '../../../charging-station';
-import { OCPPError } from '../../../exception';
+import { OCPP20Constants } from './OCPP20Constants.js';
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js';
+import type { ChargingStation } from '../../../charging-station/index.js';
+import { OCPPError } from '../../../exception/index.js';
 import {
   ErrorType,
   type JsonObject,
@@ -16,10 +16,10 @@ import {
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
   type RequestParams,
-} from '../../../types';
-import { generateUUID } from '../../../utils';
-import { OCPPRequestService } from '../OCPPRequestService';
-import type { OCPPResponseService } from '../OCPPResponseService';
+} from '../../../types/index.js';
+import { generateUUID } from '../../../utils/index.js';
+import { OCPPRequestService } from '../OCPPRequestService.js';
+import type { OCPPResponseService } from '../OCPPResponseService.js';
 
 const moduleName = 'OCPP20RequestService';
 

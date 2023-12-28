@@ -6,7 +6,7 @@ import {
   OCPP16MeterValuePhase,
   OCPP16MeterValueUnit,
   type OCPP16SampledValue,
-} from './1.6/MeterValues';
+} from './1.6/MeterValues.js';
 
 export const MeterValueUnit = {
   ...OCPP16MeterValueUnit,

@@ -3,14 +3,14 @@ import {
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
-} from './ChargingStationConfigurationUtils';
-import type { ChargingStation } from '../charging-station';
+} from './ChargingStationConfigurationUtils.js';
+import type { ChargingStation } from '../charging-station/index.js';
 import {
   type ChargingStationData,
   type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
   type Statistics,
-} from '../types';
+} from '../types/index.js';
 
 export const buildStartedMessage = (
   chargingStation: ChargingStation,

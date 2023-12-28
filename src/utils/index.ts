@@ -1,28 +1,28 @@
-export { ACElectricUtils, DCElectricUtils } from './ElectricUtils';
-export { AsyncLock, AsyncLockType } from './AsyncLock';
+export { ACElectricUtils, DCElectricUtils } from './ElectricUtils.js';
+export { AsyncLock, AsyncLockType } from './AsyncLock.js';
 export {
   OutputFormat,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
-} from './ChargingStationConfigurationUtils';
-export { CircularArray } from './CircularArray';
-export { Configuration } from './Configuration';
-export { Constants } from './Constants';
+} from './ChargingStationConfigurationUtils.js';
+export { CircularArray } from './CircularArray.js';
+export { Configuration } from './Configuration.js';
+export { Constants } from './Constants.js';
 export {
   handleFileException,
   handleUncaughtException,
   handleUnhandledRejection,
   handleSendMessageError,
   setDefaultErrorParams,
-} from './ErrorUtils';
-export { watchJsonFile } from './FileUtils';
+} from './ErrorUtils.js';
+export { watchJsonFile } from './FileUtils.js';
 export {
   buildPerformanceStatisticsMessage,
   buildUpdatedMessage,
   buildStartedMessage,
   buildStoppedMessage,
-} from './MessageChannelUtils';
+} from './MessageChannelUtils.js';
 export {
   JSONStringifyWithMapSupport,
   cloneObject,
@@ -56,6 +56,6 @@ export {
   secureRandom,
   sleep,
   validateUUID,
-} from './Utils';
-export { average, median, nthPercentile, stdDeviation } from './StatisticUtils';
-export { logger } from './Logger';
+} from './Utils.js';
+export { average, median, nthPercentile, stdDeviation } from './StatisticUtils.js';
+export { logger } from './Logger.js';

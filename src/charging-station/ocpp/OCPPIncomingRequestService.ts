@@ -1,18 +1,18 @@
 import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { OCPPConstants } from './OCPPConstants';
-import { OCPPServiceUtils } from './OCPPServiceUtils';
-import { type ChargingStation, getIdTagsFile } from '../../charging-station';
-import { OCPPError } from '../../exception';
+import { OCPPConstants } from './OCPPConstants.js';
+import { OCPPServiceUtils } from './OCPPServiceUtils.js';
+import { type ChargingStation, getIdTagsFile } from '../../charging-station/index.js';
+import { OCPPError } from '../../exception/index.js';
 import type {
   ClearCacheResponse,
   HandleErrorParams,
   IncomingRequestCommand,
   JsonType,
   OCPPVersion,
-} from '../../types';
-import { logger, setDefaultErrorParams } from '../../utils';
+} from '../../types/index.js';
+import { logger, setDefaultErrorParams } from '../../utils/index.js';
 
 const moduleName = 'OCPPIncomingRequestService';
 

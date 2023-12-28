@@ -1,4 +1,4 @@
-import { BaseError, type OCPPError } from '../../../exception';
+import { BaseError, type OCPPError } from '../../../exception/index.js';
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
@@ -10,11 +10,11 @@ import {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
-} from '../../../types';
-import { isNotEmptyArray, isNullOrUndefined, logger } from '../../../utils';
-import { Bootstrap } from '../../Bootstrap';
-import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel';
-import type { AbstractUIServer } from '../AbstractUIServer';
+} from '../../../types/index.js';
+import { isNotEmptyArray, isNullOrUndefined, logger } from '../../../utils/index.js';
+import { Bootstrap } from '../../Bootstrap.js';
+import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js';
+import type { AbstractUIServer } from '../AbstractUIServer.js';
 
 const moduleName = 'AbstractUIService';
 

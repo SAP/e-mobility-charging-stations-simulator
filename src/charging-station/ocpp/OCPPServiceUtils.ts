@@ -5,11 +5,15 @@ import { fileURLToPath } from 'node:url';
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv';
 import { isDate } from 'date-fns';
 
-import { OCPP16Constants } from './1.6/OCPP16Constants';
-import { OCPP20Constants } from './2.0/OCPP20Constants';
-import { OCPPConstants } from './OCPPConstants';
-import { type ChargingStation, getConfigurationKey, getIdTagsFile } from '../../charging-station';
-import { BaseError, OCPPError } from '../../exception';
+import { OCPP16Constants } from './1.6/OCPP16Constants.js';
+import { OCPP20Constants } from './2.0/OCPP20Constants.js';
+import { OCPPConstants } from './OCPPConstants.js';
+import {
+  type ChargingStation,
+  getConfigurationKey,
+  getIdTagsFile,
+} from '../../charging-station/index.js';
+import { BaseError, OCPPError } from '../../exception/index.js';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
@@ -42,7 +46,7 @@ import {
   StandardParametersKey,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
-} from '../../types';
+} from '../../types/index.js';
 import {
   ACElectricUtils,
   Constants,
@@ -62,7 +66,7 @@ import {
   max,
   min,
   roundTo,
-} from '../../utils';
+} from '../../utils/index.js';
 
 export const getMessageTypeString = (messageType: MessageType): string => {
   switch (messageType) {

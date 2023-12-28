@@ -8,8 +8,8 @@ import {
   type HandleErrorParams,
   type Statistics,
   StorageType,
-} from '../../types';
-import { isNullOrUndefined, logger, setDefaultErrorParams } from '../../utils';
+} from '../../types/index.js';
+import { isNullOrUndefined, logger, setDefaultErrorParams } from '../../utils/index.js';
 
 export abstract class Storage {
   protected readonly storageUri: URL;

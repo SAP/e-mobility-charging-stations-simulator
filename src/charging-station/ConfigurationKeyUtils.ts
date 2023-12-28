@@ -1,6 +1,6 @@
-import type { ChargingStation } from './ChargingStation';
-import type { ConfigurationKey, ConfigurationKeyType } from '../types';
-import { logger } from '../utils';
+import type { ChargingStation } from './ChargingStation.js';
+import type { ConfigurationKey, ConfigurationKeyType } from '../types/index.js';
+import { logger } from '../utils/index.js';
 
 interface ConfigurationKeyOptions {
   readonly?: boolean;

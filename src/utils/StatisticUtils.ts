@@ -1,4 +1,4 @@
-import { isEmptyArray, isNullOrUndefined } from './Utils';
+import { isEmptyArray, isNullOrUndefined } from './Utils.js';
 
 /**
  * Computes the average of the given data set.

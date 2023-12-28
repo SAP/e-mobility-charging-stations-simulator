@@ -13,9 +13,9 @@ import {
   getDefaultPerformanceStorageUri,
   handleFileException,
   logPrefix,
-} from './ConfigurationUtils';
-import { Constants } from './Constants';
-import { hasOwnProp, isCFEnvironment, isUndefined, once } from './Utils';
+} from './ConfigurationUtils.js';
+import { Constants } from './Constants.js';
+import { hasOwnProp, isCFEnvironment, isUndefined, once } from './Utils.js';
 import {
   ApplicationProtocol,
   type ConfigurationData,
@@ -28,14 +28,14 @@ import {
   SupervisionUrlDistribution,
   type UIServerConfiguration,
   type WorkerConfiguration,
-} from '../types';
+} from '../types/index.js';
 import {
   DEFAULT_ELEMENT_START_DELAY,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
   DEFAULT_WORKER_START_DELAY,
   WorkerProcessType,
-} from '../worker';
+} from '../worker/index.js';
 
 type ConfigurationSectionType =
   | LogConfiguration

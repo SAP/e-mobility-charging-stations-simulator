@@ -1,4 +1,4 @@
-import type { OCPP16ReserveNowRequest } from './1.6/Requests';
+import type { OCPP16ReserveNowRequest } from './1.6/Requests.js';
 
 export type Reservation = OCPP16ReserveNowRequest;
 

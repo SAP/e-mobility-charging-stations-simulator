@@ -11,12 +11,12 @@ import {
   isWithinInterval,
 } from 'date-fns';
 
-import { OCPP16Constants } from './OCPP16Constants';
+import { OCPP16Constants } from './OCPP16Constants.js';
 import {
   type ChargingStation,
   hasFeatureProfile,
   hasReservationExpired,
-} from '../../../charging-station';
+} from '../../../charging-station/index.js';
 import {
   type GenericResponse,
   type JsonType,
@@ -36,9 +36,9 @@ import {
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
-} from '../../../types';
-import { isNotEmptyArray, isNullOrUndefined, logger, roundTo } from '../../../utils';
-import { OCPPServiceUtils } from '../OCPPServiceUtils';
+} from '../../../types/index.js';
+import { isNotEmptyArray, isNullOrUndefined, logger, roundTo } from '../../../utils/index.js';
+import { OCPPServiceUtils } from '../OCPPServiceUtils.js';
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static checkFeatureProfile(

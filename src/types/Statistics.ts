@@ -1,6 +1,6 @@
-import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests';
-import type { CircularArray } from '../utils';
-import type { WorkerData } from '../worker';
+import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests.js';
+import type { CircularArray } from '../utils/index.js';
+import type { WorkerData } from '../worker/index.js';
 
 export interface TimestampedData {
   timestamp: number;

@@ -1,5 +1,5 @@
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
+import type { EmptyObject } from '../../EmptyObject.js';
+import type { JsonObject } from '../../JsonType.js';
 
 export enum OCPP16MeterValueUnit {
   WATT_HOUR = 'Wh',

@@ -1,4 +1,4 @@
-import type { SampledValue } from './ocpp/MeterValues';
+import type { SampledValue } from './ocpp/MeterValues.js';
 
 export type SampledValueTemplate = SampledValue & {
   fluctuationPercent?: number;

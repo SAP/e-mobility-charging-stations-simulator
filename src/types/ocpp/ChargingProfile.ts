@@ -4,7 +4,7 @@ import {
   OCPP16ChargingRateUnitType,
   type OCPP16ChargingSchedulePeriod,
   OCPP16RecurrencyKindType,
-} from './1.6/ChargingProfile';
+} from './1.6/ChargingProfile.js';
 
 export type ChargingProfile = OCPP16ChargingProfile;
 

@@ -2,7 +2,7 @@
 
 import Queue from 'mnemonist/queue.js';
 
-import { Constants } from './Constants';
+import { Constants } from './Constants.js';
 
 export enum AsyncLockType {
   configuration = 'configuration',

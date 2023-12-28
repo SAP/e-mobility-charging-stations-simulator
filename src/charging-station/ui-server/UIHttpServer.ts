@@ -2,9 +2,9 @@ import type { IncomingMessage, RequestListener, ServerResponse } from 'node:http
 
 import { StatusCodes } from 'http-status-codes';
 
-import { AbstractUIServer } from './AbstractUIServer';
-import { UIServerUtils } from './UIServerUtils';
-import { BaseError } from '../../exception';
+import { AbstractUIServer } from './AbstractUIServer.js';
+import { UIServerUtils } from './UIServerUtils.js';
+import { BaseError } from '../../exception/index.js';
 import {
   ApplicationProtocolVersion,
   type ProcedureName,
@@ -15,7 +15,7 @@ import {
   type RequestPayload,
   ResponseStatus,
   type UIServerConfiguration,
-} from '../../types';
+} from '../../types/index.js';
 import {
   Constants,
   generateUUID,
@@ -23,7 +23,7 @@ import {
   isNullOrUndefined,
   logPrefix,
   logger,
-} from '../../utils';
+} from '../../utils/index.js';
 
 const moduleName = 'UIHttpServer';
 

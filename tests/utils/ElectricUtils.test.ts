@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 
 import { expect } from 'expect';
 
-import { ACElectricUtils, DCElectricUtils } from '../../src/utils/ElectricUtils';
+import { ACElectricUtils, DCElectricUtils } from '../../src/utils/ElectricUtils.js';
 
 await describe('ElectricUtils test suite', async () => {
   await it('Verify DCElectricUtils.power()', () => {

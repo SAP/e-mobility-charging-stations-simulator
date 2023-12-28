@@ -1,4 +1,4 @@
-import type { OCPP16MeterValuesResponse } from './1.6/MeterValues';
+import type { OCPP16MeterValuesResponse } from './1.6/MeterValues.js';
 import {
   OCPP16AvailabilityStatus,
   type OCPP16BootNotificationResponse,
@@ -14,13 +14,13 @@ import {
   type OCPP16StatusNotificationResponse,
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
-} from './1.6/Responses';
-import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses';
-import { type GenericResponse, GenericStatus } from './Common';
-import type { ErrorType } from './ErrorType';
-import type { MessageType } from './MessageType';
-import type { ChargingStation } from '../../charging-station';
-import type { JsonType } from '../JsonType';
+} from './1.6/Responses.js';
+import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses.js';
+import { type GenericResponse, GenericStatus } from './Common.js';
+import type { ErrorType } from './ErrorType.js';
+import type { MessageType } from './MessageType.js';
+import type { ChargingStation } from '../../charging-station/index.js';
+import type { JsonType } from '../JsonType.js';
 
 export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType];
 

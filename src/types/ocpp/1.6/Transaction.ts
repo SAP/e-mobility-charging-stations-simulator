@@ -1,5 +1,5 @@
-import type { OCPP16MeterValue } from './MeterValues';
-import type { JsonObject } from '../../JsonType';
+import type { OCPP16MeterValue } from './MeterValues.js';
+import type { JsonObject } from '../../JsonType.js';
 
 export enum OCPP16StopTransactionReason {
   EMERGENCY_STOP = 'EmergencyStop',

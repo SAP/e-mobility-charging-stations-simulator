@@ -4,11 +4,11 @@ import { parentPort } from 'node:worker_threads';
 
 import { ThreadWorker } from 'poolifier';
 
-import { ChargingStation } from './ChargingStation';
-import { BaseError } from '../exception';
-import type { ChargingStationWorkerData } from '../types';
-import { Configuration } from '../utils';
-import { type WorkerMessage, WorkerMessageEvents } from '../worker';
+import { ChargingStation } from './ChargingStation.js';
+import { BaseError } from '../exception/index.js';
+import type { ChargingStationWorkerData } from '../types/index.js';
+import { Configuration } from '../utils/index.js';
+import { type WorkerMessage, WorkerMessageEvents } from '../worker/index.js';
 
 /**
  * Creates and starts a charging station instance

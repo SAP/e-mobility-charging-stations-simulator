@@ -1,11 +1,11 @@
-export { OCPP16IncomingRequestService } from './1.6/OCPP16IncomingRequestService';
-export { OCPP16RequestService } from './1.6/OCPP16RequestService';
-export { OCPP16ResponseService } from './1.6/OCPP16ResponseService';
-export { OCPP20IncomingRequestService } from './2.0/OCPP20IncomingRequestService';
-export { OCPP20RequestService } from './2.0/OCPP20RequestService';
-export { OCPP20ResponseService } from './2.0/OCPP20ResponseService';
-export { OCPPIncomingRequestService } from './OCPPIncomingRequestService';
-export { OCPPRequestService } from './OCPPRequestService';
+export { OCPP16IncomingRequestService } from './1.6/OCPP16IncomingRequestService.js';
+export { OCPP16RequestService } from './1.6/OCPP16RequestService.js';
+export { OCPP16ResponseService } from './1.6/OCPP16ResponseService.js';
+export { OCPP20IncomingRequestService } from './2.0/OCPP20IncomingRequestService.js';
+export { OCPP20RequestService } from './2.0/OCPP20RequestService.js';
+export { OCPP20ResponseService } from './2.0/OCPP20ResponseService.js';
+export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js';
+export { OCPPRequestService } from './OCPPRequestService.js';
 export {
   buildMeterValue,
   buildStatusNotificationRequest,
@@ -13,4 +13,4 @@ export {
   getMessageTypeString,
   isIdTagAuthorized,
   sendAndSetConnectorStatus,
-} from './OCPPServiceUtils';
+} from './OCPPServiceUtils.js';

@@ -1,13 +1,13 @@
-import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
+import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js';
 import {
   type BroadcastChannelResponse,
   type BroadcastChannelResponsePayload,
   type MessageEvent,
   type ResponsePayload,
   ResponseStatus,
-} from '../../types';
-import { isNullOrUndefined, logger } from '../../utils';
-import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIService';
+} from '../../types/index.js';
+import { isNullOrUndefined, logger } from '../../utils/index.js';
+import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIService.js';
 
 const moduleName = 'UIServiceWorkerBroadcastChannel';
 

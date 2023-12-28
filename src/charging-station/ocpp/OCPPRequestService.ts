@@ -1,12 +1,12 @@
 import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { OCPPConstants } from './OCPPConstants';
-import type { OCPPResponseService } from './OCPPResponseService';
-import { OCPPServiceUtils } from './OCPPServiceUtils';
-import type { ChargingStation } from '../../charging-station';
-import { OCPPError } from '../../exception';
-import { PerformanceStatistics } from '../../performance';
+import { OCPPConstants } from './OCPPConstants.js';
+import type { OCPPResponseService } from './OCPPResponseService.js';
+import { OCPPServiceUtils } from './OCPPServiceUtils.js';
+import type { ChargingStation } from '../../charging-station/index.js';
+import { OCPPError } from '../../exception/index.js';
+import { PerformanceStatistics } from '../../performance/index.js';
 import {
   ChargingStationEvents,
   type ErrorCallback,
@@ -22,14 +22,14 @@ import {
   type Response,
   type ResponseCallback,
   type ResponseType,
-} from '../../types';
+} from '../../types/index.js';
 import {
   cloneObject,
   formatDurationMilliSeconds,
   handleSendMessageError,
   isNullOrUndefined,
   logger,
-} from '../../utils';
+} from '../../utils/index.js';
 
 const moduleName = 'OCPPRequestService';
 

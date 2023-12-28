@@ -2,9 +2,9 @@ import type { EventEmitterAsyncResource } from 'node:events';
 
 import { FixedThreadPool, type PoolInfo } from 'poolifier';
 
-import { WorkerAbstract } from './WorkerAbstract';
-import type { WorkerData, WorkerOptions } from './WorkerTypes';
-import { randomizeDelay, sleep } from './WorkerUtils';
+import { WorkerAbstract } from './WorkerAbstract.js';
+import type { WorkerData, WorkerOptions } from './WorkerTypes.js';
+import { randomizeDelay, sleep } from './WorkerUtils.js';
 
 export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
   private readonly pool: FixedThreadPool<WorkerData>;

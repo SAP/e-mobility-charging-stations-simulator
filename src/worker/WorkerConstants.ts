@@ -1,6 +1,6 @@
 import { availableParallelism } from 'poolifier';
 
-import type { WorkerOptions } from './WorkerTypes';
+import type { WorkerOptions } from './WorkerTypes.js';
 
 export const EMPTY_FUNCTION = Object.freeze(() => {
   /* This is intentional */

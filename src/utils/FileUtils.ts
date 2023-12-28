@@ -1,9 +1,9 @@
 import { type FSWatcher, type WatchListener, readFileSync, watch } from 'node:fs';
 
-import { handleFileException } from './ErrorUtils';
-import { logger } from './Logger';
-import { isNotEmptyString } from './Utils';
-import type { FileType, JsonType } from '../types';
+import { handleFileException } from './ErrorUtils.js';
+import { logger } from './Logger.js';
+import { isNotEmptyString } from './Utils.js';
+import type { FileType, JsonType } from '../types/index.js';
 
 export const watchJsonFile = <T extends JsonType>(
   file: string,

@@ -3,8 +3,8 @@
 import { EventEmitterAsyncResource } from 'node:events';
 import { SHARE_ENV, Worker } from 'node:worker_threads';
 
-import { WorkerAbstract } from './WorkerAbstract';
-import { EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants';
+import { WorkerAbstract } from './WorkerAbstract.js';
+import { EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants.js';
 import {
   type SetInfo,
   type WorkerData,
@@ -13,8 +13,8 @@ import {
   type WorkerOptions,
   type WorkerSetElement,
   WorkerSetEvents,
-} from './WorkerTypes';
-import { randomizeDelay, sleep } from './WorkerUtils';
+} from './WorkerTypes.js';
+import { randomizeDelay, sleep } from './WorkerUtils.js';
 
 export class WorkerSet extends WorkerAbstract<WorkerData> {
   public readonly emitter: EventEmitterAsyncResource | undefined;

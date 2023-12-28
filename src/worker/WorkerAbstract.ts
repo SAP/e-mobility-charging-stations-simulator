@@ -3,8 +3,8 @@ import { existsSync } from 'node:fs';
 
 import type { PoolInfo } from 'poolifier';
 
-import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes';
-import { defaultErrorHandler, defaultExitHandler } from './WorkerUtils';
+import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js';
+import { defaultErrorHandler, defaultExitHandler } from './WorkerUtils.js';
 
 export abstract class WorkerAbstract<T extends WorkerData> {
   protected readonly workerScript: string;

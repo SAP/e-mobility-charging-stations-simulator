@@ -8,12 +8,12 @@ import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import { availableParallelism } from 'poolifier';
 
-import { waitChargingStationEvents } from './Helpers';
-import type { AbstractUIServer } from './ui-server/AbstractUIServer';
-import { UIServerFactory } from './ui-server/UIServerFactory';
+import { waitChargingStationEvents } from './Helpers.js';
+import type { AbstractUIServer } from './ui-server/AbstractUIServer.js';
+import { UIServerFactory } from './ui-server/UIServerFactory.js';
 import { version } from '../../package.json';
-import { BaseError } from '../exception';
-import { type Storage, StorageFactory } from '../performance';
+import { BaseError } from '../exception/index.js';
+import { type Storage, StorageFactory } from '../performance/index.js';
 import {
   type ChargingStationData,
   type ChargingStationWorkerData,
@@ -27,7 +27,7 @@ import {
   type StorageConfiguration,
   type UIServerConfiguration,
   type WorkerConfiguration,
-} from '../types';
+} from '../types/index.js';
 import {
   Configuration,
   Constants,
@@ -39,8 +39,8 @@ import {
   isNullOrUndefined,
   logPrefix,
   logger,
-} from '../utils';
-import { type WorkerAbstract, WorkerFactory } from '../worker';
+} from '../utils/index.js';
+import { type WorkerAbstract, WorkerFactory } from '../worker/index.js';
 
 const moduleName = 'Bootstrap';
 

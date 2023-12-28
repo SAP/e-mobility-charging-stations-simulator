@@ -4,14 +4,14 @@ import type { Duplex } from 'node:stream';
 import { StatusCodes } from 'http-status-codes';
 import { type RawData, WebSocket, WebSocketServer } from 'ws';
 
-import { AbstractUIServer } from './AbstractUIServer';
-import { UIServerUtils } from './UIServerUtils';
+import { AbstractUIServer } from './AbstractUIServer.js';
+import { UIServerUtils } from './UIServerUtils.js';
 import {
   type ProtocolRequest,
   type ProtocolResponse,
   type UIServerConfiguration,
   WebSocketCloseEventStatusCode,
-} from '../../types';
+} from '../../types/index.js';
 import {
   Constants,
   getWebSocketCloseEventStatusString,
@@ -20,7 +20,7 @@ import {
   logPrefix,
   logger,
   validateUUID,
-} from '../../utils';
+} from '../../utils/index.js';
 
 const moduleName = 'UIWebSocketServer';
 

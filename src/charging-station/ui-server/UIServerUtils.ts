@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 
-import { Protocol, ProtocolVersion } from '../../types';
-import { logPrefix, logger } from '../../utils';
+import { Protocol, ProtocolVersion } from '../../types/index.js';
+import { logPrefix, logger } from '../../utils/index.js';
 
 export class UIServerUtils {
   private constructor() {

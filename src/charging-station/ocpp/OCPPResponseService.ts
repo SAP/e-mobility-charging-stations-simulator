@@ -1,11 +1,16 @@
 import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
 
-import { OCPPServiceUtils } from './OCPPServiceUtils';
-import type { ChargingStation } from '../../charging-station';
-import { OCPPError } from '../../exception';
-import type { IncomingRequestCommand, JsonType, OCPPVersion, RequestCommand } from '../../types';
-import { logger } from '../../utils';
+import { OCPPServiceUtils } from './OCPPServiceUtils.js';
+import type { ChargingStation } from '../../charging-station/index.js';
+import { OCPPError } from '../../exception/index.js';
+import type {
+  IncomingRequestCommand,
+  JsonType,
+  OCPPVersion,
+  RequestCommand,
+} from '../../types/index.js';
+import { logger } from '../../utils/index.js';
 
 const moduleName = 'OCPPResponseService';
 

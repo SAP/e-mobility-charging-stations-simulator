@@ -3,15 +3,15 @@
 import type { JSONSchemaType } from 'ajv';
 import { secondsToMilliseconds } from 'date-fns';
 
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils';
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js';
 import {
   type ChargingStation,
   addConfigurationKey,
   getConfigurationKey,
   hasReservationExpired,
   resetConnectorStatus,
-} from '../../../charging-station';
-import { OCPPError } from '../../../exception';
+} from '../../../charging-station/index.js';
+import { OCPPError } from '../../../exception/index.js';
 import {
   type ChangeConfigurationResponse,
   ErrorType,
@@ -50,9 +50,9 @@ import {
   type ResponseHandler,
   type SetChargingProfileResponse,
   type UnlockConnectorResponse,
-} from '../../../types';
-import { Constants, convertToInt, isNullOrUndefined, logger } from '../../../utils';
-import { OCPPResponseService } from '../OCPPResponseService';
+} from '../../../types/index.js';
+import { Constants, convertToInt, isNullOrUndefined, logger } from '../../../utils/index.js';
+import { OCPPResponseService } from '../OCPPResponseService.js';
 
 const moduleName = 'OCPP16ResponseService';
 

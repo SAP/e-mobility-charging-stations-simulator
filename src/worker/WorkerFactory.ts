@@ -1,11 +1,11 @@
 import { isMainThread } from 'node:worker_threads';
 
-import type { WorkerAbstract } from './WorkerAbstract';
-import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants';
-import { WorkerDynamicPool } from './WorkerDynamicPool';
-import { WorkerFixedPool } from './WorkerFixedPool';
-import { WorkerSet } from './WorkerSet';
-import { type WorkerData, type WorkerOptions, WorkerProcessType } from './WorkerTypes';
+import type { WorkerAbstract } from './WorkerAbstract.js';
+import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants.js';
+import { WorkerDynamicPool } from './WorkerDynamicPool.js';
+import { WorkerFixedPool } from './WorkerFixedPool.js';
+import { WorkerSet } from './WorkerSet.js';
+import { type WorkerData, type WorkerOptions, WorkerProcessType } from './WorkerTypes.js';
 
 export class WorkerFactory {
   private constructor() {

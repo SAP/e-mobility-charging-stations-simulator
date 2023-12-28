@@ -2,11 +2,11 @@ import type {
   GenericStatusEnumType,
   InstallCertificateStatusEnumType,
   StatusInfoType,
-} from './Common';
-import type { OCPP20SetVariableResultType } from './Variables';
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
-import type { RegistrationStatusEnumType } from '../Common';
+} from './Common.js';
+import type { OCPP20SetVariableResultType } from './Variables.js';
+import type { EmptyObject } from '../../EmptyObject.js';
+import type { JsonObject } from '../../JsonType.js';
+import type { RegistrationStatusEnumType } from '../Common.js';
 
 export type OCPP20BootNotificationResponse = {
   currentTime: Date;

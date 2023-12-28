@@ -1,8 +1,8 @@
-import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
-import type { ChargingStationInfoConfiguration } from './ChargingStationInfo';
-import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
-import type { ConnectorStatus } from './ConnectorStatus';
-import type { EvseStatus } from './Evse';
+import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js';
+import type { ChargingStationInfoConfiguration } from './ChargingStationInfo.js';
+import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration.js';
+import type { ConnectorStatus } from './ConnectorStatus.js';
+import type { EvseStatus } from './Evse.js';
 
 interface ConnectorsConfiguration {
   connectorsStatus?: ConnectorStatus[];

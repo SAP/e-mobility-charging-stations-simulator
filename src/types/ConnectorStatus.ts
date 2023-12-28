@@ -1,9 +1,9 @@
-import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates';
-import type { ChargingProfile } from './ocpp/ChargingProfile';
-import type { ConnectorStatusEnum } from './ocpp/ConnectorStatusEnum';
-import type { MeterValue } from './ocpp/MeterValues';
-import type { AvailabilityType } from './ocpp/Requests';
-import type { Reservation } from './ocpp/Reservation';
+import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates.js';
+import type { ChargingProfile } from './ocpp/ChargingProfile.js';
+import type { ConnectorStatusEnum } from './ocpp/ConnectorStatusEnum.js';
+import type { MeterValue } from './ocpp/MeterValues.js';
+import type { AvailabilityType } from './ocpp/Requests.js';
+import type { Reservation } from './ocpp/Reservation.js';
 
 export interface ConnectorStatus {
   availability: AvailabilityType;

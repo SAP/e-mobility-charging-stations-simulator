@@ -1,7 +1,7 @@
 import { secondsToMilliseconds } from 'date-fns';
 
-import { WorkerBroadcastChannel } from './WorkerBroadcastChannel';
-import { BaseError, type OCPPError } from '../../exception';
+import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js';
+import { BaseError, type OCPPError } from '../../exception/index.js';
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
@@ -36,11 +36,17 @@ import {
   type StatusNotificationResponse,
   type StopTransactionRequest,
   type StopTransactionResponse,
-} from '../../types';
-import { Constants, convertToInt, isEmptyObject, isNullOrUndefined, logger } from '../../utils';
-import type { ChargingStation } from '../ChargingStation';
-import { getConfigurationKey } from '../ConfigurationKeyUtils';
-import { buildMeterValue } from '../ocpp';
+} from '../../types/index.js';
+import {
+  Constants,
+  convertToInt,
+  isEmptyObject,
+  isNullOrUndefined,
+  logger,
+} from '../../utils/index.js';
+import type { ChargingStation } from '../ChargingStation.js';
+import { getConfigurationKey } from '../ConfigurationKeyUtils.js';
+import { buildMeterValue } from '../ocpp/index.js';
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel';
 

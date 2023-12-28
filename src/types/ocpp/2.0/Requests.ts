@@ -2,10 +2,10 @@ import type {
   BootReasonEnumType,
   InstallCertificateUseEnumType,
   OCPP20ConnectorStatusEnumType,
-} from './Common';
-import type { OCPP20SetVariableDataType } from './Variables';
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
+} from './Common.js';
+import type { OCPP20SetVariableDataType } from './Variables.js';
+import type { EmptyObject } from '../../EmptyObject.js';
+import type { JsonObject } from '../../JsonType.js';
 
 export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',

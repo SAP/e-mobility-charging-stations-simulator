@@ -3,9 +3,9 @@ import { type Http2Server, createServer } from 'node:http2';
 
 import type { WebSocket } from 'ws';
 
-import type { AbstractUIService } from './ui-services/AbstractUIService';
-import { UIServiceFactory } from './ui-services/UIServiceFactory';
-import { BaseError } from '../../exception';
+import type { AbstractUIService } from './ui-services/AbstractUIService.js';
+import { UIServiceFactory } from './ui-services/UIServiceFactory.js';
+import { BaseError } from '../../exception/index.js';
 import {
   ApplicationProtocolVersion,
   AuthenticationType,
@@ -17,7 +17,7 @@ import {
   type RequestPayload,
   type ResponsePayload,
   type UIServerConfiguration,
-} from '../../types';
+} from '../../types/index.js';
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>;

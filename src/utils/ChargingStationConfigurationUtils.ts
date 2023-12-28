@@ -1,11 +1,11 @@
-import { isNullOrUndefined } from './Utils';
-import type { ChargingStation } from '../charging-station';
+import { isNullOrUndefined } from './Utils.js';
+import type { ChargingStation } from '../charging-station/index.js';
 import type {
   ChargingStationAutomaticTransactionGeneratorConfiguration,
   ConnectorStatus,
   EvseStatusConfiguration,
   EvseStatusWorkerType,
-} from '../types';
+} from '../types/index.js';
 
 export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
   chargingStation: ChargingStation,

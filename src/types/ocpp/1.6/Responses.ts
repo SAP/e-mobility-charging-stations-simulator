@@ -1,8 +1,8 @@
-import type { OCPP16ChargingSchedule } from './ChargingProfile';
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
-import type { GenericStatus, RegistrationStatusEnumType } from '../Common';
-import type { OCPPConfigurationKey } from '../Configuration';
+import type { OCPP16ChargingSchedule } from './ChargingProfile.js';
+import type { EmptyObject } from '../../EmptyObject.js';
+import type { JsonObject } from '../../JsonType.js';
+import type { GenericStatus, RegistrationStatusEnumType } from '../Common.js';
+import type { OCPPConfigurationKey } from '../Configuration.js';
 
 export interface OCPP16HeartbeatResponse extends JsonObject {
   currentTime: Date;

@@ -1,4 +1,4 @@
-import type { RequestPayload, ResponsePayload } from './UIProtocol';
+import type { RequestPayload, ResponsePayload } from './UIProtocol.js';
 
 export type BroadcastChannelRequest = [
   string,

@@ -4,7 +4,7 @@ import {
   CurrentType,
   OCPPVersion,
   VendorParametersKey,
-} from '../types';
+} from '../types/index.js';
 
 export class Constants {
   static readonly DEFAULT_STATION_INFO: Partial<ChargingStationInfo> = Object.freeze({

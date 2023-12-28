@@ -3,10 +3,10 @@ import { fileURLToPath } from 'node:url';
 
 import chalk from 'chalk';
 
-import { Constants } from './Constants';
-import { isNotEmptyString, logPrefix as utilsLogPrefix } from './Utils';
-import { type ElementsPerWorkerType, FileType, StorageType } from '../types';
-import { WorkerProcessType } from '../worker';
+import { Constants } from './Constants.js';
+import { isNotEmptyString, logPrefix as utilsLogPrefix } from './Utils.js';
+import { type ElementsPerWorkerType, FileType, StorageType } from '../types/index.js';
+import { WorkerProcessType } from '../worker/index.js';
 
 export const logPrefix = (): string => {
   return utilsLogPrefix(' Simulator configuration |');

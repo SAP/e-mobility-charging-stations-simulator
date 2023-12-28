@@ -2,9 +2,9 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import type { ChargingStation } from '../../../charging-station';
-import { OCPPError } from '../../../exception';
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js';
+import type { ChargingStation } from '../../../charging-station/index.js';
+import { OCPPError } from '../../../exception/index.js';
 import {
   ErrorType,
   type IncomingRequestHandler,
@@ -12,9 +12,9 @@ import {
   type OCPP20ClearCacheRequest,
   OCPP20IncomingRequestCommand,
   OCPPVersion,
-} from '../../../types';
-import { logger } from '../../../utils';
-import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
+} from '../../../types/index.js';
+import { logger } from '../../../utils/index.js';
+import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js';
 
 const moduleName = 'OCPP20IncomingRequestService';
 

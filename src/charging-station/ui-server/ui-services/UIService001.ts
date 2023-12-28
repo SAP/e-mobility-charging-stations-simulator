@@ -1,6 +1,6 @@
-import { AbstractUIService } from './AbstractUIService';
-import { type ProtocolRequestHandler, ProtocolVersion } from '../../../types';
-import type { AbstractUIServer } from '../AbstractUIServer';
+import { AbstractUIService } from './AbstractUIService.js';
+import { type ProtocolRequestHandler, ProtocolVersion } from '../../../types/index.js';
+import type { AbstractUIServer } from '../AbstractUIServer.js';
 
 export class UIService001 extends AbstractUIService {
   constructor(uiServer: AbstractUIServer) {

@@ -1,5 +1,5 @@
-import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus';
-import type { OCPP16MeterValuesRequest } from './1.6/MeterValues';
+import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus.js';
+import type { OCPP16MeterValuesRequest } from './1.6/MeterValues.js';
 import {
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
@@ -14,18 +14,18 @@ import {
   OCPP16RequestCommand,
   type OCPP16ReserveNowRequest,
   type OCPP16StatusNotificationRequest,
-} from './1.6/Requests';
-import { OperationalStatusEnumType } from './2.0/Common';
+} from './1.6/Requests.js';
+import { OperationalStatusEnumType } from './2.0/Common.js';
 import {
   type OCPP20BootNotificationRequest,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
-} from './2.0/Requests';
-import type { MessageType } from './MessageType';
-import type { ChargingStation } from '../../charging-station';
-import type { OCPPError } from '../../exception';
-import type { JsonType } from '../JsonType';
+} from './2.0/Requests.js';
+import type { MessageType } from './MessageType.js';
+import type { ChargingStation } from '../../charging-station/index.js';
+import type { OCPPError } from '../../exception/index.js';
+import type { JsonType } from '../JsonType.js';
 
 export const RequestCommand = {
   ...OCPP16RequestCommand,

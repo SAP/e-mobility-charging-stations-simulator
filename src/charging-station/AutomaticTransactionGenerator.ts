@@ -2,12 +2,12 @@
 
 import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns';
 
-import type { ChargingStation } from './ChargingStation';
-import { checkChargingStation } from './Helpers';
-import { IdTagsCache } from './IdTagsCache';
-import { isIdTagAuthorized } from './ocpp';
-import { BaseError } from '../exception';
-import { PerformanceStatistics } from '../performance';
+import type { ChargingStation } from './ChargingStation.js';
+import { checkChargingStation } from './Helpers.js';
+import { IdTagsCache } from './IdTagsCache.js';
+import { isIdTagAuthorized } from './ocpp/index.js';
+import { BaseError } from '../exception/index.js';
+import { PerformanceStatistics } from '../performance/index.js';
 import {
   AuthorizationStatus,
   RequestCommand,
@@ -16,7 +16,7 @@ import {
   type Status,
   StopTransactionReason,
   type StopTransactionResponse,
-} from '../types';
+} from '../types/index.js';
 import {
   Constants,
   cloneObject,
@@ -27,7 +27,7 @@ import {
   logger,
   secureRandom,
   sleep,
-} from '../utils';
+} from '../utils/index.js';
 
 export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<

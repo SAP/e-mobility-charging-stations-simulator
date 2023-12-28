@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 
 import { expect } from 'expect';
 
-import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../../src/utils/CircularArray';
+import { CircularArray, DEFAULT_CIRCULAR_ARRAY_SIZE } from '../../src/utils/CircularArray.js';
 
 await describe('CircularArray test suite', async () => {
   await it('Verify that circular array can be instantiated', () => {

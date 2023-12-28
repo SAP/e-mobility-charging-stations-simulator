@@ -2,18 +2,18 @@ import type { ClientRequestArgs } from 'node:http';
 
 import type { ClientOptions } from 'ws';
 
-import type { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator';
-import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration';
-import type { ConnectorStatus } from './ConnectorStatus';
-import type { EvseTemplate } from './Evse';
-import type { OCPPProtocol } from './ocpp/OCPPProtocol';
-import type { OCPPVersion } from './ocpp/OCPPVersion';
+import type { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js';
+import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration.js';
+import type { ConnectorStatus } from './ConnectorStatus.js';
+import type { EvseTemplate } from './Evse.js';
+import type { OCPPProtocol } from './ocpp/OCPPProtocol.js';
+import type { OCPPVersion } from './ocpp/OCPPVersion.js';
 import type {
   FirmwareStatus,
   IncomingRequestCommand,
   MessageTrigger,
   RequestCommand,
-} from './ocpp/Requests';
+} from './ocpp/Requests.js';
 
 export enum CurrentType {
   AC = 'AC',

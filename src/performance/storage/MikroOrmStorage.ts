@@ -9,15 +9,15 @@ import {
 } from '@mikro-orm/core';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
-import { Storage } from './Storage';
+import { Storage } from './Storage.js';
 import {
   type MikroOrmDbType,
   PerformanceData,
   PerformanceRecord,
   type Statistics,
   StorageType,
-} from '../../types';
-import { Constants } from '../../utils';
+} from '../../types/index.js';
+import { Constants } from '../../utils/index.js';
 
 export class MikroOrmStorage extends Storage {
   private storageType: StorageType;

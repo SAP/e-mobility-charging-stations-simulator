@@ -2,9 +2,9 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import { type ChargingStation, addConfigurationKey } from '../../../charging-station';
-import { OCPPError } from '../../../exception';
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js';
+import { type ChargingStation, addConfigurationKey } from '../../../charging-station/index.js';
+import { OCPPError } from '../../../exception/index.js';
 import {
   ErrorType,
   type JsonType,
@@ -18,9 +18,9 @@ import {
   OCPPVersion,
   RegistrationStatusEnumType,
   type ResponseHandler,
-} from '../../../types';
-import { logger } from '../../../utils';
-import { OCPPResponseService } from '../OCPPResponseService';
+} from '../../../types/index.js';
+import { logger } from '../../../utils/index.js';
+import { OCPPResponseService } from '../OCPPResponseService.js';
 
 const moduleName = 'OCPP20ResponseService';
 

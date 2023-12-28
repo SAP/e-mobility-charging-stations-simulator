@@ -1,5 +1,5 @@
-import type { ChargingStationTemplate } from './ChargingStationTemplate';
-import type { FirmwareStatus } from './ocpp/Requests';
+import type { ChargingStationTemplate } from './ChargingStationTemplate.js';
+import type { FirmwareStatus } from './ocpp/Requests.js';
 
 export type ChargingStationInfo = Omit<
   ChargingStationTemplate,

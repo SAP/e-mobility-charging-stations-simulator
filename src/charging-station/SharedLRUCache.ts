@@ -1,8 +1,13 @@
 import LRUCache from 'mnemonist/lru-map-with-delete.js';
 
-import { Bootstrap } from './Bootstrap';
-import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types';
-import { isEmptyObject, isNotEmptyArray, isNotEmptyString, isNullOrUndefined } from '../utils';
+import { Bootstrap } from './Bootstrap.js';
+import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types/index.js';
+import {
+  isEmptyObject,
+  isNotEmptyArray,
+  isNotEmptyString,
+  isNullOrUndefined,
+} from '../utils/index.js';
 
 enum CacheType {
   chargingStationTemplate = 'chargingStationTemplate',

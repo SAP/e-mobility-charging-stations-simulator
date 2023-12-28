@@ -2,8 +2,8 @@
 
 import type { JSONSchemaType } from 'ajv';
 
-import { type JsonType, OCPPVersion } from '../../../types';
-import { OCPPServiceUtils } from '../OCPPServiceUtils';
+import { type JsonType, OCPPVersion } from '../../../types/index.js';
+import { OCPPServiceUtils } from '../OCPPServiceUtils.js';
 
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static parseJsonSchemaFile<T extends JsonType>(

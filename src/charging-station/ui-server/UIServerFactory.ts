@@ -1,14 +1,14 @@
 import chalk from 'chalk';
 
-import type { AbstractUIServer } from './AbstractUIServer';
-import { UIHttpServer } from './UIHttpServer';
-import { UIServerUtils } from './UIServerUtils';
-import { UIWebSocketServer } from './UIWebSocketServer';
+import type { AbstractUIServer } from './AbstractUIServer.js';
+import { UIHttpServer } from './UIHttpServer.js';
+import { UIServerUtils } from './UIServerUtils.js';
+import { UIWebSocketServer } from './UIWebSocketServer.js';
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
   type UIServerConfiguration,
-} from '../../types';
+} from '../../types/index.js';
 
 export class UIServerFactory {
   private constructor() {

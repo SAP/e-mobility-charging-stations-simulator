@@ -2,7 +2,7 @@
 import { Collection, Entity, OneToMany, PrimaryKey, Property } from '@mikro-orm/core';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { PerformanceData } from './PerformanceData';
+import type { PerformanceData } from './PerformanceData.js';
 
 @Entity()
 export class PerformanceRecord {

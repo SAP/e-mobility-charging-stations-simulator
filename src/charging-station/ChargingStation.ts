@@ -11,14 +11,14 @@ import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns';
 import merge from 'just-merge';
 import { type RawData, WebSocket } from 'ws';
 
-import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator';
-import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel';
+import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js';
+import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js';
 import {
   addConfigurationKey,
   deleteConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
-} from './ConfigurationKeyUtils';
+} from './ConfigurationKeyUtils.js';
 import {
   buildConnectorsMap,
   checkChargingStation,
@@ -43,8 +43,8 @@ import {
   propagateSerialNumber,
   stationTemplateToStationInfo,
   warnTemplateKeysDeprecation,
-} from './Helpers';
-import { IdTagsCache } from './IdTagsCache';
+} from './Helpers.js';
+import { IdTagsCache } from './IdTagsCache.js';
 import {
   OCPP16IncomingRequestService,
   OCPP16RequestService,
@@ -59,10 +59,10 @@ import {
   buildTransactionEndMeterValue,
   getMessageTypeString,
   sendAndSetConnectorStatus,
-} from './ocpp';
-import { SharedLRUCache } from './SharedLRUCache';
-import { BaseError, OCPPError } from '../exception';
-import { PerformanceStatistics } from '../performance';
+} from './ocpp/index.js';
+import { SharedLRUCache } from './SharedLRUCache.js';
+import { BaseError, OCPPError } from '../exception/index.js';
+import { PerformanceStatistics } from '../performance/index.js';
 import {
   type AutomaticTransactionGeneratorConfiguration,
   AvailabilityType,
@@ -117,7 +117,7 @@ import {
   type WSError,
   WebSocketCloseEventStatusCode,
   type WsOptions,
-} from '../types';
+} from '../types/index.js';
 import {
   ACElectricUtils,
   AsyncLock,
@@ -152,7 +152,7 @@ import {
   secureRandom,
   sleep,
   watchJsonFile,
-} from '../utils';
+} from '../utils/index.js';
 
 export class ChargingStation extends EventEmitter {
   public readonly index: number;

@@ -6,11 +6,11 @@ import {
   DataTransferStatus,
   GenericStatus,
   MeterValueMeasurand,
+  ReservationStatus,
   TriggerMessageStatus,
   UnlockStatus,
-} from '../../types';
-import { ReservationStatus } from '../../types/ocpp/Responses';
-import { Constants } from '../../utils';
+} from '../../types/index.js';
+import { Constants } from '../../utils/index.js';
 
 export class OCPPConstants {
   static readonly OCPP_WEBSOCKET_TIMEOUT = 60000; // Ms

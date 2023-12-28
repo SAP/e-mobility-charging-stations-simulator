@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 
 import { expect } from 'expect';
 
-import { average, median, nthPercentile, stdDeviation } from '../../src/utils/StatisticUtils';
+import { average, median, nthPercentile, stdDeviation } from '../../src/utils/StatisticUtils.js';
 
 await describe('StatisticUtils test suite', async () => {
   await it('Verify average()', () => {

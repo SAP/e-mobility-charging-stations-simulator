@@ -1,4 +1,4 @@
-import type { JsonObject } from '../../JsonType';
+import type { JsonObject } from '../../JsonType.js';
 
 export interface OCPP16ChargingProfile extends JsonObject {
   chargingProfileId: number;

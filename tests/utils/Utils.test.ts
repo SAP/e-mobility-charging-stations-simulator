@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns';
 import { expect } from 'expect';
 
-import { Constants } from '../../src/utils/Constants';
+import { Constants } from '../../src/utils/Constants.js';
 import {
   cloneObject,
   convertToBoolean,
@@ -35,7 +35,7 @@ import {
   secureRandom,
   sleep,
   validateUUID,
-} from '../../src/utils/Utils';
+} from '../../src/utils/Utils.js';
 
 await describe('Utils test suite', async () => {
   await it('Verify generateUUID()/validateUUID()', () => {

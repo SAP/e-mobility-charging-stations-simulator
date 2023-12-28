@@ -1,5 +1,5 @@
-import { type ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../../types';
-import { OCPPConstants } from '../OCPPConstants';
+import { type ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../../types/index.js';
+import { OCPPConstants } from '../OCPPConstants.js';
 
 export class OCPP16Constants extends OCPPConstants {
   static readonly ChargePointStatusChargingStationTransitions: Readonly<

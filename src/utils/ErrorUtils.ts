@@ -2,9 +2,9 @@ import process from 'node:process';
 
 import chalk from 'chalk';
 
-import { logger } from './Logger';
-import { isNotEmptyString } from './Utils';
-import type { ChargingStation } from '../charging-station';
+import { logger } from './Logger.js';
+import { isNotEmptyString } from './Utils.js';
+import type { ChargingStation } from '../charging-station/index.js';
 import type {
   EmptyObject,
   FileType,
@@ -12,7 +12,7 @@ import type {
   IncomingRequestCommand,
   JsonType,
   RequestCommand,
-} from '../types';
+} from '../types/index.js';
 
 const defaultErrorParams = {
   throwError: true,

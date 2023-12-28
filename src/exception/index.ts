@@ -1,2 +1,2 @@
-export { BaseError } from './BaseError';
-export { OCPPError } from './OCPPError';
+export { BaseError } from './BaseError.js';
+export { OCPPError } from './OCPPError.js';
