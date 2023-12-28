@@ -1,4 +1,4 @@
-import LRUCache from 'mnemonist/lru-map-with-delete.js';
+import { LRUMapWithDelete as LRUCache } from 'mnemonist';
 
 import { Bootstrap } from './Bootstrap.js';
 import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types/index.js';

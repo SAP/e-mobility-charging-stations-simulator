@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import Queue from 'mnemonist/queue.js';
+import { Queue } from 'mnemonist';
 
 import { Constants } from './Constants.js';
 

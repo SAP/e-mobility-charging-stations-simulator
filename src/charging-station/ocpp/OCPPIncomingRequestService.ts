@@ -25,6 +25,7 @@ export abstract class OCPPIncomingRequestService {
 
   protected constructor(version: OCPPVersion) {
     this.version = version;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.ajv = new Ajv({
       keywords: ['javaType'],
       multipleOfPrecision: 2,
@@ -117,6 +118,7 @@ export abstract class OCPPIncomingRequestService {
     schema: JSONSchemaType<T>,
   ) {
     if (this.jsonValidateFunctions.has(commandName) === false) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       this.jsonValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
     }
     return this.jsonValidateFunctions.get(commandName)!;
