@@ -1,5 +1,5 @@
-import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
-import ajvFormats from 'ajv-formats';
+import _Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
+import _ajvFormats from 'ajv-formats';
 
 import { OCPPConstants } from './OCPPConstants.js';
 import { OCPPServiceUtils } from './OCPPServiceUtils.js';
@@ -13,6 +13,9 @@ import type {
   OCPPVersion,
 } from '../../types/index.js';
 import { logger, setDefaultErrorParams } from '../../utils/index.js';
+type Ajv = _Ajv.default;
+const Ajv = _Ajv.default;
+const ajvFormats = _ajvFormats.default;
 
 const moduleName = 'OCPPIncomingRequestService';
 
@@ -25,7 +28,6 @@ export abstract class OCPPIncomingRequestService {
 
   protected constructor(version: OCPPVersion) {
     this.version = version;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.ajv = new Ajv({
       keywords: ['javaType'],
       multipleOfPrecision: 2,
@@ -118,7 +120,6 @@ export abstract class OCPPIncomingRequestService {
     schema: JSONSchemaType<T>,
   ) {
     if (this.jsonValidateFunctions.has(commandName) === false) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       this.jsonValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
     }
     return this.jsonValidateFunctions.get(commandName)!;
