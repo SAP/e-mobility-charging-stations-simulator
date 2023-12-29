@@ -116,9 +116,7 @@ export class SharedLRUCache {
       chargingStationConfiguration?.automaticTransactionGenerator != null &&
       chargingStationConfiguration?.configurationHash != null &&
       isNotEmptyArray(chargingStationConfiguration?.configurationKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       !isEmptyObject(chargingStationConfiguration.stationInfo) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       !isEmptyObject(chargingStationConfiguration.automaticTransactionGenerator) &&
       isNotEmptyString(chargingStationConfiguration?.configurationHash)
     )
