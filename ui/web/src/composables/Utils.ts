@@ -1,9 +1,5 @@
-const isUndefined = (value: unknown): boolean => {
-  return typeof value === 'undefined'
-}
-
 export const ifUndefined = <T>(value: T | undefined, isValue: T): T => {
-  if (isUndefined(value) === true) return isValue
+  if (value === undefined) return isValue
   return value as T
 }
 
