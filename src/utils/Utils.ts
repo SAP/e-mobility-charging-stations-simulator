@@ -287,10 +287,6 @@ export const isNotEmptyString = (value: unknown): boolean => {
   return isString(value) && (value as string).trim().length > 0
 }
 
-export const isUndefined = (value: unknown): boolean => {
-  return value === undefined
-}
-
 export const isEmptyArray = (object: unknown): boolean => {
   return Array.isArray(object) && object.length === 0
 }
@@ -377,9 +373,8 @@ export const getWebSocketCloseEventStatusString = (code: number): string => {
     }
   }
   if (
-    !isUndefined(
-      WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString]
-    )
+    WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString] !==
+    undefined
   ) {
     return WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString]
   }

@@ -59,7 +59,6 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
-  isUndefined,
   logPrefix,
   logger,
   max,
@@ -1045,7 +1044,7 @@ const checkMeasurandPowerDivider = (
   chargingStation: ChargingStation,
   measurandType: MeterValueMeasurand
 ): void => {
-  if (isUndefined(chargingStation.powerDivider)) {
+  if (chargingStation.powerDivider == null) {
     const errMsg = `MeterValues measurand ${
       measurandType ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
     }: powerDivider is undefined`

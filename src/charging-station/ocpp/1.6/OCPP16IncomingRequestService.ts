@@ -105,7 +105,6 @@ import {
   isEmptyArray,
   isNotEmptyArray,
   isNotEmptyString,
-  isUndefined,
   logger,
   sleep
 } from '../../../utils/index.js'
@@ -501,13 +500,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { key } = commandPayload
     const configurationKey: OCPPConfigurationKey[] = []
     const unknownKey: string[] = []
-    if (isUndefined(key)) {
+    if (key == null) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       for (const configuration of chargingStation.ocppConfiguration!.configurationKey!) {
-        if (isUndefined(configuration.visible)) {
+        if (configuration.visible == null) {
           configuration.visible = true
         }
-        if (configuration.visible === false) {
+        if (!configuration.visible) {
           continue
         }
         configurationKey.push({
@@ -517,14 +516,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         })
       }
     } else if (isNotEmptyArray(key)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const k of key!) {
+      for (const k of key) {
         const keyFound = getConfigurationKey(chargingStation, k, true)
         if (keyFound != null) {
-          if (isUndefined(keyFound.visible)) {
+          if (keyFound.visible == null) {
             keyFound.visible = true
           }
-          if (keyFound.visible === false) {
+          if (!keyFound.visible) {
             continue
           }
           configurationKey.push({
@@ -1657,15 +1655,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     try {
       const { reservationId } = commandPayload
       const reservation = chargingStation.getReservationBy('reservationId', reservationId)
-      if (isUndefined(reservation)) {
+      if (reservation == null) {
         logger.debug(
           `${chargingStation.logPrefix()} Reservation with id ${reservationId} does not exist on charging station`
         )
         return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED
       }
       await chargingStation.removeReservation(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        reservation!,
+        reservation,
         ReservationTerminationReason.RESERVATION_CANCELED
       )
       return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED

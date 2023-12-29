@@ -15,7 +15,7 @@ import {
   logPrefix
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
-import { hasOwnProp, isCFEnvironment, isUndefined, once } from './Utils.js'
+import { hasOwnProp, isCFEnvironment, once } from './Utils.js'
 import {
   ApplicationProtocol,
   type ConfigurationData,
@@ -90,9 +90,8 @@ export class Configuration {
 
   public static getSupervisionUrls (): string | string[] | undefined {
     if (
-      !isUndefined(
-        Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData]
-      )
+      Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] !==
+      undefined
     ) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
@@ -318,9 +317,8 @@ export class Configuration {
       undefined,
       "Use 'stationTemplateUrls' instead"
     )
-    !isUndefined(
-      Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData]
-    ) &&
+    Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !==
+      undefined &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       (Configuration.getConfigurationData()!.stationTemplateUrls =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -329,7 +327,7 @@ export class Configuration {
         ] as StationTemplateUrl[])
     Configuration.getConfigurationData()?.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
-        if (!isUndefined(stationTemplateUrl?.['numberOfStation' as keyof StationTemplateUrl])) {
+        if (stationTemplateUrl?.['numberOfStation' as keyof StationTemplateUrl] !== undefined) {
           console.error(
             `${chalk.green(logPrefix())} ${chalk.red(
               `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`
@@ -490,17 +488,14 @@ export class Configuration {
   ): void {
     if (
       sectionName != null &&
-      !isUndefined(
-        Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData]
-      ) &&
-      !isUndefined(
-        (
-          Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] as Record<
-          string,
-          unknown
-          >
-        )?.[key]
-      )
+      Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] !==
+        undefined &&
+      (
+        Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] as Record<
+        string,
+        unknown
+        >
+      )?.[key] !== undefined
     ) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
@@ -510,7 +505,7 @@ export class Configuration {
         )}`
       )
     } else if (
-      !isUndefined(Configuration.getConfigurationData()?.[key as keyof ConfigurationData])
+      Configuration.getConfigurationData()?.[key as keyof ConfigurationData] !== undefined
     ) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
@@ -561,7 +556,7 @@ export class Configuration {
           )
           delete Configuration.configurationData
           Configuration.configurationSectionCache.clear()
-          if (!isUndefined(Configuration.configurationChangeCallback)) {
+          if (Configuration.configurationChangeCallback !== undefined) {
             Configuration.configurationChangeCallback()
               .catch((error) => {
                 throw typeof error === 'string' ? new Error(error) : error

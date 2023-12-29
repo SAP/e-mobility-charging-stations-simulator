@@ -143,7 +143,6 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
-  isUndefined,
   logPrefix,
   logger,
   min,
@@ -963,20 +962,15 @@ export class ChargingStation extends EventEmitter {
     connectorId?: number
   ): boolean {
     const reservation = this.getReservationBy('reservationId', reservationId)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const reservationExists = !isUndefined(reservation) && !hasReservationExpired(reservation!)
+    const reservationExists = reservation !== undefined && !hasReservationExpired(reservation)
     if (arguments.length === 1) {
       return !reservationExists
     } else if (arguments.length > 1) {
-      const userReservation = !isUndefined(idTag)
-        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.getReservationBy('idTag', idTag!)
-        : undefined
+      const userReservation =
+        idTag !== undefined ? this.getReservationBy('idTag', idTag) : undefined
       const userReservationExists =
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        !isUndefined(userReservation) && !hasReservationExpired(userReservation!)
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const notConnectorZero = isUndefined(connectorId) ? true : connectorId! > 0
+        userReservation !== undefined && !hasReservationExpired(userReservation)
+      const notConnectorZero = connectorId === undefined ? true : connectorId > 0
       const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0
       return (
         !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable

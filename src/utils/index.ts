@@ -45,7 +45,6 @@ export {
   isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
-  isUndefined,
   isValidTime,
   logPrefix,
   max,

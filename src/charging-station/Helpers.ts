@@ -65,7 +65,6 @@ import {
   isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
-  isUndefined,
   isValidTime,
   logger,
   secureRandom
@@ -146,16 +145,16 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
   const chargingStationInfo = {
     chargePointModel: stationTemplate.chargePointModel,
     chargePointVendor: stationTemplate.chargePointVendor,
-    ...(!isUndefined(stationTemplate.chargeBoxSerialNumberPrefix) && {
+    ...(stationTemplate.chargeBoxSerialNumberPrefix !== undefined && {
       chargeBoxSerialNumber: stationTemplate.chargeBoxSerialNumberPrefix
     }),
-    ...(!isUndefined(stationTemplate.chargePointSerialNumberPrefix) && {
+    ...(stationTemplate.chargePointSerialNumberPrefix !== undefined && {
       chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix
     }),
-    ...(!isUndefined(stationTemplate.meterSerialNumberPrefix) && {
+    ...(stationTemplate.meterSerialNumberPrefix !== undefined && {
       meterSerialNumber: stationTemplate.meterSerialNumberPrefix
     }),
-    ...(!isUndefined(stationTemplate.meterType) && {
+    ...(stationTemplate.meterType !== undefined && {
       meterType: stationTemplate.meterType
     })
   }
@@ -356,7 +355,7 @@ export const initializeConnectorsMapStatus = (
     if (connectorId === 0) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       connectors.get(connectorId)!.availability = AvailabilityType.Operative
-      if (isUndefined(connectors.get(connectorId)?.chargingProfiles)) {
+      if (connectors.get(connectorId)?.chargingProfiles == null) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         connectors.get(connectorId)!.chargingProfiles = []
       }
@@ -398,21 +397,21 @@ export const createBootNotificationRequest = (
       return {
         chargePointModel: stationInfo.chargePointModel,
         chargePointVendor: stationInfo.chargePointVendor,
-        ...(!isUndefined(stationInfo.chargeBoxSerialNumber) && {
+        ...(stationInfo.chargeBoxSerialNumber !== undefined && {
           chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber
         }),
-        ...(!isUndefined(stationInfo.chargePointSerialNumber) && {
+        ...(stationInfo.chargePointSerialNumber !== undefined && {
           chargePointSerialNumber: stationInfo.chargePointSerialNumber
         }),
-        ...(!isUndefined(stationInfo.firmwareVersion) && {
+        ...(stationInfo.firmwareVersion !== undefined && {
           firmwareVersion: stationInfo.firmwareVersion
         }),
-        ...(!isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-        ...(!isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-        ...(!isUndefined(stationInfo.meterSerialNumber) && {
+        ...(stationInfo.iccid !== undefined && { iccid: stationInfo.iccid }),
+        ...(stationInfo.imsi !== undefined && { imsi: stationInfo.imsi }),
+        ...(stationInfo.meterSerialNumber !== undefined && {
           meterSerialNumber: stationInfo.meterSerialNumber
         }),
-        ...(!isUndefined(stationInfo.meterType) && {
+        ...(stationInfo.meterType !== undefined && {
           meterType: stationInfo.meterType
         })
       } satisfies OCPP16BootNotificationRequest
@@ -423,16 +422,16 @@ export const createBootNotificationRequest = (
         chargingStation: {
           model: stationInfo.chargePointModel,
           vendorName: stationInfo.chargePointVendor,
-          ...(!isUndefined(stationInfo.firmwareVersion) && {
+          ...(stationInfo.firmwareVersion !== undefined && {
             firmwareVersion: stationInfo.firmwareVersion
           }),
-          ...(!isUndefined(stationInfo.chargeBoxSerialNumber) && {
+          ...(stationInfo.chargeBoxSerialNumber !== undefined && {
             serialNumber: stationInfo.chargeBoxSerialNumber
           }),
-          ...((!isUndefined(stationInfo.iccid) || !isUndefined(stationInfo.imsi)) && {
+          ...((stationInfo.iccid !== undefined || stationInfo.imsi !== undefined) && {
             modem: {
-              ...(!isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-              ...(!isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi })
+              ...(stationInfo.iccid !== undefined && { iccid: stationInfo.iccid }),
+              ...(stationInfo.imsi !== undefined && { imsi: stationInfo.imsi })
             }
           })
         }
@@ -457,7 +456,7 @@ export const warnTemplateKeysDeprecation = (
       templateKey.deprecatedKey,
       logPrefix,
       templateFile,
-      !isUndefined(templateKey.key) ? `Use '${templateKey.key}' instead` : undefined
+      templateKey.key !== undefined ? `Use '${templateKey.key}' instead` : undefined
     )
     convertDeprecatedTemplateKey(stationTemplate, templateKey.deprecatedKey, templateKey.key)
   }
@@ -679,7 +678,7 @@ const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemp
     const numberOfConnectors = stationTemplate.numberOfConnectors as number[]
     configuredMaxNumberOfConnectors =
       numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)]
-  } else if (!isUndefined(stationTemplate.numberOfConnectors)) {
+  } else if (stationTemplate.numberOfConnectors != null) {
     configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors as number
   } else if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
     configuredMaxNumberOfConnectors =
@@ -735,7 +734,7 @@ const initializeConnectorStatus = (connectorStatus: ConnectorStatus): void => {
   connectorStatus.transactionStarted = false
   connectorStatus.energyActiveImportRegisterValue = 0
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-  if (isUndefined(connectorStatus.chargingProfiles)) {
+  if (connectorStatus.chargingProfiles == null) {
     connectorStatus.chargingProfiles = []
   }
 }
@@ -747,7 +746,7 @@ const warnDeprecatedTemplateKey = (
   templateFile: string,
   logMsgToAppend = ''
 ): void => {
-  if (!isUndefined(template?.[key as keyof ChargingStationTemplate])) {
+  if (template?.[key as keyof ChargingStationTemplate] !== undefined) {
     const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
     }`
@@ -761,10 +760,9 @@ const convertDeprecatedTemplateKey = (
   deprecatedKey: string,
   key?: string
 ): void => {
-  if (!isUndefined(template?.[deprecatedKey as keyof ChargingStationTemplate])) {
-    if (!isUndefined(key)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (template as unknown as Record<string, unknown>)[key!] =
+  if (template?.[deprecatedKey as keyof ChargingStationTemplate] !== undefined) {
+    if (key !== undefined) {
+      (template as unknown as Record<string, unknown>)[key] =
         template[deprecatedKey as keyof ChargingStationTemplate]
     }
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
