@@ -1,7 +1,7 @@
-import { fileURLToPath } from 'node:url';
-import { configDefaults, defineConfig } from 'vitest/config';
-import { mergeConfig } from 'vite';
-import viteConfig from './vite.config';
+import { fileURLToPath } from 'node:url'
+import { configDefaults, defineConfig } from 'vitest/config'
+import { mergeConfig } from 'vite'
+import viteConfig from './vite.config'
 
 export default mergeConfig(
   viteConfig,
@@ -12,8 +12,8 @@ export default mergeConfig(
       root: fileURLToPath(new URL('./', import.meta.url)),
       coverage: {
         provider: 'v8',
-        reporter: ['text', 'lcov'],
-      },
-    },
-  }),
-);
+        reporter: ['text', 'lcov']
+      }
+    }
+  })
+)

@@ -30,13 +30,13 @@
 </template>
 
 <script setup lang="ts">
-import CSData from './CSData.vue';
-import type { ChargingStationData } from '@/types';
+import CSData from './CSData.vue'
+import type { ChargingStationData } from '@/types'
 
 const props = defineProps<{
-  chargingStations: ChargingStationData[];
-  idTag: string;
-}>();
+  chargingStations: ChargingStationData[]
+  idTag: string
+}>()
 </script>
 
 <style>

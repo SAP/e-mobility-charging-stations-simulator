@@ -1,127 +1,131 @@
-import { LRUMapWithDelete as LRUCache } from 'mnemonist';
+import { LRUMapWithDelete as LRUCache } from 'mnemonist'
 
-import { Bootstrap } from './Bootstrap.js';
-import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types/index.js';
+import { Bootstrap } from './Bootstrap.js'
+import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types/index.js'
 import {
   isEmptyObject,
   isNotEmptyArray,
   isNotEmptyString,
-  isNullOrUndefined,
-} from '../utils/index.js';
+  isNullOrUndefined
+} from '../utils/index.js'
 
 enum CacheType {
   chargingStationTemplate = 'chargingStationTemplate',
-  chargingStationConfiguration = 'chargingStationConfiguration',
+  chargingStationConfiguration = 'chargingStationConfiguration'
 }
 
-type CacheValueType = ChargingStationTemplate | ChargingStationConfiguration;
+type CacheValueType = ChargingStationTemplate | ChargingStationConfiguration
 
 export class SharedLRUCache {
-  private static instance: SharedLRUCache | null = null;
-  private readonly lruCache: LRUCache<string, CacheValueType>;
+  private static instance: SharedLRUCache | null = null
+  private readonly lruCache: LRUCache<string, CacheValueType>
 
-  private constructor() {
+  private constructor () {
     this.lruCache = new LRUCache<string, CacheValueType>(
       Bootstrap.getInstance().numberOfChargingStationTemplates +
-        Bootstrap.getInstance().numberOfChargingStations,
-    );
+        Bootstrap.getInstance().numberOfChargingStations
+    )
   }
 
-  public static getInstance(): SharedLRUCache {
+  public static getInstance (): SharedLRUCache {
     if (SharedLRUCache.instance === null) {
-      SharedLRUCache.instance = new SharedLRUCache();
+      SharedLRUCache.instance = new SharedLRUCache()
     }
-    return SharedLRUCache.instance;
+    return SharedLRUCache.instance
   }
 
-  public hasChargingStationConfiguration(chargingStationConfigurationHash: string): boolean {
-    return this.has(this.getChargingStationConfigurationKey(chargingStationConfigurationHash));
+  public hasChargingStationConfiguration (chargingStationConfigurationHash: string): boolean {
+    return this.has(this.getChargingStationConfigurationKey(chargingStationConfigurationHash))
   }
 
-  public setChargingStationConfiguration(
-    chargingStationConfiguration: ChargingStationConfiguration,
+  public setChargingStationConfiguration (
+    chargingStationConfiguration: ChargingStationConfiguration
   ): void {
     if (this.isChargingStationConfigurationCacheable(chargingStationConfiguration)) {
       this.set(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.getChargingStationConfigurationKey(chargingStationConfiguration.configurationHash!),
-        chargingStationConfiguration,
-      );
+        chargingStationConfiguration
+      )
     }
   }
 
-  public getChargingStationConfiguration(
-    chargingStationConfigurationHash: string,
+  public getChargingStationConfiguration (
+    chargingStationConfigurationHash: string
   ): ChargingStationConfiguration {
     return this.get(
-      this.getChargingStationConfigurationKey(chargingStationConfigurationHash),
-    ) as ChargingStationConfiguration;
+      this.getChargingStationConfigurationKey(chargingStationConfigurationHash)
+    ) as ChargingStationConfiguration
   }
 
-  public deleteChargingStationConfiguration(chargingStationConfigurationHash: string): void {
-    this.delete(this.getChargingStationConfigurationKey(chargingStationConfigurationHash));
+  public deleteChargingStationConfiguration (chargingStationConfigurationHash: string): void {
+    this.delete(this.getChargingStationConfigurationKey(chargingStationConfigurationHash))
   }
 
-  public hasChargingStationTemplate(chargingStationTemplateHash: string): boolean {
-    return this.has(this.getChargingStationTemplateKey(chargingStationTemplateHash));
+  public hasChargingStationTemplate (chargingStationTemplateHash: string): boolean {
+    return this.has(this.getChargingStationTemplateKey(chargingStationTemplateHash))
   }
 
-  public setChargingStationTemplate(chargingStationTemplate: ChargingStationTemplate): void {
+  public setChargingStationTemplate (chargingStationTemplate: ChargingStationTemplate): void {
     this.set(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.getChargingStationTemplateKey(chargingStationTemplate.templateHash!),
-      chargingStationTemplate,
-    );
+      chargingStationTemplate
+    )
   }
 
-  public getChargingStationTemplate(chargingStationTemplateHash: string): ChargingStationTemplate {
+  public getChargingStationTemplate (chargingStationTemplateHash: string): ChargingStationTemplate {
     return this.get(
-      this.getChargingStationTemplateKey(chargingStationTemplateHash),
-    ) as ChargingStationTemplate;
+      this.getChargingStationTemplateKey(chargingStationTemplateHash)
+    ) as ChargingStationTemplate
   }
 
-  public deleteChargingStationTemplate(chargingStationTemplateHash: string): void {
-    this.delete(this.getChargingStationTemplateKey(chargingStationTemplateHash));
+  public deleteChargingStationTemplate (chargingStationTemplateHash: string): void {
+    this.delete(this.getChargingStationTemplateKey(chargingStationTemplateHash))
   }
 
-  public clear(): void {
-    this.lruCache.clear();
+  public clear (): void {
+    this.lruCache.clear()
   }
 
-  private getChargingStationConfigurationKey(hash: string): string {
-    return `${CacheType.chargingStationConfiguration}${hash}`;
+  private getChargingStationConfigurationKey (hash: string): string {
+    return `${CacheType.chargingStationConfiguration}${hash}`
   }
 
-  private getChargingStationTemplateKey(hash: string): string {
-    return `${CacheType.chargingStationTemplate}${hash}`;
+  private getChargingStationTemplateKey (hash: string): string {
+    return `${CacheType.chargingStationTemplate}${hash}`
   }
 
-  private has(key: string): boolean {
-    return this.lruCache.has(key);
+  private has (key: string): boolean {
+    return this.lruCache.has(key)
   }
 
-  private get(key: string): CacheValueType | undefined {
-    return this.lruCache.get(key);
+  private get (key: string): CacheValueType | undefined {
+    return this.lruCache.get(key)
   }
 
-  private set(key: string, value: CacheValueType): void {
-    this.lruCache.set(key, value);
+  private set (key: string, value: CacheValueType): void {
+    this.lruCache.set(key, value)
   }
 
-  private delete(key: string): void {
-    this.lruCache.delete(key);
+  private delete (key: string): void {
+    this.lruCache.delete(key)
   }
 
-  private isChargingStationConfigurationCacheable(
-    chargingStationConfiguration: ChargingStationConfiguration,
+  private isChargingStationConfigurationCacheable (
+    chargingStationConfiguration: ChargingStationConfiguration
   ): boolean {
     return (
-      isNullOrUndefined(chargingStationConfiguration?.configurationKey) === false &&
-      isNullOrUndefined(chargingStationConfiguration?.stationInfo) === false &&
-      isNullOrUndefined(chargingStationConfiguration?.automaticTransactionGenerator) === false &&
-      isNullOrUndefined(chargingStationConfiguration?.configurationHash) === false &&
-      isNotEmptyArray(chargingStationConfiguration?.configurationKey) === true &&
-      isEmptyObject(chargingStationConfiguration.stationInfo!) === false &&
-      isEmptyObject(chargingStationConfiguration.automaticTransactionGenerator!) === false &&
-      isNotEmptyString(chargingStationConfiguration?.configurationHash) === true
-    );
+      !isNullOrUndefined(chargingStationConfiguration?.configurationKey) &&
+      !isNullOrUndefined(chargingStationConfiguration?.stationInfo) &&
+      !isNullOrUndefined(chargingStationConfiguration?.automaticTransactionGenerator) &&
+      !isNullOrUndefined(chargingStationConfiguration?.configurationHash) &&
+      isNotEmptyArray(chargingStationConfiguration?.configurationKey) &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      !isEmptyObject(chargingStationConfiguration.stationInfo!) &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      !isEmptyObject(chargingStationConfiguration.automaticTransactionGenerator!) &&
+      isNotEmptyString(chargingStationConfiguration?.configurationHash)
+    )
   }
 }

@@ -1,62 +1,61 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { URL } from 'node:url';
+import { URL } from 'node:url'
 
 import {
   DBName,
   type EmptyObject,
   type HandleErrorParams,
   type Statistics,
-  StorageType,
-} from '../../types/index.js';
-import { isNullOrUndefined, logger, setDefaultErrorParams } from '../../utils/index.js';
+  StorageType
+} from '../../types/index.js'
+import { logger, setDefaultErrorParams } from '../../utils/index.js'
 
 export abstract class Storage {
-  protected readonly storageUri: URL;
-  protected readonly logPrefix: string;
-  protected dbName!: string;
+  protected readonly storageUri: URL
+  protected readonly logPrefix: string
+  protected dbName!: string
 
-  constructor(storageUri: string, logPrefix: string) {
-    this.storageUri = new URL(storageUri);
-    this.logPrefix = logPrefix;
+  constructor (storageUri: string, logPrefix: string) {
+    this.storageUri = new URL(storageUri)
+    this.logPrefix = logPrefix
   }
 
-  protected handleDBError(
+  protected handleDBError (
     type: StorageType,
     error: Error,
     table?: string,
-    params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false },
+    params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
   ): void {
-    setDefaultErrorParams(params, { throwError: false, consoleOut: false });
-    const inTableOrCollectionStr =
-      (!isNullOrUndefined(table) || !table) && ` in table or collection '${table}'`;
+    setDefaultErrorParams(params, { throwError: false, consoleOut: false })
+    const inTableOrCollectionStr = table != null && ` in table or collection '${table}'`
     logger.error(
       `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
         error.message
       }'${inTableOrCollectionStr}:`,
-      error,
-    );
-    if (params?.throwError) {
-      throw error;
+      error
+    )
+    if (params?.throwError === true) {
+      throw error
     }
   }
 
-  protected getDBNameFromStorageType(type: StorageType): DBName | undefined {
+  protected getDBNameFromStorageType (type: StorageType): DBName | undefined {
     switch (type) {
       case StorageType.MARIA_DB:
-        return DBName.MARIA_DB;
+        return DBName.MARIA_DB
       case StorageType.MONGO_DB:
-        return DBName.MONGO_DB;
+        return DBName.MONGO_DB
       case StorageType.MYSQL:
-        return DBName.MYSQL;
+        return DBName.MYSQL
       case StorageType.SQLITE:
-        return DBName.SQLITE;
+        return DBName.SQLITE
     }
   }
 
-  public abstract open(): void | Promise<void>;
-  public abstract close(): void | Promise<void>;
-  public abstract storePerformanceStatistics(
-    performanceStatistics: Statistics,
-  ): void | Promise<void>;
+  public abstract open (): void | Promise<void>
+  public abstract close (): void | Promise<void>
+  public abstract storePerformanceStatistics (
+    performanceStatistics: Statistics
+  ): void | Promise<void>
 }

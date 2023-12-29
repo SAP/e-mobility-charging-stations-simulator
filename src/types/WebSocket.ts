@@ -15,8 +15,8 @@ export const WebSocketCloseEventStatusString: Record<WebSocketCloseEventStatusCo
     1012: 'Service Restart',
     1013: 'Try Again Later',
     1014: 'Bad Gateway',
-    1015: 'TLS Handshake',
-  });
+    1015: 'TLS Handshake'
+  })
 
 export enum WebSocketCloseEventStatusCode {
   CLOSE_NORMAL = 1000,
@@ -34,9 +34,9 @@ export enum WebSocketCloseEventStatusCode {
   CLOSE_SERVICE_RESTART = 1012,
   CLOSE_TRY_AGAIN_LATER = 1013,
   CLOSE_BAD_GATEWAY = 1014,
-  CLOSE_TLS_HANDSHAKE = 1015,
+  CLOSE_TLS_HANDSHAKE = 1015
 }
 
 export interface WSError extends Error {
-  code?: string;
+  code?: string
 }

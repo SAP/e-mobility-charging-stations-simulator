@@ -1,5 +1,5 @@
-import type { EVSEType, StatusInfoType } from './Common.js';
-import type { JsonObject } from '../../JsonType.js';
+import type { EVSEType, StatusInfoType } from './Common.js'
+import type { JsonObject } from '../../JsonType.js'
 
 enum OCPP20ComponentName {
   AlignedDataCtrlr = 'AlignedDataCtrlr',
@@ -19,7 +19,7 @@ enum OCPP20ComponentName {
   SecurityCtrlr = 'SecurityCtrlr',
   SmartChargingCtrlr = 'SmartChargingCtrlr',
   TariffCostCtrlr = 'TariffCostCtrlr',
-  TxCtrlr = 'TxCtrlr',
+  TxCtrlr = 'TxCtrlr'
 }
 
 export enum OCPP20RequiredVariableName {
@@ -50,48 +50,48 @@ export enum OCPP20RequiredVariableName {
   TxEndedMeasurands = 'TxEndedMeasurands',
   TxStartedMeasurands = 'TxStartedMeasurands',
   TxUpdatedMeasurands = 'TxUpdatedMeasurands',
-  TxUpdatedInterval = 'TxUpdatedInterval',
+  TxUpdatedInterval = 'TxUpdatedInterval'
 }
 
 export enum OCPP20OptionalVariableName {
   HeartbeatInterval = 'HeartbeatInterval',
-  WebSocketPingInterval = 'WebSocketPingInterval',
+  WebSocketPingInterval = 'WebSocketPingInterval'
 }
 
 export enum OCPP20VendorVariableName {
-  ConnectionUrl = 'ConnectionUrl',
+  ConnectionUrl = 'ConnectionUrl'
 }
 
 enum AttributeEnumType {
   Actual = 'Actual',
   Target = 'Target',
   MinSet = 'MinSet',
-  MaxSet = 'MaxSet',
+  MaxSet = 'MaxSet'
 }
 
 type ComponentType = {
-  name: string | OCPP20ComponentName;
-  instance?: string;
-  evse?: EVSEType;
-} & JsonObject;
+  name: string | OCPP20ComponentName
+  instance?: string
+  evse?: EVSEType
+} & JsonObject
 
 type VariableName =
   | string
   | OCPP20RequiredVariableName
   | OCPP20OptionalVariableName
-  | OCPP20VendorVariableName;
+  | OCPP20VendorVariableName
 
 type VariableType = {
-  name: VariableName;
-  instance?: string;
-} & JsonObject;
+  name: VariableName
+  instance?: string
+} & JsonObject
 
 export type OCPP20SetVariableDataType = {
-  attributeType?: AttributeEnumType;
-  attributeValue: string;
-  component: ComponentType;
-  variable: VariableType;
-} & JsonObject;
+  attributeType?: AttributeEnumType
+  attributeValue: string
+  component: ComponentType
+  variable: VariableType
+} & JsonObject
 
 enum SetVariableStatusEnumType {
   Accepted = 'Accepted',
@@ -99,18 +99,18 @@ enum SetVariableStatusEnumType {
   UnknownComponent = 'UnknownComponent',
   UnknownVariable = 'UnknownVariable',
   NotSupportedAttributeType = 'NotSupportedAttributeType',
-  RebootRequired = 'RebootRequired',
+  RebootRequired = 'RebootRequired'
 }
 
 export type OCPP20SetVariableResultType = {
-  attributeType?: AttributeEnumType;
-  attributeStatus: SetVariableStatusEnumType;
-  component: ComponentType;
-  variable: VariableType;
-  attributeStatusInfo?: StatusInfoType;
-} & JsonObject;
+  attributeType?: AttributeEnumType
+  attributeStatus: SetVariableStatusEnumType
+  component: ComponentType
+  variable: VariableType
+  attributeStatusInfo?: StatusInfoType
+} & JsonObject
 
 export type OCPP20ComponentVariableType = {
-  component: ComponentType;
-  variable?: VariableType;
-} & JsonObject;
+  component: ComponentType
+  variable?: VariableType
+} & JsonObject

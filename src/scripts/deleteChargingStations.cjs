@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const fs = require('node:fs');
+const fs = require('node:fs')
 
-const { MongoClient } = require('mongodb');
+const { MongoClient } = require('mongodb')
 
 // This script deletes charging stations
 // Filter charging stations by id pattern
@@ -11,23 +11,24 @@ const { MongoClient } = require('mongodb');
 // Delete these charging stations all at once
 
 // Config
-const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'))
 
 // Mongo Connection and Query
 if (config?.mongoConnectionString) {
-  MongoClient.connect(config.mongoConnectionString, async function (err, client) {
-    const db = client.db();
+  // eslint-disable-next-line n/handle-callback-err
+  MongoClient.connect(config.mongoConnectionString, async function (_err, client) {
+    const db = client.db()
 
     for await (const tenantID of config.tenantIDs) {
       const response = await db
         .collection(`${tenantID}.chargingstations`)
-        .deleteMany({ _id: { $regex: config.idPattern } });
+        .deleteMany({ _id: { $regex: config.idPattern } })
       console.info(
         response.deletedCount,
         `Charging Stations with id = %${config.idPattern}% deleted. TenantID =`,
-        tenantID,
-      );
+        tenantID
+      )
     }
-    client.close();
-  });
+    client.close()
+  })
 }

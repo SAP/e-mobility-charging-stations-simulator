@@ -1,11 +1,11 @@
-import type { RequestPayload, ResponsePayload } from './UIProtocol.js';
+import type { RequestPayload, ResponsePayload } from './UIProtocol.js'
 
 export type BroadcastChannelRequest = [
   string,
   BroadcastChannelProcedureName,
-  BroadcastChannelRequestPayload,
-];
-export type BroadcastChannelResponse = [string, BroadcastChannelResponsePayload];
+  BroadcastChannelRequestPayload
+]
+export type BroadcastChannelResponse = [string, BroadcastChannelResponsePayload]
 
 export enum BroadcastChannelProcedureName {
   START_CHARGING_STATION = 'startChargingStation',
@@ -24,19 +24,19 @@ export enum BroadcastChannelProcedureName {
   METER_VALUES = 'meterValues',
   DATA_TRANSFER = 'dataTransfer',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
-  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification'
 }
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {
-  connectorId?: number;
-  transactionId?: number;
+  connectorId?: number
+  transactionId?: number
 }
 
 export interface BroadcastChannelResponsePayload
   extends Omit<ResponsePayload, 'hashIdsSucceeded' | 'hashIdsFailed' | 'responsesFailed'> {
-  hashId: string;
+  hashId: string
 }
 
 export interface MessageEvent {
-  data: BroadcastChannelRequest | BroadcastChannelResponse;
+  data: BroadcastChannelRequest | BroadcastChannelResponse
 }

@@ -1,59 +1,59 @@
-import { BroadcastChannel } from 'node:worker_threads';
+import { BroadcastChannel } from 'node:worker_threads'
 
 import type {
   BroadcastChannelRequest,
   BroadcastChannelResponse,
   JsonType,
-  MessageEvent,
-} from '../../types/index.js';
-import { logPrefix, logger, validateUUID } from '../../utils/index.js';
+  MessageEvent
+} from '../../types/index.js'
+import { logPrefix, logger, validateUUID } from '../../utils/index.js'
 
-const moduleName = 'WorkerBroadcastChannel';
+const moduleName = 'WorkerBroadcastChannel'
 
 export abstract class WorkerBroadcastChannel extends BroadcastChannel {
-  protected constructor() {
-    super('worker');
+  protected constructor () {
+    super('worker')
   }
 
-  public sendRequest(request: BroadcastChannelRequest): void {
-    this.postMessage(request);
+  public sendRequest (request: BroadcastChannelRequest): void {
+    this.postMessage(request)
   }
 
-  protected sendResponse(response: BroadcastChannelResponse): void {
-    this.postMessage(response);
+  protected sendResponse (response: BroadcastChannelResponse): void {
+    this.postMessage(response)
   }
 
-  protected isRequest(message: JsonType[]): boolean {
-    return Array.isArray(message) === true && message.length === 3;
+  protected isRequest (message: JsonType[]): boolean {
+    return Array.isArray(message) && message.length === 3
   }
 
-  protected isResponse(message: JsonType[]): boolean {
-    return Array.isArray(message) === true && message.length === 2;
+  protected isResponse (message: JsonType[]): boolean {
+    return Array.isArray(message) && message.length === 2
   }
 
-  protected validateMessageEvent(messageEvent: MessageEvent): MessageEvent | false {
-    if (Array.isArray(messageEvent.data) === false) {
+  protected validateMessageEvent (messageEvent: MessageEvent): MessageEvent | false {
+    if (!Array.isArray(messageEvent.data)) {
       logger.error(
         `${this.logPrefix(
           moduleName,
-          'validateMessageEvent',
-        )} Worker broadcast channel protocol message event data is not an array`,
-      );
-      return false;
+          'validateMessageEvent'
+        )} Worker broadcast channel protocol message event data is not an array`
+      )
+      return false
     }
-    if (validateUUID(messageEvent.data[0]) === false) {
+    if (!validateUUID(messageEvent.data[0])) {
       logger.error(
         `${this.logPrefix(
           moduleName,
-          'validateMessageEvent',
-        )} Worker broadcast channel protocol message event data UUID field is invalid`,
-      );
-      return false;
+          'validateMessageEvent'
+        )} Worker broadcast channel protocol message event data UUID field is invalid`
+      )
+      return false
     }
-    return messageEvent;
+    return messageEvent
   }
 
-  private logPrefix = (modName: string, methodName: string): string => {
-    return logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`);
-  };
+  private readonly logPrefix = (modName: string, methodName: string): string => {
+    return logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`)
+  }
 }

@@ -5,11 +5,11 @@
 </template>
 
 <script setup lang="ts">
-import FlatButton from '@/components/buttons/FlatButton.vue';
+import FlatButton from '@/components/buttons/FlatButton.vue'
 
 const props = defineProps<{
-  loading: boolean;
-}>();
+  loading: boolean
+}>()
 </script>
 
 <style>

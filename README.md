@@ -215,17 +215,17 @@ But the modifications to test have to be done to the files in the build target d
 
 ```ts
 type AutomaticTransactionGeneratorConfiguration = {
-  enable: boolean;
-  minDuration: number;
-  maxDuration: number;
-  minDelayBetweenTwoTransactions: number;
-  maxDelayBetweenTwoTransactions: number;
-  probabilityOfStart: number;
-  stopAfterHours: number;
-  stopOnConnectionFailure: boolean;
-  requireAuthorize?: boolean;
-  idTagDistribution?: 'random' | 'round-robin' | 'connector-affinity';
-};
+  enable: boolean
+  minDuration: number
+  maxDuration: number
+  minDelayBetweenTwoTransactions: number
+  maxDelayBetweenTwoTransactions: number
+  probabilityOfStart: number
+  stopAfterHours: number
+  stopOnConnectionFailure: boolean
+  requireAuthorize?: boolean
+  idTagDistribution?: 'random' | 'round-robin' | 'connector-affinity'
+}
 ```
 
 ##### Example:

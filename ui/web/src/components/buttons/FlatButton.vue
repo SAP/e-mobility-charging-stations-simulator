@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import Button from '@/components/buttons/Button.vue';
+import Button from '@/components/buttons/Button.vue'
 </script>
 
 <style>

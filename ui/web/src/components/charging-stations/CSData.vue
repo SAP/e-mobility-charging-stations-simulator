@@ -18,82 +18,82 @@
 </template>
 
 <script setup lang="ts">
-// import { reactive } from 'vue';
-import CSConnector from './CSConnector.vue';
-import type { ChargingStationData, ChargingStationInfo, ConnectorStatus } from '@/types';
-import { ifUndefined } from '@/composables/Utils';
+// import { reactive } from 'vue'
+import CSConnector from './CSConnector.vue'
+import type { ChargingStationData, ChargingStationInfo, ConnectorStatus } from '@/types'
+import { ifUndefined } from '@/composables/Utils'
 
 const props = defineProps<{
-  chargingStation: ChargingStationData;
-  idTag: string;
-}>();
+  chargingStation: ChargingStationData
+  idTag: string
+}>()
 
 // type State = {
-//   isTagModalVisible: boolean;
-//   idTag: string;
-// };
+//   isTagModalVisible: boolean
+//   idTag: string
+// }
 
 // const state: State = reactive({
 //   isTagModalVisible: false,
-//   idTag: '',
-// });
+//   idTag: ''
+// })
 
 function getConnectors(): ConnectorStatus[] {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
-    const connectorsStatus: ConnectorStatus[] = [];
+    const connectorsStatus: ConnectorStatus[] = []
     for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
       if (evseId > 0 && Array.isArray(evseStatus.connectors) && evseStatus.connectors.length > 0) {
         for (const connectorStatus of evseStatus.connectors) {
-          connectorsStatus.push(connectorStatus);
+          connectorsStatus.push(connectorStatus)
         }
       }
     }
-    return connectorsStatus;
+    return connectorsStatus
   }
-  return props.chargingStation.connectors?.slice(1);
+  return props.chargingStation.connectors?.slice(1)
 }
 function getInfo(): ChargingStationInfo {
-  return props.chargingStation.stationInfo;
+  return props.chargingStation.stationInfo
 }
 function getHashId(): string {
-  return getInfo().hashId;
+  return getInfo().hashId
 }
 function getId(): string {
-  return ifUndefined<string>(getInfo().chargingStationId, 'Ø');
+  return ifUndefined<string>(getInfo().chargingStationId, 'Ø')
 }
 function getModel(): string {
-  return getInfo().chargePointModel;
+  return getInfo().chargePointModel
 }
 function getVendor(): string {
-  return getInfo().chargePointVendor;
+  return getInfo().chargePointVendor
 }
 function getFirmwareVersion(): string {
-  return ifUndefined<string>(getInfo().firmwareVersion, 'Ø');
+  return ifUndefined<string>(getInfo().firmwareVersion, 'Ø')
 }
 function getStarted(): string {
-  return props.chargingStation.started === true ? 'Yes' : 'No';
+  return props.chargingStation.started === true ? 'Yes' : 'No'
 }
 function getWsState(): string {
   switch (props.chargingStation?.wsState) {
     case WebSocket.CONNECTING:
-      return 'Connecting';
+      return 'Connecting'
     case WebSocket.OPEN:
-      return 'Open';
+      return 'Open'
     case WebSocket.CLOSING:
-      return 'Closing';
+      return 'Closing'
     case WebSocket.CLOSED:
-      return 'Closed';
+      return 'Closed'
     default:
-      return 'Ø';
+      return 'Ø'
   }
 }
 function getRegistrationStatus(): string {
-  return props.chargingStation?.bootNotificationResponse?.status ?? 'Ø';
+  return props.chargingStation?.bootNotificationResponse?.status ?? 'Ø'
 }
 // function showTagModal(): void {
-//   state.isTagModalVisible = true;
+//   state.isTagModalVisible = true
 // }
 // function hideTagModal(): void {
-//   state.isTagModalVisible = false;
+//   state.isTagModalVisible = false
 // }
 </script>

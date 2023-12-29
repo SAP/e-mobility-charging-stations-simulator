@@ -1,4 +1,4 @@
-import { isEmptyArray, isNullOrUndefined } from './Utils.js';
+import { isEmptyArray, isNullOrUndefined } from './Utils.js'
 
 /**
  * Computes the average of the given data set.
@@ -9,13 +9,13 @@ import { isEmptyArray, isNullOrUndefined } from './Utils.js';
  */
 export const average = (dataSet: number[]): number => {
   if (Array.isArray(dataSet) && dataSet.length === 0) {
-    return 0;
+    return 0
   }
   if (Array.isArray(dataSet) && dataSet.length === 1) {
-    return dataSet[0];
+    return dataSet[0]
   }
-  return dataSet.reduce((accumulator, nb) => accumulator + nb, 0) / dataSet.length;
-};
+  return dataSet.reduce((accumulator, nb) => accumulator + nb, 0) / dataSet.length
+}
 
 /**
  * Computes the median of the given data set.
@@ -26,43 +26,43 @@ export const average = (dataSet: number[]): number => {
  */
 export const median = (dataSet: number[]): number => {
   if (isEmptyArray(dataSet)) {
-    return 0;
+    return 0
   }
-  if (Array.isArray(dataSet) === true && dataSet.length === 1) {
-    return dataSet[0];
+  if (Array.isArray(dataSet) && dataSet.length === 1) {
+    return dataSet[0]
   }
-  const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
+  const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
   return (
     (sortedDataSet[(sortedDataSet.length - 1) >> 1] + sortedDataSet[sortedDataSet.length >> 1]) / 2
-  );
-};
+  )
+}
 
 // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
 export const nthPercentile = (dataSet: number[], percentile: number): number => {
   if (percentile < 0 && percentile > 100) {
-    throw new RangeError('Percentile is not between 0 and 100');
+    throw new RangeError('Percentile is not between 0 and 100')
   }
   if (isEmptyArray(dataSet)) {
-    return 0;
+    return 0
   }
-  const sortedDataSet = dataSet.slice().sort((a, b) => a - b);
+  const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
   if (percentile === 0 || sortedDataSet.length === 1) {
-    return sortedDataSet[0];
+    return sortedDataSet[0]
   }
   if (percentile === 100) {
-    return sortedDataSet[sortedDataSet.length - 1];
+    return sortedDataSet[sortedDataSet.length - 1]
   }
-  const percentileIndexBase = (percentile / 100) * (sortedDataSet.length - 1);
-  const percentileIndexInteger = Math.floor(percentileIndexBase);
+  const percentileIndexBase = (percentile / 100) * (sortedDataSet.length - 1)
+  const percentileIndexInteger = Math.floor(percentileIndexBase)
   if (!isNullOrUndefined(sortedDataSet[percentileIndexInteger + 1])) {
     return (
       sortedDataSet[percentileIndexInteger] +
       (percentileIndexBase - percentileIndexInteger) *
         (sortedDataSet[percentileIndexInteger + 1] - sortedDataSet[percentileIndexInteger])
-    );
+    )
   }
-  return sortedDataSet[percentileIndexInteger];
-};
+  return sortedDataSet[percentileIndexInteger]
+}
 
 /**
  * Computes the sample standard deviation of the given data set.
@@ -75,16 +75,16 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
  */
 export const stdDeviation = (
   dataSet: number[],
-  dataSetAverage: number = average(dataSet),
+  dataSetAverage: number = average(dataSet)
 ): number => {
   if (isEmptyArray(dataSet)) {
-    return 0;
+    return 0
   }
   if (Array.isArray(dataSet) && dataSet.length === 1) {
-    return 0;
+    return 0
   }
   return Math.sqrt(
     dataSet.reduce((accumulator, num) => accumulator + Math.pow(num - dataSetAverage, 2), 0) /
-      (dataSet.length - 1),
-  );
-};
+      (dataSet.length - 1)
+  )
+}
