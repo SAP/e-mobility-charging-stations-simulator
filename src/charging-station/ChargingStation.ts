@@ -1200,7 +1200,6 @@ export class ChargingStation extends EventEmitter {
     const stationConfiguration = this.getConfigurationFromFile()
     if (
       stationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       (stationConfiguration?.connectorsStatus != null || stationConfiguration?.evsesStatus != null)
     ) {
       checkConfiguration(stationConfiguration, this.logPrefix(), this.configurationFile)
