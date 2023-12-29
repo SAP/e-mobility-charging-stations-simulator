@@ -36,7 +36,6 @@ import {
   handleUncaughtException,
   handleUnhandledRejection,
   isNotEmptyArray,
-  isNullOrUndefined,
   logPrefix,
   logger
 } from '../utils/index.js'
@@ -156,7 +155,7 @@ export class Bootstrap extends EventEmitter {
                 ? `/${workerConfiguration.poolMaxSize?.toString()}`
                 : ''
             } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
-              !isNullOrUndefined(this.workerImplementation?.maxElementsPerWorker)
+              this.workerImplementation?.maxElementsPerWorker != null
                 ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
             }`

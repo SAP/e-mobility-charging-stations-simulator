@@ -22,7 +22,6 @@ import {
   cloneObject,
   formatDurationMilliSeconds,
   getRandomInteger,
-  isNullOrUndefined,
   logPrefix,
   logger,
   secureRandom,
@@ -511,7 +510,7 @@ export class AutomaticTransactionGenerator {
       const transactionId = this.chargingStation.getConnectorStatus(connectorId)?.transactionId
       logger.debug(
         `${this.logPrefix(connectorId)} stopping a not started transaction${
-          !isNullOrUndefined(transactionId) ? ` with id ${transactionId}` : ''
+          transactionId != null ? ` with id ${transactionId}` : ''
         }`
       )
     }
@@ -528,7 +527,7 @@ export class AutomaticTransactionGenerator {
   private readonly logPrefix = (connectorId?: number): string => {
     return logPrefix(
       ` ${this.chargingStation.stationInfo.chargingStationId} | ATG${
-        !isNullOrUndefined(connectorId) ? ` on connector #${connectorId}` : ''
+        connectorId != null ? ` on connector #${connectorId}` : ''
       }:`
     )
   }

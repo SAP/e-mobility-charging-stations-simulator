@@ -37,13 +37,7 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse
 } from '../../types/index.js'
-import {
-  Constants,
-  convertToInt,
-  isEmptyObject,
-  isNullOrUndefined,
-  logger
-} from '../../utils/index.js'
+import { Constants, convertToInt, isEmptyObject, logger } from '../../utils/index.js'
 import type { ChargingStation } from '../ChargingStation.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
 import { buildMeterValue } from '../ocpp/index.js'
@@ -278,12 +272,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
     const [uuid, command, requestPayload] = validatedMessageEvent.data as BroadcastChannelRequest
     if (
-      !isNullOrUndefined(requestPayload.hashIds) &&
-      requestPayload.hashIds?.includes(this.chargingStation.stationInfo.hashId) === false
+      requestPayload.hashIds != null &&
+      !requestPayload.hashIds.includes(this.chargingStation.stationInfo.hashId)
     ) {
       return
     }
-    if (!isNullOrUndefined(requestPayload.hashId)) {
+    if (requestPayload.hashId != null) {
       logger.error(
         `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'hashId' field usage in PDU is deprecated, use 'hashIds' array instead`
       )
@@ -294,7 +288,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     let commandResponse: CommandResponse | void | undefined
     try {
       commandResponse = await this.commandHandler(command, requestPayload)
-      if (isNullOrUndefined(commandResponse) || isEmptyObject(commandResponse as CommandResponse)) {
+      if (commandResponse == null || isEmptyObject(commandResponse)) {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
           status: ResponseStatus.SUCCESS
@@ -303,7 +297,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         responsePayload = this.commandResponseToResponsePayload(
           command,
           requestPayload,
-          commandResponse as CommandResponse
+          commandResponse
         )
       }
     } catch (error) {

@@ -2,12 +2,7 @@ import { LRUMapWithDelete as LRUCache } from 'mnemonist'
 
 import { Bootstrap } from './Bootstrap.js'
 import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types/index.js'
-import {
-  isEmptyObject,
-  isNotEmptyArray,
-  isNotEmptyString,
-  isNullOrUndefined
-} from '../utils/index.js'
+import { isEmptyObject, isNotEmptyArray, isNotEmptyString } from '../utils/index.js'
 
 enum CacheType {
   chargingStationTemplate = 'chargingStationTemplate',
@@ -116,15 +111,15 @@ export class SharedLRUCache {
     chargingStationConfiguration: ChargingStationConfiguration
   ): boolean {
     return (
-      !isNullOrUndefined(chargingStationConfiguration?.configurationKey) &&
-      !isNullOrUndefined(chargingStationConfiguration?.stationInfo) &&
-      !isNullOrUndefined(chargingStationConfiguration?.automaticTransactionGenerator) &&
-      !isNullOrUndefined(chargingStationConfiguration?.configurationHash) &&
+      chargingStationConfiguration?.configurationKey != null &&
+      chargingStationConfiguration?.stationInfo != null &&
+      chargingStationConfiguration?.automaticTransactionGenerator != null &&
+      chargingStationConfiguration?.configurationHash != null &&
       isNotEmptyArray(chargingStationConfiguration?.configurationKey) &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !isEmptyObject(chargingStationConfiguration.stationInfo!) &&
+      !isEmptyObject(chargingStationConfiguration.stationInfo) &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !isEmptyObject(chargingStationConfiguration.automaticTransactionGenerator!) &&
+      !isEmptyObject(chargingStationConfiguration.automaticTransactionGenerator) &&
       isNotEmptyString(chargingStationConfiguration?.configurationHash)
     )
   }
