@@ -404,7 +404,7 @@ export class AutomaticTransactionGenerator {
   }
 
   private resetConnectorStatus (connectorStatus: Status | undefined): void {
-    if (connectorStatus === undefined) {
+    if (connectorStatus == null) {
       return
     }
     delete connectorStatus?.startDate

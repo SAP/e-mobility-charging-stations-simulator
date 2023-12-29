@@ -6,7 +6,7 @@ import { Constants } from './Constants.js'
 
 export enum AsyncLockType {
   configuration = 'configuration',
-  performance = 'performance'
+  performance = 'performance',
 }
 
 type ResolveType = (value: void | PromiseLike<void>) => void

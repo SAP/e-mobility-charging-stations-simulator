@@ -10,13 +10,13 @@ import type { JsonObject } from '../../JsonType.js'
 export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
-  STATUS_NOTIFICATION = 'StatusNotification'
+  STATUS_NOTIFICATION = 'StatusNotification',
 }
 
 export enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
   REQUEST_START_TRANSACTION = 'RequestStartTransaction',
-  REQUEST_STOP_TRANSACTION = 'RequestStopTransaction'
+  REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
 }
 
 type ModemType = {

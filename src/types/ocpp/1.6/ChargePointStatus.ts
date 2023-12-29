@@ -7,5 +7,5 @@ export enum OCPP16ChargePointStatus {
   Finishing = 'Finishing',
   Reserved = 'Reserved',
   Unavailable = 'Unavailable',
-  Faulted = 'Faulted'
+  Faulted = 'Faulted',
 }

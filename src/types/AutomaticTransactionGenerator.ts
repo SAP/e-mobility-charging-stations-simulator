@@ -1,7 +1,7 @@
 export enum IdTagDistribution {
   RANDOM = 'random',
   ROUND_ROBIN = 'round-robin',
-  CONNECTOR_AFFINITY = 'connector-affinity'
+  CONNECTOR_AFFINITY = 'connector-affinity',
 }
 
 export interface AutomaticTransactionGeneratorConfiguration {

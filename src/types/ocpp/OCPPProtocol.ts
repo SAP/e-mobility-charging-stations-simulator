@@ -1,3 +1,3 @@
 export enum OCPPProtocol {
-  JSON = 'json'
+  JSON = 'json',
 }

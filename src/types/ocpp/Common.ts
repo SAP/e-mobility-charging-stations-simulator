@@ -2,7 +2,7 @@ import type { JsonObject } from '../JsonType.js'
 
 export enum GenericStatus {
   Accepted = 'Accepted',
-  Rejected = 'Rejected'
+  Rejected = 'Rejected',
 }
 
 export interface GenericResponse extends JsonObject {
@@ -12,5 +12,5 @@ export interface GenericResponse extends JsonObject {
 export enum RegistrationStatusEnumType {
   ACCEPTED = 'Accepted',
   PENDING = 'Pending',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }

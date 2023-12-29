@@ -73,7 +73,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       hashIdsSucceeded: this.responses
         .get(uuid)
         ?.responses.map(({ status, hashId }) => {
-          if (hashId !== undefined && status === ResponseStatus.SUCCESS) {
+          if (hashId != null && status === ResponseStatus.SUCCESS) {
             return hashId
           }
           return undefined
@@ -83,7 +83,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         hashIdsFailed: this.responses
           .get(uuid)
           ?.responses.map(({ status, hashId }) => {
-            if (hashId !== undefined && status === ResponseStatus.FAILURE) {
+            if (hashId != null && status === ResponseStatus.FAILURE) {
               return hashId
             }
             return undefined
@@ -94,7 +94,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         responsesFailed: this.responses
           .get(uuid)
           ?.responses.map((response) => {
-            if (response !== undefined && response.status === ResponseStatus.FAILURE) {
+            if (response != null && response.status === ResponseStatus.FAILURE) {
               return response
             }
             return undefined

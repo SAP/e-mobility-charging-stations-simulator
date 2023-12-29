@@ -11,7 +11,7 @@ import {
 
 enum CacheType {
   chargingStationTemplate = 'chargingStationTemplate',
-  chargingStationConfiguration = 'chargingStationConfiguration'
+  chargingStationConfiguration = 'chargingStationConfiguration',
 }
 
 type CacheValueType = ChargingStationTemplate | ChargingStationConfiguration

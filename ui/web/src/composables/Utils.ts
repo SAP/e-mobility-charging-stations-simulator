@@ -8,7 +8,7 @@ export const ifUndefined = <T>(value: T | undefined, isValue: T): T => {
 }
 
 // const isIterable = <T>(obj: T): boolean => {
-//   if (obj === null || obj === undefined) {
+//   if (obj == null) {
 //     return false
 //   }
 //   return typeof (obj as unknown as Iterable<T>)[Symbol.iterator] === 'function'

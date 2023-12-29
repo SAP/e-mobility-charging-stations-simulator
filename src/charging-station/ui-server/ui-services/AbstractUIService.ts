@@ -164,7 +164,7 @@ export abstract class AbstractUIService {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
         ?.map((hashId) => {
-          if (hashId !== undefined && this.uiServer.chargingStations.has(hashId)) {
+          if (hashId != null && this.uiServer.chargingStations.has(hashId)) {
             return hashId
           }
           logger.warn(

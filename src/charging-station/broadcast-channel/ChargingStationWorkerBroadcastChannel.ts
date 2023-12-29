@@ -180,7 +180,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           await this.chargingStation.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, requestPayload, requestParams)
+          >(
+            this.chargingStation,
+            RequestCommand.STATUS_NOTIFICATION,
+            requestPayload,
+            requestParams
+          )
       ],
       [
         BroadcastChannelProcedureName.HEARTBEAT,
@@ -212,7 +217,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   this.chargingStation.getConnectorStatus(requestPayload!.connectorId!)!
                     .transactionId!,
-                  configuredMeterValueSampleInterval !== undefined
+                  configuredMeterValueSampleInterval != null
                     ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
                     : Constants.DEFAULT_METER_VALUES_INTERVAL
                 )
@@ -285,10 +290,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       return
     }
     let responsePayload: BroadcastChannelResponsePayload | undefined
-    let commandResponse: CommandResponse | undefined
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    let commandResponse: CommandResponse | void | undefined
     try {
       commandResponse = await this.commandHandler(command, requestPayload)
-      if (isNullOrUndefined(commandResponse) || isEmptyObject(commandResponse)) {
+      if (isNullOrUndefined(commandResponse) || isEmptyObject(commandResponse as CommandResponse)) {
         responsePayload = {
           hashId: this.chargingStation.stationInfo.hashId,
           status: ResponseStatus.SUCCESS
@@ -297,7 +303,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         responsePayload = this.commandResponseToResponsePayload(
           command,
           requestPayload,
-          commandResponse
+          commandResponse as CommandResponse
         )
       }
     } catch (error) {

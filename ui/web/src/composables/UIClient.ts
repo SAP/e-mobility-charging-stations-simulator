@@ -3,7 +3,7 @@ import {
   type ProtocolResponse,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus
+  ResponseStatus,
 } from '@/types'
 import config from '@/assets/config'
 
@@ -57,13 +57,13 @@ export class UIClient {
 
   public async openConnection(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
-      hashIds: [hashId]
+      hashIds: [hashId],
     })
   }
 
   public async closeConnection(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
-      hashIds: [hashId]
+      hashIds: [hashId],
     })
   }
 
@@ -75,7 +75,7 @@ export class UIClient {
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
       hashIds: [hashId],
       connectorId,
-      idTag
+      idTag,
     })
   }
 
@@ -85,7 +85,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
-      transactionId
+      transactionId,
     })
   }
 
@@ -95,7 +95,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR, {
       hashIds: [hashId],
-      connectorIds: [connectorId]
+      connectorIds: [connectorId],
     })
   }
 
@@ -105,7 +105,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR, {
       hashIds: [hashId],
-      connectorIds: [connectorId]
+      connectorIds: [connectorId],
     })
   }
 

@@ -21,11 +21,11 @@ export enum OCPP16FirmwareStatus {
   Idle = 'Idle',
   InstallationFailed = 'InstallationFailed',
   Installing = 'Installing',
-  Installed = 'Installed'
+  Installed = 'Installed',
 }
 
 export const FirmwareStatus = {
-  ...OCPP16FirmwareStatus
+  ...OCPP16FirmwareStatus,
 } as const
 export type FirmwareStatus = OCPP16FirmwareStatus
 
@@ -99,11 +99,11 @@ export enum OCPP16IncomingRequestCommand {
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
   REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
   GET_DIAGNOSTICS = 'GetDiagnostics',
-  TRIGGER_MESSAGE = 'TriggerMessage'
+  TRIGGER_MESSAGE = 'TriggerMessage',
 }
 
 export const IncomingRequestCommand = {
-  ...OCPP16IncomingRequestCommand
+  ...OCPP16IncomingRequestCommand,
 } as const
 export type IncomingRequestCommand = OCPP16IncomingRequestCommand
 
@@ -115,11 +115,11 @@ export enum OCPP16RequestCommand {
   START_TRANSACTION = 'StartTransaction',
   STOP_TRANSACTION = 'StopTransaction',
   METER_VALUES = 'MeterValues',
-  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification'
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
 }
 
 export const RequestCommand = {
-  ...OCPP16RequestCommand
+  ...OCPP16RequestCommand,
 } as const
 export type RequestCommand = OCPP16RequestCommand
 
@@ -128,7 +128,7 @@ export type BootNotificationResponse = OCPP16BootNotificationResponse
 export enum OCPP16RegistrationStatus {
   ACCEPTED = 'Accepted',
   PENDING = 'Pending',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
@@ -143,11 +143,11 @@ export enum OCPP16MessageTrigger {
   FirmwareStatusNotification = 'FirmwareStatusNotification',
   Heartbeat = 'Heartbeat',
   MeterValues = 'MeterValues',
-  StatusNotification = 'StatusNotification'
+  StatusNotification = 'StatusNotification',
 }
 
 export const MessageTrigger = {
-  ...OCPP16MessageTrigger
+  ...OCPP16MessageTrigger,
 } as const
 export type MessageTrigger = OCPP16MessageTrigger
 
@@ -158,30 +158,30 @@ type CommandsSupport = {
 
 export enum OCPPVersion {
   VERSION_16 = '1.6',
-  VERSION_20 = '2.0'
+  VERSION_20 = '2.0',
 }
 
 export enum OCPPProtocol {
-  JSON = 'json'
+  JSON = 'json',
 }
 
 export enum CurrentType {
   AC = 'AC',
-  DC = 'DC'
+  DC = 'DC',
 }
 
 export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
-  VOLTAGE_800 = 800
+  VOLTAGE_800 = 800,
 }
 
 export enum AmpereUnits {
   MILLI_AMPERE = 'mA',
   CENTI_AMPERE = 'cA',
   DECI_AMPERE = 'dA',
-  AMPERE = 'A'
+  AMPERE = 'A',
 }
 
 export type ConnectorStatus = {
@@ -207,7 +207,7 @@ export type EvseStatus = {
 
 export enum OCPP16AvailabilityType {
   INOPERATIVE = 'Inoperative',
-  OPERATIVE = 'Operative'
+  OPERATIVE = 'Operative',
 }
 export type AvailabilityType = OCPP16AvailabilityType
 
@@ -221,7 +221,7 @@ export enum OCPP16ChargePointStatus {
   FINISHING = 'Finishing',
   RESERVED = 'Reserved',
   UNAVAILABLE = 'Unavailable',
-  FAULTED = 'Faulted'
+  FAULTED = 'Faulted',
 }
 export type ChargePointStatus = OCPP16ChargePointStatus
 

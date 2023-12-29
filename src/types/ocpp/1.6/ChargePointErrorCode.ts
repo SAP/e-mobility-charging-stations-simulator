@@ -14,5 +14,5 @@ export enum OCPP16ChargePointErrorCode {
   READER_FAILURE = 'ReaderFailure',
   RESET_FAILURE = 'ResetFailure',
   UNDER_VOLTAGE = 'UnderVoltage',
-  WEAK_SIGNAL = 'WeakSignal'
+  WEAK_SIGNAL = 'WeakSignal',
 }

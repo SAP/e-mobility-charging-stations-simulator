@@ -1,6 +1,6 @@
 import { env, exit } from 'node:process'
 
-const skipPreinstall = env.SKIP_PREINSTALL || env.VCAP_APPLICATION !== undefined
+const skipPreinstall = parseInt(env.SKIP_PREINSTALL) || env.VCAP_APPLICATION != null
 if (skipPreinstall) {
   // eslint-disable-next-line n/no-process-exit
   exit()

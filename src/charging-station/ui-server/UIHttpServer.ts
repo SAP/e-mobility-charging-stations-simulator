@@ -24,7 +24,7 @@ enum HttpMethods {
   GET = 'GET',
   PUT = 'PUT',
   POST = 'POST',
-  PATCH = 'PATCH'
+  PATCH = 'PATCH',
 }
 
 export class UIHttpServer extends AbstractUIServer {
@@ -96,7 +96,7 @@ export class UIHttpServer extends AbstractUIServer {
     const [protocol, version, procedureName] = req.url?.split('/').slice(1) as [
       Protocol,
       ProtocolVersion,
-      ProcedureName
+      ProcedureName,
     ]
     const uuid = generateUUID()
     this.responseHandlers.set(uuid, res)

@@ -46,13 +46,13 @@ export const addConfigurationKey = (
   }
   params = { ...{ overwrite: false, save: false }, ...params }
   let keyFound = getConfigurationKey(chargingStation, key)
-  if (keyFound !== undefined && params?.overwrite === true) {
+  if (keyFound != null && params?.overwrite === true) {
     deleteConfigurationKey(chargingStation, keyFound.key, {
       save: false
     })
     keyFound = undefined
   }
-  if (keyFound === undefined) {
+  if (keyFound == null) {
     chargingStation.ocppConfiguration?.configurationKey?.push({
       key,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -77,7 +77,7 @@ export const setConfigurationKeyValue = (
   caseInsensitive = false
 ): void => {
   const keyFound = getConfigurationKey(chargingStation, key, caseInsensitive)
-  if (keyFound !== undefined) {
+  if (keyFound != null) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     chargingStation.ocppConfiguration!.configurationKey![
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -99,7 +99,7 @@ export const deleteConfigurationKey = (
 ): ConfigurationKey[] | undefined => {
   params = { ...{ save: true, caseInsensitive: false }, ...params }
   const keyFound = getConfigurationKey(chargingStation, key, params?.caseInsensitive)
-  if (keyFound !== undefined) {
+  if (keyFound != null) {
     const deletedConfigurationKey = chargingStation.ocppConfiguration?.configurationKey?.splice(
       chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound),
       1

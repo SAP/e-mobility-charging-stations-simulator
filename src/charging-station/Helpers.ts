@@ -78,14 +78,14 @@ export const getChargingStationId = (
   index: number,
   stationTemplate: ChargingStationTemplate | undefined
 ): string => {
-  if (stationTemplate === undefined) {
+  if (stationTemplate == null) {
     return "Unknown 'chargingStationId'"
   }
   // In case of multiple instances: add instance index to charging station id
   const instanceIndex = env.CF_INSTANCE_INDEX ?? 0
   const idSuffix = stationTemplate?.nameSuffix ?? ''
   const idStr = `000000000${index.toString()}`
-  return stationTemplate?.fixedName != null
+  return stationTemplate?.fixedName === true
     ? stationTemplate.baseName
     : `${stationTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
         idStr.length - 4
@@ -267,13 +267,12 @@ export const checkConfiguration = (
   logPrefix: string,
   configurationFile: string
 ): void => {
-  if (isNullOrUndefined(stationConfiguration)) {
+  if (stationConfiguration == null) {
     const errorMsg = `Failed to read charging station configuration file ${configurationFile}`
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (isEmptyObject(stationConfiguration!)) {
+  if (isEmptyObject(stationConfiguration)) {
     const errorMsg = `Empty charging station configuration from file ${configurationFile}`
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
@@ -314,7 +313,7 @@ export const checkStationInfoConnectorStatus = (
   logPrefix: string,
   templateFile: string
 ): void => {
-  if (!isNullOrUndefined(connectorStatus?.status)) {
+  if (connectorStatus?.status != null) {
     logger.warn(
       `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId} status configuration defined, undefine it`
     )

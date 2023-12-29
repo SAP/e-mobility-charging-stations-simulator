@@ -19,5 +19,5 @@ export enum ErrorType {
   // Payload for Action is syntactically correct but at least one of the fields violates data type constraints (e.g. "somestring" = 12)
   TYPE_CONSTRAINT_VIOLATION = 'TypeConstraintViolation',
   // Any other error not covered by the previous ones
-  GENERIC_ERROR = 'GenericError'
+  GENERIC_ERROR = 'GenericError',
 }

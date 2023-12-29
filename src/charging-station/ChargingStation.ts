@@ -38,6 +38,7 @@ import {
   getMaxNumberOfEvses,
   getNumberOfReservableConnectors,
   getPhaseRotationValue,
+  hasFeatureProfile,
   hasReservationExpired,
   initializeConnectorsMapStatus,
   propagateSerialNumber,
@@ -461,7 +462,7 @@ export class ChargingStation extends EventEmitter {
       this,
       StandardParametersKey.AuthorizeRemoteTxRequests
     )
-    return authorizeRemoteTxRequests !== undefined
+    return authorizeRemoteTxRequests != null
       ? convertToBoolean(authorizeRemoteTxRequests.value)
       : false
   }
@@ -471,16 +472,16 @@ export class ChargingStation extends EventEmitter {
       this,
       StandardParametersKey.LocalAuthListEnabled
     )
-    return localAuthListEnabled !== undefined ? convertToBoolean(localAuthListEnabled.value) : false
+    return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
   }
 
   public getHeartbeatInterval (): number {
     const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)
-    if (HeartbeatInterval !== undefined) {
+    if (HeartbeatInterval != null) {
       return secondsToMilliseconds(convertToInt(HeartbeatInterval.value))
     }
     const HeartBeatInterval = getConfigurationKey(this, StandardParametersKey.HeartBeatInterval)
-    if (HeartBeatInterval !== undefined) {
+    if (HeartBeatInterval != null) {
       return secondsToMilliseconds(convertToInt(HeartBeatInterval.value))
     }
     this.stationInfo?.autoRegister === false &&
@@ -507,7 +508,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public startHeartbeat (): void {
-    if (this.getHeartbeatInterval() > 0 && this.heartbeatSetInterval === undefined) {
+    if (this.getHeartbeatInterval() > 0 && this.heartbeatSetInterval == null) {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
@@ -523,7 +524,7 @@ export class ChargingStation extends EventEmitter {
           this.getHeartbeatInterval()
         )}`
       )
-    } else if (this.heartbeatSetInterval !== undefined) {
+    } else if (this.heartbeatSetInterval != null) {
       logger.info(
         `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
           this.getHeartbeatInterval()
@@ -613,7 +614,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public stopMeterValues (connectorId: number): void {
-    if (this.getConnectorStatus(connectorId)?.transactionSetInterval !== undefined) {
+    if (this.getConnectorStatus(connectorId)?.transactionSetInterval != null) {
       clearInterval(this.getConnectorStatus(connectorId)?.transactionSetInterval)
     }
   }
@@ -897,7 +898,7 @@ export class ChargingStation extends EventEmitter {
 
   public async addReservation (reservation: Reservation): Promise<void> {
     const reservationFound = this.getReservationBy('reservationId', reservation.reservationId)
-    if (reservationFound !== undefined) {
+    if (reservationFound != null) {
       await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING)
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -990,7 +991,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private setIntervalFlushMessageBuffer (): void {
-    if (this.flushMessageBufferSetInterval === undefined) {
+    if (this.flushMessageBufferSetInterval == null) {
       this.flushMessageBufferSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
           this.flushMessageBuffer()
@@ -1003,7 +1004,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private clearIntervalFlushMessageBuffer (): void {
-    if (this.flushMessageBufferSetInterval !== undefined) {
+    if (this.flushMessageBufferSetInterval != null) {
       clearInterval(this.flushMessageBufferSetInterval)
       delete this.flushMessageBufferSetInterval
     }
@@ -1401,9 +1402,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (
       isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled)) &&
-      getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles)?.value?.includes(
-        SupportedFeatureProfiles.LocalAuthListManagement
-      ) === true
+      hasFeatureProfile(this, SupportedFeatureProfiles.LocalAuthListManagement) === true
     ) {
       addConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled, 'false')
     }
@@ -2072,7 +2071,7 @@ export class ChargingStation extends EventEmitter {
 
   // 0 for disabling
   private getConnectionTimeout (): number {
-    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) !== undefined) {
+    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) != null) {
       return convertToInt(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)!.value! ??
@@ -2120,7 +2119,7 @@ export class ChargingStation extends EventEmitter {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!) !== undefined
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!) != null
     ) {
       return (
         convertToInt(
@@ -2238,12 +2237,12 @@ export class ChargingStation extends EventEmitter {
 
   private startWebSocketPing (): void {
     const webSocketPingInterval: number =
-      getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) !== undefined
+      getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
         ? convertToInt(
           getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value
         )
         : 0
-    if (webSocketPingInterval > 0 && this.webSocketPingSetInterval === undefined) {
+    if (webSocketPingInterval > 0 && this.webSocketPingSetInterval == null) {
       this.webSocketPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened()) {
           this.wsConnection?.ping()
@@ -2254,7 +2253,7 @@ export class ChargingStation extends EventEmitter {
           webSocketPingInterval
         )}`
       )
-    } else if (this.webSocketPingSetInterval !== undefined) {
+    } else if (this.webSocketPingSetInterval != null) {
       logger.info(
         `${this.logPrefix()} WebSocket ping already started every ${formatDurationSeconds(
           webSocketPingInterval
@@ -2268,7 +2267,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private stopWebSocketPing (): void {
-    if (this.webSocketPingSetInterval !== undefined) {
+    if (this.webSocketPingSetInterval != null) {
       clearInterval(this.webSocketPingSetInterval)
       delete this.webSocketPingSetInterval
     }
@@ -2314,7 +2313,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private stopHeartbeat (): void {
-    if (this.heartbeatSetInterval !== undefined) {
+    if (this.heartbeatSetInterval != null) {
       clearInterval(this.heartbeatSetInterval)
       delete this.heartbeatSetInterval
     }

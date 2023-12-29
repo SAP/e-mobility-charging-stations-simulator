@@ -1,7 +1,7 @@
 export type {
   ChargingStationData,
   ChargingStationInfo,
-  ConnectorStatus
+  ConnectorStatus,
 } from './ChargingStationType'
 export type { BaseConfig } from './ConfigurationType'
 export {
@@ -9,5 +9,5 @@ export {
   type ProtocolResponse,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus
+  ResponseStatus,
 } from './UIProtocol'

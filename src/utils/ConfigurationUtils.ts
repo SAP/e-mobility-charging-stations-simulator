@@ -71,7 +71,7 @@ export const checkWorkerElementsPerWorker = (
   elementsPerWorker: ElementsPerWorkerType | undefined
 ): void => {
   if (
-    elementsPerWorker !== undefined &&
+    elementsPerWorker != null &&
     elementsPerWorker !== 'auto' &&
     elementsPerWorker !== 'all' &&
     !Number.isSafeInteger(elementsPerWorker)

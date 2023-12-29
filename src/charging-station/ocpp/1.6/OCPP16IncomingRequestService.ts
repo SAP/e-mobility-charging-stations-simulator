@@ -521,7 +521,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       for (const k of key!) {
         const keyFound = getConfigurationKey(chargingStation, k, true)
-        if (keyFound !== undefined) {
+        if (keyFound != null) {
           if (isUndefined(keyFound.visible)) {
             keyFound.visible = true
           }

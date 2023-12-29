@@ -5,13 +5,13 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'charging-stations',
-    component: ChargingStationsView
-  }
+    component: ChargingStationsView,
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 })
 
 export default router
