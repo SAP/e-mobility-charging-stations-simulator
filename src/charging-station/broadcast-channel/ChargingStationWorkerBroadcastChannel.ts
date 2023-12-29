@@ -285,7 +285,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
     let responsePayload: BroadcastChannelResponsePayload | undefined
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    let commandResponse: CommandResponse | void | undefined
+    let commandResponse: CommandResponse | void
     try {
       commandResponse = await this.commandHandler(command, requestPayload)
       if (commandResponse == null || isEmptyObject(commandResponse)) {
@@ -333,7 +333,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     command: BroadcastChannelProcedureName,
     requestPayload: BroadcastChannelRequestPayload
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  ): Promise<void | CommandResponse> {
+  ): Promise<CommandResponse | void> {
     if (this.commandHandlers.has(command)) {
       this.cleanRequestPayload(command, requestPayload)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

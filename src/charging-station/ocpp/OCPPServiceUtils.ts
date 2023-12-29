@@ -37,7 +37,9 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  type OCPP16ChargePointStatus,
   type OCPP16StatusNotificationRequest,
+  type OCPP20ConnectorStatusEnumType,
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
   RequestCommand,
@@ -89,16 +91,17 @@ export const buildStatusNotificationRequest = (
     case OCPPVersion.VERSION_16:
       return {
         connectorId,
-        status,
+        status: status as OCPP16ChargePointStatus,
         errorCode: ChargePointErrorCode.NO_ERROR
       } satisfies OCPP16StatusNotificationRequest
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
       return {
         timestamp: new Date(),
-        connectorStatus: status,
+        connectorStatus: status as OCPP20ConnectorStatusEnumType,
         connectorId,
-        evseId
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        evseId: evseId!
       } satisfies OCPP20StatusNotificationRequest
     default:
       throw new BaseError('Cannot build status notification payload: OCPP version not supported')

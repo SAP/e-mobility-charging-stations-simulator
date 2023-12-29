@@ -295,7 +295,7 @@ export const checkConnectorsConfiguration = (
     stationTemplate.Connectors?.[0] != null ? templateMaxConnectors - 1 : templateMaxConnectors
   if (
     configuredMaxConnectors > templateMaxAvailableConnectors &&
-    stationTemplate?.randomConnectors === false
+    stationTemplate?.randomConnectors !== true
   ) {
     logger.warn(
       `${logPrefix} Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`
