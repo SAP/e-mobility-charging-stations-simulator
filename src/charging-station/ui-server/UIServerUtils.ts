@@ -49,12 +49,7 @@ export class UIServerUtils {
   }
 
   public static isLoopback (address: string): boolean {
-    // eslint-disable-next-line prefer-regex-literals
-    const isLoopbackRegExp = new RegExp(
-      // eslint-disable-next-line no-useless-escape
-      /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*\:)*?:?0*1$/,
-      'i'
-    )
-    return isLoopbackRegExp.test(address)
+    // eslint-disable-next-line no-useless-escape
+    return /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*\:)*?:?0*1$/i.test(address)
   }
 }
