@@ -1,4 +1,3 @@
-import { isNullOrUndefined } from './Utils.js'
 import type { ChargingStation } from '../charging-station/index.js'
 import type {
   ChargingStationAutomaticTransactionGeneratorConfiguration,
@@ -12,10 +11,9 @@ export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
 ): ChargingStationAutomaticTransactionGeneratorConfiguration => {
   return {
     automaticTransactionGenerator: chargingStation.getAutomaticTransactionGeneratorConfiguration(),
-    ...(!isNullOrUndefined(chargingStation.automaticTransactionGenerator?.connectorsStatus) && {
+    ...(chargingStation.automaticTransactionGenerator?.connectorsStatus != null && {
       automaticTransactionGeneratorStatuses: [
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...chargingStation.automaticTransactionGenerator!.connectorsStatus.values()
+        ...chargingStation.automaticTransactionGenerator.connectorsStatus.values()
       ]
     })
   }

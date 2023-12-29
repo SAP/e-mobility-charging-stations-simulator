@@ -143,7 +143,6 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
-  isNullOrUndefined,
   isUndefined,
   logPrefix,
   logger,
@@ -274,7 +273,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public inUnknownState (): boolean {
-    return isNullOrUndefined(this?.bootNotificationResponse?.status)
+    return this?.bootNotificationResponse?.status == null
   }
 
   public inPendingState (): boolean {
@@ -348,7 +347,7 @@ export class ChargingStation extends EventEmitter {
   public getConnectorMaximumAvailablePower (connectorId: number): number {
     let connectorAmperageLimitationPowerLimit: number | undefined
     if (
-      !isNullOrUndefined(this.getAmperageLimitation()) &&
+      this.getAmperageLimitation() != null &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.getAmperageLimitation()! < this.stationInfo.maximumAmperage!
     ) {
@@ -570,7 +569,7 @@ export class ChargingStation extends EventEmitter {
       return
     } else if (
       this.getConnectorStatus(connectorId)?.transactionStarted === true &&
-      isNullOrUndefined(this.getConnectorStatus(connectorId)?.transactionId)
+      this.getConnectorStatus(connectorId)?.transactionId == null
     ) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction id`
@@ -735,10 +734,7 @@ export class ChargingStation extends EventEmitter {
     if (!checkChargingStation(this, this.logPrefix())) {
       return
     }
-    if (
-      !isNullOrUndefined(this.stationInfo.supervisionUser) &&
-      !isNullOrUndefined(this.stationInfo.supervisionPassword)
-    ) {
+    if (this.stationInfo.supervisionUser != null && this.stationInfo.supervisionPassword != null) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`
     }
     if (params?.closeOpened === true) {
@@ -796,7 +792,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getAutomaticTransactionGeneratorConfiguration (): AutomaticTransactionGeneratorConfiguration {
-    if (isNullOrUndefined(this.automaticTransactionGeneratorConfiguration)) {
+    if (this.automaticTransactionGeneratorConfiguration == null) {
       let automaticTransactionGeneratorConfiguration:
       | AutomaticTransactionGeneratorConfiguration
       | undefined
@@ -817,8 +813,7 @@ export class ChargingStation extends EventEmitter {
         ...automaticTransactionGeneratorConfiguration
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.automaticTransactionGeneratorConfiguration!
+    return this.automaticTransactionGeneratorConfiguration
   }
 
   public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
@@ -885,7 +880,7 @@ export class ChargingStation extends EventEmitter {
       transactionId,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId!, true),
-      ...(isNullOrUndefined(reason) && { reason })
+      ...(reason != null && { reason })
     })
   }
 
@@ -1046,7 +1041,7 @@ export class ChargingStation extends EventEmitter {
         this.wsConnection?.send(message, (error?: Error) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!)
-          if (isNullOrUndefined(error)) {
+          if (error == null) {
             logger.debug(
               `${this.logPrefix()} >> Buffered ${getMessageTypeString(
                 messageType
@@ -1145,10 +1140,10 @@ export class ChargingStation extends EventEmitter {
       },
       stationTemplate?.firmwareUpgrade ?? {}
     )
-    stationInfo.resetTime = !isNullOrUndefined(stationTemplate?.resetTime)
-      ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      secondsToMilliseconds(stationTemplate.resetTime!)
-      : Constants.CHARGING_STATION_DEFAULT_RESET_TIME
+    stationInfo.resetTime =
+      stationTemplate?.resetTime != null
+        ? secondsToMilliseconds(stationTemplate.resetTime)
+        : Constants.CHARGING_STATION_DEFAULT_RESET_TIME
     return stationInfo
   }
 
@@ -1234,16 +1229,14 @@ export class ChargingStation extends EventEmitter {
         .exec(this.stationInfo.firmwareVersion!)
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ?.slice(1, patternGroup! + 1)
-      if (!isNullOrUndefined(match)) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const patchLevelIndex = match!.length - 1
-        // prettier-ignore
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        match![patchLevelIndex] = (convertToInt(match![patchLevelIndex]) +
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!).toString()
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.stationInfo.firmwareVersion = match!.join('.')
+      if (match != null) {
+        const patchLevelIndex = match.length - 1
+        match[patchLevelIndex] = (
+          convertToInt(match[patchLevelIndex]) +
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!
+        ).toString()
+        this.stationInfo.firmwareVersion = match.join('.')
       }
     }
     this.saveStationInfo()
@@ -1301,17 +1294,17 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeOcppConfiguration (): void {
-    if (isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.HeartbeatInterval))) {
+    if (getConfigurationKey(this, StandardParametersKey.HeartbeatInterval) == null) {
       addConfigurationKey(this, StandardParametersKey.HeartbeatInterval, '0')
     }
-    if (isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.HeartBeatInterval))) {
+    if (getConfigurationKey(this, StandardParametersKey.HeartBeatInterval) == null) {
       addConfigurationKey(this, StandardParametersKey.HeartBeatInterval, '0', { visible: false })
     }
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      isNullOrUndefined(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!))
+      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!) == null
     ) {
       addConfigurationKey(
         this,
@@ -1324,7 +1317,7 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo?.supervisionUrlOcppConfiguration === false &&
       isNotEmptyString(this.stationInfo?.supervisionUrlOcppKey) &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !isNullOrUndefined(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!))
+      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!) != null
     ) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!, { save: false })
@@ -1332,7 +1325,7 @@ export class ChargingStation extends EventEmitter {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      isNullOrUndefined(getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!))
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!) == null
     ) {
       addConfigurationKey(
         this,
@@ -1343,9 +1336,7 @@ export class ChargingStation extends EventEmitter {
         (this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
       )
     }
-    if (
-      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles))
-    ) {
+    if (getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles) == null) {
       addConfigurationKey(
         this,
         StandardParametersKey.SupportedFeatureProfiles,
@@ -1359,18 +1350,14 @@ export class ChargingStation extends EventEmitter {
       { readonly: true },
       { overwrite: true }
     )
-    if (
-      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.MeterValuesSampledData))
-    ) {
+    if (getConfigurationKey(this, StandardParametersKey.MeterValuesSampledData) == null) {
       addConfigurationKey(
         this,
         StandardParametersKey.MeterValuesSampledData,
         MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       )
     }
-    if (
-      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.ConnectorPhaseRotation))
-    ) {
+    if (getConfigurationKey(this, StandardParametersKey.ConnectorPhaseRotation) == null) {
       const connectorsPhaseRotation: string[] = []
       if (this.hasEvses) {
         for (const evseStatus of this.evses.values()) {
@@ -1395,18 +1382,16 @@ export class ChargingStation extends EventEmitter {
         connectorsPhaseRotation.toString()
       )
     }
-    if (
-      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests))
-    ) {
+    if (getConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests) == null) {
       addConfigurationKey(this, StandardParametersKey.AuthorizeRemoteTxRequests, 'true')
     }
     if (
-      isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled)) &&
+      getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled) == null &&
       hasFeatureProfile(this, SupportedFeatureProfiles.LocalAuthListManagement) === true
     ) {
       addConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled, 'false')
     }
-    if (isNullOrUndefined(getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut))) {
+    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) == null) {
       addConfigurationKey(
         this,
         StandardParametersKey.ConnectionTimeOut,

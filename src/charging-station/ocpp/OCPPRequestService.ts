@@ -27,7 +27,6 @@ import {
   cloneObject,
   formatDurationMilliSeconds,
   handleSendMessageError,
-  isNullOrUndefined,
   logger
 } from '../../utils/index.js'
 type Ajv = _Ajv.default
@@ -436,7 +435,7 @@ export abstract class OCPPRequestService {
           chargingStation.wsConnection?.send(messageToSend, (error?: Error) => {
             PerformanceStatistics.endMeasure(commandName, beginId)
             clearTimeout(sendTimeout)
-            if (isNullOrUndefined(error)) {
+            if (error == null) {
               logger.debug(
                 `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
                   messageType

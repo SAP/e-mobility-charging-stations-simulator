@@ -51,7 +51,7 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse
 } from '../../../types/index.js'
-import { Constants, convertToInt, isNullOrUndefined, logger } from '../../../utils/index.js'
+import { Constants, convertToInt, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 
 const moduleName = 'OCPP16ResponseService'
@@ -462,7 +462,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const authorizeConnectorStatus = chargingStation.getConnectorStatus(authorizeConnectorId!)
-    const authorizeConnectorIdDefined = !isNullOrUndefined(authorizeConnectorId)
+    const authorizeConnectorIdDefined = authorizeConnectorId != null
     if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
       if (authorizeConnectorIdDefined) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -705,7 +705,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const transactionConnectorId = chargingStation.getConnectorIdByTransactionId(
       requestPayload.transactionId
     )
-    if (isNullOrUndefined(transactionConnectorId)) {
+    if (transactionConnectorId == null) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${
           requestPayload.transactionId
@@ -725,28 +725,24 @@ export class OCPP16ResponseService extends OCPPResponseService {
         meterValue: [
           OCPP16ServiceUtils.buildTransactionEndMeterValue(
             chargingStation,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            transactionConnectorId!,
+            transactionConnectorId,
             requestPayload.meterStop
           )
         ]
       }))
     if (
       !chargingStation.isChargingStationAvailable() ||
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !chargingStation.isConnectorAvailable(transactionConnectorId!)
+      !chargingStation.isConnectorAvailable(transactionConnectorId)
     ) {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        transactionConnectorId!,
+        transactionConnectorId,
         OCPP16ChargePointStatus.Unavailable
       )
     } else {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
         chargingStation,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        transactionConnectorId!,
+        transactionConnectorId,
         OCPP16ChargePointStatus.Available
       )
     }
@@ -754,16 +750,15 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.powerDivider--
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId!)!)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.stopMeterValues(transactionConnectorId!)
+    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId)!)
+    chargingStation.stopMeterValues(transactionConnectorId)
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${
       requestPayload.transactionId
     } STOPPED on ${
       chargingStation.stationInfo.chargingStationId
     }#${transactionConnectorId} with status '${payload.idTagInfo?.status}'`
     if (
-      isNullOrUndefined(payload.idTagInfo) ||
+      payload.idTagInfo == null ||
       payload.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED
     ) {
       logger.info(logMsg)

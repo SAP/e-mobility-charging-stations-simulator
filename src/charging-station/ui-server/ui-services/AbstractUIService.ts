@@ -12,7 +12,7 @@ import {
   type ResponsePayload,
   ResponseStatus
 } from '../../../types/index.js'
-import { isNotEmptyArray, isNullOrUndefined, logger } from '../../../utils/index.js'
+import { isNotEmptyArray, logger } from '../../../utils/index.js'
 import { Bootstrap } from '../../Bootstrap.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import type { AbstractUIServer } from '../AbstractUIServer.js'
@@ -108,9 +108,9 @@ export abstract class AbstractUIService {
         errorDetails: (error as OCPPError).details
       }
     }
-    if (!isNullOrUndefined(responsePayload)) {
+    if (responsePayload != null) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.uiServer.buildProtocolResponse(messageId!, responsePayload!)
+      return this.uiServer.buildProtocolResponse(messageId!, responsePayload)
     }
   }
 
@@ -175,7 +175,7 @@ export abstract class AbstractUIService {
           )
           return undefined
         })
-        ?.filter((hashId) => !isNullOrUndefined(hashId)) as string[]
+        ?.filter((hashId) => hashId != null) as string[]
     } else {
       delete payload.hashIds
     }

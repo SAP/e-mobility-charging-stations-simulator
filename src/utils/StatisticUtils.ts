@@ -1,4 +1,4 @@
-import { isEmptyArray, isNullOrUndefined } from './Utils.js'
+import { isEmptyArray } from './Utils.js'
 
 /**
  * Computes the average of the given data set.
@@ -54,7 +54,7 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   }
   const percentileIndexBase = (percentile / 100) * (sortedDataSet.length - 1)
   const percentileIndexInteger = Math.floor(percentileIndexBase)
-  if (!isNullOrUndefined(sortedDataSet[percentileIndexInteger + 1])) {
+  if (sortedDataSet[percentileIndexInteger + 1] != null) {
     return (
       sortedDataSet[percentileIndexInteger] +
       (percentileIndexBase - percentileIndexInteger) *

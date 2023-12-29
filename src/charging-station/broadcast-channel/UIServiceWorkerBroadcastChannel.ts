@@ -6,7 +6,7 @@ import {
   type ResponsePayload,
   ResponseStatus
 } from '../../types/index.js'
-import { isNullOrUndefined, logger } from '../../utils/index.js'
+import { logger } from '../../utils/index.js'
 import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIService.js'
 
 const moduleName = 'UIServiceWorkerBroadcastChannel'
@@ -78,7 +78,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
           }
           return undefined
         })
-        .filter((hashId) => !isNullOrUndefined(hashId)) as string[],
+        .filter((hashId) => hashId != null) as string[],
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: this.responses
           .get(uuid)
@@ -88,7 +88,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             }
             return undefined
           })
-          .filter((hashId) => !isNullOrUndefined(hashId)) as string[]
+          .filter((hashId) => hashId != null) as string[]
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: this.responses
@@ -99,7 +99,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             }
             return undefined
           })
-          .filter((response) => !isNullOrUndefined(response)) as BroadcastChannelResponsePayload[]
+          .filter((response) => response != null) as BroadcastChannelResponsePayload[]
       })
     }
   }

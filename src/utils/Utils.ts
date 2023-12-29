@@ -209,7 +209,7 @@ export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[]
 }
 
 export const isObject = (item: unknown): boolean => {
-  return !isNullOrUndefined(item) && typeof item === 'object' && !Array.isArray(item)
+  return item != null && typeof item === 'object' && !Array.isArray(item)
 }
 
 type CloneableData =
@@ -268,11 +268,11 @@ export const hasOwnProp = (object: unknown, property: PropertyKey): boolean => {
 }
 
 export const isCFEnvironment = (): boolean => {
-  return !isNullOrUndefined(env.VCAP_APPLICATION)
+  return env.VCAP_APPLICATION != null
 }
 
 export const isIterable = <T>(obj: T): boolean => {
-  return !isNullOrUndefined(obj) ? typeof obj[Symbol.iterator as keyof T] === 'function' : false
+  return obj != null ? typeof obj[Symbol.iterator as keyof T] === 'function' : false
 }
 
 const isString = (value: unknown): boolean => {
@@ -280,7 +280,7 @@ const isString = (value: unknown): boolean => {
 }
 
 export const isEmptyString = (value: unknown): boolean => {
-  return isNullOrUndefined(value) || (isString(value) && (value as string).trim().length === 0)
+  return value == null || (isString(value) && (value as string).trim().length === 0)
 }
 
 export const isNotEmptyString = (value: unknown): boolean => {

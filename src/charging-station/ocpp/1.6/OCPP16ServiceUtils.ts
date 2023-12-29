@@ -37,7 +37,7 @@ import {
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion
 } from '../../../types/index.js'
-import { isNotEmptyArray, isNullOrUndefined, logger, roundTo } from '../../../utils/index.js'
+import { isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
@@ -149,7 +149,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     connectorId: number,
     cp: OCPP16ChargingProfile
   ): void {
-    if (isNullOrUndefined(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
+    if (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles == null) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
       )
