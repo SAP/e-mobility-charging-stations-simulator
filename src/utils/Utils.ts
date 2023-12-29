@@ -291,10 +291,6 @@ export const isUndefined = (value: unknown): boolean => {
   return value === undefined
 }
 
-export const isNullOrUndefined = (value: unknown): boolean => {
-  return value == null
-}
-
 export const isEmptyArray = (object: unknown): boolean => {
   return Array.isArray(object) && object.length === 0
 }

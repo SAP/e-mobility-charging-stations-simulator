@@ -24,7 +24,6 @@ import {
   isIterable,
   isNotEmptyArray,
   isNotEmptyString,
-  isNullOrUndefined,
   isObject,
   isUndefined,
   isValidTime,
@@ -366,19 +365,6 @@ await describe('Utils test suite', async () => {
     expect(isUndefined(new Set())).toBe(false)
     expect(isUndefined(new WeakMap())).toBe(false)
     expect(isUndefined(new WeakSet())).toBe(false)
-  })
-
-  await it('Verify isNullOrUndefined()', () => {
-    expect(isNullOrUndefined(undefined)).toBe(true)
-    expect(isNullOrUndefined(null)).toBe(true)
-    expect(isNullOrUndefined('')).toBe(false)
-    expect(isNullOrUndefined(0)).toBe(false)
-    expect(isNullOrUndefined({})).toBe(false)
-    expect(isNullOrUndefined([])).toBe(false)
-    expect(isNullOrUndefined(new Map())).toBe(false)
-    expect(isNullOrUndefined(new Set())).toBe(false)
-    expect(isNullOrUndefined(new WeakMap())).toBe(false)
-    expect(isNullOrUndefined(new WeakSet())).toBe(false)
   })
 
   await it('Verify isEmptyArray()', () => {

@@ -65,7 +65,6 @@ import {
   isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
-  isNullOrUndefined,
   isUndefined,
   isValidTime,
   logger,
@@ -255,7 +254,7 @@ export const checkTemplate = (
       Constants.DEFAULT_ATG_CONFIGURATION
     )
   }
-  if (isNullOrUndefined(stationTemplate.idTagsFile) || isEmptyString(stationTemplate.idTagsFile)) {
+  if (stationTemplate.idTagsFile == null || isEmptyString(stationTemplate.idTagsFile)) {
     logger.warn(
       `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
     )
@@ -361,10 +360,7 @@ export const initializeConnectorsMapStatus = (
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         connectors.get(connectorId)!.chargingProfiles = []
       }
-    } else if (
-      connectorId > 0 &&
-      isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
-    ) {
+    } else if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted == null) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       initializeConnectorStatus(connectors.get(connectorId)!)
     }
@@ -593,7 +589,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
       chargingProfiles,
       chargingStation.logPrefix()
     )
-    if (!isNullOrUndefined(result)) {
+    if (result != null) {
       limit = result?.limit
       chargingProfile = result?.chargingProfile
       switch (chargingStation.stationInfo?.currentOutType) {
@@ -605,8 +601,7 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
                 chargingStation.getNumberOfPhases(),
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 chargingStation.stationInfo.voltageOut!,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                limit!
+                limit
               )
           break
         case CurrentType.DC:
@@ -614,13 +609,12 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
             chargingProfile?.chargingSchedule?.chargingRateUnit === ChargingRateUnitType.WATT
               ? limit
               : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit!)
+              DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
       }
       const connectorMaximumPower =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         chargingStation.stationInfo.maximumPower! / chargingStation.powerDivider
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      if (limit! > connectorMaximumPower) {
+      if (limit > connectorMaximumPower) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${chargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
           result
@@ -804,36 +798,26 @@ const getLimitFromChargingProfiles = (
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule
-    if (
-      isNullOrUndefined(chargingSchedule?.startSchedule) &&
-      connectorStatus?.transactionStarted === true
-    ) {
+    if (chargingSchedule?.startSchedule == null && connectorStatus?.transactionStarted === true) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
       )
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
       chargingSchedule.startSchedule = connectorStatus?.transactionStart
     }
-    if (
-      !isNullOrUndefined(chargingSchedule?.startSchedule) &&
-      !isDate(chargingSchedule?.startSchedule)
-    ) {
+    if (chargingSchedule?.startSchedule != null && !isDate(chargingSchedule?.startSchedule)) {
       logger.warn(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingSchedule.startSchedule = convertToDate(chargingSchedule?.startSchedule)!
     }
-    if (
-      !isNullOrUndefined(chargingSchedule?.startSchedule) &&
-      isNullOrUndefined(chargingSchedule?.duration)
-    ) {
+    if (chargingSchedule?.startSchedule != null && chargingSchedule?.duration == null) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined and will be set to the maximum time allowed`
       )
       // OCPP specifies that if duration is not defined, it should be infinite
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule!)
+      chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule)
     }
     if (!prepareChargingProfileKind(connectorStatus, chargingProfile, currentDate, logPrefix)) {
       continue
@@ -949,7 +933,7 @@ export const prepareChargingProfileKind = (
       prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix)
       break
     case ChargingProfileKindType.RELATIVE:
-      if (!isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)) {
+      if (chargingProfile.chargingSchedule.startSchedule != null) {
         logger.warn(
           `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`
         )
@@ -983,8 +967,8 @@ export const canProceedChargingProfile = (
     return false
   }
   if (
-    isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule) ||
-    isNullOrUndefined(chargingProfile.chargingSchedule.duration)
+    chargingProfile.chargingSchedule.startSchedule == null ||
+    chargingProfile.chargingSchedule.duration == null
   ) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule or duration defined`
@@ -992,7 +976,7 @@ export const canProceedChargingProfile = (
     return false
   }
   if (
-    !isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule) &&
+    chargingProfile.chargingSchedule.startSchedule != null &&
     !isValidTime(chargingProfile.chargingSchedule.startSchedule)
   ) {
     logger.error(
@@ -1001,7 +985,7 @@ export const canProceedChargingProfile = (
     return false
   }
   if (
-    !isNullOrUndefined(chargingProfile.chargingSchedule.duration) &&
+    chargingProfile.chargingSchedule.duration != null &&
     !Number.isSafeInteger(chargingProfile.chargingSchedule.duration)
   ) {
     logger.error(
@@ -1018,7 +1002,7 @@ const canProceedRecurringChargingProfile = (
 ): boolean => {
   if (
     chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-    isNullOrUndefined(chargingProfile.recurrencyKind)
+    chargingProfile.recurrencyKind == null
   ) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no recurrencyKind defined`
@@ -1027,7 +1011,7 @@ const canProceedRecurringChargingProfile = (
   }
   if (
     chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-    isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)
+    chargingProfile.chargingSchedule.startSchedule == null
   ) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`
@@ -1126,7 +1110,7 @@ const checkRecurringChargingProfileDuration = (
   interval: Interval,
   logPrefix: string
 ): void => {
-  if (isNullOrUndefined(chargingProfile.chargingSchedule.duration)) {
+  if (chargingProfile.chargingSchedule.duration == null) {
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
         chargingProfile.chargingProfileKind
@@ -1139,8 +1123,7 @@ const checkRecurringChargingProfileDuration = (
     )
     chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start)
   } else if (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingProfile.chargingSchedule.duration! > differenceInSeconds(interval.end, interval.start)
+    chargingProfile.chargingSchedule.duration > differenceInSeconds(interval.end, interval.start)
   ) {
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${

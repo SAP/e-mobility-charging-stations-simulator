@@ -105,7 +105,6 @@ import {
   isEmptyArray,
   isNotEmptyArray,
   isNotEmptyString,
-  isNullOrUndefined,
   isUndefined,
   logger,
   sleep
@@ -724,7 +723,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     let compositeSchedule: OCPP16ChargingSchedule | undefined
     for (const chargingProfile of chargingProfiles) {
       if (
-        isNullOrUndefined(chargingProfile.chargingSchedule?.startSchedule) &&
+        chargingProfile.chargingSchedule?.startSchedule == null &&
         connectorStatus?.transactionStarted === true
       ) {
         logger.debug(
@@ -736,7 +735,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart
       }
       if (
-        !isNullOrUndefined(chargingProfile.chargingSchedule?.startSchedule) &&
+        chargingProfile.chargingSchedule?.startSchedule != null &&
         !isDate(chargingProfile.chargingSchedule?.startSchedule)
       ) {
         logger.warn(
@@ -750,8 +749,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         )!
       }
       if (
-        !isNullOrUndefined(chargingProfile.chargingSchedule?.startSchedule) &&
-        isNullOrUndefined(chargingProfile.chargingSchedule?.duration)
+        chargingProfile.chargingSchedule?.startSchedule != null &&
+        chargingProfile.chargingSchedule?.duration == null
       ) {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
@@ -761,8 +760,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         // OCPP specifies that if duration is not defined, it should be infinite
         chargingProfile.chargingSchedule.duration = differenceInSeconds(
           maxTime,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingProfile.chargingSchedule.startSchedule!
+          chargingProfile.chargingSchedule.startSchedule
         )
       }
       if (
@@ -826,7 +824,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const connectorStatus = chargingStation.getConnectorStatus(connectorId!)
-    if (!isNullOrUndefined(connectorId) && isNotEmptyArray(connectorStatus?.chargingProfiles)) {
+    if (connectorId != null && isNotEmptyArray(connectorStatus?.chargingProfiles)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       connectorStatus!.chargingProfiles = []
       logger.debug(
@@ -834,7 +832,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED
     }
-    if (isNullOrUndefined(connectorId)) {
+    if (connectorId == null) {
       let clearedCP = false
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
@@ -1123,7 +1121,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     let { retrieveDate } = commandPayload
     if (
-      !isNullOrUndefined(chargingStation.stationInfo.firmwareStatus) &&
+      chargingStation.stationInfo.firmwareStatus != null &&
       chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed
     ) {
       logger.warn(
@@ -1473,7 +1471,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
         case OCPP16MessageTrigger.StatusNotification:
           setTimeout(() => {
-            if (!isNullOrUndefined(connectorId)) {
+            if (connectorId != null) {
               chargingStation.ocppRequestService
                 .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
                 chargingStation,
@@ -1481,8 +1479,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 {
                   connectorId,
                   errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  status: chargingStation.getConnectorStatus(connectorId!)?.status
+                  status: chargingStation.getConnectorStatus(connectorId)?.status
                 },
                 {
                   triggerMessage: true

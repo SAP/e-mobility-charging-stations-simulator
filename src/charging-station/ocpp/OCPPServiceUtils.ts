@@ -59,7 +59,6 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
-  isNullOrUndefined,
   isUndefined,
   logPrefix,
   logger,
@@ -961,17 +960,13 @@ export const buildMeterValue = (
         // Persist previous value on connector
         if (connector != null) {
           if (
-            !isNullOrUndefined(connector.energyActiveImportRegisterValue) &&
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            connector.energyActiveImportRegisterValue! >= 0 &&
-            !isNullOrUndefined(connector.transactionEnergyActiveImportRegisterValue) &&
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            connector.transactionEnergyActiveImportRegisterValue! >= 0
+            connector.energyActiveImportRegisterValue != null &&
+            connector.energyActiveImportRegisterValue >= 0 &&
+            connector.transactionEnergyActiveImportRegisterValue != null &&
+            connector.transactionEnergyActiveImportRegisterValue >= 0
           ) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            connector.energyActiveImportRegisterValue! += energyValueRounded
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            connector.transactionEnergyActiveImportRegisterValue! += energyValueRounded
+            connector.energyActiveImportRegisterValue += energyValueRounded
+            connector.transactionEnergyActiveImportRegisterValue += energyValueRounded
           } else {
             connector.energyActiveImportRegisterValue = 0
             connector.transactionEnergyActiveImportRegisterValue = 0
@@ -1185,16 +1180,16 @@ const buildSampledValue = (
   const sampledValuePhase = phase ?? sampledValueTemplate?.phase
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   return {
-    ...(!isNullOrUndefined(sampledValueTemplate.unit) && {
+    ...(sampledValueTemplate.unit != null && {
       unit: sampledValueTemplate.unit
     }),
-    ...(!isNullOrUndefined(sampledValueContext) && { context: sampledValueContext }),
-    ...(!isNullOrUndefined(sampledValueTemplate.measurand) && {
+    ...(sampledValueContext != null && { context: sampledValueContext }),
+    ...(sampledValueTemplate.measurand != null && {
       measurand: sampledValueTemplate.measurand
     }),
-    ...(!isNullOrUndefined(sampledValueLocation) && { location: sampledValueLocation }),
-    ...(!isNullOrUndefined(value) && { value: value.toString() }),
-    ...(!isNullOrUndefined(sampledValuePhase) && { phase: sampledValuePhase })
+    ...(sampledValueLocation != null && { location: sampledValueLocation }),
+    ...(value != null && { value: value.toString() }),
+    ...(sampledValuePhase != null && { phase: sampledValuePhase })
   } as SampledValue
 }
 
