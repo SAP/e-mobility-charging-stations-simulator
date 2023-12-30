@@ -502,27 +502,21 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const unknownKey: string[] = []
     if (key == null) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const configuration of chargingStation.ocppConfiguration!.configurationKey!) {
-        if (configuration.visible == null) {
-          configuration.visible = true
-        }
-        if (!configuration.visible) {
+      for (const configKey of chargingStation.ocppConfiguration!.configurationKey!) {
+        if (!OCPP16ServiceUtils.isConfigurationKeyVisible(configKey)) {
           continue
         }
         configurationKey.push({
-          key: configuration.key,
-          readonly: configuration.readonly,
-          value: configuration.value
+          key: configKey.key,
+          readonly: configKey.readonly,
+          value: configKey.value
         })
       }
     } else if (isNotEmptyArray(key)) {
       for (const k of key) {
         const keyFound = getConfigurationKey(chargingStation, k, true)
         if (keyFound != null) {
-          if (keyFound.visible == null) {
-            keyFound.visible = true
-          }
-          if (!keyFound.visible) {
+          if (!OCPP16ServiceUtils.isConfigurationKeyVisible(keyFound)) {
             continue
           }
           configurationKey.push({

@@ -18,6 +18,7 @@ import {
   hasReservationExpired
 } from '../../../charging-station/index.js'
 import {
+  type ConfigurationKey,
   type GenericResponse,
   type JsonType,
   OCPP16AuthorizationStatus,
@@ -37,7 +38,7 @@ import {
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion
 } from '../../../types/index.js'
-import { isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
+import { cloneObject, isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
@@ -429,6 +430,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           })
       ].sort((a, b) => a.startPeriod - b.startPeriod)
     }
+  }
+
+  public static isConfigurationKeyVisible (key: ConfigurationKey): boolean {
+    if (key.visible == null) {
+      key = cloneObject(key)
+      key.visible = true
+    }
+    return key.visible
   }
 
   public static hasReservation = (
