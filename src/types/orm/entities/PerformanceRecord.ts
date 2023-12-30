@@ -7,15 +7,15 @@ import type { PerformanceData } from './PerformanceData.js'
 @Entity()
 export class PerformanceRecord {
   // @PrimaryKey()
-  // pk!: number;
+  //   pk!: number
   // @Property()
-  // id!: string;
+  //   id!: string
   // @Property()
-  // URI!: string;
+  //   URI!: string
   // @Property()
-  // createdAt!: Date;
+  //   createdAt!: Date
   // @Property()
-  // updatedAt?: Date;
+  //   updatedAt?: Date
   // @OneToMany('PerformanceData', 'performanceRecord')
-  // performanceData? = new Collection<PerformanceData>(this);
+  //   performanceData? = new Collection<PerformanceData>(this)
 }

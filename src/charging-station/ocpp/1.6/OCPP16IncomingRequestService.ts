@@ -700,10 +700,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
     if (
-      isEmptyArray(
-        connectorStatus?.chargingProfiles != null &&
-          isEmptyArray(chargingStation.getConnectorStatus(0)?.chargingProfiles)
-      )
+      isEmptyArray(connectorStatus?.chargingProfiles) &&
+      isEmptyArray(chargingStation.getConnectorStatus(0)?.chargingProfiles)
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
     }

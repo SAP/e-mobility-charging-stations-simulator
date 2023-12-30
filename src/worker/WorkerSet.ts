@@ -40,7 +40,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       throw new RangeError('Elements per worker must be greater than zero')
     }
     this.workerSet = new Set<WorkerSetElement>()
-    if (this.workerOptions.poolOptions?.enableEvents != null) {
+    if (this.workerOptions.poolOptions?.enableEvents === true) {
       this.emitter = new EventEmitterAsyncResource({ name: 'workerset' })
     }
     this.started = false

@@ -85,10 +85,8 @@ export const convertToDate = (
     return value
   }
   if (isString(value) || typeof value === 'number') {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const valueToDate = new Date(value)
     if (isNaN(valueToDate.getTime())) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       throw new Error(`Cannot convert to date: '${value}'`)
     }
     return valueToDate

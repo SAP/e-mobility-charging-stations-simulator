@@ -110,6 +110,6 @@ export class OCPP16Constants extends OCPPConstants {
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Finishing },
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Reserved },
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Unavailable }
-      // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted },
+      // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
     ])
 }
