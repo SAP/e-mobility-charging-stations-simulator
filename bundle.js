@@ -5,11 +5,9 @@ import chalk from 'chalk'
 import { build } from 'esbuild'
 import { clean } from 'esbuild-plugin-clean'
 import { copy } from 'esbuild-plugin-copy'
-
-const isDevelopmentBuild = env.BUILD === 'development'
-const sourcemap = !!isDevelopmentBuild
-
 ;(async () => {
+  const isDevelopmentBuild = env.BUILD === 'development'
+  const sourcemap = !!isDevelopmentBuild
   console.info(chalk.green(`Building in ${isDevelopmentBuild ? 'development' : 'production'} mode`))
   console.time('Build time')
   await build({
