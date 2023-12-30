@@ -82,7 +82,7 @@ export class PerformanceStatistics {
       performance.measure(name, markId)
     } catch (error) {
       if (error instanceof Error && error.message.includes('performance mark has not been set')) {
-        /** Ignore */
+        /* Ignore */
       } else {
         throw error
       }
