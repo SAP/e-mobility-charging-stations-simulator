@@ -75,7 +75,7 @@ export const setConfigurationKeyValue = (
   key: ConfigurationKeyType,
   value: string,
   caseInsensitive = false
-): void => {
+): ConfigurationKey | undefined => {
   const keyFound = getConfigurationKey(chargingStation, key, caseInsensitive)
   if (keyFound != null) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -90,6 +90,7 @@ export const setConfigurationKeyValue = (
       { key, value }
     )
   }
+  return keyFound
 }
 
 export const deleteConfigurationKey = (
