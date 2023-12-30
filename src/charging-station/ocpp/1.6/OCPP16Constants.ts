@@ -16,7 +16,7 @@ export class OCPP16Constants extends OCPPConstants {
       { to: OCPP16ChargePointStatus.Faulted },
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Available },
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Unavailable }
-    // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted },
+    // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
     ])
 
   static readonly ChargePointStatusConnectorTransitions: Readonly<ConnectorStatusTransition[]> =
