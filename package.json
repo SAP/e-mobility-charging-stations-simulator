@@ -71,9 +71,9 @@
     "build:cf:dev": "pnpm clean:node_modules && npx cross-env SKIP_PREINSTALL=1 npm install && pnpm build:dev",
     "clean:dist": "npx rimraf dist",
     "clean:node_modules": "npx rimraf node_modules",
-    "lint": "cross-env TIMING=1 eslint --cache src",
-    "lint:fix": "cross-env TIMING=1 eslint --cache --fix src",
-    "format": "prettier --cache --write .; ts-standard --fix .",
+    "lint": "cross-env TIMING=1 eslint --cache src tests .eslintrc.cjs bundle.js mikro-orm.config-template.ts",
+    "lint:fix": "cross-env TIMING=1 eslint --cache --fix src tests .eslintrc.cjs bundle.js mikro-orm.config-template.ts",
+    "format": "prettier --cache --write .; eslint --cache --fix src .eslintrc.cjs tests bundle.js mikro-orm.config-template.ts",
     "test": "glob -c \"c8 node --import tsx --test\" \"tests/**/*.test.ts\"",
     "test:debug": "glob -c \"node --import tsx --test --inspect\" \"tests/**/*.test.ts\"",
     "coverage": "c8 report --reporter=lcov",
@@ -154,7 +154,6 @@
     "rimraf": "^5.0.5",
     "semver": "^7.5.4",
     "ts-node": "^10.9.2",
-    "ts-standard": "^12.0.2",
     "tsx": "^4.7.0",
     "typescript": "~5.3.3"
   }
