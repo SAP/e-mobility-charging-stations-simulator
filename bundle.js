@@ -5,6 +5,7 @@ import chalk from 'chalk'
 import { build } from 'esbuild'
 import { clean } from 'esbuild-plugin-clean'
 import { copy } from 'esbuild-plugin-copy'
+
 ;(async () => {
   const isDevelopmentBuild = env.BUILD === 'development'
   const sourcemap = !!isDevelopmentBuild
