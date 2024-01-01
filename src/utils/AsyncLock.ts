@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { Queue } from 'mnemonist'
+import Queue from 'mnemonist/queue.js'
 
 import { Constants } from './Constants.js'
 
@@ -18,6 +18,7 @@ export class AsyncLock {
 
   private constructor () {
     this.acquired = false
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.resolveQueue = new Queue<ResolveType>()
   }
 
@@ -36,19 +37,22 @@ export class AsyncLock {
       return
     }
     await new Promise<void>((resolve) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       asyncLock.resolveQueue.enqueue(resolve)
     })
   }
 
   private static async release (type: AsyncLockType): Promise<void> {
     const asyncLock = AsyncLock.getAsyncLock(type)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (asyncLock.resolveQueue.size === 0 && asyncLock.acquired) {
       asyncLock.acquired = false
       return
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const queuedResolve = asyncLock.resolveQueue.dequeue()!
     await new Promise<void>((resolve) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       queuedResolve()
       resolve()
     })

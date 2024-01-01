@@ -26,6 +26,7 @@ import { copy } from 'esbuild-plugin-copy'
       'just-merge',
       'logform',
       'mnemonist',
+      'mnemonist/*',
       'mongodb',
       'node:*',
       'poolifier',
