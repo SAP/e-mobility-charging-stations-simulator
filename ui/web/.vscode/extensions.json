@@ -4,7 +4,6 @@
   "recommendations": [
     "codezombiech.gitignore",
     "dbaeumer.vscode-eslint",
-    "eamodio.gitlens",
     "EditorConfig.EditorConfig",
     "sonarsource.sonarlint-vscode",
     "streetsidesoftware.code-spell-checker",
