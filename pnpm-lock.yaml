@@ -51,8 +51,8 @@ dependencies:
     specifier: ^2.6.0
     version: 2.6.0
   mnemonist:
-    specifier: ^0.39.6
-    version: 0.39.6
+    specifier: ^0.39.7
+    version: 0.39.7
   mongodb:
     specifier: ^6.3.0
     version: 6.3.0
@@ -6820,8 +6820,8 @@ packages:
     resolution: {integrity: sha512-VoAYUqmPRmzKbbqRejjqceGFp3VF81Qe8XXFGU0UXLxB7Mf4GGvyGq5Qn3k4AiQgDEV6WzobqlPOd+j0+m6IrA==}
     dev: true
 
-  /mnemonist@0.39.6:
-    resolution: {integrity: sha512-A/0v5Z59y63US00cRSLiloEIw3t5G+MiKz4BhX21FI+YBJXBOGW0ohFxTxO08dsOYlzxo87T7vGfZKYp2bcAWA==}
+  /mnemonist@0.39.7:
+    resolution: {integrity: sha512-ix3FwHWZgdXUt0dHM8bCrI4r1KMeYx8bCunPCYmvKXq4tn6gbNsqrsb4q0kDbDqbpIOvEaW5Sn+dmDwGydfrwA==}
     dependencies:
       obliterator: 2.0.4
     dev: false
