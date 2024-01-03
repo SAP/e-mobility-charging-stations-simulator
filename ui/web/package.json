@@ -34,7 +34,7 @@
   "dependencies": {
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.4.3",
+    "vue": "^3.4.4",
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
