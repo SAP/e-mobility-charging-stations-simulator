@@ -39,9 +39,7 @@
     }
   ],
   "type": "module",
-  "exports": [
-    "./dist/start.js"
-  ],
+  "exports": "./dist/start.js",
   "auto-changelog": {
     "commitUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/commit/{id}",
     "issueUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/issues/{id}",
