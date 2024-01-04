@@ -263,7 +263,7 @@ export class ChargingStation extends EventEmitter {
 
   public getNumberOfPhases (stationInfo?: ChargingStationInfo): number {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const localStationInfo: ChargingStationInfo = stationInfo ?? this.stationInfo!
+    const localStationInfo = stationInfo ?? this.stationInfo!
     switch (this.getCurrentOutType(stationInfo)) {
       case CurrentType.AC:
         return localStationInfo.numberOfPhases ?? 3
@@ -1092,14 +1092,14 @@ export class ChargingStation extends EventEmitter {
 
   private getStationInfoFromTemplate (): ChargingStationInfo {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const stationTemplate: ChargingStationTemplate = this.getTemplateFromFile()!
+    const stationTemplate = this.getTemplateFromFile()!
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
     const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation, this)
     warnTemplateKeysDeprecationOnce(stationTemplate, this.logPrefix(), this.templateFile)
     if (stationTemplate.Connectors != null) {
       checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile)
     }
-    const stationInfo: ChargingStationInfo = stationTemplateToStationInfo(stationTemplate)
+    const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     stationInfo.ocppVersion = stationTemplate.ocppVersion ?? OCPPVersion.VERSION_16
@@ -1164,8 +1164,8 @@ export class ChargingStation extends EventEmitter {
 
   private getStationInfo (): ChargingStationInfo {
     const defaultStationInfo = Constants.DEFAULT_STATION_INFO
-    const stationInfoFromTemplate: ChargingStationInfo = this.getStationInfoFromTemplate()
-    const stationInfoFromFile: ChargingStationInfo | undefined = this.getStationInfoFromFile(
+    const stationInfoFromTemplate = this.getStationInfoFromTemplate()
+    const stationInfoFromFile = this.getStationInfoFromFile(
       stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
     // Priority:
@@ -2229,7 +2229,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private startWebSocketPing (): void {
-    const webSocketPingInterval: number =
+    const webSocketPingInterval =
       getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
         ? convertToInt(
           getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value

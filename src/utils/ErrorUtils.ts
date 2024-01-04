@@ -17,7 +17,7 @@ import type {
 const defaultErrorParams = {
   throwError: true,
   consoleOut: false
-}
+} satisfies HandleErrorParams<EmptyObject>
 
 export const handleUncaughtException = (): void => {
   process.on('uncaughtException', (error: Error) => {

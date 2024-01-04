@@ -1115,7 +1115,7 @@ const getSampledValueTemplate = (
     )
     return
   }
-  const sampledValueTemplates: SampledValueTemplate[] =
+  const sampledValueTemplates =
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     chargingStation.getConnectorStatus(connectorId)!.MeterValues
   for (

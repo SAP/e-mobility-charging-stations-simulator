@@ -53,7 +53,7 @@ export class UIWebSocketServer extends AbstractUIServer {
           ws.close(WebSocketCloseEventStatusCode.CLOSE_INVALID_PAYLOAD)
           return
         }
-        const [requestId] = request as ProtocolRequest
+        const [requestId] = request
         this.responseHandlers.set(requestId, ws)
         this.uiServices
           .get(version)
