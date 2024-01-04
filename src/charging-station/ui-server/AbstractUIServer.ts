@@ -103,7 +103,8 @@ export abstract class AbstractUIServer {
   private isBasicAuthEnabled (): boolean {
     return (
       this.uiServerConfiguration.authentication?.enabled === true &&
-      this.uiServerConfiguration.authentication?.type === AuthenticationType.BASIC_AUTH
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      this.uiServerConfiguration.authentication.type === AuthenticationType.BASIC_AUTH
     )
   }
 

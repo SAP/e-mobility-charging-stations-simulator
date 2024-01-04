@@ -129,7 +129,7 @@ export class Bootstrap extends EventEmitter {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
-            const nbStations = stationTemplateUrl.numberOfStations ?? 0
+            const nbStations = stationTemplateUrl.numberOfStations
             for (let index = 1; index <= nbStations; index++) {
               await this.startChargingStation(index, stationTemplateUrl)
             }
@@ -156,7 +156,7 @@ export class Bootstrap extends EventEmitter {
                 : ''
             } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
               this.workerImplementation?.maxElementsPerWorker != null
-                ? ` (${this.workerImplementation?.maxElementsPerWorker} charging station(s) per worker)`
+                ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
                 : ''
             }`
           )
@@ -246,7 +246,7 @@ export class Bootstrap extends EventEmitter {
 
   private initializeWorkerImplementation (workerConfiguration: WorkerConfiguration): void {
     let elementsPerWorker: number | undefined
-    switch (workerConfiguration?.elementsPerWorker) {
+    switch (workerConfiguration.elementsPerWorker) {
       case 'auto':
         elementsPerWorker =
           this.numberOfChargingStations > availableParallelism()
@@ -373,7 +373,7 @@ export class Bootstrap extends EventEmitter {
       if (isNotEmptyArray(stationTemplateUrls)) {
         this.numberOfChargingStationTemplates = stationTemplateUrls.length
         for (const stationTemplateUrl of stationTemplateUrls) {
-          this.numberOfChargingStations += stationTemplateUrl.numberOfStations ?? 0
+          this.numberOfChargingStations += stationTemplateUrl.numberOfStations
         }
       } else {
         console.warn(
@@ -413,7 +413,7 @@ export class Bootstrap extends EventEmitter {
   private gracefulShutdown (): void {
     this.stop()
       .then(() => {
-        console.info(`${chalk.green('Graceful shutdown')}`)
+        console.info(chalk.green('Graceful shutdown'))
         this.uiServer?.stop()
         // stop() asks for charging stations to stop by default
         this.waitChargingStationsStopped()

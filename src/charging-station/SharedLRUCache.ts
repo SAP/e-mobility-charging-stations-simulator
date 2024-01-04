@@ -111,14 +111,14 @@ export class SharedLRUCache {
     chargingStationConfiguration: ChargingStationConfiguration
   ): boolean {
     return (
-      chargingStationConfiguration?.configurationKey != null &&
-      chargingStationConfiguration?.stationInfo != null &&
-      chargingStationConfiguration?.automaticTransactionGenerator != null &&
-      chargingStationConfiguration?.configurationHash != null &&
-      isNotEmptyArray(chargingStationConfiguration?.configurationKey) &&
+      chargingStationConfiguration.configurationKey != null &&
+      chargingStationConfiguration.stationInfo != null &&
+      chargingStationConfiguration.automaticTransactionGenerator != null &&
+      chargingStationConfiguration.configurationHash != null &&
+      isNotEmptyArray(chargingStationConfiguration.configurationKey) &&
       !isEmptyObject(chargingStationConfiguration.stationInfo) &&
       !isEmptyObject(chargingStationConfiguration.automaticTransactionGenerator) &&
-      isNotEmptyString(chargingStationConfiguration?.configurationHash)
+      isNotEmptyString(chargingStationConfiguration.configurationHash)
     )
   }
 }

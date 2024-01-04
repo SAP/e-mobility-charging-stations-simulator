@@ -45,7 +45,7 @@ type ConfigurationSectionType =
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Configuration {
-  public static configurationChangeCallback: () => Promise<void>
+  public static configurationChangeCallback?: () => Promise<void>
 
   private static readonly configurationFile = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -327,7 +327,8 @@ export class Configuration {
         ] as StationTemplateUrl[])
     Configuration.getConfigurationData()?.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
-        if (stationTemplateUrl?.['numberOfStation' as keyof StationTemplateUrl] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (stationTemplateUrl['numberOfStation' as keyof StationTemplateUrl] !== undefined) {
           console.error(
             `${chalk.green(logPrefix())} ${chalk.red(
               `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`
@@ -495,7 +496,7 @@ export class Configuration {
         string,
         unknown
         >
-      )?.[key] !== undefined
+      )[key] !== undefined
     ) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(

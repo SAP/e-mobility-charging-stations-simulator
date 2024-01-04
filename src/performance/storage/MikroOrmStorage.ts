@@ -1,12 +1,6 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import {
-  type Configuration,
-  type Connection,
-  type IDatabaseDriver,
-  MikroORM,
-  type Options
-} from '@mikro-orm/core'
+import { type Configuration, MikroORM, type Options } from '@mikro-orm/core'
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection'
 
 import { Storage } from './Storage.js'
@@ -40,7 +34,7 @@ export class MikroOrmStorage extends Storage {
 
   public async open (): Promise<void> {
     try {
-      if (this?.orm == null) {
+      if (this.orm == null) {
         this.orm = await MikroORM.init(this.getOptions(), true)
       }
     } catch (error) {
@@ -50,9 +44,9 @@ export class MikroOrmStorage extends Storage {
 
   public async close (): Promise<void> {
     try {
-      if (this?.orm != null) {
+      if (this.orm != null) {
         await this.orm.close()
-        delete this?.orm
+        delete this.orm
       }
     } catch (error) {
       this.handleDBError(this.storageType, error as Error)
@@ -63,15 +57,10 @@ export class MikroOrmStorage extends Storage {
     if (this.storageType === StorageType.SQLITE) {
       return `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
     }
-    return (
-      this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ??
-      Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME
-    )
+    return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
-  private getOptions ():
-  | Configuration<IDatabaseDriver<Connection>>
-  | Options<IDatabaseDriver<Connection>> {
+  private getOptions (): Configuration | Options {
     return {
       metadataProvider: TsMorphMetadataProvider,
       entities: [PerformanceRecord, PerformanceData],

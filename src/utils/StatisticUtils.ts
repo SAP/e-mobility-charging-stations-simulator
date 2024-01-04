@@ -54,6 +54,7 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   }
   const percentileIndexBase = (percentile / 100) * (sortedDataSet.length - 1)
   const percentileIndexInteger = Math.floor(percentileIndexBase)
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (sortedDataSet[percentileIndexInteger + 1] != null) {
     return (
       sortedDataSet[percentileIndexInteger] +

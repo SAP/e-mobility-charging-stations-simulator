@@ -48,9 +48,10 @@ export class IdTagsCache {
     chargingStation: ChargingStation,
     connectorId: number
   ): string {
-    const hashId = chargingStation.stationInfo.hashId
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTagsFile = getIdTagsFile(chargingStation.stationInfo)!
+    const hashId = chargingStation.stationInfo!.hashId
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
     switch (distribution) {
       case IdTagDistribution.RANDOM:
         return this.getRandomIdTag(hashId, idTagsFile)
@@ -108,12 +109,13 @@ export class IdTagsCache {
 
   private getConnectorAffinityIdTag (chargingStation: ChargingStation, connectorId: number): string {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const file = getIdTagsFile(chargingStation.stationInfo)!
+    const file = getIdTagsFile(chargingStation.stationInfo!)!
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const idTags = this.getIdTags(file)!
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
       file,
-      chargingStation.stationInfo.hashId
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      chargingStation.stationInfo!.hashId
     )
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,

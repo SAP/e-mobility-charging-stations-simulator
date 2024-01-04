@@ -94,7 +94,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         responsesFailed: this.responses
           .get(uuid)
           ?.responses.map((response) => {
-            if (response != null && response.status === ResponseStatus.FAILURE) {
+            if (response.status === ResponseStatus.FAILURE) {
               return response
             }
             return undefined

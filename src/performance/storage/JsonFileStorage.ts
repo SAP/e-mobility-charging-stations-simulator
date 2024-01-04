@@ -47,7 +47,7 @@ export class JsonFileStorage extends Storage {
   public open (): void {
     JsonFileStorage.performanceRecords = new Map<string, Statistics>()
     try {
-      if (this?.fd == null) {
+      if (this.fd == null) {
         if (!existsSync(dirname(this.dbName))) {
           mkdirSync(dirname(this.dbName), { recursive: true })
         }
@@ -66,9 +66,9 @@ export class JsonFileStorage extends Storage {
   public close (): void {
     JsonFileStorage.performanceRecords.clear()
     try {
-      if (this?.fd != null) {
+      if (this.fd != null) {
         closeSync(this.fd)
-        delete this?.fd
+        delete this.fd
       }
     } catch (error) {
       handleFileException(
@@ -81,7 +81,7 @@ export class JsonFileStorage extends Storage {
   }
 
   private checkPerformanceRecordsFile (): void {
-    if (this?.fd == null) {
+    if (this.fd == null) {
       throw new BaseError(
         `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
       )

@@ -122,13 +122,7 @@ export class UIHttpServer extends AbstractUIServer {
             const body = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload
             this.uiServices
               .get(version)
-              ?.requestHandler(
-                this.buildProtocolRequest(
-                  uuid,
-                  procedureName,
-                  body ?? Constants.EMPTY_FROZEN_OBJECT
-                )
-              )
+              ?.requestHandler(this.buildProtocolRequest(uuid, procedureName, body))
               .then((protocolResponse?: ProtocolResponse) => {
                 if (protocolResponse != null) {
                   this.sendResponse(protocolResponse)

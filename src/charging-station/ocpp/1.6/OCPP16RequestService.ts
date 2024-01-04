@@ -35,8 +35,8 @@ export class OCPP16RequestService extends OCPPRequestService {
   protected jsonSchemas: Map<OCPP16RequestCommand, JSONSchemaType<JsonType>>
 
   public constructor (ocppResponseService: OCPPResponseService) {
-    // if (new.target?.name === moduleName) {
-    //   throw new TypeError(`Cannot construct ${new.target?.name} instances directly`)
+    // if (new.target.name === moduleName) {
+    //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
     super(OCPPVersion.VERSION_16, ocppResponseService)
     this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonType>>([
@@ -180,21 +180,21 @@ export class OCPP16RequestService extends OCPPRequestService {
         return {
           idTag: Constants.DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
-            commandParams?.connectorId as number,
+            commandParams.connectorId as number,
             true
           ),
           timestamp: new Date(),
           ...(OCPP16ServiceUtils.hasReservation(
             chargingStation,
-            commandParams?.connectorId as number,
-            commandParams?.idTag as string
+            commandParams.connectorId as number,
+            commandParams.idTag as string
           ) && {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             reservationId: chargingStation.getReservationBy(
               'connectorId',
               chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
                 ? 0
-                : (commandParams?.connectorId as number)
+                : (commandParams.connectorId as number)
             )!.reservationId
           }),
           ...commandParams
@@ -203,14 +203,14 @@ export class OCPP16RequestService extends OCPPRequestService {
         chargingStation.stationInfo?.transactionDataMeterValues === true &&
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           (connectorId = chargingStation.getConnectorIdByTransactionId(
-            commandParams?.transactionId as number
+            commandParams.transactionId as number
           )!)
         energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
-          commandParams?.transactionId as number,
+          commandParams.transactionId as number,
           true
         )
         return {
-          idTag: chargingStation.getTransactionIdTag(commandParams?.transactionId as number),
+          idTag: chargingStation.getTransactionIdTag(commandParams.transactionId as number),
           meterStop: energyActiveImportRegister,
           timestamp: new Date(),
           ...(chargingStation.stationInfo?.transactionDataMeterValues === true && {

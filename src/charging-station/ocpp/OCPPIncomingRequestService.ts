@@ -73,14 +73,14 @@ export abstract class OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
       error
     )
-    if (params?.throwError === false && params?.errorResponse != null) {
-      return params?.errorResponse
+    if (params.throwError === false && params.errorResponse != null) {
+      return params.errorResponse
     }
-    if (params?.throwError === true && params?.errorResponse == null) {
+    if (params.throwError === true && params.errorResponse == null) {
       throw error
     }
-    if (params?.throwError === true && params?.errorResponse != null) {
-      return params?.errorResponse
+    if (params.throwError === true && params.errorResponse != null) {
+      return params.errorResponse
     }
   }
 
@@ -111,7 +111,7 @@ export abstract class OCPPIncomingRequestService {
 
   protected handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo)!)) {
+    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {
       return OCPPConstants.OCPP_RESPONSE_ACCEPTED
     }
     return OCPPConstants.OCPP_RESPONSE_REJECTED

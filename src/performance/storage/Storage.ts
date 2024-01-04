@@ -35,7 +35,7 @@ export abstract class Storage {
       }'${inTableOrCollectionStr}:`,
       error
     )
-    if (params?.throwError === true) {
+    if (params.throwError === true) {
       throw error
     }
   }

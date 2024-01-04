@@ -34,7 +34,7 @@ export interface BroadcastChannelRequestPayload extends RequestPayload {
 
 export interface BroadcastChannelResponsePayload
   extends Omit<ResponsePayload, 'hashIdsSucceeded' | 'hashIdsFailed' | 'responsesFailed'> {
-  hashId: string
+  hashId: string | undefined
 }
 
 export interface MessageEvent {

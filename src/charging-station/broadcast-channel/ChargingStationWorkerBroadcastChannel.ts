@@ -273,7 +273,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     const [uuid, command, requestPayload] = validatedMessageEvent.data as BroadcastChannelRequest
     if (
       requestPayload.hashIds != null &&
-      !requestPayload.hashIds.includes(this.chargingStation.stationInfo.hashId)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      !requestPayload.hashIds.includes(this.chargingStation.stationInfo!.hashId)
     ) {
       return
     }
@@ -290,7 +291,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       commandResponse = await this.commandHandler(command, requestPayload)
       if (commandResponse == null || isEmptyObject(commandResponse)) {
         responsePayload = {
-          hashId: this.chargingStation.stationInfo.hashId,
+          hashId: this.chargingStation.stationInfo?.hashId,
           status: ResponseStatus.SUCCESS
         }
       } else {
@@ -306,7 +307,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         error
       )
       responsePayload = {
-        hashId: this.chargingStation.stationInfo.hashId,
+        hashId: this.chargingStation.stationInfo?.hashId,
         status: ResponseStatus.FAILURE,
         command,
         requestPayload,
@@ -362,12 +363,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     const responseStatus = this.commandResponseToResponseStatus(command, commandResponse)
     if (responseStatus === ResponseStatus.SUCCESS) {
       return {
-        hashId: this.chargingStation.stationInfo.hashId,
+        hashId: this.chargingStation.stationInfo?.hashId,
         status: responseStatus
       }
     }
     return {
-      hashId: this.chargingStation.stationInfo.hashId,
+      hashId: this.chargingStation.stationInfo?.hashId,
       status: responseStatus,
       command,
       requestPayload,
@@ -389,18 +390,18 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
               | StartTransactionResponse
               | StopTransactionResponse
               | AuthorizeResponse
-          )?.idTagInfo?.status === AuthorizationStatus.ACCEPTED
+          ).idTagInfo?.status === AuthorizationStatus.ACCEPTED
         ) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE
       case BroadcastChannelProcedureName.BOOT_NOTIFICATION:
-        if (commandResponse?.status === RegistrationStatusEnumType.ACCEPTED) {
+        if (commandResponse.status === RegistrationStatusEnumType.ACCEPTED) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE
       case BroadcastChannelProcedureName.DATA_TRANSFER:
-        if (commandResponse?.status === DataTransferStatus.ACCEPTED) {
+        if (commandResponse.status === DataTransferStatus.ACCEPTED) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE

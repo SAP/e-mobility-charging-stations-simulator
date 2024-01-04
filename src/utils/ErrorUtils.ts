@@ -57,21 +57,21 @@ export const handleFileException = (
     default:
       logMsg = `${fileType} file ${file} error:`
   }
-  if (params?.consoleOut === true) {
+  if (params.consoleOut === true) {
     logMsg = `${logMsg} `
-    if (params?.throwError === true) {
+    if (params.throwError === true) {
       console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error)
     } else {
       console.warn(`${chalk.green(prefix)}${chalk.yellow(logMsg)}`, error)
     }
-  } else if (params?.consoleOut === false) {
-    if (params?.throwError === true) {
+  } else if (params.consoleOut === false) {
+    if (params.throwError === true) {
       logger.error(`${prefix}${logMsg}`, error)
     } else {
       logger.warn(`${prefix}${logMsg}`, error)
     }
   }
-  if (params?.throwError === true) {
+  if (params.throwError === true) {
     throw error
   }
 }
@@ -84,7 +84,7 @@ export const handleSendMessageError = (
 ): void => {
   setDefaultErrorParams(params, { throwError: false, consoleOut: false })
   logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error)
-  if (params?.throwError === true) {
+  if (params.throwError === true) {
     throw error
   }
 }

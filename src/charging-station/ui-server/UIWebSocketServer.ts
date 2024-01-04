@@ -80,7 +80,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       })
     })
     this.httpServer.on('connect', (req: IncomingMessage, socket: Duplex, _head: Buffer) => {
-      if (req.headers?.connection !== 'Upgrade' || req.headers?.upgrade !== 'websocket') {
+      if (req.headers.connection !== 'Upgrade' || req.headers.upgrade !== 'websocket') {
         socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST} Bad Request\r\n\r\n`)
         socket.destroy()
       }
@@ -115,18 +115,20 @@ export class UIWebSocketServer extends AbstractUIServer {
   }
 
   public sendResponse (response: ProtocolResponse): void {
-    const responseId = response?.[0]
+    const responseId = response[0]
     try {
       if (this.hasResponseHandler(responseId)) {
         const ws = this.responseHandlers.get(responseId) as WebSocket
-        if (ws?.readyState === WebSocket.OPEN) {
+        if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify(response))
         } else {
           logger.error(
             `${this.logPrefix(
               moduleName,
               'sendResponse'
-            )} Error at sending response id '${responseId}', WebSocket is not open: ${ws?.readyState}`
+            )} Error at sending response id '${responseId}', WebSocket is not open: ${
+              ws.readyState
+            }`
           )
         }
       } else {
@@ -162,7 +164,7 @@ export class UIWebSocketServer extends AbstractUIServer {
 
   private broadcastToClients (message: string): void {
     for (const client of this.webSocketServer.clients) {
-      if (client?.readyState === WebSocket.OPEN) {
+      if (client.readyState === WebSocket.OPEN) {
         client.send(message)
       }
     }
@@ -191,6 +193,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       return false
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (request.length !== 3) {
       logger.error(
         `${this.logPrefix(moduleName, 'validateRawDataRequest')} UI protocol request is malformed:`,
@@ -199,7 +202,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       return false
     }
 
-    if (!validateUUID(request?.[0])) {
+    if (!validateUUID(request[0])) {
       logger.error(
         `${this.logPrefix(
           moduleName,

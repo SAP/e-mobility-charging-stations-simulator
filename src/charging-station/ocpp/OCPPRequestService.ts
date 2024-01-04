@@ -454,7 +454,7 @@ export abstract class OCPPRequestService {
                 // Resolve response
                 resolve(messagePayload)
               }
-            } else if (error != null) {
+            } else {
               handleSendError(
                 new OCPPError(
                   ErrorType.GENERIC_ERROR,
@@ -483,7 +483,7 @@ export abstract class OCPPRequestService {
     }
     throw new OCPPError(
       ErrorType.SECURITY_ERROR,
-      `Cannot send command ${commandName} PDU when the charging station is in ${chargingStation?.bootNotificationResponse?.status} state on the central server`,
+      `Cannot send command ${commandName} PDU when the charging station is in ${chargingStation.bootNotificationResponse?.status} state on the central server`,
       commandName
     )
   }

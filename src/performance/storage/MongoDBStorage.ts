@@ -15,9 +15,7 @@ export class MongoDBStorage extends Storage {
     super(storageUri, logPrefix)
     this.client = new MongoClient(this.storageUri.toString())
     this.connected = false
-    this.dbName =
-      this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '') ??
-      Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME
+    this.dbName = this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
@@ -34,7 +32,7 @@ export class MongoDBStorage extends Storage {
 
   public async open (): Promise<void> {
     try {
-      if (!this.connected && this?.client != null) {
+      if (!this.connected && this.client != null) {
         await this.client.connect()
         this.connected = true
       }
@@ -45,7 +43,7 @@ export class MongoDBStorage extends Storage {
 
   public async close (): Promise<void> {
     try {
-      if (this.connected && this?.client != null) {
+      if (this.connected && this.client != null) {
         await this.client.close()
         this.connected = false
       }
@@ -55,7 +53,7 @@ export class MongoDBStorage extends Storage {
   }
 
   private checkDBConnection (): void {
-    if (this?.client == null) {
+    if (this.client == null) {
       throw new BaseError(
         `${this.logPrefix} ${this.getDBNameFromStorageType(
           StorageType.MONGO_DB

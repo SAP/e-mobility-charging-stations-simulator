@@ -37,7 +37,7 @@ export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
   }
 
   get emitter (): EventEmitterAsyncResource | undefined {
-    return this.pool?.emitter
+    return this.pool.emitter
   }
 
   /** @inheritDoc */

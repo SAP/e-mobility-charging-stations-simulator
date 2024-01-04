@@ -105,9 +105,6 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     if (!this.started) {
       throw new Error('Cannot add a WorkerSet element: not started')
     }
-    if (this.workerSet == null) {
-      throw new Error("Cannot add a WorkerSet element: 'workerSet' property does not exist")
-    }
     const workerSetElement = await this.getWorkerSetElement()
     workerSetElement.worker.postMessage({
       event: WorkerMessageEvents.startWorkerElement,

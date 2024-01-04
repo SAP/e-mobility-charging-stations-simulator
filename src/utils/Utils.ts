@@ -154,7 +154,7 @@ export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
 
 export const getRandomInteger = (max = Constants.MAX_RANDOM_INTEGER, min = 0): number => {
   max = Math.floor(max)
-  if (min != null && min !== 0) {
+  if (min !== 0) {
     min = Math.ceil(min)
     return Math.floor(randomInt(min, max + 1))
   }
@@ -175,7 +175,7 @@ export const roundTo = (numberValue: number, scale: number): number => {
 }
 
 export const getRandomFloatRounded = (max = Number.MAX_VALUE, min = 0, scale = 2): number => {
-  if (min != null && min !== 0) {
+  if (min !== 0) {
     return roundTo(getRandomFloat(max, min), scale)
   }
   return roundTo(getRandomFloat(max), scale)
@@ -294,7 +294,7 @@ export const isNotEmptyArray = (object: unknown): boolean => {
 }
 
 export const isEmptyObject = (obj: object): boolean => {
-  if (obj?.constructor !== Object) {
+  if (obj.constructor !== Object) {
     return false
   }
   // Iterates over the keys of an object, if
@@ -371,8 +371,8 @@ export const getWebSocketCloseEventStatusString = (code: number): string => {
     }
   }
   if (
-    WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString] !==
-    undefined
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString] != null
   ) {
     return WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString]
   }
@@ -395,6 +395,7 @@ export const once = <T, A extends any[], R>(
 ): ((...args: A) => R) => {
   let result: R
   return (...args: A) => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (fn != null) {
       result = fn.apply<T, A, R>(context, args)
       ;(fn as unknown as undefined) = (context as unknown as undefined) = undefined

@@ -41,19 +41,19 @@ export class PerformanceStatistics {
   PerformanceStatistics
   >()
 
-  private readonly objId: string
-  private readonly objName: string
+  private readonly objId: string | undefined
+  private readonly objName: string | undefined
   private performanceObserver!: PerformanceObserver
   private readonly statistics: Statistics
   private displayInterval?: NodeJS.Timeout
 
-  private constructor (objId: string, objName: string, uri: URL) {
-    this.objId = objId
-    this.objName = objName
+  private constructor (objId: string | undefined, objName: string | undefined, uri: URL) {
+    this.objId = objId ?? 'Object id not specified'
+    this.objName = objName ?? 'Object name not specified'
     this.initializePerformanceObserver()
     this.statistics = {
-      id: this.objId ?? 'Object id not specified',
-      name: this.objName ?? 'Object name not specified',
+      id: this.objId,
+      name: this.objName,
       uri: uri.toString(),
       createdAt: new Date(),
       statisticsData: new Map()
@@ -164,7 +164,7 @@ export class PerformanceStatistics {
     this.stopLogStatisticsInterval()
     performance.clearMarks()
     performance.clearMeasures()
-    this.performanceObserver?.disconnect()
+    this.performanceObserver.disconnect()
   }
 
   public restart (): void {
@@ -185,7 +185,7 @@ export class PerformanceStatistics {
   }
 
   private logStatistics (): void {
-    logger.info(`${this.logPrefix()}`, {
+    logger.info(this.logPrefix(), {
       ...this.statistics,
       statisticsData: JSONStringifyWithMapSupport(this.statistics.statisticsData)
     })

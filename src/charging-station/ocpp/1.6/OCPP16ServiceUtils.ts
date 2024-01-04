@@ -61,7 +61,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static buildTransactionBeginMeterValue (
     chargingStation: ChargingStation,
     connectorId: number,
-    meterStart: number
+    meterStart: number | undefined
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
       timestamp: new Date(),
@@ -126,7 +126,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
-      if (connectorStatus?.transactionStarted === true) {
+      if (connectorStatus.transactionStarted === true) {
         response = OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED
       }
       connectorStatus.availability = availabilityType
@@ -166,19 +166,19 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }
     let cpReplaced = false
     if (isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
-      chargingStation
+      for (const [index, chargingProfile] of chargingStation
         .getConnectorStatus(connectorId)
-        ?.chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
-          if (
-            chargingProfile.chargingProfileId === cp.chargingProfileId ||
-            (chargingProfile.stackLevel === cp.stackLevel &&
-              chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)
-          ) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            chargingStation.getConnectorStatus(connectorId)!.chargingProfiles![index] = cp
-            cpReplaced = true
-          }
-        })
+        ?.chargingProfiles?.entries() ?? []) {
+        if (
+          chargingProfile.chargingProfileId === cp.chargingProfileId ||
+          (chargingProfile.stackLevel === cp.stackLevel &&
+            chargingProfile.chargingProfilePurpose === cp.chargingProfilePurpose)
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          chargingStation.getConnectorStatus(connectorId)!.chargingProfiles![index] = cp
+          cpReplaced = true
+        }
+      }
     }
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
   }
@@ -451,11 +451,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         OCPP16ChargePointStatus.Reserved &&
         connectorReservation != null &&
         !hasReservationExpired(connectorReservation) &&
-        connectorReservation?.idTag === idTag) ||
+        connectorReservation.idTag === idTag) ||
       (chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved &&
         chargingStationReservation != null &&
         !hasReservationExpired(chargingStationReservation) &&
-        chargingStationReservation?.idTag === idTag)
+        chargingStationReservation.idTag === idTag)
     ) {
       logger.debug(
         `${chargingStation.logPrefix()} Connector id ${connectorId} has a valid reservation for idTag ${idTag}: %j`,

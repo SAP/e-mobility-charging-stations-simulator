@@ -51,12 +51,13 @@ export const buildPerformanceStatisticsMessage = (
 const buildChargingStationDataPayload = (chargingStation: ChargingStation): ChargingStationData => {
   return {
     started: chargingStation.started,
-    stationInfo: chargingStation.stationInfo,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    stationInfo: chargingStation.stationInfo!,
     connectors: buildConnectorsStatus(chargingStation),
     evses: buildEvsesStatus(chargingStation, OutputFormat.worker),
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ocppConfiguration: chargingStation.ocppConfiguration!,
-    wsState: chargingStation?.wsConnection?.readyState,
+    wsState: chargingStation.wsConnection?.readyState,
     bootNotificationResponse: chargingStation.bootNotificationResponse,
     ...(chargingStation.automaticTransactionGenerator != null && {
       automaticTransactionGenerator:
