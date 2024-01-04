@@ -238,8 +238,12 @@ export class ChargingStation extends EventEmitter {
   }
 
   public logPrefix = (): string => {
-    if (isNotEmptyString(this.stationInfo?.chargingStationId)) {
-      return logPrefix(` ${this.stationInfo?.chargingStationId} |`)
+    if (
+      this instanceof ChargingStation &&
+      this.stationInfo != null &&
+      isNotEmptyString(this.stationInfo.chargingStationId)
+    ) {
+      return logPrefix(` ${this.stationInfo.chargingStationId} |`)
     }
     let stationTemplate: ChargingStationTemplate | undefined
     try {
