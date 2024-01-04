@@ -118,7 +118,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.3",
-    "@commitlint/config-conventional": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.4",
     "@mikro-orm/cli": "^5.9.7",
     "@release-it/bumper": "^6.0.1",
     "@types/node": "^20.10.6",
