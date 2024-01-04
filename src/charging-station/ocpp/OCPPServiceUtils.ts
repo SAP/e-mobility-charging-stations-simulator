@@ -20,7 +20,6 @@ import {
   type AuthorizeResponse,
   ChargePointErrorCode,
   ChargingStationEvents,
-  type ConnectorStatus,
   type ConnectorStatusEnum,
   CurrentType,
   ErrorType,
@@ -123,7 +122,7 @@ export const isIdTagAuthorized = async (
   }
   if (chargingStation.getLocalAuthListEnabled() && isIdTagLocalAuthorized(chargingStation, idTag)) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorStatus: ConnectorStatus = chargingStation.getConnectorStatus(connectorId)!
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
     connectorStatus.localAuthorizeIdTag = idTag
     connectorStatus.idTagLocalAuthorized = true
     return true

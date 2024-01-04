@@ -6,6 +6,7 @@ import { parentPort } from 'node:worker_threads'
 
 import { secondsToMilliseconds } from 'date-fns'
 
+import { BaseError } from '../exception/index.js'
 import {
   ConfigurationSection,
   type IncomingRequestCommand,
@@ -47,9 +48,9 @@ export class PerformanceStatistics {
   private readonly statistics: Statistics
   private displayInterval?: NodeJS.Timeout
 
-  private constructor (objId: string | undefined, objName: string | undefined, uri: URL) {
-    this.objId = objId ?? 'Object id not specified'
-    this.objName = objName ?? 'Object name not specified'
+  private constructor (objId: string, objName: string, uri: URL) {
+    this.objId = objId
+    this.objName = objName
     this.initializePerformanceObserver()
     this.statistics = {
       id: this.objId,
@@ -61,10 +62,26 @@ export class PerformanceStatistics {
   }
 
   public static getInstance (
-    objId: string,
-    objName: string,
-    uri: URL
+    objId: string | undefined,
+    objName: string | undefined,
+    uri: URL | undefined
   ): PerformanceStatistics | undefined {
+    const logPfx = logPrefix(' Performance statistics')
+    if (objId == null) {
+      const errMsg = 'Cannot get performance statistics instance without specifying object id'
+      logger.error(`${logPfx} ${errMsg}`)
+      throw new BaseError(errMsg)
+    }
+    if (objName == null) {
+      const errMsg = 'Cannot get performance statistics instance without specifying object name'
+      logger.error(`${logPfx} ${errMsg}`)
+      throw new BaseError(errMsg)
+    }
+    if (uri == null) {
+      const errMsg = 'Cannot get performance statistics instance without specifying object uri'
+      logger.error(`${logPfx} ${errMsg}`)
+      throw new BaseError(errMsg)
+    }
     if (!PerformanceStatistics.instances.has(objId)) {
       PerformanceStatistics.instances.set(objId, new PerformanceStatistics(objId, objName, uri))
     }

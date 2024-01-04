@@ -166,9 +166,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }
     let cpReplaced = false
     if (isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       for (const [index, chargingProfile] of chargingStation
-        .getConnectorStatus(connectorId)
-        ?.chargingProfiles?.entries() ?? []) {
+        .getConnectorStatus(connectorId)!
+        .chargingProfiles!.entries()) {
         if (
           chargingProfile.chargingProfileId === cp.chargingProfileId ||
           (chargingProfile.stackLevel === cp.stackLevel &&

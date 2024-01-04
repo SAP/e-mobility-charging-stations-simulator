@@ -346,10 +346,11 @@ export class ChargingStation extends EventEmitter {
 
   public getConnectorMaximumAvailablePower (connectorId: number): number {
     let connectorAmperageLimitationPowerLimit: number | undefined
+    const amperageLimitation = this.getAmperageLimitation()
     if (
-      this.getAmperageLimitation() != null &&
+      amperageLimitation != null &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getAmperageLimitation()! < this.stationInfo!.maximumAmperage!
+      amperageLimitation < this.stationInfo!.maximumAmperage!
     ) {
       connectorAmperageLimitationPowerLimit =
         (this.stationInfo?.currentOutType === CurrentType.AC
@@ -357,12 +358,11 @@ export class ChargingStation extends EventEmitter {
             this.getNumberOfPhases(),
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             this.stationInfo.voltageOut!,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.getAmperageLimitation()! *
+            amperageLimitation *
                 (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
           )
           : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          DCElectricUtils.power(this.stationInfo!.voltageOut!, this.getAmperageLimitation()!)) /
+          DCElectricUtils.power(this.stationInfo!.voltageOut!, amperageLimitation)) /
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.powerDivider!
     }
@@ -855,7 +855,8 @@ export class ChargingStation extends EventEmitter {
     connectorId: number,
     reason?: StopTransactionReason
   ): Promise<StopTransactionResponse> {
-    const transactionId = this.getConnectorStatus(connectorId)?.transactionId
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const transactionId = this.getConnectorStatus(connectorId)!.transactionId!
     if (
       this.stationInfo?.beginEndMeterValues === true &&
       this.stationInfo.ocppStrictCompliance === true &&
@@ -864,8 +865,7 @@ export class ChargingStation extends EventEmitter {
       const transactionEndMeterValue = buildTransactionEndMeterValue(
         this,
         connectorId,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.getEnergyActiveImportRegisterByTransactionId(transactionId!)
+        this.getEnergyActiveImportRegisterByTransactionId(transactionId)
       )
       await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
         this,
@@ -882,8 +882,7 @@ export class ChargingStation extends EventEmitter {
     StopTransactionResponse
     >(this, RequestCommand.STOP_TRANSACTION, {
       transactionId,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId!, true),
+      meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
       ...(reason != null && { reason })
     })
   }
@@ -1168,9 +1167,11 @@ export class ChargingStation extends EventEmitter {
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
-    if (stationInfoFromFile?.templateHash === stationInfoFromTemplate.templateHash) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return { ...defaultStationInfo, ...stationInfoFromFile! }
+    if (
+      stationInfoFromFile != null &&
+      stationInfoFromFile.templateHash === stationInfoFromTemplate.templateHash
+    ) {
+      return { ...defaultStationInfo, ...stationInfoFromFile }
     }
     stationInfoFromFile != null &&
       propagateSerialNumber(
@@ -1217,7 +1218,7 @@ export class ChargingStation extends EventEmitter {
       isNotEmptyString(this.stationInfo.firmwareVersion) &&
       isNotEmptyString(this.stationInfo.firmwareVersionPattern)
     ) {
-      const patternGroup: number | undefined =
+      const patternGroup =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
         this.stationInfo.firmwareVersion?.split('.').length
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1241,12 +1242,17 @@ export class ChargingStation extends EventEmitter {
     if (this.stationInfo.enableStatistics === true) {
       this.performanceStatistics = PerformanceStatistics.getInstance(
         this.stationInfo.hashId,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.stationInfo.chargingStationId!,
+        this.stationInfo.chargingStationId,
         this.configuredSupervisionUrl
       )
     }
-    this.bootNotificationRequest = createBootNotificationRequest(this.stationInfo)
+    const bootNotificationRequest = createBootNotificationRequest(this.stationInfo)
+    if (bootNotificationRequest == null) {
+      const errorMsg = 'Error while creating boot notification request'
+      logger.error(`${this.logPrefix()} ${errorMsg}`)
+      throw new BaseError(errorMsg)
+    }
+    this.bootNotificationRequest = bootNotificationRequest
     this.powerDivider = this.getPowerDivider()
     // OCPP configuration
     this.ocppConfiguration = this.getOcppConfiguration()
@@ -1322,7 +1328,7 @@ export class ChargingStation extends EventEmitter {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo!.amperageLimitationOcppKey!) == null
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!) == null
     ) {
       addConfigurationKey(
         this,
@@ -1633,10 +1639,10 @@ export class ChargingStation extends EventEmitter {
         if (!existsSync(dirname(this.configurationFile))) {
           mkdirSync(dirname(this.configurationFile), { recursive: true })
         }
+        const configurationFromFile = this.getConfigurationFromFile()
         let configurationData: ChargingStationConfiguration =
-          this.getConfigurationFromFile() != null
-            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            cloneObject<ChargingStationConfiguration>(this.getConfigurationFromFile()!)
+          configurationFromFile != null
+            ? cloneObject<ChargingStationConfiguration>(configurationFromFile)
             : {}
         if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
           configurationData.stationInfo = this.stationInfo

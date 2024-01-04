@@ -390,9 +390,8 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => 
 export const createBootNotificationRequest = (
   stationInfo: ChargingStationInfo,
   bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp
-): BootNotificationRequest => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const ocppVersion = stationInfo.ocppVersion!
+): BootNotificationRequest | undefined => {
+  const ocppVersion = stationInfo.ocppVersion
   switch (ocppVersion) {
     case OCPPVersion.VERSION_16:
       return {
@@ -800,21 +799,21 @@ const getLimitFromChargingProfiles = (
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule
-    if (chargingSchedule.startSchedule == null && connectorStatus.transactionStarted === true) {
+    if (chargingSchedule.startSchedule == null) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
       )
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
       chargingSchedule.startSchedule = connectorStatus.transactionStart
     }
-    if (chargingSchedule.startSchedule != null && !isDate(chargingSchedule.startSchedule)) {
+    if (!isDate(chargingSchedule.startSchedule)) {
       logger.warn(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!
     }
-    if (chargingSchedule.startSchedule != null && chargingSchedule.duration == null) {
+    if (chargingSchedule.duration == null) {
       logger.debug(
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined and will be set to the maximum time allowed`
       )
@@ -830,10 +829,8 @@ const getLimitFromChargingProfiles = (
     // Check if the charging profile is active
     if (
       isWithinInterval(currentDate, {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        start: chargingSchedule.startSchedule!,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!)
+        start: chargingSchedule.startSchedule,
+        end: addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration)
       })
     ) {
       if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
@@ -877,8 +874,7 @@ const getLimitFromChargingProfiles = (
           // Find the right schedule period
           if (
             isAfter(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              addSeconds(chargingSchedule.startSchedule!, chargingSchedulePeriod.startPeriod),
+              addSeconds(chargingSchedule.startSchedule, chargingSchedulePeriod.startPeriod),
               currentDate
             )
           ) {
@@ -899,14 +895,11 @@ const getLimitFromChargingProfiles = (
             (index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
               differenceInSeconds(
                 addSeconds(
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  chargingSchedule.startSchedule!,
+                  chargingSchedule.startSchedule,
                   chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod
                 ),
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                chargingSchedule.startSchedule!
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              ) > chargingSchedule.duration!)
+                chargingSchedule.startSchedule
+              ) > chargingSchedule.duration)
           ) {
             const result: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod.limit,

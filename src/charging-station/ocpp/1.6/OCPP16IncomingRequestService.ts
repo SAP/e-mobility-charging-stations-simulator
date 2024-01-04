@@ -712,10 +712,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     let previousCompositeSchedule: OCPP16ChargingSchedule | undefined
     let compositeSchedule: OCPP16ChargingSchedule | undefined
     for (const chargingProfile of chargingProfiles) {
-      if (
-        chargingProfile.chargingSchedule.startSchedule == null &&
-        connectorStatus.transactionStarted === true
-      ) {
+      if (chargingProfile.chargingSchedule.startSchedule == null) {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
             chargingProfile.chargingProfileId
@@ -724,10 +721,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
         chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
       }
-      if (
-        chargingProfile.chargingSchedule.startSchedule != null &&
-        !isDate(chargingProfile.chargingSchedule.startSchedule)
-      ) {
+      if (!isDate(chargingProfile.chargingSchedule.startSchedule)) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
             chargingProfile.chargingProfileId
@@ -738,10 +732,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           chargingProfile.chargingSchedule.startSchedule
         )!
       }
-      if (
-        chargingProfile.chargingSchedule.startSchedule != null &&
-        chargingProfile.chargingSchedule.duration == null
-      ) {
+      if (chargingProfile.chargingSchedule.duration == null) {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
             chargingProfile.chargingProfileId
