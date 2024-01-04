@@ -1,3 +1,4 @@
+require('@rushstack/eslint-patch/modern-module-resolution')
 const { env } = require('node:process')
 const { defineConfig } = require('eslint-define-config')
 
@@ -14,8 +15,8 @@ module.exports = defineConfig({
     'eslint:recommended',
     'plugin:import/recommended',
     'plugin:vue/vue3-recommended',
-    '@vue/eslint-config-prettier',
     '@vue/eslint-config-typescript/recommended',
+    '@vue/eslint-config-prettier',
   ],
 
   settings: {

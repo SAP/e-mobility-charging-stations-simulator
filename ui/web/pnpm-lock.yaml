@@ -22,6 +22,9 @@ dependencies:
     version: 4.2.5(vue@3.4.5)
 
 devDependencies:
+  '@rushstack/eslint-patch':
+    specifier: ^1.6.1
+    version: 1.6.1
   '@tsconfig/node20':
     specifier: ^20.1.2
     version: 20.1.2
@@ -854,6 +857,10 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@rushstack/eslint-patch@1.6.1:
+    resolution: {integrity: sha512-UY+FGM/2jjMkzQLn8pxcHGMaVLh9aEitG3zY2CiY7XHdLiz3bZOwa6oDxNqEMv7zZkV+cj5DOdz0cQ1BP5Hjgw==}
+    dev: true
 
   /@sinclair/typebox@0.27.8:
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
