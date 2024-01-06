@@ -1,5 +1,5 @@
-import type { OCPP16MeterValue } from './MeterValues';
-import type { JsonObject } from '../../JsonType';
+import type { OCPP16MeterValue } from './MeterValues.js'
+import type { JsonObject } from '../../JsonType.js'
 
 export enum OCPP16StopTransactionReason {
   EMERGENCY_STOP = 'EmergencyStop',
@@ -24,41 +24,41 @@ export enum OCPP16AuthorizationStatus {
 }
 
 interface IdTagInfo extends JsonObject {
-  status: OCPP16AuthorizationStatus;
-  parentIdTag?: string;
-  expiryDate?: Date;
+  status: OCPP16AuthorizationStatus
+  parentIdTag?: string
+  expiryDate?: Date
 }
 
 export interface OCPP16AuthorizeRequest extends JsonObject {
-  idTag: string;
+  idTag: string
 }
 
 export interface OCPP16AuthorizeResponse extends JsonObject {
-  idTagInfo: IdTagInfo;
+  idTagInfo: IdTagInfo
 }
 
 export interface OCPP16StartTransactionRequest extends JsonObject {
-  connectorId: number;
-  idTag: string;
-  meterStart: number;
-  timestamp: Date;
-  reservationId?: number;
+  connectorId: number
+  idTag: string
+  meterStart: number
+  timestamp: Date
+  reservationId?: number
 }
 
 export interface OCPP16StartTransactionResponse extends JsonObject {
-  idTagInfo: IdTagInfo;
-  transactionId: number;
+  idTagInfo: IdTagInfo
+  transactionId: number
 }
 
 export interface OCPP16StopTransactionRequest extends JsonObject {
-  idTag?: string;
-  meterStop: number;
-  timestamp: Date;
-  transactionId: number;
-  reason?: OCPP16StopTransactionReason;
-  transactionData?: OCPP16MeterValue[];
+  idTag?: string
+  meterStop: number
+  timestamp: Date
+  transactionId: number
+  reason?: OCPP16StopTransactionReason
+  transactionData?: OCPP16MeterValue[]
 }
 
 export interface OCPP16StopTransactionResponse extends JsonObject {
-  idTagInfo?: IdTagInfo;
+  idTagInfo?: IdTagInfo
 }

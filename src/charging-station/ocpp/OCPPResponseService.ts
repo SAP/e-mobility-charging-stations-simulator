@@ -1,43 +1,52 @@
-import Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv';
-import ajvFormats from 'ajv-formats';
+import _Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv'
+import _ajvFormats from 'ajv-formats'
 
-import { OCPPServiceUtils } from './OCPPServiceUtils';
-import type { ChargingStation } from '../../charging-station';
-import { OCPPError } from '../../exception';
-import type { IncomingRequestCommand, JsonType, OCPPVersion, RequestCommand } from '../../types';
-import { logger } from '../../utils';
+import { OCPPServiceUtils } from './OCPPServiceUtils.js'
+import type { ChargingStation } from '../../charging-station/index.js'
+import { OCPPError } from '../../exception/index.js'
+import type {
+  IncomingRequestCommand,
+  JsonType,
+  OCPPVersion,
+  RequestCommand
+} from '../../types/index.js'
+import { logger } from '../../utils/index.js'
+type Ajv = _Ajv.default
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+const Ajv = _Ajv.default
+const ajvFormats = _ajvFormats.default
 
-const moduleName = 'OCPPResponseService';
+const moduleName = 'OCPPResponseService'
 
 export abstract class OCPPResponseService {
-  private static instance: OCPPResponseService | null = null;
+  private static instance: OCPPResponseService | null = null
 
   public jsonIncomingRequestResponseValidateFunctions: Map<
-    IncomingRequestCommand,
-    ValidateFunction<JsonType>
-  >;
+  IncomingRequestCommand,
+  ValidateFunction<JsonType>
+  >
 
-  private readonly version: OCPPVersion;
-  private readonly ajv: Ajv;
-  private jsonRequestValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>;
+  private readonly version: OCPPVersion
+  private readonly ajv: Ajv
+  private readonly jsonRequestValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
 
   public abstract jsonIncomingRequestResponseSchemas: Map<
-    IncomingRequestCommand,
-    JSONSchemaType<JsonType>
-  >;
+  IncomingRequestCommand,
+  JSONSchemaType<JsonType>
+  >
 
-  protected constructor(version: OCPPVersion) {
-    this.version = version;
+  protected constructor (version: OCPPVersion) {
+    this.version = version
     this.ajv = new Ajv({
       keywords: ['javaType'],
-      multipleOfPrecision: 2,
-    });
-    ajvFormats(this.ajv);
-    this.jsonRequestValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonType>>();
+      multipleOfPrecision: 2
+    })
+    ajvFormats(this.ajv)
+    this.jsonRequestValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonType>>()
     this.jsonIncomingRequestResponseValidateFunctions = new Map<
-      IncomingRequestCommand,
-      ValidateFunction<JsonType>
-    >();
+    IncomingRequestCommand,
+    ValidateFunction<JsonType>
+    >()
     this.responseHandler = this.responseHandler.bind(this) as <
       ReqType extends JsonType,
       ResType extends JsonType,
@@ -45,66 +54,67 @@ export abstract class OCPPResponseService {
       chargingStation: ChargingStation,
       commandName: RequestCommand,
       payload: ResType,
-      requestPayload: ReqType,
-    ) => Promise<void>;
+      requestPayload: ReqType
+    ) => Promise<void>
     this.validateResponsePayload = this.validateResponsePayload.bind(this) as <T extends JsonType>(
       chargingStation: ChargingStation,
       commandName: RequestCommand,
       schema: JSONSchemaType<T>,
-      payload: T,
-    ) => boolean;
+      payload: T
+    ) => boolean
   }
 
   public static getInstance<T extends OCPPResponseService>(this: new () => T): T {
     if (OCPPResponseService.instance === null) {
-      OCPPResponseService.instance = new this();
+      OCPPResponseService.instance = new this()
     }
-    return OCPPResponseService.instance as T;
+    return OCPPResponseService.instance as T
   }
 
   protected validateResponsePayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     schema: JSONSchemaType<T>,
-    payload: T,
+    payload: T
   ): boolean {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
-      return true;
+      return true
     }
-    const validate = this.getJsonRequestValidateFunction<T>(commandName, schema);
+    const validate = this.getJsonRequestValidateFunction<T>(commandName, schema)
     if (validate(payload)) {
-      return true;
+      return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Command '${commandName}' response PDU is invalid: %j`,
-      validate.errors,
-    );
+      validate.errors
+    )
     throw new OCPPError(
       OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
       'Response PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, undefined, 2),
-    );
+      JSON.stringify(validate.errors, undefined, 2)
+    )
   }
 
-  protected emptyResponseHandler() {
+  protected emptyResponseHandler (): void {
     /* This is intentional */
   }
 
   private getJsonRequestValidateFunction<T extends JsonType>(
     commandName: RequestCommand,
-    schema: JSONSchemaType<T>,
-  ) {
-    if (this.jsonRequestValidateFunctions.has(commandName) === false) {
-      this.jsonRequestValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this));
+    schema: JSONSchemaType<T>
+  ): ValidateFunction<JsonType> {
+    if (!this.jsonRequestValidateFunctions.has(commandName)) {
+      this.jsonRequestValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this))
     }
-    return this.jsonRequestValidateFunctions.get(commandName)!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.jsonRequestValidateFunctions.get(commandName)!
   }
 
   public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     payload: ResType,
-    requestPayload: ReqType,
-  ): Promise<void>;
+    requestPayload: ReqType
+  ): Promise<void>
 }

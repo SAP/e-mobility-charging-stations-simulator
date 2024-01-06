@@ -1,41 +1,41 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { PerformanceRecord } from './PerformanceRecord';
+import { PerformanceRecord } from './PerformanceRecord.js'
 
 @Entity()
 export class PerformanceData {
   // @PrimaryKey()
-  // pk!: number;
+  //   pk!: number
   // @Property()
-  // commandName!: string;
+  //   commandName!: string
   // @Property()
-  // countRequest!: number;
+  //   countRequest!: number
   // @Property()
-  // countResponse!: number;
+  //   countResponse!: number
   // @Property()
-  // countError!: number;
+  //   countError!: number
   // @Property()
-  // countTimeMeasurement!: number;
+  //   countTimeMeasurement!: number
   // @Property()
-  // timeMeasurementSeries!: number[];
+  //   timeMeasurementSeries!: number[]
   // @Property()
-  // currentTimeMeasurement!: number;
+  //   currentTimeMeasurement!: number
   // @Property()
-  // minTimeMeasurement!: number;
+  //   minTimeMeasurement!: number
   // @Property()
-  // maxTimeMeasurement!: number;
+  //   maxTimeMeasurement!: number
   // @Property()
-  // totalTimeMeasurement!: number;
+  //   totalTimeMeasurement!: number
   // @Property()
-  // avgTimeMeasurement!: number;
+  //   avgTimeMeasurement!: number
   // @Property()
-  // medTimeMeasurement!: number;
+  //   medTimeMeasurement!: number
   // @Property()
-  // ninetyFiveThPercentileTimeMeasurement!: number;
+  //   ninetyFiveThPercentileTimeMeasurement!: number
   // @Property()
-  // stdDevTimeMeasurement!: number;
+  //   stdDevTimeMeasurement!: number
   // @ManyToOne('PerformanceRecord')
-  // performanceRecord!: PerformanceRecord;
+  //   performanceRecord!: PerformanceRecord
 }

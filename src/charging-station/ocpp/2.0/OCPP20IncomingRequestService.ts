@@ -1,62 +1,65 @@
 // Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import type { JSONSchemaType } from 'ajv';
+import type { JSONSchemaType } from 'ajv'
 
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils';
-import type { ChargingStation } from '../../../charging-station';
-import { OCPPError } from '../../../exception';
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
+import type { ChargingStation } from '../../../charging-station/index.js'
+import { OCPPError } from '../../../exception/index.js'
 import {
   ErrorType,
   type IncomingRequestHandler,
   type JsonType,
   type OCPP20ClearCacheRequest,
   OCPP20IncomingRequestCommand,
-  OCPPVersion,
-} from '../../../types';
-import { logger } from '../../../utils';
-import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService';
+  OCPPVersion
+} from '../../../types/index.js'
+import { logger } from '../../../utils/index.js'
+import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 
-const moduleName = 'OCPP20IncomingRequestService';
+const moduleName = 'OCPP20IncomingRequestService'
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
-  protected jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonType>>;
-  private incomingRequestHandlers: Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>;
+  protected jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonType>>
+  private readonly incomingRequestHandlers: Map<
+  OCPP20IncomingRequestCommand,
+  IncomingRequestHandler
+  >
 
-  public constructor() {
-    // if (new.target?.name === moduleName) {
-    //   throw new TypeError(`Cannot construct ${new.target?.name} instances directly`);
+  public constructor () {
+    // if (new.target.name === moduleName) {
+    //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
-    super(OCPPVersion.VERSION_20);
+    super(OCPPVersion.VERSION_20)
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
-      [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],
-    ]);
+      [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)]
+    ])
     this.jsonSchemas = new Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonType>>([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
           'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
           moduleName,
-          'constructor',
-        ),
-      ],
-    ]);
+          'constructor'
+        )
+      ]
+    ])
     this.validatePayload = this.validatePayload.bind(this) as (
       chargingStation: ChargingStation,
       commandName: OCPP20IncomingRequestCommand,
-      commandPayload: JsonType,
-    ) => boolean;
+      commandPayload: JsonType
+    ) => boolean
   }
 
   public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     messageId: string,
     commandName: OCPP20IncomingRequestCommand,
-    commandPayload: ReqType,
+    commandPayload: ReqType
   ): Promise<void> {
-    let response: ResType;
+    let response: ResType
     if (
       chargingStation.stationInfo?.ocppStrictCompliance === true &&
-      chargingStation.inPendingState() === true &&
+      chargingStation.inPendingState() &&
       (commandName === OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION ||
         commandName === OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION)
     ) {
@@ -65,35 +68,36 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           undefined,
-          2,
+          2
         )} while the charging station is in pending state on the central server`,
         commandName,
-        commandPayload,
-      );
+        commandPayload
+      )
     }
     if (
-      chargingStation.isRegistered() === true ||
+      chargingStation.isRegistered() ||
       (chargingStation.stationInfo?.ocppStrictCompliance === false &&
-        chargingStation.inUnknownState() === true)
+        chargingStation.inUnknownState())
     ) {
       if (
-        this.incomingRequestHandlers.has(commandName) === true &&
-        OCPP20ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName) === true
+        this.incomingRequestHandlers.has(commandName) &&
+        OCPP20ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName)
       ) {
         try {
-          this.validatePayload(chargingStation, commandName, commandPayload);
+          this.validatePayload(chargingStation, commandName, commandPayload)
           // Call the method to build the response
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           response = (await this.incomingRequestHandlers.get(commandName)!(
             chargingStation,
-            commandPayload,
-          )) as ResType;
+            commandPayload
+          )) as ResType
         } catch (error) {
           // Log
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler: Handle incoming request error:`,
-            error,
-          );
-          throw error;
+            error
+          )
+          throw error
         }
       } else {
         // Throw exception
@@ -102,11 +106,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           `${commandName} is not implemented to handle request PDU ${JSON.stringify(
             commandPayload,
             undefined,
-            2,
+            2
           )}`,
           commandName,
-          commandPayload,
-        );
+          commandPayload
+        )
       }
     } else {
       throw new OCPPError(
@@ -114,37 +118,38 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
           commandPayload,
           undefined,
-          2,
+          2
         )} while the charging station is not registered on the central server.`,
         commandName,
-        commandPayload,
-      );
+        commandPayload
+      )
     }
     // Send the built response
     await chargingStation.ocppRequestService.sendResponse(
       chargingStation,
       messageId,
       response,
-      commandName,
-    );
+      commandName
+    )
   }
 
-  private validatePayload(
+  private validatePayload (
     chargingStation: ChargingStation,
     commandName: OCPP20IncomingRequestCommand,
-    commandPayload: JsonType,
+    commandPayload: JsonType
   ): boolean {
-    if (this.jsonSchemas.has(commandName) === true) {
+    if (this.jsonSchemas.has(commandName)) {
       return this.validateIncomingRequestPayload(
         chargingStation,
         commandName,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.jsonSchemas.get(commandName)!,
-        commandPayload,
-      );
+        commandPayload
+      )
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`,
-    );
-    return false;
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
+    )
+    return false
   }
 }

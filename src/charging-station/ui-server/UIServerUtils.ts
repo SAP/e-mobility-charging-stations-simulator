@@ -1,60 +1,55 @@
-import type { IncomingMessage } from 'node:http';
+import type { IncomingMessage } from 'node:http'
 
-import { Protocol, ProtocolVersion } from '../../types';
-import { logPrefix, logger } from '../../utils';
+import { Protocol, ProtocolVersion } from '../../types/index.js'
+import { logPrefix, logger } from '../../utils/index.js'
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServerUtils {
-  private constructor() {
+  private constructor () {
     // This is intentional
   }
 
   public static handleProtocols = (
     protocols: Set<string>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    request: IncomingMessage,
+    request: IncomingMessage
   ): string | false => {
-    let protocol: Protocol | undefined;
-    let version: ProtocolVersion | undefined;
+    let protocol: Protocol | undefined
+    let version: ProtocolVersion | undefined
     if (protocols.size === 0) {
-      return false;
+      return false
     }
     for (const fullProtocol of protocols) {
-      if (UIServerUtils.isProtocolAndVersionSupported(fullProtocol) === true) {
-        return fullProtocol;
+      if (UIServerUtils.isProtocolAndVersionSupported(fullProtocol)) {
+        return fullProtocol
       }
     }
     logger.error(
       `${logPrefix(
-        ' UI WebSocket Server |',
-      )} Unsupported protocol: '${protocol}' or protocol version: '${version}'`,
-    );
-    return false;
-  };
+        ' UI WebSocket Server |'
+      )} Unsupported protocol: '${protocol}' or protocol version: '${version}'`
+    )
+    return false
+  }
 
   public static isProtocolAndVersionSupported = (protocolStr: string): boolean => {
-    const [protocol, version] = UIServerUtils.getProtocolAndVersion(protocolStr);
+    const [protocol, version] = UIServerUtils.getProtocolAndVersion(protocolStr)
     return (
-      Object.values(Protocol).includes(protocol) === true &&
-      Object.values(ProtocolVersion).includes(version) === true
-    );
-  };
+      Object.values(Protocol).includes(protocol) && Object.values(ProtocolVersion).includes(version)
+    )
+  }
 
   public static getProtocolAndVersion = (protocolStr: string): [Protocol, ProtocolVersion] => {
-    const protocolIndex = protocolStr.indexOf(Protocol.UI);
+    const protocolIndex = protocolStr.indexOf(Protocol.UI)
     const protocol = protocolStr.substring(
       protocolIndex,
-      protocolIndex + Protocol.UI.length,
-    ) as Protocol;
-    const version = protocolStr.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion;
-    return [protocol, version];
-  };
+      protocolIndex + Protocol.UI.length
+    ) as Protocol
+    const version = protocolStr.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion
+    return [protocol, version]
+  }
 
-  public static isLoopback(address: string): boolean {
-    const isLoopbackRegExp = new RegExp(
-      // eslint-disable-next-line no-useless-escape
-      /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*\:)*?:?0*1$/,
-      'i',
-    );
-    return isLoopbackRegExp.test(address);
+  public static isLoopback (address: string): boolean {
+    // eslint-disable-next-line no-useless-escape
+    return /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*\:)*?:?0*1$/i.test(address)
   }
 }

@@ -1,5 +1,5 @@
-import { getRandomValues, randomBytes, randomInt, randomUUID } from 'node:crypto';
-import { env, nextTick } from 'node:process';
+import { getRandomValues, randomBytes, randomInt, randomUUID } from 'node:crypto'
+import { env, nextTick } from 'node:process'
 
 import {
   formatDuration,
@@ -10,156 +10,156 @@ import {
   millisecondsToMinutes,
   millisecondsToSeconds,
   minutesToSeconds,
-  secondsToMilliseconds,
-} from 'date-fns';
+  secondsToMilliseconds
+} from 'date-fns'
 
-import { Constants } from './Constants';
-import { type TimestampedData, WebSocketCloseEventStatusString } from '../types';
+import { Constants } from './Constants.js'
+import { type TimestampedData, WebSocketCloseEventStatusString } from '../types/index.js'
 
 export const logPrefix = (prefixString = ''): string => {
-  return `${new Date().toLocaleString()}${prefixString}`;
-};
+  return `${new Date().toLocaleString()}${prefixString}`
+}
 
 export const generateUUID = (): string => {
-  return randomUUID();
-};
+  return randomUUID()
+}
 
 export const validateUUID = (uuid: string): boolean => {
-  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-    uuid,
-  );
-};
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid)
+}
 
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
-  return new Promise<NodeJS.Timeout>((resolve) => setTimeout(resolve as () => void, milliSeconds));
-};
+  return await new Promise<NodeJS.Timeout>((resolve) =>
+    setTimeout(resolve as () => void, milliSeconds)
+  )
+}
 
 export const formatDurationMilliSeconds = (duration: number): string => {
-  duration = convertToInt(duration);
+  duration = convertToInt(duration)
   if (duration < 0) {
-    throw new RangeError('Duration cannot be negative');
+    throw new RangeError('Duration cannot be negative')
   }
-  const days = Math.floor(duration / (24 * 3600 * 1000));
-  const hours = Math.floor(millisecondsToHours(duration) - days * 24);
+  const days = Math.floor(duration / (24 * 3600 * 1000))
+  const hours = Math.floor(millisecondsToHours(duration) - days * 24)
   const minutes = Math.floor(
-    millisecondsToMinutes(duration) - days * 24 * 60 - hoursToMinutes(hours),
-  );
+    millisecondsToMinutes(duration) - days * 24 * 60 - hoursToMinutes(hours)
+  )
   const seconds = Math.floor(
     millisecondsToSeconds(duration) -
       days * 24 * 3600 -
       hoursToSeconds(hours) -
-      minutesToSeconds(minutes),
-  );
+      minutesToSeconds(minutes)
+  )
   if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) {
-    return formatDuration({ seconds }, { zero: true });
+    return formatDuration({ seconds }, { zero: true })
   }
   return formatDuration({
     days,
     hours,
     minutes,
-    seconds,
-  });
-};
+    seconds
+  })
+}
 
 export const formatDurationSeconds = (duration: number): string => {
-  return formatDurationMilliSeconds(secondsToMilliseconds(duration));
-};
+  return formatDurationMilliSeconds(secondsToMilliseconds(duration))
+}
 
 // More efficient time validation function than the one provided by date-fns
 export const isValidTime = (date: unknown): boolean => {
   if (typeof date === 'number') {
-    return !isNaN(date);
+    return !isNaN(date)
   } else if (isDate(date)) {
-    return !isNaN(date.getTime());
+    return !isNaN(date.getTime())
   }
-  return false;
-};
+  return false
+}
 
 export const convertToDate = (
-  value: Date | string | number | null | undefined,
+  value: Date | string | number | null | undefined
 ): Date | null | undefined => {
-  if (isNullOrUndefined(value)) {
-    return value as null | undefined;
+  if (value == null) {
+    return value
   }
   if (isDate(value)) {
-    return value;
+    return value
   }
   if (isString(value) || typeof value === 'number') {
-    const valueToDate = new Date(value!);
+    const valueToDate = new Date(value)
     if (isNaN(valueToDate.getTime())) {
-      throw new Error(`Cannot convert to date: '${value!}'`);
+      throw new Error(`Cannot convert to date: '${value}'`)
     }
-    return valueToDate;
+    return valueToDate
   }
-};
+}
 
 export const convertToInt = (value: unknown): number => {
-  if (!value) {
-    return 0;
+  if (value == null) {
+    return 0
   }
-  let changedValue: number = value as number;
+  let changedValue: number = value as number
   if (Number.isSafeInteger(value)) {
-    return value as number;
+    return value as number
   }
   if (typeof value === 'number') {
-    return Math.trunc(value);
+    return Math.trunc(value)
   }
   if (isString(value)) {
-    changedValue = parseInt(value as string);
+    changedValue = parseInt(value as string)
   }
   if (isNaN(changedValue)) {
-    throw new Error(`Cannot convert to integer: '${String(value)}'`);
+    throw new Error(`Cannot convert to integer: '${String(value)}'`)
   }
-  return changedValue;
-};
+  return changedValue
+}
 
 export const convertToFloat = (value: unknown): number => {
-  if (!value) {
-    return 0;
+  if (value == null) {
+    return 0
   }
-  let changedValue: number = value as number;
+  let changedValue: number = value as number
   if (isString(value)) {
-    changedValue = parseFloat(value as string);
+    changedValue = parseFloat(value as string)
   }
   if (isNaN(changedValue)) {
-    throw new Error(`Cannot convert to float: '${String(value)}'`);
+    throw new Error(`Cannot convert to float: '${String(value)}'`)
   }
-  return changedValue;
-};
+  return changedValue
+}
 
 export const convertToBoolean = (value: unknown): boolean => {
-  let result = false;
+  let result = false
   if (value != null) {
     // Check the type
     if (typeof value === 'boolean') {
-      return value;
+      return value
     } else if (isString(value) && ((value as string).toLowerCase() === 'true' || value === '1')) {
-      result = true;
+      result = true
     } else if (typeof value === 'number' && value === 1) {
-      result = true;
+      result = true
     }
   }
-  return result;
-};
+  return result
+}
 
 export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
   if (max < min) {
-    throw new RangeError('Invalid interval');
+    throw new RangeError('Invalid interval')
   }
   if (max - min === Infinity) {
-    throw new RangeError('Invalid interval');
+    throw new RangeError('Invalid interval')
   }
-  return (randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min;
-};
+  return (randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min
+}
 
 export const getRandomInteger = (max = Constants.MAX_RANDOM_INTEGER, min = 0): number => {
-  max = Math.floor(max);
-  if (!isNullOrUndefined(min) && min !== 0) {
-    min = Math.ceil(min);
-    return Math.floor(randomInt(min, max + 1));
+  max = Math.floor(max)
+  if (min !== 0) {
+    min = Math.ceil(min)
+    return Math.floor(randomInt(min, max + 1))
   }
-  return Math.floor(randomInt(max + 1));
-};
+  return Math.floor(randomInt(max + 1))
+}
 
 /**
  * Rounds the given number to the given scale.
@@ -170,47 +170,45 @@ export const getRandomInteger = (max = Constants.MAX_RANDOM_INTEGER, min = 0): n
  * @returns The rounded number.
  */
 export const roundTo = (numberValue: number, scale: number): number => {
-  const roundPower = Math.pow(10, scale);
-  return Math.round(numberValue * roundPower * (1 + Number.EPSILON)) / roundPower;
-};
+  const roundPower = Math.pow(10, scale)
+  return Math.round(numberValue * roundPower * (1 + Number.EPSILON)) / roundPower
+}
 
 export const getRandomFloatRounded = (max = Number.MAX_VALUE, min = 0, scale = 2): number => {
-  if (min) {
-    return roundTo(getRandomFloat(max, min), scale);
+  if (min !== 0) {
+    return roundTo(getRandomFloat(max, min), scale)
   }
-  return roundTo(getRandomFloat(max), scale);
-};
+  return roundTo(getRandomFloat(max), scale)
+}
 
 export const getRandomFloatFluctuatedRounded = (
   staticValue: number,
   fluctuationPercent: number,
-  scale = 2,
+  scale = 2
 ): number => {
   if (fluctuationPercent < 0 || fluctuationPercent > 100) {
     throw new RangeError(
-      `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent}`,
-    );
+      `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent}`
+    )
   }
   if (fluctuationPercent === 0) {
-    return roundTo(staticValue, scale);
+    return roundTo(staticValue, scale)
   }
-  const fluctuationRatio = fluctuationPercent / 100;
+  const fluctuationRatio = fluctuationPercent / 100
   return getRandomFloatRounded(
     staticValue * (1 + fluctuationRatio),
     staticValue * (1 - fluctuationRatio),
-    scale,
-  );
-};
+    scale
+  )
+}
 
-export const extractTimeSeriesValues = (timeSeries: Array<TimestampedData>): number[] => {
-  return timeSeries.map((timeSeriesItem) => timeSeriesItem.value);
-};
+export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[] => {
+  return timeSeries.map((timeSeriesItem) => timeSeriesItem.value)
+}
 
 export const isObject = (item: unknown): boolean => {
-  return (
-    isNullOrUndefined(item) === false && typeof item === 'object' && Array.isArray(item) === false
-  );
-};
+  return item != null && typeof item === 'object' && !Array.isArray(item)
+}
 
 type CloneableData =
   | number
@@ -220,103 +218,96 @@ type CloneableData =
   | undefined
   | Date
   | CloneableData[]
-  | { [key: string]: CloneableData };
+  | { [key: string]: CloneableData }
 
-type FormatKey = (key: string) => string;
+type FormatKey = (key: string) => string
 
 const deepClone = <I extends CloneableData, O extends CloneableData = I>(
   value: I,
   formatKey?: FormatKey,
-  refs: Map<I, O> = new Map<I, O>(),
+  refs: Map<I, O> = new Map<I, O>()
 ): O => {
-  const ref = refs.get(value);
+  const ref = refs.get(value)
   if (ref !== undefined) {
-    return ref;
+    return ref
   }
   if (Array.isArray(value)) {
-    const clone: CloneableData[] = [];
-    refs.set(value, clone as O);
+    const clone: CloneableData[] = []
+    refs.set(value, clone as O)
     for (let i = 0; i < value.length; i++) {
-      clone[i] = deepClone(value[i], formatKey, refs);
+      clone[i] = deepClone(value[i], formatKey, refs)
     }
-    return clone as O;
+    return clone as O
   }
   if (value instanceof Date) {
-    return new Date(value.valueOf()) as O;
+    return new Date(value.valueOf()) as O
   }
   if (typeof value !== 'object' || value === null) {
-    return value as unknown as O;
+    return value as unknown as O
   }
-  const clone: Record<string, CloneableData> = {};
-  refs.set(value, clone as O);
+  const clone: Record<string, CloneableData> = {}
+  refs.set(value, clone as O)
   for (const key of Object.keys(value)) {
     clone[typeof formatKey === 'function' ? formatKey(key) : key] = deepClone(
       value[key],
       formatKey,
-      refs,
-    );
+      refs
+    )
   }
-  return clone as O;
-};
+  return clone as O
+}
 
 export const cloneObject = <T>(object: T): T => {
-  return deepClone(object as CloneableData) as T;
-};
+  return deepClone(object as CloneableData) as T
+}
 
 export const hasOwnProp = (object: unknown, property: PropertyKey): boolean => {
-  return isObject(object) && Object.hasOwn(object as object, property);
-};
+  return isObject(object) && Object.hasOwn(object as object, property)
+}
 
 export const isCFEnvironment = (): boolean => {
-  return !isNullOrUndefined(env.VCAP_APPLICATION);
-};
+  return env.VCAP_APPLICATION != null
+}
 
 export const isIterable = <T>(obj: T): boolean => {
-  return !isNullOrUndefined(obj) ? typeof obj[Symbol.iterator as keyof T] === 'function' : false;
-};
+  return obj != null ? typeof obj[Symbol.iterator as keyof T] === 'function' : false
+}
 
 const isString = (value: unknown): boolean => {
-  return typeof value === 'string';
-};
+  return typeof value === 'string'
+}
 
 export const isEmptyString = (value: unknown): boolean => {
-  return isNullOrUndefined(value) || (isString(value) && (value as string).trim().length === 0);
-};
+  return value == null || (isString(value) && (value as string).trim().length === 0)
+}
 
 export const isNotEmptyString = (value: unknown): boolean => {
-  return isString(value) && (value as string).trim().length > 0;
-};
-
-export const isUndefined = (value: unknown): boolean => {
-  return value === undefined;
-};
-
-export const isNullOrUndefined = (value: unknown): boolean => {
-  return value == null;
-};
+  return isString(value) && (value as string).trim().length > 0
+}
 
 export const isEmptyArray = (object: unknown): boolean => {
-  return Array.isArray(object) && object.length === 0;
-};
+  return Array.isArray(object) && object.length === 0
+}
 
 export const isNotEmptyArray = (object: unknown): boolean => {
-  return Array.isArray(object) && object.length > 0;
-};
+  return Array.isArray(object) && object.length > 0
+}
 
 export const isEmptyObject = (obj: object): boolean => {
-  if (obj?.constructor !== Object) {
-    return false;
+  if (obj.constructor !== Object) {
+    return false
   }
   // Iterates over the keys of an object, if
   // any exist, return false.
+  // eslint-disable-next-line no-unreachable-loop
   for (const _ in obj) {
-    return false;
+    return false
   }
-  return true;
-};
+  return true
+}
 
 export const insertAt = (str: string, subStr: string, pos: number): string =>
-  `${str.slice(0, pos)}${subStr}${str.slice(pos)}`;
+  `${str.slice(0, pos)}${subStr}${str.slice(pos)}`
 
 /**
  * Computes the retry delay in milliseconds using an exponential backoff algorithm.
@@ -326,10 +317,10 @@ export const insertAt = (str: string, subStr: string, pos: number): string =>
  * @returns delay in milliseconds
  */
 export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => {
-  const delay = Math.pow(2, retryNumber) * delayFactor;
-  const randomSum = delay * 0.2 * secureRandom(); // 0-20% of the delay
-  return delay + randomSum;
-};
+  const delay = Math.pow(2, retryNumber) * delayFactor
+  const randomSum = delay * 0.2 * secureRandom() // 0-20% of the delay
+  return delay + randomSum
+}
 
 /**
  * Generates a cryptographically secure random number in the [0,1[ range
@@ -337,12 +328,12 @@ export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => 
  * @returns A number in the [0,1[ range
  */
 export const secureRandom = (): number => {
-  return getRandomValues(new Uint32Array(1))[0] / 0x100000000;
-};
+  return getRandomValues(new Uint32Array(1))[0] / 0x100000000
+}
 
 export const JSONStringifyWithMapSupport = (
-  obj: Record<string, unknown> | Record<string, unknown>[] | Map<unknown, unknown>,
-  space?: number,
+  obj: Record<string, unknown> | Array<Record<string, unknown>> | Map<unknown, unknown>,
+  space?: number
 ): string => {
   return JSON.stringify(
     obj,
@@ -350,14 +341,14 @@ export const JSONStringifyWithMapSupport = (
       if (value instanceof Map) {
         return {
           dataType: 'Map',
-          value: [...value],
-        };
+          value: [...value]
+        }
       }
-      return value;
+      return value
     },
-    space,
-  );
-};
+    space
+  )
+}
 
 /**
  * Converts websocket error code to human readable string message
@@ -367,60 +358,60 @@ export const JSONStringifyWithMapSupport = (
  */
 export const getWebSocketCloseEventStatusString = (code: number): string => {
   if (code >= 0 && code <= 999) {
-    return '(Unused)';
+    return '(Unused)'
   } else if (code >= 1016) {
     if (code <= 1999) {
-      return '(For WebSocket standard)';
+      return '(For WebSocket standard)'
     } else if (code <= 2999) {
-      return '(For WebSocket extensions)';
+      return '(For WebSocket extensions)'
     } else if (code <= 3999) {
-      return '(For libraries and frameworks)';
+      return '(For libraries and frameworks)'
     } else if (code <= 4999) {
-      return '(For applications)';
+      return '(For applications)'
     }
   }
   if (
-    !isUndefined(
-      WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString],
-    )
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString] != null
   ) {
-    return WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString];
+    return WebSocketCloseEventStatusString[code as keyof typeof WebSocketCloseEventStatusString]
   }
-  return '(Unknown)';
-};
+  return '(Unknown)'
+}
 
 export const isArraySorted = <T>(array: T[], compareFn: (a: T, b: T) => number): boolean => {
   for (let index = 0; index < array.length - 1; ++index) {
     if (compareFn(array[index], array[index + 1]) > 0) {
-      return false;
+      return false
     }
   }
-  return true;
-};
+  return true
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const once = <T, A extends any[], R>(
   fn: (...args: A) => R,
-  context: T,
+  context: T
 ): ((...args: A) => R) => {
-  let result: R;
+  let result: R
   return (...args: A) => {
-    if (fn) {
-      result = fn.apply<T, A, R>(context, args);
-      (fn as unknown as undefined) = (context as unknown as undefined) = undefined;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (fn != null) {
+      result = fn.apply<T, A, R>(context, args)
+      ;(fn as unknown as undefined) = (context as unknown as undefined) = undefined
     }
-    return result;
-  };
-};
+    return result
+  }
+}
 
 export const min = (...args: number[]): number =>
-  args.reduce((minimum, num) => (minimum < num ? minimum : num), Infinity);
+  args.reduce((minimum, num) => (minimum < num ? minimum : num), Infinity)
 
 export const max = (...args: number[]): number =>
-  args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity);
+  args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity)
 
 export const throwErrorInNextTick = (error: Error): void => {
   nextTick(() => {
-    throw error;
-  });
-};
+    throw error
+  })
+}

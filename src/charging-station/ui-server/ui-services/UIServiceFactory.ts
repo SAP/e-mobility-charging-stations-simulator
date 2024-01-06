@@ -1,20 +1,21 @@
-import type { AbstractUIService } from './AbstractUIService';
-import { UIService001 } from './UIService001';
-import { ProtocolVersion } from '../../../types';
-import type { AbstractUIServer } from '../AbstractUIServer';
+import type { AbstractUIService } from './AbstractUIService.js'
+import { UIService001 } from './UIService001.js'
+import { ProtocolVersion } from '../../../types/index.js'
+import type { AbstractUIServer } from '../AbstractUIServer.js'
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServiceFactory {
-  private constructor() {
+  private constructor () {
     // This is intentional
   }
 
-  public static getUIServiceImplementation(
+  public static getUIServiceImplementation (
     version: ProtocolVersion,
-    uiServer: AbstractUIServer,
+    uiServer: AbstractUIServer
   ): AbstractUIService {
     switch (version) {
       case ProtocolVersion['0.0.1']:
-        return new UIService001(uiServer);
+        return new UIService001(uiServer)
     }
   }
 }

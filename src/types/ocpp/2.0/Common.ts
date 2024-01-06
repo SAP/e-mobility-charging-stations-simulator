@@ -1,13 +1,11 @@
-import type { JsonObject } from '../../JsonType';
-import type { GenericStatus } from '../Common';
+import type { JsonObject } from '../../JsonType.js'
+import type { GenericStatus } from '../Common.js'
 
 export enum DataEnumType {
-  // eslint-disable-next-line id-blacklist
   string = 'string',
   decimal = 'decimal',
   integer = 'integer',
   dateTime = 'dateTime',
-  // eslint-disable-next-line id-blacklist
   boolean = 'boolean',
   OptionList = 'OptionList',
   SequenceList = 'SequenceList',
@@ -39,7 +37,7 @@ export enum OCPP20ConnectorStatusEnumType {
   Faulted = 'Faulted',
 }
 
-export type GenericStatusEnumType = GenericStatus;
+export type GenericStatusEnumType = GenericStatus
 
 export enum HashAlgorithmEnumType {
   SHA256 = 'SHA256',
@@ -94,35 +92,35 @@ export enum CertificateSigningUseEnumType {
   V2GCertificate = 'V2GCertificate',
 }
 
-export type CertificateSignedStatusEnumType = GenericStatusEnumType;
+export type CertificateSignedStatusEnumType = GenericStatusEnumType
 
 export type CertificateHashDataType = {
-  hashAlgorithm: HashAlgorithmEnumType;
-  issuerNameHash: string;
-  issuerKeyHash: string;
-  serialNumber: string;
-} & JsonObject;
+  hashAlgorithm: HashAlgorithmEnumType
+  issuerNameHash: string
+  issuerKeyHash: string
+  serialNumber: string
+} & JsonObject
 
 export type CertificateHashDataChainType = {
-  certificateType: GetCertificateIdUseEnumType;
-  certificateHashData: CertificateHashDataType;
-  childCertificateHashData?: CertificateHashDataType;
-} & JsonObject;
+  certificateType: GetCertificateIdUseEnumType
+  certificateHashData: CertificateHashDataType
+  childCertificateHashData?: CertificateHashDataType
+} & JsonObject
 
 export type OCSPRequestDataType = {
-  hashAlgorithm: HashAlgorithmEnumType;
-  issuerNameHash: string;
-  issuerKeyHash: string;
-  serialNumber: string;
-  responderURL: string;
-} & JsonObject;
+  hashAlgorithm: HashAlgorithmEnumType
+  issuerNameHash: string
+  issuerKeyHash: string
+  serialNumber: string
+  responderURL: string
+} & JsonObject
 
 export type StatusInfoType = {
-  reasonCode: string;
-  additionalInfo?: string;
-} & JsonObject;
+  reasonCode: string
+  additionalInfo?: string
+} & JsonObject
 
 export type EVSEType = {
-  id: number;
-  connectorId?: string;
-} & JsonObject;
+  id: number
+  connectorId?: string
+} & JsonObject

@@ -17,45 +17,45 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue';
-import CSTable from '@/components/charging-stations/CSTable.vue';
-import type { ChargingStationData } from '@/types';
-import Container from '@/components/Container.vue';
-import ReloadButton from '@/components/buttons/ReloadButton.vue';
-import { UIClient } from '@/composables/UIClient';
+import { onMounted, reactive } from 'vue'
+import CSTable from '@/components/charging-stations/CSTable.vue'
+import type { ChargingStationData } from '@/types'
+import Container from '@/components/Container.vue'
+import ReloadButton from '@/components/buttons/ReloadButton.vue'
+import { UIClient } from '@/composables/UIClient'
 
-const UIClientInstance = UIClient.getInstance();
+const UIClientInstance = UIClient.getInstance()
 
 onMounted(() => {
-  UIClientInstance.registerWSonOpenListener(load);
-});
+  UIClientInstance.registerWSonOpenListener(load)
+})
 
 type State = {
-  isLoading: boolean;
-  chargingStations: ChargingStationData[];
-  idTag: string;
-};
+  isLoading: boolean
+  chargingStations: ChargingStationData[]
+  idTag: string
+}
 
 const state: State = reactive({
   isLoading: false,
   chargingStations: [],
   idTag: '',
-});
+})
 
 async function load(): Promise<void> {
-  if (state.isLoading === true) return;
-  state.isLoading = true;
-  const listChargingStationsPayload = await UIClientInstance.listChargingStations();
+  if (state.isLoading === true) return
+  state.isLoading = true
+  const listChargingStationsPayload = await UIClientInstance.listChargingStations()
   state.chargingStations =
-    listChargingStationsPayload.chargingStations as unknown as ChargingStationData[];
-  state.isLoading = false;
+    listChargingStationsPayload.chargingStations as unknown as ChargingStationData[]
+  state.isLoading = false
 }
 
 function startSimulator(): void {
-  UIClientInstance.startSimulator();
+  UIClientInstance.startSimulator()
 }
 function stopSimulator(): void {
-  UIClientInstance.stopSimulator();
+  UIClientInstance.stopSimulator()
 }
 </script>
 

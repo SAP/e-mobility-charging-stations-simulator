@@ -2,10 +2,8 @@
   // See https://go.microsoft.com/fwlink/?LinkId=827846
   // for the documentation about the extensions.json format
   "recommendations": [
-    "codezombiech.gitignore",
     "connor4312.nodejs-testing",
     "dbaeumer.vscode-eslint",
-    "eamodio.gitlens",
     "EditorConfig.EditorConfig",
     "ms-azuretools.vscode-docker",
     "sonarsource.sonarlint-vscode",

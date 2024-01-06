@@ -1,5 +1,5 @@
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
+import type { EmptyObject } from '../../EmptyObject.js'
+import type { JsonObject } from '../../JsonType.js'
 
 export enum OCPP16MeterValueUnit {
   WATT_HOUR = 'Wh',
@@ -83,24 +83,24 @@ enum OCPP16MeterValueFormat {
 }
 
 export interface OCPP16SampledValue extends JsonObject {
-  value: string;
-  unit?: OCPP16MeterValueUnit;
-  context?: OCPP16MeterValueContext;
-  measurand?: OCPP16MeterValueMeasurand;
-  phase?: OCPP16MeterValuePhase;
-  location?: OCPP16MeterValueLocation;
-  format?: OCPP16MeterValueFormat;
+  value: string
+  unit?: OCPP16MeterValueUnit
+  context?: OCPP16MeterValueContext
+  measurand?: OCPP16MeterValueMeasurand
+  phase?: OCPP16MeterValuePhase
+  location?: OCPP16MeterValueLocation
+  format?: OCPP16MeterValueFormat
 }
 
 export interface OCPP16MeterValue extends JsonObject {
-  timestamp: Date;
-  sampledValue: OCPP16SampledValue[];
+  timestamp: Date
+  sampledValue: OCPP16SampledValue[]
 }
 
 export interface OCPP16MeterValuesRequest extends JsonObject {
-  connectorId: number;
-  transactionId?: number;
-  meterValue: OCPP16MeterValue[];
+  connectorId: number
+  transactionId?: number
+  meterValue: OCPP16MeterValue[]
 }
 
-export type OCPP16MeterValuesResponse = EmptyObject;
+export type OCPP16MeterValuesResponse = EmptyObject

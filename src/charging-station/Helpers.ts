@@ -1,10 +1,10 @@
-import { createHash, randomBytes } from 'node:crypto';
-import type { EventEmitter } from 'node:events';
-import { basename, dirname, join } from 'node:path';
-import { env } from 'node:process';
-import { fileURLToPath } from 'node:url';
+import { createHash, randomBytes } from 'node:crypto'
+import type { EventEmitter } from 'node:events'
+import { basename, dirname, join } from 'node:path'
+import { env } from 'node:process'
+import { fileURLToPath } from 'node:url'
 
-import chalk from 'chalk';
+import chalk from 'chalk'
 import {
   type Interval,
   addDays,
@@ -18,13 +18,13 @@ import {
   isDate,
   isPast,
   isWithinInterval,
-  toDate,
-} from 'date-fns';
-import { maxTime } from 'date-fns/constants';
+  toDate
+} from 'date-fns'
+import { maxTime } from 'date-fns/constants'
 
-import type { ChargingStation } from './ChargingStation';
-import { getConfigurationKey } from './ConfigurationKeyUtils';
-import { BaseError } from '../exception';
+import type { ChargingStation } from './ChargingStation.js'
+import { getConfigurationKey } from './ConfigurationKeyUtils.js'
+import { BaseError } from '../exception/index.js'
 import {
   AmpereUnits,
   AvailabilityType,
@@ -37,7 +37,7 @@ import {
   type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationTemplate,
-  ChargingStationWorkerMessageEvents,
+  type ChargingStationWorkerMessageEvents,
   ConnectorPhaseRotation,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -50,9 +50,9 @@ import {
   type Reservation,
   ReservationTerminationReason,
   StandardParametersKey,
-  SupportedFeatureProfiles,
-  Voltage,
-} from '../types';
+  type SupportedFeatureProfiles,
+  Voltage
+} from '../types/index.js'
 import {
   ACElectricUtils,
   Constants,
@@ -65,350 +65,356 @@ import {
   isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
-  isNullOrUndefined,
-  isUndefined,
   isValidTime,
   logger,
-  secureRandom,
-} from '../utils';
+  secureRandom
+} from '../utils/index.js'
 
-const moduleName = 'Helpers';
+const moduleName = 'Helpers'
 
 export const getChargingStationId = (
   index: number,
-  stationTemplate: ChargingStationTemplate | undefined,
+  stationTemplate: ChargingStationTemplate | undefined
 ): string => {
-  if (stationTemplate === undefined) {
-    return "Unknown 'chargingStationId'";
+  if (stationTemplate == null) {
+    return "Unknown 'chargingStationId'"
   }
   // In case of multiple instances: add instance index to charging station id
-  const instanceIndex = env.CF_INSTANCE_INDEX ?? 0;
-  const idSuffix = stationTemplate?.nameSuffix ?? '';
-  const idStr = `000000000${index.toString()}`;
-  return stationTemplate?.fixedName
+  const instanceIndex = env.CF_INSTANCE_INDEX ?? 0
+  const idSuffix = stationTemplate.nameSuffix ?? ''
+  const idStr = `000000000${index.toString()}`
+  return stationTemplate.fixedName === true
     ? stationTemplate.baseName
     : `${stationTemplate.baseName}-${instanceIndex.toString()}${idStr.substring(
-        idStr.length - 4,
-      )}${idSuffix}`;
-};
+        idStr.length - 4
+      )}${idSuffix}`
+}
 
 export const hasReservationExpired = (reservation: Reservation): boolean => {
-  return isPast(reservation.expiryDate);
-};
+  return isPast(reservation.expiryDate)
+}
 
 export const removeExpiredReservations = async (
-  chargingStation: ChargingStation,
+  chargingStation: ChargingStation
 ): Promise<void> => {
   if (chargingStation.hasEvses) {
     for (const evseStatus of chargingStation.evses.values()) {
       for (const connectorStatus of evseStatus.connectors.values()) {
-        if (connectorStatus.reservation && hasReservationExpired(connectorStatus.reservation)) {
+        if (
+          connectorStatus.reservation != null &&
+          hasReservationExpired(connectorStatus.reservation)
+        ) {
           await chargingStation.removeReservation(
             connectorStatus.reservation,
-            ReservationTerminationReason.EXPIRED,
-          );
+            ReservationTerminationReason.EXPIRED
+          )
         }
       }
     }
   } else {
     for (const connectorStatus of chargingStation.connectors.values()) {
-      if (connectorStatus.reservation && hasReservationExpired(connectorStatus.reservation)) {
+      if (
+        connectorStatus.reservation != null &&
+        hasReservationExpired(connectorStatus.reservation)
+      ) {
         await chargingStation.removeReservation(
           connectorStatus.reservation,
-          ReservationTerminationReason.EXPIRED,
-        );
+          ReservationTerminationReason.EXPIRED
+        )
       }
     }
   }
-};
+}
 
 export const getNumberOfReservableConnectors = (
-  connectors: Map<number, ConnectorStatus>,
+  connectors: Map<number, ConnectorStatus>
 ): number => {
-  let numberOfReservableConnectors = 0;
+  let numberOfReservableConnectors = 0
   for (const [connectorId, connectorStatus] of connectors) {
     if (connectorId === 0) {
-      continue;
+      continue
     }
     if (connectorStatus.status === ConnectorStatusEnum.Available) {
-      ++numberOfReservableConnectors;
+      ++numberOfReservableConnectors
     }
   }
-  return numberOfReservableConnectors;
-};
+  return numberOfReservableConnectors
+}
 
 export const getHashId = (index: number, stationTemplate: ChargingStationTemplate): string => {
   const chargingStationInfo = {
     chargePointModel: stationTemplate.chargePointModel,
     chargePointVendor: stationTemplate.chargePointVendor,
-    ...(!isUndefined(stationTemplate.chargeBoxSerialNumberPrefix) && {
-      chargeBoxSerialNumber: stationTemplate.chargeBoxSerialNumberPrefix,
+    ...(stationTemplate.chargeBoxSerialNumberPrefix !== undefined && {
+      chargeBoxSerialNumber: stationTemplate.chargeBoxSerialNumberPrefix
     }),
-    ...(!isUndefined(stationTemplate.chargePointSerialNumberPrefix) && {
-      chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix,
+    ...(stationTemplate.chargePointSerialNumberPrefix !== undefined && {
+      chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix
     }),
-    ...(!isUndefined(stationTemplate.meterSerialNumberPrefix) && {
-      meterSerialNumber: stationTemplate.meterSerialNumberPrefix,
+    ...(stationTemplate.meterSerialNumberPrefix !== undefined && {
+      meterSerialNumber: stationTemplate.meterSerialNumberPrefix
     }),
-    ...(!isUndefined(stationTemplate.meterType) && {
-      meterType: stationTemplate.meterType,
-    }),
-  };
+    ...(stationTemplate.meterType !== undefined && {
+      meterType: stationTemplate.meterType
+    })
+  }
   return createHash(Constants.DEFAULT_HASH_ALGORITHM)
     .update(`${JSON.stringify(chargingStationInfo)}${getChargingStationId(index, stationTemplate)}`)
-    .digest('hex');
-};
+    .digest('hex')
+}
 
 export const checkChargingStation = (
   chargingStation: ChargingStation,
-  logPrefix: string,
+  logPrefix: string
 ): boolean => {
-  if (chargingStation.started === false && chargingStation.starting === false) {
-    logger.warn(`${logPrefix} charging station is stopped, cannot proceed`);
-    return false;
+  if (!chargingStation.started && !chargingStation.starting) {
+    logger.warn(`${logPrefix} charging station is stopped, cannot proceed`)
+    return false
   }
-  return true;
-};
+  return true
+}
 
 export const getPhaseRotationValue = (
   connectorId: number,
-  numberOfPhases: number,
+  numberOfPhases: number
 ): string | undefined => {
   // AC/DC
   if (connectorId === 0 && numberOfPhases === 0) {
-    return `${connectorId}.${ConnectorPhaseRotation.RST}`;
+    return `${connectorId}.${ConnectorPhaseRotation.RST}`
   } else if (connectorId > 0 && numberOfPhases === 0) {
-    return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`;
+    return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`
     // AC
   } else if (connectorId >= 0 && numberOfPhases === 1) {
-    return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`;
+    return `${connectorId}.${ConnectorPhaseRotation.NotApplicable}`
   } else if (connectorId >= 0 && numberOfPhases === 3) {
-    return `${connectorId}.${ConnectorPhaseRotation.RST}`;
+    return `${connectorId}.${ConnectorPhaseRotation.RST}`
   }
-};
+}
 
-export const getMaxNumberOfEvses = (evses: Record<string, EvseTemplate>): number => {
-  if (!evses) {
-    return -1;
+export const getMaxNumberOfEvses = (evses: Record<string, EvseTemplate> | undefined): number => {
+  if (evses == null) {
+    return -1
   }
-  return Object.keys(evses).length;
-};
+  return Object.keys(evses).length
+}
 
-const getMaxNumberOfConnectors = (connectors: Record<string, ConnectorStatus>): number => {
-  if (!connectors) {
-    return -1;
+const getMaxNumberOfConnectors = (
+  connectors: Record<string, ConnectorStatus> | undefined
+): number => {
+  if (connectors == null) {
+    return -1
   }
-  return Object.keys(connectors).length;
-};
+  return Object.keys(connectors).length
+}
 
 export const getBootConnectorStatus = (
   chargingStation: ChargingStation,
   connectorId: number,
-  connectorStatus: ConnectorStatus,
+  connectorStatus: ConnectorStatus
 ): ConnectorStatusEnum => {
-  let connectorBootStatus: ConnectorStatusEnum;
+  let connectorBootStatus: ConnectorStatusEnum
   if (
-    !connectorStatus?.status &&
-    (chargingStation.isChargingStationAvailable() === false ||
-      chargingStation.isConnectorAvailable(connectorId) === false)
+    connectorStatus.status == null &&
+    (!chargingStation.isChargingStationAvailable() ||
+      !chargingStation.isConnectorAvailable(connectorId))
   ) {
-    connectorBootStatus = ConnectorStatusEnum.Unavailable;
-  } else if (!connectorStatus?.status && connectorStatus?.bootStatus) {
+    connectorBootStatus = ConnectorStatusEnum.Unavailable
+  } else if (connectorStatus.status == null && connectorStatus.bootStatus != null) {
     // Set boot status in template at startup
-    connectorBootStatus = connectorStatus?.bootStatus;
-  } else if (connectorStatus?.status) {
+    connectorBootStatus = connectorStatus.bootStatus
+  } else if (connectorStatus.status != null) {
     // Set previous status at startup
-    connectorBootStatus = connectorStatus?.status;
+    connectorBootStatus = connectorStatus.status
   } else {
     // Set default status
-    connectorBootStatus = ConnectorStatusEnum.Available;
+    connectorBootStatus = ConnectorStatusEnum.Available
   }
-  return connectorBootStatus;
-};
+  return connectorBootStatus
+}
 
 export const checkTemplate = (
-  stationTemplate: ChargingStationTemplate,
+  stationTemplate: ChargingStationTemplate | undefined,
   logPrefix: string,
-  templateFile: string,
+  templateFile: string
 ): void => {
-  if (isNullOrUndefined(stationTemplate)) {
-    const errorMsg = `Failed to read charging station template file ${templateFile}`;
-    logger.error(`${logPrefix} ${errorMsg}`);
-    throw new BaseError(errorMsg);
+  if (stationTemplate == null) {
+    const errorMsg = `Failed to read charging station template file ${templateFile}`
+    logger.error(`${logPrefix} ${errorMsg}`)
+    throw new BaseError(errorMsg)
   }
   if (isEmptyObject(stationTemplate)) {
-    const errorMsg = `Empty charging station information from template file ${templateFile}`;
-    logger.error(`${logPrefix} ${errorMsg}`);
-    throw new BaseError(errorMsg);
+    const errorMsg = `Empty charging station information from template file ${templateFile}`
+    logger.error(`${logPrefix} ${errorMsg}`)
+    throw new BaseError(errorMsg)
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (isEmptyObject(stationTemplate.AutomaticTransactionGenerator!)) {
-    stationTemplate.AutomaticTransactionGenerator = Constants.DEFAULT_ATG_CONFIGURATION;
+    stationTemplate.AutomaticTransactionGenerator = Constants.DEFAULT_ATG_CONFIGURATION
     logger.warn(
       `${logPrefix} Empty automatic transaction generator configuration from template file ${templateFile}, set to default: %j`,
-      Constants.DEFAULT_ATG_CONFIGURATION,
-    );
+      Constants.DEFAULT_ATG_CONFIGURATION
+    )
   }
-  if (isNullOrUndefined(stationTemplate.idTagsFile) || isEmptyString(stationTemplate.idTagsFile)) {
+  if (stationTemplate.idTagsFile == null || isEmptyString(stationTemplate.idTagsFile)) {
     logger.warn(
-      `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`,
-    );
+      `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
+    )
   }
-};
+}
 
 export const checkConfiguration = (
   stationConfiguration: ChargingStationConfiguration | undefined,
   logPrefix: string,
-  configurationFile: string,
+  configurationFile: string
 ): void => {
-  if (isNullOrUndefined(stationConfiguration)) {
-    const errorMsg = `Failed to read charging station configuration file ${configurationFile}`;
-    logger.error(`${logPrefix} ${errorMsg}`);
-    throw new BaseError(errorMsg);
+  if (stationConfiguration == null) {
+    const errorMsg = `Failed to read charging station configuration file ${configurationFile}`
+    logger.error(`${logPrefix} ${errorMsg}`)
+    throw new BaseError(errorMsg)
   }
-  if (isEmptyObject(stationConfiguration!)) {
-    const errorMsg = `Empty charging station configuration from file ${configurationFile}`;
-    logger.error(`${logPrefix} ${errorMsg}`);
-    throw new BaseError(errorMsg);
+  if (isEmptyObject(stationConfiguration)) {
+    const errorMsg = `Empty charging station configuration from file ${configurationFile}`
+    logger.error(`${logPrefix} ${errorMsg}`)
+    throw new BaseError(errorMsg)
   }
-};
+}
 
 export const checkConnectorsConfiguration = (
   stationTemplate: ChargingStationTemplate,
   logPrefix: string,
-  templateFile: string,
+  templateFile: string
 ): {
-  configuredMaxConnectors: number;
-  templateMaxConnectors: number;
-  templateMaxAvailableConnectors: number;
+  configuredMaxConnectors: number
+  templateMaxConnectors: number
+  templateMaxAvailableConnectors: number
 } => {
-  const configuredMaxConnectors = getConfiguredMaxNumberOfConnectors(stationTemplate);
-  checkConfiguredMaxConnectors(configuredMaxConnectors, logPrefix, templateFile);
-  const templateMaxConnectors = getMaxNumberOfConnectors(stationTemplate.Connectors!);
-  checkTemplateMaxConnectors(templateMaxConnectors, logPrefix, templateFile);
-  const templateMaxAvailableConnectors = stationTemplate.Connectors?.[0]
-    ? templateMaxConnectors - 1
-    : templateMaxConnectors;
+  const configuredMaxConnectors = getConfiguredMaxNumberOfConnectors(stationTemplate)
+  checkConfiguredMaxConnectors(configuredMaxConnectors, logPrefix, templateFile)
+  const templateMaxConnectors = getMaxNumberOfConnectors(stationTemplate.Connectors)
+  checkTemplateMaxConnectors(templateMaxConnectors, logPrefix, templateFile)
+  const templateMaxAvailableConnectors =
+    stationTemplate.Connectors?.[0] != null ? templateMaxConnectors - 1 : templateMaxConnectors
   if (
     configuredMaxConnectors > templateMaxAvailableConnectors &&
-    !stationTemplate?.randomConnectors
+    stationTemplate.randomConnectors !== true
   ) {
     logger.warn(
-      `${logPrefix} Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`,
-    );
-    stationTemplate.randomConnectors = true;
+      `${logPrefix} Number of connectors exceeds the number of connector configurations in template ${templateFile}, forcing random connector configurations affectation`
+    )
+    stationTemplate.randomConnectors = true
   }
-  return { configuredMaxConnectors, templateMaxConnectors, templateMaxAvailableConnectors };
-};
+  return { configuredMaxConnectors, templateMaxConnectors, templateMaxAvailableConnectors }
+}
 
 export const checkStationInfoConnectorStatus = (
   connectorId: number,
   connectorStatus: ConnectorStatus,
   logPrefix: string,
-  templateFile: string,
+  templateFile: string
 ): void => {
-  if (!isNullOrUndefined(connectorStatus?.status)) {
+  if (connectorStatus.status != null) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId} status configuration defined, undefine it`,
-    );
-    delete connectorStatus.status;
+      `${logPrefix} Charging station information from template ${templateFile} with connector id ${connectorId} status configuration defined, undefine it`
+    )
+    delete connectorStatus.status
   }
-};
+}
 
 export const buildConnectorsMap = (
   connectors: Record<string, ConnectorStatus>,
   logPrefix: string,
-  templateFile: string,
+  templateFile: string
 ): Map<number, ConnectorStatus> => {
-  const connectorsMap = new Map<number, ConnectorStatus>();
+  const connectorsMap = new Map<number, ConnectorStatus>()
   if (getMaxNumberOfConnectors(connectors) > 0) {
     for (const connector in connectors) {
-      const connectorStatus = connectors[connector];
-      const connectorId = convertToInt(connector);
-      checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile);
-      connectorsMap.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus));
+      const connectorStatus = connectors[connector]
+      const connectorId = convertToInt(connector)
+      checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
+      connectorsMap.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus))
     }
   } else {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`,
-    );
+      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
+    )
   }
-  return connectorsMap;
-};
+  return connectorsMap
+}
 
 export const initializeConnectorsMapStatus = (
   connectors: Map<number, ConnectorStatus>,
-  logPrefix: string,
+  logPrefix: string
 ): void => {
   for (const connectorId of connectors.keys()) {
     if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
       logger.warn(
         `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${connectors.get(
-          connectorId,
-        )?.transactionId}`,
-      );
+          connectorId
+        )?.transactionId}`
+      )
     }
     if (connectorId === 0) {
-      connectors.get(connectorId)!.availability = AvailabilityType.Operative;
-      if (isUndefined(connectors.get(connectorId)?.chargingProfiles)) {
-        connectors.get(connectorId)!.chargingProfiles = [];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      connectors.get(connectorId)!.availability = AvailabilityType.Operative
+      if (connectors.get(connectorId)?.chargingProfiles == null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        connectors.get(connectorId)!.chargingProfiles = []
       }
-    } else if (
-      connectorId > 0 &&
-      isNullOrUndefined(connectors.get(connectorId)?.transactionStarted)
-    ) {
-      initializeConnectorStatus(connectors.get(connectorId)!);
+    } else if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted == null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      initializeConnectorStatus(connectors.get(connectorId)!)
     }
   }
-};
+}
 
 export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => {
   connectorStatus.chargingProfiles =
-    connectorStatus.transactionId && isNotEmptyArray(connectorStatus.chargingProfiles)
+    connectorStatus.transactionId != null && isNotEmptyArray(connectorStatus.chargingProfiles)
       ? connectorStatus.chargingProfiles?.filter(
-          (chargingProfile) => chargingProfile.transactionId !== connectorStatus.transactionId,
-        )
-      : [];
-  connectorStatus.idTagLocalAuthorized = false;
-  connectorStatus.idTagAuthorized = false;
-  connectorStatus.transactionRemoteStarted = false;
-  connectorStatus.transactionStarted = false;
-  delete connectorStatus?.transactionStart;
-  delete connectorStatus?.transactionId;
-  delete connectorStatus?.localAuthorizeIdTag;
-  delete connectorStatus?.authorizeIdTag;
-  delete connectorStatus?.transactionIdTag;
-  connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
-  delete connectorStatus?.transactionBeginMeterValue;
-};
+        (chargingProfile) => chargingProfile.transactionId !== connectorStatus.transactionId
+      )
+      : []
+  connectorStatus.idTagLocalAuthorized = false
+  connectorStatus.idTagAuthorized = false
+  connectorStatus.transactionRemoteStarted = false
+  connectorStatus.transactionStarted = false
+  delete connectorStatus.transactionStart
+  delete connectorStatus.transactionId
+  delete connectorStatus.localAuthorizeIdTag
+  delete connectorStatus.authorizeIdTag
+  delete connectorStatus.transactionIdTag
+  connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+  delete connectorStatus.transactionBeginMeterValue
+}
 
 export const createBootNotificationRequest = (
   stationInfo: ChargingStationInfo,
-  bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp,
-): BootNotificationRequest => {
-  const ocppVersion = stationInfo.ocppVersion!;
+  bootReason: BootReasonEnumType = BootReasonEnumType.PowerUp
+): BootNotificationRequest | undefined => {
+  const ocppVersion = stationInfo.ocppVersion
   switch (ocppVersion) {
     case OCPPVersion.VERSION_16:
       return {
         chargePointModel: stationInfo.chargePointModel,
         chargePointVendor: stationInfo.chargePointVendor,
-        ...(!isUndefined(stationInfo.chargeBoxSerialNumber) && {
-          chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber,
+        ...(stationInfo.chargeBoxSerialNumber !== undefined && {
+          chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber
         }),
-        ...(!isUndefined(stationInfo.chargePointSerialNumber) && {
-          chargePointSerialNumber: stationInfo.chargePointSerialNumber,
+        ...(stationInfo.chargePointSerialNumber !== undefined && {
+          chargePointSerialNumber: stationInfo.chargePointSerialNumber
         }),
-        ...(!isUndefined(stationInfo.firmwareVersion) && {
-          firmwareVersion: stationInfo.firmwareVersion,
+        ...(stationInfo.firmwareVersion !== undefined && {
+          firmwareVersion: stationInfo.firmwareVersion
         }),
-        ...(!isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-        ...(!isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-        ...(!isUndefined(stationInfo.meterSerialNumber) && {
-          meterSerialNumber: stationInfo.meterSerialNumber,
+        ...(stationInfo.iccid !== undefined && { iccid: stationInfo.iccid }),
+        ...(stationInfo.imsi !== undefined && { imsi: stationInfo.imsi }),
+        ...(stationInfo.meterSerialNumber !== undefined && {
+          meterSerialNumber: stationInfo.meterSerialNumber
         }),
-        ...(!isUndefined(stationInfo.meterType) && {
-          meterType: stationInfo.meterType,
-        }),
-      } as OCPP16BootNotificationRequest;
+        ...(stationInfo.meterType !== undefined && {
+          meterType: stationInfo.meterType
+        })
+      } satisfies OCPP16BootNotificationRequest
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
       return {
@@ -416,130 +422,134 @@ export const createBootNotificationRequest = (
         chargingStation: {
           model: stationInfo.chargePointModel,
           vendorName: stationInfo.chargePointVendor,
-          ...(!isUndefined(stationInfo.firmwareVersion) && {
-            firmwareVersion: stationInfo.firmwareVersion,
+          ...(stationInfo.firmwareVersion !== undefined && {
+            firmwareVersion: stationInfo.firmwareVersion
           }),
-          ...(!isUndefined(stationInfo.chargeBoxSerialNumber) && {
-            serialNumber: stationInfo.chargeBoxSerialNumber,
+          ...(stationInfo.chargeBoxSerialNumber !== undefined && {
+            serialNumber: stationInfo.chargeBoxSerialNumber
           }),
-          ...((!isUndefined(stationInfo.iccid) || !isUndefined(stationInfo.imsi)) && {
+          ...((stationInfo.iccid !== undefined || stationInfo.imsi !== undefined) && {
             modem: {
-              ...(!isUndefined(stationInfo.iccid) && { iccid: stationInfo.iccid }),
-              ...(!isUndefined(stationInfo.imsi) && { imsi: stationInfo.imsi }),
-            },
-          }),
-        },
-      } as OCPP20BootNotificationRequest;
+              ...(stationInfo.iccid !== undefined && { iccid: stationInfo.iccid }),
+              ...(stationInfo.imsi !== undefined && { imsi: stationInfo.imsi })
+            }
+          })
+        }
+      } satisfies OCPP20BootNotificationRequest
   }
-};
+}
 
 export const warnTemplateKeysDeprecation = (
   stationTemplate: ChargingStationTemplate,
   logPrefix: string,
-  templateFile: string,
-) => {
-  const templateKeys: { deprecatedKey: string; key?: string }[] = [
+  templateFile: string
+): void => {
+  const templateKeys: Array<{ deprecatedKey: string, key?: string }> = [
     { deprecatedKey: 'supervisionUrl', key: 'supervisionUrls' },
     { deprecatedKey: 'authorizationFile', key: 'idTagsFile' },
     { deprecatedKey: 'payloadSchemaValidation', key: 'ocppStrictCompliance' },
-    { deprecatedKey: 'mustAuthorizeAtRemoteStart', key: 'remoteAuthorization' },
-  ];
+    { deprecatedKey: 'mustAuthorizeAtRemoteStart', key: 'remoteAuthorization' }
+  ]
   for (const templateKey of templateKeys) {
     warnDeprecatedTemplateKey(
       stationTemplate,
       templateKey.deprecatedKey,
       logPrefix,
       templateFile,
-      !isUndefined(templateKey.key) ? `Use '${templateKey.key}' instead` : undefined,
-    );
-    convertDeprecatedTemplateKey(stationTemplate, templateKey.deprecatedKey, templateKey.key);
+      templateKey.key !== undefined ? `Use '${templateKey.key}' instead` : undefined
+    )
+    convertDeprecatedTemplateKey(stationTemplate, templateKey.deprecatedKey, templateKey.key)
   }
-};
+}
 
 export const stationTemplateToStationInfo = (
-  stationTemplate: ChargingStationTemplate,
+  stationTemplate: ChargingStationTemplate
 ): ChargingStationInfo => {
-  stationTemplate = cloneObject<ChargingStationTemplate>(stationTemplate);
-  delete stationTemplate.power;
-  delete stationTemplate.powerUnit;
-  delete stationTemplate.Connectors;
-  delete stationTemplate.Evses;
-  delete stationTemplate.Configuration;
-  delete stationTemplate.AutomaticTransactionGenerator;
-  delete stationTemplate.chargeBoxSerialNumberPrefix;
-  delete stationTemplate.chargePointSerialNumberPrefix;
-  delete stationTemplate.meterSerialNumberPrefix;
-  return stationTemplate as ChargingStationInfo;
-};
+  stationTemplate = cloneObject<ChargingStationTemplate>(stationTemplate)
+  delete stationTemplate.power
+  delete stationTemplate.powerUnit
+  delete stationTemplate.Connectors
+  delete stationTemplate.Evses
+  delete stationTemplate.Configuration
+  delete stationTemplate.AutomaticTransactionGenerator
+  delete stationTemplate.chargeBoxSerialNumberPrefix
+  delete stationTemplate.chargePointSerialNumberPrefix
+  delete stationTemplate.meterSerialNumberPrefix
+  return stationTemplate as ChargingStationInfo
+}
 
 export const createSerialNumber = (
   stationTemplate: ChargingStationTemplate,
   stationInfo: ChargingStationInfo,
   params?: {
-    randomSerialNumberUpperCase?: boolean;
-    randomSerialNumber?: boolean;
-  },
+    randomSerialNumberUpperCase?: boolean
+    randomSerialNumber?: boolean
+  }
 ): void => {
-  params = { ...{ randomSerialNumberUpperCase: true, randomSerialNumber: true }, ...params };
-  const serialNumberSuffix = params?.randomSerialNumber
-    ? getRandomSerialNumberSuffix({
-        upperCase: params.randomSerialNumberUpperCase,
+  params = { ...{ randomSerialNumberUpperCase: true, randomSerialNumber: true }, ...params }
+  const serialNumberSuffix =
+    params.randomSerialNumber === true
+      ? getRandomSerialNumberSuffix({
+        upperCase: params.randomSerialNumberUpperCase
       })
-    : '';
-  isNotEmptyString(stationTemplate?.chargePointSerialNumberPrefix) &&
-    (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`);
-  isNotEmptyString(stationTemplate?.chargeBoxSerialNumberPrefix) &&
-    (stationInfo.chargeBoxSerialNumber = `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`);
-  isNotEmptyString(stationTemplate?.meterSerialNumberPrefix) &&
-    (stationInfo.meterSerialNumber = `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`);
-};
+      : ''
+  isNotEmptyString(stationTemplate.chargePointSerialNumberPrefix) &&
+    (stationInfo.chargePointSerialNumber = `${stationTemplate.chargePointSerialNumberPrefix}${serialNumberSuffix}`)
+  isNotEmptyString(stationTemplate.chargeBoxSerialNumberPrefix) &&
+    (stationInfo.chargeBoxSerialNumber = `${stationTemplate.chargeBoxSerialNumberPrefix}${serialNumberSuffix}`)
+  isNotEmptyString(stationTemplate.meterSerialNumberPrefix) &&
+    (stationInfo.meterSerialNumber = `${stationTemplate.meterSerialNumberPrefix}${serialNumberSuffix}`)
+}
 
 export const propagateSerialNumber = (
-  stationTemplate: ChargingStationTemplate,
-  stationInfoSrc: ChargingStationInfo,
-  stationInfoDst: ChargingStationInfo,
-) => {
-  if (!stationInfoSrc || !stationTemplate) {
+  stationTemplate: ChargingStationTemplate | undefined,
+  stationInfoSrc: ChargingStationInfo | undefined,
+  stationInfoDst: ChargingStationInfo
+): void => {
+  if (stationInfoSrc == null || stationTemplate == null) {
     throw new BaseError(
-      'Missing charging station template or existing configuration to propagate serial number',
-    );
+      'Missing charging station template or existing configuration to propagate serial number'
+    )
   }
-  stationTemplate?.chargePointSerialNumberPrefix && stationInfoSrc?.chargePointSerialNumber
+  stationTemplate.chargePointSerialNumberPrefix != null &&
+  stationInfoSrc.chargePointSerialNumber != null
     ? (stationInfoDst.chargePointSerialNumber = stationInfoSrc.chargePointSerialNumber)
-    : stationInfoDst?.chargePointSerialNumber && delete stationInfoDst.chargePointSerialNumber;
-  stationTemplate?.chargeBoxSerialNumberPrefix && stationInfoSrc?.chargeBoxSerialNumber
+    : stationInfoDst.chargePointSerialNumber != null &&
+      delete stationInfoDst.chargePointSerialNumber
+  stationTemplate.chargeBoxSerialNumberPrefix != null &&
+  stationInfoSrc.chargeBoxSerialNumber != null
     ? (stationInfoDst.chargeBoxSerialNumber = stationInfoSrc.chargeBoxSerialNumber)
-    : stationInfoDst?.chargeBoxSerialNumber && delete stationInfoDst.chargeBoxSerialNumber;
-  stationTemplate?.meterSerialNumberPrefix && stationInfoSrc?.meterSerialNumber
+    : stationInfoDst.chargeBoxSerialNumber != null && delete stationInfoDst.chargeBoxSerialNumber
+  stationTemplate.meterSerialNumberPrefix != null && stationInfoSrc.meterSerialNumber != null
     ? (stationInfoDst.meterSerialNumber = stationInfoSrc.meterSerialNumber)
-    : stationInfoDst?.meterSerialNumber && delete stationInfoDst.meterSerialNumber;
-};
+    : stationInfoDst.meterSerialNumber != null && delete stationInfoDst.meterSerialNumber
+}
 
 export const hasFeatureProfile = (
   chargingStation: ChargingStation,
-  featureProfile: SupportedFeatureProfiles,
+  featureProfile: SupportedFeatureProfiles
 ): boolean | undefined => {
   return getConfigurationKey(
     chargingStation,
-    StandardParametersKey.SupportedFeatureProfiles,
-  )?.value?.includes(featureProfile);
-};
+    StandardParametersKey.SupportedFeatureProfiles
+  )?.value?.includes(featureProfile)
+}
 
 export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInfo): number => {
-  let unitDivider = 1;
+  let unitDivider = 1
   switch (stationInfo.amperageLimitationUnit) {
     case AmpereUnits.DECI_AMPERE:
-      unitDivider = 10;
-      break;
+      unitDivider = 10
+      break
     case AmpereUnits.CENTI_AMPERE:
-      unitDivider = 100;
-      break;
+      unitDivider = 100
+      break
     case AmpereUnits.MILLI_AMPERE:
-      unitDivider = 1000;
-      break;
+      unitDivider = 1000
+      break
   }
-  return unitDivider;
-};
+  return unitDivider
+}
 
 /**
  * Gets the connector cloned charging profiles applying a power limitation
@@ -551,213 +561,221 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
  */
 export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
-  connectorId: number,
-) => {
+  connectorId: number
+): ChargingProfile[] => {
   return cloneObject<ChargingProfile[]>(
     (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
       .sort((a, b) => b.stackLevel - a.stackLevel)
       .concat(
         (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? []).sort(
-          (a, b) => b.stackLevel - a.stackLevel,
-        ),
-      ),
-  );
-};
+          (a, b) => b.stackLevel - a.stackLevel
+        )
+      )
+  )
+}
 
 export const getChargingStationConnectorChargingProfilesPowerLimit = (
   chargingStation: ChargingStation,
-  connectorId: number,
+  connectorId: number
 ): number | undefined => {
-  let limit: number | undefined, chargingProfile: ChargingProfile | undefined;
+  let limit: number | undefined, chargingProfile: ChargingProfile | undefined
   // Get charging profiles sorted by connector id then stack level
-  const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId);
+  const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId)
   if (isNotEmptyArray(chargingProfiles)) {
     const result = getLimitFromChargingProfiles(
       chargingStation,
       connectorId,
       chargingProfiles,
-      chargingStation.logPrefix(),
-    );
-    if (!isNullOrUndefined(result)) {
-      limit = result?.limit;
-      chargingProfile = result?.chargingProfile;
+      chargingStation.logPrefix()
+    )
+    if (result != null) {
+      limit = result.limit
+      chargingProfile = result.chargingProfile
       switch (chargingStation.stationInfo?.currentOutType) {
         case CurrentType.AC:
           limit =
-            chargingProfile?.chargingSchedule?.chargingRateUnit === ChargingRateUnitType.WATT
+            chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
               ? limit
               : ACElectricUtils.powerTotal(
-                  chargingStation.getNumberOfPhases(),
-                  chargingStation.stationInfo.voltageOut!,
-                  limit!,
-                );
-          break;
+                chargingStation.getNumberOfPhases(),
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                chargingStation.stationInfo.voltageOut!,
+                limit
+              )
+          break
         case CurrentType.DC:
           limit =
-            chargingProfile?.chargingSchedule?.chargingRateUnit === ChargingRateUnitType.WATT
+            chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
               ? limit
-              : DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit!);
+              : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
       }
       const connectorMaximumPower =
-        chargingStation.stationInfo.maximumPower! / chargingStation.powerDivider;
-      if (limit! > connectorMaximumPower) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        chargingStation.stationInfo!.maximumPower! / chargingStation.powerDivider!
+      if (limit > connectorMaximumPower) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${chargingProfile?.chargingProfileId} limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
-          result,
-        );
-        limit = connectorMaximumPower;
+          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${
+            chargingProfile.chargingProfileId
+          } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
+          result
+        )
+        limit = connectorMaximumPower
       }
     }
   }
-  return limit;
-};
+  return limit
+}
 
 export const getDefaultVoltageOut = (
   currentType: CurrentType,
   logPrefix: string,
-  templateFile: string,
+  templateFile: string
 ): Voltage => {
-  const errorMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`;
-  let defaultVoltageOut: number;
+  const errorMsg = `Unknown ${currentType} currentOutType in template file ${templateFile}, cannot define default voltage out`
+  let defaultVoltageOut: number
   switch (currentType) {
     case CurrentType.AC:
-      defaultVoltageOut = Voltage.VOLTAGE_230;
-      break;
+      defaultVoltageOut = Voltage.VOLTAGE_230
+      break
     case CurrentType.DC:
-      defaultVoltageOut = Voltage.VOLTAGE_400;
-      break;
+      defaultVoltageOut = Voltage.VOLTAGE_400
+      break
     default:
-      logger.error(`${logPrefix} ${errorMsg}`);
-      throw new BaseError(errorMsg);
+      logger.error(`${logPrefix} ${errorMsg}`)
+      throw new BaseError(errorMsg)
   }
-  return defaultVoltageOut;
-};
+  return defaultVoltageOut
+}
 
 export const getIdTagsFile = (stationInfo: ChargingStationInfo): string | undefined => {
-  return (
-    stationInfo.idTagsFile &&
-    join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.idTagsFile))
-  );
-};
+  return stationInfo.idTagsFile != null
+    ? join(dirname(fileURLToPath(import.meta.url)), 'assets', basename(stationInfo.idTagsFile))
+    : undefined
+}
 
 export const waitChargingStationEvents = async (
   emitter: EventEmitter,
   event: ChargingStationWorkerMessageEvents,
-  eventsToWait: number,
+  eventsToWait: number
 ): Promise<number> => {
-  return new Promise<number>((resolve) => {
-    let events = 0;
+  return await new Promise<number>((resolve) => {
+    let events = 0
     if (eventsToWait === 0) {
-      resolve(events);
+      resolve(events)
+      return
     }
     emitter.on(event, () => {
-      ++events;
+      ++events
       if (events === eventsToWait) {
-        resolve(events);
+        resolve(events)
       }
-    });
-  });
-};
+    })
+  })
+}
 
 const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemplate): number => {
-  let configuredMaxNumberOfConnectors = 0;
-  if (isNotEmptyArray(stationTemplate.numberOfConnectors) === true) {
-    const numberOfConnectors = stationTemplate.numberOfConnectors as number[];
+  let configuredMaxNumberOfConnectors = 0
+  if (isNotEmptyArray(stationTemplate.numberOfConnectors)) {
+    const numberOfConnectors = stationTemplate.numberOfConnectors as number[]
     configuredMaxNumberOfConnectors =
-      numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)];
-  } else if (isUndefined(stationTemplate.numberOfConnectors) === false) {
-    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors as number;
-  } else if (stationTemplate.Connectors && !stationTemplate.Evses) {
-    configuredMaxNumberOfConnectors = stationTemplate.Connectors?.[0]
-      ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
-      : getMaxNumberOfConnectors(stationTemplate.Connectors);
-  } else if (stationTemplate.Evses && !stationTemplate.Connectors) {
+      numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)]
+  } else if (stationTemplate.numberOfConnectors != null) {
+    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors as number
+  } else if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
+    configuredMaxNumberOfConnectors =
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      stationTemplate.Connectors[0] != null
+        ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
+        : getMaxNumberOfConnectors(stationTemplate.Connectors)
+  } else if (stationTemplate.Evses != null && stationTemplate.Connectors == null) {
     for (const evse in stationTemplate.Evses) {
       if (evse === '0') {
-        continue;
+        continue
       }
       configuredMaxNumberOfConnectors += getMaxNumberOfConnectors(
-        stationTemplate.Evses[evse].Connectors,
-      );
+        stationTemplate.Evses[evse].Connectors
+      )
     }
   }
-  return configuredMaxNumberOfConnectors;
-};
+  return configuredMaxNumberOfConnectors
+}
 
 const checkConfiguredMaxConnectors = (
   configuredMaxConnectors: number,
   logPrefix: string,
-  templateFile: string,
+  templateFile: string
 ): void => {
   if (configuredMaxConnectors <= 0) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`,
-    );
+      `${logPrefix} Charging station information from template ${templateFile} with ${configuredMaxConnectors} connectors`
+    )
   }
-};
+}
 
 const checkTemplateMaxConnectors = (
   templateMaxConnectors: number,
   logPrefix: string,
-  templateFile: string,
+  templateFile: string
 ): void => {
   if (templateMaxConnectors === 0) {
     logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`,
-    );
+      `${logPrefix} Charging station information from template ${templateFile} with empty connectors configuration`
+    )
   } else if (templateMaxConnectors < 0) {
     logger.error(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`,
-    );
+      `${logPrefix} Charging station information from template ${templateFile} with no connectors configuration defined`
+    )
   }
-};
+}
 
 const initializeConnectorStatus = (connectorStatus: ConnectorStatus): void => {
-  connectorStatus.availability = AvailabilityType.Operative;
-  connectorStatus.idTagLocalAuthorized = false;
-  connectorStatus.idTagAuthorized = false;
-  connectorStatus.transactionRemoteStarted = false;
-  connectorStatus.transactionStarted = false;
-  connectorStatus.energyActiveImportRegisterValue = 0;
-  connectorStatus.transactionEnergyActiveImportRegisterValue = 0;
-  if (isUndefined(connectorStatus.chargingProfiles)) {
-    connectorStatus.chargingProfiles = [];
+  connectorStatus.availability = AvailabilityType.Operative
+  connectorStatus.idTagLocalAuthorized = false
+  connectorStatus.idTagAuthorized = false
+  connectorStatus.transactionRemoteStarted = false
+  connectorStatus.transactionStarted = false
+  connectorStatus.energyActiveImportRegisterValue = 0
+  connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+  if (connectorStatus.chargingProfiles == null) {
+    connectorStatus.chargingProfiles = []
   }
-};
+}
 
 const warnDeprecatedTemplateKey = (
   template: ChargingStationTemplate,
   key: string,
   logPrefix: string,
   templateFile: string,
-  logMsgToAppend = '',
+  logMsgToAppend = ''
 ): void => {
-  if (!isUndefined(template?.[key as keyof ChargingStationTemplate])) {
+  if (template[key as keyof ChargingStationTemplate] !== undefined) {
     const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
-    }`;
-    logger.warn(`${logPrefix} ${logMsg}`);
-    console.warn(`${chalk.green(logPrefix)} ${chalk.yellow(logMsg)}`);
+    }`
+    logger.warn(`${logPrefix} ${logMsg}`)
+    console.warn(`${chalk.green(logPrefix)} ${chalk.yellow(logMsg)}`)
   }
-};
+}
 
 const convertDeprecatedTemplateKey = (
   template: ChargingStationTemplate,
   deprecatedKey: string,
-  key?: string,
+  key?: string
 ): void => {
-  if (!isUndefined(template?.[deprecatedKey as keyof ChargingStationTemplate])) {
-    if (!isUndefined(key)) {
-      (template as unknown as Record<string, unknown>)[key!] =
-        template[deprecatedKey as keyof ChargingStationTemplate];
+  if (template[deprecatedKey as keyof ChargingStationTemplate] !== undefined) {
+    if (key !== undefined) {
+      (template as unknown as Record<string, unknown>)[key] =
+        template[deprecatedKey as keyof ChargingStationTemplate]
     }
-    delete template[deprecatedKey as keyof ChargingStationTemplate];
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete template[deprecatedKey as keyof ChargingStationTemplate]
   }
-};
+}
 
 interface ChargingProfilesLimit {
-  limit: number;
-  chargingProfile: ChargingProfile;
+  limit: number
+  chargingProfile: ChargingProfile
 }
 
 /**
@@ -773,231 +791,224 @@ const getLimitFromChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number,
   chargingProfiles: ChargingProfile[],
-  logPrefix: string,
+  logPrefix: string
 ): ChargingProfilesLimit | undefined => {
-  const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`;
-  const currentDate = new Date();
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)!;
+  const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`
+  const currentDate = new Date()
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
   for (const chargingProfile of chargingProfiles) {
-    const chargingSchedule = chargingProfile.chargingSchedule;
-    if (isNullOrUndefined(chargingSchedule?.startSchedule) && connectorStatus?.transactionStarted) {
+    const chargingSchedule = chargingProfile.chargingSchedule
+    if (chargingSchedule.startSchedule == null) {
       logger.debug(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`,
-      );
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
+      )
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
-      chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+      chargingSchedule.startSchedule = connectorStatus.transactionStart
     }
-    if (
-      !isNullOrUndefined(chargingSchedule?.startSchedule) &&
-      !isDate(chargingSchedule?.startSchedule)
-    ) {
+    if (!isDate(chargingSchedule.startSchedule)) {
       logger.warn(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`,
-      );
-      chargingSchedule.startSchedule = convertToDate(chargingSchedule?.startSchedule)!;
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
+      )
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!
     }
-    if (
-      !isNullOrUndefined(chargingSchedule?.startSchedule) &&
-      isNullOrUndefined(chargingSchedule?.duration)
-    ) {
+    if (chargingSchedule.duration == null) {
       logger.debug(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined and will be set to the maximum time allowed`,
-      );
+        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined and will be set to the maximum time allowed`
+      )
       // OCPP specifies that if duration is not defined, it should be infinite
-      chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule!);
+      chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule)
     }
     if (!prepareChargingProfileKind(connectorStatus, chargingProfile, currentDate, logPrefix)) {
-      continue;
+      continue
     }
     if (!canProceedChargingProfile(chargingProfile, currentDate, logPrefix)) {
-      continue;
+      continue
     }
     // Check if the charging profile is active
     if (
       isWithinInterval(currentDate, {
-        start: chargingSchedule.startSchedule!,
-        end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
+        start: chargingSchedule.startSchedule,
+        end: addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration)
       })
     ) {
       if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
         const chargingSchedulePeriodCompareFn = (
           a: ChargingSchedulePeriod,
-          b: ChargingSchedulePeriod,
-        ) => a.startPeriod - b.startPeriod;
+          b: ChargingSchedulePeriod
+        ): number => a.startPeriod - b.startPeriod
         if (
           !isArraySorted<ChargingSchedulePeriod>(
             chargingSchedule.chargingSchedulePeriod,
-            chargingSchedulePeriodCompareFn,
+            chargingSchedulePeriodCompareFn
           )
         ) {
           logger.warn(
-            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} schedule periods are not sorted by start period`,
-          );
-          chargingSchedule.chargingSchedulePeriod.sort(chargingSchedulePeriodCompareFn);
+            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} schedule periods are not sorted by start period`
+          )
+          chargingSchedule.chargingSchedulePeriod.sort(chargingSchedulePeriodCompareFn)
         }
         // Check if the first schedule period startPeriod property is equal to 0
         if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
           logger.error(
-            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod} is not equal to 0`,
-          );
-          continue;
+            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod} is not equal to 0`
+          )
+          continue
         }
         // Handle only one schedule period
         if (chargingSchedule.chargingSchedulePeriod.length === 1) {
           const result: ChargingProfilesLimit = {
             limit: chargingSchedule.chargingSchedulePeriod[0].limit,
-            chargingProfile,
-          };
-          logger.debug(debugLogMsg, result);
-          return result;
+            chargingProfile
+          }
+          logger.debug(debugLogMsg, result)
+          return result
         }
-        let previousChargingSchedulePeriod: ChargingSchedulePeriod | undefined;
+        let previousChargingSchedulePeriod: ChargingSchedulePeriod | undefined
         // Search for the right schedule period
         for (const [
           index,
-          chargingSchedulePeriod,
+          chargingSchedulePeriod
         ] of chargingSchedule.chargingSchedulePeriod.entries()) {
           // Find the right schedule period
           if (
             isAfter(
-              addSeconds(chargingSchedule.startSchedule!, chargingSchedulePeriod.startPeriod),
-              currentDate,
+              addSeconds(chargingSchedule.startSchedule, chargingSchedulePeriod.startPeriod),
+              currentDate
             )
           ) {
             // Found the schedule period: previous is the correct one
             const result: ChargingProfilesLimit = {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               limit: previousChargingSchedulePeriod!.limit,
-              chargingProfile,
-            };
-            logger.debug(debugLogMsg, result);
-            return result;
+              chargingProfile
+            }
+            logger.debug(debugLogMsg, result)
+            return result
           }
           // Keep a reference to previous one
-          previousChargingSchedulePeriod = chargingSchedulePeriod;
+          previousChargingSchedulePeriod = chargingSchedulePeriod
           // Handle the last schedule period within the charging profile duration
           if (
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
             (index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
               differenceInSeconds(
                 addSeconds(
-                  chargingSchedule.startSchedule!,
-                  chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod,
+                  chargingSchedule.startSchedule,
+                  chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod
                 ),
-                chargingSchedule.startSchedule!,
-              ) > chargingSchedule.duration!)
+                chargingSchedule.startSchedule
+              ) > chargingSchedule.duration)
           ) {
             const result: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod.limit,
-              chargingProfile,
-            };
-            logger.debug(debugLogMsg, result);
-            return result;
+              chargingProfile
+            }
+            logger.debug(debugLogMsg, result)
+            return result
           }
         }
       }
     }
   }
-};
+}
 
 export const prepareChargingProfileKind = (
   connectorStatus: ConnectorStatus,
   chargingProfile: ChargingProfile,
   currentDate: Date,
-  logPrefix: string,
+  logPrefix: string
 ): boolean => {
   switch (chargingProfile.chargingProfileKind) {
     case ChargingProfileKindType.RECURRING:
       if (!canProceedRecurringChargingProfile(chargingProfile, logPrefix)) {
-        return false;
+        return false
       }
-      prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix);
-      break;
+      prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix)
+      break
     case ChargingProfileKindType.RELATIVE:
-      if (!isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)) {
+      if (chargingProfile.chargingSchedule.startSchedule != null) {
         logger.warn(
-          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`,
-        );
-        delete chargingProfile.chargingSchedule.startSchedule;
+          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfile.chargingProfileId} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`
+        )
+        delete chargingProfile.chargingSchedule.startSchedule
       }
-      if (connectorStatus?.transactionStarted) {
-        chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart;
+      if (connectorStatus.transactionStarted === true) {
+        chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
       }
       // FIXME: Handle relative charging profile duration
-      break;
+      break
   }
-  return true;
-};
+  return true
+}
 
 export const canProceedChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
-  logPrefix: string,
+  logPrefix: string
 ): boolean => {
   if (
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     (isValidTime(chargingProfile.validFrom) && isBefore(currentDate, chargingProfile.validFrom!)) ||
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     (isValidTime(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo!))
   ) {
     logger.debug(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${
         chargingProfile.chargingProfileId
-      } is not valid for the current date ${currentDate.toISOString()}`,
-    );
-    return false;
+      } is not valid for the current date ${currentDate.toISOString()}`
+    )
+    return false
   }
   if (
-    isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule) ||
-    isNullOrUndefined(chargingProfile.chargingSchedule.duration)
+    chargingProfile.chargingSchedule.startSchedule == null ||
+    chargingProfile.chargingSchedule.duration == null
   ) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule or duration defined`,
-    );
-    return false;
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule or duration defined`
+    )
+    return false
   }
-  if (
-    !isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule) &&
-    !isValidTime(chargingProfile.chargingSchedule.startSchedule)
-  ) {
+  if (!isValidTime(chargingProfile.chargingSchedule.startSchedule)) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has an invalid startSchedule date defined`,
-    );
-    return false;
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has an invalid startSchedule date defined`
+    )
+    return false
   }
-  if (
-    !isNullOrUndefined(chargingProfile.chargingSchedule.duration) &&
-    !Number.isSafeInteger(chargingProfile.chargingSchedule.duration)
-  ) {
+  if (!Number.isSafeInteger(chargingProfile.chargingSchedule.duration)) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has non integer duration defined`,
-    );
-    return false;
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has non integer duration defined`
+    )
+    return false
   }
-  return true;
-};
+  return true
+}
 
 const canProceedRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
-  logPrefix: string,
+  logPrefix: string
 ): boolean => {
   if (
     chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-    isNullOrUndefined(chargingProfile.recurrencyKind)
+    chargingProfile.recurrencyKind == null
   ) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no recurrencyKind defined`,
-    );
-    return false;
+      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no recurrencyKind defined`
+    )
+    return false
   }
   if (
     chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-    isNullOrUndefined(chargingProfile.chargingSchedule.startSchedule)
+    chargingProfile.chargingSchedule.startSchedule == null
   ) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`,
-    );
-    return false;
+      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined`
+    )
+    return false
   }
-  return true;
-};
+  return true
+}
 
 /**
  * Adjust recurring charging profile startSchedule to the current recurrency time interval if needed
@@ -1009,79 +1020,86 @@ const canProceedRecurringChargingProfile = (
 const prepareRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   currentDate: Date,
-  logPrefix: string,
+  logPrefix: string
 ): boolean => {
-  const chargingSchedule = chargingProfile.chargingSchedule;
-  let recurringIntervalTranslated = false;
-  let recurringInterval: Interval;
+  const chargingSchedule = chargingProfile.chargingSchedule
+  let recurringIntervalTranslated = false
+  let recurringInterval: Interval
   switch (chargingProfile.recurrencyKind) {
     case RecurrencyKindType.DAILY:
       recurringInterval = {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: chargingSchedule.startSchedule!,
-        end: addDays(chargingSchedule.startSchedule!, 1),
-      };
-      checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        end: addDays(chargingSchedule.startSchedule!, 1)
+      }
+      checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix)
       if (
         !isWithinInterval(currentDate, recurringInterval) &&
         isBefore(recurringInterval.end, currentDate)
       ) {
         chargingSchedule.startSchedule = addDays(
           recurringInterval.start,
-          differenceInDays(currentDate, recurringInterval.start),
-        );
+          differenceInDays(currentDate, recurringInterval.start)
+        )
         recurringInterval = {
           start: chargingSchedule.startSchedule,
-          end: addDays(chargingSchedule.startSchedule, 1),
-        };
-        recurringIntervalTranslated = true;
+          end: addDays(chargingSchedule.startSchedule, 1)
+        }
+        recurringIntervalTranslated = true
       }
-      break;
+      break
     case RecurrencyKindType.WEEKLY:
       recurringInterval = {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: chargingSchedule.startSchedule!,
-        end: addWeeks(chargingSchedule.startSchedule!, 1),
-      };
-      checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        end: addWeeks(chargingSchedule.startSchedule!, 1)
+      }
+      checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix)
       if (
         !isWithinInterval(currentDate, recurringInterval) &&
         isBefore(recurringInterval.end, currentDate)
       ) {
         chargingSchedule.startSchedule = addWeeks(
           recurringInterval.start,
-          differenceInWeeks(currentDate, recurringInterval.start),
-        );
+          differenceInWeeks(currentDate, recurringInterval.start)
+        )
         recurringInterval = {
           start: chargingSchedule.startSchedule,
-          end: addWeeks(chargingSchedule.startSchedule, 1),
-        };
-        recurringIntervalTranslated = true;
+          end: addWeeks(chargingSchedule.startSchedule, 1)
+        }
+        recurringIntervalTranslated = true
       }
-      break;
+      break
     default:
       logger.error(
-        `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${chargingProfile.recurrencyKind} charging profile id ${chargingProfile.chargingProfileId} is not supported`,
-      );
+        `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${chargingProfile.recurrencyKind} charging profile id ${chargingProfile.chargingProfileId} is not supported`
+      )
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (recurringIntervalTranslated && !isWithinInterval(currentDate, recurringInterval!)) {
     logger.error(
       `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${
         chargingProfile.recurrencyKind
       } charging profile id ${chargingProfile.chargingProfileId} recurrency time interval [${toDate(
-        recurringInterval!.start,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        recurringInterval!.start
       ).toISOString()}, ${toDate(
-        recurringInterval!.end,
-      ).toISOString()}] has not been properly translated to current date ${currentDate.toISOString()} `,
-    );
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        recurringInterval!.end
+      ).toISOString()}] has not been properly translated to current date ${currentDate.toISOString()} `
+    )
   }
-  return recurringIntervalTranslated;
-};
+  return recurringIntervalTranslated
+}
 
 const checkRecurringChargingProfileDuration = (
   chargingProfile: ChargingProfile,
   interval: Interval,
-  logPrefix: string,
+  logPrefix: string
 ): void => {
-  if (isNullOrUndefined(chargingProfile.chargingSchedule.duration)) {
+  if (chargingProfile.chargingSchedule.duration == null) {
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
         chargingProfile.chargingProfileKind
@@ -1089,12 +1107,12 @@ const checkRecurringChargingProfileDuration = (
         chargingProfile.chargingProfileId
       } duration is not defined, set it to the recurrency time interval duration ${differenceInSeconds(
         interval.end,
-        interval.start,
-      )}`,
-    );
-    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start);
+        interval.start
+      )}`
+    )
+    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start)
   } else if (
-    chargingProfile.chargingSchedule.duration! > differenceInSeconds(interval.end, interval.start)
+    chargingProfile.chargingSchedule.duration > differenceInSeconds(interval.end, interval.start)
   ) {
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
@@ -1103,20 +1121,20 @@ const checkRecurringChargingProfileDuration = (
         chargingProfile.chargingSchedule.duration
       } is greater than the recurrency time interval duration ${differenceInSeconds(
         interval.end,
-        interval.start,
-      )}`,
-    );
-    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start);
+        interval.start
+      )}`
+    )
+    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start)
   }
-};
+}
 
 const getRandomSerialNumberSuffix = (params?: {
-  randomBytesLength?: number;
-  upperCase?: boolean;
+  randomBytesLength?: number
+  upperCase?: boolean
 }): string => {
-  const randomSerialNumberSuffix = randomBytes(params?.randomBytesLength ?? 16).toString('hex');
-  if (params?.upperCase) {
-    return randomSerialNumberSuffix.toUpperCase();
+  const randomSerialNumberSuffix = randomBytes(params?.randomBytesLength ?? 16).toString('hex')
+  if (params?.upperCase === true) {
+    return randomSerialNumberSuffix.toUpperCase()
   }
-  return randomSerialNumberSuffix;
-};
+  return randomSerialNumberSuffix
+}

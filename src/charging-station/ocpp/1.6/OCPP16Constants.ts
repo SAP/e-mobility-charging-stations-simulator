@@ -1,23 +1,23 @@
-import { type ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../../types';
-import { OCPPConstants } from '../OCPPConstants';
+import { type ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../../types/index.js'
+import { OCPPConstants } from '../OCPPConstants.js'
 
 export class OCPP16Constants extends OCPPConstants {
   static readonly ChargePointStatusChargingStationTransitions: Readonly<
-    ConnectorStatusTransition[]
+  ConnectorStatusTransition[]
   > = Object.freeze([
-    { to: OCPP16ChargePointStatus.Available },
-    // { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Available },
-    { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Unavailable },
-    { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Faulted },
-    { to: OCPP16ChargePointStatus.Unavailable },
-    { from: OCPP16ChargePointStatus.Unavailable, to: OCPP16ChargePointStatus.Available },
-    // { from: OCPP16ChargePointStatus.Unavailable, to: OCPP16ChargePointStatus.Unavailable },
-    { from: OCPP16ChargePointStatus.Unavailable, to: OCPP16ChargePointStatus.Faulted },
-    { to: OCPP16ChargePointStatus.Faulted },
-    { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Available },
-    { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Unavailable },
-    // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted },
-  ]);
+      { to: OCPP16ChargePointStatus.Available },
+      // { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Available },
+      { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Unavailable },
+      { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Faulted },
+      { to: OCPP16ChargePointStatus.Unavailable },
+      { from: OCPP16ChargePointStatus.Unavailable, to: OCPP16ChargePointStatus.Available },
+      // { from: OCPP16ChargePointStatus.Unavailable, to: OCPP16ChargePointStatus.Unavailable },
+      { from: OCPP16ChargePointStatus.Unavailable, to: OCPP16ChargePointStatus.Faulted },
+      { to: OCPP16ChargePointStatus.Faulted },
+      { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Available },
+      { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Unavailable }
+    // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
+    ])
 
   static readonly ChargePointStatusConnectorTransitions: Readonly<ConnectorStatusTransition[]> =
     Object.freeze([
@@ -109,7 +109,7 @@ export class OCPP16Constants extends OCPPConstants {
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.SuspendedEVSE },
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Finishing },
       { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Reserved },
-      { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Unavailable },
-      // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted },
-    ]);
+      { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Unavailable }
+      // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
+    ])
 }

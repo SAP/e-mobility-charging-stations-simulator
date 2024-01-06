@@ -9,15 +9,15 @@ export {
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus,
-} from './UIProtocol';
+  ResponseStatus
+} from './UIProtocol.js'
 export {
   type AutomaticTransactionGeneratorConfiguration,
   type ChargingStationAutomaticTransactionGeneratorConfiguration,
   IdTagDistribution,
-  type Status,
-} from './AutomaticTransactionGenerator';
-export { type GenericResponse, GenericStatus, RegistrationStatusEnumType } from './ocpp/Common';
+  type Status
+} from './AutomaticTransactionGenerator.js'
+export { type GenericResponse, GenericStatus, RegistrationStatusEnumType } from './ocpp/Common.js'
 export {
   AvailabilityType,
   type BootNotificationRequest,
@@ -38,8 +38,8 @@ export {
   type RequestParams,
   type ResponseCallback,
   type ResponseType,
-  type StatusNotificationRequest,
-} from './ocpp/Requests';
+  type StatusNotificationRequest
+} from './ocpp/Requests.js'
 export {
   AvailabilityStatus,
   type BootNotificationResponse,
@@ -54,12 +54,13 @@ export {
   type FirmwareStatusNotificationResponse,
   type HeartbeatResponse,
   type MeterValuesResponse,
+  ReservationStatus,
   type Response,
   type ResponseHandler,
   type StatusNotificationResponse,
   TriggerMessageStatus,
-  UnlockStatus,
-} from './ocpp/Responses';
+  UnlockStatus
+} from './ocpp/Responses.js'
 export {
   AuthorizationStatus,
   type AuthorizeRequest,
@@ -68,17 +69,17 @@ export {
   type StartTransactionResponse,
   StopTransactionReason,
   type StopTransactionRequest,
-  type StopTransactionResponse,
-} from './ocpp/Transaction';
-export { BootReasonEnumType, OCPP20ConnectorStatusEnumType } from './ocpp/2.0/Common';
+  type StopTransactionResponse
+} from './ocpp/Transaction.js'
+export { BootReasonEnumType, OCPP20ConnectorStatusEnumType } from './ocpp/2.0/Common.js'
 export {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequest,
   type BroadcastChannelRequestPayload,
   type BroadcastChannelResponse,
   type BroadcastChannelResponsePayload,
-  type MessageEvent,
-} from './WorkerBroadcastChannel';
+  type MessageEvent
+} from './WorkerBroadcastChannel.js'
 export {
   type ChangeConfigurationRequest,
   type GetConfigurationRequest,
@@ -107,8 +108,8 @@ export {
   type RemoteStopTransactionRequest,
   type ResetRequest,
   type SetChargingProfileRequest,
-  type UnlockConnectorRequest,
-} from './ocpp/1.6/Requests';
+  type UnlockConnectorRequest
+} from './ocpp/1.6/Requests.js'
 export {
   type ChangeConfigurationResponse,
   type GetConfigurationResponse,
@@ -127,33 +128,33 @@ export {
   type OCPP16TriggerMessageResponse,
   type OCPP16UpdateFirmwareResponse,
   type SetChargingProfileResponse,
-  type UnlockConnectorResponse,
-} from './ocpp/1.6/Responses';
-export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode';
+  type UnlockConnectorResponse
+} from './ocpp/1.6/Responses.js'
+export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'
 export {
   type ChargingProfile,
   ChargingProfileKindType,
   ChargingRateUnitType,
   type ChargingSchedulePeriod,
-  RecurrencyKindType,
-} from './ocpp/ChargingProfile';
+  RecurrencyKindType
+} from './ocpp/ChargingProfile.js'
 export type {
   ChargingStationConfiguration,
-  EvseStatusConfiguration,
-} from './ChargingStationConfiguration';
+  EvseStatusConfiguration
+} from './ChargingStationConfiguration.js'
 export {
   type ChargingStationData,
   type ChargingStationWorkerData,
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
-  type EvseStatusWorkerType,
-} from './ChargingStationWorker';
-export type { ChargingStationInfo } from './ChargingStationInfo';
+  type EvseStatusWorkerType
+} from './ChargingStationWorker.js'
+export type { ChargingStationInfo } from './ChargingStationInfo.js'
 export type {
   ChargingStationOcppConfiguration,
-  ConfigurationKey,
-} from './ChargingStationOcppConfiguration';
+  ConfigurationKey
+} from './ChargingStationOcppConfiguration.js'
 export {
   AmpereUnits,
   type ChargingStationTemplate,
@@ -161,8 +162,8 @@ export {
   type FirmwareUpgrade,
   PowerUnits,
   Voltage,
-  type WsOptions,
-} from './ChargingStationTemplate';
+  type WsOptions
+} from './ChargingStationTemplate.js'
 export {
   ApplicationProtocolVersion,
   type ConfigurationData,
@@ -173,31 +174,31 @@ export {
   type StorageConfiguration,
   SupervisionUrlDistribution,
   type UIServerConfiguration,
-  type WorkerConfiguration,
-} from './ConfigurationData';
+  type WorkerConfiguration
+} from './ConfigurationData.js'
 export {
   type ConfigurationKeyType,
   ConnectorPhaseRotation,
   type OCPPConfigurationKey,
   StandardParametersKey,
   SupportedFeatureProfiles,
-  VendorParametersKey,
-} from './ocpp/Configuration';
-export type { ConnectorStatus } from './ConnectorStatus';
-export { ConnectorStatusEnum, type ConnectorStatusTransition } from './ocpp/ConnectorStatusEnum';
-export { DBName, type MikroOrmDbType, StorageType } from './Storage';
-export type { EmptyObject } from './EmptyObject';
-export { ErrorType } from './ocpp/ErrorType';
-export type { EvseTemplate, EvseStatus } from './Evse';
-export { FileType } from './FileType';
-export type { HandleErrorParams } from './Error';
-export type { JsonObject, JsonType } from './JsonType';
+  VendorParametersKey
+} from './ocpp/Configuration.js'
+export type { ConnectorStatus } from './ConnectorStatus.js'
+export { ConnectorStatusEnum, type ConnectorStatusTransition } from './ocpp/ConnectorStatusEnum.js'
+export { DBName, type MikroOrmDbType, StorageType } from './Storage.js'
+export type { EmptyObject } from './EmptyObject.js'
+export { ErrorType } from './ocpp/ErrorType.js'
+export type { EvseTemplate, EvseStatus } from './Evse.js'
+export { FileType } from './FileType.js'
+export type { HandleErrorParams } from './Error.js'
+export type { JsonObject, JsonType } from './JsonType.js'
 export type {
   MeasurandPerPhaseSampledValueTemplates,
-  SampledValueTemplate,
-} from './MeasurandPerPhaseSampledValueTemplates';
-export type { MeasurandValues } from './MeasurandValues';
-export { MessageType } from './ocpp/MessageType';
+  SampledValueTemplate
+} from './MeasurandPerPhaseSampledValueTemplates.js'
+export type { MeasurandValues } from './MeasurandValues.js'
+export { MessageType } from './ocpp/MessageType.js'
 export {
   type MeterValue,
   MeterValueContext,
@@ -205,8 +206,8 @@ export {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
-  type SampledValue,
-} from './ocpp/MeterValues';
+  type SampledValue
+} from './ocpp/MeterValues.js'
 export {
   type OCPP16MeterValue,
   OCPP16MeterValueContext,
@@ -216,8 +217,8 @@ export {
   OCPP16MeterValueUnit,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
-  type OCPP16SampledValue,
-} from './ocpp/1.6/MeterValues';
+  type OCPP16SampledValue
+} from './ocpp/1.6/MeterValues.js'
 export {
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
@@ -226,49 +227,49 @@ export {
   type OCPP16StartTransactionResponse,
   OCPP16StopTransactionReason,
   type OCPP16StopTransactionRequest,
-  type OCPP16StopTransactionResponse,
-} from './ocpp/1.6/Transaction';
-export { OCPP16ChargePointErrorCode } from './ocpp/1.6/ChargePointErrorCode';
-export { OCPP16ChargePointStatus } from './ocpp/1.6/ChargePointStatus';
+  type OCPP16StopTransactionResponse
+} from './ocpp/1.6/Transaction.js'
+export { OCPP16ChargePointErrorCode } from './ocpp/1.6/ChargePointErrorCode.js'
+export { OCPP16ChargePointStatus } from './ocpp/1.6/ChargePointStatus.js'
 export {
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
   OCPP16ChargingRateUnitType,
   type OCPP16ChargingSchedule,
-  type OCPP16ChargingSchedulePeriod,
-} from './ocpp/1.6/ChargingProfile';
+  type OCPP16ChargingSchedulePeriod
+} from './ocpp/1.6/ChargingProfile.js'
 export {
   OCPP16StandardParametersKey,
-  OCPP16SupportedFeatureProfiles,
-} from './ocpp/1.6/Configuration';
-export { OCPP16DiagnosticsStatus } from './ocpp/1.6/DiagnosticsStatus';
+  OCPP16SupportedFeatureProfiles
+} from './ocpp/1.6/Configuration.js'
+export { OCPP16DiagnosticsStatus } from './ocpp/1.6/DiagnosticsStatus.js'
 export {
   type OCPP20BootNotificationRequest,
   type OCPP20ClearCacheRequest,
   type OCPP20HeartbeatRequest,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
-  type OCPP20StatusNotificationRequest,
-} from './ocpp/2.0/Requests';
+  type OCPP20StatusNotificationRequest
+} from './ocpp/2.0/Requests.js'
 export type {
   OCPP20BootNotificationResponse,
   OCPP20ClearCacheResponse,
   OCPP20HeartbeatResponse,
-  OCPP20StatusNotificationResponse,
-} from './ocpp/2.0/Responses';
-export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables';
-export { OCPPVersion } from './ocpp/OCPPVersion';
-export { PerformanceData } from './orm/entities/PerformanceData';
-export { PerformanceRecord } from './orm/entities/PerformanceRecord';
-export type { Statistics, TimestampedData } from './Statistics';
+  OCPP20StatusNotificationResponse
+} from './ocpp/2.0/Responses.js'
+export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
+export { OCPPVersion } from './ocpp/OCPPVersion.js'
+export { PerformanceData } from './orm/entities/PerformanceData.js'
+export { PerformanceRecord } from './orm/entities/PerformanceRecord.js'
+export type { Statistics, TimestampedData } from './Statistics.js'
 export {
   type WSError,
   WebSocketCloseEventStatusCode,
-  WebSocketCloseEventStatusString,
-} from './WebSocket';
+  WebSocketCloseEventStatusString
+} from './WebSocket.js'
 export {
   type Reservation,
   type ReservationKey,
-  ReservationTerminationReason,
-} from './ocpp/Reservation';
-export { ChargingStationEvents } from './ChargingStationEvents';
+  ReservationTerminationReason
+} from './ocpp/Reservation.js'
+export { ChargingStationEvents } from './ChargingStationEvents.js'

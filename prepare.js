@@ -1,8 +1,8 @@
-import { env } from 'node:process';
+import { env } from 'node:process'
 
-const isCIEnvironment = env.CI !== undefined;
-const isCFEnvironment = env.VCAP_APPLICATION !== undefined;
+const isCIEnvironment = env.CI != null
+const isCFEnvironment = env.VCAP_APPLICATION != null
 if (isCFEnvironment === false && isCIEnvironment === false) {
   // eslint-disable-next-line n/no-unpublished-import
-  import('husky').then(({ install }) => install());
+  import('husky').then(({ install }) => install())
 }

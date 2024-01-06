@@ -1,39 +1,40 @@
 // Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
 
-import { JsonFileStorage } from './JsonFileStorage';
+import { JsonFileStorage } from './JsonFileStorage.js'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { MikroOrmStorage } from './MikroOrmStorage';
-import { MongoDBStorage } from './MongoDBStorage';
-import type { Storage } from './Storage';
-import { BaseError } from '../../exception';
-import { StorageType } from '../../types';
+import { MikroOrmStorage } from './MikroOrmStorage.js'
+import { MongoDBStorage } from './MongoDBStorage.js'
+import type { Storage } from './Storage.js'
+import { BaseError } from '../../exception/index.js'
+import { StorageType } from '../../types/index.js'
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class StorageFactory {
-  private constructor() {
+  private constructor () {
     // This is intentional
   }
 
-  public static getStorage(
+  public static getStorage (
     type: StorageType,
     connectionUri: string,
-    logPrefix: string,
+    logPrefix: string
   ): Storage | undefined {
-    let storageInstance: Storage;
+    let storageInstance: Storage
     switch (type) {
       case StorageType.JSON_FILE:
-        storageInstance = new JsonFileStorage(connectionUri, logPrefix);
-        break;
+        storageInstance = new JsonFileStorage(connectionUri, logPrefix)
+        break
       case StorageType.MONGO_DB:
-        storageInstance = new MongoDBStorage(connectionUri, logPrefix);
-        break;
+        storageInstance = new MongoDBStorage(connectionUri, logPrefix)
+        break
       // case StorageType.MYSQL:
       // case StorageType.MARIA_DB:
       // case StorageType.SQLITE:
-      //   storageInstance = new MikroOrmStorage(connectionUri, logPrefix, type);
-      //   break;
+      //   storageInstance = new MikroOrmStorage(connectionUri, logPrefix, type)
+      //   break
       default:
-        throw new BaseError(`${logPrefix} Unknown storage type: ${type}`);
+        throw new BaseError(`${logPrefix} Unknown storage type: ${type}`)
     }
-    return storageInstance;
+    return storageInstance
   }
 }

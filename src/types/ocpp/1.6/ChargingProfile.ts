@@ -1,29 +1,29 @@
-import type { JsonObject } from '../../JsonType';
+import type { JsonObject } from '../../JsonType.js'
 
 export interface OCPP16ChargingProfile extends JsonObject {
-  chargingProfileId: number;
-  transactionId?: number;
-  stackLevel: number;
-  chargingProfilePurpose: OCPP16ChargingProfilePurposeType;
-  chargingProfileKind: OCPP16ChargingProfileKindType;
-  recurrencyKind?: OCPP16RecurrencyKindType;
-  validFrom?: Date;
-  validTo?: Date;
-  chargingSchedule: OCPP16ChargingSchedule;
+  chargingProfileId: number
+  transactionId?: number
+  stackLevel: number
+  chargingProfilePurpose: OCPP16ChargingProfilePurposeType
+  chargingProfileKind: OCPP16ChargingProfileKindType
+  recurrencyKind?: OCPP16RecurrencyKindType
+  validFrom?: Date
+  validTo?: Date
+  chargingSchedule: OCPP16ChargingSchedule
 }
 
 export interface OCPP16ChargingSchedule extends JsonObject {
-  startSchedule?: Date;
-  duration?: number;
-  chargingRateUnit: OCPP16ChargingRateUnitType;
-  chargingSchedulePeriod: OCPP16ChargingSchedulePeriod[];
-  minChargeRate?: number;
+  startSchedule?: Date
+  duration?: number
+  chargingRateUnit: OCPP16ChargingRateUnitType
+  chargingSchedulePeriod: OCPP16ChargingSchedulePeriod[]
+  minChargeRate?: number
 }
 
 export interface OCPP16ChargingSchedulePeriod extends JsonObject {
-  startPeriod: number;
-  limit: number;
-  numberPhases?: number;
+  startPeriod: number
+  limit: number
+  numberPhases?: number
 }
 
 export enum OCPP16ChargingRateUnitType {

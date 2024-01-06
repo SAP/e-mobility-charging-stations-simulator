@@ -1,10 +1,10 @@
-export { Bootstrap } from './Bootstrap';
-export type { ChargingStation } from './ChargingStation';
+export { Bootstrap } from './Bootstrap.js'
+export type { ChargingStation } from './ChargingStation.js'
 export {
   addConfigurationKey,
   getConfigurationKey,
-  setConfigurationKeyValue,
-} from './ConfigurationKeyUtils';
+  setConfigurationKeyValue
+} from './ConfigurationKeyUtils.js'
 export {
   canProceedChargingProfile,
   checkChargingStation,
@@ -14,5 +14,5 @@ export {
   hasReservationExpired,
   prepareChargingProfileKind,
   removeExpiredReservations,
-  resetConnectorStatus,
-} from './Helpers';
+  resetConnectorStatus
+} from './Helpers.js'

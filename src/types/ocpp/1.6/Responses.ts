@@ -1,11 +1,11 @@
-import type { OCPP16ChargingSchedule } from './ChargingProfile';
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
-import type { GenericStatus, RegistrationStatusEnumType } from '../Common';
-import type { OCPPConfigurationKey } from '../Configuration';
+import type { OCPP16ChargingSchedule } from './ChargingProfile.js'
+import type { EmptyObject } from '../../EmptyObject.js'
+import type { JsonObject } from '../../JsonType.js'
+import type { GenericStatus, RegistrationStatusEnumType } from '../Common.js'
+import type { OCPPConfigurationKey } from '../Configuration.js'
 
 export interface OCPP16HeartbeatResponse extends JsonObject {
-  currentTime: Date;
+  currentTime: Date
 }
 
 export enum OCPP16UnlockStatus {
@@ -15,7 +15,7 @@ export enum OCPP16UnlockStatus {
 }
 
 export interface UnlockConnectorResponse extends JsonObject {
-  status: OCPP16UnlockStatus;
+  status: OCPP16UnlockStatus
 }
 
 export enum OCPP16ConfigurationStatus {
@@ -26,20 +26,20 @@ export enum OCPP16ConfigurationStatus {
 }
 
 export interface ChangeConfigurationResponse extends JsonObject {
-  status: OCPP16ConfigurationStatus;
+  status: OCPP16ConfigurationStatus
 }
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
-  status: RegistrationStatusEnumType;
-  currentTime: Date;
-  interval: number;
+  status: RegistrationStatusEnumType
+  currentTime: Date
+  interval: number
 }
 
-export type OCPP16StatusNotificationResponse = EmptyObject;
+export type OCPP16StatusNotificationResponse = EmptyObject
 
 export interface GetConfigurationResponse extends JsonObject {
-  configurationKey: OCPPConfigurationKey[];
-  unknownKey: string[];
+  configurationKey: OCPPConfigurationKey[]
+  unknownKey: string[]
 }
 
 export enum OCPP16ChargingProfileStatus {
@@ -49,14 +49,14 @@ export enum OCPP16ChargingProfileStatus {
 }
 
 export interface OCPP16GetCompositeScheduleResponse extends JsonObject {
-  status: GenericStatus;
-  connectorId?: number;
-  scheduleStart?: Date;
-  chargingSchedule?: OCPP16ChargingSchedule;
+  status: GenericStatus
+  connectorId?: number
+  scheduleStart?: Date
+  chargingSchedule?: OCPP16ChargingSchedule
 }
 
 export interface SetChargingProfileResponse extends JsonObject {
-  status: OCPP16ChargingProfileStatus;
+  status: OCPP16ChargingProfileStatus
 }
 
 export enum OCPP16AvailabilityStatus {
@@ -66,7 +66,7 @@ export enum OCPP16AvailabilityStatus {
 }
 
 export interface OCPP16ChangeAvailabilityResponse extends JsonObject {
-  status: OCPP16AvailabilityStatus;
+  status: OCPP16AvailabilityStatus
 }
 
 export enum OCPP16ClearChargingProfileStatus {
@@ -75,18 +75,18 @@ export enum OCPP16ClearChargingProfileStatus {
 }
 
 export interface OCPP16ClearChargingProfileResponse extends JsonObject {
-  status: OCPP16ClearChargingProfileStatus;
+  status: OCPP16ClearChargingProfileStatus
 }
 
-export type OCPP16UpdateFirmwareResponse = EmptyObject;
+export type OCPP16UpdateFirmwareResponse = EmptyObject
 
-export type OCPP16FirmwareStatusNotificationResponse = EmptyObject;
+export type OCPP16FirmwareStatusNotificationResponse = EmptyObject
 
 export interface GetDiagnosticsResponse extends JsonObject {
-  fileName?: string;
+  fileName?: string
 }
 
-export type OCPP16DiagnosticsStatusNotificationResponse = EmptyObject;
+export type OCPP16DiagnosticsStatusNotificationResponse = EmptyObject
 
 export enum OCPP16TriggerMessageStatus {
   ACCEPTED = 'Accepted',
@@ -95,7 +95,7 @@ export enum OCPP16TriggerMessageStatus {
 }
 
 export interface OCPP16TriggerMessageResponse extends JsonObject {
-  status: OCPP16TriggerMessageStatus;
+  status: OCPP16TriggerMessageStatus
 }
 
 export enum OCPP16DataTransferStatus {
@@ -106,8 +106,8 @@ export enum OCPP16DataTransferStatus {
 }
 
 export interface OCPP16DataTransferResponse extends JsonObject {
-  status: OCPP16DataTransferStatus;
-  data?: string;
+  status: OCPP16DataTransferStatus
+  data?: string
 }
 
 export enum OCPP16ReservationStatus {
@@ -120,5 +120,5 @@ export enum OCPP16ReservationStatus {
 }
 
 export interface OCPP16ReserveNowResponse extends JsonObject {
-  status: OCPP16ReservationStatus;
+  status: OCPP16ReservationStatus
 }

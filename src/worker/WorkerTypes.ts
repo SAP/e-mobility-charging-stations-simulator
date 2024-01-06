@@ -1,6 +1,6 @@
-import type { Worker } from 'node:worker_threads';
+import type { Worker } from 'node:worker_threads'
 
-import { type PoolEvent, PoolEvents, type ThreadPoolOptions } from 'poolifier';
+import { type PoolEvent, PoolEvents, type ThreadPoolOptions } from 'poolifier'
 
 export enum WorkerProcessType {
   workerSet = 'workerSet',
@@ -10,12 +10,12 @@ export enum WorkerProcessType {
 }
 
 export interface SetInfo {
-  version: string;
-  type: string;
-  worker: string;
-  size: number;
-  elementsExecuting: number;
-  elementsPerWorker: number;
+  version: string
+  type: string
+  worker: string
+  size: number
+  elementsExecuting: number
+  elementsPerWorker: number
 }
 
 export enum WorkerSetEvents {
@@ -28,29 +28,30 @@ export enum WorkerSetEvents {
 
 export const WorkerEvents = {
   ...PoolEvents,
-  ...WorkerSetEvents,
-} as const;
-export type WorkerEvents = PoolEvent | WorkerSetEvents;
+  ...WorkerSetEvents
+} as const
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type WorkerEvents = PoolEvent | WorkerSetEvents
 
 export interface WorkerOptions {
-  workerStartDelay?: number;
-  elementStartDelay?: number;
-  poolMaxSize: number;
-  poolMinSize: number;
-  elementsPerWorker?: number;
-  poolOptions?: ThreadPoolOptions;
+  workerStartDelay?: number
+  elementStartDelay?: number
+  poolMaxSize: number
+  poolMinSize: number
+  elementsPerWorker?: number
+  poolOptions?: ThreadPoolOptions
 }
 
-export type WorkerData = Record<string, unknown>;
+export type WorkerData = Record<string, unknown>
 
 export interface WorkerSetElement {
-  worker: Worker;
-  numberOfWorkerElements: number;
+  worker: Worker
+  numberOfWorkerElements: number
 }
 
 export interface WorkerMessage<T extends WorkerData> {
-  event: WorkerMessageEvents;
-  data: T;
+  event: WorkerMessageEvents
+  data: T
 }
 
 export enum WorkerMessageEvents {

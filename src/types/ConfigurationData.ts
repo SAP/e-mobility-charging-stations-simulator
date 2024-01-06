@@ -1,13 +1,13 @@
-import type { ListenOptions } from 'node:net';
-import type { ResourceLimits } from 'node:worker_threads';
+import type { ListenOptions } from 'node:net'
+import type { ResourceLimits } from 'node:worker_threads'
 
-import type { WorkerChoiceStrategy } from 'poolifier';
+import type { WorkerChoiceStrategy } from 'poolifier'
 
-import type { StorageType } from './Storage';
-import type { ApplicationProtocol, AuthenticationType } from './UIProtocol';
-import type { WorkerProcessType } from '../worker';
+import type { StorageType } from './Storage.js'
+import type { ApplicationProtocol, AuthenticationType } from './UIProtocol.js'
+import type { WorkerProcessType } from '../worker/index.js'
 
-type ServerOptions = ListenOptions;
+type ServerOptions = ListenOptions
 
 export enum ConfigurationSection {
   log = 'log',
@@ -23,21 +23,21 @@ export enum SupervisionUrlDistribution {
 }
 
 export interface StationTemplateUrl {
-  file: string;
-  numberOfStations: number;
+  file: string
+  numberOfStations: number
 }
 
 export interface LogConfiguration {
-  enabled?: boolean;
-  file?: string;
-  errorFile?: string;
-  statisticsInterval?: number;
-  level?: string;
-  console?: boolean;
-  format?: string;
-  rotate?: boolean;
-  maxFiles?: string | number;
-  maxSize?: string | number;
+  enabled?: boolean
+  file?: string
+  errorFile?: string
+  statisticsInterval?: number
+  level?: string
+  console?: boolean
+  format?: string
+  rotate?: boolean
+  maxFiles?: string | number
+  maxSize?: string | number
 }
 
 export enum ApplicationProtocolVersion {
@@ -46,78 +46,78 @@ export enum ApplicationProtocolVersion {
 }
 
 export interface UIServerConfiguration {
-  enabled?: boolean;
-  type?: ApplicationProtocol;
-  version?: ApplicationProtocolVersion;
-  options?: ServerOptions;
+  enabled?: boolean
+  type?: ApplicationProtocol
+  version?: ApplicationProtocolVersion
+  options?: ServerOptions
   authentication?: {
-    enabled: boolean;
-    type: AuthenticationType;
-    username?: string;
-    password?: string;
-  };
+    enabled: boolean
+    type: AuthenticationType
+    username?: string
+    password?: string
+  }
 }
 
 export interface StorageConfiguration {
-  enabled?: boolean;
-  type?: StorageType;
-  uri?: string;
+  enabled?: boolean
+  type?: StorageType
+  uri?: string
 }
 
-export type ElementsPerWorkerType = number | 'auto' | 'all';
+export type ElementsPerWorkerType = number | 'auto' | 'all'
 
 export interface WorkerConfiguration {
-  processType?: WorkerProcessType;
-  startDelay?: number;
-  elementsPerWorker?: ElementsPerWorkerType;
-  elementStartDelay?: number;
-  poolMinSize?: number;
-  poolMaxSize?: number;
-  resourceLimits?: ResourceLimits;
+  processType?: WorkerProcessType
+  startDelay?: number
+  elementsPerWorker?: ElementsPerWorkerType
+  elementStartDelay?: number
+  poolMinSize?: number
+  poolMaxSize?: number
+  resourceLimits?: ResourceLimits
 }
 
 export interface ConfigurationData {
-  supervisionUrls?: string | string[];
-  supervisionUrlDistribution?: SupervisionUrlDistribution;
-  stationTemplateUrls: StationTemplateUrl[];
-  log?: LogConfiguration;
-  worker?: WorkerConfiguration;
-  uiServer?: UIServerConfiguration;
-  performanceStorage?: StorageConfiguration;
+  supervisionUrls?: string | string[]
+  supervisionUrlDistribution?: SupervisionUrlDistribution
+  stationTemplateUrls: StationTemplateUrl[]
+  log?: LogConfiguration
+  worker?: WorkerConfiguration
+  uiServer?: UIServerConfiguration
+  performanceStorage?: StorageConfiguration
   /** @deprecated Moved to charging station template */
-  autoReconnectMaxRetries?: number;
+  autoReconnectMaxRetries?: number
   /** @deprecated Moved to worker configuration section. */
-  workerProcess?: WorkerProcessType;
+  workerProcess?: WorkerProcessType
   /** @deprecated Moved to worker configuration section. */
-  workerStartDelay?: number;
+  workerStartDelay?: number
   /** @deprecated Moved to worker configuration section. */
-  elementStartDelay?: number;
+  elementStartDelay?: number
   /** @deprecated Moved to worker configuration section. */
-  workerPoolMinSize?: number;
+  workerPoolMinSize?: number
   /** @deprecated Moved to worker configuration section. */
-  workerPoolMaxSize?: number;
+  workerPoolMaxSize?: number
   /** @deprecated Moved to worker configuration section. */
-  workerPoolStrategy?: WorkerChoiceStrategy;
+  workerPoolStrategy?: WorkerChoiceStrategy
   /** @deprecated Moved to worker configuration section. */
-  chargingStationsPerWorker?: number;
+  chargingStationsPerWorker?: number
   /** @deprecated Moved to log configuration section. */
-  logStatisticsInterval?: number;
+  logStatisticsInterval?: number
   /** @deprecated Moved to log configuration section. */
-  logEnabled?: boolean;
+  logEnabled?: boolean
   /** @deprecated Moved to log configuration section. */
-  logConsole?: boolean;
+  logConsole?: boolean
   /** @deprecated Moved to log configuration section. */
-  logFormat?: string;
+  logFormat?: string
   /** @deprecated Moved to log configuration section. */
-  logLevel?: string;
+  logLevel?: string
   /** @deprecated Moved to log configuration section. */
-  logRotate?: boolean;
+  logRotate?: boolean
   /** @deprecated Moved to log configuration section. */
-  logMaxFiles?: number | string;
+  logMaxFiles?: number | string
   /** @deprecated Moved to log configuration section. */
-  logMaxSize?: number | string;
+  logMaxSize?: number | string
   /** @deprecated Moved to log configuration section. */
-  logFile?: string;
+  logFile?: string
   /** @deprecated Moved to log configuration section. */
-  logErrorFile?: string;
+  logErrorFile?: string
 }

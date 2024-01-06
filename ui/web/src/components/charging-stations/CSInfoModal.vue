@@ -5,13 +5,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ChargingStationInfo } from '@/types';
-import Modal from '@/components/Modal.vue';
+import type { ChargingStationInfo } from '@/types'
+import Modal from '@/components/Modal.vue'
 
 const props = defineProps<{
-  stationInfo: ChargingStationInfo;
-  isVisible: boolean;
-}>();
+  stationInfo: ChargingStationInfo
+  isVisible: boolean
+}>()
 </script>
 
 <style>

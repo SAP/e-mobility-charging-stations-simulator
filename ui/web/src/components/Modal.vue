@@ -8,13 +8,13 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-  visibility: boolean;
-}>();
+  visibility: boolean
+}>()
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close'])
 
 function close() {
-  emit('close');
+  emit('close')
 }
 </script>
 

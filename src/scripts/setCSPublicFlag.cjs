@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const fs = require('node:fs');
+const fs = require('node:fs')
 
-const { MongoClient } = require('mongodb');
+const { MongoClient } = require('mongodb')
 
 // This script sets charging stations public or private
 // Filter charging stations by id pattern
@@ -12,23 +12,24 @@ const { MongoClient } = require('mongodb');
 // set public = true
 
 // Config
-const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'))
 
 // Mongo Connection and Query
 if (config?.mongoConnectionString) {
-  MongoClient.connect(config.mongoConnectionString, async function (err, client) {
-    const db = client.db();
+  // eslint-disable-next-line n/handle-callback-err
+  MongoClient.connect(config.mongoConnectionString, async function (_err, client) {
+    const db = client.db()
 
     for await (const tenantID of config.tenantIDs) {
       const response = await db
         .collection(`${tenantID}.chargingstations`)
-        .updateMany({ _id: { $regex: config.idPattern } }, { $set: { public: config.publicFlag } });
+        .updateMany({ _id: { $regex: config.idPattern } }, { $set: { public: config.publicFlag } })
       console.info(
         response.modifiedCount,
         `Charging Stations with id = %${config.idPattern}% updated. TenantID =`,
-        tenantID,
-      );
+        tenantID
+      )
     }
-    client.close();
-  });
+    client.close()
+  })
 }

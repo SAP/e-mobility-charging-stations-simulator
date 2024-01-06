@@ -2,64 +2,66 @@ import {
   OutputFormat,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
-  buildEvsesStatus,
-} from './ChargingStationConfigurationUtils';
-import type { ChargingStation } from '../charging-station';
+  buildEvsesStatus
+} from './ChargingStationConfigurationUtils.js'
+import type { ChargingStation } from '../charging-station/index.js'
 import {
   type ChargingStationData,
   type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
-  type Statistics,
-} from '../types';
+  type Statistics
+} from '../types/index.js'
 
 export const buildStartedMessage = (
-  chargingStation: ChargingStation,
+  chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.started,
-    data: buildChargingStationDataPayload(chargingStation),
-  };
-};
+    data: buildChargingStationDataPayload(chargingStation)
+  }
+}
 
 export const buildStoppedMessage = (
-  chargingStation: ChargingStation,
+  chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.stopped,
-    data: buildChargingStationDataPayload(chargingStation),
-  };
-};
+    data: buildChargingStationDataPayload(chargingStation)
+  }
+}
 
 export const buildUpdatedMessage = (
-  chargingStation: ChargingStation,
+  chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.updated,
-    data: buildChargingStationDataPayload(chargingStation),
-  };
-};
+    data: buildChargingStationDataPayload(chargingStation)
+  }
+}
 
 export const buildPerformanceStatisticsMessage = (
-  statistics: Statistics,
+  statistics: Statistics
 ): ChargingStationWorkerMessage<Statistics> => {
   return {
     event: ChargingStationWorkerMessageEvents.performanceStatistics,
-    data: statistics,
-  };
-};
+    data: statistics
+  }
+}
 
 const buildChargingStationDataPayload = (chargingStation: ChargingStation): ChargingStationData => {
   return {
     started: chargingStation.started,
-    stationInfo: chargingStation.stationInfo,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    stationInfo: chargingStation.stationInfo!,
     connectors: buildConnectorsStatus(chargingStation),
     evses: buildEvsesStatus(chargingStation, OutputFormat.worker),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ocppConfiguration: chargingStation.ocppConfiguration!,
-    wsState: chargingStation?.wsConnection?.readyState,
+    wsState: chargingStation.wsConnection?.readyState,
     bootNotificationResponse: chargingStation.bootNotificationResponse,
-    ...(chargingStation.automaticTransactionGenerator && {
+    ...(chargingStation.automaticTransactionGenerator != null && {
       automaticTransactionGenerator:
-        buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation),
-    }),
-  };
-};
+        buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation)
+    })
+  }
+}

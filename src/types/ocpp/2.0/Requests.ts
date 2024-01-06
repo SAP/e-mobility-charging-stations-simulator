@@ -1,11 +1,11 @@
 import type {
   BootReasonEnumType,
   InstallCertificateUseEnumType,
-  OCPP20ConnectorStatusEnumType,
-} from './Common';
-import type { OCPP20SetVariableDataType } from './Variables';
-import type { EmptyObject } from '../../EmptyObject';
-import type { JsonObject } from '../../JsonType';
+  OCPP20ConnectorStatusEnumType
+} from './Common.js'
+import type { OCPP20SetVariableDataType } from './Variables.js'
+import type { EmptyObject } from '../../EmptyObject.js'
+import type { JsonObject } from '../../JsonType.js'
 
 export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
@@ -20,39 +20,39 @@ export enum OCPP20IncomingRequestCommand {
 }
 
 type ModemType = {
-  iccid?: string;
-  imsi?: string;
-} & JsonObject;
+  iccid?: string
+  imsi?: string
+} & JsonObject
 
 type ChargingStationType = {
-  serialNumber?: string;
-  model: string;
-  vendorName: string;
-  firmwareVersion?: string;
-  modem?: ModemType;
-} & JsonObject;
+  serialNumber?: string
+  model: string
+  vendorName: string
+  firmwareVersion?: string
+  modem?: ModemType
+} & JsonObject
 
 export type OCPP20BootNotificationRequest = {
-  reason: BootReasonEnumType;
-  chargingStation: ChargingStationType;
-} & JsonObject;
+  reason: BootReasonEnumType
+  chargingStation: ChargingStationType
+} & JsonObject
 
-export type OCPP20HeartbeatRequest = EmptyObject;
+export type OCPP20HeartbeatRequest = EmptyObject
 
-export type OCPP20ClearCacheRequest = EmptyObject;
+export type OCPP20ClearCacheRequest = EmptyObject
 
 export type OCPP20StatusNotificationRequest = {
-  timestamp: Date;
-  connectorStatus: OCPP20ConnectorStatusEnumType;
-  evseId: number;
-  connectorId: number;
-} & JsonObject;
+  timestamp: Date
+  connectorStatus: OCPP20ConnectorStatusEnumType
+  evseId: number
+  connectorId: number
+} & JsonObject
 
 export type OCPP20SetVariablesRequest = {
-  setVariableData: OCPP20SetVariableDataType[];
-} & JsonObject;
+  setVariableData: OCPP20SetVariableDataType[]
+} & JsonObject
 
 export type OCPP20InstallCertificateRequest = {
-  certificateType: InstallCertificateUseEnumType;
-  certificate: string;
-} & JsonObject;
+  certificateType: InstallCertificateUseEnumType
+  certificate: string
+} & JsonObject

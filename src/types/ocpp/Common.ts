@@ -1,4 +1,4 @@
-import type { JsonObject } from '../JsonType';
+import type { JsonObject } from '../JsonType.js'
 
 export enum GenericStatus {
   Accepted = 'Accepted',
@@ -6,7 +6,7 @@ export enum GenericStatus {
 }
 
 export interface GenericResponse extends JsonObject {
-  status: GenericStatus;
+  status: GenericStatus
 }
 
 export enum RegistrationStatusEnumType {

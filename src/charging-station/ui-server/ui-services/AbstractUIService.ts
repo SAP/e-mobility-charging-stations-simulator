@@ -1,7 +1,8 @@
-import { BaseError, type OCPPError } from '../../../exception';
+import { BaseError, type OCPPError } from '../../../exception/index.js'
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
+  type JsonType,
   ProcedureName,
   type ProtocolRequest,
   type ProtocolRequestHandler,
@@ -9,19 +10,19 @@ import {
   type ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus,
-} from '../../../types';
-import { isNotEmptyArray, isNullOrUndefined, logger } from '../../../utils';
-import { Bootstrap } from '../../Bootstrap';
-import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel';
-import type { AbstractUIServer } from '../AbstractUIServer';
+  ResponseStatus
+} from '../../../types/index.js'
+import { isNotEmptyArray, logger } from '../../../utils/index.js'
+import { Bootstrap } from '../../Bootstrap.js'
+import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
+import type { AbstractUIServer } from '../AbstractUIServer.js'
 
-const moduleName = 'AbstractUIService';
+const moduleName = 'AbstractUIService'
 
 export abstract class AbstractUIService {
   protected static readonly ProcedureNameToBroadCastChannelProcedureNameMapping = new Map<
-    ProcedureName,
-    BroadcastChannelProcedureName
+  ProcedureName,
+  BroadcastChannelProcedureName
   >([
     [ProcedureName.START_CHARGING_STATION, BroadcastChannelProcedureName.START_CHARGING_STATION],
     [ProcedureName.STOP_CHARGING_STATION, BroadcastChannelProcedureName.STOP_CHARGING_STATION],
@@ -29,11 +30,11 @@ export abstract class AbstractUIService {
     [ProcedureName.OPEN_CONNECTION, BroadcastChannelProcedureName.OPEN_CONNECTION],
     [
       ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
-      BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
+      BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR
     ],
     [
       ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
+      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR
     ],
     [ProcedureName.SET_SUPERVISION_URL, BroadcastChannelProcedureName.SET_SUPERVISION_URL],
     [ProcedureName.START_TRANSACTION, BroadcastChannelProcedureName.START_TRANSACTION],
@@ -46,59 +47,56 @@ export abstract class AbstractUIService {
     [ProcedureName.DATA_TRANSFER, BroadcastChannelProcedureName.DATA_TRANSFER],
     [
       ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
-      BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
+      BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION
     ],
     [
       ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
-      BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
-    ],
-  ]);
+      BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION
+    ]
+  ])
 
-  protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>;
-  private readonly version: ProtocolVersion;
-  private readonly uiServer: AbstractUIServer;
-  private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel;
-  private readonly broadcastChannelRequests: Map<string, number>;
+  protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>
+  private readonly version: ProtocolVersion
+  private readonly uiServer: AbstractUIServer
+  private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
+  private readonly broadcastChannelRequests: Map<string, number>
 
-  constructor(uiServer: AbstractUIServer, version: ProtocolVersion) {
-    this.uiServer = uiServer;
-    this.version = version;
+  constructor (uiServer: AbstractUIServer, version: ProtocolVersion) {
+    this.uiServer = uiServer
+    this.version = version
     this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
-      [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
-    ]);
-    this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this);
-    this.broadcastChannelRequests = new Map<string, number>();
+      [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)]
+    ])
+    this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this)
+    this.broadcastChannelRequests = new Map<string, number>()
   }
 
-  public async requestHandler(request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
-    let messageId: string | undefined;
-    let command: ProcedureName | undefined;
-    let requestPayload: RequestPayload | undefined;
-    let responsePayload: ResponsePayload | undefined;
+  public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
+    let messageId: string | undefined
+    let command: ProcedureName | undefined
+    let requestPayload: RequestPayload | undefined
+    let responsePayload: ResponsePayload | undefined
     try {
-      [messageId, command, requestPayload] = request;
+      [messageId, command, requestPayload] = request
 
-      if (this.requestHandlers.has(command) === false) {
+      if (!this.requestHandlers.has(command)) {
         throw new BaseError(
           `${command} is not implemented to handle message payload ${JSON.stringify(
             requestPayload,
             undefined,
-            2,
-          )}`,
-        );
+            2
+          )}`
+        )
       }
 
       // Call the request handler to build the response payload
-      responsePayload = await this.requestHandlers.get(command)!(
-        messageId,
-        command,
-        requestPayload,
-      );
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      responsePayload = await this.requestHandlers.get(command)!(messageId, command, requestPayload)
     } catch (error) {
       // Log
-      logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error);
+      logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error)
       responsePayload = {
         hashIds: requestPayload?.hashIds,
         status: ResponseStatus.FAILURE,
@@ -107,110 +105,114 @@ export abstract class AbstractUIService {
         responsePayload,
         errorMessage: (error as OCPPError).message,
         errorStack: (error as OCPPError).stack,
-        errorDetails: (error as OCPPError).details,
-      };
+        errorDetails: (error as OCPPError).details
+      }
     }
-    if (!isNullOrUndefined(responsePayload)) {
-      return this.uiServer.buildProtocolResponse(messageId!, responsePayload!);
+    if (responsePayload != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return this.uiServer.buildProtocolResponse(messageId!, responsePayload)
     }
   }
 
-  // public sendRequest(
+  // public sendRequest (
   //   messageId: string,
   //   procedureName: ProcedureName,
-  //   requestPayload: RequestPayload,
+  //   requestPayload: RequestPayload
   // ): void {
   //   this.uiServer.sendRequest(
-  //     this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload),
-  //   );
+  //     this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
+  //   )
   // }
 
-  public sendResponse(messageId: string, responsePayload: ResponsePayload): void {
+  public sendResponse (messageId: string, responsePayload: ResponsePayload): void {
     if (this.uiServer.hasResponseHandler(messageId)) {
-      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload));
+      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload))
     }
   }
 
   public logPrefix = (modName: string, methodName: string): string => {
-    return this.uiServer.logPrefix(modName, methodName, this.version);
-  };
-
-  public deleteBroadcastChannelRequest(uuid: string): void {
-    this.broadcastChannelRequests.delete(uuid);
+    return this.uiServer.logPrefix(modName, methodName, this.version)
   }
 
-  public getBroadcastChannelExpectedResponses(uuid: string): number {
-    return this.broadcastChannelRequests.get(uuid)!;
+  public deleteBroadcastChannelRequest (uuid: string): void {
+    this.broadcastChannelRequests.delete(uuid)
   }
 
-  protected handleProtocolRequest(
+  public getBroadcastChannelExpectedResponses (uuid: string): number {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.broadcastChannelRequests.get(uuid)!
+  }
+
+  protected handleProtocolRequest (
     uuid: string,
     procedureName: ProcedureName,
-    payload: RequestPayload,
+    payload: RequestPayload
   ): void {
     this.sendBroadcastChannelRequest(
       uuid,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.get(procedureName)!,
-      payload,
-    );
+      payload
+    )
   }
 
-  private sendBroadcastChannelRequest(
+  private sendBroadcastChannelRequest (
     uuid: string,
     procedureName: BroadcastChannelProcedureName,
-    payload: BroadcastChannelRequestPayload,
+    payload: BroadcastChannelRequestPayload
   ): void {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
         ?.map((hashId) => {
-          if (hashId !== undefined && this.uiServer.chargingStations.has(hashId) === true) {
-            return hashId;
+          if (this.uiServer.chargingStations.has(hashId)) {
+            return hashId
           }
           logger.warn(
             `${this.logPrefix(
               moduleName,
-              'sendBroadcastChannelRequest',
-            )} Charging station with hashId '${hashId}' not found`,
-          );
+              'sendBroadcastChannelRequest'
+            )} Charging station with hashId '${hashId}' not found`
+          )
+          return undefined
         })
-        ?.filter((hashId) => !isNullOrUndefined(hashId)) as string[];
+        ?.filter((hashId) => hashId != null) as string[]
     } else {
-      delete payload.hashIds;
+      delete payload.hashIds
     }
     const expectedNumberOfResponses = Array.isArray(payload.hashIds)
       ? payload.hashIds.length
-      : this.uiServer.chargingStations.size;
+      : this.uiServer.chargingStations.size
     if (expectedNumberOfResponses === 0) {
       throw new BaseError(
-        'hashIds array in the request payload does not contain any valid charging station hashId',
-      );
+        'hashIds array in the request payload does not contain any valid charging station hashId'
+      )
     }
-    this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload]);
-    this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses);
+    this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
+    this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses)
   }
 
-  private handleListChargingStations(): ResponsePayload {
+  private handleListChargingStations (): ResponsePayload {
     return {
       status: ResponseStatus.SUCCESS,
-      chargingStations: [...this.uiServer.chargingStations.values()],
-    } as ResponsePayload;
+      chargingStations: [...this.uiServer.chargingStations.values()] as JsonType[]
+    } satisfies ResponsePayload
   }
 
-  private async handleStartSimulator(): Promise<ResponsePayload> {
+  private async handleStartSimulator (): Promise<ResponsePayload> {
     try {
-      await Bootstrap.getInstance().start();
-      return { status: ResponseStatus.SUCCESS };
+      await Bootstrap.getInstance().start()
+      return { status: ResponseStatus.SUCCESS }
     } catch {
-      return { status: ResponseStatus.FAILURE };
+      return { status: ResponseStatus.FAILURE }
     }
   }
 
-  private async handleStopSimulator(): Promise<ResponsePayload> {
+  private async handleStopSimulator (): Promise<ResponsePayload> {
     try {
-      await Bootstrap.getInstance().stop();
-      return { status: ResponseStatus.SUCCESS };
+      await Bootstrap.getInstance().stop()
+      return { status: ResponseStatus.SUCCESS }
     } catch {
-      return { status: ResponseStatus.FAILURE };
+      return { status: ResponseStatus.FAILURE }
     }
   }
 }

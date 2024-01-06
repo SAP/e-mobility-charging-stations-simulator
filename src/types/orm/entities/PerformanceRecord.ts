@@ -1,21 +1,21 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Collection, Entity, OneToMany, PrimaryKey, Property } from '@mikro-orm/core';
+import { Collection, Entity, OneToMany, PrimaryKey, Property } from '@mikro-orm/core'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { PerformanceData } from './PerformanceData';
+import type { PerformanceData } from './PerformanceData.js'
 
 @Entity()
 export class PerformanceRecord {
   // @PrimaryKey()
-  // pk!: number;
+  //   pk!: number
   // @Property()
-  // id!: string;
+  //   id!: string
   // @Property()
-  // URI!: string;
+  //   URI!: string
   // @Property()
-  // createdAt!: Date;
+  //   createdAt!: Date
   // @Property()
-  // updatedAt?: Date;
+  //   updatedAt?: Date
   // @OneToMany('PerformanceData', 'performanceRecord')
-  // performanceData? = new Collection<PerformanceData>(this);
+  //   performanceData? = new Collection<PerformanceData>(this)
 }

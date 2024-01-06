@@ -6,6 +6,7 @@
 [![GitHub commit activity (main)](https://img.shields.io/github/commit-activity/m/SAP/e-mobility-charging-stations-simulator/main?color=brightgreen&logo=github)](https://github.com/SAP/e-mobility-charging-stations-simulator/graphs/commit-activity)
 [![CI workflow](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml)
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator)
+[![Javascript Standard Style Guide](<https://badgen.net/static/code style/standard/green>)](https://standardjs.com)
 
 ## Summary
 
@@ -215,17 +216,17 @@ But the modifications to test have to be done to the files in the build target d
 
 ```ts
 type AutomaticTransactionGeneratorConfiguration = {
-  enable: boolean;
-  minDuration: number;
-  maxDuration: number;
-  minDelayBetweenTwoTransactions: number;
-  maxDelayBetweenTwoTransactions: number;
-  probabilityOfStart: number;
-  stopAfterHours: number;
-  stopOnConnectionFailure: boolean;
-  requireAuthorize?: boolean;
-  idTagDistribution?: 'random' | 'round-robin' | 'connector-affinity';
-};
+  enable: boolean
+  minDuration: number
+  maxDuration: number
+  minDelayBetweenTwoTransactions: number
+  maxDelayBetweenTwoTransactions: number
+  probabilityOfStart: number
+  stopAfterHours: number
+  stopOnConnectionFailure: boolean
+  requireAuthorize?: boolean
+  idTagDistribution?: 'random' | 'round-robin' | 'connector-affinity'
+}
 ```
 
 ##### Example:
