@@ -260,30 +260,20 @@ export class AutomaticTransactionGenerator {
   }
 
   private setStartConnectorStatus (connectorId: number): void {
-    const previousRunDuration =
-      isValidTime(this.connectorsStatus.get(connectorId)?.startDate) &&
-      isValidTime(this.connectorsStatus.get(connectorId)?.lastRunDate) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.connectorsStatus.get(connectorId)!.lastRunDate! >
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.connectorsStatus.get(connectorId)!.startDate!
-        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.connectorsStatus.get(connectorId)!.lastRunDate!.getTime() -
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.connectorsStatus.get(connectorId)!.startDate!.getTime()
-        : 0
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.connectorsStatus.get(connectorId)!.startDate = new Date()
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.connectorsStatus.get(connectorId)!.stopDate = new Date(
+    if (!isValidTime(this.connectorsStatus.get(connectorId)!.stopDate)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.connectorsStatus.get(connectorId)!.startDate!.getTime() +
-        hoursToMilliseconds(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!.stopAfterHours
-        ) -
-        previousRunDuration
-    )
+      this.connectorsStatus.get(connectorId)!.stopDate = new Date(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.connectorsStatus.get(connectorId)!.startDate!.getTime() +
+          hoursToMilliseconds(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!.stopAfterHours
+          )
+      )
+    }
     delete this.connectorsStatus.get(connectorId)?.stoppedDate
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.connectorsStatus.get(connectorId)!.skippedConsecutiveTransactions = 0
