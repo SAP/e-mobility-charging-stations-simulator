@@ -223,6 +223,7 @@ type AutomaticTransactionGeneratorConfiguration = {
   maxDelayBetweenTwoTransactions: number
   probabilityOfStart: number
   stopAfterHours: number
+  stopAbsoluteDuration: boolean
   stopOnConnectionFailure: boolean
   requireAuthorize?: boolean
   idTagDistribution?: 'random' | 'round-robin' | 'connector-affinity'

@@ -262,8 +262,12 @@ export class AutomaticTransactionGenerator {
   private setStartConnectorStatus (connectorId: number): void {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.connectorsStatus.get(connectorId)!.startDate = new Date()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (!isValidTime(this.connectorsStatus.get(connectorId)!.stopDate)) {
+    if (
+      this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration ===
+        false ||
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      !isValidTime(this.connectorsStatus.get(connectorId)!.stopDate)
+    ) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.connectorsStatus.get(connectorId)!.stopDate = new Date(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
