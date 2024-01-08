@@ -20,6 +20,7 @@ import {
 import {
   Constants,
   cloneObject,
+  convertToDate,
   formatDurationMilliSeconds,
   getRandomInteger,
   isValidTime,
@@ -261,7 +262,11 @@ export class AutomaticTransactionGenerator {
   private setStartConnectorStatus (connectorId: number): void {
     const previousRunDuration =
       isValidTime(this.connectorsStatus.get(connectorId)?.startDate) &&
-      isValidTime(this.connectorsStatus.get(connectorId)?.lastRunDate)
+      isValidTime(this.connectorsStatus.get(connectorId)?.lastRunDate) &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.connectorsStatus.get(connectorId)!.lastRunDate! >
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.connectorsStatus.get(connectorId)!.startDate!
         ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.connectorsStatus.get(connectorId)!.lastRunDate!.getTime() -
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -379,7 +384,23 @@ export class AutomaticTransactionGenerator {
           this.chargingStation.getAutomaticTransactionGeneratorStatuses()![connectorId - 1]
         )
         : undefined
-    this.resetConnectorStatus(connectorStatus)
+    if (connectorStatus != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      connectorStatus.startDate = convertToDate(connectorStatus.startDate)!
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      connectorStatus.lastRunDate = convertToDate(connectorStatus.lastRunDate)!
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      connectorStatus.stopDate = convertToDate(connectorStatus.stopDate)!
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      connectorStatus.stoppedDate = convertToDate(connectorStatus.stoppedDate)!
+      if (
+        !this.started &&
+        (connectorStatus.start ||
+          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.enable !== true)
+      ) {
+        connectorStatus.start = false
+      }
+    }
     return (
       connectorStatus ?? {
         start: false,
@@ -396,19 +417,6 @@ export class AutomaticTransactionGenerator {
         skippedTransactions: 0
       }
     )
-  }
-
-  private resetConnectorStatus (connectorStatus: Status | undefined): void {
-    if (connectorStatus == null) {
-      return
-    }
-    if (
-      !this.started &&
-      (connectorStatus.start ||
-        this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.enable !== true)
-    ) {
-      connectorStatus.start = false
-    }
   }
 
   private async startTransaction (
