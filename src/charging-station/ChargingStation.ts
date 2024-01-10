@@ -169,8 +169,8 @@ export class ChargingStation extends EventEmitter {
   public performanceStatistics!: PerformanceStatistics | undefined
   public heartbeatSetInterval?: NodeJS.Timeout
   public ocppRequestService!: OCPPRequestService
-  public bootNotificationRequest!: BootNotificationRequest
-  public bootNotificationResponse!: BootNotificationResponse | undefined
+  public bootNotificationRequest?: BootNotificationRequest
+  public bootNotificationResponse?: BootNotificationResponse
   public powerDivider?: number
   private stopping: boolean
   private configurationFile!: string

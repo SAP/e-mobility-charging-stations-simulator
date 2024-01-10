@@ -748,7 +748,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         !prepareChargingProfileKind(
           connectorStatus,
           chargingProfile,
-          compositeScheduleInterval.start as Date,
+          compositeScheduleInterval.start,
           chargingStation.logPrefix()
         )
       ) {
@@ -757,7 +757,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (
         !canProceedChargingProfile(
           chargingProfile,
-          compositeScheduleInterval.start as Date,
+          compositeScheduleInterval.start,
           chargingStation.logPrefix()
         )
       ) {

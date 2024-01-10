@@ -917,7 +917,7 @@ const getLimitFromChargingProfiles = (
 export const prepareChargingProfileKind = (
   connectorStatus: ConnectorStatus,
   chargingProfile: ChargingProfile,
-  currentDate: Date,
+  currentDate: string | number | Date,
   logPrefix: string
 ): boolean => {
   switch (chargingProfile.chargingProfileKind) {
@@ -945,7 +945,7 @@ export const prepareChargingProfileKind = (
 
 export const canProceedChargingProfile = (
   chargingProfile: ChargingProfile,
-  currentDate: Date,
+  currentDate: string | number | Date,
   logPrefix: string
 ): boolean => {
   if (
@@ -957,7 +957,9 @@ export const canProceedChargingProfile = (
     logger.debug(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${
         chargingProfile.chargingProfileId
-      } is not valid for the current date ${currentDate.toISOString()}`
+      } is not valid for the current date ${
+        currentDate instanceof Date ? currentDate.toISOString() : currentDate
+      }`
     )
     return false
   }
@@ -1019,7 +1021,7 @@ const canProceedRecurringChargingProfile = (
  */
 const prepareRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
-  currentDate: Date,
+  currentDate: string | number | Date,
   logPrefix: string
 ): boolean => {
   const chargingSchedule = chargingProfile.chargingSchedule
@@ -1088,7 +1090,9 @@ const prepareRecurringChargingProfile = (
       ).toISOString()}, ${toDate(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         recurringInterval!.end
-      ).toISOString()}] has not been properly translated to current date ${currentDate.toISOString()} `
+      ).toISOString()}] has not been properly translated to current date ${
+        currentDate instanceof Date ? currentDate.toISOString() : currentDate
+      } `
     )
   }
   return recurringIntervalTranslated

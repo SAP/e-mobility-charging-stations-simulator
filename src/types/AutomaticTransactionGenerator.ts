@@ -12,6 +12,7 @@ export interface AutomaticTransactionGeneratorConfiguration {
   maxDelayBetweenTwoTransactions: number
   probabilityOfStart: number
   stopAfterHours: number
+  stopAbsoluteDuration: boolean
   stopOnConnectionFailure: boolean
   requireAuthorize?: boolean
   idTagDistribution?: IdTagDistribution
@@ -23,17 +24,17 @@ export interface Status {
   lastRunDate?: Date
   stopDate?: Date
   stoppedDate?: Date
-  authorizeRequests?: number
-  acceptedAuthorizeRequests?: number
-  rejectedAuthorizeRequests?: number
-  startTransactionRequests?: number
-  acceptedStartTransactionRequests?: number
-  rejectedStartTransactionRequests?: number
-  stopTransactionRequests?: number
-  acceptedStopTransactionRequests?: number
-  rejectedStopTransactionRequests?: number
-  skippedConsecutiveTransactions?: number
-  skippedTransactions?: number
+  authorizeRequests: number
+  acceptedAuthorizeRequests: number
+  rejectedAuthorizeRequests: number
+  startTransactionRequests: number
+  acceptedStartTransactionRequests: number
+  rejectedStartTransactionRequests: number
+  stopTransactionRequests: number
+  acceptedStopTransactionRequests: number
+  rejectedStopTransactionRequests: number
+  skippedConsecutiveTransactions: number
+  skippedTransactions: number
 }
 
 export interface ChargingStationAutomaticTransactionGeneratorConfiguration {

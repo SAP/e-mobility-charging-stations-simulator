@@ -49,6 +49,7 @@ export class Constants {
       maxDelayBetweenTwoTransactions: 30,
       probabilityOfStart: 1,
       stopAfterHours: 0.25,
+      stopAbsoluteDuration: false,
       stopOnConnectionFailure: true
     })
 
