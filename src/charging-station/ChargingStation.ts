@@ -1779,7 +1779,7 @@ export class ChargingStation extends EventEmitter {
             this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount
             await sleep(
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-              this.bootNotificationResponse.interval != null
+              this.bootNotificationResponse?.interval != null
                 ? secondsToMilliseconds(this.bootNotificationResponse.interval)
                 : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
             )
