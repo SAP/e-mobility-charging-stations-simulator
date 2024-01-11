@@ -339,6 +339,12 @@ The syntax is similar to charging station configuration template 'Connectors' se
 
 That section is overwritten on matching charging station configuration template file changes.
 
+#### evsesStatus section
+
+The syntax is similar to charging station configuration template 'Evses' section with some added fields.
+
+That section is overwritten on matching charging station configuration template file changes.
+
 #### automaticTransactionGenerator section
 
 The syntax is similar to the charging station configuration template 'AutomaticTransactionGenerator' section.
