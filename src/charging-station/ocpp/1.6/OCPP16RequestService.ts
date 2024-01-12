@@ -201,10 +201,9 @@ export class OCPP16RequestService extends OCPPRequestService {
         } as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.stationInfo?.transactionDataMeterValues === true &&
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams.transactionId as number
-          )!)
+          ))
         energyActiveImportRegister = chargingStation.getEnergyActiveImportRegisterByTransactionId(
           commandParams.transactionId as number,
           true

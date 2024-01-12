@@ -427,8 +427,10 @@ export class ChargingStation extends EventEmitter {
     return numberOfRunningTransactions
   }
 
-  public getConnectorIdByTransactionId (transactionId: number): number | undefined {
-    if (this.hasEvses) {
+  public getConnectorIdByTransactionId (transactionId: number | undefined): number | undefined {
+    if (transactionId == null) {
+      return undefined
+    } else if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
         for (const [connectorId, connectorStatus] of evseStatus.connectors) {
           if (connectorStatus.transactionId === transactionId) {
@@ -446,19 +448,18 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getEnergyActiveImportRegisterByTransactionId (
-    transactionId: number,
+    transactionId: number | undefined,
     rounded = false
   ): number {
     return this.getEnergyActiveImportRegister(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!)!,
+      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!),
       rounded
     )
   }
 
   public getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId)!, rounded)
+    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded)
   }
 
   public getAuthorizeRemoteTxRequests (): boolean {
@@ -561,21 +562,22 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}`)
       return
     }
-    if (this.getConnectorStatus(connectorId) == null) {
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on non existing connector id
           ${connectorId}`
       )
       return
     }
-    if (this.getConnectorStatus(connectorId)?.transactionStarted === false) {
+    if (connectorStatus.transactionStarted === false) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction started`
       )
       return
     } else if (
-      this.getConnectorStatus(connectorId)?.transactionStarted === true &&
-      this.getConnectorStatus(connectorId)?.transactionId == null
+      connectorStatus.transactionStarted === true &&
+      connectorStatus.transactionId == null
     ) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction id`
@@ -583,13 +585,12 @@ export class ChargingStation extends EventEmitter {
       return
     }
     if (interval > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getConnectorStatus(connectorId)!.transactionSetInterval = setInterval(() => {
+      connectorStatus.transactionSetInterval = setInterval(() => {
         const meterValue = buildMeterValue(
           this,
           connectorId,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.getConnectorStatus(connectorId)!.transactionId!,
+          connectorStatus.transactionId!,
           interval
         )
         this.ocppRequestService
@@ -598,7 +599,7 @@ export class ChargingStation extends EventEmitter {
           RequestCommand.METER_VALUES,
           {
             connectorId,
-            transactionId: this.getConnectorStatus(connectorId)?.transactionId,
+            transactionId: connectorStatus.transactionId,
             meterValue: [meterValue]
           }
         )
@@ -619,8 +620,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   public stopMeterValues (connectorId: number): void {
-    if (this.getConnectorStatus(connectorId)?.transactionSetInterval != null) {
-      clearInterval(this.getConnectorStatus(connectorId)?.transactionSetInterval)
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionSetInterval != null) {
+      clearInterval(connectorStatus.transactionSetInterval)
     }
   }
 
@@ -859,8 +861,7 @@ export class ChargingStation extends EventEmitter {
     connectorId: number,
     reason?: StopTransactionReason
   ): Promise<StopTransactionResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transactionId = this.getConnectorStatus(connectorId)!.transactionId!
+    const transactionId = this.getConnectorStatus(connectorId)?.transactionId
     if (
       this.stationInfo?.beginEndMeterValues === true &&
       this.stationInfo.ocppStrictCompliance === true &&
@@ -2018,20 +2019,25 @@ export class ChargingStation extends EventEmitter {
     logger.error(`${this.logPrefix()} WebSocket error:`, error)
   }
 
-  private getEnergyActiveImportRegister (connectorStatus: ConnectorStatus, rounded = false): number {
+  private getEnergyActiveImportRegister (
+    connectorStatus: ConnectorStatus | undefined,
+    rounded = false
+  ): number {
     if (this.stationInfo?.meteringPerTransaction === true) {
       return (
         (rounded
-          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          Math.round(connectorStatus.transactionEnergyActiveImportRegisterValue!)
-          : connectorStatus.transactionEnergyActiveImportRegisterValue) ?? 0
+          ? connectorStatus?.transactionEnergyActiveImportRegisterValue != null
+            ? Math.round(connectorStatus.transactionEnergyActiveImportRegisterValue)
+            : undefined
+          : connectorStatus?.transactionEnergyActiveImportRegisterValue) ?? 0
       )
     }
     return (
       (rounded
-        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        Math.round(connectorStatus.energyActiveImportRegisterValue!)
-        : connectorStatus.energyActiveImportRegisterValue) ?? 0
+        ? connectorStatus?.energyActiveImportRegisterValue != null
+          ? Math.round(connectorStatus.energyActiveImportRegisterValue)
+          : undefined
+        : connectorStatus?.energyActiveImportRegisterValue) ?? 0
     )
   }
 

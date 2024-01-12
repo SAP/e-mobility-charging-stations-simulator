@@ -120,9 +120,12 @@ export const isIdTagAuthorized = async (
       `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`
     )
   }
-  if (chargingStation.getLocalAuthListEnabled() && isIdTagLocalAuthorized(chargingStation, idTag)) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  if (
+    connectorStatus != null &&
+    chargingStation.getLocalAuthListEnabled() &&
+    isIdTagLocalAuthorized(chargingStation, idTag)
+  ) {
     connectorStatus.localAuthorizeIdTag = idTag
     connectorStatus.idTagLocalAuthorized = true
     return true
@@ -196,8 +199,7 @@ const checkConnectorStatusTransition = (
   connectorId: number,
   status: ConnectorStatusEnum
 ): boolean => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const fromStatus = chargingStation.getConnectorStatus(connectorId)!.status
+  const fromStatus = chargingStation.getConnectorStatus(connectorId)?.status
   let transitionAllowed = false
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
@@ -238,10 +240,9 @@ const checkConnectorStatusTransition = (
     logger.warn(
       `${chargingStation.logPrefix()} OCPP ${
         chargingStation.stationInfo.ocppVersion
-      } connector id ${connectorId} status transition from '${
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.getConnectorStatus(connectorId)!.status
-      }' to '${status}' is not allowed`
+      } connector id ${connectorId} status transition from '${chargingStation.getConnectorStatus(
+        connectorId
+      )?.status}' to '${status}' is not allowed`
     )
   }
   return transitionAllowed

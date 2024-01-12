@@ -367,7 +367,10 @@ export const initializeConnectorsMapStatus = (
   }
 }
 
-export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => {
+export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefined): void => {
+  if (connectorStatus == null) {
+    return
+  }
   connectorStatus.chargingProfiles =
     connectorStatus.transactionId != null && isNotEmptyArray(connectorStatus.chargingProfiles)
       ? connectorStatus.chargingProfiles?.filter(
@@ -795,8 +798,7 @@ const getLimitFromChargingProfiles = (
 ): ChargingProfilesLimit | undefined => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`
   const currentDate = new Date()
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule
     if (chargingSchedule.startSchedule == null) {
@@ -804,7 +806,7 @@ const getLimitFromChargingProfiles = (
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
       )
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
-      chargingSchedule.startSchedule = connectorStatus.transactionStart
+      chargingSchedule.startSchedule = connectorStatus?.transactionStart
     }
     if (!isDate(chargingSchedule.startSchedule)) {
       logger.warn(
@@ -915,7 +917,7 @@ const getLimitFromChargingProfiles = (
 }
 
 export const prepareChargingProfileKind = (
-  connectorStatus: ConnectorStatus,
+  connectorStatus: ConnectorStatus | undefined,
   chargingProfile: ChargingProfile,
   currentDate: string | number | Date,
   logPrefix: string
@@ -934,7 +936,7 @@ export const prepareChargingProfileKind = (
         )
         delete chargingProfile.chargingSchedule.startSchedule
       }
-      if (connectorStatus.transactionStarted === true) {
+      if (connectorStatus?.transactionStarted === true) {
         chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
       }
       // FIXME: Handle relative charging profile duration
