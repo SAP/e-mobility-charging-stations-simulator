@@ -772,8 +772,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (compositeSchedule != null) {
       return {
         status: GenericStatus.Accepted,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        scheduleStart: compositeSchedule.startSchedule!,
+        scheduleStart: compositeSchedule.startSchedule,
         connectorId,
         chargingSchedule: compositeSchedule
       }
