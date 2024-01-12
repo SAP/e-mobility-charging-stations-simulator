@@ -6,7 +6,7 @@ import type { ChargingStationData } from '@/types'
 test('renders CS table columns name', () => {
   const chargingStations: ChargingStationData[] = []
   const wrapper = shallowMount(CSTable, {
-    props: { chargingStations, idTag: '0' },
+    props: { chargingStations, idTag: '0' }
   })
   expect(wrapper.text()).to.include('Action')
   expect(wrapper.text()).to.include('Connector')

@@ -518,7 +518,7 @@ export class ChargingStation extends EventEmitter {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
-          .catch((error) => {
+          .catch(error => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
               error
@@ -603,7 +603,7 @@ export class ChargingStation extends EventEmitter {
             meterValue: [meterValue]
           }
         )
-          .catch((error) => {
+          .catch(error => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
               error
@@ -1264,7 +1264,7 @@ export class ChargingStation extends EventEmitter {
     this.initializeOcppConfiguration()
     this.initializeOcppServices()
     this.once(ChargingStationEvents.accepted, () => {
-      this.startMessageSequence().catch((error) => {
+      this.startMessageSequence().catch(error => {
         logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
       })
     })
@@ -1710,7 +1710,7 @@ export class ChargingStation extends EventEmitter {
             this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
             this.sharedLRUCache.setChargingStationConfiguration(configurationData)
             this.configurationFileHash = configurationHash
-          }).catch((error) => {
+          }).catch(error => {
             handleFileException(
               this.configurationFile,
               FileType.ChargingStationConfiguration,

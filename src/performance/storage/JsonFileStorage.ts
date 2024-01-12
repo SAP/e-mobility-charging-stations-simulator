@@ -34,7 +34,7 @@ export class JsonFileStorage extends Storage {
         0,
         'utf8'
       )
-    }).catch((error) => {
+    }).catch(error => {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,

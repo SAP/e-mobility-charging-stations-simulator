@@ -29,7 +29,7 @@ export const validateUUID = (uuid: string): boolean => {
 }
 
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
-  return await new Promise<NodeJS.Timeout>((resolve) =>
+  return await new Promise<NodeJS.Timeout>(resolve =>
     setTimeout(resolve as () => void, milliSeconds)
   )
 }
@@ -203,7 +203,7 @@ export const getRandomFloatFluctuatedRounded = (
 }
 
 export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[] => {
-  return timeSeries.map((timeSeriesItem) => timeSeriesItem.value)
+  return timeSeries.map(timeSeriesItem => timeSeriesItem.value)
 }
 
 export const isObject = (item: unknown): boolean => {

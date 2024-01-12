@@ -374,7 +374,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   connectorStatus.chargingProfiles =
     connectorStatus.transactionId != null && isNotEmptyArray(connectorStatus.chargingProfiles)
       ? connectorStatus.chargingProfiles?.filter(
-        (chargingProfile) => chargingProfile.transactionId !== connectorStatus.transactionId
+        chargingProfile => chargingProfile.transactionId !== connectorStatus.transactionId
       )
       : []
   connectorStatus.idTagLocalAuthorized = false
@@ -662,7 +662,7 @@ export const waitChargingStationEvents = async (
   event: ChargingStationWorkerMessageEvents,
   eventsToWait: number
 ): Promise<number> => {
-  return await new Promise<number>((resolve) => {
+  return await new Promise<number>(resolve => {
     let events = 0
     if (eventsToWait === 0) {
       resolve(events)

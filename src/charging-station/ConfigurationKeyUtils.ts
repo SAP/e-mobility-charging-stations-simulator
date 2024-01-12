@@ -21,7 +21,7 @@ export const getConfigurationKey = (
   key: ConfigurationKeyType,
   caseInsensitive = false
 ): ConfigurationKey | undefined => {
-  return chargingStation.ocppConfiguration?.configurationKey?.find((configElement) => {
+  return chargingStation.ocppConfiguration?.configurationKey?.find(configElement => {
     if (caseInsensitive) {
       return configElement.key.toLowerCase() === key.toLowerCase()
     }

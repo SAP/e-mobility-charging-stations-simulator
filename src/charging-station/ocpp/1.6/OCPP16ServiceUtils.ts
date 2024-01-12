@@ -293,7 +293,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           ),
         chargingSchedulePeriod: [
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map((schedulePeriod) => {
+          ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map(schedulePeriod => {
             return {
               ...schedulePeriod,
               startPeriod: higherFirst
@@ -306,7 +306,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             }
           }),
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...compositeChargingScheduleLower!.chargingSchedulePeriod.map((schedulePeriod) => {
+          ...compositeChargingScheduleLower!.chargingSchedulePeriod.map(schedulePeriod => {
             return {
               ...schedulePeriod,
               startPeriod: higherFirst
@@ -339,7 +339,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         ),
       chargingSchedulePeriod: [
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map((schedulePeriod) => {
+        ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map(schedulePeriod => {
           return {
             ...schedulePeriod,
             startPeriod: higherFirst
@@ -544,7 +544,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             compositeInterval.end as Date,
             chargingScheduleInterval.start
           ),
-          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter((schedulePeriod) =>
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(schedulePeriod =>
             isWithinInterval(
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,

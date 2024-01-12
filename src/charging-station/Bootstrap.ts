@@ -424,7 +424,7 @@ export class Bootstrap extends EventEmitter {
             exit(exitCodes.gracefulShutdownError)
           })
       })
-      .catch((error) => {
+      .catch(error => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error)
         exit(exitCodes.gracefulShutdownError)
       })

@@ -35,7 +35,7 @@ export const buildEvsesStatus = (
   outputFormat: OutputFormat = OutputFormat.configuration
 ): Array<EvseStatusWorkerType | EvseStatusConfiguration> => {
   // eslint-disable-next-line array-callback-return
-  return [...chargingStation.evses.values()].map((evseStatus) => {
+  return [...chargingStation.evses.values()].map(evseStatus => {
     const connectorsStatus = [...evseStatus.connectors.values()].map(
       ({ transactionSetInterval, ...connectorStatusRest }) => connectorStatusRest
     )

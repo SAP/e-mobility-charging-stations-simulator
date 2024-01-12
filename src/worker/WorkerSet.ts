@@ -86,7 +86,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   public async stop (): Promise<void> {
     for (const workerSetElement of this.workerSet) {
       const worker = workerSetElement.worker
-      const waitWorkerExit = new Promise<void>((resolve) => {
+      const waitWorkerExit = new Promise<void>(resolve => {
         worker.once('exit', () => {
           resolve()
         })
@@ -137,7 +137,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       }
     })
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION)
-    worker.on('error', (error) => {
+    worker.on('error', error => {
       this.emitter?.emit(WorkerSetEvents.error, error)
       if (
         this.workerOptions.poolOptions?.restartWorkerOnError === true &&

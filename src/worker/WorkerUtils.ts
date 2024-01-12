@@ -3,7 +3,7 @@ import { getRandomValues } from 'node:crypto'
 import chalk from 'chalk'
 
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
-  return await new Promise<NodeJS.Timeout>((resolve) =>
+  return await new Promise<NodeJS.Timeout>(resolve =>
     setTimeout(resolve as () => void, milliSeconds)
   )
 }

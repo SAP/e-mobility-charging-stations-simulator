@@ -142,7 +142,7 @@ const isIdTagLocalAuthorized = (chargingStation: ChargingStation, idTag: string)
       chargingStation.idTagsCache
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         .getIdTags(getIdTagsFile(chargingStation.stationInfo!)!)
-        ?.find((tag) => tag === idTag)
+        ?.find(tag => tag === idTag)
     )
   )
 }
@@ -206,11 +206,11 @@ const checkConnectorStatusTransition = (
       if (
         (connectorId === 0 &&
           OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1) ||
         (connectorId > 0 &&
           OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1)
       ) {
         transitionAllowed = true
@@ -221,11 +221,11 @@ const checkConnectorStatusTransition = (
       if (
         (connectorId === 0 &&
           OCPP20Constants.ChargingStationStatusTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1) ||
         (connectorId > 0 &&
           OCPP20Constants.ConnectorStatusTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1)
       ) {
         transitionAllowed = true

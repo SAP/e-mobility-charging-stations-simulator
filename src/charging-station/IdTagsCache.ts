@@ -178,7 +178,7 @@ export class IdTagsCache {
         deleted.push(this.idTagsCachesAddressableIndexes.delete(key))
       }
     }
-    return !deleted.some((value) => !value)
+    return !deleted.some(value => !value)
   }
 
   private getIdTagsCacheIndexesAddressableKey (prefix: string, uid: string): string {

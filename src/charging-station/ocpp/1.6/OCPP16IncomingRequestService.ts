@@ -1290,8 +1290,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       let ftpClient: Client | undefined
       try {
         const logFiles = readdirSync(resolve(dirname(fileURLToPath(import.meta.url)), '../'))
-          .filter((file) => file.endsWith('.log'))
-          .map((file) => join('./', file))
+          .filter(file => file.endsWith('.log'))
+          .map(file => join('./', file))
         const diagnosticsArchive = `${chargingStation.stationInfo?.chargingStationId}_logs.tar.gz`
         create({ gzip: true }, logFiles).pipe(createWriteStream(diagnosticsArchive))
         ftpClient = new Client()
@@ -1303,7 +1303,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         })
         let uploadResponse: FTPResponse | undefined
         if (accessResponse.code === 220) {
-          ftpClient.trackProgress((info) => {
+          ftpClient.trackProgress(info => {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: ${
                 info.bytes / 1024
@@ -1316,7 +1316,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
               status: OCPP16DiagnosticsStatus.Uploading
             })
-              .catch((error) => {
+              .catch(error => {
                 logger.error(
                   `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Error while sending '${
                     OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION
@@ -1418,7 +1418,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               chargingStation.bootNotificationRequest,
               { skipBufferingOnError: true, triggerMessage: true }
             )
-              .then((response) => {
+              .then(response => {
                 chargingStation.bootNotificationResponse = response
               })
               .catch(Constants.EMPTY_FUNCTION)

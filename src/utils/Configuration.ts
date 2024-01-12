@@ -559,7 +559,7 @@ export class Configuration {
           Configuration.configurationSectionCache.clear()
           if (Configuration.configurationChangeCallback !== undefined) {
             Configuration.configurationChangeCallback()
-              .catch((error) => {
+              .catch(error => {
                 throw typeof error === 'string' ? new Error(error) : error
               })
               .finally(() => {
