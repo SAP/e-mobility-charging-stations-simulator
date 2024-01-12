@@ -66,7 +66,7 @@ export const formatDurationSeconds = (duration: number): string => {
 }
 
 // More efficient time validation function than the one provided by date-fns
-export const isValidTime = (date: unknown): boolean => {
+export const isValidTime = (date: Date | number | undefined): boolean => {
   if (typeof date === 'number') {
     return !isNaN(date)
   } else if (isDate(date)) {

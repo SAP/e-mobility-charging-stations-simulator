@@ -38,7 +38,7 @@ import {
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion
 } from '../../../types/index.js'
-import { isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
+import { convertToDate, isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
@@ -164,6 +164,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    cp.validFrom = convertToDate(cp.validFrom)!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    cp.validTo = convertToDate(cp.validTo)!
     let cpReplaced = false
     if (isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

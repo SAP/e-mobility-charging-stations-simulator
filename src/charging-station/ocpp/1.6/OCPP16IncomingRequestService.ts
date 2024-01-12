@@ -1099,15 +1099,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
-    let { retrieveDate } = commandPayload
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate)!
+    const { retrieveDate } = commandPayload
     if (chargingStation.stationInfo?.firmwareStatus !== OCPP16FirmwareStatus.Installed) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`
       )
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    retrieveDate = convertToDate(retrieveDate)!
     const now = Date.now()
     if (retrieveDate.getTime() <= now) {
       this.updateFirmwareSimulation(chargingStation).catch(Constants.EMPTY_FUNCTION)
@@ -1548,6 +1548,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    commandPayload.expiryDate = convertToDate(commandPayload.expiryDate)!
     const { reservationId, idTag, connectorId } = commandPayload
     let response: OCPP16ReserveNowResponse
     try {
