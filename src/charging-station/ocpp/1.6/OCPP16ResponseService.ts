@@ -682,8 +682,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.warn(
         `${chargingStation.logPrefix()} Starting transaction with id ${
           payload.transactionId
-        } REJECTED on ${chargingStation.stationInfo
-          ?.chargingStationId}#${connectorId} with status '${payload.idTagInfo.status}', idTag '${
+        } REJECTED on ${
+          chargingStation.stationInfo?.chargingStationId
+        }#${connectorId} with status '${payload.idTagInfo.status}', idTag '${
           requestPayload.idTag
         }'${
           OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, requestPayload.idTag)
@@ -768,8 +769,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation.stopMeterValues(transactionConnectorId)
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${
       requestPayload.transactionId
-    } STOPPED on ${chargingStation.stationInfo
-      ?.chargingStationId}#${transactionConnectorId} with status '${payload.idTagInfo?.status}'`
+    } STOPPED on ${
+      chargingStation.stationInfo?.chargingStationId
+    }#${transactionConnectorId} with status '${payload.idTagInfo?.status}'`
     if (
       payload.idTagInfo == null ||
       payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED

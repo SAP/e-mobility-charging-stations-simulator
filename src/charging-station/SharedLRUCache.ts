@@ -6,7 +6,7 @@ import { isEmptyObject, isNotEmptyArray, isNotEmptyString } from '../utils/index
 
 enum CacheType {
   chargingStationTemplate = 'chargingStationTemplate',
-  chargingStationConfiguration = 'chargingStationConfiguration',
+  chargingStationConfiguration = 'chargingStationConfiguration'
 }
 
 type CacheValueType = ChargingStationTemplate | ChargingStationConfiguration

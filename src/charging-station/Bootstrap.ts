@@ -47,7 +47,7 @@ enum exitCodes {
   succeeded = 0,
   missingChargingStationsConfiguration = 1,
   noChargingStationTemplates = 2,
-  gracefulShutdownError = 3,
+  gracefulShutdownError = 3
 }
 
 export class Bootstrap extends EventEmitter {

@@ -348,9 +348,9 @@ export const initializeConnectorsMapStatus = (
   for (const connectorId of connectors.keys()) {
     if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
       logger.warn(
-        `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${connectors.get(
-          connectorId
-        )?.transactionId}`
+        `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${
+          connectors.get(connectorId)?.transactionId
+        }`
       )
     }
     if (connectorId === 0) {

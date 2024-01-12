@@ -240,9 +240,9 @@ const checkConnectorStatusTransition = (
     logger.warn(
       `${chargingStation.logPrefix()} OCPP ${
         chargingStation.stationInfo.ocppVersion
-      } connector id ${connectorId} status transition from '${chargingStation.getConnectorStatus(
-        connectorId
-      )?.status}' to '${status}' is not allowed`
+      } connector id ${connectorId} status transition from '${
+        chargingStation.getConnectorStatus(connectorId)?.status
+      }' to '${status}' is not allowed`
     )
   }
   return transitionAllowed

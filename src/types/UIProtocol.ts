@@ -2,20 +2,20 @@ import type { JsonObject } from './JsonType.js'
 import type { BroadcastChannelResponsePayload } from './WorkerBroadcastChannel.js'
 
 export enum Protocol {
-  UI = 'ui',
+  UI = 'ui'
 }
 
 export enum ApplicationProtocol {
   HTTP = 'http',
-  WS = 'ws',
+  WS = 'ws'
 }
 
 export enum AuthenticationType {
-  BASIC_AUTH = 'basic-auth',
+  BASIC_AUTH = 'basic-auth'
 }
 
 export enum ProtocolVersion {
-  '0.0.1' = '0.0.1',
+  '0.0.1' = '0.0.1'
 }
 
 export type ProtocolRequest = [string, ProcedureName, RequestPayload]
@@ -47,7 +47,7 @@ export enum ProcedureName {
   METER_VALUES = 'meterValues',
   DATA_TRANSFER = 'dataTransfer',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
-  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification'
 }
 
 export interface RequestPayload extends JsonObject {
@@ -57,7 +57,7 @@ export interface RequestPayload extends JsonObject {
 
 export enum ResponseStatus {
   SUCCESS = 'success',
-  FAILURE = 'failure',
+  FAILURE = 'failure'
 }
 
 export interface ResponsePayload extends JsonObject {

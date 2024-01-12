@@ -3,7 +3,7 @@ import type { RequestPayload, ResponsePayload } from './UIProtocol.js'
 export type BroadcastChannelRequest = [
   string,
   BroadcastChannelProcedureName,
-  BroadcastChannelRequestPayload,
+  BroadcastChannelRequestPayload
 ]
 export type BroadcastChannelResponse = [string, BroadcastChannelResponsePayload]
 
@@ -24,7 +24,7 @@ export enum BroadcastChannelProcedureName {
   METER_VALUES = 'meterValues',
   DATA_TRANSFER = 'dataTransfer',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
-  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification'
 }
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {

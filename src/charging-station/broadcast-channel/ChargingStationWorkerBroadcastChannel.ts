@@ -173,12 +173,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           await this.chargingStation.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-          >(
-            this.chargingStation,
-            RequestCommand.STATUS_NOTIFICATION,
-            requestPayload,
-            requestParams
-          )
+          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, requestPayload, requestParams)
       ],
       [
         BroadcastChannelProcedureName.HEARTBEAT,

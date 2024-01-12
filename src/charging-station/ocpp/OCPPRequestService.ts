@@ -62,7 +62,7 @@ export abstract class OCPPRequestService {
     this.requestHandler = this.requestHandler.bind(this) as <
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ReqType extends JsonType,
-      ResType extends JsonType,
+      ResType extends JsonType
     >(
       chargingStation: ChargingStation,
       commandName: RequestCommand,

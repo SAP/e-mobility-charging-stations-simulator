@@ -922,8 +922,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
     const remoteStartTransactionLogMsg = `
-      ${chargingStation.logPrefix()} Transaction remotely STARTED on ${chargingStation.stationInfo
-        ?.chargingStationId}#${transactionConnectorId} for idTag '${idTag}'`
+      ${chargingStation.logPrefix()} Transaction remotely STARTED on ${
+        chargingStation.stationInfo?.chargingStationId
+      }#${transactionConnectorId} for idTag '${idTag}'`
     await OCPP16ServiceUtils.sendAndSetConnectorStatus(
       chargingStation,
       transactionConnectorId,

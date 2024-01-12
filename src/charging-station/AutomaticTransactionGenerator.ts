@@ -218,10 +218,9 @@ export class AutomaticTransactionGenerator {
             )
           )
           logger.info(
-            `${this.logPrefix(
-              connectorId
-            )} transaction started with id ${this.chargingStation.getConnectorStatus(connectorId)
-              ?.transactionId} and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`
+            `${this.logPrefix(connectorId)} transaction started with id ${
+              this.chargingStation.getConnectorStatus(connectorId)?.transactionId
+            } and will stop in ${formatDurationMilliSeconds(waitTrxEnd)}`
           )
           await sleep(waitTrxEnd)
           await this.stopTransaction(connectorId)
@@ -232,10 +231,9 @@ export class AutomaticTransactionGenerator {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ++this.connectorsStatus.get(connectorId)!.skippedTransactions
         logger.info(
-          `${this.logPrefix(connectorId)} skipped consecutively ${this.connectorsStatus.get(
-            connectorId
-          )?.skippedConsecutiveTransactions}/${this.connectorsStatus.get(connectorId)
-            ?.skippedTransactions} transaction(s)`
+          `${this.logPrefix(connectorId)} skipped consecutively ${
+            this.connectorsStatus.get(connectorId)?.skippedConsecutiveTransactions
+          }/${this.connectorsStatus.get(connectorId)?.skippedTransactions} transaction(s)`
         )
       }
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -485,10 +483,9 @@ export class AutomaticTransactionGenerator {
     let stopResponse: StopTransactionResponse | undefined
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
       logger.info(
-        `${this.logPrefix(
-          connectorId
-        )} stop transaction with id ${this.chargingStation.getConnectorStatus(connectorId)
-          ?.transactionId}`
+        `${this.logPrefix(connectorId)} stop transaction with id ${
+          this.chargingStation.getConnectorStatus(connectorId)?.transactionId
+        }`
       )
       stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

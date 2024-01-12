@@ -49,7 +49,7 @@ export abstract class OCPPResponseService {
     >()
     this.responseHandler = this.responseHandler.bind(this) as <
       ReqType extends JsonType,
-      ResType extends JsonType,
+      ResType extends JsonType
     >(
       chargingStation: ChargingStation,
       commandName: RequestCommand,

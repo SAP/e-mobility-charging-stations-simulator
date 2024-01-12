@@ -1799,8 +1799,9 @@ export class ChargingStation extends EventEmitter {
         }
       } else {
         logger.error(
-          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${this
-            .stationInfo?.registrationMaxRetries})`
+          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${
+            this.stationInfo?.registrationMaxRetries
+          })`
         )
       }
       this.autoReconnectRetryCount = 0
