@@ -47,7 +47,7 @@
     "compareUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/compare/{from}...{to}"
   },
   "mikro-orm": {
-    "tsConfigPath": "./tsconfig-orm.json",
+    "tsConfigPath": "./tsconfig-mikro-orm.json",
     "useTsNode": true
   },
   "scripts": {
@@ -67,6 +67,7 @@
     "build:dev": "cross-env BUILD=development pnpm esbuild",
     "build:cf": "pnpm clean:node_modules && npx cross-env SKIP_PREINSTALL=1 npm install && pnpm build",
     "build:cf:dev": "pnpm clean:node_modules && npx cross-env SKIP_PREINSTALL=1 npm install && pnpm build:dev",
+    "build:entities": "tsc -p tsconfig-mikro-orm.json",
     "clean:dist": "npx rimraf dist",
     "clean:node_modules": "npx rimraf node_modules",
     "lint": "cross-env TIMING=1 eslint --cache src tests .eslintrc.cjs bundle.js mikro-orm.config-template.ts",
@@ -107,7 +108,6 @@
     "mongodb": "^6.3.0",
     "poolifier": "^3.1.18",
     "tar": "^6.2.0",
-    "tslib": "^2.6.2",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1",
     "ws": "^8.16.0"

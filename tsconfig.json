@@ -5,7 +5,6 @@
     "module": "NodeNext",
     "lib": ["es2022"],
     "removeComments": true,
-    "importHelpers": true,
 
     "strict": true,
 

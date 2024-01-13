@@ -62,9 +62,6 @@ dependencies:
   tar:
     specifier: ^6.2.0
     version: 6.2.0
-  tslib:
-    specifier: ^2.6.2
-    version: 2.6.2
   winston:
     specifier: ^3.11.0
     version: 3.11.0
@@ -9130,6 +9127,7 @@ packages:
 
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
+    dev: true
 
   /tsx@4.7.0:
     resolution: {integrity: sha512-I+t79RYPlEYlHn9a+KzwrvEwhJg35h/1zHsLC2JXvhC2mdynMv6Zxzvhv5EMV6VF5qJlLlkSnMVvdZV3PSIGcg==}

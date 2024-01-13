@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src/types/orm/entities",
+    "outDir": "./dist/types/orm/entities",
+    "sourceMap": true,
+    "esModuleInterop": true
+  },
+  "include": ["src/types/orm/entities/*.ts"]
+}
