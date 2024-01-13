@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { JsonFileStorage } from './JsonFileStorage.js'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

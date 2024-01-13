@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { createWriteStream, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'

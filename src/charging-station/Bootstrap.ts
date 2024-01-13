@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { EventEmitter } from 'node:events'
 import { dirname, extname, join } from 'node:path'

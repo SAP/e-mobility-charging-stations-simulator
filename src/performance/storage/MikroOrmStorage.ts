@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { type Configuration, MikroORM, type Options } from '@mikro-orm/core'
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection'
