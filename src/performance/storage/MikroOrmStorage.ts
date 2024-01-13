@@ -1,21 +1,15 @@
 // Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import { type Configuration, MikroORM, type Options } from '@mikro-orm/core'
-import { TsMorphMetadataProvider } from '@mikro-orm/reflection'
+import { MikroORM as MariaDbORM, type Options as MariaDbOptions } from '@mikro-orm/mariadb'
+import { MikroORM as SqliteORM, type Options as SqliteOptions } from '@mikro-orm/sqlite'
 
 import { Storage } from './Storage.js'
-import {
-  type MikroOrmDbType,
-  PerformanceData,
-  PerformanceRecord,
-  type Statistics,
-  StorageType
-} from '../../types/index.js'
+import { type Statistics, StorageType } from '../../types/index.js'
 import { Constants } from '../../utils/index.js'
 
 export class MikroOrmStorage extends Storage {
   private readonly storageType: StorageType
-  private orm?: MikroORM
+  private orm?: SqliteORM | MariaDbORM
 
   constructor (storageUri: string, logPrefix: string, storageType: StorageType) {
     super(storageUri, logPrefix)
@@ -25,8 +19,8 @@ export class MikroOrmStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
-      const performanceRecord = new PerformanceRecord()
-      await this.orm?.em.persistAndFlush(performanceRecord)
+      // TODO: build PerformanceRecord entity
+      await this.orm?.em.persistAndFlush({})
     } catch (error) {
       this.handleDBError(this.storageType, error as Error, Constants.PERFORMANCE_RECORDS_TABLE)
     }
@@ -35,7 +29,15 @@ export class MikroOrmStorage extends Storage {
   public async open (): Promise<void> {
     try {
       if (this.orm == null) {
-        this.orm = await MikroORM.init(this.getOptions(), true)
+        switch (this.storageType) {
+          case StorageType.SQLITE:
+            this.orm = await SqliteORM.init(this.getOptions() as SqliteOptions)
+            break
+          case StorageType.MARIA_DB:
+          case StorageType.MYSQL:
+            this.orm = await MariaDbORM.init(this.getOptions() as MariaDbOptions)
+            break
+        }
       }
     } catch (error) {
       this.handleDBError(this.storageType, error as Error)
@@ -60,11 +62,11 @@ export class MikroOrmStorage extends Storage {
     return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
-  private getOptions (): Configuration | Options {
+  private getOptions (): SqliteOptions | MariaDbOptions {
     return {
-      metadataProvider: TsMorphMetadataProvider,
-      entities: [PerformanceRecord, PerformanceData],
-      type: this.storageType as MikroOrmDbType,
+      dbName: this.dbName,
+      entities: ['./dist/types/orm/entities/*.js'],
+      entitiesTs: ['./src/types/orm/entities/*.ts'],
       clientUrl: this.getClientUrl()
     }
   }

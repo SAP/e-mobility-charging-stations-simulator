@@ -14,7 +14,11 @@ import {
 } from 'date-fns'
 
 import { Constants } from './Constants.js'
-import { type TimestampedData, WebSocketCloseEventStatusString } from '../types/index.js'
+import {
+  type EmptyObject,
+  type TimestampedData,
+  WebSocketCloseEventStatusString
+} from '../types/index.js'
 
 export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
@@ -261,7 +265,7 @@ export const isObject = (value: unknown): value is object => {
   return value != null && typeof value === 'object' && !Array.isArray(value)
 }
 
-export const isEmptyObject = (object: object): object is Record<string, never> => {
+export const isEmptyObject = (object: object): object is EmptyObject => {
   if (object.constructor !== Object) {
     return false
   }

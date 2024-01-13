@@ -27,9 +27,9 @@ export class StorageFactory {
       case StorageType.MONGO_DB:
         storageInstance = new MongoDBStorage(connectionUri, logPrefix)
         break
+      // case StorageType.SQLITE:
       // case StorageType.MYSQL:
       // case StorageType.MARIA_DB:
-      // case StorageType.SQLITE:
       //   storageInstance = new MikroOrmStorage(connectionUri, logPrefix, type)
       //   break
       default:

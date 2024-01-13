@@ -186,7 +186,7 @@ export {
 } from './ocpp/Configuration.js'
 export type { ConnectorStatus } from './ConnectorStatus.js'
 export { ConnectorStatusEnum, type ConnectorStatusTransition } from './ocpp/ConnectorStatusEnum.js'
-export { DBName, type MikroOrmDbType, StorageType } from './Storage.js'
+export { DBName, StorageType } from './Storage.js'
 export type { EmptyObject } from './EmptyObject.js'
 export { ErrorType } from './ocpp/ErrorType.js'
 export type { EvseTemplate, EvseStatus } from './Evse.js'

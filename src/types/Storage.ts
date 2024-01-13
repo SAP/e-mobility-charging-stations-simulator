@@ -1,7 +1,3 @@
-import type { Configuration } from '@mikro-orm/core'
-
-export type MikroOrmDbType = keyof typeof Configuration.PLATFORMS
-
 export enum StorageType {
   JSON_FILE = 'jsonfile',
   MONGO_DB = 'mongodb',
