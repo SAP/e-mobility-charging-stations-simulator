@@ -1,17 +1,10 @@
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-import { TsMorphMetadataProvider } from '@mikro-orm/reflection'
+import { defineConfig } from '@mikro-orm/sqlite'
 
 import { PerformanceData, PerformanceRecord } from './src/types/index.js'
 import { Constants } from './src/utils/index.js'
 
-export default {
-  metadataProvider: TsMorphMetadataProvider,
+export default defineConfig({
+  dbName: `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`,
   entities: [PerformanceRecord, PerformanceData],
-  type: 'sqlite',
-  clientUrl: `file://${join(
-    dirname(fileURLToPath(import.meta.url)),
-    `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
-  )}`
-}
+  debug: true
+})
