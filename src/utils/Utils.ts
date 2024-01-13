@@ -77,9 +77,9 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
 
 export const convertToDate = (
   value: Date | string | number | undefined | null
-): Date | undefined | null => {
+): Date | undefined => {
   if (value == null) {
-    return value
+    return undefined
   }
   if (isDate(value)) {
     return value

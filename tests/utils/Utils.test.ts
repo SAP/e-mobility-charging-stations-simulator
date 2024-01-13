@@ -80,7 +80,7 @@ await describe('Utils test suite', async () => {
 
   await it('Verify convertToDate()', () => {
     expect(convertToDate(undefined)).toBe(undefined)
-    expect(convertToDate(null)).toBe(null)
+    expect(convertToDate(null)).toBe(undefined)
     expect(() => convertToDate('')).toThrow(new Error("Cannot convert to date: ''"))
     expect(() => convertToDate('00:70:61')).toThrow(new Error("Cannot convert to date: '00:70:61'"))
     expect(convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'))
