@@ -165,6 +165,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    cp.chargingSchedule.startSchedule = convertToDate(cp.chargingSchedule.startSchedule)!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     cp.validFrom = convertToDate(cp.validFrom)!
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     cp.validTo = convertToDate(cp.validTo)!
