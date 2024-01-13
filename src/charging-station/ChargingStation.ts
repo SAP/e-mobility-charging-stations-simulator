@@ -1763,7 +1763,8 @@ export class ChargingStation extends EventEmitter {
           })
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           this.bootNotificationResponse.currentTime = convertToDate(
-            this.bootNotificationResponse.currentTime
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            this.bootNotificationResponse?.currentTime
           )!
           if (!this.isRegistered()) {
             this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount
