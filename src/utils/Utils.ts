@@ -206,10 +206,6 @@ export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[]
   return timeSeries.map(timeSeriesItem => timeSeriesItem.value)
 }
 
-export const isObject = (item: unknown): item is object => {
-  return item != null && typeof item === 'object' && !Array.isArray(item)
-}
-
 type CloneableData =
   | number
   | string
@@ -261,8 +257,25 @@ export const clone = <T>(object: T): T => {
   return deepClone(object as CloneableData) as T
 }
 
-export const hasOwnProp = (object: unknown, property: PropertyKey): boolean => {
-  return isObject(object) && Object.hasOwn(object, property)
+export const isObject = (value: unknown): value is object => {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+export const isEmptyObject = (object: object): object is Record<string, never> => {
+  if (object.constructor !== Object) {
+    return false
+  }
+  // Iterates over the keys of an object, if
+  // any exist, return false.
+  // eslint-disable-next-line no-unreachable-loop
+  for (const _ in object) {
+    return false
+  }
+  return true
+}
+
+export const hasOwnProp = (value: unknown, property: PropertyKey): boolean => {
+  return isObject(value) && Object.hasOwn(value, property)
 }
 
 export const isCFEnvironment = (): boolean => {
@@ -273,7 +286,7 @@ const isString = (value: unknown): value is string => {
   return typeof value === 'string'
 }
 
-export const isEmptyString = (value: unknown): value is string | undefined | null => {
+export const isEmptyString = (value: unknown): value is '' | undefined | null => {
   return value == null || (isString(value) && value.trim().length === 0)
 }
 
@@ -281,25 +294,12 @@ export const isNotEmptyString = (value: unknown): value is string => {
   return isString(value) && value.trim().length > 0
 }
 
-export const isEmptyArray = (object: unknown): object is unknown[] => {
-  return Array.isArray(object) && object.length === 0
+export const isEmptyArray = (value: unknown): value is never[] => {
+  return Array.isArray(value) && value.length === 0
 }
 
-export const isNotEmptyArray = (object: unknown): object is unknown[] => {
-  return Array.isArray(object) && object.length > 0
-}
-
-export const isEmptyObject = (obj: object): boolean => {
-  if (obj.constructor !== Object) {
-    return false
-  }
-  // Iterates over the keys of an object, if
-  // any exist, return false.
-  // eslint-disable-next-line no-unreachable-loop
-  for (const _ in obj) {
-    return false
-  }
-  return true
+export const isNotEmptyArray = (value: unknown): value is unknown[] => {
+  return Array.isArray(value) && value.length > 0
 }
 
 export const insertAt = (str: string, subStr: string, pos: number): string =>
@@ -328,11 +328,11 @@ export const secureRandom = (): number => {
 }
 
 export const JSONStringifyWithMapSupport = (
-  obj: Record<string, unknown> | Array<Record<string, unknown>> | Map<unknown, unknown>,
+  object: Record<string, unknown> | Array<Record<string, unknown>> | Map<unknown, unknown>,
   space?: number
 ): string => {
   return JSON.stringify(
-    obj,
+    object,
     (_, value: Record<string, unknown>) => {
       if (value instanceof Map) {
         return {
