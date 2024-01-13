@@ -364,6 +364,8 @@ await describe('Utils test suite', async () => {
   await it('Verify isEmptyObject()', () => {
     expect(isEmptyObject({})).toBe(true)
     expect(isEmptyObject({ 1: 1, 2: 2 })).toBe(false)
+    expect(isEmptyObject([])).toBe(false)
+    expect(isEmptyObject([1, 2])).toBe(false)
     expect(isEmptyObject(new Map())).toBe(false)
     expect(isEmptyObject(new Set())).toBe(false)
     expect(isEmptyObject(new WeakMap())).toBe(false)
