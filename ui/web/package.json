@@ -34,7 +34,7 @@
   "dependencies": {
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.4.11",
+    "vue": "^3.4.13",
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
@@ -56,7 +56,7 @@
     "eslint-define-config": "^2.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-vue": "^9.20.0",
+    "eslint-plugin-vue": "^9.20.1",
     "jsdom": "^23.2.0",
     "prettier": "^3.2.1",
     "rimraf": "^5.0.5",
