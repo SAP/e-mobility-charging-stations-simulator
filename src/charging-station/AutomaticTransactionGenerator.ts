@@ -19,7 +19,7 @@ import {
 } from '../types/index.js'
 import {
   Constants,
-  cloneObject,
+  clone,
   convertToDate,
   formatDurationMilliSeconds,
   getRandomInteger,
@@ -371,7 +371,7 @@ export class AutomaticTransactionGenerator {
   private getConnectorStatus (connectorId: number): Status {
     const connectorStatus =
       this.chargingStation.getAutomaticTransactionGeneratorStatuses()?.[connectorId - 1] != null
-        ? cloneObject<Status>(
+        ? clone<Status>(
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           this.chargingStation.getAutomaticTransactionGeneratorStatuses()![connectorId - 1]
         )

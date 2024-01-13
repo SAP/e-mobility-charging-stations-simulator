@@ -25,7 +25,7 @@ export {
 } from './MessageChannelUtils.js'
 export {
   JSONStringifyWithMapSupport,
-  cloneObject,
+  clone,
   convertToBoolean,
   convertToDate,
   convertToFloat,

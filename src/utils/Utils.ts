@@ -257,7 +257,7 @@ const deepClone = <I extends CloneableData, O extends CloneableData = I>(
   return clone as O
 }
 
-export const cloneObject = <T>(object: T): T => {
+export const clone = <T>(object: T): T => {
   return deepClone(object as CloneableData) as T
 }
 

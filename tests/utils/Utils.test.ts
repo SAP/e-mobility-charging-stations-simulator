@@ -5,7 +5,7 @@ import { expect } from 'expect'
 
 import { Constants } from '../../src/utils/Constants.js'
 import {
-  cloneObject,
+  clone,
   convertToBoolean,
   convertToDate,
   convertToFloat,
@@ -68,7 +68,7 @@ await describe('Utils test suite', async () => {
     expect(formatDurationSeconds(hoursToSeconds(4380))).toBe('182 days 12 hours')
   })
 
-  await it('Verify isValidTime()', () => {
+  await it('Verify isValidDate()', () => {
     expect(isValidDate(undefined)).toBe(false)
     expect(isValidDate(-1)).toBe(true)
     expect(isValidDate(0)).toBe(true)
@@ -248,33 +248,33 @@ await describe('Utils test suite', async () => {
     expect(isObject(new WeakSet())).toBe(true)
   })
 
-  await it('Verify cloneObject()', () => {
+  await it('Verify clone()', () => {
     const obj = { 1: 1 }
-    expect(cloneObject(obj)).toStrictEqual(obj)
-    expect(cloneObject(obj) === obj).toBe(false)
+    expect(clone(obj)).toStrictEqual(obj)
+    expect(clone(obj) === obj).toBe(false)
     const nestedObj = { 1: obj, 2: obj }
-    expect(cloneObject(nestedObj)).toStrictEqual(nestedObj)
-    expect(cloneObject(nestedObj) === nestedObj).toBe(false)
+    expect(clone(nestedObj)).toStrictEqual(nestedObj)
+    expect(clone(nestedObj) === nestedObj).toBe(false)
     const array = [1, 2]
-    expect(cloneObject(array)).toStrictEqual(array)
-    expect(cloneObject(array) === array).toBe(false)
+    expect(clone(array)).toStrictEqual(array)
+    expect(clone(array) === array).toBe(false)
     const objArray = [obj, obj]
-    expect(cloneObject(objArray)).toStrictEqual(objArray)
-    expect(cloneObject(objArray) === objArray).toBe(false)
+    expect(clone(objArray)).toStrictEqual(objArray)
+    expect(clone(objArray) === objArray).toBe(false)
     const date = new Date()
-    expect(cloneObject(date)).toStrictEqual(date)
-    expect(cloneObject(date) === date).toBe(false)
+    expect(clone(date)).toStrictEqual(date)
+    expect(clone(date) === date).toBe(false)
     const map = new Map([['1', '2']])
-    expect(cloneObject(map)).toStrictEqual({})
+    expect(clone(map)).toStrictEqual({})
     const set = new Set(['1'])
-    expect(cloneObject(set)).toStrictEqual({})
+    expect(clone(set)).toStrictEqual({})
     // The URL object seems to have not enumerable properties
     const url = new URL('https://domain.tld')
-    expect(cloneObject(url)).toStrictEqual({})
+    expect(clone(url)).toStrictEqual({})
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    expect(cloneObject(weakMap)).toStrictEqual({})
+    expect(clone(weakMap)).toStrictEqual({})
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    expect(cloneObject(weakSet)).toStrictEqual({})
+    expect(clone(weakSet)).toStrictEqual({})
   })
 
   await it('Verify hasOwnProp()', () => {

@@ -132,7 +132,7 @@ import {
   buildStartedMessage,
   buildStoppedMessage,
   buildUpdatedMessage,
-  cloneObject,
+  clone,
   convertToBoolean,
   convertToDate,
   convertToInt,
@@ -1397,11 +1397,11 @@ export class ChargingStation extends EventEmitter {
   private initializeConnectorsOrEvsesFromFile (configuration: ChargingStationConfiguration): void {
     if (configuration.connectorsStatus != null && configuration.evsesStatus == null) {
       for (const [connectorId, connectorStatus] of configuration.connectorsStatus.entries()) {
-        this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus))
+        this.connectors.set(connectorId, clone<ConnectorStatus>(connectorStatus))
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
       for (const [evseId, evseStatusConfiguration] of configuration.evsesStatus.entries()) {
-        const evseStatus = cloneObject<EvseStatusConfiguration>(evseStatusConfiguration)
+        const evseStatus = clone<EvseStatusConfiguration>(evseStatusConfiguration)
         delete evseStatus.connectorsStatus
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
@@ -1488,7 +1488,7 @@ export class ChargingStation extends EventEmitter {
               this.logPrefix(),
               this.templateFile
             )
-            this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus))
+            this.connectors.set(connectorId, clone<ConnectorStatus>(connectorStatus))
           }
           initializeConnectorsMapStatus(this.connectors, this.logPrefix())
           this.saveConnectorsStatus()
@@ -1632,7 +1632,7 @@ export class ChargingStation extends EventEmitter {
         const configurationFromFile = this.getConfigurationFromFile()
         let configurationData: ChargingStationConfiguration =
           configurationFromFile != null
-            ? cloneObject<ChargingStationConfiguration>(configurationFromFile)
+            ? clone<ChargingStationConfiguration>(configurationFromFile)
             : {}
         if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
           configurationData.stationInfo = this.stationInfo

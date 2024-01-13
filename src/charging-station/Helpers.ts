@@ -57,7 +57,7 @@ import {
   ACElectricUtils,
   Constants,
   DCElectricUtils,
-  cloneObject,
+  clone,
   convertToDate,
   convertToInt,
   isArraySorted,
@@ -331,7 +331,7 @@ export const buildConnectorsMap = (
       const connectorStatus = connectors[connector]
       const connectorId = convertToInt(connector)
       checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
-      connectorsMap.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus))
+      connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
     }
   } else {
     logger.warn(
@@ -468,7 +468,7 @@ export const warnTemplateKeysDeprecation = (
 export const stationTemplateToStationInfo = (
   stationTemplate: ChargingStationTemplate
 ): ChargingStationInfo => {
-  stationTemplate = cloneObject<ChargingStationTemplate>(stationTemplate)
+  stationTemplate = clone<ChargingStationTemplate>(stationTemplate)
   delete stationTemplate.power
   delete stationTemplate.powerUnit
   delete stationTemplate.Connectors
@@ -566,7 +566,7 @@ export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number
 ): ChargingProfile[] => {
-  return cloneObject<ChargingProfile[]>(
+  return clone<ChargingProfile[]>(
     (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
       .sort((a, b) => b.stackLevel - a.stackLevel)
       .concat(
