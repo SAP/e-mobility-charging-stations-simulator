@@ -259,7 +259,6 @@ export type {
 } from './ocpp/2.0/Responses.js'
 export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
 export { OCPPVersion } from './ocpp/OCPPVersion.js'
-export { PerformanceData } from './orm/entities/PerformanceData.js'
 export { PerformanceRecord } from './orm/entities/PerformanceRecord.js'
 export type { Statistics, TimestampedData } from './Statistics.js'
 export {

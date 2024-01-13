@@ -1,6 +1,24 @@
-import { Collection, Entity, OneToMany, PrimaryKey, Property } from '@mikro-orm/core'
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core'
 
-import { PerformanceData } from './PerformanceData.js'
+interface PerformanceData {
+  name: string
+  requestCount: number
+  responseCount: number
+  errorCount: number
+  timeMeasurementCount: number
+  measurementTimeSeries: Array<{
+    timestamp: number
+    value: number
+  }>
+  currentTimeMeasurement: number
+  minTimeMeasurement: number
+  maxTimeMeasurement: number
+  totalTimeMeasurement: number
+  avgTimeMeasurement: number
+  medTimeMeasurement: number
+  ninetyFiveThPercentileTimeMeasurement: number
+  stdDevTimeMeasurement: number
+}
 
 @Entity()
 export class PerformanceRecord {
@@ -19,6 +37,6 @@ export class PerformanceRecord {
   @Property()
     updatedAt?: Date
 
-  @OneToMany(() => PerformanceData, performanceData => performanceData.performanceRecord)
-    performanceData? = new Collection<PerformanceData>(this)
+  @Property()
+    performanceData!: PerformanceData[]
 }
