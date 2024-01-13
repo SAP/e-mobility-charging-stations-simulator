@@ -24,6 +24,7 @@ export {
   buildStoppedMessage
 } from './MessageChannelUtils.js'
 export {
+  isAsyncFunction,
   JSONStringifyWithMapSupport,
   clone,
   convertToBoolean,

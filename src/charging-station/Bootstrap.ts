@@ -35,6 +35,7 @@ import {
   generateUUID,
   handleUncaughtException,
   handleUnhandledRejection,
+  isAsyncFunction,
   isNotEmptyArray,
   logPrefix,
   logger
@@ -362,7 +363,18 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventPerformanceStatistics = (data: Statistics): void => {
-    this.storage?.storePerformanceStatistics(data) as undefined
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    if (isAsyncFunction(this.storage?.storePerformanceStatistics)) {
+      (
+        this.storage.storePerformanceStatistics as (
+          performanceStatistics: Statistics
+        ) => Promise<void>
+      )(data).catch(Constants.EMPTY_FUNCTION)
+    } else {
+      (this.storage?.storePerformanceStatistics as (performanceStatistics: Statistics) => void)(
+        data
+      )
+    }
   }
 
   private initializeCounters (): void {

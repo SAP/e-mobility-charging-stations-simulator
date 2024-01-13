@@ -261,6 +261,17 @@ export const clone = <T>(object: T): T => {
   return deepClone(object as CloneableData) as T
 }
 
+/**
+ * Detects whether the given value is an asynchronous function or not.
+ *
+ * @param fn - Unknown value.
+ * @returns `true` if `fn` was an asynchronous function, otherwise `false`.
+ * @internal
+ */
+export const isAsyncFunction = (fn: unknown): fn is (...args: unknown[]) => Promise<unknown> => {
+  return typeof fn === 'function' && fn.constructor.name === 'AsyncFunction'
+}
+
 export const isObject = (value: unknown): value is object => {
   return value != null && typeof value === 'object' && !Array.isArray(value)
 }
