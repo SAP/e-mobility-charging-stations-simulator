@@ -21,11 +21,10 @@ import {
   isEmptyArray,
   isEmptyObject,
   isEmptyString,
-  isIterable,
   isNotEmptyArray,
   isNotEmptyString,
   isObject,
-  isValidTime,
+  isValidDate,
   max,
   min,
   once,
@@ -70,21 +69,13 @@ await describe('Utils test suite', async () => {
   })
 
   await it('Verify isValidTime()', () => {
-    expect(isValidTime(undefined)).toBe(false)
-    expect(isValidTime(null)).toBe(false)
-    expect(isValidTime('')).toBe(false)
-    expect(isValidTime({})).toBe(false)
-    expect(isValidTime([])).toBe(false)
-    expect(isValidTime(new Map())).toBe(false)
-    expect(isValidTime(new Set())).toBe(false)
-    expect(isValidTime(new WeakMap())).toBe(false)
-    expect(isValidTime(new WeakSet())).toBe(false)
-    expect(isValidTime(-1)).toBe(true)
-    expect(isValidTime(0)).toBe(true)
-    expect(isValidTime(1)).toBe(true)
-    expect(isValidTime(-0.5)).toBe(true)
-    expect(isValidTime(0.5)).toBe(true)
-    expect(isValidTime(new Date())).toBe(true)
+    expect(isValidDate(undefined)).toBe(false)
+    expect(isValidDate(-1)).toBe(true)
+    expect(isValidDate(0)).toBe(true)
+    expect(isValidDate(1)).toBe(true)
+    expect(isValidDate(-0.5)).toBe(true)
+    expect(isValidDate(0.5)).toBe(true)
+    expect(isValidDate(new Date())).toBe(true)
   })
 
   await it('Verify convertToDate()', () => {
@@ -300,21 +291,6 @@ await describe('Utils test suite', async () => {
     expect(hasOwnProp({ 1: '1' }, 1)).toBe(true)
     expect(hasOwnProp({ 1: '1' }, '2')).toBe(false)
     expect(hasOwnProp({ 1: '1' }, 2)).toBe(false)
-  })
-
-  await it('Verify isIterable()', () => {
-    expect(isIterable('')).toBe(true)
-    expect(isIterable(' ')).toBe(true)
-    expect(isIterable('test')).toBe(true)
-    expect(isIterable(undefined)).toBe(false)
-    expect(isIterable(null)).toBe(false)
-    expect(isIterable(0)).toBe(false)
-    expect(isIterable([0, 1])).toBe(true)
-    expect(isIterable({ 1: 1 })).toBe(false)
-    expect(isIterable(new Map())).toBe(true)
-    expect(isIterable(new Set())).toBe(true)
-    expect(isIterable(new WeakMap())).toBe(false)
-    expect(isIterable(new WeakSet())).toBe(false)
   })
 
   await it('Verify isEmptyString()', () => {

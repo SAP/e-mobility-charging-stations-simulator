@@ -65,7 +65,7 @@ import {
   isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
-  isValidTime,
+  isValidDate,
   logger,
   secureRandom
 } from '../utils/index.js'
@@ -373,7 +373,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   }
   connectorStatus.chargingProfiles =
     connectorStatus.transactionId != null && isNotEmptyArray(connectorStatus.chargingProfiles)
-      ? connectorStatus.chargingProfiles?.filter(
+      ? connectorStatus.chargingProfiles.filter(
         chargingProfile => chargingProfile.transactionId !== connectorStatus.transactionId
       )
       : []
@@ -680,11 +680,11 @@ export const waitChargingStationEvents = async (
 const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemplate): number => {
   let configuredMaxNumberOfConnectors = 0
   if (isNotEmptyArray(stationTemplate.numberOfConnectors)) {
-    const numberOfConnectors = stationTemplate.numberOfConnectors as number[]
+    const numberOfConnectors = stationTemplate.numberOfConnectors
     configuredMaxNumberOfConnectors =
       numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)]
   } else if (stationTemplate.numberOfConnectors != null) {
-    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors as number
+    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors
   } else if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
     configuredMaxNumberOfConnectors =
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -951,16 +951,14 @@ export const canProceedChargingProfile = (
   logPrefix: string
 ): boolean => {
   if (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (isValidTime(chargingProfile.validFrom) && isBefore(currentDate, chargingProfile.validFrom!)) ||
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (isValidTime(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo!))
+    (isValidDate(chargingProfile.validFrom) && isBefore(currentDate, chargingProfile.validFrom)) ||
+    (isValidDate(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo))
   ) {
     logger.debug(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${
         chargingProfile.chargingProfileId
       } is not valid for the current date ${
-        currentDate instanceof Date ? currentDate.toISOString() : currentDate
+        isDate(currentDate) ? currentDate.toISOString() : currentDate
       }`
     )
     return false
@@ -974,7 +972,7 @@ export const canProceedChargingProfile = (
     )
     return false
   }
-  if (!isValidTime(chargingProfile.chargingSchedule.startSchedule)) {
+  if (!isValidDate(chargingProfile.chargingSchedule.startSchedule)) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has an invalid startSchedule date defined`
     )
@@ -1028,7 +1026,7 @@ const prepareRecurringChargingProfile = (
 ): boolean => {
   const chargingSchedule = chargingProfile.chargingSchedule
   let recurringIntervalTranslated = false
-  let recurringInterval: Interval
+  let recurringInterval: Interval | undefined
   switch (chargingProfile.recurrencyKind) {
     case RecurrencyKindType.DAILY:
       recurringInterval = {
@@ -1087,13 +1085,11 @@ const prepareRecurringChargingProfile = (
       `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${
         chargingProfile.recurrencyKind
       } charging profile id ${chargingProfile.chargingProfileId} recurrency time interval [${toDate(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        recurringInterval!.start
+        recurringInterval?.start as Date
       ).toISOString()}, ${toDate(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        recurringInterval!.end
+        recurringInterval?.end as Date
       ).toISOString()}] has not been properly translated to current date ${
-        currentDate instanceof Date ? currentDate.toISOString() : currentDate
+        isDate(currentDate) ? currentDate.toISOString() : currentDate
       } `
     )
   }

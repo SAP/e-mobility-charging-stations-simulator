@@ -66,7 +66,7 @@ export const formatDurationSeconds = (duration: number): string => {
 }
 
 // More efficient time validation function than the one provided by date-fns
-export const isValidTime = (date: Date | number | undefined): boolean => {
+export const isValidDate = (date: Date | number | undefined): date is Date | number => {
   if (typeof date === 'number') {
     return !isNaN(date)
   } else if (isDate(date)) {
@@ -76,8 +76,8 @@ export const isValidTime = (date: Date | number | undefined): boolean => {
 }
 
 export const convertToDate = (
-  value: Date | string | number | null | undefined
-): Date | null | undefined => {
+  value: Date | string | number | undefined | null
+): Date | undefined | null => {
   if (value == null) {
     return value
   }
@@ -105,7 +105,7 @@ export const convertToInt = (value: unknown): number => {
     return Math.trunc(value)
   }
   if (isString(value)) {
-    changedValue = parseInt(value as string)
+    changedValue = parseInt(value)
   }
   if (isNaN(changedValue)) {
     throw new Error(`Cannot convert to integer: '${String(value)}'`)
@@ -119,7 +119,7 @@ export const convertToFloat = (value: unknown): number => {
   }
   let changedValue: number = value as number
   if (isString(value)) {
-    changedValue = parseFloat(value as string)
+    changedValue = parseFloat(value)
   }
   if (isNaN(changedValue)) {
     throw new Error(`Cannot convert to float: '${String(value)}'`)
@@ -133,7 +133,7 @@ export const convertToBoolean = (value: unknown): boolean => {
     // Check the type
     if (typeof value === 'boolean') {
       return value
-    } else if (isString(value) && ((value as string).toLowerCase() === 'true' || value === '1')) {
+    } else if (isString(value) && (value.toLowerCase() === 'true' || value === '1')) {
       result = true
     } else if (typeof value === 'number' && value === 1) {
       result = true
@@ -206,7 +206,7 @@ export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[]
   return timeSeries.map(timeSeriesItem => timeSeriesItem.value)
 }
 
-export const isObject = (item: unknown): boolean => {
+export const isObject = (item: unknown): item is object => {
   return item != null && typeof item === 'object' && !Array.isArray(item)
 }
 
@@ -262,34 +262,30 @@ export const cloneObject = <T>(object: T): T => {
 }
 
 export const hasOwnProp = (object: unknown, property: PropertyKey): boolean => {
-  return isObject(object) && Object.hasOwn(object as object, property)
+  return isObject(object) && Object.hasOwn(object, property)
 }
 
 export const isCFEnvironment = (): boolean => {
   return env.VCAP_APPLICATION != null
 }
 
-export const isIterable = <T>(obj: T): boolean => {
-  return obj != null ? typeof obj[Symbol.iterator as keyof T] === 'function' : false
-}
-
-const isString = (value: unknown): boolean => {
+const isString = (value: unknown): value is string => {
   return typeof value === 'string'
 }
 
-export const isEmptyString = (value: unknown): boolean => {
-  return value == null || (isString(value) && (value as string).trim().length === 0)
+export const isEmptyString = (value: unknown): value is string | undefined | null => {
+  return value == null || (isString(value) && value.trim().length === 0)
 }
 
-export const isNotEmptyString = (value: unknown): boolean => {
-  return isString(value) && (value as string).trim().length > 0
+export const isNotEmptyString = (value: unknown): value is string => {
+  return isString(value) && value.trim().length > 0
 }
 
-export const isEmptyArray = (object: unknown): boolean => {
+export const isEmptyArray = (object: unknown): object is unknown[] => {
   return Array.isArray(object) && object.length === 0
 }
 
-export const isNotEmptyArray = (object: unknown): boolean => {
+export const isNotEmptyArray = (object: unknown): object is unknown[] => {
   return Array.isArray(object) && object.length > 0
 }
 

@@ -23,7 +23,7 @@ import {
   convertToDate,
   formatDurationMilliSeconds,
   getRandomInteger,
-  isValidTime,
+  isValidDate,
   logPrefix,
   logger,
   secureRandom,
@@ -264,7 +264,7 @@ export class AutomaticTransactionGenerator {
       this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration ===
         false ||
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !isValidTime(this.connectorsStatus.get(connectorId)!.stopDate)
+      !isValidDate(this.connectorsStatus.get(connectorId)!.stopDate)
     ) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.connectorsStatus.get(connectorId)!.stopDate = new Date(

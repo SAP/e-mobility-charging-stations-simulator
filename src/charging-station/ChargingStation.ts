@@ -229,10 +229,8 @@ export class ChargingStation extends EventEmitter {
       `${
         this.stationInfo?.supervisionUrlOcppConfiguration === true &&
         isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)?.value)
-          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)!.value
+        isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
+          ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value
           : this.configuredSupervisionUrl.href
       }/${this.stationInfo?.chargingStationId}`
     )
@@ -504,8 +502,7 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey!, url)
+      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stationInfo!.supervisionUrls = url
@@ -834,8 +831,7 @@ export class ChargingStation extends EventEmitter {
   public startAutomaticTransactionGenerator (connectorIds?: number[]): void {
     this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this)
     if (isNotEmptyArray(connectorIds)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const connectorId of connectorIds!) {
+      for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.startConnector(connectorId)
       }
     } else {
@@ -847,8 +843,7 @@ export class ChargingStation extends EventEmitter {
 
   public stopAutomaticTransactionGenerator (connectorIds?: number[]): void {
     if (isNotEmptyArray(connectorIds)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const connectorId of connectorIds!) {
+      for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.stopConnector(connectorId)
       }
     } else {
@@ -1108,17 +1103,16 @@ export class ChargingStation extends EventEmitter {
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
     if (isNotEmptyArray(stationTemplate.power)) {
-      stationTemplate.power = stationTemplate.power as number[]
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
           ? stationTemplate.power[powerArrayRandomIndex] * 1000
           : stationTemplate.power[powerArrayRandomIndex]
     } else {
-      stationTemplate.power = stationTemplate.power as number
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power * 1000
+          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          stationTemplate.power! * 1000
           : stationTemplate.power
     }
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo)
@@ -1126,8 +1120,7 @@ export class ChargingStation extends EventEmitter {
       stationTemplate.firmwareVersionPattern ?? Constants.SEMVER_PATTERN
     if (
       isNotEmptyString(stationInfo.firmwareVersion) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion!)
+      !new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion)
     ) {
       logger.warn(
         `${this.logPrefix()} Firmware version '${stationInfo.firmwareVersion}' in template file ${
@@ -1226,13 +1219,10 @@ export class ChargingStation extends EventEmitter {
     ) {
       const patternGroup =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
-        this.stationInfo.firmwareVersion?.split('.').length
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const match = new RegExp(this.stationInfo.firmwareVersionPattern!)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .exec(this.stationInfo.firmwareVersion!)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ?.slice(1, patternGroup! + 1)
+        this.stationInfo.firmwareVersion.split('.').length
+      const match = new RegExp(this.stationInfo.firmwareVersionPattern)
+        .exec(this.stationInfo.firmwareVersion)
+        ?.slice(1, patternGroup + 1)
       if (match != null) {
         const patchLevelIndex = match.length - 1
         match[patchLevelIndex] = (
@@ -1312,37 +1302,31 @@ export class ChargingStation extends EventEmitter {
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!) == null
+      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey) == null
     ) {
       addConfigurationKey(
         this,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.stationInfo.supervisionUrlOcppKey!,
+        this.stationInfo.supervisionUrlOcppKey,
         this.configuredSupervisionUrl.href,
         { reboot: true }
       )
     } else if (
       this.stationInfo?.supervisionUrlOcppConfiguration === false &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!) != null
+      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey) != null
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!, { save: false })
+      deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey, { save: false })
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!) == null
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey) == null
     ) {
       addConfigurationKey(
         this,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.stationInfo!.amperageLimitationOcppKey!,
+        this.stationInfo.amperageLimitationOcppKey,
         // prettier-ignore
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (this.stationInfo!.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
+        (this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
       )
     }
     if (getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles) == null) {
@@ -2122,15 +2106,11 @@ export class ChargingStation extends EventEmitter {
   private getAmperageLimitation (): number | undefined {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo!.amperageLimitationOcppKey!) != null
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey) != null
     ) {
       return (
-        convertToInt(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          getConfigurationKey(this, this.stationInfo!.amperageLimitationOcppKey!)!.value
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ) / getAmperageLimitationUnitDivider(this.stationInfo!)
+        convertToInt(getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey)?.value) /
+        getAmperageLimitationUnitDivider(this.stationInfo)
       )
     }
   }
@@ -2285,9 +2265,7 @@ export class ChargingStation extends EventEmitter {
       let configuredSupervisionUrlIndex: number
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.RANDOM:
-          configuredSupervisionUrlIndex = Math.floor(
-            secureRandom() * (supervisionUrls as string[]).length
-          )
+          configuredSupervisionUrlIndex = Math.floor(secureRandom() * supervisionUrls.length)
           break
         case SupervisionUrlDistribution.ROUND_ROBIN:
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
@@ -2302,12 +2280,13 @@ export class ChargingStation extends EventEmitter {
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
               }`
             )
-          configuredSupervisionUrlIndex = (this.index - 1) % (supervisionUrls as string[]).length
+          configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length
           break
       }
-      configuredSupervisionUrl = (supervisionUrls as string[])[configuredSupervisionUrlIndex]
+      configuredSupervisionUrl = supervisionUrls[configuredSupervisionUrlIndex]
     } else {
-      configuredSupervisionUrl = supervisionUrls as string
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      configuredSupervisionUrl = supervisionUrls!
     }
     if (isNotEmptyString(configuredSupervisionUrl)) {
       return new URL(configuredSupervisionUrl)

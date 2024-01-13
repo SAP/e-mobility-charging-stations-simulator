@@ -491,7 +491,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    powerPerPhaseSampledValueTemplates.L1?.value,
+                    powerPerPhaseSampledValueTemplates.L1.value,
                     connectorMaximumPowerPerPhase / unitDivider,
                     connectorMinimumPowerPerPhase / unitDivider,
                     {
@@ -500,7 +500,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumPowerPerPhase / unitDivider
                     }
                   ),
-                  powerPerPhaseSampledValueTemplates.L1?.fluctuationPercent ??
+                  powerPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -509,7 +509,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    powerPerPhaseSampledValueTemplates.L2?.value,
+                    powerPerPhaseSampledValueTemplates.L2.value,
                     connectorMaximumPowerPerPhase / unitDivider,
                     connectorMinimumPowerPerPhase / unitDivider,
                     {
@@ -518,7 +518,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumPowerPerPhase / unitDivider
                     }
                   ),
-                  powerPerPhaseSampledValueTemplates.L2?.fluctuationPercent ??
+                  powerPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -527,7 +527,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    powerPerPhaseSampledValueTemplates.L3?.value,
+                    powerPerPhaseSampledValueTemplates.L3.value,
                     connectorMaximumPowerPerPhase / unitDivider,
                     connectorMinimumPowerPerPhase / unitDivider,
                     {
@@ -536,7 +536,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumPowerPerPhase / unitDivider
                     }
                   ),
-                  powerPerPhaseSampledValueTemplates.L3?.fluctuationPercent ??
+                  powerPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -757,7 +757,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    currentPerPhaseSampledValueTemplates.L1?.value,
+                    currentPerPhaseSampledValueTemplates.L1.value,
                     connectorMaximumAmperage,
                     connectorMinimumAmperage,
                     {
@@ -766,7 +766,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumAmperage
                     }
                   ),
-                  currentPerPhaseSampledValueTemplates.L1?.fluctuationPercent ??
+                  currentPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -775,7 +775,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    currentPerPhaseSampledValueTemplates.L2?.value,
+                    currentPerPhaseSampledValueTemplates.L2.value,
                     connectorMaximumAmperage,
                     connectorMinimumAmperage,
                     {
@@ -784,7 +784,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumAmperage
                     }
                   ),
-                  currentPerPhaseSampledValueTemplates.L2?.fluctuationPercent ??
+                  currentPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -793,7 +793,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    currentPerPhaseSampledValueTemplates.L3?.value,
+                    currentPerPhaseSampledValueTemplates.L3.value,
                     connectorMaximumAmperage,
                     connectorMinimumAmperage,
                     {
@@ -802,7 +802,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumAmperage
                     }
                   ),
-                  currentPerPhaseSampledValueTemplates.L3?.fluctuationPercent ??
+                  currentPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -1239,7 +1239,7 @@ export class OCPPServiceUtils {
     // This is intentional
   }
 
-  public static ajvErrorsToErrorType (errors: ErrorObject[] | null | undefined): ErrorType {
+  public static ajvErrorsToErrorType (errors: ErrorObject[] | undefined | null): ErrorType {
     if (isNotEmptyArray(errors)) {
       for (const error of errors as DefinedError[]) {
         switch (error.keyword) {

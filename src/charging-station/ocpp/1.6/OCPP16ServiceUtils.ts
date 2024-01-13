@@ -198,7 +198,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     const { id, chargingProfilePurpose, stackLevel } = commandPayload
     let clearedCP = false
     if (isNotEmptyArray(chargingProfiles)) {
-      chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
+      chargingProfiles.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
         let clearCurrentCP = false
         if (chargingProfile.chargingProfileId === id) {
           clearCurrentCP = true

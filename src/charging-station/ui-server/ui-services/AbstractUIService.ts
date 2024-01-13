@@ -163,7 +163,7 @@ export abstract class AbstractUIService {
   ): void {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
-        ?.map(hashId => {
+        .map(hashId => {
           if (this.uiServer.chargingStations.has(hashId)) {
             return hashId
           }

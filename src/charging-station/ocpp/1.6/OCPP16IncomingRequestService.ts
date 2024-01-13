@@ -804,8 +804,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const connectorStatus = chargingStation.getConnectorStatus(connectorId!)
     if (connectorId != null && isNotEmptyArray(connectorStatus?.chargingProfiles)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      connectorStatus!.chargingProfiles = []
+      connectorStatus.chargingProfiles = []
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${connectorId}`
       )
