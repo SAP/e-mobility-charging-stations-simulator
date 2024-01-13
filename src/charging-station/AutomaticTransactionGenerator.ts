@@ -377,14 +377,10 @@ export class AutomaticTransactionGenerator {
         )
         : undefined
     if (connectorStatus != null) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      connectorStatus.startDate = convertToDate(connectorStatus.startDate)!
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      connectorStatus.lastRunDate = convertToDate(connectorStatus.lastRunDate)!
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      connectorStatus.stopDate = convertToDate(connectorStatus.stopDate)!
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      connectorStatus.stoppedDate = convertToDate(connectorStatus.stoppedDate)!
+      connectorStatus.startDate = convertToDate(connectorStatus.startDate)
+      connectorStatus.lastRunDate = convertToDate(connectorStatus.lastRunDate)
+      connectorStatus.stopDate = convertToDate(connectorStatus.stopDate)
+      connectorStatus.stoppedDate = convertToDate(connectorStatus.stoppedDate)
       if (
         !this.started &&
         (connectorStatus.start ||

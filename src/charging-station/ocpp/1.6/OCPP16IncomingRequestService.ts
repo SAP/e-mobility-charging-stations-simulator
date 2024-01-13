@@ -726,10 +726,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             chargingProfile.chargingProfileId
           } startSchedule property is not a Date instance. Trying to convert it to a Date instance`
         )
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         chargingProfile.chargingSchedule.startSchedule = convertToDate(
           chargingProfile.chargingSchedule.startSchedule
-        )!
+        )
       }
       if (chargingProfile.chargingSchedule.duration == null) {
         logger.debug(
@@ -740,7 +739,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         // OCPP specifies that if duration is not defined, it should be infinite
         chargingProfile.chargingSchedule.duration = differenceInSeconds(
           maxTime,
-          chargingProfile.chargingSchedule.startSchedule
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          chargingProfile.chargingSchedule.startSchedule!
         )
       }
       if (

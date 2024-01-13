@@ -164,12 +164,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    cp.chargingSchedule.startSchedule = convertToDate(cp.chargingSchedule.startSchedule)!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    cp.validFrom = convertToDate(cp.validFrom)!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    cp.validTo = convertToDate(cp.validTo)!
+    cp.chargingSchedule.startSchedule = convertToDate(cp.chargingSchedule.startSchedule)
+    cp.validFrom = convertToDate(cp.validFrom)
+    cp.validTo = convertToDate(cp.validTo)
     let cpReplaced = false
     if (isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
