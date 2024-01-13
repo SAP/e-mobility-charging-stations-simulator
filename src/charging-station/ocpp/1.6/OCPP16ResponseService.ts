@@ -615,33 +615,40 @@ export class OCPP16ResponseService extends OCPPResponseService {
           requestPayload.meterStart
         )
       if (requestPayload.reservationId != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const reservation = chargingStation.getReservationBy(
           'reservationId',
           requestPayload.reservationId
-        )!
-        if (reservation.idTag !== requestPayload.idTag) {
-          logger.warn(
-            `${chargingStation.logPrefix()} Reserved transaction ${
-              payload.transactionId
-            } started with a different idTag ${requestPayload.idTag} than the reservation one ${
-              reservation.idTag
-            }`
-          )
-        }
-        if (hasReservationExpired(reservation)) {
-          logger.warn(
-            `${chargingStation.logPrefix()} Reserved transaction ${
-              payload.transactionId
-            } started with expired reservation ${
-              requestPayload.reservationId
-            } (expiry date: ${reservation.expiryDate.toISOString()}))`
-          )
-        }
-        await chargingStation.removeReservation(
-          reservation,
-          ReservationTerminationReason.TRANSACTION_STARTED
         )
+        if (reservation != null) {
+          if (reservation.idTag !== requestPayload.idTag) {
+            logger.warn(
+              `${chargingStation.logPrefix()} Reserved transaction ${
+                payload.transactionId
+              } started with a different idTag ${requestPayload.idTag} than the reservation one ${
+                reservation.idTag
+              }`
+            )
+          }
+          if (hasReservationExpired(reservation)) {
+            logger.warn(
+              `${chargingStation.logPrefix()} Reserved transaction ${
+                payload.transactionId
+              } started with expired reservation ${
+                requestPayload.reservationId
+              } (expiry date: ${reservation.expiryDate.toISOString()}))`
+            )
+          }
+          await chargingStation.removeReservation(
+            reservation,
+            ReservationTerminationReason.TRANSACTION_STARTED
+          )
+        } else {
+          logger.warn(
+            `${chargingStation.logPrefix()} Reserved transaction ${
+              payload.transactionId
+            } started with unknown reservation ${requestPayload.reservationId}`
+          )
+        }
       }
       chargingStation.stationInfo?.beginEndMeterValues === true &&
         (await chargingStation.ocppRequestService.requestHandler<

@@ -443,7 +443,6 @@ export const buildMeterValue = (
         }
       }
       if (powerSampledValueTemplate != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         checkMeasurandPowerDivider(chargingStation, powerSampledValueTemplate.measurand)
         const errMsg = `MeterValues measurand ${
           powerSampledValueTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
@@ -931,7 +930,6 @@ export const buildMeterValue = (
       // Energy.Active.Import.Register measurand (default)
       energySampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
       if (energySampledValueTemplate != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
         const unitDivider =
           energySampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
