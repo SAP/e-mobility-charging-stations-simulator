@@ -19,7 +19,7 @@ export class MikroOrmStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
-      await this.orm?.em.persistAndFlush({
+      await this.orm?.em.upsert({
         ...performanceStatistics,
         statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
           name,
