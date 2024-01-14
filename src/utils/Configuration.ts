@@ -177,17 +177,31 @@ export class Configuration {
   }
 
   private static buildPerformanceStorageSection (): StorageConfiguration {
-    let storageConfiguration: StorageConfiguration = {
-      enabled: false,
-      type: StorageType.JSON_FILE,
-      uri: getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
+    let storageConfiguration: StorageConfiguration
+    switch (Configuration.getConfigurationData()?.performanceStorage?.type) {
+      case StorageType.SQLITE:
+        storageConfiguration = {
+          enabled: false,
+          type: StorageType.SQLITE,
+          uri: getDefaultPerformanceStorageUri(StorageType.SQLITE)
+        }
+        break
+      case StorageType.JSON_FILE:
+      default:
+        storageConfiguration = {
+          enabled: false,
+          type: StorageType.JSON_FILE,
+          uri: getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
+        }
+        break
     }
     if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
       storageConfiguration = {
         ...storageConfiguration,
         ...Configuration.getConfigurationData()?.performanceStorage,
-        ...(Configuration.getConfigurationData()?.performanceStorage?.type ===
-          StorageType.JSON_FILE &&
+        ...((Configuration.getConfigurationData()?.performanceStorage?.type ===
+          StorageType.JSON_FILE ||
+          Configuration.getConfigurationData()?.performanceStorage?.type === StorageType.SQLITE) &&
           Configuration.getConfigurationData()?.performanceStorage?.uri != null && {
           uri: buildPerformanceUriFilePath(
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

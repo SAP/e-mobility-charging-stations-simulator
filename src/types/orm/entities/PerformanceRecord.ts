@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core'
 
-interface PerformanceData {
+interface StatisticsData {
   name: string
   requestCount: number
   responseCount: number
@@ -38,5 +38,5 @@ export class PerformanceRecord {
     updatedAt?: Date
 
   @Property()
-    performanceData!: PerformanceData[]
+    statisticsData!: Array<Partial<StatisticsData>>
 }

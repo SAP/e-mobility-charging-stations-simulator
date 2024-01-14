@@ -4,7 +4,7 @@ import { MikroORM as MariaDbORM, type Options as MariaDbOptions } from '@mikro-o
 import { MikroORM as SqliteORM, type Options as SqliteOptions } from '@mikro-orm/sqlite'
 
 import { Storage } from './Storage.js'
-import { type Statistics, StorageType } from '../../types/index.js'
+import { type PerformanceRecord, type Statistics, StorageType } from '../../types/index.js'
 import { Constants } from '../../utils/index.js'
 
 export class MikroOrmStorage extends Storage {
@@ -19,8 +19,13 @@ export class MikroOrmStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
-      // TODO: build PerformanceRecord entity
-      await this.orm?.em.persistAndFlush({})
+      await this.orm?.em.persistAndFlush({
+        ...performanceStatistics,
+        statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
+          name,
+          ...value
+        }))
+      } satisfies PerformanceRecord)
     } catch (error) {
       this.handleDBError(this.storageType, error as Error, Constants.PERFORMANCE_RECORDS_TABLE)
     }
@@ -57,7 +62,7 @@ export class MikroOrmStorage extends Storage {
 
   private getDBName (): string {
     if (this.storageType === StorageType.SQLITE) {
-      return `${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
+      return `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
     }
     return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }

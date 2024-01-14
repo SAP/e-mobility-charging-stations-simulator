@@ -3,8 +3,12 @@
   "compilerOptions": {
     "rootDir": "./src/types/orm/entities",
     "outDir": "./dist/types/orm/entities",
-    "sourceMap": true,
-    "esModuleInterop": true
+    "declaration": true,
+    "sourceMap": true
   },
-  "include": ["src/types/orm/entities/*.ts"]
+  "include": ["src/types/orm/entities/*.ts"],
+  "ts-node": {
+    "esm": true,
+    "transpileOnly": true
+  }
 }
