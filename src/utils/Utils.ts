@@ -240,7 +240,7 @@ const deepClone = <I extends CloneableData, O extends CloneableData = I>(
     return clone as O
   }
   if (value instanceof Date) {
-    return new Date(value.valueOf()) as O
+    return new Date(value.getTime()) as O
   }
   if (typeof value !== 'object' || value === null) {
     return value as unknown as O

@@ -1329,16 +1329,16 @@ export class OCPPServiceUtils {
     return true
   }
 
-  public static convertDateToISOString<T extends JsonType>(obj: T): void {
-    for (const key in obj) {
+  public static convertDateToISOString<T extends JsonType>(object: T): void {
+    for (const key in object) {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-      if (isDate(obj![key])) {
+      if (isDate(object![key])) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        (obj![key] as string) = (obj![key] as Date).toISOString()
+        (object![key] as string) = (object![key] as Date).toISOString()
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition
-      } else if (typeof obj![key] === 'object' && obj![key] !== null) {
+      } else if (typeof object![key] === 'object' && object![key] !== null) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        OCPPServiceUtils.convertDateToISOString<T>(obj![key] as T)
+        OCPPServiceUtils.convertDateToISOString<T>(object![key] as T)
       }
     }
   }
