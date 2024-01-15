@@ -559,7 +559,7 @@ export class Configuration {
         if (
           !Configuration.configurationFileReloading &&
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          filename!.trim()!.length > 0 &&
+          filename!.trim().length > 0 &&
           event === 'change'
         ) {
           Configuration.configurationFileReloading = true

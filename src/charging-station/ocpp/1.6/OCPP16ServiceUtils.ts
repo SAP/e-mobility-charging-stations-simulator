@@ -507,8 +507,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             .filter((schedulePeriod, index) => {
               if (
                 isWithinInterval(
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
                   compositeInterval
                 )
               ) {
@@ -549,8 +548,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           ),
           chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(schedulePeriod =>
             isWithinInterval(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
+              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
               compositeInterval
             )
           )
