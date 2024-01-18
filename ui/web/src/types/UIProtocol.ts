@@ -1,16 +1,16 @@
 import type { JsonObject } from './JsonType'
 
 export enum Protocol {
-  UI = 'ui',
+  UI = 'ui'
 }
 
 export enum ApplicationProtocol {
   HTTP = 'http',
-  WS = 'ws',
+  WS = 'ws'
 }
 
 export enum ProtocolVersion {
-  '0.0.1' = '0.0.1',
+  '0.0.1' = '0.0.1'
 }
 
 export type ProtocolRequest = [string, ProcedureName, RequestPayload]
@@ -31,7 +31,7 @@ export enum ProcedureName {
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   START_TRANSACTION = 'startTransaction',
-  STOP_TRANSACTION = 'stopTransaction',
+  STOP_TRANSACTION = 'stopTransaction'
 }
 
 export interface RequestPayload extends JsonObject {
@@ -41,7 +41,7 @@ export interface RequestPayload extends JsonObject {
 
 export enum ResponseStatus {
   SUCCESS = 'success',
-  FAILURE = 'failure',
+  FAILURE = 'failure'
 }
 
 export interface ResponsePayload extends JsonObject {

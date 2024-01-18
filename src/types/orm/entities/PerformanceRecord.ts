@@ -1,21 +1,42 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Collection, Entity, OneToMany, PrimaryKey, Property } from '@mikro-orm/core'
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core'
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { PerformanceData } from './PerformanceData.js'
+interface StatisticsData {
+  name: string
+  requestCount: number
+  responseCount: number
+  errorCount: number
+  timeMeasurementCount: number
+  measurementTimeSeries: Array<{
+    timestamp: number
+    value: number
+  }>
+  currentTimeMeasurement: number
+  minTimeMeasurement: number
+  maxTimeMeasurement: number
+  totalTimeMeasurement: number
+  avgTimeMeasurement: number
+  medTimeMeasurement: number
+  ninetyFiveThPercentileTimeMeasurement: number
+  stdDevTimeMeasurement: number
+}
 
 @Entity()
 export class PerformanceRecord {
-  // @PrimaryKey()
-  //   pk!: number
-  // @Property()
-  //   id!: string
-  // @Property()
-  //   URI!: string
-  // @Property()
-  //   createdAt!: Date
-  // @Property()
-  //   updatedAt?: Date
-  // @OneToMany('PerformanceData', 'performanceRecord')
-  //   performanceData? = new Collection<PerformanceData>(this)
+  @PrimaryKey()
+    id!: string
+
+  @Property()
+    name!: string
+
+  @Property()
+    uri!: string
+
+  @Property()
+    createdAt!: Date
+
+  @Property()
+    updatedAt?: Date
+
+  @Property()
+    statisticsData!: Array<Partial<StatisticsData>>
 }

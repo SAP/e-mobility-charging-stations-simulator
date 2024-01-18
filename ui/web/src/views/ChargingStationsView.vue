@@ -39,7 +39,7 @@ type State = {
 const state: State = reactive({
   isLoading: false,
   chargingStations: [],
-  idTag: '',
+  idTag: ''
 })
 
 async function load(): Promise<void> {

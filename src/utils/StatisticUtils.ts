@@ -1,5 +1,3 @@
-import { isEmptyArray } from './Utils.js'
-
 /**
  * Computes the average of the given data set.
  *
@@ -10,8 +8,7 @@ import { isEmptyArray } from './Utils.js'
 export const average = (dataSet: number[]): number => {
   if (Array.isArray(dataSet) && dataSet.length === 0) {
     return 0
-  }
-  if (Array.isArray(dataSet) && dataSet.length === 1) {
+  } else if (Array.isArray(dataSet) && dataSet.length === 1) {
     return dataSet[0]
   }
   return dataSet.reduce((accumulator, nb) => accumulator + nb, 0) / dataSet.length
@@ -25,10 +22,9 @@ export const average = (dataSet: number[]): number => {
  * @internal
  */
 export const median = (dataSet: number[]): number => {
-  if (isEmptyArray(dataSet)) {
+  if (Array.isArray(dataSet) && dataSet.length === 0) {
     return 0
-  }
-  if (Array.isArray(dataSet) && dataSet.length === 1) {
+  } else if (Array.isArray(dataSet) && dataSet.length === 1) {
     return dataSet[0]
   }
   const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
@@ -42,7 +38,7 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
   if (percentile < 0 && percentile > 100) {
     throw new RangeError('Percentile is not between 0 and 100')
   }
-  if (isEmptyArray(dataSet)) {
+  if (Array.isArray(dataSet) && dataSet.length === 0) {
     return 0
   }
   const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
@@ -78,10 +74,9 @@ export const stdDeviation = (
   dataSet: number[],
   dataSetAverage: number = average(dataSet)
 ): number => {
-  if (isEmptyArray(dataSet)) {
+  if (Array.isArray(dataSet) && dataSet.length === 0) {
     return 0
-  }
-  if (Array.isArray(dataSet) && dataSet.length === 1) {
+  } else if (Array.isArray(dataSet) && dataSet.length === 1) {
     return 0
   }
   return Math.sqrt(

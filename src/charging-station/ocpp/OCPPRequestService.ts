@@ -24,7 +24,7 @@ import {
   type ResponseType
 } from '../../types/index.js'
 import {
-  cloneObject,
+  clone,
   formatDurationMilliSeconds,
   handleSendMessageError,
   logger
@@ -62,7 +62,7 @@ export abstract class OCPPRequestService {
     this.requestHandler = this.requestHandler.bind(this) as <
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ReqType extends JsonType,
-      ResType extends JsonType,
+      ResType extends JsonType
     >(
       chargingStation: ChargingStation,
       commandName: RequestCommand,
@@ -214,7 +214,7 @@ export abstract class OCPPRequestService {
       return true
     }
     const validate = this.getJsonRequestValidateFunction<T>(commandName as RequestCommand)
-    payload = cloneObject<T>(payload)
+    payload = clone<T>(payload)
     OCPPServiceUtils.convertDateToISOString<T>(payload)
     if (validate(payload)) {
       return true
@@ -267,7 +267,7 @@ export abstract class OCPPRequestService {
     const validate = this.getJsonRequestResponseValidateFunction<T>(
       commandName as IncomingRequestCommand
     )
-    payload = cloneObject<T>(payload)
+    payload = clone<T>(payload)
     OCPPServiceUtils.convertDateToISOString<T>(payload)
     if (validate(payload)) {
       return true

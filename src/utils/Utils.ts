@@ -14,7 +14,11 @@ import {
 } from 'date-fns'
 
 import { Constants } from './Constants.js'
-import { type TimestampedData, WebSocketCloseEventStatusString } from '../types/index.js'
+import {
+  type EmptyObject,
+  type TimestampedData,
+  WebSocketCloseEventStatusString
+} from '../types/index.js'
 
 export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
@@ -29,7 +33,7 @@ export const validateUUID = (uuid: string): boolean => {
 }
 
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
-  return await new Promise<NodeJS.Timeout>((resolve) =>
+  return await new Promise<NodeJS.Timeout>(resolve =>
     setTimeout(resolve as () => void, milliSeconds)
   )
 }
@@ -66,7 +70,7 @@ export const formatDurationSeconds = (duration: number): string => {
 }
 
 // More efficient time validation function than the one provided by date-fns
-export const isValidTime = (date: unknown): boolean => {
+export const isValidDate = (date: Date | number | undefined): date is Date | number => {
   if (typeof date === 'number') {
     return !isNaN(date)
   } else if (isDate(date)) {
@@ -76,10 +80,10 @@ export const isValidTime = (date: unknown): boolean => {
 }
 
 export const convertToDate = (
-  value: Date | string | number | null | undefined
-): Date | null | undefined => {
+  value: Date | string | number | undefined | null
+): Date | undefined => {
   if (value == null) {
-    return value
+    return undefined
   }
   if (isDate(value)) {
     return value
@@ -105,7 +109,7 @@ export const convertToInt = (value: unknown): number => {
     return Math.trunc(value)
   }
   if (isString(value)) {
-    changedValue = parseInt(value as string)
+    changedValue = parseInt(value)
   }
   if (isNaN(changedValue)) {
     throw new Error(`Cannot convert to integer: '${String(value)}'`)
@@ -119,7 +123,7 @@ export const convertToFloat = (value: unknown): number => {
   }
   let changedValue: number = value as number
   if (isString(value)) {
-    changedValue = parseFloat(value as string)
+    changedValue = parseFloat(value)
   }
   if (isNaN(changedValue)) {
     throw new Error(`Cannot convert to float: '${String(value)}'`)
@@ -133,7 +137,7 @@ export const convertToBoolean = (value: unknown): boolean => {
     // Check the type
     if (typeof value === 'boolean') {
       return value
-    } else if (isString(value) && ((value as string).toLowerCase() === 'true' || value === '1')) {
+    } else if (isString(value) && (value.toLowerCase() === 'true' || value === '1')) {
       result = true
     } else if (typeof value === 'number' && value === 1) {
       result = true
@@ -203,11 +207,7 @@ export const getRandomFloatFluctuatedRounded = (
 }
 
 export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[] => {
-  return timeSeries.map((timeSeriesItem) => timeSeriesItem.value)
-}
-
-export const isObject = (item: unknown): boolean => {
-  return item != null && typeof item === 'object' && !Array.isArray(item)
+  return timeSeries.map(timeSeriesItem => timeSeriesItem.value)
 }
 
 type CloneableData =
@@ -240,7 +240,7 @@ const deepClone = <I extends CloneableData, O extends CloneableData = I>(
     return clone as O
   }
   if (value instanceof Date) {
-    return new Date(value.valueOf()) as O
+    return new Date(value.getTime()) as O
   }
   if (typeof value !== 'object' || value === null) {
     return value as unknown as O
@@ -257,53 +257,64 @@ const deepClone = <I extends CloneableData, O extends CloneableData = I>(
   return clone as O
 }
 
-export const cloneObject = <T>(object: T): T => {
+export const clone = <T>(object: T): T => {
   return deepClone(object as CloneableData) as T
 }
 
-export const hasOwnProp = (object: unknown, property: PropertyKey): boolean => {
-  return isObject(object) && Object.hasOwn(object as object, property)
+/**
+ * Detects whether the given value is an asynchronous function or not.
+ *
+ * @param fn - Unknown value.
+ * @returns `true` if `fn` was an asynchronous function, otherwise `false`.
+ * @internal
+ */
+export const isAsyncFunction = (fn: unknown): fn is (...args: unknown[]) => Promise<unknown> => {
+  return typeof fn === 'function' && fn.constructor.name === 'AsyncFunction'
+}
+
+export const isObject = (value: unknown): value is object => {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+export const isEmptyObject = (object: object): object is EmptyObject => {
+  if (object.constructor !== Object) {
+    return false
+  }
+  // Iterates over the keys of an object, if
+  // any exist, return false.
+  // eslint-disable-next-line no-unreachable-loop
+  for (const _ in object) {
+    return false
+  }
+  return true
+}
+
+export const hasOwnProp = (value: unknown, property: PropertyKey): boolean => {
+  return isObject(value) && Object.hasOwn(value, property)
 }
 
 export const isCFEnvironment = (): boolean => {
   return env.VCAP_APPLICATION != null
 }
 
-export const isIterable = <T>(obj: T): boolean => {
-  return obj != null ? typeof obj[Symbol.iterator as keyof T] === 'function' : false
-}
-
-const isString = (value: unknown): boolean => {
+const isString = (value: unknown): value is string => {
   return typeof value === 'string'
 }
 
-export const isEmptyString = (value: unknown): boolean => {
-  return value == null || (isString(value) && (value as string).trim().length === 0)
+export const isEmptyString = (value: unknown): value is '' | undefined | null => {
+  return value == null || (isString(value) && value.trim().length === 0)
 }
 
-export const isNotEmptyString = (value: unknown): boolean => {
-  return isString(value) && (value as string).trim().length > 0
+export const isNotEmptyString = (value: unknown): value is string => {
+  return isString(value) && value.trim().length > 0
 }
 
-export const isEmptyArray = (object: unknown): boolean => {
-  return Array.isArray(object) && object.length === 0
+export const isEmptyArray = (value: unknown): value is never[] => {
+  return Array.isArray(value) && value.length === 0
 }
 
-export const isNotEmptyArray = (object: unknown): boolean => {
-  return Array.isArray(object) && object.length > 0
-}
-
-export const isEmptyObject = (obj: object): boolean => {
-  if (obj.constructor !== Object) {
-    return false
-  }
-  // Iterates over the keys of an object, if
-  // any exist, return false.
-  // eslint-disable-next-line no-unreachable-loop
-  for (const _ in obj) {
-    return false
-  }
-  return true
+export const isNotEmptyArray = (value: unknown): value is unknown[] => {
+  return Array.isArray(value) && value.length > 0
 }
 
 export const insertAt = (str: string, subStr: string, pos: number): string =>
@@ -332,11 +343,11 @@ export const secureRandom = (): number => {
 }
 
 export const JSONStringifyWithMapSupport = (
-  obj: Record<string, unknown> | Array<Record<string, unknown>> | Map<unknown, unknown>,
+  object: Record<string, unknown> | Array<Record<string, unknown>> | Map<unknown, unknown>,
   space?: number
 ): string => {
   return JSON.stringify(
-    obj,
+    object,
     (_, value: Record<string, unknown>) => {
       if (value instanceof Map) {
         return {

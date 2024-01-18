@@ -4,5 +4,5 @@ export enum FileType {
   ChargingStationConfiguration = 'charging station configuration',
   ChargingStationTemplate = 'charging station template',
   PerformanceRecords = 'performance records',
-  JsonSchema = 'json schema',
+  JsonSchema = 'json schema'
 }

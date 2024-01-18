@@ -57,7 +57,7 @@ import {
   ACElectricUtils,
   Constants,
   DCElectricUtils,
-  cloneObject,
+  clone,
   convertToDate,
   convertToInt,
   isArraySorted,
@@ -65,7 +65,7 @@ import {
   isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
-  isValidTime,
+  isValidDate,
   logger,
   secureRandom
 } from '../utils/index.js'
@@ -331,7 +331,7 @@ export const buildConnectorsMap = (
       const connectorStatus = connectors[connector]
       const connectorId = convertToInt(connector)
       checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
-      connectorsMap.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus))
+      connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
     }
   } else {
     logger.warn(
@@ -348,9 +348,9 @@ export const initializeConnectorsMapStatus = (
   for (const connectorId of connectors.keys()) {
     if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
       logger.warn(
-        `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${connectors.get(
-          connectorId
-        )?.transactionId}`
+        `${logPrefix} Connector id ${connectorId} at initialization has a transaction started with id ${
+          connectors.get(connectorId)?.transactionId
+        }`
       )
     }
     if (connectorId === 0) {
@@ -367,11 +367,14 @@ export const initializeConnectorsMapStatus = (
   }
 }
 
-export const resetConnectorStatus = (connectorStatus: ConnectorStatus): void => {
+export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefined): void => {
+  if (connectorStatus == null) {
+    return
+  }
   connectorStatus.chargingProfiles =
     connectorStatus.transactionId != null && isNotEmptyArray(connectorStatus.chargingProfiles)
-      ? connectorStatus.chargingProfiles?.filter(
-        (chargingProfile) => chargingProfile.transactionId !== connectorStatus.transactionId
+      ? connectorStatus.chargingProfiles.filter(
+        chargingProfile => chargingProfile.transactionId !== connectorStatus.transactionId
       )
       : []
   connectorStatus.idTagLocalAuthorized = false
@@ -465,7 +468,7 @@ export const warnTemplateKeysDeprecation = (
 export const stationTemplateToStationInfo = (
   stationTemplate: ChargingStationTemplate
 ): ChargingStationInfo => {
-  stationTemplate = cloneObject<ChargingStationTemplate>(stationTemplate)
+  stationTemplate = clone<ChargingStationTemplate>(stationTemplate)
   delete stationTemplate.power
   delete stationTemplate.powerUnit
   delete stationTemplate.Connectors
@@ -563,7 +566,7 @@ export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number
 ): ChargingProfile[] => {
-  return cloneObject<ChargingProfile[]>(
+  return clone<ChargingProfile[]>(
     (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
       .sort((a, b) => b.stackLevel - a.stackLevel)
       .concat(
@@ -659,7 +662,7 @@ export const waitChargingStationEvents = async (
   event: ChargingStationWorkerMessageEvents,
   eventsToWait: number
 ): Promise<number> => {
-  return await new Promise<number>((resolve) => {
+  return await new Promise<number>(resolve => {
     let events = 0
     if (eventsToWait === 0) {
       resolve(events)
@@ -677,11 +680,11 @@ export const waitChargingStationEvents = async (
 const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemplate): number => {
   let configuredMaxNumberOfConnectors = 0
   if (isNotEmptyArray(stationTemplate.numberOfConnectors)) {
-    const numberOfConnectors = stationTemplate.numberOfConnectors as number[]
+    const numberOfConnectors = stationTemplate.numberOfConnectors
     configuredMaxNumberOfConnectors =
       numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)]
   } else if (stationTemplate.numberOfConnectors != null) {
-    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors as number
+    configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors
   } else if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
     configuredMaxNumberOfConnectors =
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -795,8 +798,7 @@ const getLimitFromChargingProfiles = (
 ): ChargingProfilesLimit | undefined => {
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`
   const currentDate = new Date()
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule
     if (chargingSchedule.startSchedule == null) {
@@ -804,7 +806,7 @@ const getLimitFromChargingProfiles = (
         `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
       )
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
-      chargingSchedule.startSchedule = connectorStatus.transactionStart
+      chargingSchedule.startSchedule = connectorStatus?.transactionStart
     }
     if (!isDate(chargingSchedule.startSchedule)) {
       logger.warn(
@@ -915,7 +917,7 @@ const getLimitFromChargingProfiles = (
 }
 
 export const prepareChargingProfileKind = (
-  connectorStatus: ConnectorStatus,
+  connectorStatus: ConnectorStatus | undefined,
   chargingProfile: ChargingProfile,
   currentDate: string | number | Date,
   logPrefix: string
@@ -934,7 +936,7 @@ export const prepareChargingProfileKind = (
         )
         delete chargingProfile.chargingSchedule.startSchedule
       }
-      if (connectorStatus.transactionStarted === true) {
+      if (connectorStatus?.transactionStarted === true) {
         chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
       }
       // FIXME: Handle relative charging profile duration
@@ -949,16 +951,14 @@ export const canProceedChargingProfile = (
   logPrefix: string
 ): boolean => {
   if (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (isValidTime(chargingProfile.validFrom) && isBefore(currentDate, chargingProfile.validFrom!)) ||
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (isValidTime(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo!))
+    (isValidDate(chargingProfile.validFrom) && isBefore(currentDate, chargingProfile.validFrom)) ||
+    (isValidDate(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo))
   ) {
     logger.debug(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${
         chargingProfile.chargingProfileId
       } is not valid for the current date ${
-        currentDate instanceof Date ? currentDate.toISOString() : currentDate
+        isDate(currentDate) ? currentDate.toISOString() : currentDate
       }`
     )
     return false
@@ -972,7 +972,7 @@ export const canProceedChargingProfile = (
     )
     return false
   }
-  if (!isValidTime(chargingProfile.chargingSchedule.startSchedule)) {
+  if (!isValidDate(chargingProfile.chargingSchedule.startSchedule)) {
     logger.error(
       `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId} has an invalid startSchedule date defined`
     )
@@ -1026,7 +1026,7 @@ const prepareRecurringChargingProfile = (
 ): boolean => {
   const chargingSchedule = chargingProfile.chargingSchedule
   let recurringIntervalTranslated = false
-  let recurringInterval: Interval
+  let recurringInterval: Interval | undefined
   switch (chargingProfile.recurrencyKind) {
     case RecurrencyKindType.DAILY:
       recurringInterval = {
@@ -1085,13 +1085,11 @@ const prepareRecurringChargingProfile = (
       `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${
         chargingProfile.recurrencyKind
       } charging profile id ${chargingProfile.chargingProfileId} recurrency time interval [${toDate(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        recurringInterval!.start
+        recurringInterval?.start as Date
       ).toISOString()}, ${toDate(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        recurringInterval!.end
+        recurringInterval?.end as Date
       ).toISOString()}] has not been properly translated to current date ${
-        currentDate instanceof Date ? currentDate.toISOString() : currentDate
+        isDate(currentDate) ? currentDate.toISOString() : currentDate
       } `
     )
   }

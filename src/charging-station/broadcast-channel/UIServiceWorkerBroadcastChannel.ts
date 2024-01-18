@@ -78,7 +78,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
           }
           return undefined
         })
-        .filter((hashId) => hashId != null) as string[],
+        .filter(hashId => hashId != null) as string[],
       ...(responsesStatus === ResponseStatus.FAILURE && {
         hashIdsFailed: this.responses
           .get(uuid)
@@ -88,18 +88,18 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             }
             return undefined
           })
-          .filter((hashId) => hashId != null) as string[]
+          .filter(hashId => hashId != null) as string[]
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         responsesFailed: this.responses
           .get(uuid)
-          ?.responses.map((response) => {
+          ?.responses.map(response => {
             if (response.status === ResponseStatus.FAILURE) {
               return response
             }
             return undefined
           })
-          .filter((response) => response != null) as BroadcastChannelResponsePayload[]
+          .filter(response => response != null) as BroadcastChannelResponsePayload[]
       })
     }
   }

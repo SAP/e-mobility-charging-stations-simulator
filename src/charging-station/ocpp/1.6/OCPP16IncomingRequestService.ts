@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { createWriteStream, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -691,10 +691,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} Get composite schedule with a specified rate unit is not yet supported, no conversion will be done`
       )
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (
-      isEmptyArray(connectorStatus.chargingProfiles) &&
+      isEmptyArray(connectorStatus?.chargingProfiles) &&
       isEmptyArray(chargingStation.getConnectorStatus(0)?.chargingProfiles)
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
@@ -719,7 +718,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           } has no startSchedule defined. Trying to set it to the connector current transaction start date`
         )
         // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
-        chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
+        chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart
       }
       if (!isDate(chargingProfile.chargingSchedule.startSchedule)) {
         logger.warn(
@@ -727,10 +726,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             chargingProfile.chargingProfileId
           } startSchedule property is not a Date instance. Trying to convert it to a Date instance`
         )
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         chargingProfile.chargingSchedule.startSchedule = convertToDate(
           chargingProfile.chargingSchedule.startSchedule
-        )!
+        )
       }
       if (chargingProfile.chargingSchedule.duration == null) {
         logger.debug(
@@ -741,7 +739,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         // OCPP specifies that if duration is not defined, it should be infinite
         chargingProfile.chargingSchedule.duration = differenceInSeconds(
           maxTime,
-          chargingProfile.chargingSchedule.startSchedule
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          chargingProfile.chargingSchedule.startSchedule!
         )
       }
       if (
@@ -773,8 +772,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (compositeSchedule != null) {
       return {
         status: GenericStatus.Accepted,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        scheduleStart: compositeSchedule.startSchedule!,
+        scheduleStart: compositeSchedule.startSchedule,
         connectorId,
         chargingSchedule: compositeSchedule
       }
@@ -806,8 +804,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const connectorStatus = chargingStation.getConnectorStatus(connectorId!)
     if (connectorId != null && isNotEmptyArray(connectorStatus?.chargingProfiles)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      connectorStatus!.chargingProfiles = []
+      connectorStatus.chargingProfiles = []
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${connectorId}`
       )
@@ -857,7 +854,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         ? OCPP16ChargePointStatus.Available
         : OCPP16ChargePointStatus.Unavailable
     if (connectorId === 0) {
-      let response: OCPP16ChangeAvailabilityResponse
+      let response: OCPP16ChangeAvailabilityResponse | undefined
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
           response = await OCPP16ServiceUtils.changeAvailability(
@@ -923,8 +920,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
     const remoteStartTransactionLogMsg = `
-      ${chargingStation.logPrefix()} Transaction remotely STARTED on ${chargingStation.stationInfo
-        ?.chargingStationId}#${transactionConnectorId} for idTag '${idTag}'`
+      ${chargingStation.logPrefix()} Transaction remotely STARTED on ${
+        chargingStation.stationInfo?.chargingStationId
+      }#${transactionConnectorId} for idTag '${idTag}'`
     await OCPP16ServiceUtils.sendAndSetConnectorStatus(
       chargingStation,
       transactionConnectorId,
@@ -1099,15 +1097,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
-    let { retrieveDate } = commandPayload
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate)!
+    const { retrieveDate } = commandPayload
     if (chargingStation.stationInfo?.firmwareStatus !== OCPP16FirmwareStatus.Installed) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`
       )
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    retrieveDate = convertToDate(retrieveDate)!
     const now = Date.now()
     if (retrieveDate.getTime() <= now) {
       this.updateFirmwareSimulation(chargingStation).catch(Constants.EMPTY_FUNCTION)
@@ -1290,8 +1288,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       let ftpClient: Client | undefined
       try {
         const logFiles = readdirSync(resolve(dirname(fileURLToPath(import.meta.url)), '../'))
-          .filter((file) => file.endsWith('.log'))
-          .map((file) => join('./', file))
+          .filter(file => file.endsWith('.log'))
+          .map(file => join('./', file))
         const diagnosticsArchive = `${chargingStation.stationInfo?.chargingStationId}_logs.tar.gz`
         create({ gzip: true }, logFiles).pipe(createWriteStream(diagnosticsArchive))
         ftpClient = new Client()
@@ -1303,7 +1301,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         })
         let uploadResponse: FTPResponse | undefined
         if (accessResponse.code === 220) {
-          ftpClient.trackProgress((info) => {
+          ftpClient.trackProgress(info => {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: ${
                 info.bytes / 1024
@@ -1316,7 +1314,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
               status: OCPP16DiagnosticsStatus.Uploading
             })
-              .catch((error) => {
+              .catch(error => {
                 logger.error(
                   `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Error while sending '${
                     OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION
@@ -1418,7 +1416,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               chargingStation.bootNotificationRequest,
               { skipBufferingOnError: true, triggerMessage: true }
             )
-              .then((response) => {
+              .then(response => {
                 chargingStation.bootNotificationResponse = response
               })
               .catch(Constants.EMPTY_FUNCTION)
@@ -1455,31 +1453,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 }
               )
                 .catch(Constants.EMPTY_FUNCTION)
-            } else {
-              if (chargingStation.hasEvses) {
-                for (const evseStatus of chargingStation.evses.values()) {
-                  for (const [id, connectorStatus] of evseStatus.connectors) {
-                    chargingStation.ocppRequestService
-                      .requestHandler<
-                    OCPP16StatusNotificationRequest,
-                    OCPP16StatusNotificationResponse
-                    >(
-                      chargingStation,
-                      OCPP16RequestCommand.STATUS_NOTIFICATION,
-                      {
-                        connectorId: id,
-                        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                        status: connectorStatus.status
-                      },
-                      {
-                        triggerMessage: true
-                      }
-                    )
-                      .catch(Constants.EMPTY_FUNCTION)
-                  }
-                }
-              } else {
-                for (const id of chargingStation.connectors.keys()) {
+            } else if (chargingStation.hasEvses) {
+              for (const evseStatus of chargingStation.evses.values()) {
+                for (const [id, connectorStatus] of evseStatus.connectors) {
                   chargingStation.ocppRequestService
                     .requestHandler<
                   OCPP16StatusNotificationRequest,
@@ -1490,7 +1466,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     {
                       connectorId: id,
                       errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                      status: chargingStation.getConnectorStatus(id)?.status
+                      status: connectorStatus.status
                     },
                     {
                       triggerMessage: true
@@ -1498,6 +1474,26 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   )
                     .catch(Constants.EMPTY_FUNCTION)
                 }
+              }
+            } else {
+              for (const [id, connectorStatus] of chargingStation.connectors) {
+                chargingStation.ocppRequestService
+                  .requestHandler<
+                OCPP16StatusNotificationRequest,
+                OCPP16StatusNotificationResponse
+                >(
+                  chargingStation,
+                  OCPP16RequestCommand.STATUS_NOTIFICATION,
+                  {
+                    connectorId: id,
+                    errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                    status: connectorStatus.status
+                  },
+                  {
+                    triggerMessage: true
+                  }
+                )
+                  .catch(Constants.EMPTY_FUNCTION)
               }
             }
           }, OCPP16Constants.OCPP_TRIGGER_MESSAGE_DELAY)
@@ -1550,6 +1546,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    commandPayload.expiryDate = convertToDate(commandPayload.expiryDate)!
     const { reservationId, idTag, connectorId } = commandPayload
     let response: OCPP16ReserveNowResponse
     try {
@@ -1563,8 +1561,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
       }
       await removeExpiredReservations(chargingStation)
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      switch (chargingStation.getConnectorStatus(connectorId)!.status) {
+      switch (chargingStation.getConnectorStatus(connectorId)?.status) {
         case OCPP16ChargePointStatus.Faulted:
           response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED
           break

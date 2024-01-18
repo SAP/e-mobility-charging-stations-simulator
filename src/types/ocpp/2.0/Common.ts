@@ -9,7 +9,7 @@ export enum DataEnumType {
   boolean = 'boolean',
   OptionList = 'OptionList',
   SequenceList = 'SequenceList',
-  MemberList = 'MemberList',
+  MemberList = 'MemberList'
 }
 
 export enum BootReasonEnumType {
@@ -21,12 +21,12 @@ export enum BootReasonEnumType {
   ScheduledReset = 'ScheduledReset',
   Triggered = 'Triggered',
   Unknown = 'Unknown',
-  Watchdog = 'Watchdog',
+  Watchdog = 'Watchdog'
 }
 
 export enum OperationalStatusEnumType {
   Operative = 'Operative',
-  Inoperative = 'Inoperative',
+  Inoperative = 'Inoperative'
 }
 
 export enum OCPP20ConnectorStatusEnumType {
@@ -34,7 +34,7 @@ export enum OCPP20ConnectorStatusEnumType {
   Occupied = 'Occupied',
   Reserved = 'Reserved',
   Unavailable = 'Unavailable',
-  Faulted = 'Faulted',
+  Faulted = 'Faulted'
 }
 
 export type GenericStatusEnumType = GenericStatus
@@ -42,7 +42,7 @@ export type GenericStatusEnumType = GenericStatus
 export enum HashAlgorithmEnumType {
   SHA256 = 'SHA256',
   SHA384 = 'SHA384',
-  SHA512 = 'SHA512',
+  SHA512 = 'SHA512'
 }
 
 export enum GetCertificateIdUseEnumType {
@@ -50,46 +50,46 @@ export enum GetCertificateIdUseEnumType {
   MORootCertificate = 'MORootCertificate',
   CSMSRootCertificate = 'CSMSRootCertificate',
   V2GCertificateChain = 'V2GCertificateChain',
-  ManufacturerRootCertificate = 'ManufacturerRootCertificate',
+  ManufacturerRootCertificate = 'ManufacturerRootCertificate'
 }
 
 export enum GetCertificateStatusEnumType {
   Accepted = 'Accepted',
-  Failed = 'Failed',
+  Failed = 'Failed'
 }
 
 export enum GetInstalledCertificateStatusEnumType {
   Accepted = 'Accepted',
-  NotFound = 'NotFound',
+  NotFound = 'NotFound'
 }
 
 export enum InstallCertificateStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
-  Failed = 'Failed',
+  Failed = 'Failed'
 }
 
 export enum InstallCertificateUseEnumType {
   V2GRootCertificate = 'V2GRootCertificate',
   MORootCertificate = 'MORootCertificate',
   CSMSRootCertificate = 'CSMSRootCertificate',
-  ManufacturerRootCertificate = 'ManufacturerRootCertificate',
+  ManufacturerRootCertificate = 'ManufacturerRootCertificate'
 }
 
 export enum DeleteCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
-  NotFound = 'NotFound',
+  NotFound = 'NotFound'
 }
 
 export enum CertificateActionEnumType {
   Install = 'Install',
-  Update = 'Update',
+  Update = 'Update'
 }
 
 export enum CertificateSigningUseEnumType {
   ChargingStationCertificate = 'ChargingStationCertificate',
-  V2GCertificate = 'V2GCertificate',
+  V2GCertificate = 'V2GCertificate'
 }
 
 export type CertificateSignedStatusEnumType = GenericStatusEnumType

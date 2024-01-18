@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { type PerformanceEntry, PerformanceObserver, performance } from 'node:perf_hooks'
 import type { URL } from 'node:url'
@@ -190,7 +190,7 @@ export class PerformanceStatistics {
   }
 
   private initializePerformanceObserver (): void {
-    this.performanceObserver = new PerformanceObserver((performanceObserverList) => {
+    this.performanceObserver = new PerformanceObserver(performanceObserverList => {
       const lastPerformanceEntry = performanceObserverList.getEntries()[0]
       // logger.debug(
       //   `${this.logPrefix()} '${lastPerformanceEntry.name}' performance entry: %j`,

@@ -186,7 +186,7 @@ export {
 } from './ocpp/Configuration.js'
 export type { ConnectorStatus } from './ConnectorStatus.js'
 export { ConnectorStatusEnum, type ConnectorStatusTransition } from './ocpp/ConnectorStatusEnum.js'
-export { DBName, type MikroOrmDbType, StorageType } from './Storage.js'
+export { DBName, StorageType } from './Storage.js'
 export type { EmptyObject } from './EmptyObject.js'
 export { ErrorType } from './ocpp/ErrorType.js'
 export type { EvseTemplate, EvseStatus } from './Evse.js'
@@ -259,7 +259,6 @@ export type {
 } from './ocpp/2.0/Responses.js'
 export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
 export { OCPPVersion } from './ocpp/OCPPVersion.js'
-export { PerformanceData } from './orm/entities/PerformanceData.js'
 export { PerformanceRecord } from './orm/entities/PerformanceRecord.js'
 export type { Statistics, TimestampedData } from './Statistics.js'
 export {

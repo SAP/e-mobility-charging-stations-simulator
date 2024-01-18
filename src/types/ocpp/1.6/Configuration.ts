@@ -4,7 +4,7 @@ export enum OCPP16SupportedFeatureProfiles {
   LocalAuthListManagement = 'LocalAuthListManagement',
   Reservation = 'Reservation',
   SmartCharging = 'SmartCharging',
-  RemoteTrigger = 'RemoteTrigger',
+  RemoteTrigger = 'RemoteTrigger'
 }
 
 export enum OCPP16StandardParametersKey {
@@ -51,9 +51,9 @@ export enum OCPP16StandardParametersKey {
   ChargingScheduleAllowedChargingRateUnit = 'ChargingScheduleAllowedChargingRateUnit',
   ChargingScheduleMaxPeriods = 'ChargingScheduleMaxPeriods',
   ConnectorSwitch3to1PhaseSupported = 'ConnectorSwitch3to1PhaseSupported',
-  MaxChargingProfilesInstalled = 'MaxChargingProfilesInstalled',
+  MaxChargingProfilesInstalled = 'MaxChargingProfilesInstalled'
 }
 
 export enum OCPP16VendorParametersKey {
-  ConnectionUrl = 'ConnectionUrl',
+  ConnectionUrl = 'ConnectionUrl'
 }

@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
@@ -132,8 +132,9 @@ import {
   buildStartedMessage,
   buildStoppedMessage,
   buildUpdatedMessage,
-  cloneObject,
+  clone,
   convertToBoolean,
+  convertToDate,
   convertToInt,
   exponentialDelay,
   formatDurationMilliSeconds,
@@ -228,10 +229,8 @@ export class ChargingStation extends EventEmitter {
       `${
         this.stationInfo?.supervisionUrlOcppConfiguration === true &&
         isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)?.value)
-          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!)!.value
+        isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
+          ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value
           : this.configuredSupervisionUrl.href
       }/${this.stationInfo?.chargingStationId}`
     )
@@ -427,8 +426,10 @@ export class ChargingStation extends EventEmitter {
     return numberOfRunningTransactions
   }
 
-  public getConnectorIdByTransactionId (transactionId: number): number | undefined {
-    if (this.hasEvses) {
+  public getConnectorIdByTransactionId (transactionId: number | undefined): number | undefined {
+    if (transactionId == null) {
+      return undefined
+    } else if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
         for (const [connectorId, connectorStatus] of evseStatus.connectors) {
           if (connectorStatus.transactionId === transactionId) {
@@ -446,19 +447,18 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getEnergyActiveImportRegisterByTransactionId (
-    transactionId: number,
+    transactionId: number | undefined,
     rounded = false
   ): number {
     return this.getEnergyActiveImportRegister(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!)!,
+      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!),
       rounded
     )
   }
 
   public getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId)!, rounded)
+    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded)
   }
 
   public getAuthorizeRemoteTxRequests (): boolean {
@@ -502,8 +502,7 @@ export class ChargingStation extends EventEmitter {
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey!, url)
+      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stationInfo!.supervisionUrls = url
@@ -517,7 +516,7 @@ export class ChargingStation extends EventEmitter {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
-          .catch((error) => {
+          .catch(error => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
               error
@@ -561,21 +560,22 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}`)
       return
     }
-    if (this.getConnectorStatus(connectorId) == null) {
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on non existing connector id
           ${connectorId}`
       )
       return
     }
-    if (this.getConnectorStatus(connectorId)?.transactionStarted === false) {
+    if (connectorStatus.transactionStarted === false) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction started`
       )
       return
     } else if (
-      this.getConnectorStatus(connectorId)?.transactionStarted === true &&
-      this.getConnectorStatus(connectorId)?.transactionId == null
+      connectorStatus.transactionStarted === true &&
+      connectorStatus.transactionId == null
     ) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction id`
@@ -583,13 +583,12 @@ export class ChargingStation extends EventEmitter {
       return
     }
     if (interval > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getConnectorStatus(connectorId)!.transactionSetInterval = setInterval(() => {
+      connectorStatus.transactionSetInterval = setInterval(() => {
         const meterValue = buildMeterValue(
           this,
           connectorId,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.getConnectorStatus(connectorId)!.transactionId!,
+          connectorStatus.transactionId!,
           interval
         )
         this.ocppRequestService
@@ -598,11 +597,11 @@ export class ChargingStation extends EventEmitter {
           RequestCommand.METER_VALUES,
           {
             connectorId,
-            transactionId: this.getConnectorStatus(connectorId)?.transactionId,
+            transactionId: connectorStatus.transactionId,
             meterValue: [meterValue]
           }
         )
-          .catch((error) => {
+          .catch(error => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
               error
@@ -619,8 +618,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   public stopMeterValues (connectorId: number): void {
-    if (this.getConnectorStatus(connectorId)?.transactionSetInterval != null) {
-      clearInterval(this.getConnectorStatus(connectorId)?.transactionSetInterval)
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionSetInterval != null) {
+      clearInterval(connectorStatus.transactionSetInterval)
     }
   }
 
@@ -831,8 +831,7 @@ export class ChargingStation extends EventEmitter {
   public startAutomaticTransactionGenerator (connectorIds?: number[]): void {
     this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this)
     if (isNotEmptyArray(connectorIds)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const connectorId of connectorIds!) {
+      for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.startConnector(connectorId)
       }
     } else {
@@ -844,8 +843,7 @@ export class ChargingStation extends EventEmitter {
 
   public stopAutomaticTransactionGenerator (connectorIds?: number[]): void {
     if (isNotEmptyArray(connectorIds)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const connectorId of connectorIds!) {
+      for (const connectorId of connectorIds) {
         this.automaticTransactionGenerator?.stopConnector(connectorId)
       }
     } else {
@@ -859,8 +857,7 @@ export class ChargingStation extends EventEmitter {
     connectorId: number,
     reason?: StopTransactionReason
   ): Promise<StopTransactionResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transactionId = this.getConnectorStatus(connectorId)!.transactionId!
+    const transactionId = this.getConnectorStatus(connectorId)?.transactionId
     if (
       this.stationInfo?.beginEndMeterValues === true &&
       this.stationInfo.ocppStrictCompliance === true &&
@@ -1106,17 +1103,16 @@ export class ChargingStation extends EventEmitter {
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
     if (isNotEmptyArray(stationTemplate.power)) {
-      stationTemplate.power = stationTemplate.power as number[]
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
           ? stationTemplate.power[powerArrayRandomIndex] * 1000
           : stationTemplate.power[powerArrayRandomIndex]
     } else {
-      stationTemplate.power = stationTemplate.power as number
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? stationTemplate.power * 1000
+          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          stationTemplate.power! * 1000
           : stationTemplate.power
     }
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo)
@@ -1124,8 +1120,7 @@ export class ChargingStation extends EventEmitter {
       stationTemplate.firmwareVersionPattern ?? Constants.SEMVER_PATTERN
     if (
       isNotEmptyString(stationInfo.firmwareVersion) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion!)
+      !new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion)
     ) {
       logger.warn(
         `${this.logPrefix()} Firmware version '${stationInfo.firmwareVersion}' in template file ${
@@ -1224,13 +1219,10 @@ export class ChargingStation extends EventEmitter {
     ) {
       const patternGroup =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
-        this.stationInfo.firmwareVersion?.split('.').length
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const match = new RegExp(this.stationInfo.firmwareVersionPattern!)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .exec(this.stationInfo.firmwareVersion!)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ?.slice(1, patternGroup! + 1)
+        this.stationInfo.firmwareVersion.split('.').length
+      const match = new RegExp(this.stationInfo.firmwareVersionPattern)
+        .exec(this.stationInfo.firmwareVersion)
+        ?.slice(1, patternGroup + 1)
       if (match != null) {
         const patchLevelIndex = match.length - 1
         match[patchLevelIndex] = (
@@ -1263,7 +1255,7 @@ export class ChargingStation extends EventEmitter {
     this.initializeOcppConfiguration()
     this.initializeOcppServices()
     this.once(ChargingStationEvents.accepted, () => {
-      this.startMessageSequence().catch((error) => {
+      this.startMessageSequence().catch(error => {
         logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
       })
     })
@@ -1310,37 +1302,31 @@ export class ChargingStation extends EventEmitter {
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!) == null
+      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey) == null
     ) {
       addConfigurationKey(
         this,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.stationInfo.supervisionUrlOcppKey!,
+        this.stationInfo.supervisionUrlOcppKey,
         this.configuredSupervisionUrl.href,
         { reboot: true }
       )
     } else if (
       this.stationInfo?.supervisionUrlOcppConfiguration === false &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!) != null
+      getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey) != null
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey!, { save: false })
+      deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey, { save: false })
     }
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey!) == null
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey) == null
     ) {
       addConfigurationKey(
         this,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.stationInfo!.amperageLimitationOcppKey!,
+        this.stationInfo.amperageLimitationOcppKey,
         // prettier-ignore
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (this.stationInfo!.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
+        (this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
       )
     }
     if (getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles) == null) {
@@ -1411,11 +1397,11 @@ export class ChargingStation extends EventEmitter {
   private initializeConnectorsOrEvsesFromFile (configuration: ChargingStationConfiguration): void {
     if (configuration.connectorsStatus != null && configuration.evsesStatus == null) {
       for (const [connectorId, connectorStatus] of configuration.connectorsStatus.entries()) {
-        this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus))
+        this.connectors.set(connectorId, clone<ConnectorStatus>(connectorStatus))
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
       for (const [evseId, evseStatusConfiguration] of configuration.evsesStatus.entries()) {
-        const evseStatus = cloneObject<EvseStatusConfiguration>(evseStatusConfiguration)
+        const evseStatus = clone<EvseStatusConfiguration>(evseStatusConfiguration)
         delete evseStatus.connectorsStatus
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
@@ -1502,7 +1488,7 @@ export class ChargingStation extends EventEmitter {
               this.logPrefix(),
               this.templateFile
             )
-            this.connectors.set(connectorId, cloneObject<ConnectorStatus>(connectorStatus))
+            this.connectors.set(connectorId, clone<ConnectorStatus>(connectorStatus))
           }
           initializeConnectorsMapStatus(this.connectors, this.logPrefix())
           this.saveConnectorsStatus()
@@ -1646,7 +1632,7 @@ export class ChargingStation extends EventEmitter {
         const configurationFromFile = this.getConfigurationFromFile()
         let configurationData: ChargingStationConfiguration =
           configurationFromFile != null
-            ? cloneObject<ChargingStationConfiguration>(configurationFromFile)
+            ? clone<ChargingStationConfiguration>(configurationFromFile)
             : {}
         if (this.stationInfo?.stationInfoPersistentConfiguration === true) {
           configurationData.stationInfo = this.stationInfo
@@ -1709,7 +1695,7 @@ export class ChargingStation extends EventEmitter {
             this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
             this.sharedLRUCache.setChargingStationConfiguration(configurationData)
             this.configurationFileHash = configurationHash
-          }).catch((error) => {
+          }).catch(error => {
             handleFileException(
               this.configurationFile,
               FileType.ChargingStationConfiguration,
@@ -1775,11 +1761,18 @@ export class ChargingStation extends EventEmitter {
           >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
             skipBufferingOnError: true
           })
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (this.bootNotificationResponse?.currentTime != null) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            this.bootNotificationResponse.currentTime = convertToDate(
+              this.bootNotificationResponse.currentTime
+            )!
+          }
           if (!this.isRegistered()) {
             this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount
             await sleep(
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-              this.bootNotificationResponse.interval != null
+              this.bootNotificationResponse?.interval != null
                 ? secondsToMilliseconds(this.bootNotificationResponse.interval)
                 : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
             )
@@ -1798,8 +1791,9 @@ export class ChargingStation extends EventEmitter {
         }
       } else {
         logger.error(
-          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${this
-            .stationInfo?.registrationMaxRetries})`
+          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${
+            this.stationInfo?.registrationMaxRetries
+          })`
         )
       }
       this.autoReconnectRetryCount = 0
@@ -2018,20 +2012,25 @@ export class ChargingStation extends EventEmitter {
     logger.error(`${this.logPrefix()} WebSocket error:`, error)
   }
 
-  private getEnergyActiveImportRegister (connectorStatus: ConnectorStatus, rounded = false): number {
+  private getEnergyActiveImportRegister (
+    connectorStatus: ConnectorStatus | undefined,
+    rounded = false
+  ): number {
     if (this.stationInfo?.meteringPerTransaction === true) {
       return (
         (rounded
-          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          Math.round(connectorStatus.transactionEnergyActiveImportRegisterValue!)
-          : connectorStatus.transactionEnergyActiveImportRegisterValue) ?? 0
+          ? connectorStatus?.transactionEnergyActiveImportRegisterValue != null
+            ? Math.round(connectorStatus.transactionEnergyActiveImportRegisterValue)
+            : undefined
+          : connectorStatus?.transactionEnergyActiveImportRegisterValue) ?? 0
       )
     }
     return (
       (rounded
-        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        Math.round(connectorStatus.energyActiveImportRegisterValue!)
-        : connectorStatus.energyActiveImportRegisterValue) ?? 0
+        ? connectorStatus?.energyActiveImportRegisterValue != null
+          ? Math.round(connectorStatus.energyActiveImportRegisterValue)
+          : undefined
+        : connectorStatus?.energyActiveImportRegisterValue) ?? 0
     )
   }
 
@@ -2110,15 +2109,11 @@ export class ChargingStation extends EventEmitter {
   private getAmperageLimitation (): number | undefined {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, this.stationInfo!.amperageLimitationOcppKey!) != null
+      getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey) != null
     ) {
       return (
-        convertToInt(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          getConfigurationKey(this, this.stationInfo!.amperageLimitationOcppKey!)!.value
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ) / getAmperageLimitationUnitDivider(this.stationInfo!)
+        convertToInt(getConfigurationKey(this, this.stationInfo.amperageLimitationOcppKey)?.value) /
+        getAmperageLimitationUnitDivider(this.stationInfo)
       )
     }
   }
@@ -2273,9 +2268,7 @@ export class ChargingStation extends EventEmitter {
       let configuredSupervisionUrlIndex: number
       switch (Configuration.getSupervisionUrlDistribution()) {
         case SupervisionUrlDistribution.RANDOM:
-          configuredSupervisionUrlIndex = Math.floor(
-            secureRandom() * (supervisionUrls as string[]).length
-          )
+          configuredSupervisionUrlIndex = Math.floor(secureRandom() * supervisionUrls.length)
           break
         case SupervisionUrlDistribution.ROUND_ROBIN:
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
@@ -2290,12 +2283,13 @@ export class ChargingStation extends EventEmitter {
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
               }`
             )
-          configuredSupervisionUrlIndex = (this.index - 1) % (supervisionUrls as string[]).length
+          configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length
           break
       }
-      configuredSupervisionUrl = (supervisionUrls as string[])[configuredSupervisionUrlIndex]
+      configuredSupervisionUrl = supervisionUrls[configuredSupervisionUrlIndex]
     } else {
-      configuredSupervisionUrl = supervisionUrls as string
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      configuredSupervisionUrl = supervisionUrls!
     }
     if (isNotEmptyString(configuredSupervisionUrl)) {
       return new URL(configuredSupervisionUrl)

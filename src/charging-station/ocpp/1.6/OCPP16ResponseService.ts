@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import type { JSONSchemaType } from 'ajv'
 import { secondsToMilliseconds } from 'date-fns'
@@ -460,29 +460,30 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const authorizeConnectorStatus = chargingStation.getConnectorStatus(authorizeConnectorId!)
-    const authorizeConnectorIdDefined = authorizeConnectorId != null
-    if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      if (authorizeConnectorIdDefined) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        authorizeConnectorStatus!.idTagAuthorized = true
+    if (authorizeConnectorId != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const authorizeConnectorStatus = chargingStation.getConnectorStatus(authorizeConnectorId)!
+      if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
+        authorizeConnectorStatus.idTagAuthorized = true
+        logger.debug(
+          `${chargingStation.logPrefix()} idTag '${
+            requestPayload.idTag
+          }' accepted on connector id ${authorizeConnectorId}`
+        )
+      } else {
+        authorizeConnectorStatus.idTagAuthorized = false
+        delete authorizeConnectorStatus.authorizeIdTag
+        logger.debug(
+          `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' rejected with status '${
+            payload.idTagInfo.status
+          }`
+        )
       }
-      logger.debug(
-        `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' accepted${
-          authorizeConnectorIdDefined ? ` on connector id ${authorizeConnectorId}` : ''
-        }`
-      )
     } else {
-      if (authorizeConnectorIdDefined) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        authorizeConnectorStatus!.idTagAuthorized = false
-        delete authorizeConnectorStatus?.authorizeIdTag
-      }
-      logger.debug(
-        `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' rejected with status '${
-          payload.idTagInfo.status
-        }'${authorizeConnectorIdDefined ? ` on connector id ${authorizeConnectorId}` : ''}`
+      logger.error(
+        `${chargingStation.logPrefix()} idTag '${
+          requestPayload.idTag
+        }' has no authorize request pending`
       )
     }
   }
@@ -614,33 +615,40 @@ export class OCPP16ResponseService extends OCPPResponseService {
           requestPayload.meterStart
         )
       if (requestPayload.reservationId != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const reservation = chargingStation.getReservationBy(
           'reservationId',
           requestPayload.reservationId
-        )!
-        if (reservation.idTag !== requestPayload.idTag) {
-          logger.warn(
-            `${chargingStation.logPrefix()} Reserved transaction ${
-              payload.transactionId
-            } started with a different idTag ${requestPayload.idTag} than the reservation one ${
-              reservation.idTag
-            }`
-          )
-        }
-        if (hasReservationExpired(reservation)) {
-          logger.warn(
-            `${chargingStation.logPrefix()} Reserved transaction ${
-              payload.transactionId
-            } started with expired reservation ${
-              requestPayload.reservationId
-            } (expiry date: ${reservation.expiryDate.toISOString()}))`
-          )
-        }
-        await chargingStation.removeReservation(
-          reservation,
-          ReservationTerminationReason.TRANSACTION_STARTED
         )
+        if (reservation != null) {
+          if (reservation.idTag !== requestPayload.idTag) {
+            logger.warn(
+              `${chargingStation.logPrefix()} Reserved transaction ${
+                payload.transactionId
+              } started with a different idTag ${requestPayload.idTag} than the reservation one ${
+                reservation.idTag
+              }`
+            )
+          }
+          if (hasReservationExpired(reservation)) {
+            logger.warn(
+              `${chargingStation.logPrefix()} Reserved transaction ${
+                payload.transactionId
+              } started with expired reservation ${
+                requestPayload.reservationId
+              } (expiry date: ${reservation.expiryDate.toISOString()}))`
+            )
+          }
+          await chargingStation.removeReservation(
+            reservation,
+            ReservationTerminationReason.TRANSACTION_STARTED
+          )
+        } else {
+          logger.warn(
+            `${chargingStation.logPrefix()} Reserved transaction ${
+              payload.transactionId
+            } started with unknown reservation ${requestPayload.reservationId}`
+          )
+        }
       }
       chargingStation.stationInfo?.beginEndMeterValues === true &&
         (await chargingStation.ocppRequestService.requestHandler<
@@ -681,8 +689,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       logger.warn(
         `${chargingStation.logPrefix()} Starting transaction with id ${
           payload.transactionId
-        } REJECTED on ${chargingStation.stationInfo
-          ?.chargingStationId}#${connectorId} with status '${payload.idTagInfo.status}', idTag '${
+        } REJECTED on ${
+          chargingStation.stationInfo?.chargingStationId
+        }#${connectorId} with status '${payload.idTagInfo.status}', idTag '${
           requestPayload.idTag
         }'${
           OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, requestPayload.idTag)
@@ -699,8 +708,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     connectorId: number
   ): Promise<void> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    resetConnectorStatus(connectorStatus!)
+    resetConnectorStatus(connectorStatus)
     chargingStation.stopMeterValues(connectorId)
     if (connectorStatus?.status !== OCPP16ChargePointStatus.Available) {
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(
@@ -764,13 +772,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.powerDivider!--
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId)!)
+    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId))
     chargingStation.stopMeterValues(transactionConnectorId)
     const logMsg = `${chargingStation.logPrefix()} Transaction with id ${
       requestPayload.transactionId
-    } STOPPED on ${chargingStation.stationInfo
-      ?.chargingStationId}#${transactionConnectorId} with status '${payload.idTagInfo?.status}'`
+    } STOPPED on ${
+      chargingStation.stationInfo?.chargingStationId
+    }#${transactionConnectorId} with status '${payload.idTagInfo?.status}'`
     if (
       payload.idTagInfo == null ||
       payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED

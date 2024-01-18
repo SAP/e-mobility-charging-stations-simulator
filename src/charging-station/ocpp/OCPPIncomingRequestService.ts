@@ -38,7 +38,7 @@ export abstract class OCPPIncomingRequestService {
     this.incomingRequestHandler = this.incomingRequestHandler.bind(this) as <
       ReqType extends JsonType,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ResType extends JsonType,
+      ResType extends JsonType
     >(
       chargingStation: ChargingStation,
       messageId: string,
@@ -46,7 +46,7 @@ export abstract class OCPPIncomingRequestService {
       commandPayload: ReqType
     ) => Promise<void>
     this.validateIncomingRequestPayload = this.validateIncomingRequestPayload.bind(this) as <
-      T extends JsonType,
+      T extends JsonType
     >(
       chargingStation: ChargingStation,
       commandName: IncomingRequestCommand,

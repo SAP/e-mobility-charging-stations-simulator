@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { EventEmitter } from 'node:events'
 import { dirname, extname, join } from 'node:path'
@@ -35,6 +35,7 @@ import {
   generateUUID,
   handleUncaughtException,
   handleUnhandledRejection,
+  isAsyncFunction,
   isNotEmptyArray,
   logPrefix,
   logger
@@ -47,7 +48,7 @@ enum exitCodes {
   succeeded = 0,
   missingChargingStationsConfiguration = 1,
   noChargingStationTemplates = 2,
-  gracefulShutdownError = 3,
+  gracefulShutdownError = 3
 }
 
 export class Bootstrap extends EventEmitter {
@@ -362,7 +363,18 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventPerformanceStatistics = (data: Statistics): void => {
-    this.storage?.storePerformanceStatistics(data) as undefined
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    if (isAsyncFunction(this.storage?.storePerformanceStatistics)) {
+      (
+        this.storage.storePerformanceStatistics as (
+          performanceStatistics: Statistics
+        ) => Promise<void>
+      )(data).catch(Constants.EMPTY_FUNCTION)
+    } else {
+      (this.storage?.storePerformanceStatistics as (performanceStatistics: Statistics) => void)(
+        data
+      )
+    }
   }
 
   private initializeCounters (): void {
@@ -424,7 +436,7 @@ export class Bootstrap extends EventEmitter {
             exit(exitCodes.gracefulShutdownError)
           })
       })
-      .catch((error) => {
+      .catch(error => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error)
         exit(exitCodes.gracefulShutdownError)
       })

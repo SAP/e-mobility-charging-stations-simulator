@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { closeSync, existsSync, mkdirSync, openSync, writeSync } from 'node:fs'
 import { dirname } from 'node:path'
@@ -34,7 +34,7 @@ export class JsonFileStorage extends Storage {
         0,
         'utf8'
       )
-    }).catch((error) => {
+    }).catch(error => {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,

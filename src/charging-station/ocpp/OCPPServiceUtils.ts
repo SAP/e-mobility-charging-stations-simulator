@@ -120,9 +120,12 @@ export const isIdTagAuthorized = async (
       `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`
     )
   }
-  if (chargingStation.getLocalAuthListEnabled() && isIdTagLocalAuthorized(chargingStation, idTag)) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  if (
+    connectorStatus != null &&
+    chargingStation.getLocalAuthListEnabled() &&
+    isIdTagLocalAuthorized(chargingStation, idTag)
+  ) {
     connectorStatus.localAuthorizeIdTag = idTag
     connectorStatus.idTagLocalAuthorized = true
     return true
@@ -139,7 +142,7 @@ const isIdTagLocalAuthorized = (chargingStation: ChargingStation, idTag: string)
       chargingStation.idTagsCache
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         .getIdTags(getIdTagsFile(chargingStation.stationInfo!)!)
-        ?.find((tag) => tag === idTag)
+        ?.find(tag => tag === idTag)
     )
   )
 }
@@ -196,19 +199,18 @@ const checkConnectorStatusTransition = (
   connectorId: number,
   status: ConnectorStatusEnum
 ): boolean => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const fromStatus = chargingStation.getConnectorStatus(connectorId)!.status
+  const fromStatus = chargingStation.getConnectorStatus(connectorId)?.status
   let transitionAllowed = false
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
       if (
         (connectorId === 0 &&
           OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1) ||
         (connectorId > 0 &&
           OCPP16Constants.ChargePointStatusConnectorTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1)
       ) {
         transitionAllowed = true
@@ -219,11 +221,11 @@ const checkConnectorStatusTransition = (
       if (
         (connectorId === 0 &&
           OCPP20Constants.ChargingStationStatusTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1) ||
         (connectorId > 0 &&
           OCPP20Constants.ConnectorStatusTransitions.findIndex(
-            (transition) => transition.from === fromStatus && transition.to === status
+            transition => transition.from === fromStatus && transition.to === status
           ) !== -1)
       ) {
         transitionAllowed = true
@@ -239,8 +241,7 @@ const checkConnectorStatusTransition = (
       `${chargingStation.logPrefix()} OCPP ${
         chargingStation.stationInfo.ocppVersion
       } connector id ${connectorId} status transition from '${
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.getConnectorStatus(connectorId)!.status
+        chargingStation.getConnectorStatus(connectorId)?.status
       }' to '${status}' is not allowed`
     )
   }
@@ -442,7 +443,6 @@ export const buildMeterValue = (
         }
       }
       if (powerSampledValueTemplate != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         checkMeasurandPowerDivider(chargingStation, powerSampledValueTemplate.measurand)
         const errMsg = `MeterValues measurand ${
           powerSampledValueTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
@@ -490,7 +490,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    powerPerPhaseSampledValueTemplates.L1?.value,
+                    powerPerPhaseSampledValueTemplates.L1.value,
                     connectorMaximumPowerPerPhase / unitDivider,
                     connectorMinimumPowerPerPhase / unitDivider,
                     {
@@ -499,7 +499,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumPowerPerPhase / unitDivider
                     }
                   ),
-                  powerPerPhaseSampledValueTemplates.L1?.fluctuationPercent ??
+                  powerPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -508,7 +508,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    powerPerPhaseSampledValueTemplates.L2?.value,
+                    powerPerPhaseSampledValueTemplates.L2.value,
                     connectorMaximumPowerPerPhase / unitDivider,
                     connectorMinimumPowerPerPhase / unitDivider,
                     {
@@ -517,7 +517,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumPowerPerPhase / unitDivider
                     }
                   ),
-                  powerPerPhaseSampledValueTemplates.L2?.fluctuationPercent ??
+                  powerPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -526,7 +526,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    powerPerPhaseSampledValueTemplates.L3?.value,
+                    powerPerPhaseSampledValueTemplates.L3.value,
                     connectorMaximumPowerPerPhase / unitDivider,
                     connectorMinimumPowerPerPhase / unitDivider,
                     {
@@ -535,7 +535,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumPowerPerPhase / unitDivider
                     }
                   ),
-                  powerPerPhaseSampledValueTemplates.L3?.fluctuationPercent ??
+                  powerPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -756,7 +756,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    currentPerPhaseSampledValueTemplates.L1?.value,
+                    currentPerPhaseSampledValueTemplates.L1.value,
                     connectorMaximumAmperage,
                     connectorMinimumAmperage,
                     {
@@ -765,7 +765,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumAmperage
                     }
                   ),
-                  currentPerPhaseSampledValueTemplates.L1?.fluctuationPercent ??
+                  currentPerPhaseSampledValueTemplates.L1.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -774,7 +774,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    currentPerPhaseSampledValueTemplates.L2?.value,
+                    currentPerPhaseSampledValueTemplates.L2.value,
                     connectorMaximumAmperage,
                     connectorMinimumAmperage,
                     {
@@ -783,7 +783,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumAmperage
                     }
                   ),
-                  currentPerPhaseSampledValueTemplates.L2?.fluctuationPercent ??
+                  currentPerPhaseSampledValueTemplates.L2.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -792,7 +792,7 @@ export const buildMeterValue = (
               )
                 ? getRandomFloatFluctuatedRounded(
                   getLimitFromSampledValueTemplateCustomValue(
-                    currentPerPhaseSampledValueTemplates.L3?.value,
+                    currentPerPhaseSampledValueTemplates.L3.value,
                     connectorMaximumAmperage,
                     connectorMinimumAmperage,
                     {
@@ -801,7 +801,7 @@ export const buildMeterValue = (
                       fallbackValue: connectorMinimumAmperage
                     }
                   ),
-                  currentPerPhaseSampledValueTemplates.L3?.fluctuationPercent ??
+                  currentPerPhaseSampledValueTemplates.L3.fluctuationPercent ??
                       Constants.DEFAULT_FLUCTUATION_PERCENT
                 )
                 : undefined
@@ -930,7 +930,6 @@ export const buildMeterValue = (
       // Energy.Active.Import.Register measurand (default)
       energySampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
       if (energySampledValueTemplate != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
         const unitDivider =
           energySampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
@@ -1238,7 +1237,7 @@ export class OCPPServiceUtils {
     // This is intentional
   }
 
-  public static ajvErrorsToErrorType (errors: ErrorObject[] | null | undefined): ErrorType {
+  public static ajvErrorsToErrorType (errors: ErrorObject[] | undefined | null): ErrorType {
     if (isNotEmptyArray(errors)) {
       for (const error of errors as DefinedError[]) {
         switch (error.keyword) {
@@ -1330,16 +1329,16 @@ export class OCPPServiceUtils {
     return true
   }
 
-  public static convertDateToISOString<T extends JsonType>(obj: T): void {
-    for (const key in obj) {
+  public static convertDateToISOString<T extends JsonType>(object: T): void {
+    for (const key in object) {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-      if (isDate(obj![key])) {
+      if (isDate(object![key])) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        (obj![key] as string) = (obj![key] as Date).toISOString()
+        (object![key] as string) = (object![key] as Date).toISOString()
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition
-      } else if (typeof obj![key] === 'object' && obj![key] !== null) {
+      } else if (typeof object![key] === 'object' && object![key] !== null) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        OCPPServiceUtils.convertDateToISOString<T>(obj![key] as T)
+        OCPPServiceUtils.convertDateToISOString<T>(object![key] as T)
       }
     }
   }

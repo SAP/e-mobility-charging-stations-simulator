@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src/types/orm/entities",
+    "outDir": "./dist/types/orm/entities",
+    "declaration": true,
+    "sourceMap": true
+  },
+  "include": ["src/types/orm/entities/*.ts"],
+  "ts-node": {
+    "esm": true,
+    "transpileOnly": true
+  }
+}

@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { URL } from 'node:url'
 
@@ -42,14 +42,14 @@ export abstract class Storage {
 
   protected getDBNameFromStorageType (type: StorageType): DBName | undefined {
     switch (type) {
-      case StorageType.MARIA_DB:
-        return DBName.MARIA_DB
-      case StorageType.MONGO_DB:
-        return DBName.MONGO_DB
-      case StorageType.MYSQL:
-        return DBName.MYSQL
       case StorageType.SQLITE:
         return DBName.SQLITE
+      case StorageType.MARIA_DB:
+        return DBName.MARIA_DB
+      case StorageType.MYSQL:
+        return DBName.MYSQL
+      case StorageType.MONGO_DB:
+        return DBName.MONGO_DB
     }
   }
 

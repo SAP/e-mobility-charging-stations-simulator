@@ -64,7 +64,7 @@ export type CachedRequest = [
   ResponseCallback,
   ErrorCallback,
   RequestCommand | IncomingRequestCommand,
-  JsonType,
+  JsonType
 ]
 
 export const MessageTrigger = {

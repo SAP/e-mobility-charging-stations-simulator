@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import type { JSONSchemaType } from 'ajv'
 import {
@@ -38,7 +38,7 @@ import {
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion
 } from '../../../types/index.js'
-import { isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
+import { convertToDate, isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
@@ -164,6 +164,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
     }
+    cp.chargingSchedule.startSchedule = convertToDate(cp.chargingSchedule.startSchedule)
+    cp.validFrom = convertToDate(cp.validFrom)
+    cp.validTo = convertToDate(cp.validTo)
     let cpReplaced = false
     if (isNotEmptyArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -192,7 +195,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     const { id, chargingProfilePurpose, stackLevel } = commandPayload
     let clearedCP = false
     if (isNotEmptyArray(chargingProfiles)) {
-      chargingProfiles?.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
+      chargingProfiles.forEach((chargingProfile: OCPP16ChargingProfile, index: number) => {
         let clearCurrentCP = false
         if (chargingProfile.chargingProfileId === id) {
           clearCurrentCP = true
@@ -293,7 +296,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
           ),
         chargingSchedulePeriod: [
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map((schedulePeriod) => {
+          ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map(schedulePeriod => {
             return {
               ...schedulePeriod,
               startPeriod: higherFirst
@@ -306,7 +309,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             }
           }),
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...compositeChargingScheduleLower!.chargingSchedulePeriod.map((schedulePeriod) => {
+          ...compositeChargingScheduleLower!.chargingSchedulePeriod.map(schedulePeriod => {
             return {
               ...schedulePeriod,
               startPeriod: higherFirst
@@ -339,7 +342,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         ),
       chargingSchedulePeriod: [
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map((schedulePeriod) => {
+        ...compositeChargingScheduleHigher!.chargingSchedulePeriod.map(schedulePeriod => {
           return {
             ...schedulePeriod,
             startPeriod: higherFirst
@@ -504,8 +507,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             .filter((schedulePeriod, index) => {
               if (
                 isWithinInterval(
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
                   compositeInterval
                 )
               ) {
@@ -544,10 +546,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
             compositeInterval.end as Date,
             chargingScheduleInterval.start
           ),
-          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter((schedulePeriod) =>
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(schedulePeriod =>
             isWithinInterval(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod)!,
+              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
               compositeInterval
             )
           )

@@ -129,8 +129,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             RequestCommand.STOP_TRANSACTION,
             {
               meterStop: this.chargingStation.getEnergyActiveImportRegisterByTransactionId(
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                requestPayload!.transactionId!,
+                requestPayload?.transactionId,
                 true
               ),
               ...requestPayload
@@ -174,12 +173,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           await this.chargingStation.ocppRequestService.requestHandler<
           StatusNotificationRequest,
           StatusNotificationResponse
-          >(
-            this.chargingStation,
-            RequestCommand.STATUS_NOTIFICATION,
-            requestPayload,
-            requestParams
-          )
+          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, requestPayload, requestParams)
       ],
       [
         BroadcastChannelProcedureName.HEARTBEAT,

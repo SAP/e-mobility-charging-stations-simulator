@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2023. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { Queue } from 'mnemonist'
 
@@ -6,7 +6,7 @@ import { Constants } from './Constants.js'
 
 export enum AsyncLockType {
   configuration = 'configuration',
-  performance = 'performance',
+  performance = 'performance'
 }
 
 type ResolveType = (value: void | PromiseLike<void>) => void
@@ -35,7 +35,7 @@ export class AsyncLock {
       asyncLock.acquired = true
       return
     }
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       asyncLock.resolveQueue.enqueue(resolve)
     })
   }
@@ -48,7 +48,7 @@ export class AsyncLock {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const queuedResolve = asyncLock.resolveQueue.dequeue()!
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       queuedResolve()
       resolve()
     })

@@ -24,8 +24,9 @@ export {
   buildStoppedMessage
 } from './MessageChannelUtils.js'
 export {
+  isAsyncFunction,
   JSONStringifyWithMapSupport,
-  cloneObject,
+  clone,
   convertToBoolean,
   convertToDate,
   convertToFloat,
@@ -45,7 +46,7 @@ export {
   isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
-  isValidTime,
+  isValidDate,
   logPrefix,
   max,
   min,

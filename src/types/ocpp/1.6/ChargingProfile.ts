@@ -28,22 +28,22 @@ export interface OCPP16ChargingSchedulePeriod extends JsonObject {
 
 export enum OCPP16ChargingRateUnitType {
   WATT = 'W',
-  AMPERE = 'A',
+  AMPERE = 'A'
 }
 
 export enum OCPP16ChargingProfileKindType {
   ABSOLUTE = 'Absolute',
   RECURRING = 'Recurring',
-  RELATIVE = 'Relative',
+  RELATIVE = 'Relative'
 }
 
 export enum OCPP16ChargingProfilePurposeType {
   CHARGE_POINT_MAX_PROFILE = 'ChargePointMaxProfile',
   TX_DEFAULT_PROFILE = 'TxDefaultProfile',
-  TX_PROFILE = 'TxProfile',
+  TX_PROFILE = 'TxProfile'
 }
 
 export enum OCPP16RecurrencyKindType {
   DAILY = 'Daily',
-  WEEKLY = 'Weekly',
+  WEEKLY = 'Weekly'
 }

@@ -5,7 +5,7 @@ import { expect } from 'expect'
 
 import { Constants } from '../../src/utils/Constants.js'
 import {
-  cloneObject,
+  clone,
   convertToBoolean,
   convertToDate,
   convertToFloat,
@@ -21,11 +21,10 @@ import {
   isEmptyArray,
   isEmptyObject,
   isEmptyString,
-  isIterable,
   isNotEmptyArray,
   isNotEmptyString,
   isObject,
-  isValidTime,
+  isValidDate,
   max,
   min,
   once,
@@ -69,27 +68,19 @@ await describe('Utils test suite', async () => {
     expect(formatDurationSeconds(hoursToSeconds(4380))).toBe('182 days 12 hours')
   })
 
-  await it('Verify isValidTime()', () => {
-    expect(isValidTime(undefined)).toBe(false)
-    expect(isValidTime(null)).toBe(false)
-    expect(isValidTime('')).toBe(false)
-    expect(isValidTime({})).toBe(false)
-    expect(isValidTime([])).toBe(false)
-    expect(isValidTime(new Map())).toBe(false)
-    expect(isValidTime(new Set())).toBe(false)
-    expect(isValidTime(new WeakMap())).toBe(false)
-    expect(isValidTime(new WeakSet())).toBe(false)
-    expect(isValidTime(-1)).toBe(true)
-    expect(isValidTime(0)).toBe(true)
-    expect(isValidTime(1)).toBe(true)
-    expect(isValidTime(-0.5)).toBe(true)
-    expect(isValidTime(0.5)).toBe(true)
-    expect(isValidTime(new Date())).toBe(true)
+  await it('Verify isValidDate()', () => {
+    expect(isValidDate(undefined)).toBe(false)
+    expect(isValidDate(-1)).toBe(true)
+    expect(isValidDate(0)).toBe(true)
+    expect(isValidDate(1)).toBe(true)
+    expect(isValidDate(-0.5)).toBe(true)
+    expect(isValidDate(0.5)).toBe(true)
+    expect(isValidDate(new Date())).toBe(true)
   })
 
   await it('Verify convertToDate()', () => {
     expect(convertToDate(undefined)).toBe(undefined)
-    expect(convertToDate(null)).toBe(null)
+    expect(convertToDate(null)).toBe(undefined)
     expect(() => convertToDate('')).toThrow(new Error("Cannot convert to date: ''"))
     expect(() => convertToDate('00:70:61')).toThrow(new Error("Cannot convert to date: '00:70:61'"))
     expect(convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'))
@@ -257,33 +248,33 @@ await describe('Utils test suite', async () => {
     expect(isObject(new WeakSet())).toBe(true)
   })
 
-  await it('Verify cloneObject()', () => {
+  await it('Verify clone()', () => {
     const obj = { 1: 1 }
-    expect(cloneObject(obj)).toStrictEqual(obj)
-    expect(cloneObject(obj) === obj).toBe(false)
+    expect(clone(obj)).toStrictEqual(obj)
+    expect(clone(obj) === obj).toBe(false)
     const nestedObj = { 1: obj, 2: obj }
-    expect(cloneObject(nestedObj)).toStrictEqual(nestedObj)
-    expect(cloneObject(nestedObj) === nestedObj).toBe(false)
+    expect(clone(nestedObj)).toStrictEqual(nestedObj)
+    expect(clone(nestedObj) === nestedObj).toBe(false)
     const array = [1, 2]
-    expect(cloneObject(array)).toStrictEqual(array)
-    expect(cloneObject(array) === array).toBe(false)
+    expect(clone(array)).toStrictEqual(array)
+    expect(clone(array) === array).toBe(false)
     const objArray = [obj, obj]
-    expect(cloneObject(objArray)).toStrictEqual(objArray)
-    expect(cloneObject(objArray) === objArray).toBe(false)
+    expect(clone(objArray)).toStrictEqual(objArray)
+    expect(clone(objArray) === objArray).toBe(false)
     const date = new Date()
-    expect(cloneObject(date)).toStrictEqual(date)
-    expect(cloneObject(date) === date).toBe(false)
+    expect(clone(date)).toStrictEqual(date)
+    expect(clone(date) === date).toBe(false)
     const map = new Map([['1', '2']])
-    expect(cloneObject(map)).toStrictEqual({})
+    expect(clone(map)).toStrictEqual({})
     const set = new Set(['1'])
-    expect(cloneObject(set)).toStrictEqual({})
+    expect(clone(set)).toStrictEqual({})
     // The URL object seems to have not enumerable properties
     const url = new URL('https://domain.tld')
-    expect(cloneObject(url)).toStrictEqual({})
+    expect(clone(url)).toStrictEqual({})
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    expect(cloneObject(weakMap)).toStrictEqual({})
+    expect(clone(weakMap)).toStrictEqual({})
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    expect(cloneObject(weakSet)).toStrictEqual({})
+    expect(clone(weakSet)).toStrictEqual({})
   })
 
   await it('Verify hasOwnProp()', () => {
@@ -300,21 +291,6 @@ await describe('Utils test suite', async () => {
     expect(hasOwnProp({ 1: '1' }, 1)).toBe(true)
     expect(hasOwnProp({ 1: '1' }, '2')).toBe(false)
     expect(hasOwnProp({ 1: '1' }, 2)).toBe(false)
-  })
-
-  await it('Verify isIterable()', () => {
-    expect(isIterable('')).toBe(true)
-    expect(isIterable(' ')).toBe(true)
-    expect(isIterable('test')).toBe(true)
-    expect(isIterable(undefined)).toBe(false)
-    expect(isIterable(null)).toBe(false)
-    expect(isIterable(0)).toBe(false)
-    expect(isIterable([0, 1])).toBe(true)
-    expect(isIterable({ 1: 1 })).toBe(false)
-    expect(isIterable(new Map())).toBe(true)
-    expect(isIterable(new Set())).toBe(true)
-    expect(isIterable(new WeakMap())).toBe(false)
-    expect(isIterable(new WeakSet())).toBe(false)
   })
 
   await it('Verify isEmptyString()', () => {
@@ -388,6 +364,8 @@ await describe('Utils test suite', async () => {
   await it('Verify isEmptyObject()', () => {
     expect(isEmptyObject({})).toBe(true)
     expect(isEmptyObject({ 1: 1, 2: 2 })).toBe(false)
+    expect(isEmptyObject([])).toBe(false)
+    expect(isEmptyObject([1, 2])).toBe(false)
     expect(isEmptyObject(new Map())).toBe(false)
     expect(isEmptyObject(new Set())).toBe(false)
     expect(isEmptyObject(new WeakMap())).toBe(false)
