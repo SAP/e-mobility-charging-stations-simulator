@@ -216,7 +216,7 @@ packages:
       jsonstream2: 3.0.0
       make-dir: 3.1.0
       minimist: 1.2.8
-      morphdom: 2.7.1
+      morphdom: 2.7.2
       nanohtml: 1.10.0
       on-net-listen: 1.1.2
       opn: 5.5.0
@@ -3525,7 +3525,7 @@ packages:
       end-of-stream: 1.4.4
       inherits: 2.0.4
       readable-stream: 3.6.2
-      stream-shift: 1.0.2
+      stream-shift: 1.0.3
     dev: true
 
   /eastasianwidth@0.2.0:
@@ -6733,8 +6733,8 @@ packages:
       mongodb-connection-string-url: 3.0.0
     dev: false
 
-  /morphdom@2.7.1:
-    resolution: {integrity: sha512-LwrrjplMolniWtOGluKF1EHZ0y78Fa4sq7f/MXCydyNkDof+POf+ruCn+k08l7H7b/JISfRo8Zd0HazuqySY9w==}
+  /morphdom@2.7.2:
+    resolution: {integrity: sha512-Dqb/lHFyTi7SZpY0a5R4I/0Edo+iPMbaUexsHHsLAByyixCDiLHPHyVoKVmrpL0THcT7V9Cgev9y21TQYq6wQg==}
     dev: true
 
   /ms@2.1.2:
@@ -8637,8 +8637,8 @@ packages:
       xtend: 4.0.2
     dev: true
 
-  /stream-shift@1.0.2:
-    resolution: {integrity: sha512-rV4Bovi9xx0BFzOb/X0B2GqoIjvqPCttZdu0Wgtx2Dxkj7ETyWl9gmqJ4EutWRLvtZWm8dxE+InQZX1IryZn/w==}
+  /stream-shift@1.0.3:
+    resolution: {integrity: sha512-76ORR0DO1o1hlKwTbi/DM3EXWGf3ZJYO8cXX5RJwnul2DEg2oyoZyjLNoQM8WsvZiFKCRfC1O0J7iCvie3RZmQ==}
     dev: true
 
   /stream-splicer@2.0.1:
