@@ -35,13 +35,13 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        uses: actions/dependency-review-action@v3
+        uses: actions/dependency-review-action@v4
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        uses: actions/dependency-review-action@v3
+        uses: actions/dependency-review-action@v4
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -88,13 +88,13 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Dependency Review
         if: ${{ github.event_name == 'push' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        uses: actions/dependency-review-action@v3
+        uses: actions/dependency-review-action@v4
         with:
           base-ref: ${{ github.ref_name }}
           head-ref: ${{ github.sha }}
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        uses: actions/dependency-review-action@v3
+        uses: actions/dependency-review-action@v4
       - uses: pnpm/action-setup@v2
         with:
           version: 8
