@@ -24,8 +24,8 @@ dependencies:
     specifier: ^6.0.5
     version: 6.0.5(@mikro-orm/core@6.0.5)
   '@mikro-orm/sqlite':
-    specifier: ^6.0.4
-    version: 6.0.4(@mikro-orm/core@6.0.5)
+    specifier: ^6.0.5
+    version: 6.0.5(@mikro-orm/core@6.0.5)
   ajv:
     specifier: ^8.12.0
     version: 8.12.0
@@ -974,7 +974,7 @@ packages:
     dependencies:
       '@jercle/yargonaut': 1.1.5
       '@mikro-orm/core': 6.0.5
-      '@mikro-orm/knex': 6.0.5(@mikro-orm/core@6.0.5)
+      '@mikro-orm/knex': 6.0.5(@mikro-orm/core@6.0.5)(sqlite3@5.1.7)
       fs-extra: 11.2.0
       tsconfig-paths: 4.2.0
       yargs: 17.7.2
@@ -1001,7 +1001,7 @@ packages:
       mikro-orm: 6.0.5
       reflect-metadata: 0.2.1
 
-  /@mikro-orm/knex@6.0.4(@mikro-orm/core@6.0.5)(sqlite3@5.1.7):
+  /@mikro-orm/knex@6.0.4(@mikro-orm/core@6.0.5):
     resolution: {integrity: sha512-OoNk6M4S7ZK+h1uOe6dk6dbdCxxOXnVcwRr9a+zspn/yz/zOxt3dqQlburEXevhbNDl4U/h99BWYQ9Jw1zPrjQ==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
@@ -1022,7 +1022,7 @@ packages:
       - tedious
     dev: false
 
-  /@mikro-orm/knex@6.0.5(@mikro-orm/core@6.0.5):
+  /@mikro-orm/knex@6.0.5(@mikro-orm/core@6.0.5)(sqlite3@5.1.7):
     resolution: {integrity: sha512-ZzDoJCFHvjPWJmTCoYEOVdTvVckPSL1Ny8J+/G3GgZwX6pPobJn/B2M6OI77w6SeQ7z7eWR1yfl9hOOn8GGSAA==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
@@ -1041,7 +1041,6 @@ packages:
       - sqlite3
       - supports-color
       - tedious
-    dev: true
 
   /@mikro-orm/mariadb@6.0.4(@mikro-orm/core@6.0.5):
     resolution: {integrity: sha512-SFa1xg2shfmiLxLkCBtFsQaqdjtkIoWEryFSLusEAM7CPtIO3IgRDYQZBBjWVgTsuZ1DKkArA60nVXVwzB3fcw==}
@@ -1050,7 +1049,7 @@ packages:
       '@mikro-orm/core': ^6.0.0
     dependencies:
       '@mikro-orm/core': 6.0.5
-      '@mikro-orm/knex': 6.0.4(@mikro-orm/core@6.0.5)(sqlite3@5.1.7)
+      '@mikro-orm/knex': 6.0.4(@mikro-orm/core@6.0.5)
       mariadb: 2.5.6
     transitivePeerDependencies:
       - better-sqlite3
@@ -1074,14 +1073,14 @@ packages:
       ts-morph: 21.0.1
     dev: false
 
-  /@mikro-orm/sqlite@6.0.4(@mikro-orm/core@6.0.5):
-    resolution: {integrity: sha512-gG+OWKY1rI/YTeAn5JGZlhA9PQ3NsAsp+zOLFOedvmNF8dK3cBZJV3TqCzKPYi/plVQH+dwxo1T4ZDORpt+3sg==}
+  /@mikro-orm/sqlite@6.0.5(@mikro-orm/core@6.0.5):
+    resolution: {integrity: sha512-LrsefdzxoCrBZvX5hgVbJ2WNEikkeco1zPBjZc/9oYdxqBkGEpW7yI+dypuSDH9K3ktE0HpNJnX/uwIQSVzvTw==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
     dependencies:
       '@mikro-orm/core': 6.0.5
-      '@mikro-orm/knex': 6.0.4(@mikro-orm/core@6.0.5)(sqlite3@5.1.7)
+      '@mikro-orm/knex': 6.0.5(@mikro-orm/core@6.0.5)(sqlite3@5.1.7)
       fs-extra: 11.2.0
       sqlite3: 5.1.7
       sqlstring-sqlite: 0.1.1
@@ -1721,6 +1720,7 @@ packages:
   /aggregate-error@3.1.0:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
+    requiresBuild: true
     dependencies:
       clean-stack: 2.2.0
       indent-string: 4.0.0
