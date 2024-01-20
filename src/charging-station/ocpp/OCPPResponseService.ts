@@ -10,7 +10,7 @@ import type {
   OCPPVersion,
   RequestCommand
 } from '../../types/index.js'
-import { logger } from '../../utils/index.js'
+import { Constants, logger } from '../../utils/index.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -96,9 +96,7 @@ export abstract class OCPPResponseService {
     )
   }
 
-  protected emptyResponseHandler (): void {
-    /* This is intentional */
-  }
+  protected emptyResponseHandler = Constants.EMPTY_FUNCTION
 
   private getJsonRequestValidateFunction<T extends JsonType>(
     commandName: RequestCommand,
