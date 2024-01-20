@@ -256,7 +256,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     this.onmessageerror = this.messageErrorHandler.bind(this) as (message: unknown) => void
   }
 
-  private async requestHandler (messageEvent: MessageEvent): Promise<void> {
+  private requestHandler (messageEvent: MessageEvent): void {
     const validatedMessageEvent = this.validateMessageEvent(messageEvent)
     if (validatedMessageEvent === false) {
       return
@@ -281,40 +281,42 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     let responsePayload: BroadcastChannelResponsePayload | undefined
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     let commandResponse: CommandResponse | void
-    try {
-      commandResponse = await this.commandHandler(command, requestPayload)
-      if (commandResponse == null || isEmptyObject(commandResponse)) {
+    this.commandHandler(command, requestPayload)
+      .then(commandResponse => {
+        if (commandResponse == null || isEmptyObject(commandResponse)) {
+          responsePayload = {
+            hashId: this.chargingStation.stationInfo?.hashId,
+            status: ResponseStatus.SUCCESS
+          }
+        } else {
+          responsePayload = this.commandResponseToResponsePayload(
+            command,
+            requestPayload,
+            commandResponse
+          )
+        }
+      })
+      .catch(error => {
+        logger.error(
+          `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: Handle request error:`,
+          error
+        )
         responsePayload = {
           hashId: this.chargingStation.stationInfo?.hashId,
-          status: ResponseStatus.SUCCESS
-        }
-      } else {
-        responsePayload = this.commandResponseToResponsePayload(
+          status: ResponseStatus.FAILURE,
           command,
           requestPayload,
-          commandResponse
-        )
-      }
-    } catch (error) {
-      logger.error(
-        `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: Handle request error:`,
-        error
-      )
-      responsePayload = {
-        hashId: this.chargingStation.stationInfo?.hashId,
-        status: ResponseStatus.FAILURE,
-        command,
-        requestPayload,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          commandResponse: commandResponse!,
+          errorMessage: (error as OCPPError).message,
+          errorStack: (error as OCPPError).stack,
+          errorDetails: (error as OCPPError).details
+        }
+      })
+      .finally(() => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        commandResponse: commandResponse!,
-        errorMessage: (error as OCPPError).message,
-        errorStack: (error as OCPPError).stack,
-        errorDetails: (error as OCPPError).details
-      }
-    } finally {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.sendResponse([uuid, responsePayload!])
-    }
+        this.sendResponse([uuid, responsePayload!])
+      })
   }
 
   private messageErrorHandler (messageEvent: MessageEvent): void {

@@ -82,11 +82,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         )
       ]
     ])
-    this.validatePayload = this.validatePayload.bind(this) as (
-      chargingStation: ChargingStation,
-      commandName: OCPP20RequestCommand,
-      payload: JsonType
-    ) => boolean
+    this.validatePayload = this.validatePayload.bind(this)
   }
 
   public async responseHandler<ReqType extends JsonType, ResType extends JsonType>(

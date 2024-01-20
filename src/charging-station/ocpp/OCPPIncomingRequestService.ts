@@ -35,24 +35,8 @@ export abstract class OCPPIncomingRequestService {
     })
     ajvFormats(this.ajv)
     this.jsonValidateFunctions = new Map<IncomingRequestCommand, ValidateFunction<JsonType>>()
-    this.incomingRequestHandler = this.incomingRequestHandler.bind(this) as <
-      ReqType extends JsonType,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ResType extends JsonType
-    >(
-      chargingStation: ChargingStation,
-      messageId: string,
-      commandName: IncomingRequestCommand,
-      commandPayload: ReqType
-    ) => Promise<void>
-    this.validateIncomingRequestPayload = this.validateIncomingRequestPayload.bind(this) as <
-      T extends JsonType
-    >(
-      chargingStation: ChargingStation,
-      commandName: IncomingRequestCommand,
-      schema: JSONSchemaType<T>,
-      payload: T
-    ) => boolean
+    this.incomingRequestHandler = this.incomingRequestHandler.bind(this)
+    this.validateIncomingRequestPayload = this.validateIncomingRequestPayload.bind(this)
   }
 
   public static getInstance<T extends OCPPIncomingRequestService>(this: new () => T): T {

@@ -59,62 +59,15 @@ export abstract class OCPPRequestService {
     ajvFormats(this.ajv)
     this.jsonValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonType>>()
     this.ocppResponseService = ocppResponseService
-    this.requestHandler = this.requestHandler.bind(this) as <
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ReqType extends JsonType,
-      ResType extends JsonType
-    >(
-      chargingStation: ChargingStation,
-      commandName: RequestCommand,
-      commandParams?: JsonType,
-      params?: RequestParams
-    ) => Promise<ResType>
-    this.sendMessage = this.sendMessage.bind(this) as (
-      chargingStation: ChargingStation,
-      messageId: string,
-      messagePayload: JsonType,
-      commandName: RequestCommand,
-      params?: RequestParams
-    ) => Promise<ResponseType>
-    this.sendResponse = this.sendResponse.bind(this) as (
-      chargingStation: ChargingStation,
-      messageId: string,
-      messagePayload: JsonType,
-      commandName: IncomingRequestCommand
-    ) => Promise<ResponseType>
-    this.sendError = this.sendError.bind(this) as (
-      chargingStation: ChargingStation,
-      messageId: string,
-      ocppError: OCPPError,
-      commandName: RequestCommand | IncomingRequestCommand
-    ) => Promise<ResponseType>
-    this.internalSendMessage = this.internalSendMessage.bind(this) as (
-      chargingStation: ChargingStation,
-      messageId: string,
-      messagePayload: JsonType | OCPPError,
-      messageType: MessageType,
-      commandName: RequestCommand | IncomingRequestCommand,
-      params?: RequestParams
-    ) => Promise<ResponseType>
-    this.buildMessageToSend = this.buildMessageToSend.bind(this) as (
-      chargingStation: ChargingStation,
-      messageId: string,
-      messagePayload: JsonType | OCPPError,
-      messageType: MessageType,
-      commandName: RequestCommand | IncomingRequestCommand
-    ) => string
-    this.validateRequestPayload = this.validateRequestPayload.bind(this) as <T extends JsonType>(
-      chargingStation: ChargingStation,
-      commandName: RequestCommand | IncomingRequestCommand,
-      payload: T
-    ) => boolean
-    this.validateIncomingRequestResponsePayload = this.validateIncomingRequestResponsePayload.bind(
-      this
-    ) as <T extends JsonType>(
-      chargingStation: ChargingStation,
-      commandName: RequestCommand | IncomingRequestCommand,
-      payload: T
-    ) => boolean
+    this.requestHandler = this.requestHandler.bind(this)
+    this.sendMessage = this.sendMessage.bind(this)
+    this.sendResponse = this.sendResponse.bind(this)
+    this.sendError = this.sendError.bind(this)
+    this.internalSendMessage = this.internalSendMessage.bind(this)
+    this.buildMessageToSend = this.buildMessageToSend.bind(this)
+    this.validateRequestPayload = this.validateRequestPayload.bind(this)
+    this.validateIncomingRequestResponsePayload =
+      this.validateIncomingRequestResponsePayload.bind(this)
   }
 
   public static getInstance<T extends OCPPRequestService>(

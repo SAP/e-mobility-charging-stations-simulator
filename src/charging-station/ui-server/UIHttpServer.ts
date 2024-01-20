@@ -1,4 +1,4 @@
-import type { IncomingMessage, RequestListener, ServerResponse } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { StatusCodes } from 'http-status-codes'
 
@@ -33,7 +33,7 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   public start (): void {
-    this.httpServer.on('request', this.requestListener.bind(this) as RequestListener)
+    this.httpServer.on('request', this.requestListener.bind(this))
     this.startHttpServer()
   }
 

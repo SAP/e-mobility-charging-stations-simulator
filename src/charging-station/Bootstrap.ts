@@ -4,9 +4,10 @@ import { EventEmitter } from 'node:events'
 import { dirname, extname, join } from 'node:path'
 import process, { exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
+import type { Worker } from 'worker_threads'
 
 import chalk from 'chalk'
-import { availableParallelism } from 'poolifier'
+import { type MessageHandler, availableParallelism } from 'poolifier'
 
 import { waitChargingStationEvents } from './Helpers.js'
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
@@ -274,7 +275,7 @@ export class Bootstrap extends EventEmitter {
         poolMinSize: workerConfiguration.poolMinSize!,
         elementsPerWorker: elementsPerWorker ?? (workerConfiguration.elementsPerWorker as number),
         poolOptions: {
-          messageHandler: this.messageHandler.bind(this) as (message: unknown) => void,
+          messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
           workerOptions: { resourceLimits: workerConfiguration.resourceLimits }
         }
       }

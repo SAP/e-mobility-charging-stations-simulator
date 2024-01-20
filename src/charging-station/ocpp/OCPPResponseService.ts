@@ -47,21 +47,8 @@ export abstract class OCPPResponseService {
     IncomingRequestCommand,
     ValidateFunction<JsonType>
     >()
-    this.responseHandler = this.responseHandler.bind(this) as <
-      ReqType extends JsonType,
-      ResType extends JsonType
-    >(
-      chargingStation: ChargingStation,
-      commandName: RequestCommand,
-      payload: ResType,
-      requestPayload: ReqType
-    ) => Promise<void>
-    this.validateResponsePayload = this.validateResponsePayload.bind(this) as <T extends JsonType>(
-      chargingStation: ChargingStation,
-      commandName: RequestCommand,
-      schema: JSONSchemaType<T>,
-      payload: T
-    ) => boolean
+    this.responseHandler = this.responseHandler.bind(this)
+    this.validateResponsePayload = this.validateResponsePayload.bind(this)
   }
 
   public static getInstance<T extends OCPPResponseService>(this: new () => T): T {

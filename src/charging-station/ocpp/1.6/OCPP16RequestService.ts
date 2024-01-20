@@ -121,11 +121,7 @@ export class OCPP16RequestService extends OCPPRequestService {
         )
       ]
     ])
-    this.buildRequestPayload = this.buildRequestPayload.bind(this) as <Request extends JsonType>(
-      chargingStation: ChargingStation,
-      commandName: OCPP16RequestCommand,
-      commandParams?: JsonType
-    ) => Request
+    this.buildRequestPayload = this.buildRequestPayload.bind(this)
   }
 
   public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(

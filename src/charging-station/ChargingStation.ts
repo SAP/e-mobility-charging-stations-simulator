@@ -768,26 +768,21 @@ export class ChargingStation extends EventEmitter {
     )
 
     // Handle WebSocket message
-    this.wsConnection.on(
-      'message',
-      this.onMessage.bind(this) as (this: WebSocket, data: RawData, isBinary: boolean) => void
-    )
+    // FIXME
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    this.wsConnection.on('message', this.onMessage.bind(this))
     // Handle WebSocket error
-    this.wsConnection.on(
-      'error',
-      this.onError.bind(this) as (this: WebSocket, error: Error) => void
-    )
+    this.wsConnection.on('error', this.onError.bind(this))
     // Handle WebSocket close
-    this.wsConnection.on(
-      'close',
-      this.onClose.bind(this) as (this: WebSocket, code: number, reason: Buffer) => void
-    )
+    this.wsConnection.on('close', this.onClose.bind(this))
     // Handle WebSocket open
-    this.wsConnection.on('open', this.onOpen.bind(this) as (this: WebSocket) => void)
+    // FIXME
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    this.wsConnection.on('open', this.onOpen.bind(this))
     // Handle WebSocket ping
-    this.wsConnection.on('ping', this.onPing.bind(this) as (this: WebSocket, data: Buffer) => void)
+    this.wsConnection.on('ping', this.onPing.bind(this))
     // Handle WebSocket pong
-    this.wsConnection.on('pong', this.onPong.bind(this) as (this: WebSocket, data: Buffer) => void)
+    this.wsConnection.on('pong', this.onPong.bind(this))
   }
 
   public closeWSConnection (): void {
@@ -1805,7 +1800,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private async onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): Promise<void> {
+  private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
@@ -1824,7 +1819,7 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.started && (await this.reconnect())
+        this.started && this.reconnect().catch(Constants.EMPTY_FUNCTION)
         break
     }
     this.emit(ChargingStationEvents.updated)

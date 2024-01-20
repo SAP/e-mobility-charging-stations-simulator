@@ -332,11 +332,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         )
       ]
     ])
-    this.validatePayload = this.validatePayload.bind(this) as (
-      chargingStation: ChargingStation,
-      commandName: OCPP16IncomingRequestCommand,
-      commandPayload: JsonType
-    ) => boolean
+    this.validatePayload = this.validatePayload.bind(this)
   }
 
   public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
