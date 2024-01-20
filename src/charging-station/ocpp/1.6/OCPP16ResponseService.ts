@@ -75,7 +75,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16RequestCommand.BOOT_NOTIFICATION,
         this.handleResponseBootNotification.bind(this) as ResponseHandler
       ],
-      [OCPP16RequestCommand.HEARTBEAT, this.emptyResponseHandler.bind(this) as ResponseHandler],
+      [OCPP16RequestCommand.HEARTBEAT, this.emptyResponseHandler],
       [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
       [
         OCPP16RequestCommand.START_TRANSACTION,
@@ -89,16 +89,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16RequestCommand.STATUS_NOTIFICATION,
         this.emptyResponseHandler.bind(this) as ResponseHandler
       ],
-      [OCPP16RequestCommand.METER_VALUES, this.emptyResponseHandler.bind(this) as ResponseHandler],
+      [OCPP16RequestCommand.METER_VALUES, this.emptyResponseHandler],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
         this.emptyResponseHandler.bind(this) as ResponseHandler
       ],
-      [OCPP16RequestCommand.DATA_TRANSFER, this.emptyResponseHandler.bind(this) as ResponseHandler],
-      [
-        OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-        this.emptyResponseHandler.bind(this) as ResponseHandler
-      ]
+      [OCPP16RequestCommand.DATA_TRANSFER, this.emptyResponseHandler],
+      [OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, this.emptyResponseHandler]
     ])
     this.jsonSchemas = new Map<OCPP16RequestCommand, JSONSchemaType<JsonType>>([
       [
