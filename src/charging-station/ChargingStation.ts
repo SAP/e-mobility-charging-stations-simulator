@@ -768,17 +768,17 @@ export class ChargingStation extends EventEmitter {
     )
 
     // Handle WebSocket message
-    // FIXME
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    this.wsConnection.on('message', this.onMessage.bind(this))
+    this.wsConnection.on('message', data => {
+      this.onMessage(data).catch(Constants.EMPTY_FUNCTION)
+    })
     // Handle WebSocket error
     this.wsConnection.on('error', this.onError.bind(this))
     // Handle WebSocket close
     this.wsConnection.on('close', this.onClose.bind(this))
     // Handle WebSocket open
-    // FIXME
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    this.wsConnection.on('open', this.onOpen.bind(this))
+    this.wsConnection.on('open', () => {
+      this.onOpen().catch(Constants.EMPTY_FUNCTION)
+    })
     // Handle WebSocket ping
     this.wsConnection.on('ping', this.onPing.bind(this))
     // Handle WebSocket pong
