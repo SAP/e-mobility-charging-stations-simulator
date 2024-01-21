@@ -777,7 +777,9 @@ export class ChargingStation extends EventEmitter {
     this.wsConnection.on('close', this.onClose.bind(this))
     // Handle WebSocket open
     this.wsConnection.on('open', () => {
-      this.onOpen().catch(Constants.EMPTY_FUNCTION)
+      this.onOpen().catch(error =>
+        logger.error(`${this.logPrefix()} Error while opening WebSocket connection:`, error)
+      )
     })
     // Handle WebSocket ping
     this.wsConnection.on('ping', this.onPing.bind(this))
