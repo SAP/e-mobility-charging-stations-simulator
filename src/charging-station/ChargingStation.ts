@@ -1947,11 +1947,14 @@ export class ChargingStation extends EventEmitter {
         )
       }
     } catch (error) {
+      if (!Array.isArray(request)) {
+        logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, error)
+        return
+      }
       let commandName: IncomingRequestCommand | undefined
       let requestCommandName: RequestCommand | IncomingRequestCommand | undefined
       let errorCallback: ErrorCallback
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const [, messageId] = request!
+      const [, messageId] = request
       switch (messageType) {
         case MessageType.CALL_MESSAGE:
           [, , commandName] = request as IncomingRequest
