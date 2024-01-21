@@ -458,9 +458,9 @@ export abstract class OCPPRequestService {
         messageToSend = JSON.stringify([
           messageType,
           messageId,
-          commandName,
-          messagePayload
-        ] as OutgoingRequest)
+          commandName as RequestCommand,
+          messagePayload as JsonType
+        ] satisfies OutgoingRequest)
         break
       // Response
       case MessageType.CALL_RESULT_MESSAGE:
@@ -470,7 +470,11 @@ export abstract class OCPPRequestService {
           commandName,
           messagePayload as JsonType
         )
-        messageToSend = JSON.stringify([messageType, messageId, messagePayload] as Response)
+        messageToSend = JSON.stringify([
+          messageType,
+          messageId,
+          messagePayload as JsonType
+        ] satisfies Response)
         break
       // Error Message
       case MessageType.CALL_ERROR_MESSAGE:
@@ -483,7 +487,7 @@ export abstract class OCPPRequestService {
           (messagePayload as OCPPError).details ?? {
             command: (messagePayload as OCPPError).command ?? commandName
           }
-        ] as ErrorResponse)
+        ] satisfies ErrorResponse)
         break
     }
     return messageToSend
