@@ -377,7 +377,9 @@ export class AutomaticTransactionGenerator {
         this.chargingStation.getAutomaticTransactionGeneratorStatuses()![statusIndex]
       )
     } else if (this.chargingStation.getAutomaticTransactionGeneratorStatuses() != null) {
-      logger.error(`${this.logPrefix(connectorId)} no status found for connector #${connectorId}`)
+      logger.warn(
+        `${this.logPrefix(connectorId)} no status found for connector #${connectorId} in charging station configuration file. New status will be created`
+      )
     }
     if (connectorStatus != null) {
       connectorStatus.startDate = convertToDate(connectorStatus.startDate)
