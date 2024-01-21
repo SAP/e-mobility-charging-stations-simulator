@@ -23,7 +23,7 @@ export class OCPPError extends BaseError {
     super(message)
 
     this.code = code
-    this.command = command ?? (Constants.UNKNOWN_COMMAND as RequestCommand | IncomingRequestCommand)
+    this.command = command ?? Constants.UNKNOWN_COMMAND
     this.details = details
   }
 }

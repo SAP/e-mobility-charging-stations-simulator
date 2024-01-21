@@ -2,7 +2,9 @@ import {
   type AutomaticTransactionGeneratorConfiguration,
   type ChargingStationInfo,
   CurrentType,
+  type IncomingRequestCommand,
   OCPPVersion,
+  type RequestCommand,
   VendorParametersKey
 } from '../types/index.js'
 
@@ -77,7 +79,7 @@ export class Constants {
   static readonly DEFAULT_UI_SERVER_HOST = 'localhost'
   static readonly DEFAULT_UI_SERVER_PORT = 8080
 
-  static readonly UNKNOWN_COMMAND = 'unknown command'
+  static readonly UNKNOWN_COMMAND = 'unknown command' as RequestCommand | IncomingRequestCommand
 
   static readonly MAX_RANDOM_INTEGER = 281474976710654
 
