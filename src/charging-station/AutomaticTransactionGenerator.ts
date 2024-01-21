@@ -369,13 +369,16 @@ export class AutomaticTransactionGenerator {
   }
 
   private getConnectorStatus (connectorId: number): Status {
-    const connectorStatus =
-      this.chargingStation.getAutomaticTransactionGeneratorStatuses()?.[connectorId - 1] != null
-        ? clone<Status>(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.chargingStation.getAutomaticTransactionGeneratorStatuses()![connectorId - 1]
-        )
-        : undefined
+    const statusIndex = connectorId - 1
+    let connectorStatus: Status | undefined
+    if (this.chargingStation.getAutomaticTransactionGeneratorStatuses()?.[statusIndex] != null) {
+      connectorStatus = clone<Status>(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.chargingStation.getAutomaticTransactionGeneratorStatuses()![statusIndex]
+      )
+    } else if (this.chargingStation.getAutomaticTransactionGeneratorStatuses() != null) {
+      logger.error(`${this.logPrefix(connectorId)} no status found for connector #${connectorId}`)
+    }
     if (connectorStatus != null) {
       connectorStatus.startDate = convertToDate(connectorStatus.startDate)
       connectorStatus.lastRunDate = convertToDate(connectorStatus.lastRunDate)
