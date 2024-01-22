@@ -9,7 +9,7 @@
   },
   "volta": {
     "node": "20.11.0",
-    "pnpm": "8.14.1"
+    "pnpm": "8.14.2"
   },
   "pnpm": {
     "overrides": {
@@ -57,7 +57,7 @@
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-vue": "^9.20.1",
-    "jsdom": "^23.2.0",
+    "jsdom": "^24.0.0",
     "prettier": "^3.2.4",
     "rimraf": "^5.0.5",
     "typescript": "~5.3.3",
