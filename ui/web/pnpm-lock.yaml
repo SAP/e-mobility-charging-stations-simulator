@@ -23,8 +23,8 @@ dependencies:
 
 devDependencies:
   '@rushstack/eslint-patch':
-    specifier: ^1.7.0
-    version: 1.7.0
+    specifier: ^1.7.1
+    version: 1.7.1
   '@tsconfig/node20':
     specifier: ^20.1.2
     version: 20.1.2
@@ -858,8 +858,8 @@ packages:
     dev: true
     optional: true
 
-  /@rushstack/eslint-patch@1.7.0:
-    resolution: {integrity: sha512-Jh4t/593gxs0lJZ/z3NnasKlplXT2f+4y/LZYuaKZW5KAaiVFL/fThhs+17EbUd53jUVJ0QudYCBGbN/psvaqg==}
+  /@rushstack/eslint-patch@1.7.1:
+    resolution: {integrity: sha512-irBNt5094vHloql4QzY8RdeI8Tns2kGsaiJ/m6jENWx9xCz/m/F4gKQ1dAailFmpL0Id9tgWLqZbTUO4SINM/Q==}
     dev: true
 
   /@sinclair/typebox@0.27.8:
