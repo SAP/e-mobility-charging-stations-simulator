@@ -225,7 +225,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     >([
       [
         OCPP16IncomingRequestCommand.RESET,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
               'assets/json-schemas/ocpp/1.6/ResetResponse.json',
@@ -237,7 +237,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
               'assets/json-schemas/ocpp/1.6/ClearCacheResponse.json',
@@ -249,7 +249,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ChangeAvailabilityResponse>(
               'assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json',
@@ -261,7 +261,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<UnlockConnectorResponse>(
               'assets/json-schemas/ocpp/1.6/UnlockConnectorResponse.json',
@@ -273,7 +273,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<GetConfigurationResponse>(
               'assets/json-schemas/ocpp/1.6/GetConfigurationResponse.json',
@@ -285,7 +285,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationResponse>(
               'assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json',
@@ -297,7 +297,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16GetCompositeScheduleResponse>(
               'assets/json-schemas/ocpp/1.6/GetCompositeScheduleResponse.json',
@@ -309,7 +309,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<SetChargingProfileResponse>(
               'assets/json-schemas/ocpp/1.6/SetChargingProfileResponse.json',
@@ -321,7 +321,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearChargingProfileResponse>(
               'assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json',
@@ -333,7 +333,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
               'assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json',
@@ -345,7 +345,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
               'assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json',
@@ -357,7 +357,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsResponse>(
               'assets/json-schemas/ocpp/1.6/GetDiagnosticsResponse.json',
@@ -369,7 +369,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16TriggerMessageResponse>(
               'assets/json-schemas/ocpp/1.6/TriggerMessageResponse.json',
@@ -381,7 +381,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferResponse>(
               'assets/json-schemas/ocpp/1.6/DataTransferResponse.json',
@@ -393,7 +393,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareResponse>(
               'assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json',
@@ -405,7 +405,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.RESERVE_NOW,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowResponse>(
               'assets/json-schemas/ocpp/1.6/ReserveNowResponse.json',
@@ -417,7 +417,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ],
       [
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
               'assets/json-schemas/ocpp/1.6/CancelReservationResponse.json',

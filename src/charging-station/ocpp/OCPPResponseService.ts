@@ -22,6 +22,7 @@ export abstract class OCPPResponseService {
   private static instance: OCPPResponseService | null = null
   private readonly version: OCPPVersion
   protected readonly ajv: Ajv
+  protected readonly ajvIncomingRequest: Ajv
   protected abstract jsonSchemasValidateFunction: Map<RequestCommand, ValidateFunction<JsonType>>
   public abstract jsonSchemasIncomingRequestResponseValidateFunction: Map<
   IncomingRequestCommand,
@@ -35,6 +36,11 @@ export abstract class OCPPResponseService {
       multipleOfPrecision: 2
     })
     ajvFormats(this.ajv)
+    this.ajvIncomingRequest = new Ajv({
+      keywords: ['javaType'],
+      multipleOfPrecision: 2
+    })
+    ajvFormats(this.ajvIncomingRequest)
     this.responseHandler = this.responseHandler.bind(this)
     this.validateResponsePayload = this.validateResponsePayload.bind(this)
   }

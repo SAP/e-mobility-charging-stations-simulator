@@ -90,7 +90,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     >([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.ajv
+        this.ajvIncomingRequest
           .compile(
             OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
               'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
