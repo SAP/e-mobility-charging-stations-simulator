@@ -47,7 +47,7 @@ export abstract class OCPPRequestService {
   private readonly version: OCPPVersion
   private readonly ocppResponseService: OCPPResponseService
   protected readonly ajv: Ajv
-  protected abstract jsonSchemasValidateFunction: Map<RequestCommand, ValidateFunction<JsonType>>
+  protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
 
   protected constructor (version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version
@@ -158,13 +158,13 @@ export abstract class OCPPRequestService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    if (!this.jsonSchemasValidateFunction.has(commandName as RequestCommand)) {
+    if (!this.payloadValidateFunctions.has(commandName as RequestCommand)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema found for command '${commandName}' PDU validation`
       )
       return true
     }
-    const validate = this.jsonSchemasValidateFunction.get(commandName as RequestCommand)
+    const validate = this.payloadValidateFunctions.get(commandName as RequestCommand)
     payload = clone<T>(payload)
     OCPPServiceUtils.convertDateToISOString<T>(payload)
     if (validate?.(payload) === true) {
@@ -192,7 +192,7 @@ export abstract class OCPPRequestService {
       return true
     }
     if (
-      !this.ocppResponseService.jsonSchemasIncomingRequestResponseValidateFunction.has(
+      !this.ocppResponseService.incomingRequestResponsePayloadValidateFunctions.has(
         commandName as IncomingRequestCommand
       )
     ) {
@@ -201,10 +201,9 @@ export abstract class OCPPRequestService {
       )
       return true
     }
-    const validate =
-      this.ocppResponseService.jsonSchemasIncomingRequestResponseValidateFunction.get(
-        commandName as IncomingRequestCommand
-      )
+    const validate = this.ocppResponseService.incomingRequestResponsePayloadValidateFunctions.get(
+      commandName as IncomingRequestCommand
+    )
     payload = clone<T>(payload)
     OCPPServiceUtils.convertDateToISOString<T>(payload)
     if (validate?.(payload) === true) {

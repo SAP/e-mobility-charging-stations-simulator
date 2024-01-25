@@ -25,12 +25,12 @@ import { OCPPResponseService } from '../OCPPResponseService.js'
 const moduleName = 'OCPP20ResponseService'
 
 export class OCPP20ResponseService extends OCPPResponseService {
-  public jsonSchemasIncomingRequestResponseValidateFunction: Map<
+  public incomingRequestResponsePayloadValidateFunctions: Map<
   OCPP20IncomingRequestCommand,
   ValidateFunction<JsonType>
   >
 
-  protected jsonSchemasValidateFunction: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
   private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
 
   public constructor () {
@@ -46,7 +46,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [OCPP20RequestCommand.HEARTBEAT, this.emptyResponseHandler],
       [OCPP20RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler]
     ])
-    this.jsonSchemasValidateFunction = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
+    this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         this.ajv
@@ -84,7 +84,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
           .bind(this)
       ]
     ])
-    this.jsonSchemasIncomingRequestResponseValidateFunction = new Map<
+    this.incomingRequestResponsePayloadValidateFunctions = new Map<
     OCPP20IncomingRequestCommand,
     ValidateFunction<JsonType>
     >([
@@ -158,7 +158,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     commandName: OCPP20RequestCommand,
     payload: JsonType
   ): boolean {
-    if (this.jsonSchemasValidateFunction.has(commandName)) {
+    if (this.payloadValidateFunctions.has(commandName)) {
       return this.validateResponsePayload(chargingStation, commandName, payload)
     }
     logger.warn(

@@ -32,14 +32,14 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 const moduleName = 'OCPP16RequestService'
 
 export class OCPP16RequestService extends OCPPRequestService {
-  protected jsonSchemasValidateFunction: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidateFunctions: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
 
   public constructor (ocppResponseService: OCPPResponseService) {
     // if (new.target.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
     super(OCPPVersion.VERSION_16, ocppResponseService)
-    this.jsonSchemasValidateFunction = new Map<OCPP16RequestCommand, ValidateFunction<JsonType>>([
+    this.payloadValidateFunctions = new Map<OCPP16RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP16RequestCommand.AUTHORIZE,
         this.ajv

@@ -57,12 +57,12 @@ import { OCPPResponseService } from '../OCPPResponseService.js'
 const moduleName = 'OCPP16ResponseService'
 
 export class OCPP16ResponseService extends OCPPResponseService {
-  public jsonSchemasIncomingRequestResponseValidateFunction: Map<
+  public incomingRequestResponsePayloadValidateFunctions: Map<
   OCPP16IncomingRequestCommand,
   ValidateFunction<JsonType>
   >
 
-  protected jsonSchemasValidateFunction: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidateFunctions: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
   private readonly responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>
 
   public constructor () {
@@ -97,7 +97,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       [OCPP16RequestCommand.DATA_TRANSFER, this.emptyResponseHandler],
       [OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, this.emptyResponseHandler]
     ])
-    this.jsonSchemasValidateFunction = new Map<OCPP16RequestCommand, ValidateFunction<JsonType>>([
+    this.payloadValidateFunctions = new Map<OCPP16RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
         this.ajv
@@ -219,7 +219,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           .bind(this)
       ]
     ])
-    this.jsonSchemasIncomingRequestResponseValidateFunction = new Map<
+    this.incomingRequestResponsePayloadValidateFunctions = new Map<
     OCPP16IncomingRequestCommand,
     ValidateFunction<JsonType>
     >([
@@ -485,7 +485,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     commandName: OCPP16RequestCommand,
     payload: JsonType
   ): boolean {
-    if (this.jsonSchemasValidateFunction.has(commandName)) {
+    if (this.payloadValidateFunctions.has(commandName)) {
       return this.validateResponsePayload(chargingStation, commandName, payload)
     }
     logger.warn(

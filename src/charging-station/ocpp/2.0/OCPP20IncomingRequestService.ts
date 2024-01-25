@@ -19,10 +19,7 @@ import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 const moduleName = 'OCPP20IncomingRequestService'
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
-  protected jsonSchemasValidateFunction: Map<
-  OCPP20IncomingRequestCommand,
-  ValidateFunction<JsonType>
-  >
+  protected payloadValidateFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
 
   private readonly incomingRequestHandlers: Map<
   OCPP20IncomingRequestCommand,
@@ -37,7 +34,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)]
     ])
-    this.jsonSchemasValidateFunction = new Map<
+    this.payloadValidateFunctions = new Map<
     OCPP20IncomingRequestCommand,
     ValidateFunction<JsonType>
     >([
@@ -145,7 +142,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandName: OCPP20IncomingRequestCommand,
     commandPayload: JsonType
   ): boolean {
-    if (this.jsonSchemasValidateFunction.has(commandName)) {
+    if (this.payloadValidateFunctions.has(commandName)) {
       return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
     }
     logger.warn(

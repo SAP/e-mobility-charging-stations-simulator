@@ -113,10 +113,7 @@ import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 const moduleName = 'OCPP16IncomingRequestService'
 
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
-  protected jsonSchemasValidateFunction: Map<
-  OCPP16IncomingRequestCommand,
-  ValidateFunction<JsonType>
-  >
+  protected payloadValidateFunctions: Map<OCPP16IncomingRequestCommand, ValidateFunction<JsonType>>
 
   private readonly incomingRequestHandlers: Map<
   OCPP16IncomingRequestCommand,
@@ -198,7 +195,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         this.handleRequestCancelReservation.bind(this) as unknown as IncomingRequestHandler
       ]
     ])
-    this.jsonSchemasValidateFunction = new Map<
+    this.payloadValidateFunctions = new Map<
     OCPP16IncomingRequestCommand,
     ValidateFunction<JsonType>
     >([
@@ -498,7 +495,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandName: OCPP16IncomingRequestCommand,
     commandPayload: JsonType
   ): boolean {
-    if (this.jsonSchemasValidateFunction.has(commandName)) {
+    if (this.payloadValidateFunctions.has(commandName)) {
       return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
     }
     logger.warn(

@@ -23,8 +23,8 @@ export abstract class OCPPResponseService {
   private readonly version: OCPPVersion
   protected readonly ajv: Ajv
   protected readonly ajvIncomingRequest: Ajv
-  protected abstract jsonSchemasValidateFunction: Map<RequestCommand, ValidateFunction<JsonType>>
-  public abstract jsonSchemasIncomingRequestResponseValidateFunction: Map<
+  protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
+  public abstract incomingRequestResponsePayloadValidateFunctions: Map<
   IncomingRequestCommand,
   ValidateFunction<JsonType>
   >
@@ -60,7 +60,7 @@ export abstract class OCPPResponseService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    const validate = this.jsonSchemasValidateFunction.get(commandName)
+    const validate = this.payloadValidateFunctions.get(commandName)
     if (validate?.(payload) === true) {
       return true
     }

@@ -24,14 +24,14 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 const moduleName = 'OCPP20RequestService'
 
 export class OCPP20RequestService extends OCPPRequestService {
-  protected jsonSchemasValidateFunction: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
 
   public constructor (ocppResponseService: OCPPResponseService) {
     // if (new.target.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
     super(OCPPVersion.VERSION_20, ocppResponseService)
-    this.jsonSchemasValidateFunction = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
+    this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         this.ajv
