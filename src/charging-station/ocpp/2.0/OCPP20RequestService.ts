@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import type { JSONSchemaType } from 'ajv'
+import type { ValidateFunction } from 'ajv'
 
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
@@ -24,37 +24,49 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 const moduleName = 'OCPP20RequestService'
 
 export class OCPP20RequestService extends OCPPRequestService {
-  protected jsonSchemas: Map<OCPP20RequestCommand, JSONSchemaType<JsonType>>
+  protected jsonSchemasValidateFunction: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
 
   public constructor (ocppResponseService: OCPPResponseService) {
     // if (new.target.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
     super(OCPPVersion.VERSION_20, ocppResponseService)
-    this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonType>>([
+    this.jsonSchemasValidateFunction = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
-          'assets/json-schemas/ocpp/2.0/BootNotificationRequest.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
+              'assets/json-schemas/ocpp/2.0/BootNotificationRequest.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
-          'assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
+              'assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
-          'assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
+              'assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ]
     ])
     this.buildRequestPayload = this.buildRequestPayload.bind(this)

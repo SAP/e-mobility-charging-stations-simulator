@@ -1,4 +1,4 @@
-import _Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv'
+import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 
 import { OCPPConstants } from './OCPPConstants.js'
@@ -45,10 +45,9 @@ const defaultRequestParams: RequestParams = {
 export abstract class OCPPRequestService {
   private static instance: OCPPRequestService | null = null
   private readonly version: OCPPVersion
-  private readonly ajv: Ajv
   private readonly ocppResponseService: OCPPResponseService
-  private readonly jsonValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
-  protected abstract jsonSchemas: Map<RequestCommand, JSONSchemaType<JsonType>>
+  protected readonly ajv: Ajv
+  protected abstract jsonSchemasValidateFunction: Map<RequestCommand, ValidateFunction<JsonType>>
 
   protected constructor (version: OCPPVersion, ocppResponseService: OCPPResponseService) {
     this.version = version
@@ -57,7 +56,6 @@ export abstract class OCPPRequestService {
       multipleOfPrecision: 2
     })
     ajvFormats(this.ajv)
-    this.jsonValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonType>>()
     this.ocppResponseService = ocppResponseService
     this.requestHandler = this.requestHandler.bind(this)
     this.sendMessage = this.sendMessage.bind(this)
@@ -160,43 +158,29 @@ export abstract class OCPPRequestService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    if (!this.jsonSchemas.has(commandName as RequestCommand)) {
+    if (!this.jsonSchemasValidateFunction.has(commandName as RequestCommand)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema found for command '${commandName}' PDU validation`
       )
       return true
     }
-    const validate = this.getJsonRequestValidateFunction<T>(commandName as RequestCommand)
+    const validate = this.jsonSchemasValidateFunction.get(commandName as RequestCommand)
     payload = clone<T>(payload)
     OCPPServiceUtils.convertDateToISOString<T>(payload)
-    if (validate(payload)) {
+    if (validate?.(payload) === true) {
       return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: Command '${commandName}' request PDU is invalid: %j`,
-      validate.errors
+      validate?.errors
     )
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
       'Request PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, undefined, 2)
+      JSON.stringify(validate?.errors, undefined, 2)
     )
-  }
-
-  private getJsonRequestValidateFunction<T extends JsonType>(
-    commandName: RequestCommand
-  ): ValidateFunction<JsonType> {
-    if (!this.jsonValidateFunctions.has(commandName)) {
-      this.jsonValidateFunctions.set(
-        commandName,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.ajv.compile<T>(this.jsonSchemas.get(commandName)!).bind(this)
-      )
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.jsonValidateFunctions.get(commandName)!
   }
 
   private validateIncomingRequestResponsePayload<T extends JsonType>(
@@ -208,50 +192,35 @@ export abstract class OCPPRequestService {
       return true
     }
     if (
-      !this.ocppResponseService.jsonIncomingRequestResponseSchemas.has(
+      !this.ocppResponseService.jsonSchemasIncomingRequestResponseValidateFunction.has(
         commandName as IncomingRequestCommand
       )
     ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: No JSON schema found for command '${commandName}' PDU validation`
+        `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
       )
       return true
     }
-    const validate = this.getJsonRequestResponseValidateFunction<T>(
-      commandName as IncomingRequestCommand
-    )
+    const validate =
+      this.ocppResponseService.jsonSchemasIncomingRequestResponseValidateFunction.get(
+        commandName as IncomingRequestCommand
+      )
     payload = clone<T>(payload)
     OCPPServiceUtils.convertDateToISOString<T>(payload)
-    if (validate(payload)) {
+    if (validate?.(payload) === true) {
       return true
     }
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: Command '${commandName}' reponse PDU is invalid: %j`,
-      validate.errors
+      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: Command '${commandName}' response PDU is invalid: %j`,
+      validate?.errors
     )
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
       'Response PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, undefined, 2)
+      JSON.stringify(validate?.errors, undefined, 2)
     )
-  }
-
-  private getJsonRequestResponseValidateFunction<T extends JsonType>(
-    commandName: IncomingRequestCommand
-  ): ValidateFunction<JsonType> {
-    if (!this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.has(commandName)) {
-      this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.set(
-        commandName,
-        this.ajv
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .compile<T>(this.ocppResponseService.jsonIncomingRequestResponseSchemas.get(commandName)!)
-          .bind(this)
-      )
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.ocppResponseService.jsonIncomingRequestResponseValidateFunctions.get(commandName)!
   }
 
   private async internalSendMessage (

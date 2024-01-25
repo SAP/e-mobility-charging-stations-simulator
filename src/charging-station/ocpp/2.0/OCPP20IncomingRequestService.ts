@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import type { JSONSchemaType } from 'ajv'
+import type { ValidateFunction } from 'ajv'
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import type { ChargingStation } from '../../../charging-station/index.js'
@@ -19,7 +19,11 @@ import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 const moduleName = 'OCPP20IncomingRequestService'
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
-  protected jsonSchemas: Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonType>>
+  protected jsonSchemasValidateFunction: Map<
+  OCPP20IncomingRequestCommand,
+  ValidateFunction<JsonType>
+  >
+
   private readonly incomingRequestHandlers: Map<
   OCPP20IncomingRequestCommand,
   IncomingRequestHandler
@@ -33,14 +37,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)]
     ])
-    this.jsonSchemas = new Map<OCPP20IncomingRequestCommand, JSONSchemaType<JsonType>>([
+    this.jsonSchemasValidateFunction = new Map<
+    OCPP20IncomingRequestCommand,
+    ValidateFunction<JsonType>
+    >([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
-          'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
+              'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ]
     ])
     this.validatePayload = this.validatePayload.bind(this)
@@ -134,17 +145,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandName: OCPP20IncomingRequestCommand,
     commandPayload: JsonType
   ): boolean {
-    if (this.jsonSchemas.has(commandName)) {
-      return this.validateIncomingRequestPayload(
-        chargingStation,
-        commandName,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.jsonSchemas.get(commandName)!,
-        commandPayload
-      )
+    if (this.jsonSchemasValidateFunction.has(commandName)) {
+      return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
     )
     return false
   }

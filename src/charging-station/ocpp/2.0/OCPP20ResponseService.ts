@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import type { JSONSchemaType } from 'ajv'
+import type { ValidateFunction } from 'ajv'
 
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { type ChargingStation, addConfigurationKey } from '../../../charging-station/index.js'
@@ -25,13 +25,13 @@ import { OCPPResponseService } from '../OCPPResponseService.js'
 const moduleName = 'OCPP20ResponseService'
 
 export class OCPP20ResponseService extends OCPPResponseService {
-  public jsonIncomingRequestResponseSchemas: Map<
+  public jsonSchemasIncomingRequestResponseValidateFunction: Map<
   OCPP20IncomingRequestCommand,
-  JSONSchemaType<JsonType>
+  ValidateFunction<JsonType>
   >
 
+  protected jsonSchemasValidateFunction: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
   private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
-  private readonly jsonSchemas: Map<OCPP20RequestCommand, JSONSchemaType<JsonType>>
 
   public constructor () {
     // if (new.target.name === moduleName) {
@@ -46,40 +46,59 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [OCPP20RequestCommand.HEARTBEAT, this.emptyResponseHandler],
       [OCPP20RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler]
     ])
-    this.jsonSchemas = new Map<OCPP20RequestCommand, JSONSchemaType<JsonType>>([
+    this.jsonSchemasValidateFunction = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
-          'assets/json-schemas/ocpp/2.0/BootNotificationResponse.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
+              'assets/json-schemas/ocpp/2.0/BootNotificationResponse.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
-          'assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
+              'assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
-          'assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
+              'assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ]
     ])
-    this.jsonIncomingRequestResponseSchemas = new Map([
+    this.jsonSchemasIncomingRequestResponseValidateFunction = new Map<
+    OCPP20IncomingRequestCommand,
+    ValidateFunction<JsonType>
+    >([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
-          'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
-          moduleName,
-          'constructor'
-        )
+        this.ajv
+          .compile(
+            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
+              'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
+              moduleName,
+              'constructor'
+            )
+          )
+          .bind(this)
       ]
     ])
     this.validatePayload = this.validatePayload.bind(this)
@@ -139,17 +158,11 @@ export class OCPP20ResponseService extends OCPPResponseService {
     commandName: OCPP20RequestCommand,
     payload: JsonType
   ): boolean {
-    if (this.jsonSchemas.has(commandName)) {
-      return this.validateResponsePayload(
-        chargingStation,
-        commandName,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.jsonSchemas.get(commandName)!,
-        payload
-      )
+    if (this.jsonSchemasValidateFunction.has(commandName)) {
+      return this.validateResponsePayload(chargingStation, commandName, payload)
     }
     logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema found for command '${commandName}' PDU validation`
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
     )
     return false
   }

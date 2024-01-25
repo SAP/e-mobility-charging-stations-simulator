@@ -1,4 +1,4 @@
-import _Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv'
+import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 
 import { OCPPConstants } from './OCPPConstants.js'
@@ -23,9 +23,11 @@ const moduleName = 'OCPPIncomingRequestService'
 export abstract class OCPPIncomingRequestService {
   private static instance: OCPPIncomingRequestService | null = null
   private readonly version: OCPPVersion
-  private readonly ajv: Ajv
-  private readonly jsonValidateFunctions: Map<IncomingRequestCommand, ValidateFunction<JsonType>>
-  protected abstract jsonSchemas: Map<IncomingRequestCommand, JSONSchemaType<JsonType>>
+  protected readonly ajv: Ajv
+  protected abstract jsonSchemasValidateFunction: Map<
+  IncomingRequestCommand,
+  ValidateFunction<JsonType>
+  >
 
   protected constructor (version: OCPPVersion) {
     this.version = version
@@ -34,7 +36,6 @@ export abstract class OCPPIncomingRequestService {
       multipleOfPrecision: 2
     })
     ajvFormats(this.ajv)
-    this.jsonValidateFunctions = new Map<IncomingRequestCommand, ValidateFunction<JsonType>>()
     this.incomingRequestHandler = this.incomingRequestHandler.bind(this)
     this.validateIncomingRequestPayload = this.validateIncomingRequestPayload.bind(this)
   }
@@ -71,25 +72,24 @@ export abstract class OCPPIncomingRequestService {
   protected validateIncomingRequestPayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
-    schema: JSONSchemaType<T>,
     payload: T
   ): boolean {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    const validate = this.getJsonIncomingRequestValidateFunction<T>(commandName, schema)
-    if (validate(payload)) {
+    const validate = this.jsonSchemasValidateFunction.get(commandName)
+    if (validate?.(payload) === true) {
       return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Command '${commandName}' incoming request PDU is invalid: %j`,
-      validate.errors
+      validate?.errors
     )
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
       'Incoming request PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, undefined, 2)
+      JSON.stringify(validate?.errors, undefined, 2)
     )
   }
 
@@ -99,17 +99,6 @@ export abstract class OCPPIncomingRequestService {
       return OCPPConstants.OCPP_RESPONSE_ACCEPTED
     }
     return OCPPConstants.OCPP_RESPONSE_REJECTED
-  }
-
-  private getJsonIncomingRequestValidateFunction<T extends JsonType>(
-    commandName: IncomingRequestCommand,
-    schema: JSONSchemaType<T>
-  ): ValidateFunction<JsonType> {
-    if (!this.jsonValidateFunctions.has(commandName)) {
-      this.jsonValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this))
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.jsonValidateFunctions.get(commandName)!
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

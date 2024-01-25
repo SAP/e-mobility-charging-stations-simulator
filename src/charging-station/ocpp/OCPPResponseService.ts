@@ -1,4 +1,4 @@
-import _Ajv, { type JSONSchemaType, type ValidateFunction } from 'ajv'
+import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 
 import { OCPPServiceUtils } from './OCPPServiceUtils.js'
@@ -20,19 +20,12 @@ const moduleName = 'OCPPResponseService'
 
 export abstract class OCPPResponseService {
   private static instance: OCPPResponseService | null = null
-
-  public jsonIncomingRequestResponseValidateFunctions: Map<
+  private readonly version: OCPPVersion
+  protected readonly ajv: Ajv
+  protected abstract jsonSchemasValidateFunction: Map<RequestCommand, ValidateFunction<JsonType>>
+  public abstract jsonSchemasIncomingRequestResponseValidateFunction: Map<
   IncomingRequestCommand,
   ValidateFunction<JsonType>
-  >
-
-  private readonly version: OCPPVersion
-  private readonly ajv: Ajv
-  private readonly jsonRequestValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
-
-  public abstract jsonIncomingRequestResponseSchemas: Map<
-  IncomingRequestCommand,
-  JSONSchemaType<JsonType>
   >
 
   protected constructor (version: OCPPVersion) {
@@ -42,11 +35,6 @@ export abstract class OCPPResponseService {
       multipleOfPrecision: 2
     })
     ajvFormats(this.ajv)
-    this.jsonRequestValidateFunctions = new Map<RequestCommand, ValidateFunction<JsonType>>()
-    this.jsonIncomingRequestResponseValidateFunctions = new Map<
-    IncomingRequestCommand,
-    ValidateFunction<JsonType>
-    >()
     this.responseHandler = this.responseHandler.bind(this)
     this.validateResponsePayload = this.validateResponsePayload.bind(this)
   }
@@ -61,40 +49,28 @@ export abstract class OCPPResponseService {
   protected validateResponsePayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
-    schema: JSONSchemaType<T>,
     payload: T
   ): boolean {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    const validate = this.getJsonRequestValidateFunction<T>(commandName, schema)
-    if (validate(payload)) {
+    const validate = this.jsonSchemasValidateFunction.get(commandName)
+    if (validate?.(payload) === true) {
       return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Command '${commandName}' response PDU is invalid: %j`,
-      validate.errors
+      validate?.errors
     )
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate.errors),
+      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
       'Response PDU is invalid',
       commandName,
-      JSON.stringify(validate.errors, undefined, 2)
+      JSON.stringify(validate?.errors, undefined, 2)
     )
   }
 
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
-
-  private getJsonRequestValidateFunction<T extends JsonType>(
-    commandName: RequestCommand,
-    schema: JSONSchemaType<T>
-  ): ValidateFunction<JsonType> {
-    if (!this.jsonRequestValidateFunctions.has(commandName)) {
-      this.jsonRequestValidateFunctions.set(commandName, this.ajv.compile<T>(schema).bind(this))
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.jsonRequestValidateFunctions.get(commandName)!
-  }
 
   public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
