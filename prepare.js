@@ -4,5 +4,5 @@ const isCIEnvironment = env.CI != null
 const isCFEnvironment = env.VCAP_APPLICATION != null
 if (isCFEnvironment === false && isCIEnvironment === false) {
   // eslint-disable-next-line n/no-unpublished-import
-  import('husky').then(husky => husky.default())
+  import('husky').then(husky => console.warn(husky.default()))
 }
