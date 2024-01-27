@@ -180,7 +180,6 @@ export class ChargingStation extends EventEmitter {
   private evsesConfigurationHash!: string
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private ocppIncomingRequestService!: OCPPIncomingRequestService
-  private acceptedEventListenerRegistered: boolean
   private readonly messageBuffer: Set<string>
   private configuredSupervisionUrl!: URL
   private autoReconnectRetryCount: number
@@ -196,7 +195,6 @@ export class ChargingStation extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
-    this.acceptedEventListenerRegistered = false
     this.wsConnection = null
     this.autoReconnectRetryCount = 0
     this.index = index
@@ -217,6 +215,11 @@ export class ChargingStation extends EventEmitter {
     })
     this.on(ChargingStationEvents.updated, () => {
       parentPort?.postMessage(buildUpdatedMessage(this))
+    })
+    this.on(ChargingStationEvents.accepted, () => {
+      this.startMessageSequence().catch(error => {
+        logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
+      })
     })
 
     this.initialize()
@@ -1740,16 +1743,6 @@ export class ChargingStation extends EventEmitter {
     return ocppConfiguration
   }
 
-  private registerAcceptedEventListener (): void {
-    this.once(ChargingStationEvents.accepted, () => {
-      this.startMessageSequence().catch(error => {
-        logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
-      })
-      this.acceptedEventListenerRegistered = false
-    })
-    this.acceptedEventListenerRegistered = true
-  }
-
   private async onOpen (): Promise<void> {
     if (this.isWebSocketConnectionOpened()) {
       logger.info(
@@ -1787,9 +1780,6 @@ export class ChargingStation extends EventEmitter {
           (registrationRetryCount <= this.stationInfo!.registrationMaxRetries! ||
             this.stationInfo?.registrationMaxRetries === -1)
         )
-      }
-      if (!this.acceptedEventListenerRegistered) {
-        this.registerAcceptedEventListener()
       }
       if (this.isRegistered()) {
         this.emit(ChargingStationEvents.registered)
