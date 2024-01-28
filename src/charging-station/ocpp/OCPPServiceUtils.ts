@@ -80,7 +80,7 @@ export const getMessageTypeString = (messageType: MessageType): string => {
   }
 }
 
-export const buildStatusNotificationRequest = (
+const buildStatusNotificationRequest = (
   chargingStation: ChargingStation,
   connectorId: number,
   status: ConnectorStatusEnum,

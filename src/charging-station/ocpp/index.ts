@@ -8,7 +8,6 @@ export { OCPPIncomingRequestService } from './OCPPIncomingRequestService.js'
 export { OCPPRequestService } from './OCPPRequestService.js'
 export {
   buildMeterValue,
-  buildStatusNotificationRequest,
   buildTransactionEndMeterValue,
   getMessageTypeString,
   isIdTagAuthorized,
