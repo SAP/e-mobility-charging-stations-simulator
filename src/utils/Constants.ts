@@ -51,8 +51,7 @@ export class Constants {
       maxDelayBetweenTwoTransactions: 30,
       probabilityOfStart: 1,
       stopAfterHours: 0.25,
-      stopAbsoluteDuration: false,
-      stopOnConnectionFailure: true
+      stopAbsoluteDuration: false
     })
 
   // See https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string

@@ -66,7 +66,7 @@ export class AutomaticTransactionGenerator {
     return AutomaticTransactionGenerator.instances.get(chargingStation.stationInfo!.hashId)
   }
 
-  public start (): void {
+  public start (stopAbsoluteDuration?: boolean): void {
     if (!checkChargingStation(this.chargingStation, this.logPrefix())) {
       return
     }
@@ -79,7 +79,7 @@ export class AutomaticTransactionGenerator {
       return
     }
     this.starting = true
-    this.startConnectors()
+    this.startConnectors(stopAbsoluteDuration)
     this.started = true
     this.starting = false
   }
@@ -99,7 +99,7 @@ export class AutomaticTransactionGenerator {
     this.stopping = false
   }
 
-  public startConnector (connectorId: number): void {
+  public startConnector (connectorId: number, stopAbsoluteDuration?: boolean): void {
     if (!checkChargingStation(this.chargingStation, this.logPrefix(connectorId))) {
       return
     }
@@ -108,7 +108,7 @@ export class AutomaticTransactionGenerator {
       throw new BaseError(`Connector ${connectorId} does not exist`)
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
-      this.internalStartConnector(connectorId).catch(Constants.EMPTY_FUNCTION)
+      this.internalStartConnector(connectorId, stopAbsoluteDuration).catch(Constants.EMPTY_FUNCTION)
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(`${this.logPrefix(connectorId)} is already started on connector`)
     }
@@ -127,7 +127,7 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private startConnectors (): void {
+  private startConnectors (stopAbsoluteDuration?: boolean): void {
     if (
       this.connectorsStatus.size > 0 &&
       this.connectorsStatus.size !== this.chargingStation.getNumberOfConnectors()
@@ -139,14 +139,14 @@ export class AutomaticTransactionGenerator {
       for (const [evseId, evseStatus] of this.chargingStation.evses) {
         if (evseId > 0) {
           for (const connectorId of evseStatus.connectors.keys()) {
-            this.startConnector(connectorId)
+            this.startConnector(connectorId, stopAbsoluteDuration)
           }
         }
       }
     } else {
       for (const connectorId of this.chargingStation.connectors.keys()) {
         if (connectorId > 0) {
-          this.startConnector(connectorId)
+          this.startConnector(connectorId, stopAbsoluteDuration)
         }
       }
     }
@@ -170,8 +170,11 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private async internalStartConnector (connectorId: number): Promise<void> {
-    this.setStartConnectorStatus(connectorId)
+  private async internalStartConnector (
+    connectorId: number,
+    stopAbsoluteDuration?: boolean
+  ): Promise<void> {
+    this.setStartConnectorStatus(connectorId, stopAbsoluteDuration)
     logger.info(
       `${this.logPrefix(
         connectorId
@@ -257,12 +260,15 @@ export class AutomaticTransactionGenerator {
     )
   }
 
-  private setStartConnectorStatus (connectorId: number): void {
+  private setStartConnectorStatus (
+    connectorId: number,
+    stopAbsoluteDuration = this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
+      ?.stopAbsoluteDuration
+  ): void {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.connectorsStatus.get(connectorId)!.startDate = new Date()
     if (
-      this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration ===
-        false ||
+      stopAbsoluteDuration === false ||
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       !isValidDate(this.connectorsStatus.get(connectorId)!.stopDate)
     ) {

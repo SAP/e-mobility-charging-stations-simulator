@@ -56,7 +56,6 @@ import {
   type OCPPIncomingRequestService,
   type OCPPRequestService,
   buildMeterValue,
-  buildStatusNotificationRequest,
   buildTransactionEndMeterValue,
   getMessageTypeString,
   sendAndSetConnectorStatus
@@ -107,8 +106,6 @@ import {
   type Response,
   StandardParametersKey,
   type Status,
-  type StatusNotificationRequest,
-  type StatusNotificationResponse,
   type StopTransactionReason,
   type StopTransactionRequest,
   type StopTransactionResponse,
@@ -217,9 +214,23 @@ export class ChargingStation extends EventEmitter {
       parentPort?.postMessage(buildUpdatedMessage(this))
     })
     this.on(ChargingStationEvents.accepted, () => {
-      this.startMessageSequence().catch(error => {
+      this.startMessageSequence(
+        this.autoReconnectRetryCount > 0
+          ? true
+          : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
+      ).catch(error => {
         logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
       })
+    })
+    this.on(ChargingStationEvents.disconnected, () => {
+      try {
+        this.internalStopMessageSequence()
+      } catch (error) {
+        logger.error(
+          `${this.logPrefix()} Error while stopping the internal message sequence:`,
+          error
+        )
+      }
     })
 
     this.initialize()
@@ -657,10 +668,16 @@ export class ChargingStation extends EventEmitter {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
                 // Restart the ATG
-                this.stopAutomaticTransactionGenerator()
+                const ATGStarted = this.automaticTransactionGenerator?.started
+                if (ATGStarted === true) {
+                  this.stopAutomaticTransactionGenerator()
+                }
                 delete this.automaticTransactionGeneratorConfiguration
-                if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
-                  this.startAutomaticTransactionGenerator()
+                if (
+                  this.getAutomaticTransactionGeneratorConfiguration()?.enable === true &&
+                  ATGStarted === true
+                ) {
+                  this.startAutomaticTransactionGenerator(undefined, true)
                 }
                 if (this.stationInfo?.enableStatistics === true) {
                   this.performanceStatistics?.restart()
@@ -830,14 +847,17 @@ export class ChargingStation extends EventEmitter {
     return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
   }
 
-  public startAutomaticTransactionGenerator (connectorIds?: number[]): void {
+  public startAutomaticTransactionGenerator (
+    connectorIds?: number[],
+    stopAbsoluteDuration?: boolean
+  ): void {
     this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this)
     if (isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
-        this.automaticTransactionGenerator?.startConnector(connectorId)
+        this.automaticTransactionGenerator?.startConnector(connectorId, stopAbsoluteDuration)
       }
     } else {
-      this.automaticTransactionGenerator?.start()
+      this.automaticTransactionGenerator?.start(stopAbsoluteDuration)
     }
     this.saveAutomaticTransactionGeneratorConfiguration()
     this.emit(ChargingStationEvents.updated)
@@ -1787,6 +1807,9 @@ export class ChargingStation extends EventEmitter {
           this.emit(ChargingStationEvents.accepted)
         }
       } else {
+        if (this.inRejectedState()) {
+          this.emit(ChargingStationEvents.rejected)
+        }
         logger.error(
           `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${
             this.stationInfo?.registrationMaxRetries
@@ -1803,6 +1826,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
+    this.emit(ChargingStationEvents.disconnected)
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
@@ -2121,7 +2145,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private async startMessageSequence (): Promise<void> {
+  private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {
     if (this.stationInfo?.autoRegister === true) {
       await this.ocppRequestService.requestHandler<
       BootNotificationRequest,
@@ -2169,15 +2193,12 @@ export class ChargingStation extends EventEmitter {
 
     // Start the ATG
     if (this.getAutomaticTransactionGeneratorConfiguration()?.enable === true) {
-      this.startAutomaticTransactionGenerator()
+      this.startAutomaticTransactionGenerator(undefined, ATGStopAbsoluteDuration)
     }
     this.flushMessageBuffer()
   }
 
-  private async stopMessageSequence (
-    reason?: StopTransactionReason,
-    stopTransactions = this.stationInfo?.stopTransactionsOnStopped
-  ): Promise<void> {
+  private internalStopMessageSequence (): void {
     // Stop WebSocket ping
     this.stopWebSocketPing()
     // Stop heartbeat
@@ -2186,24 +2207,24 @@ export class ChargingStation extends EventEmitter {
     if (this.automaticTransactionGenerator?.started === true) {
       this.stopAutomaticTransactionGenerator()
     }
+  }
+
+  private async stopMessageSequence (
+    reason?: StopTransactionReason,
+    stopTransactions = this.stationInfo?.stopTransactionsOnStopped
+  ): Promise<void> {
+    this.internalStopMessageSequence()
     // Stop ongoing transactions
     stopTransactions === true && (await this.stopRunningTransactions(reason))
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            await this.ocppRequestService.requestHandler<
-            StatusNotificationRequest,
-            StatusNotificationResponse
-            >(
+            await sendAndSetConnectorStatus(
               this,
-              RequestCommand.STATUS_NOTIFICATION,
-              buildStatusNotificationRequest(
-                this,
-                connectorId,
-                ConnectorStatusEnum.Unavailable,
-                evseId
-              )
+              connectorId,
+              ConnectorStatusEnum.Unavailable,
+              evseId
             )
             delete connectorStatus.status
           }
@@ -2212,14 +2233,7 @@ export class ChargingStation extends EventEmitter {
     } else {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0) {
-          await this.ocppRequestService.requestHandler<
-          StatusNotificationRequest,
-          StatusNotificationResponse
-          >(
-            this,
-            RequestCommand.STATUS_NOTIFICATION,
-            buildStatusNotificationRequest(this, connectorId, ConnectorStatusEnum.Unavailable)
-          )
+          await sendAndSetConnectorStatus(this, connectorId, ConnectorStatusEnum.Unavailable)
           delete this.getConnectorStatus(connectorId)?.status
         }
       }
@@ -2317,14 +2331,6 @@ export class ChargingStation extends EventEmitter {
   }
 
   private async reconnect (): Promise<void> {
-    // Stop WebSocket ping
-    this.stopWebSocketPing()
-    // Stop heartbeat
-    this.stopHeartbeat()
-    // Stop the ATG if needed
-    if (this.getAutomaticTransactionGeneratorConfiguration()?.stopOnConnectionFailure === true) {
-      this.stopAutomaticTransactionGenerator()
-    }
     if (
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.autoReconnectRetryCount < this.stationInfo!.autoReconnectMaxRetries! ||

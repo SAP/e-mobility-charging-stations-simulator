@@ -85,7 +85,6 @@
     "maxDelayBetweenTwoTransactions": 30,
     "probabilityOfStart": 1,
     "stopAfterHours": 0.3,
-    "stopOnConnectionFailure": false,
     "requireAuthorize": true
   },
   "Connectors": {
