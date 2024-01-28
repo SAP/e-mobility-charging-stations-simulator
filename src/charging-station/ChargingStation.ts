@@ -179,11 +179,12 @@ export class ChargingStation extends EventEmitter {
   private ocppIncomingRequestService!: OCPPIncomingRequestService
   private readonly messageBuffer: Set<string>
   private configuredSupervisionUrl!: URL
-  private autoReconnectRetryCount: number
+  private wsConnectionRetried: boolean
+  private wsConnectionRetryCount: number
   private templateFileWatcher!: FSWatcher | undefined
   private templateFileHash!: string
   private readonly sharedLRUCache: SharedLRUCache
-  private webSocketPingSetInterval?: NodeJS.Timeout
+  private wsPingSetInterval?: NodeJS.Timeout
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private flushMessageBufferSetInterval?: NodeJS.Timeout
 
@@ -193,7 +194,8 @@ export class ChargingStation extends EventEmitter {
     this.starting = false
     this.stopping = false
     this.wsConnection = null
-    this.autoReconnectRetryCount = 0
+    this.wsConnectionRetried = false
+    this.wsConnectionRetryCount = 0
     this.index = index
     this.templateFile = templateFile
     this.connectors = new Map<number, ConnectorStatus>()
@@ -215,12 +217,13 @@ export class ChargingStation extends EventEmitter {
     })
     this.on(ChargingStationEvents.accepted, () => {
       this.startMessageSequence(
-        this.autoReconnectRetryCount > 0
+        this.wsConnectionRetried
           ? true
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
       ).catch(error => {
         logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
       })
+      this.wsConnectionRetried = false
     })
     this.on(ChargingStationEvents.disconnected, () => {
       try {
@@ -1816,7 +1819,7 @@ export class ChargingStation extends EventEmitter {
           })`
         )
       }
-      this.autoReconnectRetryCount = 0
+      this.wsConnectionRetryCount = 0
       this.emit(ChargingStationEvents.updated)
     } else {
       logger.warn(
@@ -1836,7 +1839,7 @@ export class ChargingStation extends EventEmitter {
             code
           )}' and reason '${reason.toString()}'`
         )
-        this.autoReconnectRetryCount = 0
+        this.wsConnectionRetryCount = 0
         break
       // Abnormal close
       default:
@@ -2247,8 +2250,8 @@ export class ChargingStation extends EventEmitter {
           getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value
         )
         : 0
-    if (webSocketPingInterval > 0 && this.webSocketPingSetInterval == null) {
-      this.webSocketPingSetInterval = setInterval(() => {
+    if (webSocketPingInterval > 0 && this.wsPingSetInterval == null) {
+      this.wsPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened()) {
           this.wsConnection?.ping()
         }
@@ -2258,7 +2261,7 @@ export class ChargingStation extends EventEmitter {
           webSocketPingInterval
         )}`
       )
-    } else if (this.webSocketPingSetInterval != null) {
+    } else if (this.wsPingSetInterval != null) {
       logger.info(
         `${this.logPrefix()} WebSocket ping already started every ${formatDurationSeconds(
           webSocketPingInterval
@@ -2272,9 +2275,9 @@ export class ChargingStation extends EventEmitter {
   }
 
   private stopWebSocketPing (): void {
-    if (this.webSocketPingSetInterval != null) {
-      clearInterval(this.webSocketPingSetInterval)
-      delete this.webSocketPingSetInterval
+    if (this.wsPingSetInterval != null) {
+      clearInterval(this.wsPingSetInterval)
+      delete this.wsPingSetInterval
     }
   }
 
@@ -2333,13 +2336,14 @@ export class ChargingStation extends EventEmitter {
   private async reconnect (): Promise<void> {
     if (
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.autoReconnectRetryCount < this.stationInfo!.autoReconnectMaxRetries! ||
+      this.wsConnectionRetryCount < this.stationInfo!.autoReconnectMaxRetries! ||
       this.stationInfo?.autoReconnectMaxRetries === -1
     ) {
-      ++this.autoReconnectRetryCount
+      this.wsConnectionRetried = true
+      ++this.wsConnectionRetryCount
       const reconnectDelay =
         this.stationInfo?.reconnectExponentialDelay === true
-          ? exponentialDelay(this.autoReconnectRetryCount)
+          ? exponentialDelay(this.wsConnectionRetryCount)
           : secondsToMilliseconds(this.getConnectionTimeout())
       const reconnectDelayWithdraw = 1000
       const reconnectTimeout =
@@ -2352,7 +2356,7 @@ export class ChargingStation extends EventEmitter {
       )
       await sleep(reconnectDelay)
       logger.error(
-        `${this.logPrefix()} WebSocket connection retry #${this.autoReconnectRetryCount.toString()}`
+        `${this.logPrefix()} WebSocket connection retry #${this.wsConnectionRetryCount.toString()}`
       )
       this.openWSConnection(
         {
@@ -2363,7 +2367,7 @@ export class ChargingStation extends EventEmitter {
     } else if (this.stationInfo?.autoReconnectMaxRetries !== -1) {
       logger.error(
         `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${
-          this.autoReconnectRetryCount
+          this.wsConnectionRetryCount
         }) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries})`
       )
     }
