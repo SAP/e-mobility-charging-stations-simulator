@@ -453,7 +453,7 @@ export abstract class OCPPRequestService {
           (messagePayload as OCPPError).code,
           (messagePayload as OCPPError).message,
           (messagePayload as OCPPError).details ?? {
-            command: (messagePayload as OCPPError).command ?? commandName
+            command: (messagePayload as OCPPError).command
           }
         ] satisfies ErrorResponse)
         break
