@@ -6,8 +6,5 @@ export class BaseError extends Error {
     this.name = new.target.name
     this.date = new Date()
     Object.setPrototypeOf(this, new.target.prototype)
-    if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, BaseError)
-    }
   }
 }
