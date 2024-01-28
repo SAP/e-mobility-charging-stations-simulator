@@ -3,12 +3,8 @@ export class BaseError extends Error {
     super(message)
     this.name = new.target.name
     Object.setPrototypeOf(this, new.target.prototype)
-    typeof Error.captureStackTrace === 'function'
-      ? Error.captureStackTrace(this, this.constructor)
-      : this.createStack()
-  }
-
-  private createStack (): void {
-    this.stack = new Error().stack
+    if (this.stack == null && typeof BaseError.captureStackTrace === 'function') {
+      BaseError.captureStackTrace(this, this.constructor)
+    }
   }
 }
