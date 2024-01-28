@@ -225,6 +225,9 @@ export class ChargingStation extends EventEmitter {
       })
       this.wsConnectionRetried = false
     })
+    this.on(ChargingStationEvents.rejected, () => {
+      this.wsConnectionRetried = false
+    })
     this.on(ChargingStationEvents.disconnected, () => {
       try {
         this.internalStopMessageSequence()
