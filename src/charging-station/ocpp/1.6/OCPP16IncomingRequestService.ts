@@ -2,7 +2,6 @@
 
 import { createWriteStream, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { nextTick } from 'node:process'
 import { URL, fileURLToPath } from 'node:url'
 
 import type { ValidateFunction } from 'ajv'
@@ -1146,14 +1145,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         idTag
       )
     }
-    nextTick(() =>
-      this.emit(
-        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        chargingStation,
-        transactionConnectorId,
-        idTag
+    Promise.resolve()
+      .then(() =>
+        this.emit(
+          OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+          chargingStation,
+          transactionConnectorId,
+          idTag
+        )
       )
-    )
+      .catch(Constants.EMPTY_FUNCTION)
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
 
@@ -1555,21 +1556,27 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     try {
       switch (requestedMessage) {
         case OCPP16MessageTrigger.BootNotification:
-          nextTick(() =>
-            this.emit(`Trigger${OCPP16MessageTrigger.BootNotification}`, chargingStation)
-          )
+          Promise.resolve()
+            .then(() =>
+              this.emit(`Trigger${OCPP16MessageTrigger.BootNotification}`, chargingStation)
+            )
+            .catch(Constants.EMPTY_FUNCTION)
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
         case OCPP16MessageTrigger.Heartbeat:
-          nextTick(() => this.emit(`Trigger${OCPP16MessageTrigger.Heartbeat}`, chargingStation))
+          Promise.resolve()
+            .then(() => this.emit(`Trigger${OCPP16MessageTrigger.Heartbeat}`, chargingStation))
+            .catch(Constants.EMPTY_FUNCTION)
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
         case OCPP16MessageTrigger.StatusNotification:
-          nextTick(() =>
-            this.emit(
-              `Trigger${OCPP16MessageTrigger.StatusNotification}`,
-              chargingStation,
-              connectorId
+          Promise.resolve()
+            .then(() =>
+              this.emit(
+                `Trigger${OCPP16MessageTrigger.StatusNotification}`,
+                chargingStation,
+                connectorId
+              )
             )
-          )
+            .catch(Constants.EMPTY_FUNCTION)
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
         default:
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED
