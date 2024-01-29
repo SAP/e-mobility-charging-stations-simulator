@@ -126,6 +126,7 @@ export {
   type OCPP16ReserveNowResponse,
   type OCPP16StatusNotificationResponse,
   type OCPP16TriggerMessageResponse,
+  OCPP16TriggerMessageStatus,
   type OCPP16UpdateFirmwareResponse,
   type SetChargingProfileResponse,
   type UnlockConnectorResponse

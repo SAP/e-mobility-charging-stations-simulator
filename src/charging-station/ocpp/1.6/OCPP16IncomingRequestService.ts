@@ -83,6 +83,7 @@ import {
   OCPP16SupportedFeatureProfiles,
   type OCPP16TriggerMessageRequest,
   type OCPP16TriggerMessageResponse,
+  OCPP16TriggerMessageStatus,
   type OCPP16UpdateFirmwareRequest,
   type OCPP16UpdateFirmwareResponse,
   type OCPPConfigurationKey,
@@ -446,7 +447,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     )
     this.on(
       OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-      (chargingStation: ChargingStation, request: OCPP16TriggerMessageRequest) => {
+      (
+        chargingStation: ChargingStation,
+        request: OCPP16TriggerMessageRequest,
+        response: OCPP16TriggerMessageResponse
+      ) => {
+        if (response.status !== OCPP16TriggerMessageStatus.ACCEPTED) {
+          return
+        }
         const { requestedMessage, connectorId } = request
         const errorHandler = (error: Error): void => {
           logger.error(
