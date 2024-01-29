@@ -420,15 +420,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         )
           .then(response => {
             if (response.status === OCPP16AuthorizationStatus.ACCEPTED) {
-              logger.debug(`
-        ${chargingStation.logPrefix()} Remote start transaction ACCEPTED on ${
-          chargingStation.stationInfo?.chargingStationId
-        }#${connectorId} for idTag '${idTag}'`)
+              logger.debug(
+                `${chargingStation.logPrefix()} Remote start transaction ACCEPTED on ${chargingStation.stationInfo?.chargingStationId}#${connectorId} for idTag '${idTag}'`
+              )
             } else {
-              logger.debug(`
-        ${chargingStation.logPrefix()} Remote start transaction REJECTED on ${
-          chargingStation.stationInfo?.chargingStationId
-        }#${connectorId} for idTag '${idTag}'`)
+              logger.debug(
+                `${chargingStation.logPrefix()} Remote start transaction REJECTED on ${chargingStation.stationInfo?.chargingStationId}#${connectorId} for idTag '${idTag}'`
+              )
             }
           })
           .catch(error => {
