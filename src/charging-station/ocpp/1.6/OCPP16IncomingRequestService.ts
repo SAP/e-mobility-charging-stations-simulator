@@ -405,6 +405,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           .bind(this)
       ]
     ])
+    // Handle incoming request events
     this.on(
       OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
       (
@@ -635,6 +636,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       response,
       commandName
     )
+    // Emit command name event to allow delayed handling
     this.emit(commandName, chargingStation, commandPayload, response)
   }
 

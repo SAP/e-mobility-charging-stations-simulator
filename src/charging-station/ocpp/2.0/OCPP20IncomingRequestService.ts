@@ -135,6 +135,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       response,
       commandName
     )
+    // Emit command name event to allow delayed handling
     this.emit(commandName, chargingStation, commandPayload, response)
   }
 
