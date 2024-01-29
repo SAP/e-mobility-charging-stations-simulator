@@ -15,7 +15,6 @@ import { Constants } from '../../utils/index.js'
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPConstants {
   static readonly OCPP_WEBSOCKET_TIMEOUT = 60000 // Ms
-  static readonly OCPP_TRIGGER_MESSAGE_DELAY = 500 // Ms
 
   static readonly OCPP_MEASURANDS_SUPPORTED = Object.freeze([
     MeterValueMeasurand.STATE_OF_CHARGE,
