@@ -404,6 +404,140 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           .bind(this)
       ]
     ])
+    this.on(
+      OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+      (chargingStation: ChargingStation, connectorId: number, idTag: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        chargingStation.getConnectorStatus(connectorId)!.transactionRemoteStarted = true
+        chargingStation.ocppRequestService
+          .requestHandler<OCPP16StartTransactionRequest, OCPP16StartTransactionResponse>(
+          chargingStation,
+          OCPP16RequestCommand.START_TRANSACTION,
+          {
+            connectorId,
+            idTag
+          }
+        )
+          .then(response => {
+            if (response.status === OCPP16AuthorizationStatus.ACCEPTED) {
+              logger.debug(
+                `${chargingStation.logPrefix()} Remote start transaction ACCEPTED on ${chargingStation.stationInfo?.chargingStationId}#${connectorId} for idTag '${idTag}'`
+              )
+            } else {
+              logger.debug(
+                `${chargingStation.logPrefix()} Remote start transaction REJECTED on ${chargingStation.stationInfo?.chargingStationId}#${connectorId} for idTag '${idTag}'`
+              )
+            }
+          })
+          .catch(error => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote start transaction error:`,
+              error
+            )
+          })
+      }
+    )
+    this.on(
+      `Trigger${OCPP16MessageTrigger.BootNotification}`,
+      (chargingStation: ChargingStation) => {
+        chargingStation.ocppRequestService
+          .requestHandler<OCPP16BootNotificationRequest, OCPP16BootNotificationResponse>(
+          chargingStation,
+          OCPP16RequestCommand.BOOT_NOTIFICATION,
+          chargingStation.bootNotificationRequest,
+          { skipBufferingOnError: true, triggerMessage: true }
+        )
+          .then(response => {
+            chargingStation.bootNotificationResponse = response
+          })
+          .catch(error => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: Trigger boot notification error:`,
+              error
+            )
+          })
+      }
+    )
+    this.on(`Trigger${OCPP16MessageTrigger.Heartbeat}`, (chargingStation: ChargingStation) => {
+      chargingStation.ocppRequestService
+        .requestHandler<OCPP16HeartbeatRequest, OCPP16HeartbeatResponse>(
+        chargingStation,
+        OCPP16RequestCommand.HEARTBEAT,
+        undefined,
+        {
+          triggerMessage: true
+        }
+      )
+        .catch(error => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.constructor: Trigger heartbeat error:`,
+            error
+          )
+        })
+    })
+    this.on(
+      `$Trigger${OCPP16MessageTrigger.StatusNotification}`,
+      (chargingStation: ChargingStation, connectorId?: number) => {
+        const errorHandler = (error: Error): void => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.constructor: Trigger status notification error:`,
+            error
+          )
+        }
+        if (connectorId != null) {
+          chargingStation.ocppRequestService
+            .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+            chargingStation,
+            OCPP16RequestCommand.STATUS_NOTIFICATION,
+            {
+              connectorId,
+              errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+              status: chargingStation.getConnectorStatus(connectorId)?.status
+            },
+            {
+              triggerMessage: true
+            }
+          )
+            .catch(errorHandler)
+        } else if (chargingStation.hasEvses) {
+          for (const evseStatus of chargingStation.evses.values()) {
+            for (const [id, connectorStatus] of evseStatus.connectors) {
+              chargingStation.ocppRequestService
+                .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+                chargingStation,
+                OCPP16RequestCommand.STATUS_NOTIFICATION,
+                {
+                  connectorId: id,
+                  errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                  status: connectorStatus.status
+                },
+                {
+                  triggerMessage: true
+                }
+              )
+                .catch(errorHandler)
+            }
+          }
+        } else {
+          for (const [id, connectorStatus] of chargingStation.connectors) {
+            chargingStation.ocppRequestService
+              .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+              chargingStation,
+              OCPP16RequestCommand.STATUS_NOTIFICATION,
+              {
+                connectorId: id,
+                errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
+                status: connectorStatus.status
+              },
+              {
+                triggerMessage: true
+              }
+            )
+              .catch(errorHandler)
+          }
+        }
+      }
+    )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -981,95 +1115,47 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         idTag
       )
     }
-    const remoteStartTransactionLogMsg = `
-      ${chargingStation.logPrefix()} Transaction remotely STARTED on ${
-        chargingStation.stationInfo?.chargingStationId
-      }#${transactionConnectorId} for idTag '${idTag}'`
+    // idTag authorization check required
+    if (
+      chargingStation.getAuthorizeRemoteTxRequests() &&
+      !(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, transactionConnectorId, idTag))
+    ) {
+      return await this.notifyRemoteStartTransactionRejected(
+        chargingStation,
+        transactionConnectorId,
+        idTag
+      )
+    }
     await OCPP16ServiceUtils.sendAndSetConnectorStatus(
       chargingStation,
       transactionConnectorId,
       OCPP16ChargePointStatus.Preparing
     )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)!
-    // Authorization check required
     if (
-      chargingStation.getAuthorizeRemoteTxRequests() &&
-      (await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, transactionConnectorId, idTag))
+      chargingProfile != null &&
+      !this.setRemoteStartTransactionChargingProfile(
+        chargingStation,
+        transactionConnectorId,
+        chargingProfile
+      )
     ) {
-      // Authorization successful, start transaction
-      if (
-        (chargingProfile != null &&
-          this.setRemoteStartTransactionChargingProfile(
-            chargingStation,
-            transactionConnectorId,
-            chargingProfile
-          )) ||
-        chargingProfile == null
-      ) {
-        connectorStatus.transactionRemoteStarted = true
-        if (
-          (
-            await chargingStation.ocppRequestService.requestHandler<
-            OCPP16StartTransactionRequest,
-            OCPP16StartTransactionResponse
-            >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
-              connectorId: transactionConnectorId,
-              idTag
-            })
-          ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
-        ) {
-          logger.debug(remoteStartTransactionLogMsg)
-          return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
-        }
-        return await this.notifyRemoteStartTransactionRejected(
+      return await this.notifyRemoteStartTransactionRejected(
+        chargingStation,
+        transactionConnectorId,
+        idTag
+      )
+    }
+    Promise.resolve()
+      .then(() =>
+        this.emit(
+          OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
           chargingStation,
           transactionConnectorId,
           idTag
         )
-      }
-      return await this.notifyRemoteStartTransactionRejected(
-        chargingStation,
-        transactionConnectorId,
-        idTag
       )
-    }
-    // No authorization check required, start transaction
-    if (
-      (chargingProfile != null &&
-        this.setRemoteStartTransactionChargingProfile(
-          chargingStation,
-          transactionConnectorId,
-          chargingProfile
-        )) ||
-      chargingProfile == null
-    ) {
-      connectorStatus.transactionRemoteStarted = true
-      if (
-        (
-          await chargingStation.ocppRequestService.requestHandler<
-          OCPP16StartTransactionRequest,
-          OCPP16StartTransactionResponse
-          >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
-            connectorId: transactionConnectorId,
-            idTag
-          })
-        ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
-      ) {
-        logger.debug(remoteStartTransactionLogMsg)
-        return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
-      }
-      return await this.notifyRemoteStartTransactionRejected(
-        chargingStation,
-        transactionConnectorId,
-        idTag
-      )
-    }
-    return await this.notifyRemoteStartTransactionRejected(
-      chargingStation,
-      transactionConnectorId,
-      idTag
-    )
+      .catch(Constants.EMPTY_FUNCTION)
+    return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
 
   private async notifyRemoteStartTransactionRejected (
@@ -1086,7 +1172,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
     logger.warn(
-      `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector id ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`
+      `${chargingStation.logPrefix()} Remote start transaction REJECTED on connector id ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
@@ -1470,95 +1556,27 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     try {
       switch (requestedMessage) {
         case OCPP16MessageTrigger.BootNotification:
-          setTimeout(() => {
-            chargingStation.ocppRequestService
-              .requestHandler<OCPP16BootNotificationRequest, OCPP16BootNotificationResponse>(
-              chargingStation,
-              OCPP16RequestCommand.BOOT_NOTIFICATION,
-              chargingStation.bootNotificationRequest,
-              { skipBufferingOnError: true, triggerMessage: true }
+          Promise.resolve()
+            .then(() =>
+              this.emit(`Trigger${OCPP16MessageTrigger.BootNotification}`, chargingStation)
             )
-              .then(response => {
-                chargingStation.bootNotificationResponse = response
-              })
-              .catch(Constants.EMPTY_FUNCTION)
-          }, OCPP16Constants.OCPP_TRIGGER_MESSAGE_DELAY)
+            .catch(Constants.EMPTY_FUNCTION)
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
         case OCPP16MessageTrigger.Heartbeat:
-          setTimeout(() => {
-            chargingStation.ocppRequestService
-              .requestHandler<OCPP16HeartbeatRequest, OCPP16HeartbeatResponse>(
-              chargingStation,
-              OCPP16RequestCommand.HEARTBEAT,
-              undefined,
-              {
-                triggerMessage: true
-              }
-            )
-              .catch(Constants.EMPTY_FUNCTION)
-          }, OCPP16Constants.OCPP_TRIGGER_MESSAGE_DELAY)
+          Promise.resolve()
+            .then(() => this.emit(`Trigger${OCPP16MessageTrigger.Heartbeat}`, chargingStation))
+            .catch(Constants.EMPTY_FUNCTION)
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
         case OCPP16MessageTrigger.StatusNotification:
-          setTimeout(() => {
-            if (connectorId != null) {
-              chargingStation.ocppRequestService
-                .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
+          Promise.resolve()
+            .then(() =>
+              this.emit(
+                `Trigger${OCPP16MessageTrigger.StatusNotification}`,
                 chargingStation,
-                OCPP16RequestCommand.STATUS_NOTIFICATION,
-                {
-                  connectorId,
-                  errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                  status: chargingStation.getConnectorStatus(connectorId)?.status
-                },
-                {
-                  triggerMessage: true
-                }
+                connectorId
               )
-                .catch(Constants.EMPTY_FUNCTION)
-            } else if (chargingStation.hasEvses) {
-              for (const evseStatus of chargingStation.evses.values()) {
-                for (const [id, connectorStatus] of evseStatus.connectors) {
-                  chargingStation.ocppRequestService
-                    .requestHandler<
-                  OCPP16StatusNotificationRequest,
-                  OCPP16StatusNotificationResponse
-                  >(
-                    chargingStation,
-                    OCPP16RequestCommand.STATUS_NOTIFICATION,
-                    {
-                      connectorId: id,
-                      errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                      status: connectorStatus.status
-                    },
-                    {
-                      triggerMessage: true
-                    }
-                  )
-                    .catch(Constants.EMPTY_FUNCTION)
-                }
-              }
-            } else {
-              for (const [id, connectorStatus] of chargingStation.connectors) {
-                chargingStation.ocppRequestService
-                  .requestHandler<
-                OCPP16StatusNotificationRequest,
-                OCPP16StatusNotificationResponse
-                >(
-                  chargingStation,
-                  OCPP16RequestCommand.STATUS_NOTIFICATION,
-                  {
-                    connectorId: id,
-                    errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                    status: connectorStatus.status
-                  },
-                  {
-                    triggerMessage: true
-                  }
-                )
-                  .catch(Constants.EMPTY_FUNCTION)
-              }
-            }
-          }, OCPP16Constants.OCPP_TRIGGER_MESSAGE_DELAY)
+            )
+            .catch(Constants.EMPTY_FUNCTION)
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
         default:
           return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED
