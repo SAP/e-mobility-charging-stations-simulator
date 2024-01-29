@@ -121,7 +121,7 @@
     "@commitlint/config-conventional": "^18.6.0",
     "@mikro-orm/cli": "^6.0.5",
     "@release-it/bumper": "^6.0.1",
-    "@types/node": "^20.11.9",
+    "@types/node": "^20.11.10",
     "@types/tar": "^6.1.11",
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
