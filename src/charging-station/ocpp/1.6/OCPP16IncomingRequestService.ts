@@ -1553,42 +1553,30 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED
     }
-    try {
-      switch (requestedMessage) {
-        case OCPP16MessageTrigger.BootNotification:
-          Promise.resolve()
-            .then(() =>
-              this.emit(`Trigger${OCPP16MessageTrigger.BootNotification}`, chargingStation)
+    switch (requestedMessage) {
+      case OCPP16MessageTrigger.BootNotification:
+        Promise.resolve()
+          .then(() => this.emit(`Trigger${OCPP16MessageTrigger.BootNotification}`, chargingStation))
+          .catch(Constants.EMPTY_FUNCTION)
+        return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
+      case OCPP16MessageTrigger.Heartbeat:
+        Promise.resolve()
+          .then(() => this.emit(`Trigger${OCPP16MessageTrigger.Heartbeat}`, chargingStation))
+          .catch(Constants.EMPTY_FUNCTION)
+        return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
+      case OCPP16MessageTrigger.StatusNotification:
+        Promise.resolve()
+          .then(() =>
+            this.emit(
+              `Trigger${OCPP16MessageTrigger.StatusNotification}`,
+              chargingStation,
+              connectorId
             )
-            .catch(Constants.EMPTY_FUNCTION)
-          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
-        case OCPP16MessageTrigger.Heartbeat:
-          Promise.resolve()
-            .then(() => this.emit(`Trigger${OCPP16MessageTrigger.Heartbeat}`, chargingStation))
-            .catch(Constants.EMPTY_FUNCTION)
-          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
-        case OCPP16MessageTrigger.StatusNotification:
-          Promise.resolve()
-            .then(() =>
-              this.emit(
-                `Trigger${OCPP16MessageTrigger.StatusNotification}`,
-                chargingStation,
-                connectorId
-              )
-            )
-            .catch(Constants.EMPTY_FUNCTION)
-          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
-        default:
-          return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED
-      }
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.handleIncomingRequestError<OCPP16TriggerMessageResponse>(
-        chargingStation,
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        error as Error,
-        { errorResponse: OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_REJECTED }
-      )!
+          )
+          .catch(Constants.EMPTY_FUNCTION)
+        return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
+      default:
+        return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_NOT_IMPLEMENTED
     }
   }
 
