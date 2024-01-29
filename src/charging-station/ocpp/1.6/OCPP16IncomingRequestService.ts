@@ -595,7 +595,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             chargingStation,
             commandPayload
           )) as ResType
-          this.emit(commandName, chargingStation, commandPayload, response)
         } catch (error) {
           // Log
           logger.error(
@@ -636,6 +635,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       response,
       commandName
     )
+    this.emit(commandName, chargingStation, commandPayload, response)
   }
 
   private validatePayload (
