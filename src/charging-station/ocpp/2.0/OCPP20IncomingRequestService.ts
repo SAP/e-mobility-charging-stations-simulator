@@ -95,6 +95,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             chargingStation,
             commandPayload
           )) as ResType
+          this.emit(commandName, chargingStation, commandPayload, response)
         } catch (error) {
           // Log
           logger.error(
