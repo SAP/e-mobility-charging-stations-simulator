@@ -404,6 +404,41 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           .bind(this)
       ]
     ])
+    this.on(
+      OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+      (chargingStation: ChargingStation, connectorId: number, idTag: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        chargingStation.getConnectorStatus(connectorId)!.transactionRemoteStarted = true
+        chargingStation.ocppRequestService
+          .requestHandler<OCPP16StartTransactionRequest, OCPP16StartTransactionResponse>(
+          chargingStation,
+          OCPP16RequestCommand.START_TRANSACTION,
+          {
+            connectorId,
+            idTag
+          }
+        )
+          .then(response => {
+            if (response.status === OCPP16AuthorizationStatus.ACCEPTED) {
+              logger.debug(`
+        ${chargingStation.logPrefix()} Remote start transaction ACCEPTED on ${
+          chargingStation.stationInfo?.chargingStationId
+        }#${connectorId} for idTag '${idTag}'`)
+            } else {
+              logger.debug(`
+        ${chargingStation.logPrefix()} Remote start transaction REJECTED on ${
+          chargingStation.stationInfo?.chargingStationId
+        }#${connectorId} for idTag '${idTag}'`)
+            }
+          })
+          .catch(error => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote start transaction error:`,
+              error
+            )
+          })
+      }
+    )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -1011,30 +1046,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         idTag
       )
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.getConnectorStatus(transactionConnectorId)!.transactionRemoteStarted = true
-    if (
-      (
-        await chargingStation.ocppRequestService.requestHandler<
-        OCPP16StartTransactionRequest,
-        OCPP16StartTransactionResponse
-        >(chargingStation, OCPP16RequestCommand.START_TRANSACTION, {
-          connectorId: transactionConnectorId,
-          idTag
-        })
-      ).idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED
-    ) {
-      logger.debug(`
-      ${chargingStation.logPrefix()} Transaction remotely STARTED on ${
-        chargingStation.stationInfo?.chargingStationId
-      }#${transactionConnectorId} for idTag '${idTag}'`)
-      return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
-    }
-    return await this.notifyRemoteStartTransactionRejected(
+    this.emit(
+      OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
       chargingStation,
       transactionConnectorId,
       idTag
     )
+    return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
 
   private async notifyRemoteStartTransactionRejected (
@@ -1051,7 +1069,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
     logger.warn(
-      `${chargingStation.logPrefix()} Remote starting transaction REJECTED on connector id ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`
+      `${chargingStation.logPrefix()} Remote start transaction REJECTED on connector id ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }

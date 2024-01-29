@@ -1,3 +1,5 @@
+import { EventEmitter } from 'node:events'
+
 import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 
@@ -20,7 +22,7 @@ const ajvFormats = _ajvFormats.default
 
 const moduleName = 'OCPPIncomingRequestService'
 
-export abstract class OCPPIncomingRequestService {
+export abstract class OCPPIncomingRequestService extends EventEmitter {
   private static instance: OCPPIncomingRequestService | null = null
   private readonly version: OCPPVersion
   protected readonly ajv: Ajv
@@ -30,6 +32,7 @@ export abstract class OCPPIncomingRequestService {
   >
 
   protected constructor (version: OCPPVersion) {
+    super()
     this.version = version
     this.ajv = new Ajv({
       keywords: ['javaType'],
