@@ -18,6 +18,7 @@ import {
   getRandomInteger,
   hasOwnProp,
   isArraySorted,
+  isAsyncFunction,
   isEmptyArray,
   isEmptyObject,
   isEmptyString,
@@ -246,6 +247,82 @@ await describe('Utils test suite', async () => {
     expect(isObject(new Set())).toBe(true)
     expect(isObject(new WeakMap())).toBe(true)
     expect(isObject(new WeakSet())).toBe(true)
+  })
+
+  await it('Verify isAsyncFunction()', () => {
+    expect(isAsyncFunction(null)).toBe(false)
+    expect(isAsyncFunction(undefined)).toBe(false)
+    expect(isAsyncFunction(true)).toBe(false)
+    expect(isAsyncFunction(false)).toBe(false)
+    expect(isAsyncFunction(0)).toBe(false)
+    expect(isAsyncFunction('')).toBe(false)
+    expect(isAsyncFunction([])).toBe(false)
+    expect(isAsyncFunction(new Date())).toBe(false)
+    // eslint-disable-next-line prefer-regex-literals
+    expect(isAsyncFunction(new RegExp('[a-z]', 'i'))).toBe(false)
+    expect(isAsyncFunction(new Error())).toBe(false)
+    expect(isAsyncFunction(new Map())).toBe(false)
+    expect(isAsyncFunction(new Set())).toBe(false)
+    expect(isAsyncFunction(new WeakMap())).toBe(false)
+    expect(isAsyncFunction(new WeakSet())).toBe(false)
+    expect(isAsyncFunction(new Int8Array())).toBe(false)
+    expect(isAsyncFunction(new Uint8Array())).toBe(false)
+    expect(isAsyncFunction(new Uint8ClampedArray())).toBe(false)
+    expect(isAsyncFunction(new Int16Array())).toBe(false)
+    expect(isAsyncFunction(new Uint16Array())).toBe(false)
+    expect(isAsyncFunction(new Int32Array())).toBe(false)
+    expect(isAsyncFunction(new Uint32Array())).toBe(false)
+    expect(isAsyncFunction(new Float32Array())).toBe(false)
+    expect(isAsyncFunction(new Float64Array())).toBe(false)
+    expect(isAsyncFunction(new BigInt64Array())).toBe(false)
+    expect(isAsyncFunction(new BigUint64Array())).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(new Promise(() => {}))).toBe(false)
+    expect(isAsyncFunction(new WeakRef({}))).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(new FinalizationRegistry(() => {}))).toBe(false)
+    expect(isAsyncFunction(new ArrayBuffer(16))).toBe(false)
+    expect(isAsyncFunction(new SharedArrayBuffer(16))).toBe(false)
+    expect(isAsyncFunction(new DataView(new ArrayBuffer(16)))).toBe(false)
+    expect(isAsyncFunction({})).toBe(false)
+    expect(isAsyncFunction({ a: 1 })).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(() => {})).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(function () {})).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(function named () {})).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(async () => {})).toBe(true)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(async function () {})).toBe(true)
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    expect(isAsyncFunction(async function named () {})).toBe(true)
+    class TestClass {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testSync (): void {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public async testAsync (): Promise<void> {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testArrowSync = (): void => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testArrowAsync = async (): Promise<void> => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public static testStaticSync (): void {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public static async testStaticAsync (): Promise<void> {}
+    }
+    const testClass = new TestClass()
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(isAsyncFunction(testClass.testSync)).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(isAsyncFunction(testClass.testAsync)).toBe(true)
+    expect(isAsyncFunction(testClass.testArrowSync)).toBe(false)
+    expect(isAsyncFunction(testClass.testArrowAsync)).toBe(true)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(isAsyncFunction(TestClass.testStaticSync)).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(isAsyncFunction(TestClass.testStaticAsync)).toBe(true)
   })
 
   await it('Verify clone()', () => {

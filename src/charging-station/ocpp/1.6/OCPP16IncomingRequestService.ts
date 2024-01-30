@@ -103,6 +103,7 @@ import {
   convertToInt,
   formatDurationMilliSeconds,
   getRandomInteger,
+  isAsyncFunction,
   isEmptyArray,
   isNotEmptyArray,
   isNotEmptyString,
@@ -624,10 +625,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           this.validatePayload(chargingStation, commandName, commandPayload)
           // Call the method to build the response
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          response = (await this.incomingRequestHandlers.get(commandName)!(
-            chargingStation,
-            commandPayload
-          )) as ResType
+          const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
+          if (isAsyncFunction(incomingRequestHandler)) {
+            response = (await incomingRequestHandler(chargingStation, commandPayload)) as ResType
+          } else {
+            response = incomingRequestHandler(chargingStation, commandPayload) as ResType
+          }
         } catch (error) {
           // Log
           logger.error(

@@ -13,7 +13,7 @@ import {
   OCPP20IncomingRequestCommand,
   OCPPVersion
 } from '../../../types/index.js'
-import { logger } from '../../../utils/index.js'
+import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
@@ -91,10 +91,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           this.validatePayload(chargingStation, commandName, commandPayload)
           // Call the method to build the response
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          response = (await this.incomingRequestHandlers.get(commandName)!(
-            chargingStation,
-            commandPayload
-          )) as ResType
+          const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
+          if (isAsyncFunction(incomingRequestHandler)) {
+            response = (await incomingRequestHandler(chargingStation, commandPayload)) as ResType
+          } else {
+            response = incomingRequestHandler(chargingStation, commandPayload) as ResType
+          }
         } catch (error) {
           // Log
           logger.error(

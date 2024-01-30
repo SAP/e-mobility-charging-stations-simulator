@@ -51,7 +51,7 @@ import {
   type SetChargingProfileResponse,
   type UnlockConnectorResponse
 } from '../../../types/index.js'
-import { Constants, convertToInt, logger } from '../../../utils/index.js'
+import { Constants, convertToInt, isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 
 const moduleName = 'OCPP16ResponseService'
@@ -445,7 +445,18 @@ export class OCPP16ResponseService extends OCPPResponseService {
         try {
           this.validatePayload(chargingStation, commandName, payload)
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          await this.responseHandlers.get(commandName)!(chargingStation, payload, requestPayload)
+          const responseHandler = this.responseHandlers.get(commandName)!
+          if (isAsyncFunction(responseHandler)) {
+            await responseHandler(chargingStation, payload, requestPayload)
+          } else {
+            (
+              responseHandler as (
+                chargingStation: ChargingStation,
+                payload: JsonType,
+                requestPayload?: JsonType
+              ) => void
+            )(chargingStation, payload, requestPayload)
+          }
         } catch (error) {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
