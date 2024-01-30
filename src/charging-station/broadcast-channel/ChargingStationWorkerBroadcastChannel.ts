@@ -285,8 +285,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       return
     }
     let responsePayload: BroadcastChannelResponsePayload | undefined
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    let commandResponse: CommandResponse | void
+    let commandResponse: CommandResponse | undefined
     this.commandHandler(command, requestPayload)
       .then(commandResponse => {
         if (commandResponse == null || isEmptyObject(commandResponse)) {
