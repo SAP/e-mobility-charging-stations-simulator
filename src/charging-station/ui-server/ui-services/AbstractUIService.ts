@@ -12,7 +12,7 @@ import {
   type ResponsePayload,
   ResponseStatus
 } from '../../../types/index.js'
-import { isNotEmptyArray, logger } from '../../../utils/index.js'
+import { isAsyncFunction, isNotEmptyArray, logger } from '../../../utils/index.js'
 import { Bootstrap } from '../../Bootstrap.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import type { AbstractUIServer } from '../AbstractUIServer.js'
@@ -93,7 +93,18 @@ export abstract class AbstractUIService {
 
       // Call the request handler to build the response payload
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      responsePayload = await this.requestHandlers.get(command)!(messageId, command, requestPayload)
+      const requestHandler = this.requestHandlers.get(command)!
+      if (isAsyncFunction(requestHandler)) {
+        responsePayload = await requestHandler(messageId, command, requestPayload)
+      } else {
+        responsePayload = (
+          requestHandler as (
+            uuid?: string,
+            procedureName?: ProcedureName,
+            payload?: RequestPayload
+          ) => undefined | ResponsePayload
+        )(messageId, command, requestPayload)
+      }
     } catch (error) {
       // Log
       logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error)

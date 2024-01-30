@@ -37,7 +37,13 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse
 } from '../../types/index.js'
-import { Constants, convertToInt, isEmptyObject, logger } from '../../utils/index.js'
+import {
+  Constants,
+  convertToInt,
+  isAsyncFunction,
+  isEmptyObject,
+  logger
+} from '../../utils/index.js'
 import type { ChargingStation } from '../ChargingStation.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
 import { buildMeterValue } from '../ocpp/index.js'
@@ -56,7 +62,7 @@ type CommandResponse =
 type CommandHandler = (
   requestPayload?: BroadcastChannelRequestPayload
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-) => Promise<CommandResponse | void> | void
+) => Promise<CommandResponse | void> | CommandResponse | void
 
 export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly commandHandlers: Map<BroadcastChannelProcedureName, CommandHandler>
@@ -334,7 +340,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     if (this.commandHandlers.has(command)) {
       this.cleanRequestPayload(command, requestPayload)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return await this.commandHandlers.get(command)!(requestPayload)
+      const commandHandler = this.commandHandlers.get(command)!
+      if (isAsyncFunction(commandHandler)) {
+        return await commandHandler(requestPayload)
+      }
+      return (
+        commandHandler as (requestPayload?: BroadcastChannelRequestPayload) => CommandResponse
+      )(requestPayload)
     }
     throw new BaseError(`Unknown worker broadcast channel command: '${command}'`)
   }
