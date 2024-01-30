@@ -285,7 +285,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       return
     }
     let responsePayload: BroadcastChannelResponsePayload | undefined
-    let commandResponse: CommandResponse | undefined
     this.commandHandler(command, requestPayload)
       .then(commandResponse => {
         if (commandResponse == null || isEmptyObject(commandResponse)) {
@@ -311,12 +310,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           status: ResponseStatus.FAILURE,
           command,
           requestPayload,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          commandResponse: commandResponse!,
           errorMessage: (error as OCPPError).message,
           errorStack: (error as OCPPError).stack,
           errorDetails: (error as OCPPError).details
-        }
+        } satisfies BroadcastChannelResponsePayload
       })
       .finally(() => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
