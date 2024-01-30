@@ -447,6 +447,38 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     )
     this.on(
+      OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
+      (
+        chargingStation: ChargingStation,
+        request: RemoteStopTransactionRequest,
+        response: GenericResponse
+      ) => {
+        if (response.status === GenericStatus.Accepted) {
+          const { transactionId } = request
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)!
+          OCPP16ServiceUtils.remoteStopTransaction(chargingStation, connectorId)
+            .then(response => {
+              if (response.status === GenericStatus.Accepted) {
+                logger.debug(
+                  `${chargingStation.logPrefix()} Remote stop transaction ACCEPTED on ${chargingStation.stationInfo?.chargingStationId}#${connectorId} for transaction '${transactionId}'`
+                )
+              } else {
+                logger.debug(
+                  `${chargingStation.logPrefix()} Remote stop transaction REJECTED on ${chargingStation.stationInfo?.chargingStationId}#${connectorId} for transaction '${transactionId}'`
+                )
+              }
+            })
+            .catch(error => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote stop transaction error:`,
+                error
+              )
+            })
+        }
+      }
+    )
+    this.on(
       OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
       (
         chargingStation: ChargingStation,
@@ -1161,6 +1193,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         idTag
       )
     }
+    logger.debug(
+      `${chargingStation.logPrefix()} Remote start transaction ACCEPTED on connector id ${transactionConnectorId}, idTag '${idTag}'`
+    )
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
   }
 
@@ -1177,7 +1212,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16ChargePointStatus.Available
       )
     }
-    logger.warn(
+    logger.debug(
       `${chargingStation.logPrefix()} Remote start transaction REJECTED on connector id ${connectorId}, idTag '${idTag}', availability '${connectorStatus?.availability}', status '${connectorStatus?.status}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
@@ -1196,7 +1231,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return true
     }
-    logger.warn(
+    logger.debug(
       `${chargingStation.logPrefix()} Not allowed to set ${
         chargingProfile.chargingProfilePurpose
       } charging profile(s) at remote start transaction`
@@ -1204,33 +1239,19 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     return false
   }
 
-  private async handleRequestRemoteStopTransaction (
+  private handleRequestRemoteStopTransaction (
     chargingStation: ChargingStation,
     commandPayload: RemoteStopTransactionRequest
-  ): Promise<GenericResponse> {
+  ): GenericResponse {
     const { transactionId } = commandPayload
-    if (chargingStation.hasEvses) {
-      for (const [evseId, evseStatus] of chargingStation.evses) {
-        if (evseId > 0) {
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            if (connectorStatus.transactionId === transactionId) {
-              return await OCPP16ServiceUtils.remoteStopTransaction(chargingStation, connectorId)
-            }
-          }
-        }
-      }
-    } else {
-      for (const connectorId of chargingStation.connectors.keys()) {
-        if (
-          connectorId > 0 &&
-          chargingStation.getConnectorStatus(connectorId)?.transactionId === transactionId
-        ) {
-          return await OCPP16ServiceUtils.remoteStopTransaction(chargingStation, connectorId)
-        }
-      }
+    if (chargingStation.getConnectorIdByTransactionId(transactionId) != null) {
+      logger.debug(
+        `${chargingStation.logPrefix()} Remote stop transaction ACCEPTED for transactionId '${transactionId}'`
+      )
+      return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
     }
-    logger.warn(
-      `${chargingStation.logPrefix()} Trying to remote stop a non existing transaction with id ${transactionId}`
+    logger.debug(
+      `${chargingStation.logPrefix()} Remote stop transaction REJECTED for transactionId '${transactionId}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
