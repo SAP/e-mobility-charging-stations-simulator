@@ -345,7 +345,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         return await commandHandler(requestPayload)
       }
       return (
-        commandHandler as (requestPayload?: BroadcastChannelRequestPayload) => CommandResponse
+        commandHandler as (
+          requestPayload?: BroadcastChannelRequestPayload
+          // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+        ) => CommandResponse | void
       )(requestPayload)
     }
     throw new BaseError(`Unknown worker broadcast channel command: '${command}'`)
