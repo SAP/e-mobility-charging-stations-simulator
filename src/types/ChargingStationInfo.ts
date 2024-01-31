@@ -14,6 +14,7 @@ ChargingStationTemplate,
 | 'meterSerialNumberPrefix'
 > & {
   hashId: string
+  templateName: string
   /** @deprecated Use hashId instead */
   infoHash?: string
   chargingStationId?: string

@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 import { type FSWatcher, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, parse } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
@@ -1126,6 +1126,7 @@ export class ChargingStation extends EventEmitter {
     }
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
+    stationInfo.templateName = parse(this.templateFile).name
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     stationInfo.ocppVersion = stationTemplate.ocppVersion ?? OCPPVersion.VERSION_16
     createSerialNumber(stationTemplate, stationInfo)
@@ -1180,6 +1181,10 @@ export class ChargingStation extends EventEmitter {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
         delete stationInfo.infoHash
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (stationInfo.templateName == null) {
+          stationInfo.templateName = parse(this.templateFile).name
+        }
       }
     }
     return stationInfo
