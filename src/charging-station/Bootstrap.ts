@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { EventEmitter } from 'node:events'
-import { dirname, extname, join } from 'node:path'
+import { dirname, extname, join, parse } from 'node:path'
 import process, { exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import type { Worker } from 'worker_threads'
@@ -48,18 +48,17 @@ const moduleName = 'Bootstrap'
 enum exitCodes {
   succeeded = 0,
   missingChargingStationsConfiguration = 1,
-  noChargingStationTemplates = 2,
-  gracefulShutdownError = 3
+  duplicateChargingStationTemplateUrls = 2,
+  noChargingStationTemplates = 3,
+  gracefulShutdownError = 4
 }
 
 export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null
-  public numberOfChargingStations!: number
-  public numberOfChargingStationTemplates!: number
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
   private readonly uiServer?: AbstractUIServer
   private storage?: Storage
-  private numberOfStartedChargingStations!: number
+  private readonly chargingStationsByTemplate!: Map<string, { configured: number, started: number }>
   private readonly version: string = version
   private initializedCounters: boolean
   private started: boolean
@@ -77,6 +76,13 @@ export class Bootstrap extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
+    this.chargingStationsByTemplate = new Map<
+    string,
+    {
+      configured: number
+      started: number
+    }
+    >()
     this.initializedCounters = false
     this.initializeCounters()
     this.uiServer = UIServerFactory.getUIServerImplementation(
@@ -92,6 +98,24 @@ export class Bootstrap extends EventEmitter {
       Bootstrap.instance = new Bootstrap()
     }
     return Bootstrap.instance
+  }
+
+  public get numberOfChargingStationTemplates (): number {
+    return this.chargingStationsByTemplate.size
+  }
+
+  public get numberOfConfiguredChargingStations (): number {
+    return [...this.chargingStationsByTemplate.values()].reduce(
+      (accumulator, value) => accumulator + value.configured,
+      0
+    )
+  }
+
+  private get numberOfStartedChargingStations (): number {
+    return [...this.chargingStationsByTemplate.values()].reduce(
+      (accumulator, value) => accumulator + value.started,
+      0
+    )
   }
 
   public async start (): Promise<void> {
@@ -131,7 +155,9 @@ export class Bootstrap extends EventEmitter {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
-            const nbStations = stationTemplateUrl.numberOfStations
+            const nbStations =
+              this.chargingStationsByTemplate.get(parse(stationTemplateUrl.file).name)
+                ?.configured ?? stationTemplateUrl.numberOfStations
             for (let index = 1; index <= nbStations; index++) {
               await this.startChargingStation(index, stationTemplateUrl)
             }
@@ -148,14 +174,10 @@ export class Bootstrap extends EventEmitter {
           chalk.green(
             `Charging stations simulator ${
               this.version
-            } started with ${this.numberOfChargingStations.toString()} charging station(s) from ${this.numberOfChargingStationTemplates.toString()} configured charging station template(s) and ${
-              Configuration.workerDynamicPoolInUse()
-                ? `${workerConfiguration.poolMinSize?.toString()}/`
-                : ''
+            } started with ${this.numberOfConfiguredChargingStations} charging station(s) from ${this.numberOfChargingStationTemplates} configured charging station template(s) and ${
+              Configuration.workerDynamicPoolInUse() ? `${workerConfiguration.poolMinSize}/` : ''
             }${this.workerImplementation?.size}${
-              Configuration.workerPoolInUse()
-                ? `/${workerConfiguration.poolMaxSize?.toString()}`
-                : ''
+              Configuration.workerPoolInUse() ? `/${workerConfiguration.poolMaxSize}` : ''
             } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
               this.workerImplementation?.maxElementsPerWorker != null
                 ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
@@ -203,8 +225,6 @@ export class Bootstrap extends EventEmitter {
         this.removeAllListeners()
         await this.storage?.close()
         delete this.storage
-        this.resetCounters()
-        this.initializedCounters = false
         this.started = false
         this.stopping = false
       } else {
@@ -219,6 +239,7 @@ export class Bootstrap extends EventEmitter {
     await this.stop(stopChargingStations)
     Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
       .enabled === false && this.uiServer?.stop()
+    this.initializedCounters = false
     await this.start()
   }
 
@@ -251,12 +272,12 @@ export class Bootstrap extends EventEmitter {
     switch (workerConfiguration.elementsPerWorker) {
       case 'auto':
         elementsPerWorker =
-          this.numberOfChargingStations > availableParallelism()
-            ? Math.round(this.numberOfChargingStations / (availableParallelism() * 1.5))
+          this.numberOfConfiguredChargingStations > availableParallelism()
+            ? Math.round(this.numberOfConfiguredChargingStations / (availableParallelism() * 1.5))
             : 1
         break
       case 'all':
-        elementsPerWorker = this.numberOfChargingStations
+        elementsPerWorker = this.numberOfConfiguredChargingStations
         break
     }
     this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
@@ -337,25 +358,27 @@ export class Bootstrap extends EventEmitter {
 
   private readonly workerEventStarted = (data: ChargingStationData): void => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
-    ++this.numberOfStartedChargingStations
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    ++this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station ${
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) started (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfChargingStations})`
+      } started from ${this.numberOfConfiguredChargingStations})`
     )
   }
 
   private readonly workerEventStopped = (data: ChargingStationData): void => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
-    --this.numberOfStartedChargingStations
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    --this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station ${
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) stopped (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfChargingStations})`
+      } started from ${this.numberOfConfiguredChargingStations})`
     )
   }
 
@@ -380,32 +403,41 @@ export class Bootstrap extends EventEmitter {
 
   private initializeCounters (): void {
     if (!this.initializedCounters) {
-      this.resetCounters()
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const stationTemplateUrls = Configuration.getStationTemplateUrls()!
       if (isNotEmptyArray(stationTemplateUrls)) {
-        this.numberOfChargingStationTemplates = stationTemplateUrls.length
         for (const stationTemplateUrl of stationTemplateUrls) {
-          this.numberOfChargingStations += stationTemplateUrl.numberOfStations
+          const templateName = parse(stationTemplateUrl.file).name
+          this.chargingStationsByTemplate.set(templateName, {
+            configured: stationTemplateUrl.numberOfStations,
+            started: 0
+          })
+          this.uiServer?.chargingStationTemplates.add(templateName)
+        }
+        if (this.chargingStationsByTemplate.size !== stationTemplateUrls.length) {
+          console.error(
+            chalk.red(
+              "'stationTemplateUrls' contains duplicate entries, please check your configuration"
+            )
+          )
+          exit(exitCodes.duplicateChargingStationTemplateUrls)
         }
       } else {
-        console.warn(
-          chalk.yellow("'stationTemplateUrls' not defined or empty in configuration, exiting")
+        console.error(
+          chalk.red("'stationTemplateUrls' not defined or empty, please check your configuration")
         )
         exit(exitCodes.missingChargingStationsConfiguration)
       }
-      if (this.numberOfChargingStations === 0) {
-        console.warn(chalk.yellow('No charging station template enabled in configuration, exiting'))
+      if (this.numberOfConfiguredChargingStations === 0) {
+        console.error(
+          chalk.red(
+            "'stationTemplateUrls' has no charging station enabled, please check your configuration"
+          )
+        )
         exit(exitCodes.noChargingStationTemplates)
       }
       this.initializedCounters = true
     }
-  }
-
-  private resetCounters (): void {
-    this.numberOfChargingStationTemplates = 0
-    this.numberOfChargingStations = 0
-    this.numberOfStartedChargingStations = 0
   }
 
   private async startChargingStation (

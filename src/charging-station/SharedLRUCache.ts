@@ -18,7 +18,7 @@ export class SharedLRUCache {
   private constructor () {
     this.lruCache = new LRUCache<string, CacheValueType>(
       Bootstrap.getInstance().numberOfChargingStationTemplates +
-        Bootstrap.getInstance().numberOfChargingStations
+        Bootstrap.getInstance().numberOfConfiguredChargingStations
     )
   }
 

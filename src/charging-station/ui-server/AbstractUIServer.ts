@@ -21,12 +21,14 @@ import {
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>
+  public readonly chargingStationTemplates: Set<string>
   protected readonly httpServer: Server | Http2Server
   protected readonly responseHandlers: Map<string, ServerResponse | WebSocket>
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>()
+    this.chargingStationTemplates = new Set<string>()
     switch (this.uiServerConfiguration.version) {
       case ApplicationProtocolVersion.VERSION_11:
         this.httpServer = new Server()
@@ -58,6 +60,7 @@ export abstract class AbstractUIServer {
   public stop (): void {
     this.stopHttpServer()
     this.chargingStations.clear()
+    this.chargingStationTemplates.clear()
   }
 
   public async sendInternalRequest (request: ProtocolRequest): Promise<ProtocolResponse> {
