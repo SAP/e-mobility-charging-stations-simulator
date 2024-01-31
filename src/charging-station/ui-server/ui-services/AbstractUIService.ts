@@ -65,6 +65,7 @@ export abstract class AbstractUIService {
     this.uiServer = uiServer
     this.version = version
     this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
+      [ProcedureName.LIST_TEMPLATES, this.handleListTemplates.bind(this)],
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)]
@@ -200,6 +201,13 @@ export abstract class AbstractUIService {
     }
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
     this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses)
+  }
+
+  private handleListTemplates (): ResponsePayload {
+    return {
+      status: ResponseStatus.SUCCESS,
+      templates: [...this.uiServer.chargingStationTemplates.values()] as JsonType[]
+    } satisfies ResponsePayload
   }
 
   private handleListChargingStations (): ResponsePayload {

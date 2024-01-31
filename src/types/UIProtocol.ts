@@ -30,6 +30,7 @@ export type ProtocolRequestHandler = (
 export enum ProcedureName {
   START_SIMULATOR = 'startSimulator',
   STOP_SIMULATOR = 'stopSimulator',
+  LIST_TEMPLATES = 'listTemplates',
   LIST_CHARGING_STATIONS = 'listChargingStations',
   START_CHARGING_STATION = 'startChargingStation',
   STOP_CHARGING_STATION = 'stopChargingStation',

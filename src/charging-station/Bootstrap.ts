@@ -58,7 +58,7 @@ export class Bootstrap extends EventEmitter {
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
   private readonly uiServer?: AbstractUIServer
   private storage?: Storage
-  private readonly chargingStationsByTemplate!: Map<string, { configured: number, started: number }>
+  private readonly chargingStationsByTemplate: Map<string, { configured: number, started: number }>
   private readonly version: string = version
   private initializedCounters: boolean
   private started: boolean
@@ -83,11 +83,11 @@ export class Bootstrap extends EventEmitter {
       started: number
     }
     >()
-    this.initializedCounters = false
-    this.initializeCounters()
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
+    this.initializedCounters = false
+    this.initializeCounters()
     Configuration.configurationChangeCallback = async () => {
       await Bootstrap.getInstance().restart(false)
     }
