@@ -1,6 +1,29 @@
 # Changelog
 
-## [v1.2.33](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.32...v1.2.33)
+## [v1.2.34](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.33...v1.2.34)
+
+- feat: add addChargingStations command to UI API [`#964`](https://github.com/sap/e-mobility-charging-stations-simulator/issues/964)
+- feat: add command to list templates on UI services [`42e341c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/42e341c40076aa8c5fc37e10512ec41c9ab60825)
+- build(deps): apply updates [`5948d16`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/5948d169983d2660f661661e3ec7ca0f98dbafea)
+- build(deps-dev): apply updates [`61e7211`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/61e7211fc5ffba826712773b685cb06f9cd9a2a6)
+- build(deps-dev): apply updates [`8bb5566`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8bb5566ff360f375f0b4b39abd733fdd23f75b66)
+- perf: 'await' on OCPP request handlers only when necessary [`bcf95df`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/bcf95df12dfe4236db8c278eabea9f5058f40933)
+- docs: add addChargingStations request to Insomnia requests collection [`0a20508`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/0a20508138762053a4373c947ca08c3da3a01d51)
+- refactor: consolidate charging stations tracking [`2f98913`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2f98913683eb6a71ae4fa1314d128994885abc8c)
+- build(deps-dev): apply updates [`e29f8d4`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/e29f8d4e1a7f6d9baafe0d9923035e0ef1fd3636)
+- refactor: convert remote stop transaction to two stages request [`2665ed1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2665ed1ef62a9fc9b6eec417f3ec7c33305789cf)
+- perf: 'await' on UI request handlers only when necessary [`4b9332a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4b9332afad3ebdd1c7b7e3e98dc1a9fcefebc04f)
+- refactor: add type for template charging stations tracking [`efc411f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/efc411f77a552bf66e118c46c25dcf6ef8d07a16)
+- build(deps-dev): apply updates [`961231b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/961231bfc5ae5bcdc87fe86ba9c341eab2bd9241)
+- feat: expose template name used in stationInfo [`1fdb60b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1fdb60b661afed4d26796cb0a2ed15e78f3b40a7)
+- refactor: cleanup UI service response [`859099b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/859099b6e7adaf9eeed2aa348921a23d7aa0bc7a)
+- refactor: refine type casting in internal simulator communication code [`7f79ef4`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7f79ef45be4ba9bcfee9ec8c69cd54c75f24aec0)
+- refactor: cleanup control flow in statistic helpers [`736073f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/736073f0c51fc24b3d676fa2cedc6052f928fbbc)
+- fix: fix uiServer configuration section sanity checks [`baf34a7`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/baf34a770f0392a9556c20fb9140394d12c5ebb7)
+- refactor: cleanup type definition in internal messaging [`ae2f7bc`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ae2f7bc017445da9af276d1d120a8d0a9dfc1faa)
+- docs: cleanup code comments [`6514a5a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/6514a5a1cee96581272c8a980c414d4c81fd2da3)
+
+## [v1.2.33](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.2.32...v1.2.33) (2024-01-30)
 
 - fix: fix control flow at remote start [`#960`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/960)
 - build(deps): Bump @mikro-orm/mariadb from 6.0.4 to 6.0.5 [`#943`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/943)
@@ -29,6 +52,7 @@
 - build(deps-dev): apply updates [`4c4f2e6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/4c4f2e6dda38a2bcbdcc2d9211be3b8878b302f8)
 - build(deps-dev): apply updates [`8caa511`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/8caa5116fd972d874346d9c63f7ac034055213fb)
 - build(deps-dev): apply updates [`3e09e94`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3e09e94b65eeaf17d5ac56d5ec456205184f1488)
+- chore: version 1.2.33 [`b8c78e4`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b8c78e4f10bc8513dca1062fb618a29aaa85d89f)
 - refactor: cleanup payload validation properties namespace [`d5490a1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d5490a13c341153af159d4b2ed745d32dc38452f)
 - fix: ensure remote start transaction triggers a delayed start transaction [`54510a6`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/54510a60e9114c2076c86e6c90fe73c0dfefdb45)
 - build(deps-dev): Bump @mikro-orm/cli from 6.0.4 to 6.0.5 [`006190c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/006190c3e9c1b1f546a96e88ca7cd0492d9654fc)
