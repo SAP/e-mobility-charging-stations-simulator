@@ -4,6 +4,7 @@ import { EventEmitter } from 'node:events'
 import { dirname, extname, join, parse } from 'node:path'
 import process, { exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { isMainThread } from 'node:worker_threads'
 import type { Worker } from 'worker_threads'
 
 import chalk from 'chalk'
@@ -23,7 +24,6 @@ import {
   ChargingStationWorkerMessageEvents,
   ConfigurationSection,
   ProcedureName,
-  type StationTemplateUrl,
   type Statistics,
   type StorageConfiguration,
   type UIServerConfiguration,
@@ -39,7 +39,8 @@ import {
   isAsyncFunction,
   isNotEmptyArray,
   logPrefix,
-  logger
+  logger,
+  max
 } from '../utils/index.js'
 import { type WorkerAbstract, WorkerFactory } from '../worker/index.js'
 
@@ -58,7 +59,11 @@ export class Bootstrap extends EventEmitter {
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
   private readonly uiServer?: AbstractUIServer
   private storage?: Storage
-  private readonly chargingStationsByTemplate: Map<string, { configured: number, started: number }>
+  private readonly chargingStationsByTemplate: Map<
+  string,
+  { configured: number, started: number, lastIndex: number }
+  >
+
   private readonly version: string = version
   private initializedCounters: boolean
   private started: boolean
@@ -78,10 +83,7 @@ export class Bootstrap extends EventEmitter {
     this.stopping = false
     this.chargingStationsByTemplate = new Map<
     string,
-    {
-      configured: number
-      started: number
-    }
+    { configured: number, started: number, lastIndex: number }
     >()
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
@@ -89,7 +91,9 @@ export class Bootstrap extends EventEmitter {
     this.initializedCounters = false
     this.initializeCounters()
     Configuration.configurationChangeCallback = async () => {
-      await Bootstrap.getInstance().restart(false)
+      if (isMainThread) {
+        await Bootstrap.getInstance().restart()
+      }
     }
   }
 
@@ -109,6 +113,10 @@ export class Bootstrap extends EventEmitter {
       (accumulator, value) => accumulator + value.configured,
       0
     )
+  }
+
+  public getLastIndex (templateName: string): number {
+    return this.chargingStationsByTemplate.get(templateName)?.lastIndex ?? 0
   }
 
   private get numberOfStartedChargingStations (): number {
@@ -159,7 +167,7 @@ export class Bootstrap extends EventEmitter {
               this.chargingStationsByTemplate.get(parse(stationTemplateUrl.file).name)
                 ?.configured ?? stationTemplateUrl.numberOfStations
             for (let index = 1; index <= nbStations; index++) {
-              await this.startChargingStation(index, stationTemplateUrl)
+              await this.addChargingStation(index, stationTemplateUrl.file)
             }
           } catch (error) {
             console.error(
@@ -174,7 +182,7 @@ export class Bootstrap extends EventEmitter {
           chalk.green(
             `Charging stations simulator ${
               this.version
-            } started with ${this.numberOfConfiguredChargingStations} charging station(s) from ${this.numberOfChargingStationTemplates} configured charging station template(s) and ${
+            } started with ${this.numberOfConfiguredChargingStations} configured charging station(s) from ${this.numberOfChargingStationTemplates} charging station template(s) and ${
               Configuration.workerDynamicPoolInUse() ? `${workerConfiguration.poolMinSize}/` : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse() ? `/${workerConfiguration.poolMaxSize}` : ''
@@ -202,23 +210,21 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async stop (stopChargingStations = true): Promise<void> {
+  public async stop (): Promise<void> {
     if (this.started) {
       if (!this.stopping) {
         this.stopping = true
-        if (stopChargingStations) {
-          await this.uiServer?.sendInternalRequest(
-            this.uiServer.buildProtocolRequest(
-              generateUUID(),
-              ProcedureName.STOP_CHARGING_STATION,
-              Constants.EMPTY_FROZEN_OBJECT
-            )
+        await this.uiServer?.sendInternalRequest(
+          this.uiServer.buildProtocolRequest(
+            generateUUID(),
+            ProcedureName.STOP_CHARGING_STATION,
+            Constants.EMPTY_FROZEN_OBJECT
           )
-          try {
-            await this.waitChargingStationsStopped()
-          } catch (error) {
-            console.error(chalk.red('Error while waiting for charging stations to stop: '), error)
-          }
+        )
+        try {
+          await this.waitChargingStationsStopped()
+        } catch (error) {
+          console.error(chalk.red('Error while waiting for charging stations to stop: '), error)
         }
         await this.workerImplementation?.stop()
         delete this.workerImplementation
@@ -235,8 +241,8 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async restart (stopChargingStations?: boolean): Promise<void> {
-    await this.stop(stopChargingStations)
+  private async restart (): Promise<void> {
+    await this.stop()
     Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
       .enabled === false && this.uiServer?.stop()
     this.initializedCounters = false
@@ -268,6 +274,9 @@ export class Bootstrap extends EventEmitter {
   }
 
   private initializeWorkerImplementation (workerConfiguration: WorkerConfiguration): void {
+    if (!isMainThread) {
+      return
+    }
     let elementsPerWorker: number | undefined
     switch (workerConfiguration.elementsPerWorker) {
       case 'auto':
@@ -365,7 +374,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) started (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfConfiguredChargingStations})`
+      } started from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
     )
   }
 
@@ -378,7 +387,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) stopped (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfConfiguredChargingStations})`
+      } started from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
     )
   }
 
@@ -410,7 +419,8 @@ export class Bootstrap extends EventEmitter {
           const templateName = parse(stationTemplateUrl.file).name
           this.chargingStationsByTemplate.set(templateName, {
             configured: stationTemplateUrl.numberOfStations,
-            started: 0
+            started: 0,
+            lastIndex: 0
           })
           this.uiServer?.chargingStationTemplates.add(templateName)
         }
@@ -428,10 +438,14 @@ export class Bootstrap extends EventEmitter {
         )
         exit(exitCodes.missingChargingStationsConfiguration)
       }
-      if (this.numberOfConfiguredChargingStations === 0) {
+      if (
+        this.numberOfConfiguredChargingStations === 0 &&
+        Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+          .enabled === true
+      ) {
         console.error(
           chalk.red(
-            "'stationTemplateUrls' has no charging station enabled, please check your configuration"
+            "'stationTemplateUrls' has no charging station enabled and UI server is disabled, please check your configuration"
           )
         )
         exit(exitCodes.noChargingStationTemplates)
@@ -440,19 +454,21 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  private async startChargingStation (
-    index: number,
-    stationTemplateUrl: StationTemplateUrl
-  ): Promise<void> {
+  public async addChargingStation (index: number, stationTemplateFile: string): Promise<void> {
     await this.workerImplementation?.addElement({
       index,
       templateFile: join(
         dirname(fileURLToPath(import.meta.url)),
         'assets',
         'station-templates',
-        stationTemplateUrl.file
+        stationTemplateFile
       )
     })
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.chargingStationsByTemplate.get(parse(stationTemplateFile).name)!.lastIndex = max(
+      index,
+      this.chargingStationsByTemplate.get(parse(stationTemplateFile).name)?.lastIndex ?? -Infinity
+    )
   }
 
   private gracefulShutdown (): void {

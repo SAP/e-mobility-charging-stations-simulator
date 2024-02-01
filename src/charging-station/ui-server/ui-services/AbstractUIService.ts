@@ -67,6 +67,7 @@ export abstract class AbstractUIService {
     this.requestHandlers = new Map<ProcedureName, ProtocolRequestHandler>([
       [ProcedureName.LIST_TEMPLATES, this.handleListTemplates.bind(this)],
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
+      [ProcedureName.ADD_CHARGING_STATIONS, this.handleAddChargingStations.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)]
     ])
@@ -118,7 +119,7 @@ export abstract class AbstractUIService {
         errorMessage: (error as OCPPError).message,
         errorStack: (error as OCPPError).stack,
         errorDetails: (error as OCPPError).details
-      }
+      } satisfies ResponsePayload
     }
     if (responsePayload != null) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -215,6 +216,40 @@ export abstract class AbstractUIService {
       status: ResponseStatus.SUCCESS,
       chargingStations: [...this.uiServer.chargingStations.values()] as JsonType[]
     } satisfies ResponsePayload
+  }
+
+  private async handleAddChargingStations (
+    messageId?: string,
+    procedureName?: ProcedureName,
+    requestPayload?: RequestPayload
+  ): Promise<ResponsePayload> {
+    const { template, numberOfStations } = requestPayload as {
+      template: string
+      numberOfStations: number
+    }
+    if (!this.uiServer.chargingStationTemplates.has(template)) {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage: `Template '${template}' not found`
+      } satisfies ResponsePayload
+    }
+    for (let i = 0; i < numberOfStations; i++) {
+      try {
+        await Bootstrap.getInstance().addChargingStation(
+          Bootstrap.getInstance().getLastIndex(template) + 1,
+          `${template}.json`
+        )
+      } catch (error) {
+        return {
+          status: ResponseStatus.FAILURE,
+          errorMessage: (error as Error).message,
+          errorStack: (error as Error).stack
+        } satisfies ResponsePayload
+      }
+    }
+    return {
+      status: ResponseStatus.SUCCESS
+    }
   }
 
   private async handleStartSimulator (): Promise<ResponsePayload> {
