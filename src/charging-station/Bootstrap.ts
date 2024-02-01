@@ -54,16 +54,18 @@ enum exitCodes {
   gracefulShutdownError = 4
 }
 
+interface TemplateChargingStations {
+  configured: number
+  started: number
+  lastIndex: number
+}
+
 export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
   private readonly uiServer?: AbstractUIServer
   private storage?: Storage
-  private readonly chargingStationsByTemplate: Map<
-  string,
-  { configured: number, started: number, lastIndex: number }
-  >
-
+  private readonly chargingStationsByTemplate: Map<string, TemplateChargingStations>
   private readonly version: string = version
   private initializedCounters: boolean
   private started: boolean
@@ -81,10 +83,7 @@ export class Bootstrap extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
-    this.chargingStationsByTemplate = new Map<
-    string,
-    { configured: number, started: number, lastIndex: number }
-    >()
+    this.chargingStationsByTemplate = new Map<string, TemplateChargingStations>()
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
