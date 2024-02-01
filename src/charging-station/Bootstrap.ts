@@ -475,7 +475,6 @@ export class Bootstrap extends EventEmitter {
       .then(() => {
         console.info(chalk.green('Graceful shutdown'))
         this.uiServer?.stop()
-        // stop() asks for charging stations to stop by default
         this.waitChargingStationsStopped()
           .then(() => {
             exit(exitCodes.succeeded)
