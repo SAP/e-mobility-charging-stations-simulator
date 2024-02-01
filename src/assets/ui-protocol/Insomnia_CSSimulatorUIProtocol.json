@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-01-31T19:03:49.139Z",
+  "__export_date": "2024-02-01T10:00:15.210Z",
   "__export_source": "insomnia.desktop.app:v8.6.0",
   "resources": [
     {
@@ -148,6 +148,45 @@
         "password": "{{password}}"
       },
       "metaSortKey": -1000000000,
+      "isPrivate": false,
+      "pathParameters": [],
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_c43bfb67921546baa49b4ec96e571859",
+      "parentId": "wrk_509d4a5094fa485ba93e53bc735e8ac3",
+      "modified": 1706781452580,
+      "created": 1706781436512,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/addChargingStations",
+      "name": "addChargingStations",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"template\": \"evlink.station-template\",\n\t\"numberOfStations\": 1\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_af9f914ca52f407488bc6df6c7db3a08"
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
+      "metaSortKey": -999999975,
       "isPrivate": false,
       "pathParameters": [],
       "settingStoreCookies": true,
