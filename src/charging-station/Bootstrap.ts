@@ -243,7 +243,7 @@ export class Bootstrap extends EventEmitter {
   private async restart (): Promise<void> {
     await this.stop()
     Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
-      .enabled === false && this.uiServer?.stop()
+      .enabled !== true && this.uiServer?.stop()
     this.initializedCounters = false
     await this.start()
   }
@@ -440,7 +440,7 @@ export class Bootstrap extends EventEmitter {
       if (
         this.numberOfConfiguredChargingStations === 0 &&
         Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
-          .enabled === true
+          .enabled !== true
       ) {
         console.error(
           chalk.red(
