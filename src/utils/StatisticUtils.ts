@@ -74,9 +74,7 @@ export const stdDeviation = (
   dataSet: number[],
   dataSetAverage: number = average(dataSet)
 ): number => {
-  if (Array.isArray(dataSet) && dataSet.length === 0) {
-    return 0
-  } else if (Array.isArray(dataSet) && dataSet.length === 1) {
+  if (Array.isArray(dataSet) && (dataSet.length === 0 || dataSet.length === 1)) {
     return 0
   }
   return Math.sqrt(
