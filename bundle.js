@@ -25,7 +25,7 @@ await build({
     'http-status-codes',
     'just-merge',
     'logform',
-    // 'mnemonist',
+    'mnemonist',
     'mongodb',
     'node:*',
     'poolifier',

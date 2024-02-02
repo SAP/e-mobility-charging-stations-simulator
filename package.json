@@ -104,7 +104,7 @@
     "http-status-codes": "^2.3.0",
     "just-merge": "^3.2.0",
     "logform": "^2.6.0",
-    "mnemonist": "^0.39.8",
+    "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.3.0",
     "poolifier": "^3.1.19",
     "tar": "^6.2.0",
