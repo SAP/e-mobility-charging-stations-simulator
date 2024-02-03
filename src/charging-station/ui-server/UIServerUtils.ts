@@ -9,7 +9,7 @@ export class UIServerUtils {
     // This is intentional
   }
 
-  public static handleProtocols = (
+  public static readonly handleProtocols = (
     protocols: Set<string>,
     request: IncomingMessage
   ): string | false => {
@@ -31,14 +31,16 @@ export class UIServerUtils {
     return false
   }
 
-  public static isProtocolAndVersionSupported = (protocolStr: string): boolean => {
+  public static readonly isProtocolAndVersionSupported = (protocolStr: string): boolean => {
     const [protocol, version] = UIServerUtils.getProtocolAndVersion(protocolStr)
     return (
       Object.values(Protocol).includes(protocol) && Object.values(ProtocolVersion).includes(version)
     )
   }
 
-  public static getProtocolAndVersion = (protocolStr: string): [Protocol, ProtocolVersion] => {
+  public static readonly getProtocolAndVersion = (
+    protocolStr: string
+  ): [Protocol, ProtocolVersion] => {
     const protocolIndex = protocolStr.indexOf(Protocol.UI)
     const protocol = protocolStr.substring(
       protocolIndex,

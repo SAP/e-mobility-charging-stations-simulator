@@ -1226,10 +1226,10 @@ const getMeasurandDefaultLocation = (
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
-  public static getMessageTypeString = getMessageTypeString
-  public static sendAndSetConnectorStatus = sendAndSetConnectorStatus
-  public static isIdTagAuthorized = isIdTagAuthorized
-  public static buildTransactionEndMeterValue = buildTransactionEndMeterValue
+  public static readonly getMessageTypeString = getMessageTypeString
+  public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
+  public static readonly isIdTagAuthorized = isIdTagAuthorized
+  public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
   protected static getSampledValueTemplate = getSampledValueTemplate
   protected static buildSampledValue = buildSampledValue
 
