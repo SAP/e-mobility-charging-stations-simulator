@@ -715,7 +715,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   } (the OCPP command payload with some optional fields added to target the simulated charging stations)
 
 - Response:  
-   `PDU`: {  
+  `PDU`: {  
    `status`: 'success' | 'failure',  
    `hashIdsSucceeded`: charging station unique identifier strings array,  
    `hashIdsFailed`: charging station unique identifier strings array (optional),  
