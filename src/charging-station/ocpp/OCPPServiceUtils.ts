@@ -67,7 +67,7 @@ import {
   roundTo
 } from '../../utils/index.js'
 
-export const getMessageTypeString = (messageType: MessageType): string => {
+export const getMessageTypeString = (messageType: MessageType | undefined): string => {
   switch (messageType) {
     case MessageType.CALL_MESSAGE:
       return 'request'

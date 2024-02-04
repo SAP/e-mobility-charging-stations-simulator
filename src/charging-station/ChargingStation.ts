@@ -1865,7 +1865,10 @@ export class ChargingStation extends EventEmitter {
     this.emit(ChargingStationEvents.updated)
   }
 
-  private getCachedRequest (messageType: MessageType, messageId: string): CachedRequest | undefined {
+  private getCachedRequest (
+    messageType: MessageType | undefined,
+    messageId: string
+  ): CachedRequest | undefined {
     const cachedRequest = this.requests.get(messageId)
     if (Array.isArray(cachedRequest)) {
       return cachedRequest
@@ -2028,8 +2031,8 @@ export class ChargingStation extends EventEmitter {
           commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
         }' message '${data.toString()}'${
-          messageType !== MessageType.CALL_MESSAGE
-            ? ` matching cached request '${JSON.stringify(this.requests.get(messageId))}'`
+          this.requests.has(messageId)
+            ? ` matching cached request '${JSON.stringify(this.getCachedRequest(messageType, messageId))}'`
             : ''
         } processing error:`,
         error
