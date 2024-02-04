@@ -711,7 +711,10 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  public async stop (reason?: StopTransactionReason, stopTransactions?: boolean): Promise<void> {
+  public async stop (
+    reason?: StopTransactionReason,
+    stopTransactions = this.stationInfo?.stopTransactionsOnStopped
+  ): Promise<void> {
     if (this.started) {
       if (!this.stopping) {
         this.stopping = true
@@ -1169,7 +1172,7 @@ export class ChargingStation extends EventEmitter {
     stationInfo.resetTime =
       stationTemplate.resetTime != null
         ? secondsToMilliseconds(stationTemplate.resetTime)
-        : Constants.CHARGING_STATION_DEFAULT_RESET_TIME
+        : Constants.DEFAULT_CHARGING_STATION_RESET_TIME
     return stationInfo
   }
 
@@ -2225,7 +2228,7 @@ export class ChargingStation extends EventEmitter {
 
   private async stopMessageSequence (
     reason?: StopTransactionReason,
-    stopTransactions = this.stationInfo?.stopTransactionsOnStopped
+    stopTransactions?: boolean
   ): Promise<void> {
     this.internalStopMessageSequence()
     // Stop ongoing transactions

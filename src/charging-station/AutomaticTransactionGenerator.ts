@@ -188,6 +188,7 @@ export class AutomaticTransactionGenerator {
     while (this.connectorsStatus.get(connectorId)?.start === true) {
       await this.waitChargingStationAvailable(connectorId)
       await this.waitConnectorAvailable(connectorId)
+      await this.waitRunningTransactionStopped(connectorId)
       if (!this.canStartConnector(connectorId)) {
         this.stopConnector(connectorId)
         break
@@ -337,7 +338,7 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.CHARGING_STATION_ATG_AVAILABILITY_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
     }
   }
 
@@ -352,7 +353,23 @@ export class AutomaticTransactionGenerator {
         )
         logged = true
       }
-      await sleep(Constants.CHARGING_STATION_ATG_AVAILABILITY_TIME)
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
+    }
+  }
+
+  private async waitRunningTransactionStopped (connectorId: number): Promise<void> {
+    const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
+    let logged = false
+    while (connectorStatus?.transactionStarted === true) {
+      if (!logged) {
+        logger.info(
+          `${this.logPrefix(
+            connectorId
+          )} transaction loop waiting for running transaction ${connectorStatus.transactionId} on connector ${connectorId} to be stopped`
+        )
+        logged = true
+      }
+      await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
     }
   }
 
