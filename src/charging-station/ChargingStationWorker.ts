@@ -11,11 +11,11 @@ import { Configuration } from '../utils/index.js'
 import { type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 
 /**
- * Creates and starts a charging station instance
+ * Adds and starts a charging station instance
  *
  * @param data - data sent to worker
  */
-const startChargingStation = (data?: ChargingStationWorkerData): void => {
+const addChargingStation = (data?: ChargingStationWorkerData): void => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   new ChargingStation(data!.index, data!.templateFile).start()
 }
@@ -28,7 +28,7 @@ class ChargingStationWorker<Data extends ChargingStationWorkerData> {
       switch (message.event) {
         case WorkerMessageEvents.startWorkerElement:
           try {
-            startChargingStation(message.data)
+            addChargingStation(message.data)
             parentPort?.postMessage({
               event: WorkerMessageEvents.startedWorkerElement
             })
@@ -60,7 +60,7 @@ export let chargingStationWorker:
 | ChargingStationWorker<ChargingStationWorkerData>
 | ThreadWorker<ChargingStationWorkerData>
 if (Configuration.workerPoolInUse()) {
-  chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(startChargingStation)
+  chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(addChargingStation)
 } else {
   chargingStationWorker = new ChargingStationWorker<ChargingStationWorkerData>()
 }
