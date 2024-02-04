@@ -307,7 +307,7 @@ export abstract class OCPPRequestService {
             // Buffer
             chargingStation.bufferMessage(messageToSend)
             if (messageType === MessageType.CALL_MESSAGE) {
-              this.cacheRequestPromise(
+              this.setCachedRequest(
                 chargingStation,
                 messageId,
                 messagePayload as JsonType,
@@ -363,7 +363,7 @@ export abstract class OCPPRequestService {
                 )} payload: ${messageToSend}`
               )
               if (messageType === MessageType.CALL_MESSAGE) {
-                this.cacheRequestPromise(
+                this.setCachedRequest(
                   chargingStation,
                   messageId,
                   messagePayload as JsonType,
@@ -461,7 +461,7 @@ export abstract class OCPPRequestService {
     return messageToSend
   }
 
-  private cacheRequestPromise (
+  private setCachedRequest (
     chargingStation: ChargingStation,
     messageId: string,
     messagePayload: JsonType,
