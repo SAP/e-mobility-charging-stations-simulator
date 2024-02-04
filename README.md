@@ -498,7 +498,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ## UI protocol
 
-Protocol to control the simulator via a Websocket or HTTP server.
+Protocol to control the simulator via a Websocket or HTTP server:
 
 ```mermaid
 sequenceDiagram
@@ -506,10 +506,6 @@ Client->>UI Server: request
 UI Server->>Client: response
 Note over UI Server,Client: Transport protocol: HTTP, WebSocket
 ```
-
-### HTTP Protocol
-
-To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
 
 ### Websocket Protocol
 
@@ -542,7 +538,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure'  
+   `status`: 'success' | 'failure'  
   }
 
 ###### Stop Simulator
@@ -553,7 +549,33 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure'  
+   `status`: 'success' | 'failure'  
+  }
+
+###### List Charging Station Templates
+
+- Request:  
+  `ProcedureName`: 'listTemplates'  
+  `PDU`: {}
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `templates`: string[]  
+  }
+
+###### Add Charging Stations
+
+- Request:  
+  `ProcedureName`: 'addChargingStations'  
+  `PDU`: {  
+   `template`: string,  
+   `numberOfStations`: number  
+  }
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure'  
   }
 
 ###### List Charging Stations
@@ -564,8 +586,8 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `chargingStations`: ChargingStationData[]  
+   `status`: 'success' | 'failure',  
+   `chargingStations`: ChargingStationData[]  
   }
 
 ###### Start Charging Station
@@ -573,15 +595,15 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startChargingStation'  
   `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional)  
-  `responsesFailed`: failed responses payload array (optional)  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Stop Charging Station
@@ -589,15 +611,15 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'stopChargingStation'  
   `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Open Connection
@@ -605,15 +627,15 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'openConnection'  
   `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Close Connection
@@ -621,15 +643,15 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'closeConnection'  
   `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
   }
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Start Automatic Transaction Generator
@@ -637,16 +659,16 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'startAutomaticTransactionGenerator'  
   `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorIds`: connector id integer array (optional, default: all connectors)  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   `connectorIds`: connector id integer array (optional, default: all connectors)  
   }
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### Stop Automatic Transaction Generator
@@ -654,16 +676,16 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Request:  
   `ProcedureName`: 'stopAutomaticTransactionGenerator'  
   `PDU`: {  
-  `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-  `connectorIds`: connector id integer array (optional, default: all connectors)  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   `connectorIds`: connector id integer array (optional, default: all connectors)  
   }
 
 - Response:  
   `PDU`: {  
-  `status`: 'success' | 'failure',  
-  `hashIdsSucceeded`: charging station unique identifier strings array,  
-  `hashIdsFailed`: charging station unique identifier strings array (optional),  
-  `responsesFailed`: failed responses payload array (optional)  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
   }
 
 ###### OCPP commands trigger
@@ -690,17 +712,17 @@ Examples:
   - Request:  
     `ProcedureName`: 'startTransaction'  
     `PDU`: {  
-    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-    `connectorId`: connector id integer,  
-    `idTag`: RFID tag string  
+     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+     `connectorId`: connector id integer,  
+     `idTag`: RFID tag string  
     }
 
   - Response:  
     `PDU`: {  
-    `status`: 'success' | 'failure',  
-    `hashIdsSucceeded`: charging station unique identifier strings array,  
-    `hashIdsFailed`: charging station unique identifier strings array (optional),  
-    `responsesFailed`: failed responses payload array (optional)  
+     `status`: 'success' | 'failure',  
+     `hashIdsSucceeded`: charging station unique identifier strings array,  
+     `hashIdsFailed`: charging station unique identifier strings array (optional),  
+     `responsesFailed`: failed responses payload array (optional)  
     }
 
 - **Stop Transaction**
@@ -708,16 +730,16 @@ Examples:
   - Request:  
     `ProcedureName`: 'stopTransaction'  
     `PDU`: {  
-    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-    `transactionId`: transaction id integer  
+     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+     `transactionId`: transaction id integer  
     }
 
   - Response:  
     `PDU`: {  
     `status`: 'success' | 'failure',  
-    `hashIdsSucceeded`: charging station unique identifier strings array,  
-    `hashIdsFailed`: charging station unique identifier strings array (optional),  
-    `responsesFailed`: failed responses payload array (optional)  
+     `hashIdsSucceeded`: charging station unique identifier strings array,  
+     `hashIdsFailed`: charging station unique identifier strings array (optional),  
+     `responsesFailed`: failed responses payload array (optional)  
     }
 
 - **Status Notification**
@@ -725,18 +747,18 @@ Examples:
   - Request:  
     `ProcedureName`: 'statusNotification'  
     `PDU`: {  
-    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
-    `connectorId`: connector id integer,  
-    `errorCode`: connector error code,  
-    `status`: connector status  
+     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+     `connectorId`: connector id integer,  
+     `errorCode`: connector error code,  
+     `status`: connector status  
     }
 
   - Response:  
     `PDU`: {  
-    `status`: 'success' | 'failure',  
-    `hashIdsSucceeded`: charging station unique identifier strings array,  
-    `hashIdsFailed`: charging station unique identifier strings array (optional),  
-    `responsesFailed`: failed responses payload array (optional)  
+     `status`: 'success' | 'failure',  
+     `hashIdsSucceeded`: charging station unique identifier strings array,  
+     `hashIdsFailed`: charging station unique identifier strings array (optional),  
+     `responsesFailed`: failed responses payload array (optional)  
     }
 
 - **Heartbeat**
@@ -744,16 +766,20 @@ Examples:
   - Request:  
     `ProcedureName`: 'heartbeat'  
     `PDU`: {  
-    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
     }
 
   - Response:  
     `PDU`: {  
-    `status`: 'success' | 'failure',  
-    `hashIdsSucceeded`: charging station unique identifier strings array,  
-    `hashIdsFailed`: charging station unique identifier strings array (optional),  
-    `responsesFailed`: failed responses payload array (optional)  
+     `status`: 'success' | 'failure',  
+     `hashIdsSucceeded`: charging station unique identifier strings array,  
+     `hashIdsFailed`: charging station unique identifier strings array (optional),  
+     `responsesFailed`: failed responses payload array (optional)  
     }
+
+### HTTP Protocol
+
+To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
 
 ## Support, Feedback, Contributing
 
