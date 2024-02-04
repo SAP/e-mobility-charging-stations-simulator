@@ -578,6 +578,23 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
    `status`: 'success' | 'failure'  
   }
 
+###### Set Charging Station Supervision Url
+
+- Request:  
+  `ProcedureName`: 'setSupervisionUrl'  
+  `PDU`: {  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   `uri`: string  
+  }
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
+  }
+
 ###### List Charging Stations
 
 - Request:  
@@ -695,7 +712,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `PDU`: {  
    `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
    ...`commandPayload`  
-   } (the OCPP command payload with some optional fields added to target the simulated charging stations)
+  } (the OCPP command payload with some optional fields added to target the simulated charging stations)
 
 - Response:  
    `PDU`: {  
@@ -703,7 +720,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
    `hashIdsSucceeded`: charging station unique identifier strings array,  
    `hashIdsFailed`: charging station unique identifier strings array (optional),  
    `responsesFailed`: failed responses payload array (optional)  
-   }
+  }
 
 Examples:
 
@@ -736,7 +753,7 @@ Examples:
 
   - Response:  
     `PDU`: {  
-    `status`: 'success' | 'failure',  
+     `status`: 'success' | 'failure',  
      `hashIdsSucceeded`: charging station unique identifier strings array,  
      `hashIdsFailed`: charging station unique identifier strings array (optional),  
      `responsesFailed`: failed responses payload array (optional)  
