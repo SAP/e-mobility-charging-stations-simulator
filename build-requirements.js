@@ -11,7 +11,7 @@ export const checkNodeVersion = () => {
   if (semVer.satisfies(version, enginesNodeVersion) === false) {
     console.error(
       chalk.red(
-        `Required node version ${enginesNodeVersion} not satisfied with current version ${version}.`
+        `Required node version ${enginesNodeVersion} not satisfied with current version ${version}`
       )
     )
     // eslint-disable-next-line n/no-process-exit

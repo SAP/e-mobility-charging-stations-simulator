@@ -157,7 +157,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
           payload,
           undefined,
           2
-        )} while the charging station is not registered on the central server.`,
+        )} while the charging station is not registered on the central server`,
         commandName,
         payload
       )

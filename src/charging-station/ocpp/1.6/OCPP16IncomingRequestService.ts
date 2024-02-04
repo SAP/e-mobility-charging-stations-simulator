@@ -659,7 +659,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           commandPayload,
           undefined,
           2
-        )} while the charging station is not registered on the central server.`,
+        )} while the charging station is not registered on the central server`,
         commandName,
         commandPayload
       )

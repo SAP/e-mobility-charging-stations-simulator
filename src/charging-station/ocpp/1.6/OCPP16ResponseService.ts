@@ -484,7 +484,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           payload,
           undefined,
           2
-        )} while the charging station is not registered on the central server.`,
+        )} while the charging station is not registered on the central server`,
         commandName,
         payload
       )
@@ -585,7 +585,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         logger.debug(
           `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' rejected with status '${
             payload.idTagInfo.status
-          }`
+          }'`
         )
       }
     } else {

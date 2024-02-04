@@ -23,7 +23,7 @@ export class UIServerFactory {
     if (!UIServerUtils.isLoopback(uiServerConfiguration.options!.host!)) {
       console.warn(
         chalk.yellow(
-          'Loopback address not detected in UI server configuration. This is not recommended.'
+          'Loopback address not detected in UI server configuration. This is not recommended'
         )
       )
     }
@@ -37,7 +37,7 @@ export class UIServerFactory {
     ) {
       console.warn(
         chalk.yellow(
-          `Only version ${ApplicationProtocolVersion.VERSION_11} is supported for WebSocket UI server. Falling back to version ${ApplicationProtocolVersion.VERSION_11}.`
+          `Only version ${ApplicationProtocolVersion.VERSION_11} is supported for WebSocket UI server. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
         )
       )
       uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
