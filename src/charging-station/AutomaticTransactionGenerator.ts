@@ -324,6 +324,15 @@ export class AutomaticTransactionGenerator {
       )
       return false
     }
+    const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionStarted === true) {
+      logger.info(
+        `${this.logPrefix(
+          connectorId
+        )} entered in transaction loop while a transaction ${connectorStatus.transactionId} is already started on connector ${connectorId}`
+      )
+      return false
+    }
     return true
   }
 
@@ -365,7 +374,7 @@ export class AutomaticTransactionGenerator {
         logger.info(
           `${this.logPrefix(
             connectorId
-          )} transaction loop waiting for running transaction ${connectorStatus.transactionId} on connector ${connectorId} to be stopped`
+          )} transaction loop waiting for started transaction ${connectorStatus.transactionId} on connector ${connectorId} to be stopped`
         )
         logged = true
       }
