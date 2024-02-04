@@ -500,6 +500,12 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 Protocol to control the simulator via a Websocket or HTTP server.
 
+```mermaid
+sequenceDiagram
+Client->>UI Server: request
+UI Server->>Client: response
+```
+
 ### HTTP Protocol
 
 To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
