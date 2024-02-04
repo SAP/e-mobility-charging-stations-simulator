@@ -146,7 +146,7 @@
     "glob": "^10.3.10",
     "husky": "^9.0.10",
     "lint-staged": "^15.2.1",
-    "prettier": "^3.2.4",
+    "prettier": "^3.2.5",
     "release-it": "^17.0.3",
     "rimraf": "^5.0.5",
     "semver": "^7.5.4",
