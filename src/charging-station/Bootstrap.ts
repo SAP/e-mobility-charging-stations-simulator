@@ -120,6 +120,10 @@ export class Bootstrap extends EventEmitter {
     return this.chargingStationsByTemplate.get(templateName)?.lastIndex ?? 0
   }
 
+  public getPerformanceStatistics (): IterableIterator<Statistics> | undefined {
+    return this.storage?.getPerformanceStatistics()
+  }
+
   private get numberOfAddedChargingStations (): number {
     return [...this.chargingStationsByTemplate.values()].reduce(
       (accumulator, value) => accumulator + value.added,

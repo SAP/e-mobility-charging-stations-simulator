@@ -2,6 +2,7 @@ import { BaseError, type OCPPError } from '../../../exception/index.js'
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
+  ConfigurationSection,
   type JsonType,
   ProcedureName,
   type ProtocolRequest,
@@ -10,9 +11,10 @@ import {
   type ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus
+  ResponseStatus,
+  type StorageConfiguration
 } from '../../../types/index.js'
-import { isAsyncFunction, isNotEmptyArray, logger } from '../../../utils/index.js'
+import { Configuration, isAsyncFunction, isNotEmptyArray, logger } from '../../../utils/index.js'
 import { Bootstrap } from '../../Bootstrap.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import type { AbstractUIServer } from '../AbstractUIServer.js'
@@ -68,6 +70,7 @@ export abstract class AbstractUIService {
       [ProcedureName.LIST_TEMPLATES, this.handleListTemplates.bind(this)],
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.ADD_CHARGING_STATIONS, this.handleAddChargingStations.bind(this)],
+      [ProcedureName.PERFORMANCE_STATISTICS, this.handlePerformanceStatistics.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)]
     ])
@@ -252,12 +255,44 @@ export abstract class AbstractUIService {
     }
   }
 
+  private handlePerformanceStatistics (): ResponsePayload {
+    if (
+      Configuration.getConfigurationSection<StorageConfiguration>(
+        ConfigurationSection.performanceStorage
+      ).enabled !== true
+    ) {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage: 'Performance statistics storage is not enabled'
+      } satisfies ResponsePayload
+    }
+    try {
+      return {
+        status: ResponseStatus.SUCCESS,
+        performanceStatistics: [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ...Bootstrap.getInstance().getPerformanceStatistics()!
+        ] as JsonType[]
+      }
+    } catch (error) {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage: (error as Error).message,
+        errorStack: (error as Error).stack
+      } satisfies ResponsePayload
+    }
+  }
+
   private async handleStartSimulator (): Promise<ResponsePayload> {
     try {
       await Bootstrap.getInstance().start()
       return { status: ResponseStatus.SUCCESS }
-    } catch {
-      return { status: ResponseStatus.FAILURE }
+    } catch (error) {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage: (error as Error).message,
+        errorStack: (error as Error).stack
+      } satisfies ResponsePayload
     }
   }
 
@@ -265,8 +300,12 @@ export abstract class AbstractUIService {
     try {
       await Bootstrap.getInstance().stop()
       return { status: ResponseStatus.SUCCESS }
-    } catch {
-      return { status: ResponseStatus.FAILURE }
+    } catch (error) {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage: (error as Error).message,
+        errorStack: (error as Error).stack
+      } satisfies ResponsePayload
     }
   }
 }

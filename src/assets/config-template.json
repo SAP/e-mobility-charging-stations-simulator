@@ -11,8 +11,8 @@
     "processType": "workerSet"
   },
   "performanceStorage": {
-    "enabled": false,
-    "type": "jsonfile"
+    "enabled": true,
+    "type": "none"
   },
   "uiServer": {
     "enabled": false,

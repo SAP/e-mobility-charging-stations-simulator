@@ -15,6 +15,7 @@ export abstract class Storage {
   protected readonly storageUri: URL
   protected readonly logPrefix: string
   protected dbName!: string
+  private static readonly performanceStatistics = new Map<string, Statistics>()
 
   constructor (storageUri: string, logPrefix: string) {
     this.storageUri = new URL(storageUri)
@@ -51,6 +52,18 @@ export abstract class Storage {
       case StorageType.MONGO_DB:
         return DBName.MONGO_DB
     }
+  }
+
+  public getPerformanceStatistics (): IterableIterator<Statistics> {
+    return Storage.performanceStatistics.values()
+  }
+
+  protected setPerformanceStatistics (performanceStatistics: Statistics): void {
+    Storage.performanceStatistics.set(performanceStatistics.id, performanceStatistics)
+  }
+
+  protected clearPerformanceStatistics (): void {
+    Storage.performanceStatistics.clear()
   }
 
   public abstract open (): void | Promise<void>

@@ -16,7 +16,14 @@ import {
   ResponseStatus,
   type UIServerConfiguration
 } from '../../types/index.js'
-import { Constants, generateUUID, isNotEmptyString, logPrefix, logger } from '../../utils/index.js'
+import {
+  Constants,
+  JSONStringifyWithMapSupport,
+  generateUUID,
+  isNotEmptyString,
+  logPrefix,
+  logger
+} from '../../utils/index.js'
 
 const moduleName = 'UIHttpServer'
 
@@ -54,7 +61,7 @@ export class UIHttpServer extends AbstractUIServer {
           .writeHead(this.responseStatusToStatusCode(payload.status), {
             'Content-Type': 'application/json'
           })
-          .end(JSON.stringify(payload))
+          .end(JSONStringifyWithMapSupport(payload))
       } else {
         logger.error(
           `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`

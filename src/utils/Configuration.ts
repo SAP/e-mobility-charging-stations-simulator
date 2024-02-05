@@ -187,11 +187,17 @@ export class Configuration {
         }
         break
       case StorageType.JSON_FILE:
-      default:
         storageConfiguration = {
           enabled: false,
           type: StorageType.JSON_FILE,
           uri: getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
+        }
+        break
+      case StorageType.NONE:
+      default:
+        storageConfiguration = {
+          enabled: true,
+          type: StorageType.NONE
         }
         break
     }

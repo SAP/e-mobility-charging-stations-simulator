@@ -14,8 +14,6 @@ import {
 } from '../../utils/index.js'
 
 export class JsonFileStorage extends Storage {
-  private static performanceRecords: Map<string, Statistics>
-
   private fd?: number
 
   constructor (storageUri: string, logPrefix: string) {
@@ -24,13 +22,13 @@ export class JsonFileStorage extends Storage {
   }
 
   public storePerformanceStatistics (performanceStatistics: Statistics): void {
+    this.setPerformanceStatistics(performanceStatistics)
     this.checkPerformanceRecordsFile()
-    JsonFileStorage.performanceRecords.set(performanceStatistics.id, performanceStatistics)
     AsyncLock.runExclusive(AsyncLockType.performance, () => {
       writeSync(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.fd!,
-        JSONStringifyWithMapSupport([...JsonFileStorage.performanceRecords.values()], 2),
+        JSONStringifyWithMapSupport([...this.getPerformanceStatistics()], 2),
         0,
         'utf8'
       )
@@ -45,7 +43,6 @@ export class JsonFileStorage extends Storage {
   }
 
   public open (): void {
-    JsonFileStorage.performanceRecords = new Map<string, Statistics>()
     try {
       if (this.fd == null) {
         if (!existsSync(dirname(this.dbName))) {
@@ -64,7 +61,7 @@ export class JsonFileStorage extends Storage {
   }
 
   public close (): void {
-    JsonFileStorage.performanceRecords.clear()
+    this.clearPerformanceStatistics()
     try {
       if (this.fd != null) {
         closeSync(this.fd)
