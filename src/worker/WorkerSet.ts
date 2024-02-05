@@ -52,6 +52,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       version: workerSetVersion,
       type: 'set',
       worker: 'thread',
+      started: this.started,
       size: this.size,
       elementsExecuting: [...this.workerSet].reduce(
         (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
@@ -93,11 +94,11 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       })
       await worker.terminate()
       await waitWorkerExit
-      this.emitter?.emit(WorkerSetEvents.stopped, this.info)
-      this.emitter?.emitDestroy()
-      this.emitter?.removeAllListeners()
-      this.started = false
     }
+    this.emitter?.emit(WorkerSetEvents.stopped, this.info)
+    this.emitter?.emitDestroy()
+    this.emitter?.removeAllListeners()
+    this.started = false
   }
 
   /** @inheritDoc */

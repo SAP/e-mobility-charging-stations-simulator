@@ -13,6 +13,7 @@ export interface SetInfo {
   version: string
   type: string
   worker: string
+  started: boolean
   size: number
   elementsExecuting: number
   elementsPerWorker: number
