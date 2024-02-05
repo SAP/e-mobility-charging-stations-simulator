@@ -150,6 +150,15 @@ export class Bootstrap extends EventEmitter {
           ChargingStationWorkerMessageEvents.performanceStatistics,
           this.workerEventPerformanceStatistics
         )
+        this.on(
+          ChargingStationWorkerMessageEvents.workerElementError,
+          (msg: ChargingStationWorkerMessage<ChargingStationWorkerEventError>) => {
+            logger.error(
+              `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${msg.data.event}' event on worker:`,
+              msg.data
+            )
+          }
+        )
         this.initializeCounters()
         const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
           ConfigurationSection.worker
@@ -338,30 +347,23 @@ export class Bootstrap extends EventEmitter {
     try {
       switch (msg.event) {
         case ChargingStationWorkerMessageEvents.added:
-          this.emit(ChargingStationWorkerMessageEvents.added, msg.data as ChargingStationData)
+          this.emit(ChargingStationWorkerMessageEvents.added, msg.data)
           break
         case ChargingStationWorkerMessageEvents.started:
-          this.emit(ChargingStationWorkerMessageEvents.started, msg.data as ChargingStationData)
+          this.emit(ChargingStationWorkerMessageEvents.started, msg.data)
           break
         case ChargingStationWorkerMessageEvents.stopped:
-          this.emit(ChargingStationWorkerMessageEvents.stopped, msg.data as ChargingStationData)
+          this.emit(ChargingStationWorkerMessageEvents.stopped, msg.data)
           break
         case ChargingStationWorkerMessageEvents.updated:
-          this.emit(ChargingStationWorkerMessageEvents.updated, msg.data as ChargingStationData)
+          this.emit(ChargingStationWorkerMessageEvents.updated, msg.data)
           break
         case ChargingStationWorkerMessageEvents.performanceStatistics:
-          this.emit(
-            ChargingStationWorkerMessageEvents.performanceStatistics,
-            msg.data as Statistics
-          )
+          this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, msg.data)
           break
         case ChargingStationWorkerMessageEvents.addedWorkerElement:
           break
         case ChargingStationWorkerMessageEvents.workerElementError:
-          logger.error(
-            `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${(msg.data as ChargingStationWorkerEventError).event}' event on worker:`,
-            msg.data
-          )
           this.emit(ChargingStationWorkerMessageEvents.workerElementError, msg.data)
           break
         default:
