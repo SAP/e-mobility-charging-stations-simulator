@@ -11,20 +11,21 @@ export { Configuration } from './Configuration.js'
 export { Constants } from './Constants.js'
 export {
   handleFileException,
+  handleSendMessageError,
   handleUncaughtException,
   handleUnhandledRejection,
-  handleSendMessageError,
   setDefaultErrorParams
 } from './ErrorUtils.js'
 export { watchJsonFile } from './FileUtils.js'
 export {
+  buildAddedMessage,
+  buildChargingStationDataPayload,
   buildPerformanceStatisticsMessage,
-  buildUpdatedMessage,
   buildStartedMessage,
-  buildStoppedMessage
+  buildStoppedMessage,
+  buildUpdatedMessage
 } from './MessageChannelUtils.js'
 export {
-  isAsyncFunction,
   JSONStringifyWithMapSupport,
   clone,
   convertToBoolean,
@@ -41,6 +42,7 @@ export {
   getRandomInteger,
   getWebSocketCloseEventStatusString,
   isArraySorted,
+  isAsyncFunction,
   isEmptyArray,
   isEmptyObject,
   isEmptyString,

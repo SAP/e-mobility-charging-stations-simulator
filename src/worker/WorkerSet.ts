@@ -107,7 +107,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     }
     const workerSetElement = await this.getWorkerSetElement()
     workerSetElement.worker.postMessage({
-      event: WorkerMessageEvents.startWorkerElement,
+      event: WorkerMessageEvents.addWorkerElement,
       data: elementData
     })
     ++workerSetElement.numberOfWorkerElements
@@ -130,9 +130,9 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     })
     worker.on('message', this.workerOptions.poolOptions?.messageHandler ?? EMPTY_FUNCTION)
     worker.on('message', (message: WorkerMessage<WorkerData>) => {
-      if (message.event === WorkerMessageEvents.startedWorkerElement) {
-        this.emitter?.emit(WorkerSetEvents.elementStarted, this.info)
-      } else if (message.event === WorkerMessageEvents.startWorkerElementError) {
+      if (message.event === WorkerMessageEvents.addedWorkerElement) {
+        this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
+      } else if (message.event === WorkerMessageEvents.workerElementError) {
         this.emitter?.emit(WorkerSetEvents.elementError, message.data)
       }
     })

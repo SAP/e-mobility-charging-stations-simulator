@@ -4,9 +4,9 @@ import { type PoolEvent, PoolEvents, type ThreadPoolOptions } from 'poolifier'
 
 export enum WorkerProcessType {
   workerSet = 'workerSet',
+  fixedPool = 'fixedPool',
   /** @experimental */
-  dynamicPool = 'dynamicPool',
-  fixedPool = 'fixedPool'
+  dynamicPool = 'dynamicPool'
 }
 
 export interface SetInfo {
@@ -22,7 +22,7 @@ export enum WorkerSetEvents {
   started = 'started',
   stopped = 'stopped',
   error = 'error',
-  elementStarted = 'elementStarted',
+  elementAdded = 'elementAdded',
   elementError = 'elementError'
 }
 
@@ -55,7 +55,7 @@ export interface WorkerMessage<T extends WorkerData> {
 }
 
 export enum WorkerMessageEvents {
-  startWorkerElement = 'startWorkerElement',
-  startWorkerElementError = 'startWorkerElementError',
-  startedWorkerElement = 'startedWorkerElement'
+  addWorkerElement = 'addWorkerElement',
+  addedWorkerElement = 'addedWorkerElement',
+  workerElementError = 'workerElementError'
 }

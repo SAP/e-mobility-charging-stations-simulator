@@ -12,6 +12,15 @@ import {
   type Statistics
 } from '../types/index.js'
 
+export const buildAddedMessage = (
+  chargingStation: ChargingStation
+): ChargingStationWorkerMessage<ChargingStationData> => {
+  return {
+    event: ChargingStationWorkerMessageEvents.added,
+    data: buildChargingStationDataPayload(chargingStation)
+  }
+}
+
 export const buildStartedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
@@ -48,7 +57,9 @@ export const buildPerformanceStatisticsMessage = (
   }
 }
 
-const buildChargingStationDataPayload = (chargingStation: ChargingStation): ChargingStationData => {
+export const buildChargingStationDataPayload = (
+  chargingStation: ChargingStation
+): ChargingStationData => {
   return {
     started: chargingStation.started,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
