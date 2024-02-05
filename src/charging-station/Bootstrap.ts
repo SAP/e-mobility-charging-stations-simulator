@@ -351,14 +351,14 @@ export class Bootstrap extends EventEmitter {
             msg.data as Statistics
           )
           break
+        case ChargingStationWorkerMessageEvents.addedWorkerElement:
+          break
         case ChargingStationWorkerMessageEvents.workerElementError:
           logger.error(
             `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${(msg.data as ChargingStationWorkerEventError).event}' event on worker:`,
             msg.data
           )
           this.emit(ChargingStationWorkerMessageEvents.workerElementError, msg.data)
-          break
-        case ChargingStationWorkerMessageEvents.addedWorkerElement:
           break
         default:
           throw new BaseError(
