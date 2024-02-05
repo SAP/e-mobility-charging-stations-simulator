@@ -14,6 +14,7 @@ import {
 } from '../../types/index.js'
 import {
   Constants,
+  JSONStringifyWithMapSupport,
   getWebSocketCloseEventStatusString,
   isNotEmptyString,
   logPrefix,
@@ -120,7 +121,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       if (this.hasResponseHandler(responseId)) {
         const ws = this.responseHandlers.get(responseId) as WebSocket
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify(response))
+          ws.send(JSONStringifyWithMapSupport(response))
         } else {
           logger.error(
             `${this.logPrefix(

@@ -1,4 +1,5 @@
 export enum StorageType {
+  NONE = 'none',
   JSON_FILE = 'jsonfile',
   MONGO_DB = 'mongodb',
   MYSQL = 'mysql',

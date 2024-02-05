@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-01T10:00:15.210Z",
+  "__export_date": "2024-02-05T15:10:03.585Z",
   "__export_source": "insomnia.desktop.app:v8.6.0",
   "resources": [
     {
@@ -187,6 +187,42 @@
         "password": "{{password}}"
       },
       "metaSortKey": -999999975,
+      "isPrivate": false,
+      "pathParameters": [],
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_eb5ab162f6d64b87b61968263e743309",
+      "parentId": "wrk_509d4a5094fa485ba93e53bc735e8ac3",
+      "modified": 1707145606591,
+      "created": 1707145585253,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/performanceStatistics",
+      "name": "performanceStatistics",
+      "description": "",
+      "method": "POST",
+      "body": { "mimeType": "application/json", "text": "{}" },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_af9f914ca52f407488bc6df6c7db3a08"
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
+      "metaSortKey": -999999962.5,
       "isPrivate": false,
       "pathParameters": [],
       "settingStoreCookies": true,

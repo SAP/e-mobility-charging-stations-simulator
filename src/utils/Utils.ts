@@ -16,6 +16,7 @@ import {
 import { Constants } from './Constants.js'
 import {
   type EmptyObject,
+  type ProtocolResponse,
   type TimestampedData,
   WebSocketCloseEventStatusString
 } from '../types/index.js'
@@ -343,8 +344,12 @@ export const secureRandom = (): number => {
 }
 
 export const JSONStringifyWithMapSupport = (
-  object: Record<string, unknown> | Array<Record<string, unknown>> | Map<unknown, unknown>,
-  space?: number
+  object:
+  | Record<string, unknown>
+  | Array<Record<string, unknown>>
+  | Map<unknown, unknown>
+  | ProtocolResponse,
+  space?: string | number
 ): string => {
   return JSON.stringify(
     object,

@@ -20,6 +20,7 @@ export class MongoDBStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
+      this.setPerformanceStatistics(performanceStatistics)
       this.checkDBConnection()
       await this.client
         ?.db(this.dbName)
@@ -42,6 +43,7 @@ export class MongoDBStorage extends Storage {
   }
 
   public async close (): Promise<void> {
+    this.clearPerformanceStatistics()
     try {
       if (this.connected && this.client != null) {
         await this.client.close()

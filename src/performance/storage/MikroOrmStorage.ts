@@ -19,6 +19,7 @@ export class MikroOrmStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
+      this.setPerformanceStatistics(performanceStatistics)
       await this.orm?.em.upsert({
         ...performanceStatistics,
         statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
@@ -50,6 +51,7 @@ export class MikroOrmStorage extends Storage {
   }
 
   public async close (): Promise<void> {
+    this.clearPerformanceStatistics()
     try {
       if (this.orm != null) {
         await this.orm.close()
