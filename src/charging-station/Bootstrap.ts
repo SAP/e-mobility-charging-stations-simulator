@@ -362,6 +362,7 @@ export class Bootstrap extends EventEmitter {
           this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, msg.data)
           break
         case ChargingStationWorkerMessageEvents.addedWorkerElement:
+          this.emit(ChargingStationWorkerMessageEvents.addWorkerElement, msg.data)
           break
         case ChargingStationWorkerMessageEvents.workerElementError:
           this.emit(ChargingStationWorkerMessageEvents.workerElementError, msg.data)
