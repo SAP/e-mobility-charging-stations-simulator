@@ -14,6 +14,7 @@ import {
   MessageType,
   type RequestCommand,
   type Statistics,
+  type StatisticsData,
   type StorageConfiguration,
   type TimestampedData
 } from '../types/index.js'
@@ -204,7 +205,9 @@ export class PerformanceStatistics {
   private logStatistics (): void {
     logger.info(this.logPrefix(), {
       ...this.statistics,
-      statisticsData: JSONStringifyWithMapSupport(this.statistics.statisticsData)
+      statisticsData: JSON.parse(
+        JSONStringifyWithMapSupport(this.statistics.statisticsData)
+      ) as Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
     })
   }
 
