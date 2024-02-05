@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-05T15:02:32.625Z",
+  "__export_date": "2024-02-05T15:45:41.932Z",
   "__export_source": "insomnia.desktop.app:v8.6.0",
   "resources": [
     {
@@ -774,10 +774,10 @@
     {
       "_id": "ws-payload_95c28d71c8d940bb83ac514f8916a66d",
       "parentId": "ws-req_afbfa6e6824b427e99e735c0b1eabe3b",
-      "modified": 1707145322952,
+      "modified": 1707147910864,
       "created": 1678991663554,
       "name": "New Payload",
-      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"setSupervisonUrl\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"5b82a559d2b453f6277e272e134ae824ae358cfb6ee2415af9f7c2f325ef8b3e930aeeadcd866df4b8aec58786e60ae7\"\n\t\t],\n\t\t\"url\": \"wss://domain.tld\"\n\t}\n]",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"setSupervisionUrl\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"5b82a559d2b453f6277e272e134ae824ae358cfb6ee2415af9f7c2f325ef8b3e930aeeadcd866df4b8aec58786e60ae7\"\n\t\t],\n\t\t\"url\": \"wss://domain.tld\"\n\t}\n]",
       "mode": "application/json",
       "_type": "websocket_payload"
     },
