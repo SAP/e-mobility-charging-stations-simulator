@@ -19,6 +19,7 @@ import { type Storage, StorageFactory } from '../performance/index.js'
 import {
   type ChargingStationData,
   type ChargingStationWorkerData,
+  type ChargingStationWorkerEventError,
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
@@ -56,6 +57,7 @@ enum exitCodes {
 
 interface TemplateChargingStations {
   configured: number
+  added: number
   started: number
   lastIndex: number
 }
@@ -118,6 +120,13 @@ export class Bootstrap extends EventEmitter {
     return this.chargingStationsByTemplate.get(templateName)?.lastIndex ?? 0
   }
 
+  private get numberOfAddedChargingStations (): number {
+    return [...this.chargingStationsByTemplate.values()].reduce(
+      (accumulator, value) => accumulator + value.added,
+      0
+    )
+  }
+
   private get numberOfStartedChargingStations (): number {
     return [...this.chargingStationsByTemplate.values()].reduce(
       (accumulator, value) => accumulator + value.started,
@@ -129,6 +138,7 @@ export class Bootstrap extends EventEmitter {
     if (!this.started) {
       if (!this.starting) {
         this.starting = true
+        this.on(ChargingStationWorkerMessageEvents.added, this.workerEventAdded)
         this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted)
         this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped)
         this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated)
@@ -323,6 +333,9 @@ export class Bootstrap extends EventEmitter {
     // )
     try {
       switch (msg.event) {
+        case ChargingStationWorkerMessageEvents.added:
+          this.emit(ChargingStationWorkerMessageEvents.added, msg.data as ChargingStationData)
+          break
         case ChargingStationWorkerMessageEvents.started:
           this.emit(ChargingStationWorkerMessageEvents.started, msg.data as ChargingStationData)
           break
@@ -338,14 +351,14 @@ export class Bootstrap extends EventEmitter {
             msg.data as Statistics
           )
           break
-        case ChargingStationWorkerMessageEvents.startWorkerElementError:
+        case ChargingStationWorkerMessageEvents.workerElementError:
           logger.error(
-            `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while starting worker element:`,
+            `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${(msg.data as ChargingStationWorkerEventError).event}' event on worker:`,
             msg.data
           )
-          this.emit(ChargingStationWorkerMessageEvents.startWorkerElementError, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.workerElementError, msg.data)
           break
-        case ChargingStationWorkerMessageEvents.startedWorkerElement:
+        case ChargingStationWorkerMessageEvents.addedWorkerElement:
           break
         default:
           throw new BaseError(
@@ -364,6 +377,19 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
+  private readonly workerEventAdded = (data: ChargingStationData): void => {
+    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    ++this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.added
+    logger.info(
+      `${this.logPrefix()} ${moduleName}.workerEventAdded: Charging station ${
+        data.stationInfo.chargingStationId
+      } (hashId: ${data.stationInfo.hashId}) added (${
+        this.numberOfAddedChargingStations
+      } added from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+    )
+  }
+
   private readonly workerEventStarted = (data: ChargingStationData): void => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -373,7 +399,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) started (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+      } started from ${this.numberOfAddedChargingStations} added charging station(s))`
     )
   }
 
@@ -386,7 +412,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) stopped (${
         this.numberOfStartedChargingStations
-      } started from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+      } started from ${this.numberOfAddedChargingStations} added charging station(s))`
     )
   }
 
@@ -418,6 +444,7 @@ export class Bootstrap extends EventEmitter {
           const templateName = parse(stationTemplateUrl.file).name
           this.chargingStationsByTemplate.set(templateName, {
             configured: stationTemplateUrl.numberOfStations,
+            added: 0,
             started: 0,
             lastIndex: 0
           })

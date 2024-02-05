@@ -146,6 +146,7 @@ export type {
 export {
   type ChargingStationData,
   type ChargingStationWorkerData,
+  type ChargingStationWorkerEventError,
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,

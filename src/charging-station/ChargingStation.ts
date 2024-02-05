@@ -123,6 +123,7 @@ import {
   Configuration,
   Constants,
   DCElectricUtils,
+  buildAddedMessage,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
@@ -206,6 +207,9 @@ export class ChargingStation extends EventEmitter {
     this.idTagsCache = IdTagsCache.getInstance()
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this)
 
+    this.on(ChargingStationEvents.added, () => {
+      parentPort?.postMessage(buildAddedMessage(this))
+    })
     this.on(ChargingStationEvents.started, () => {
       parentPort?.postMessage(buildStartedMessage(this))
     })
@@ -240,6 +244,8 @@ export class ChargingStation extends EventEmitter {
     })
 
     this.initialize()
+
+    this.stationInfo?.autoStart === true && this.start()
   }
 
   public get hasEvses (): boolean {
@@ -644,6 +650,10 @@ export class ChargingStation extends EventEmitter {
     if (connectorStatus?.transactionSetInterval != null) {
       clearInterval(connectorStatus.transactionSetInterval)
     }
+  }
+
+  public add (): void {
+    this.emit(ChargingStationEvents.added)
   }
 
   public start (): void {
@@ -1129,6 +1139,7 @@ export class ChargingStation extends EventEmitter {
     }
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
+    stationInfo.autoStart = stationTemplate.autoStart ?? true
     stationInfo.templateName = parse(this.templateFile).name
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     stationInfo.ocppVersion = stationTemplate.ocppVersion ?? OCPPVersion.VERSION_16
@@ -1187,6 +1198,9 @@ export class ChargingStation extends EventEmitter {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (stationInfo.templateName == null) {
           stationInfo.templateName = parse(this.templateFile).name
+        }
+        if (stationInfo.autoStart == null) {
+          stationInfo.autoStart = true
         }
       }
     }

@@ -71,6 +71,7 @@ export interface ChargingStationTemplate {
   supervisionUrlOcppKey?: string
   supervisionUser?: string
   supervisionPassword?: string
+  autoStart?: boolean
   ocppVersion?: OCPPVersion
   ocppProtocol?: OCPPProtocol
   ocppStrictCompliance?: boolean

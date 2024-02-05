@@ -55,7 +55,17 @@ export type ChargingStationWorkerMessageEvents =
   | ChargingStationEvents
   | ChargingStationMessageEvents
 
-export type ChargingStationWorkerMessageData = ChargingStationData | Statistics
+export interface ChargingStationWorkerEventError extends WorkerData {
+  event: WorkerMessageEvents
+  name: string
+  message: string
+  stack?: string
+}
+
+export type ChargingStationWorkerMessageData =
+  | ChargingStationData
+  | Statistics
+  | ChargingStationWorkerEventError
 
 export type ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> = Omit<
 WorkerMessage<T>,

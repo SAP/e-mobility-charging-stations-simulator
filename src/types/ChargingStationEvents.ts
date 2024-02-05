@@ -1,4 +1,5 @@
 export enum ChargingStationEvents {
+  added = 'added',
   started = 'started',
   stopped = 'stopped',
   updated = 'updated',
