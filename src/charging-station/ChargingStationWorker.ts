@@ -19,8 +19,8 @@ export let chargingStationWorker: object
 if (Configuration.workerPoolInUse()) {
   chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(
     (data?: ChargingStationWorkerData): void => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      new ChargingStation(data!.index, data!.templateFile).add()
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, no-new
+      new ChargingStation(data!.index, data!.templateFile)
     }
   )
 } else {
@@ -35,7 +35,6 @@ if (Configuration.workerPoolInUse()) {
                 message.data.index,
                 message.data.templateFile
               )
-              chargingStation.add()
               parentPort?.postMessage({
                 event: WorkerMessageEvents.addedWorkerElement,
                 data: buildChargingStationDataPayload(chargingStation)

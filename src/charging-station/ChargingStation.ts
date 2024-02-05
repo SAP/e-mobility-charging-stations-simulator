@@ -245,6 +245,8 @@ export class ChargingStation extends EventEmitter {
 
     this.initialize()
 
+    this.add()
+
     this.stationInfo?.autoStart === true && this.start()
   }
 
@@ -652,7 +654,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  public add (): void {
+  private add (): void {
     this.emit(ChargingStationEvents.added)
   }
 
