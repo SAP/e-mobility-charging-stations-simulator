@@ -154,7 +154,7 @@ export class Bootstrap extends EventEmitter {
           ChargingStationWorkerMessageEvents.workerElementError,
           (eventError: ChargingStationWorkerEventError) => {
             logger.error(
-              `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${eventError.event}' event on worker:`,
+              `${this.logPrefix()} ${moduleName}.start: Error occurred while handling '${eventError.event}' event on worker:`,
               eventError
             )
           }
