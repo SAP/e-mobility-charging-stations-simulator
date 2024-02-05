@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-05T15:10:03.585Z",
+  "__export_date": "2024-02-05T18:06:20.997Z",
   "__export_source": "insomnia.desktop.app:v8.6.0",
   "resources": [
     {
@@ -187,6 +187,45 @@
         "password": "{{password}}"
       },
       "metaSortKey": -999999975,
+      "isPrivate": false,
+      "pathParameters": [],
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_79422f6238204d9b8f832f2cb3ebfde3",
+      "parentId": "wrk_509d4a5094fa485ba93e53bc735e8ac3",
+      "modified": 1707156231294,
+      "created": 1707156096617,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/setSupervisionUrl",
+      "name": "setSupervisionUrl",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t],\n\t\"url\": \"wss://domain.tld\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_af9f914ca52f407488bc6df6c7db3a08"
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
+      "metaSortKey": -999999968.75,
       "isPrivate": false,
       "pathParameters": [],
       "settingStoreCookies": true,
