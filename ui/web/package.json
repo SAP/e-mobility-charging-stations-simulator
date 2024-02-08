@@ -34,7 +34,7 @@
   "dependencies": {
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.4.15",
+    "vue": "^3.4.16",
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
@@ -61,7 +61,7 @@
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
     "typescript": "~5.3.3",
-    "vite": "^5.0.12",
+    "vite": "^5.1.0",
     "vitest": "^1.2.2"
   },
   "_id": "webui@0.1.1"
