@@ -13,6 +13,7 @@
         <th scope="col" class="cs-table__started-col">Started</th>
         <th scope="col" class="cs-table__wsState-col">WebSocket State</th>
         <th scope="col" class="cs-table__registration-status-col">Registration Status</th>
+        <th scope="col" class="cs-table__template-col">Template</th>
         <th scope="col" class="cs-table__vendor-col">Vendor</th>
         <th scope="col" class="cs-table__model-col">Model</th>
         <th scope="col" class="cs-table__firmware-col">Firmware Version</th>
@@ -88,6 +89,7 @@ const props = defineProps<{
 .cs-table__started-col,
 .cs-table__wsState-col,
 .cs-table__registration-status-col,
+.cs-table__template-col,
 .cs-table__model-col,
 .cs-table__vendor-col,
 .cs-table__firmware-col {

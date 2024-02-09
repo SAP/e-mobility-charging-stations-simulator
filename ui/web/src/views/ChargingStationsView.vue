@@ -63,11 +63,10 @@ function stopSimulator(): void {
 #charging-stations {
   height: 100%;
   width: 100%;
-  padding: 30px;
+  padding: 0.5%;
   background-color: rgb(233, 227, 227);
   display: flex;
   flex-direction: column;
-  gap: 0.5%;
 }
 
 #inputs-container {
@@ -77,9 +76,7 @@ function stopSimulator(): void {
 
 #reload-button {
   flex: auto;
-  padding: 5px 15px;
   background-color: rgb(25, 118, 210);
-  border-radius: 5px;
   color: white;
   font-size: 35px;
   font-weight: bold;

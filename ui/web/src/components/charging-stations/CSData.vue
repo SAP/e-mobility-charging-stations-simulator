@@ -11,6 +11,7 @@
     <td class="cs-table__started-col">{{ getStarted() }}</td>
     <td class="cs-table__wsState-col">{{ getWsState() }}</td>
     <td class="cs-table__registration-status-col">{{ getRegistrationStatus() }}</td>
+    <td class="cs-table__template-col">{{ getInfo().templateName }}</td>
     <td class="cs-table__vendor-col">{{ getVendor() }}</td>
     <td class="cs-table__model-col">{{ getModel() }}</td>
     <td class="cs-table__firmware-col">{{ getFirmwareVersion() }}</td>

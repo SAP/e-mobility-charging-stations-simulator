@@ -17,6 +17,6 @@ const props = defineProps<{
 <style>
 .card-info {
   background-color: white;
-  padding: 15px;
+  padding: 0.2%;
 }
 </style>

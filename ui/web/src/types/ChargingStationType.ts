@@ -5,6 +5,7 @@ export type ChargingStationData = {
   stationInfo: ChargingStationInfo
   connectors: ConnectorStatus[]
   evses: EvseStatus[]
+  ocppConfiguration: ChargingStationOcppConfiguration
   wsState?:
     | typeof WebSocket.CONNECTING
     | typeof WebSocket.OPEN
@@ -31,6 +32,7 @@ export type FirmwareStatus = OCPP16FirmwareStatus
 
 export type ChargingStationInfo = {
   hashId: string
+  templateName: string
   chargingStationId?: string
   chargePointModel: string
   chargePointVendor: string
@@ -86,6 +88,21 @@ export type ChargingStationInfo = {
   commandsSupport?: CommandsSupport
   messageTriggerSupport?: Record<MessageTrigger, boolean>
 }
+
+export interface ChargingStationOcppConfiguration {
+  configurationKey?: ConfigurationKey[]
+}
+
+export type ConfigurationKey = OCPPConfigurationKey & {
+  visible?: boolean
+  reboot?: boolean
+}
+
+export type OCPPConfigurationKey = {
+  key: string
+  readonly: boolean
+  value?: string
+} & JsonObject
 
 export enum OCPP16IncomingRequestCommand {
   RESET = 'Reset',
