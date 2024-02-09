@@ -573,9 +573,9 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
    `template`: string,  
    `numberOfStations`: number,  
    `options?`: {  
+   `persistentConfiguration?`: boolean,  
    `autoStart?`: boolean,  
-   `autoRegister?`: boolean,  
-   `persistentConfiguration?`: boolean  
+   `autoRegister?`: boolean  
    }  
   }
 
