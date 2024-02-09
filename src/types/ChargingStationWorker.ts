@@ -11,14 +11,14 @@ import type { BootNotificationResponse } from './ocpp/Responses.js'
 import type { Statistics } from './Statistics.js'
 import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 
-interface ChargingStationWorkerOptions extends JsonObject {
-  elementStartDelay?: number
+export interface ChargingStationOptions extends JsonObject {
+  autoStart?: boolean
 }
 
 export interface ChargingStationWorkerData extends WorkerData {
   index: number
   templateFile: string
-  chargingStationWorkerOptions?: ChargingStationWorkerOptions
+  options?: ChargingStationOptions
 }
 
 export type EvseStatusWorkerType = Omit<EvseStatus, 'connectors'> & {

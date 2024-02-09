@@ -73,6 +73,7 @@ import {
   ChargingStationEvents,
   type ChargingStationInfo,
   type ChargingStationOcppConfiguration,
+  type ChargingStationOptions,
   type ChargingStationTemplate,
   type ConnectorStatus,
   ConnectorStatusEnum,
@@ -189,7 +190,7 @@ export class ChargingStation extends EventEmitter {
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private flushMessageBufferSetInterval?: NodeJS.Timeout
 
-  constructor (index: number, templateFile: string) {
+  constructor (index: number, templateFile: string, options?: ChargingStationOptions) {
     super()
     this.started = false
     this.starting = false
@@ -247,7 +248,12 @@ export class ChargingStation extends EventEmitter {
 
     this.add()
 
-    this.stationInfo?.autoStart === true && this.start()
+    if (
+      options?.autoStart === true ||
+      (options?.autoStart !== false && this.stationInfo?.autoStart === true)
+    ) {
+      this.start()
+    }
   }
 
   public get hasEvses (): boolean {

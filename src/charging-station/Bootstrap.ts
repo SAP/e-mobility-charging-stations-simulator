@@ -18,6 +18,7 @@ import { BaseError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
   type ChargingStationData,
+  type ChargingStationOptions,
   type ChargingStationWorkerData,
   type ChargingStationWorkerEventError,
   type ChargingStationWorkerMessage,
@@ -487,7 +488,11 @@ export class Bootstrap extends EventEmitter {
     }
   }
 
-  public async addChargingStation (index: number, stationTemplateFile: string): Promise<void> {
+  public async addChargingStation (
+    index: number,
+    stationTemplateFile: string,
+    options?: ChargingStationOptions
+  ): Promise<void> {
     await this.workerImplementation?.addElement({
       index,
       templateFile: join(
@@ -495,7 +500,8 @@ export class Bootstrap extends EventEmitter {
         'assets',
         'station-templates',
         stationTemplateFile
-      )
+      ),
+      options
     })
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.chargingStationsByTemplate.get(parse(stationTemplateFile).name)!.lastIndex = max(

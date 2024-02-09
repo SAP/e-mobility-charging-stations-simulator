@@ -2,6 +2,7 @@ import { BaseError, type OCPPError } from '../../../exception/index.js'
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
+  type ChargingStationOptions,
   ConfigurationSection,
   type JsonType,
   ProcedureName,
@@ -226,9 +227,10 @@ export abstract class AbstractUIService {
     procedureName?: ProcedureName,
     requestPayload?: RequestPayload
   ): Promise<ResponsePayload> {
-    const { template, numberOfStations } = requestPayload as {
+    const { template, numberOfStations, options } = requestPayload as {
       template: string
       numberOfStations: number
+      options?: ChargingStationOptions
     }
     if (!this.uiServer.chargingStationTemplates.has(template)) {
       return {
@@ -240,7 +242,8 @@ export abstract class AbstractUIService {
       try {
         await Bootstrap.getInstance().addChargingStation(
           Bootstrap.getInstance().getLastIndex(template) + 1,
-          `${template}.json`
+          `${template}.json`,
+          options
         )
       } catch (error) {
         return {

@@ -150,6 +150,7 @@ export {
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
+  type ChargingStationOptions,
   type EvseStatusWorkerType
 } from './ChargingStationWorker.js'
 export type { ChargingStationInfo } from './ChargingStationInfo.js'

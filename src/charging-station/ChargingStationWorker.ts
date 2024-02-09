@@ -20,7 +20,7 @@ if (Configuration.workerPoolInUse()) {
   chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(
     (data?: ChargingStationWorkerData): void => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, no-new
-      new ChargingStation(data!.index, data!.templateFile)
+      new ChargingStation(data!.index, data!.templateFile, data!.options)
     }
   )
 } else {
@@ -33,7 +33,8 @@ if (Configuration.workerPoolInUse()) {
             try {
               const chargingStation = new ChargingStation(
                 message.data.index,
-                message.data.templateFile
+                message.data.templateFile,
+                message.data.options
               )
               parentPort?.postMessage({
                 event: WorkerMessageEvents.addedWorkerElement,

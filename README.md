@@ -571,7 +571,10 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
   `ProcedureName`: 'addChargingStations'  
   `PDU`: {  
    `template`: string,  
-   `numberOfStations`: number  
+   `numberOfStations`: number,
+  `options?`: {
+  `autoStart`: boolean
+  }  
   }
 
 - Response:  

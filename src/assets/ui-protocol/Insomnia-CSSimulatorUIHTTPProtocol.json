@@ -1,8 +1,8 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-05T18:06:20.997Z",
-  "__export_source": "insomnia.desktop.app:v8.6.0",
+  "__export_date": "2024-02-09T12:44:04.862Z",
+  "__export_source": "insomnia.desktop.app:v8.6.1",
   "resources": [
     {
       "_id": "req_09f5c772800b48d9aea7462de3379752",
@@ -161,7 +161,7 @@
     {
       "_id": "req_c43bfb67921546baa49b4ec96e571859",
       "parentId": "wrk_509d4a5094fa485ba93e53bc735e8ac3",
-      "modified": 1706781452580,
+      "modified": 1707482593708,
       "created": 1706781436512,
       "url": "{{baseUrl}}/{{protocol}}/{{version}}/addChargingStations",
       "name": "addChargingStations",
@@ -169,7 +169,7 @@
       "method": "POST",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n\t\"template\": \"evlink.station-template\",\n\t\"numberOfStations\": 1\n}"
+        "text": "{\n\t\"template\": \"evlink.station-template\",\n\t\"numberOfStations\": 1,\n\t\"options\": {\n\t\t\"autoStart\": false\n\t}\n}"
       },
       "parameters": [],
       "headers": [

@@ -180,8 +180,20 @@ export class UIWebSocketServer extends AbstractUIServer {
     //   )} Raw data received in string format: ${rawData.toString()}`
     // )
 
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const request = JSON.parse(rawData.toString()) as ProtocolRequest
+    let request: ProtocolRequest
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      request = JSON.parse(rawData.toString()) as ProtocolRequest
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        )} UI protocol request is not valid JSON: ${rawData.toString()}`
+      )
+      return false
+    }
 
     if (!Array.isArray(request)) {
       logger.error(
