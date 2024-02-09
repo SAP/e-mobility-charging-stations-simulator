@@ -126,9 +126,9 @@ export class UIHttpServer extends AbstractUIServer {
             bodyBuffer.push(chunk)
           })
           .on('end', () => {
-            let body: RequestPayload | undefined
+            let requestPayload: RequestPayload | undefined
             try {
-              body = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload
+              requestPayload = JSON.parse(Buffer.concat(bodyBuffer).toString()) as RequestPayload
             } catch (error) {
               this.sendResponse(
                 this.buildProtocolResponse(uuid, {
@@ -141,7 +141,7 @@ export class UIHttpServer extends AbstractUIServer {
             }
             this.uiServices
               .get(version)
-              ?.requestHandler(this.buildProtocolRequest(uuid, procedureName, body))
+              ?.requestHandler(this.buildProtocolRequest(uuid, procedureName, requestPayload))
               .then((protocolResponse?: ProtocolResponse) => {
                 if (protocolResponse != null) {
                   this.sendResponse(protocolResponse)
