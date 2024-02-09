@@ -1,6 +1,6 @@
 <template>
   <table id="cs-table">
-    <caption>
+    <caption id="cs-table__caption">
       Charging stations
     </caption>
     <thead id="cs-table__head">
@@ -63,6 +63,12 @@ const props = defineProps<{
 
 #cs-table__body {
   overflow: visible overlay;
+}
+
+#cs-table__caption {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 0.5rem;
 }
 
 .cs-table__row {
