@@ -123,26 +123,9 @@ export class UIClient {
     }
   }
 
-  private setResponseHandler(
-    id: string,
-    procedureName: ProcedureName,
-    resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void,
-    reject: (reason?: unknown) => void
-  ): void {
-    this.responseHandlers.set(id, { procedureName, resolve, reject })
-  }
-
-  private getResponseHandler(id: string): ResponseHandler | undefined {
-    return this.responseHandlers.get(id)
-  }
-
-  private deleteResponseHandler(id: string): boolean {
-    return this.responseHandlers.delete(id)
-  }
-
   private async sendRequest(
-    command: ProcedureName,
-    data: RequestPayload
+    procedureName: ProcedureName,
+    payload: RequestPayload
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
       if (this.ws.readyState !== WebSocket.OPEN) {
@@ -150,22 +133,22 @@ export class UIClient {
       }
       if (this.ws.readyState === WebSocket.OPEN) {
         const uuid = crypto.randomUUID()
-        const msg = JSON.stringify([uuid, command, data])
+        const msg = JSON.stringify([uuid, procedureName, payload])
         const sendTimeout = setTimeout(() => {
-          this.deleteResponseHandler(uuid)
-          return reject(new Error(`Send request '${command}' message timeout`))
+          this.responseHandlers.delete(uuid)
+          return reject(new Error(`Send request '${procedureName}' message timeout`))
         }, 60 * 1000)
         try {
           this.ws.send(msg)
-          this.setResponseHandler(uuid, command, resolve, reject)
+          this.responseHandlers.set(uuid, { procedureName, resolve, reject })
         } catch (error) {
-          this.deleteResponseHandler(uuid)
+          this.responseHandlers.delete(uuid)
           reject(error)
         } finally {
           clearTimeout(sendTimeout)
         }
       } else {
-        throw new Error(`Send request '${command}' message: connection not opened`)
+        throw new Error(`Send request '${procedureName}' message: connection not opened`)
       }
     })
   }
@@ -180,7 +163,7 @@ export class UIClient {
     const [uuid, responsePayload] = response
 
     if (this.responseHandlers.has(uuid) === true) {
-      const { procedureName, resolve, reject } = this.getResponseHandler(uuid)!
+      const { procedureName, resolve, reject } = this.responseHandlers.get(uuid)!
       switch (responsePayload.status) {
         case ResponseStatus.SUCCESS:
           resolve(responsePayload)
@@ -193,7 +176,7 @@ export class UIClient {
             `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
           )
       }
-      this.deleteResponseHandler(uuid)
+      this.responseHandlers.delete(uuid)
     } else {
       throw new Error(`Not a response to a request: ${JSON.stringify(response, undefined, 2)}`)
     }
