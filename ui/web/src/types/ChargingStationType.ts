@@ -6,6 +6,7 @@ export type ChargingStationData = {
   connectors: ConnectorStatus[]
   evses: EvseStatus[]
   ocppConfiguration: ChargingStationOcppConfiguration
+  supervisionUrl: string
   wsState?:
     | typeof WebSocket.CONNECTING
     | typeof WebSocket.OPEN

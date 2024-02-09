@@ -7,14 +7,15 @@
       :transaction-id="connector.transactionId"
       :id-tag="props.idTag"
     />
-    <td class="cs-table__name-col">{{ getId() }}</td>
-    <td class="cs-table__started-col">{{ getStarted() }}</td>
-    <td class="cs-table__wsState-col">{{ getWsState() }}</td>
-    <td class="cs-table__registration-status-col">{{ getRegistrationStatus() }}</td>
-    <td class="cs-table__template-col">{{ getInfo().templateName }}</td>
-    <td class="cs-table__vendor-col">{{ getVendor() }}</td>
-    <td class="cs-table__model-col">{{ getModel() }}</td>
-    <td class="cs-table__firmware-col">{{ getFirmwareVersion() }}</td>
+    <td class="cs-table__column">{{ getId() }}</td>
+    <td class="cs-table__column">{{ getStarted() }}</td>
+    <td class="cs-table__column">{{ getSupervisionUrl() }}</td>
+    <td class="cs-table__column">{{ getWsState() }}</td>
+    <td class="cs-table__column">{{ getRegistrationStatus() }}</td>
+    <td class="cs-table__column">{{ getInfo().templateName }}</td>
+    <td class="cs-table__column">{{ getVendor() }}</td>
+    <td class="cs-table__column">{{ getModel() }}</td>
+    <td class="cs-table__column">{{ getFirmwareVersion() }}</td>
   </tr>
 </template>
 
@@ -22,7 +23,6 @@
 // import { reactive } from 'vue'
 import CSConnector from './CSConnector.vue'
 import type { ChargingStationData, ChargingStationInfo, ConnectorStatus } from '@/types'
-import { ifUndefined } from '@/composables/Utils'
 
 const props = defineProps<{
   chargingStation: ChargingStationData
@@ -60,7 +60,7 @@ function getHashId(): string {
   return getInfo().hashId
 }
 function getId(): string {
-  return ifUndefined<string>(getInfo().chargingStationId, 'Ø')
+  return getInfo().chargingStationId ?? 'Ø'
 }
 function getModel(): string {
   return getInfo().chargePointModel
@@ -69,10 +69,14 @@ function getVendor(): string {
   return getInfo().chargePointVendor
 }
 function getFirmwareVersion(): string {
-  return ifUndefined<string>(getInfo().firmwareVersion, 'Ø')
+  return getInfo().firmwareVersion ?? 'Ø'
 }
 function getStarted(): string {
   return props.chargingStation.started === true ? 'Yes' : 'No'
+}
+function getSupervisionUrl(): string {
+  const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
+  return `${supervisionUrl.protocol}//${supervisionUrl.host.split('.').join('.\u200b')}`
 }
 function getWsState(): string {
   switch (props.chargingStation?.wsState) {

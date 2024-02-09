@@ -68,6 +68,7 @@ export const buildChargingStationDataPayload = (
     evses: buildEvsesStatus(chargingStation, OutputFormat.worker),
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ocppConfiguration: chargingStation.ocppConfiguration!,
+    supervisionUrl: chargingStation.wsConnectionUrl.href,
     wsState: chargingStation.wsConnection?.readyState,
     bootNotificationResponse: chargingStation.bootNotificationResponse,
     ...(chargingStation.automaticTransactionGenerator != null && {

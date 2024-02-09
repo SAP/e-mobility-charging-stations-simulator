@@ -4,8 +4,8 @@
 
 <style>
 #app {
-  height: 100%;
-  width: 100%;
+  height: fit-content;
+  width: fit-content;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -13,10 +13,10 @@
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  width: 100vw;
+  height: fit-content;
+  width: fit-content;
+  margin: 0.05%;
+  padding: 0.05%;
   background-color: rgb(233, 227, 227);
 }
 </style>

@@ -31,6 +31,7 @@ export interface ChargingStationData extends WorkerData {
   connectors: ConnectorStatus[]
   evses: EvseStatusWorkerType[]
   ocppConfiguration: ChargingStationOcppConfiguration
+  supervisionUrl: string
   wsState?:
   | typeof WebSocket.CONNECTING
   | typeof WebSocket.OPEN

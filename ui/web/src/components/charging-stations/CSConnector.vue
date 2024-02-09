@@ -1,5 +1,5 @@
 <template>
-  <td class="cs-table__action-col">
+  <td class="cs-table__column">
     <Button @click="startChargingStation()">Start Charging Station</Button>
     <Button @click="stopChargingStation()">Stop Charging Station</Button>
     <Button @click="openConnection()">Open Connection</Button>
@@ -17,9 +17,9 @@
     <Button @click="startAutomaticTransactionGenerator()">Start ATG</Button>
     <Button @click="stopAutomaticTransactionGenerator()">Stop ATG</Button>
   </td>
-  <td class="cs-table__connector-col">{{ connectorId }}</td>
-  <td class="cs-table__status-col">{{ connector.status }}</td>
-  <td class="cs-table__transaction-col">{{ connector.transactionStarted ? 'Yes' : 'No' }}</td>
+  <td class="cs-table__column">{{ connectorId }}</td>
+  <td class="cs-table__column">{{ connector.status ?? 'Ø' }}</td>
+  <td class="cs-table__column">{{ connector.transactionStarted === true ? 'Yes' : 'No' }}</td>
 </template>
 
 <script setup lang="ts">

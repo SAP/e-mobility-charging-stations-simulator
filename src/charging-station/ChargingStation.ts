@@ -260,7 +260,7 @@ export class ChargingStation extends EventEmitter {
     return this.connectors.size === 0 && this.evses.size > 0
   }
 
-  private get wsConnectionUrl (): URL {
+  public get wsConnectionUrl (): URL {
     return new URL(
       `${
         this.stationInfo?.supervisionUrlOcppConfiguration === true &&
@@ -801,14 +801,12 @@ export class ChargingStation extends EventEmitter {
 
     if (this.isWebSocketConnectionOpened()) {
       logger.warn(
-        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.toString()} is already opened`
+        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.href} is already opened`
       )
       return
     }
 
-    logger.info(
-      `${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.toString()}`
-    )
+    logger.info(`${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.href}`)
 
     this.wsConnection = new WebSocket(
       this.wsConnectionUrl,
@@ -1802,7 +1800,7 @@ export class ChargingStation extends EventEmitter {
   private async onOpen (): Promise<void> {
     if (this.isWebSocketConnectionOpened()) {
       logger.info(
-        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} succeeded`
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.href} succeeded`
       )
       let registrationRetryCount = 0
       if (!this.isRegistered()) {
@@ -1856,7 +1854,7 @@ export class ChargingStation extends EventEmitter {
       this.emit(ChargingStationEvents.updated)
     } else {
       logger.warn(
-        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.toString()} failed`
+        `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.href} failed`
       )
     }
   }

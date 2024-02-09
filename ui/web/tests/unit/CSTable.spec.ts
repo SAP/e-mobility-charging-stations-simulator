@@ -14,6 +14,7 @@ test('renders CS table columns name', () => {
   expect(wrapper.text()).to.include('Transaction')
   expect(wrapper.text()).to.include('Name')
   expect(wrapper.text()).to.include('Started')
+  expect(wrapper.text()).to.include('Supervision Url')
   expect(wrapper.text()).to.include('WebSocket State')
   expect(wrapper.text()).to.include('Registration Status')
   expect(wrapper.text()).to.include('Template')

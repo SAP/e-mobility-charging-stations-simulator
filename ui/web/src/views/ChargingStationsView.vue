@@ -61,9 +61,8 @@ function stopSimulator(): void {
 
 <style>
 #charging-stations {
-  height: 100%;
+  height: fit-content;
   width: 100%;
-  padding: 0.5%;
   background-color: rgb(233, 227, 227);
   display: flex;
   flex-direction: column;
@@ -96,5 +95,6 @@ function stopSimulator(): void {
 
 #idtag-field {
   flex: auto;
+  text-align: center;
 }
 </style>
