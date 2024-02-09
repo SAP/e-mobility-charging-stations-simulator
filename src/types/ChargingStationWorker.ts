@@ -13,6 +13,8 @@ import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../wor
 
 export interface ChargingStationOptions extends JsonObject {
   autoStart?: boolean
+  autoRegister?: boolean
+  persistentConfiguration?: boolean
 }
 
 export interface ChargingStationWorkerData extends WorkerData {

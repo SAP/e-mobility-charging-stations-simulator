@@ -244,14 +244,16 @@ export class ChargingStation extends EventEmitter {
       }
     })
 
-    this.initialize()
+    this.initialize(options)
 
     this.add()
 
-    if (
-      options?.autoStart === true ||
-      (options?.autoStart !== false && this.stationInfo?.autoStart === true)
-    ) {
+    if (options?.autoStart != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.stationInfo!.autoStart = options.autoStart
+    }
+
+    if (this.stationInfo?.autoStart === true) {
       this.start()
     }
   }
@@ -1194,10 +1196,10 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfoFromFile (
-    stationInfoPersistentConfiguration = true
+    stationInfoPersistentConfiguration?: boolean
   ): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined
-    if (stationInfoPersistentConfiguration) {
+    if (stationInfoPersistentConfiguration === true) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
         delete stationInfo.infoHash
@@ -1213,9 +1215,11 @@ export class ChargingStation extends EventEmitter {
     return stationInfo
   }
 
-  private getStationInfo (): ChargingStationInfo {
-    const defaultStationInfo = Constants.DEFAULT_STATION_INFO
+  private getStationInfo (stationInfoPersistentConfiguration?: boolean): ChargingStationInfo {
     const stationInfoFromTemplate = this.getStationInfoFromTemplate()
+    stationInfoPersistentConfiguration != null &&
+      (stationInfoFromTemplate.stationInfoPersistentConfiguration =
+        stationInfoPersistentConfiguration)
     const stationInfoFromFile = this.getStationInfoFromFile(
       stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
@@ -1226,7 +1230,7 @@ export class ChargingStation extends EventEmitter {
       stationInfoFromFile != null &&
       stationInfoFromFile.templateHash === stationInfoFromTemplate.templateHash
     ) {
-      return { ...defaultStationInfo, ...stationInfoFromFile }
+      return { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromFile }
     }
     stationInfoFromFile != null &&
       propagateSerialNumber(
@@ -1234,7 +1238,7 @@ export class ChargingStation extends EventEmitter {
         stationInfoFromFile,
         stationInfoFromTemplate
       )
-    return { ...defaultStationInfo, ...stationInfoFromTemplate }
+    return { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromTemplate }
   }
 
   private saveStationInfo (): void {
@@ -1249,7 +1253,7 @@ export class ChargingStation extends EventEmitter {
     throw new BaseError(errorMsg)
   }
 
-  private initialize (): void {
+  private initialize (options?: ChargingStationOptions): void {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const stationTemplate = this.getTemplateFromFile()!
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
@@ -1267,7 +1271,17 @@ export class ChargingStation extends EventEmitter {
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate)
     }
-    this.stationInfo = this.getStationInfo()
+    this.stationInfo = this.getStationInfo(options?.persistentConfiguration)
+    if (options?.persistentConfiguration != null) {
+      this.stationInfo.ocppPersistentConfiguration = options.persistentConfiguration
+    }
+    if (options?.persistentConfiguration != null) {
+      this.stationInfo.automaticTransactionGeneratorPersistentConfiguration =
+        options.persistentConfiguration
+    }
+    if (options?.autoRegister != null) {
+      this.stationInfo.autoRegister = options.autoRegister
+    }
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersion) &&
@@ -1307,7 +1321,7 @@ export class ChargingStation extends EventEmitter {
     this.bootNotificationRequest = bootNotificationRequest
     this.powerDivider = this.getPowerDivider()
     // OCPP configuration
-    this.ocppConfiguration = this.getOcppConfiguration()
+    this.ocppConfiguration = this.getOcppConfiguration(options?.persistentConfiguration)
     this.initializeOcppConfiguration()
     this.initializeOcppServices()
     if (this.stationInfo.autoRegister === true) {
@@ -1703,7 +1717,7 @@ export class ChargingStation extends EventEmitter {
           buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
         )
         if (
-          this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration === false ||
+          this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration !== true ||
           this.getAutomaticTransactionGeneratorConfiguration() == null
         ) {
           delete configurationData.automaticTransactionGenerator
@@ -1780,17 +1794,21 @@ export class ChargingStation extends EventEmitter {
     return this.getTemplateFromFile()?.Configuration
   }
 
-  private getOcppConfigurationFromFile (): ChargingStationOcppConfiguration | undefined {
+  private getOcppConfigurationFromFile (
+    ocppPersistentConfiguration?: boolean
+  ): ChargingStationOcppConfiguration | undefined {
     const configurationKey = this.getConfigurationFromFile()?.configurationKey
-    if (this.stationInfo?.ocppPersistentConfiguration === true && Array.isArray(configurationKey)) {
+    if (ocppPersistentConfiguration === true && Array.isArray(configurationKey)) {
       return { configurationKey }
     }
     return undefined
   }
 
-  private getOcppConfiguration (): ChargingStationOcppConfiguration | undefined {
+  private getOcppConfiguration (
+    ocppPersistentConfiguration: boolean | undefined = this.stationInfo?.ocppPersistentConfiguration
+  ): ChargingStationOcppConfiguration | undefined {
     let ocppConfiguration: ChargingStationOcppConfiguration | undefined =
-      this.getOcppConfigurationFromFile()
+      this.getOcppConfigurationFromFile(ocppPersistentConfiguration)
     if (ocppConfiguration == null) {
       ocppConfiguration = this.getOcppConfigurationFromTemplate()
     }
