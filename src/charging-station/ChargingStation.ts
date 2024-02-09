@@ -1221,7 +1221,7 @@ export class ChargingStation extends EventEmitter {
       (stationInfoFromTemplate.stationInfoPersistentConfiguration =
         stationInfoPersistentConfiguration)
     const stationInfoFromFile = this.getStationInfoFromFile(
-      stationInfoFromTemplate.stationInfoPersistentConfiguration
+      stationInfoFromTemplate.stationInfoPersistentConfiguration ?? true
     )
     // Priority:
     // 1. charging station info from template
@@ -1716,10 +1716,7 @@ export class ChargingStation extends EventEmitter {
           configurationData,
           buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
         )
-        if (
-          this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration !== true ||
-          this.getAutomaticTransactionGeneratorConfiguration() == null
-        ) {
+        if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration !== true) {
           delete configurationData.automaticTransactionGenerator
         }
         if (this.connectors.size > 0) {
