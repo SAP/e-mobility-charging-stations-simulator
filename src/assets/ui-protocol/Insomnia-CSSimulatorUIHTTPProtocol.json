@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-09T12:44:04.862Z",
+  "__export_date": "2024-02-09T13:02:45.966Z",
   "__export_source": "insomnia.desktop.app:v8.6.1",
   "resources": [
     {
@@ -43,9 +43,9 @@
     {
       "_id": "wrk_509d4a5094fa485ba93e53bc735e8ac3",
       "parentId": null,
-      "modified": 1695635686355,
+      "modified": 1707483664587,
       "created": 1695635686355,
-      "name": "CSSimulatorUIProtocolCollection",
+      "name": "CSSimulatorUIHTTPProtocolCollection",
       "description": "",
       "scope": "collection",
       "_type": "workspace"
