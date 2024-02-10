@@ -1,7 +1,7 @@
 <template>
   <table id="cs-table">
     <caption id="cs-table__caption">
-      Charging stations
+      Charging Stations
     </caption>
     <thead id="cs-table__head">
       <tr class="cs-table__row">
