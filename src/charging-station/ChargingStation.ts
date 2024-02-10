@@ -1283,6 +1283,12 @@ export class ChargingStation extends EventEmitter {
     if (options?.autoRegister != null) {
       this.stationInfo.autoRegister = options.autoRegister
     }
+    if (options?.enableStatistics != null) {
+      this.stationInfo.enableStatistics = options.enableStatistics
+    }
+    if (options?.ocppStrictCompliance != null) {
+      this.stationInfo.ocppStrictCompliance = options.ocppStrictCompliance
+    }
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersion) &&

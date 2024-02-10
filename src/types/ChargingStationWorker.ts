@@ -15,6 +15,8 @@ export interface ChargingStationOptions extends JsonObject {
   persistentConfiguration?: boolean
   autoStart?: boolean
   autoRegister?: boolean
+  enableStatistics?: boolean
+  ocppStrictCompliance?: boolean
 }
 
 export interface ChargingStationWorkerData extends WorkerData {

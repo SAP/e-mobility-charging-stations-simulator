@@ -575,7 +575,9 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
    `options?`: {  
    `persistentConfiguration?`: boolean,  
    `autoStart?`: boolean,  
-   `autoRegister?`: boolean  
+   `autoRegister?`: boolean,  
+   `enableStatistics?`: boolean,  
+   `ocppStrictCompliance?`: boolean  
    }  
   }
 
