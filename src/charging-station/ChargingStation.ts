@@ -1196,7 +1196,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getStationInfoFromFile (
-    stationInfoPersistentConfiguration?: boolean
+    stationInfoPersistentConfiguration: boolean | undefined = Constants.DEFAULT_STATION_INFO
+      .stationInfoPersistentConfiguration
   ): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined
     if (stationInfoPersistentConfiguration === true) {
@@ -1221,7 +1222,7 @@ export class ChargingStation extends EventEmitter {
       (stationInfoFromTemplate.stationInfoPersistentConfiguration =
         stationInfoPersistentConfiguration)
     const stationInfoFromFile = this.getStationInfoFromFile(
-      stationInfoFromTemplate.stationInfoPersistentConfiguration ?? true
+      stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
     // Priority:
     // 1. charging station info from template
@@ -1802,7 +1803,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getOcppConfiguration (
-    ocppPersistentConfiguration: boolean | undefined = this.stationInfo?.ocppPersistentConfiguration
+    ocppPersistentConfiguration: boolean | undefined = Constants.DEFAULT_STATION_INFO
+      .ocppPersistentConfiguration
   ): ChargingStationOcppConfiguration | undefined {
     let ocppConfiguration: ChargingStationOcppConfiguration | undefined =
       this.getOcppConfigurationFromFile(ocppPersistentConfiguration)
