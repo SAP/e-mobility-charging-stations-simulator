@@ -1147,10 +1147,8 @@ export class ChargingStation extends EventEmitter {
     }
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
-    stationInfo.autoStart = stationTemplate.autoStart ?? true
     stationInfo.templateName = parse(this.templateFile).name
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
-    stationInfo.ocppVersion = stationTemplate.ocppVersion ?? OCPPVersion.VERSION_16
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
     if (isNotEmptyArray(stationTemplate.power)) {
@@ -1167,9 +1165,8 @@ export class ChargingStation extends EventEmitter {
           : stationTemplate.power
     }
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo)
-    stationInfo.firmwareVersionPattern =
-      stationTemplate.firmwareVersionPattern ?? Constants.SEMVER_PATTERN
     if (
+      isNotEmptyString(stationInfo.firmwareVersionPattern) &&
       isNotEmptyString(stationInfo.firmwareVersion) &&
       !new RegExp(stationInfo.firmwareVersionPattern).test(stationInfo.firmwareVersion)
     ) {
@@ -1188,10 +1185,9 @@ export class ChargingStation extends EventEmitter {
       },
       stationTemplate.firmwareUpgrade ?? {}
     )
-    stationInfo.resetTime =
-      stationTemplate.resetTime != null
-        ? secondsToMilliseconds(stationTemplate.resetTime)
-        : Constants.DEFAULT_CHARGING_STATION_RESET_TIME
+    if (stationTemplate.resetTime != null) {
+      stationInfo.resetTime = secondsToMilliseconds(stationTemplate.resetTime)
+    }
     return stationInfo
   }
 
@@ -1207,9 +1203,6 @@ export class ChargingStation extends EventEmitter {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (stationInfo.templateName == null) {
           stationInfo.templateName = parse(this.templateFile).name
-        }
-        if (stationInfo.autoStart == null) {
-          stationInfo.autoStart = true
         }
       }
     }
@@ -1275,8 +1268,6 @@ export class ChargingStation extends EventEmitter {
     this.stationInfo = this.getStationInfo(options?.persistentConfiguration)
     if (options?.persistentConfiguration != null) {
       this.stationInfo.ocppPersistentConfiguration = options.persistentConfiguration
-    }
-    if (options?.persistentConfiguration != null) {
       this.stationInfo.automaticTransactionGeneratorPersistentConfiguration =
         options.persistentConfiguration
     }
@@ -1289,10 +1280,13 @@ export class ChargingStation extends EventEmitter {
     if (options?.ocppStrictCompliance != null) {
       this.stationInfo.ocppStrictCompliance = options.ocppStrictCompliance
     }
+    if (options?.stopTransactionsOnStopped != null) {
+      this.stationInfo.stopTransactionsOnStopped = options.stopTransactionsOnStopped
+    }
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
-      isNotEmptyString(this.stationInfo.firmwareVersion) &&
-      isNotEmptyString(this.stationInfo.firmwareVersionPattern)
+      isNotEmptyString(this.stationInfo.firmwareVersionPattern) &&
+      isNotEmptyString(this.stationInfo.firmwareVersion)
     ) {
       const patternGroup =
         this.stationInfo.firmwareUpgrade?.versionUpgrade?.patternGroup ??
@@ -1809,8 +1803,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getOcppConfiguration (
-    ocppPersistentConfiguration: boolean | undefined = Constants.DEFAULT_STATION_INFO
-      .ocppPersistentConfiguration
+    ocppPersistentConfiguration: boolean | undefined = this.stationInfo?.ocppPersistentConfiguration
   ): ChargingStationOcppConfiguration | undefined {
     let ocppConfiguration: ChargingStationOcppConfiguration | undefined =
       this.getOcppConfigurationFromFile(ocppPersistentConfiguration)
@@ -2066,7 +2059,7 @@ export class ChargingStation extends EventEmitter {
       if (!(error instanceof OCPPError)) {
         logger.warn(
           `${this.logPrefix()} Error thrown at incoming OCPP command '${
-            commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
+            commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
             // eslint-disable-next-line @typescript-eslint/no-base-to-string
           }' message '${data.toString()}' handling is not an OCPPError:`,
           error
@@ -2074,7 +2067,7 @@ export class ChargingStation extends EventEmitter {
       }
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
-          commandName ?? requestCommandName ?? Constants.UNKNOWN_COMMAND
+          commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
         }' message '${data.toString()}'${
           this.requests.has(messageId)
@@ -2122,7 +2115,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getUseConnectorId0 (stationTemplate?: ChargingStationTemplate): boolean {
-    return stationTemplate?.useConnectorId0 ?? true
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return stationTemplate?.useConnectorId0 ?? Constants.DEFAULT_STATION_INFO.useConnectorId0!
   }
 
   private async stopRunningTransactions (reason?: StopTransactionReason): Promise<void> {
@@ -2181,8 +2175,12 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getCurrentOutType (stationInfo?: ChargingStationInfo): CurrentType {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return (stationInfo ?? this.stationInfo!).currentOutType ?? CurrentType.AC
+    return (
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (stationInfo ?? this.stationInfo!).currentOutType ??
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      Constants.DEFAULT_STATION_INFO.currentOutType!
+    )
   }
 
   private getVoltageOut (stationInfo?: ChargingStationInfo): Voltage {

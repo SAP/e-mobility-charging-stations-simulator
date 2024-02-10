@@ -300,16 +300,17 @@ export class Bootstrap extends EventEmitter {
     if (!isMainThread) {
       return
     }
-    let elementsPerWorker: number | undefined
+    let elementsPerWorker: number
     switch (workerConfiguration.elementsPerWorker) {
+      case 'all':
+        elementsPerWorker = this.numberOfConfiguredChargingStations
+        break
       case 'auto':
+      default:
         elementsPerWorker =
           this.numberOfConfiguredChargingStations > availableParallelism()
             ? Math.round(this.numberOfConfiguredChargingStations / (availableParallelism() * 1.5))
             : 1
-        break
-      case 'all':
-        elementsPerWorker = this.numberOfConfiguredChargingStations
         break
     }
     this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
@@ -326,7 +327,7 @@ export class Bootstrap extends EventEmitter {
         poolMaxSize: workerConfiguration.poolMaxSize!,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         poolMinSize: workerConfiguration.poolMinSize!,
-        elementsPerWorker: elementsPerWorker ?? (workerConfiguration.elementsPerWorker as number),
+        elementsPerWorker,
         poolOptions: {
           messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
           workerOptions: { resourceLimits: workerConfiguration.resourceLimits }

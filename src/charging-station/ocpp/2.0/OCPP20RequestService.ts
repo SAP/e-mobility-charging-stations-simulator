@@ -30,7 +30,7 @@ export class OCPP20RequestService extends OCPPRequestService {
     // if (new.target.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
-    super(OCPPVersion.VERSION_20, ocppResponseService)
+    super(OCPPVersion.VERSION_201, ocppResponseService)
     this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,

@@ -37,7 +37,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     // if (new.target.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
-    super(OCPPVersion.VERSION_20)
+    super(OCPPVersion.VERSION_201)
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,

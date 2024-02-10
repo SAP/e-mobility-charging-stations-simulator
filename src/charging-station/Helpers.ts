@@ -247,14 +247,6 @@ export const checkTemplate = (
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  if (isEmptyObject(stationTemplate.AutomaticTransactionGenerator!)) {
-    stationTemplate.AutomaticTransactionGenerator = Constants.DEFAULT_ATG_CONFIGURATION
-    logger.warn(
-      `${logPrefix} Empty automatic transaction generator configuration from template file ${templateFile}, set to default: %j`,
-      Constants.DEFAULT_ATG_CONFIGURATION
-    )
-  }
   if (stationTemplate.idTagsFile == null || isEmptyString(stationTemplate.idTagsFile)) {
     logger.warn(
       `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`

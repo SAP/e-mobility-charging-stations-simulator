@@ -10,8 +10,15 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Constants {
+  // See https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+  private static readonly SEMVER_PATTERN =
+    '^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$'
+
+  private static readonly DEFAULT_CHARGING_STATION_RESET_TIME = 60000 // Ms
+
   static readonly DEFAULT_STATION_INFO: Partial<ChargingStationInfo> = Object.freeze({
     enableStatistics: false,
+    autoStart: true,
     remoteAuthorization: true,
     currentOutType: CurrentType.AC,
     mainVoltageMeterValues: true,
@@ -24,10 +31,13 @@ export class Constants {
     transactionDataMeterValues: false,
     supervisionUrlOcppConfiguration: false,
     supervisionUrlOcppKey: VendorParametersKey.ConnectionUrl,
+    useConnectorId0: true,
     ocppVersion: OCPPVersion.VERSION_16,
+    firmwareVersionPattern: Constants.SEMVER_PATTERN,
     ocppPersistentConfiguration: true,
     stationInfoPersistentConfiguration: true,
     automaticTransactionGeneratorPersistentConfiguration: true,
+    resetTime: Constants.DEFAULT_CHARGING_STATION_RESET_TIME,
     autoReconnectMaxRetries: -1,
     registrationMaxRetries: -1,
     reconnectExponentialDelay: false,
@@ -37,8 +47,6 @@ export class Constants {
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000 // Ms
   static readonly DEFAULT_HEARTBEAT_INTERVAL = 60000 // Ms
   static readonly DEFAULT_METER_VALUES_INTERVAL = 60000 // Ms
-
-  static readonly DEFAULT_CHARGING_STATION_RESET_TIME = 60000 // Ms
 
   static readonly DEFAULT_ATG_WAIT_TIME = 1000 // Ms
   static readonly DEFAULT_ATG_CONFIGURATION: AutomaticTransactionGeneratorConfiguration =
@@ -52,10 +60,6 @@ export class Constants {
       stopAfterHours: 0.25,
       stopAbsoluteDuration: false
     })
-
-  // See https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-  static readonly SEMVER_PATTERN =
-    '^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$'
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 4096
 
@@ -77,7 +81,9 @@ export class Constants {
   static readonly DEFAULT_UI_SERVER_HOST = 'localhost'
   static readonly DEFAULT_UI_SERVER_PORT = 8080
 
-  static readonly UNKNOWN_COMMAND = 'unknown command' as RequestCommand | IncomingRequestCommand
+  static readonly UNKNOWN_OCPP_COMMAND = 'unknown OCPP command' as
+    | RequestCommand
+    | IncomingRequestCommand
 
   static readonly MAX_RANDOM_INTEGER = 281474976710654
 
