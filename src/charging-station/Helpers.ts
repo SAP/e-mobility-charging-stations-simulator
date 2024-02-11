@@ -339,6 +339,7 @@ export const setChargingStationOptions = (
   options?: ChargingStationOptions
 ): ChargingStationInfo => {
   if (options?.persistentConfiguration != null) {
+    stationInfo.stationInfoPersistentConfiguration = options.persistentConfiguration
     stationInfo.ocppPersistentConfiguration = options.persistentConfiguration
     stationInfo.automaticTransactionGeneratorPersistentConfiguration =
       options.persistentConfiguration
