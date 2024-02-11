@@ -106,7 +106,7 @@
     "logform": "^2.6.0",
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.3.0",
-    "poolifier": "^3.1.19",
+    "poolifier": "^3.1.20",
     "tar": "^6.2.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0",
