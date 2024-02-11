@@ -59,6 +59,9 @@ export abstract class AbstractUIServer {
 
   public stop (): void {
     this.stopHttpServer()
+    for (const uiService of this.uiServices.values()) {
+      uiService.stop()
+    }
     this.chargingStations.clear()
     this.chargingStationTemplates.clear()
   }

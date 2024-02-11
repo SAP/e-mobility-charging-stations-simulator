@@ -87,6 +87,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         }
       ],
       [
+        BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS,
+        async (requestPayload?: BroadcastChannelRequestPayload) => {
+          await this.chargingStation.delete(requestPayload?.deleteConfiguration as boolean)
+        }
+      ],
+      [
         BroadcastChannelProcedureName.OPEN_CONNECTION,
         () => {
           this.chargingStation.openWSConnection()

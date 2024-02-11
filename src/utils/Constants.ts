@@ -14,7 +14,7 @@ export class Constants {
   private static readonly SEMVER_PATTERN =
     '^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$'
 
-  private static readonly DEFAULT_CHARGING_STATION_RESET_TIME = 60000 // Ms
+  private static readonly DEFAULT_CHARGING_STATION_RESET_TIME = 30000 // Ms
 
   static readonly DEFAULT_STATION_INFO: Partial<ChargingStationInfo> = Object.freeze({
     enableStatistics: false,

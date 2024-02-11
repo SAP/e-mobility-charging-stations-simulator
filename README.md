@@ -587,6 +587,23 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
    `status`: 'success' | 'failure'  
   }
 
+###### Delete Charging Stations
+
+- Request:  
+  `ProcedureName`: 'deleteChargingStations'  
+  `PDU`: {  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   `deleteConfiguration?`: boolean  
+  }
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
+  }
+
 ###### Set Charging Station Supervision Url
 
 - Request:  

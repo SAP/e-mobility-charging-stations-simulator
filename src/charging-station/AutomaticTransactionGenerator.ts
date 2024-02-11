@@ -66,6 +66,11 @@ export class AutomaticTransactionGenerator {
     return AutomaticTransactionGenerator.instances.get(chargingStation.stationInfo!.hashId)
   }
 
+  public static deleteInstance (chargingStation: ChargingStation): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return AutomaticTransactionGenerator.instances.delete(chargingStation.stationInfo!.hashId)
+  }
+
   public start (stopAbsoluteDuration?: boolean): void {
     if (!checkChargingStation(this.chargingStation, this.logPrefix())) {
       return

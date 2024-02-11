@@ -21,6 +21,15 @@ export const buildAddedMessage = (
   }
 }
 
+export const buildDeletedMessage = (
+  chargingStation: ChargingStation
+): ChargingStationWorkerMessage<ChargingStationData> => {
+  return {
+    event: ChargingStationWorkerMessageEvents.deleted,
+    data: buildChargingStationDataPayload(chargingStation)
+  }
+}
+
 export const buildStartedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {

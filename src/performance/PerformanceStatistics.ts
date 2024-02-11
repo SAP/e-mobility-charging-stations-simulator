@@ -67,26 +67,34 @@ export class PerformanceStatistics {
     objName: string | undefined,
     uri: URL | undefined
   ): PerformanceStatistics | undefined {
-    const logPfx = logPrefix(' Performance statistics')
     if (objId == null) {
       const errMsg = 'Cannot get performance statistics instance without specifying object id'
-      logger.error(`${logPfx} ${errMsg}`)
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
       throw new BaseError(errMsg)
     }
     if (objName == null) {
       const errMsg = 'Cannot get performance statistics instance without specifying object name'
-      logger.error(`${logPfx} ${errMsg}`)
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
       throw new BaseError(errMsg)
     }
     if (uri == null) {
       const errMsg = 'Cannot get performance statistics instance without specifying object uri'
-      logger.error(`${logPfx} ${errMsg}`)
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
       throw new BaseError(errMsg)
     }
     if (!PerformanceStatistics.instances.has(objId)) {
       PerformanceStatistics.instances.set(objId, new PerformanceStatistics(objId, objName, uri))
     }
     return PerformanceStatistics.instances.get(objId)
+  }
+
+  public static deleteInstance (objId: string | undefined): boolean {
+    if (objId == null) {
+      const errMsg = 'Cannot delete performance statistics instance without specifying object id'
+      logger.error(`${PerformanceStatistics.logPrefix()} ${errMsg}`)
+      throw new BaseError(errMsg)
+    }
+    return PerformanceStatistics.instances.delete(objId)
   }
 
   public static beginMeasure (id: string): string {
@@ -306,6 +314,10 @@ export class PerformanceStatistics {
     ) {
       parentPort?.postMessage(buildPerformanceStatisticsMessage(this.statistics))
     }
+  }
+
+  private static readonly logPrefix = (): string => {
+    return logPrefix(' Performance statistics')
   }
 
   private readonly logPrefix = (): string => {

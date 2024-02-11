@@ -144,6 +144,7 @@ export class Bootstrap extends EventEmitter {
       if (!this.starting) {
         this.starting = true
         this.on(ChargingStationWorkerMessageEvents.added, this.workerEventAdded)
+        this.on(ChargingStationWorkerMessageEvents.deleted, this.workerEventDeleted)
         this.on(ChargingStationWorkerMessageEvents.started, this.workerEventStarted)
         this.on(ChargingStationWorkerMessageEvents.stopped, this.workerEventStopped)
         this.on(ChargingStationWorkerMessageEvents.updated, this.workerEventUpdated)
@@ -351,6 +352,9 @@ export class Bootstrap extends EventEmitter {
         case ChargingStationWorkerMessageEvents.added:
           this.emit(ChargingStationWorkerMessageEvents.added, msg.data)
           break
+        case ChargingStationWorkerMessageEvents.deleted:
+          this.emit(ChargingStationWorkerMessageEvents.deleted, msg.data)
+          break
         case ChargingStationWorkerMessageEvents.started:
           this.emit(ChargingStationWorkerMessageEvents.started, msg.data)
           break
@@ -394,6 +398,19 @@ export class Bootstrap extends EventEmitter {
       `${this.logPrefix()} ${moduleName}.workerEventAdded: Charging station ${
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) added (${
+        this.numberOfAddedChargingStations
+      } added from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+    )
+  }
+
+  private readonly workerEventDeleted = (data: ChargingStationData): void => {
+    this.uiServer?.chargingStations.delete(data.stationInfo.hashId)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    --this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.added
+    logger.info(
+      `${this.logPrefix()} ${moduleName}.workerEventDeleted: Charging station ${
+        data.stationInfo.chargingStationId
+      } (hashId: ${data.stationInfo.hashId}) deleted (${
         this.numberOfAddedChargingStations
       } added from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
     )

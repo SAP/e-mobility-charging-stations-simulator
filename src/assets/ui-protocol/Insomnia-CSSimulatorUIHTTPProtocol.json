@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-09T13:02:45.966Z",
+  "__export_date": "2024-02-11T11:11:14.532Z",
   "__export_source": "insomnia.desktop.app:v8.6.1",
   "resources": [
     {
@@ -187,6 +187,45 @@
         "password": "{{password}}"
       },
       "metaSortKey": -999999975,
+      "isPrivate": false,
+      "pathParameters": [],
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_5db3c8b9a7094ec5806bcc804752f968",
+      "parentId": "wrk_509d4a5094fa485ba93e53bc735e8ac3",
+      "modified": 1707649833755,
+      "created": 1707649782517,
+      "url": "{{baseUrl}}/{{protocol}}/{{version}}/deleteChargingStations",
+      "name": "deleteChargingStations",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"hashIds\": [\n\t\t\"0058d8b50e422cce5bbd0c0a4ad13d5d657e8a88670dcf04c1b2b563fea3db5b96a3686278b374ed050e21baef89060e\"\n\t]\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_af9f914ca52f407488bc6df6c7db3a08"
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{username}}",
+        "password": "{{password}}"
+      },
+      "metaSortKey": -999999971.875,
       "isPrivate": false,
       "pathParameters": [],
       "settingStoreCookies": true,

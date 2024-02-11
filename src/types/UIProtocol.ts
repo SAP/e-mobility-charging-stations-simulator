@@ -33,6 +33,7 @@ export enum ProcedureName {
   LIST_TEMPLATES = 'listTemplates',
   LIST_CHARGING_STATIONS = 'listChargingStations',
   ADD_CHARGING_STATIONS = 'addChargingStations',
+  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
   PERFORMANCE_STATISTICS = 'performanceStatistics',
   START_CHARGING_STATION = 'startChargingStation',
   STOP_CHARGING_STATION = 'stopChargingStation',

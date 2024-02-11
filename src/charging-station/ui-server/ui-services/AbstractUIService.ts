@@ -29,6 +29,10 @@ export abstract class AbstractUIService {
   >([
     [ProcedureName.START_CHARGING_STATION, BroadcastChannelProcedureName.START_CHARGING_STATION],
     [ProcedureName.STOP_CHARGING_STATION, BroadcastChannelProcedureName.STOP_CHARGING_STATION],
+    [
+      ProcedureName.DELETE_CHARGING_STATIONS,
+      BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS
+    ],
     [ProcedureName.CLOSE_CONNECTION, BroadcastChannelProcedureName.CLOSE_CONNECTION],
     [ProcedureName.OPEN_CONNECTION, BroadcastChannelProcedureName.OPEN_CONNECTION],
     [
@@ -77,6 +81,11 @@ export abstract class AbstractUIService {
     ])
     this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this)
     this.broadcastChannelRequests = new Map<string, number>()
+  }
+
+  public stop (): void {
+    this.broadcastChannelRequests.clear()
+    this.uiServiceWorkerBroadcastChannel.close()
   }
 
   public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {

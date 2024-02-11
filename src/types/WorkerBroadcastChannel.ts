@@ -10,6 +10,7 @@ export type BroadcastChannelResponse = [string, BroadcastChannelResponsePayload]
 export enum BroadcastChannelProcedureName {
   START_CHARGING_STATION = 'startChargingStation',
   STOP_CHARGING_STATION = 'stopChargingStation',
+  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
   OPEN_CONNECTION = 'openConnection',
   CLOSE_CONNECTION = 'closeConnection',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',

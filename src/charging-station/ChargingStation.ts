@@ -2,7 +2,7 @@
 
 import { createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { type FSWatcher, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { type FSWatcher, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, parse } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
@@ -127,6 +127,7 @@ import {
   buildAddedMessage,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
+  buildDeletedMessage,
   buildEvsesStatus,
   buildStartedMessage,
   buildStoppedMessage,
@@ -166,7 +167,7 @@ export class ChargingStation extends EventEmitter {
   public readonly connectors: Map<number, ConnectorStatus>
   public readonly evses: Map<number, EvseStatus>
   public readonly requests: Map<string, CachedRequest>
-  public performanceStatistics!: PerformanceStatistics | undefined
+  public performanceStatistics: PerformanceStatistics | undefined
   public heartbeatSetInterval?: NodeJS.Timeout
   public ocppRequestService!: OCPPRequestService
   public bootNotificationRequest?: BootNotificationRequest
@@ -183,7 +184,7 @@ export class ChargingStation extends EventEmitter {
   private configuredSupervisionUrl!: URL
   private wsConnectionRetried: boolean
   private wsConnectionRetryCount: number
-  private templateFileWatcher!: FSWatcher | undefined
+  private templateFileWatcher: FSWatcher | undefined
   private templateFileHash!: string
   private readonly sharedLRUCache: SharedLRUCache
   private wsPingSetInterval?: NodeJS.Timeout
@@ -210,6 +211,9 @@ export class ChargingStation extends EventEmitter {
 
     this.on(ChargingStationEvents.added, () => {
       parentPort?.postMessage(buildAddedMessage(this))
+    })
+    this.on(ChargingStationEvents.deleted, () => {
+      parentPort?.postMessage(buildDeletedMessage(this))
     })
     this.on(ChargingStationEvents.started, () => {
       parentPort?.postMessage(buildStartedMessage(this))
@@ -666,6 +670,23 @@ export class ChargingStation extends EventEmitter {
     this.emit(ChargingStationEvents.added)
   }
 
+  public async delete (deleteConfiguration = true): Promise<void> {
+    if (this.started) {
+      await this.stop()
+    }
+    AutomaticTransactionGenerator.deleteInstance(this)
+    PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+    this.requests.clear()
+    this.connectors.clear()
+    this.evses.clear()
+    this.templateFileWatcher?.unref()
+    deleteConfiguration && rmSync(this.configurationFile, { force: true })
+    this.chargingStationWorkerBroadcastChannel.unref()
+    this.emit(ChargingStationEvents.deleted)
+  }
+
   public start (): void {
     if (!this.started) {
       if (!this.starting) {
@@ -689,10 +710,10 @@ export class ChargingStation extends EventEmitter {
                   } file have changed, reload`
                 )
                 this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
-                // Initialize
-                this.initialize()
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+                // Initialize
+                this.initialize()
                 // Restart the ATG
                 const ATGStarted = this.automaticTransactionGenerator?.started
                 if (ATGStarted === true) {
@@ -743,12 +764,11 @@ export class ChargingStation extends EventEmitter {
         if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.stop()
         }
-        this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
         this.templateFileWatcher?.close()
-        this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
         delete this.bootNotificationResponse
         this.started = false
         this.saveConfiguration()
+        this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
         this.emit(ChargingStationEvents.stopped)
         this.stopping = false
       } else {

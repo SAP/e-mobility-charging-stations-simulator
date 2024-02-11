@@ -20,6 +20,7 @@ export { watchJsonFile } from './FileUtils.js'
 export {
   buildAddedMessage,
   buildChargingStationDataPayload,
+  buildDeletedMessage,
   buildPerformanceStatisticsMessage,
   buildStartedMessage,
   buildStoppedMessage,

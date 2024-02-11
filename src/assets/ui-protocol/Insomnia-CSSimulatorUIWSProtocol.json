@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-09T13:03:00.609Z",
+  "__export_date": "2024-02-11T11:07:54.308Z",
   "__export_source": "insomnia.desktop.app:v8.6.1",
   "resources": [
     {
@@ -214,6 +214,38 @@
       "name": "addChargingStations",
       "url": "{{ _.baseUrl }}",
       "metaSortKey": -1671191988793.25,
+      "headers": [
+        {
+          "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
+          "name": "Sec-WebSocket-Protocol",
+          "value": "{{ _.protocol }}{{ _.version }}",
+          "description": ""
+        }
+      ],
+      "authentication": {
+        "type": "basic",
+        "useISO88591": false,
+        "disabled": false,
+        "username": "{{ _.username }}",
+        "password": "{{ _.password }}"
+      },
+      "parameters": [],
+      "pathParameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global",
+      "description": "",
+      "_type": "websocket_request"
+    },
+    {
+      "_id": "ws-req_c36eca7e4cdd453dac690a46cba1afdf",
+      "parentId": "wrk_64c9d5670f014930baf668326b95e601",
+      "modified": 1707645101146,
+      "created": 1707645101146,
+      "name": "deleteChargingStations",
+      "url": "{{ _.baseUrl }}",
+      "metaSortKey": -1671191988792.4688,
       "headers": [
         {
           "id": "pair_9a64d3b0bc654ab68710ef138f00d3f5",
@@ -674,7 +706,7 @@
     {
       "_id": "ws-payload_2872e2656c164769acf98cc7ba7ea028",
       "parentId": "ws-req_e5902850ac1d40369bd6e942a2755a9d",
-      "modified": 1707477801921,
+      "modified": 1707649312368,
       "created": 1671297544207,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"listChargingStations\",\n\t{}\n]",
@@ -684,7 +716,7 @@
     {
       "_id": "ws-payload_edebda0226aa43f88712d7feb60ac645",
       "parentId": "ws-req_ebe5a555a6344dfba7e29f857af11d08",
-      "modified": 1707475947625,
+      "modified": 1707649325381,
       "created": 1671297697172,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startChargingStation\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"5b82a559d2b453f6277e272e134ae824ae358cfb6ee2415af9f7c2f325ef8b3e930aeeadcd866df4b8aec58786e60ae7\"\n\t\t]\n\t}\n]",
@@ -704,7 +736,7 @@
     {
       "_id": "ws-payload_d8e66e0f933e4d74bb5fbff4d15a44bf",
       "parentId": "ws-req_23025e078480491daf01406b2b5e9cc2",
-      "modified": 1707157205853,
+      "modified": 1707589443241,
       "created": 1671298432039,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"startAutomaticTransactionGenerator\",\n\t{}\n]",
@@ -774,7 +806,7 @@
     {
       "_id": "ws-payload_95c28d71c8d940bb83ac514f8916a66d",
       "parentId": "ws-req_afbfa6e6824b427e99e735c0b1eabe3b",
-      "modified": 1707157216642,
+      "modified": 1707649322410,
       "created": 1678991663554,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"setSupervisionUrl\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"5b82a559d2b453f6277e272e134ae824ae358cfb6ee2415af9f7c2f325ef8b3e930aeeadcd866df4b8aec58786e60ae7\"\n\t\t],\n\t\t\"url\": \"wss://domain.tld\"\n\t}\n]",
@@ -784,7 +816,7 @@
     {
       "_id": "ws-payload_3e1dffbcefcc481286b44c694b9e6496",
       "parentId": "ws-req_3a0ff14878b449f4be3dfbb7432b5f87",
-      "modified": 1707481292801,
+      "modified": 1707645536699,
       "created": 1706726300041,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"listTemplates\",\n\t{}\n]",
@@ -794,7 +826,7 @@
     {
       "_id": "ws-payload_5e2dfed34a104c28b887c885ada1b4af",
       "parentId": "ws-req_8777c5635dd64fccbc2b0f450be656c0",
-      "modified": 1707482458081,
+      "modified": 1707649639026,
       "created": 1706778795544,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"addChargingStations\",\n\t{\n\t\t\"template\": \"evlink.station-template\",\n\t\t\"numberOfStations\": 1,\n\t\t\"options\": {\n\t\t\t\"autoStart\": false\n\t\t}\n\t}\n]",
@@ -804,10 +836,20 @@
     {
       "_id": "ws-payload_494fba679fa644ccb318f092e780834f",
       "parentId": "ws-req_0bab7a97ceda4944976a463f616dec5c",
-      "modified": 1707475888681,
+      "modified": 1707649324584,
       "created": 1707143784130,
       "name": "New Payload",
       "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"performanceStatistics\",\n\t{}\n]",
+      "mode": "application/json",
+      "_type": "websocket_payload"
+    },
+    {
+      "_id": "ws-payload_c4a0dbcd684e430b9b27298fe2bd088a",
+      "parentId": "ws-req_c36eca7e4cdd453dac690a46cba1afdf",
+      "modified": 1707649358965,
+      "created": 1707645101151,
+      "name": "New Payload",
+      "value": "[\n\t\"{% uuid 'v4' %}\",\n\t\"deleteChargingStations\",\n\t{\n\t\t\"hashIds\": [\n\t\t\t\"5b82a559d2b453f6277e272e134ae824ae358cfb6ee2415af9f7c2f325ef8b3e930aeeadcd866df4b8aec58786e60ae7\"\n\t\t]\n\t}\n]",
       "mode": "application/json",
       "_type": "websocket_payload"
     }
