@@ -36,6 +36,7 @@ import {
   type ChargingSchedulePeriod,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
+  type ChargingStationOptions,
   type ChargingStationTemplate,
   type ChargingStationWorkerMessageEvents,
   ConnectorPhaseRotation,
@@ -331,6 +332,30 @@ export const buildConnectorsMap = (
     )
   }
   return connectorsMap
+}
+
+export const setChargingStationOptions = (
+  stationInfo: ChargingStationInfo,
+  options?: ChargingStationOptions
+): ChargingStationInfo => {
+  if (options?.persistentConfiguration != null) {
+    stationInfo.ocppPersistentConfiguration = options.persistentConfiguration
+    stationInfo.automaticTransactionGeneratorPersistentConfiguration =
+      options.persistentConfiguration
+  }
+  if (options?.autoRegister != null) {
+    stationInfo.autoRegister = options.autoRegister
+  }
+  if (options?.enableStatistics != null) {
+    stationInfo.enableStatistics = options.enableStatistics
+  }
+  if (options?.ocppStrictCompliance != null) {
+    stationInfo.ocppStrictCompliance = options.ocppStrictCompliance
+  }
+  if (options?.stopTransactionsOnStopped != null) {
+    stationInfo.stopTransactionsOnStopped = options.stopTransactionsOnStopped
+  }
+  return stationInfo
 }
 
 export const initializeConnectorsMapStatus = (

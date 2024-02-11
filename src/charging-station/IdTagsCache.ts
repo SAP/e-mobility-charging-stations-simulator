@@ -143,8 +143,7 @@ export class IdTagsCache {
               logger.debug(
                 `${this.logPrefix(file)} ${FileType.Authorization} file have changed, reload`
               )
-              this.deleteIdTagsCache(file)
-              this.deleteIdTagsCacheIndexes(file)
+              this.deleteIdTags(file)
             } catch (error) {
               handleFileException(
                 file,

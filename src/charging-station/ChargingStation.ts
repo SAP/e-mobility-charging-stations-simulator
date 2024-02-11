@@ -42,6 +42,7 @@ import {
   hasReservationExpired,
   initializeConnectorsMapStatus,
   propagateSerialNumber,
+  setChargingStationOptions,
   stationTemplateToStationInfo,
   warnTemplateKeysDeprecation
 } from './Helpers.js'
@@ -1229,11 +1230,10 @@ export class ChargingStation extends EventEmitter {
     return stationInfo
   }
 
-  private getStationInfo (stationInfoPersistentConfiguration?: boolean): ChargingStationInfo {
+  private getStationInfo (options?: ChargingStationOptions): ChargingStationInfo {
     const stationInfoFromTemplate = this.getStationInfoFromTemplate()
-    stationInfoPersistentConfiguration != null &&
-      (stationInfoFromTemplate.stationInfoPersistentConfiguration =
-        stationInfoPersistentConfiguration)
+    options?.persistentConfiguration != null &&
+      (stationInfoFromTemplate.stationInfoPersistentConfiguration = options.persistentConfiguration)
     const stationInfoFromFile = this.getStationInfoFromFile(
       stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
@@ -1244,7 +1244,10 @@ export class ChargingStation extends EventEmitter {
       stationInfoFromFile != null &&
       stationInfoFromFile.templateHash === stationInfoFromTemplate.templateHash
     ) {
-      return { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromFile }
+      return setChargingStationOptions(
+        { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromFile },
+        options
+      )
     }
     stationInfoFromFile != null &&
       propagateSerialNumber(
@@ -1252,7 +1255,10 @@ export class ChargingStation extends EventEmitter {
         stationInfoFromFile,
         stationInfoFromTemplate
       )
-    return { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromTemplate }
+    return setChargingStationOptions(
+      { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromTemplate },
+      options
+    )
   }
 
   private saveStationInfo (): void {
@@ -1285,24 +1291,7 @@ export class ChargingStation extends EventEmitter {
     } else {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate)
     }
-    this.stationInfo = this.getStationInfo(options?.persistentConfiguration)
-    if (options?.persistentConfiguration != null) {
-      this.stationInfo.ocppPersistentConfiguration = options.persistentConfiguration
-      this.stationInfo.automaticTransactionGeneratorPersistentConfiguration =
-        options.persistentConfiguration
-    }
-    if (options?.autoRegister != null) {
-      this.stationInfo.autoRegister = options.autoRegister
-    }
-    if (options?.enableStatistics != null) {
-      this.stationInfo.enableStatistics = options.enableStatistics
-    }
-    if (options?.ocppStrictCompliance != null) {
-      this.stationInfo.ocppStrictCompliance = options.ocppStrictCompliance
-    }
-    if (options?.stopTransactionsOnStopped != null) {
-      this.stationInfo.stopTransactionsOnStopped = options.stopTransactionsOnStopped
-    }
+    this.stationInfo = this.getStationInfo(options)
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersionPattern) &&
