@@ -41,8 +41,7 @@ import {
   isAsyncFunction,
   isNotEmptyArray,
   logPrefix,
-  logger,
-  max
+  logger
 } from '../utils/index.js'
 import { type WorkerAbstract, WorkerFactory } from '../worker/index.js'
 
@@ -60,7 +59,7 @@ interface TemplateChargingStations {
   configured: number
   added: number
   started: number
-  lastIndex: number
+  indexes: Set<number>
 }
 
 export class Bootstrap extends EventEmitter {
@@ -118,7 +117,16 @@ export class Bootstrap extends EventEmitter {
   }
 
   public getLastIndex (templateName: string): number {
-    return this.chargingStationsByTemplate.get(templateName)?.lastIndex ?? 0
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const indexes = [...this.chargingStationsByTemplate.get(templateName)!.indexes]
+      .concat(0)
+      .sort((a, b) => a - b)
+    for (let i = 0; i < indexes.length - 1; i++) {
+      if (indexes[i + 1] - indexes[i] !== 1) {
+        return indexes[i]
+      }
+    }
+    return indexes[indexes.length - 1]
   }
 
   public getPerformanceStatistics (): IterableIterator<Statistics> | undefined {
@@ -392,8 +400,6 @@ export class Bootstrap extends EventEmitter {
 
   private readonly workerEventAdded = (data: ChargingStationData): void => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ++this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.added
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventAdded: Charging station ${
         data.stationInfo.chargingStationId
@@ -407,6 +413,9 @@ export class Bootstrap extends EventEmitter {
     this.uiServer?.chargingStations.delete(data.stationInfo.hashId)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     --this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.added
+    this.chargingStationsByTemplate
+      .get(data.stationInfo.templateName)
+      ?.indexes.delete(data.stationInfo.templateIndex)
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventDeleted: Charging station ${
         data.stationInfo.chargingStationId
@@ -472,7 +481,7 @@ export class Bootstrap extends EventEmitter {
             configured: stationTemplateUrl.numberOfStations,
             added: 0,
             started: 0,
-            lastIndex: 0
+            indexes: new Set<number>()
           })
           this.uiServer?.chargingStationTemplates.add(templateName)
         }
@@ -521,11 +530,10 @@ export class Bootstrap extends EventEmitter {
       ),
       options
     })
+    const templateName = parse(stationTemplateFile).name
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.chargingStationsByTemplate.get(parse(stationTemplateFile).name)!.lastIndex = max(
-      index,
-      this.chargingStationsByTemplate.get(parse(stationTemplateFile).name)?.lastIndex ?? -Infinity
-    )
+    ++this.chargingStationsByTemplate.get(templateName)!.added
+    this.chargingStationsByTemplate.get(templateName)?.indexes.add(index)
   }
 
   private gracefulShutdown (): void {

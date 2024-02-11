@@ -1163,6 +1163,7 @@ export class ChargingStation extends EventEmitter {
     }
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
+    stationInfo.templateIndex = this.index
     stationInfo.templateName = parse(this.templateFile).name
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     createSerialNumber(stationTemplate, stationInfo)
@@ -1216,6 +1217,10 @@ export class ChargingStation extends EventEmitter {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
         delete stationInfo.infoHash
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (stationInfo.templateIndex == null) {
+          stationInfo.templateIndex = this.index
+        }
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (stationInfo.templateName == null) {
           stationInfo.templateName = parse(this.templateFile).name
