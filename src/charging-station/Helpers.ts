@@ -344,6 +344,9 @@ export const setChargingStationOptions = (
     stationInfo.automaticTransactionGeneratorPersistentConfiguration =
       options.persistentConfiguration
   }
+  if (options?.autoStart != null) {
+    stationInfo.autoStart = options.autoStart
+  }
   if (options?.autoRegister != null) {
     stationInfo.autoRegister = options.autoRegister
   }

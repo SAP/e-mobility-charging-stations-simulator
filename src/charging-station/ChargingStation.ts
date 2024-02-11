@@ -253,11 +253,6 @@ export class ChargingStation extends EventEmitter {
 
     this.add()
 
-    if (options?.autoStart != null) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.stationInfo!.autoStart = options.autoStart
-    }
-
     if (this.stationInfo?.autoStart === true) {
       this.start()
     }
