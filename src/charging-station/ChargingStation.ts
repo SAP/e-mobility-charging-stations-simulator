@@ -686,6 +686,7 @@ export class ChargingStation extends EventEmitter {
     deleteConfiguration && rmSync(this.configurationFile, { force: true })
     this.chargingStationWorkerBroadcastChannel.unref()
     this.emit(ChargingStationEvents.deleted)
+    this.removeAllListeners()
   }
 
   public start (): void {
