@@ -162,13 +162,13 @@ export class ChargingStation extends EventEmitter {
   public started: boolean
   public starting: boolean
   public idTagsCache: IdTagsCache
-  public automaticTransactionGenerator!: AutomaticTransactionGenerator | undefined
-  public ocppConfiguration!: ChargingStationOcppConfiguration | undefined
+  public automaticTransactionGenerator?: AutomaticTransactionGenerator
+  public ocppConfiguration?: ChargingStationOcppConfiguration
   public wsConnection: WebSocket | null
   public readonly connectors: Map<number, ConnectorStatus>
   public readonly evses: Map<number, EvseStatus>
   public readonly requests: Map<string, CachedRequest>
-  public performanceStatistics: PerformanceStatistics | undefined
+  public performanceStatistics?: PerformanceStatistics
   public heartbeatSetInterval?: NodeJS.Timeout
   public ocppRequestService!: OCPPRequestService
   public bootNotificationRequest?: BootNotificationRequest
@@ -185,7 +185,7 @@ export class ChargingStation extends EventEmitter {
   private configuredSupervisionUrl!: URL
   private wsConnectionRetried: boolean
   private wsConnectionRetryCount: number
-  private templateFileWatcher: FSWatcher | undefined
+  private templateFileWatcher?: FSWatcher
   private templateFileHash!: string
   private readonly sharedLRUCache: SharedLRUCache
   private wsPingSetInterval?: NodeJS.Timeout
