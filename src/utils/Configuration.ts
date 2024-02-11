@@ -90,8 +90,7 @@ export class Configuration {
 
   public static getSupervisionUrls (): string | string[] | undefined {
     if (
-      Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] !==
-      undefined
+      Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] != null
     ) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
@@ -337,8 +336,8 @@ export class Configuration {
       undefined,
       "Use 'stationTemplateUrls' instead"
     )
-    Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !==
-      undefined &&
+    Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !=
+      null &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       (Configuration.getConfigurationData()!.stationTemplateUrls =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -348,7 +347,7 @@ export class Configuration {
     Configuration.getConfigurationData()?.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (stationTemplateUrl['numberOfStation' as keyof StationTemplateUrl] !== undefined) {
+        if (stationTemplateUrl['numberOfStation' as keyof StationTemplateUrl] != null) {
           console.error(
             `${chalk.green(logPrefix())} ${chalk.red(
               `Deprecated configuration key 'numberOfStation' usage for template file '${stationTemplateUrl.file}' in 'stationTemplateUrls'. Use 'numberOfStations' instead`
@@ -509,14 +508,13 @@ export class Configuration {
   ): void {
     if (
       sectionName != null &&
-      Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] !==
-        undefined &&
+      Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] != null &&
       (
         Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] as Record<
         string,
         unknown
         >
-      )[key] !== undefined
+      )[key] != null
     ) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
@@ -525,9 +523,7 @@ export class Configuration {
           }`
         )}`
       )
-    } else if (
-      Configuration.getConfigurationData()?.[key as keyof ConfigurationData] !== undefined
-    ) {
+    } else if (Configuration.getConfigurationData()?.[key as keyof ConfigurationData] != null) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
           `Deprecated configuration key '${key}' usage${
@@ -577,7 +573,7 @@ export class Configuration {
           )
           delete Configuration.configurationData
           Configuration.configurationSectionCache.clear()
-          if (Configuration.configurationChangeCallback !== undefined) {
+          if (Configuration.configurationChangeCallback != null) {
             Configuration.configurationChangeCallback()
               .catch(error => {
                 throw typeof error === 'string' ? new Error(error) : error

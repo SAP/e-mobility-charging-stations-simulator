@@ -146,16 +146,16 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
   const chargingStationInfo = {
     chargePointModel: stationTemplate.chargePointModel,
     chargePointVendor: stationTemplate.chargePointVendor,
-    ...(stationTemplate.chargeBoxSerialNumberPrefix !== undefined && {
+    ...(stationTemplate.chargeBoxSerialNumberPrefix != null && {
       chargeBoxSerialNumber: stationTemplate.chargeBoxSerialNumberPrefix
     }),
-    ...(stationTemplate.chargePointSerialNumberPrefix !== undefined && {
+    ...(stationTemplate.chargePointSerialNumberPrefix != null && {
       chargePointSerialNumber: stationTemplate.chargePointSerialNumberPrefix
     }),
-    ...(stationTemplate.meterSerialNumberPrefix !== undefined && {
+    ...(stationTemplate.meterSerialNumberPrefix != null && {
       meterSerialNumber: stationTemplate.meterSerialNumberPrefix
     }),
-    ...(stationTemplate.meterType !== undefined && {
+    ...(stationTemplate.meterType != null && {
       meterType: stationTemplate.meterType
     })
   }
@@ -418,21 +418,21 @@ export const createBootNotificationRequest = (
       return {
         chargePointModel: stationInfo.chargePointModel,
         chargePointVendor: stationInfo.chargePointVendor,
-        ...(stationInfo.chargeBoxSerialNumber !== undefined && {
+        ...(stationInfo.chargeBoxSerialNumber != null && {
           chargeBoxSerialNumber: stationInfo.chargeBoxSerialNumber
         }),
-        ...(stationInfo.chargePointSerialNumber !== undefined && {
+        ...(stationInfo.chargePointSerialNumber != null && {
           chargePointSerialNumber: stationInfo.chargePointSerialNumber
         }),
-        ...(stationInfo.firmwareVersion !== undefined && {
+        ...(stationInfo.firmwareVersion != null && {
           firmwareVersion: stationInfo.firmwareVersion
         }),
-        ...(stationInfo.iccid !== undefined && { iccid: stationInfo.iccid }),
-        ...(stationInfo.imsi !== undefined && { imsi: stationInfo.imsi }),
-        ...(stationInfo.meterSerialNumber !== undefined && {
+        ...(stationInfo.iccid != null && { iccid: stationInfo.iccid }),
+        ...(stationInfo.imsi != null && { imsi: stationInfo.imsi }),
+        ...(stationInfo.meterSerialNumber != null && {
           meterSerialNumber: stationInfo.meterSerialNumber
         }),
-        ...(stationInfo.meterType !== undefined && {
+        ...(stationInfo.meterType != null && {
           meterType: stationInfo.meterType
         })
       } satisfies OCPP16BootNotificationRequest
@@ -443,16 +443,16 @@ export const createBootNotificationRequest = (
         chargingStation: {
           model: stationInfo.chargePointModel,
           vendorName: stationInfo.chargePointVendor,
-          ...(stationInfo.firmwareVersion !== undefined && {
+          ...(stationInfo.firmwareVersion != null && {
             firmwareVersion: stationInfo.firmwareVersion
           }),
-          ...(stationInfo.chargeBoxSerialNumber !== undefined && {
+          ...(stationInfo.chargeBoxSerialNumber != null && {
             serialNumber: stationInfo.chargeBoxSerialNumber
           }),
-          ...((stationInfo.iccid !== undefined || stationInfo.imsi !== undefined) && {
+          ...((stationInfo.iccid != null || stationInfo.imsi != null) && {
             modem: {
-              ...(stationInfo.iccid !== undefined && { iccid: stationInfo.iccid }),
-              ...(stationInfo.imsi !== undefined && { imsi: stationInfo.imsi })
+              ...(stationInfo.iccid != null && { iccid: stationInfo.iccid }),
+              ...(stationInfo.imsi != null && { imsi: stationInfo.imsi })
             }
           })
         }
@@ -477,7 +477,7 @@ export const warnTemplateKeysDeprecation = (
       templateKey.deprecatedKey,
       logPrefix,
       templateFile,
-      templateKey.key !== undefined ? `Use '${templateKey.key}' instead` : undefined
+      templateKey.key != null ? `Use '${templateKey.key}' instead` : undefined
     )
     convertDeprecatedTemplateKey(stationTemplate, templateKey.deprecatedKey, templateKey.key)
   }
@@ -770,7 +770,7 @@ const warnDeprecatedTemplateKey = (
   templateFile: string,
   logMsgToAppend = ''
 ): void => {
-  if (template[key as keyof ChargingStationTemplate] !== undefined) {
+  if (template[key as keyof ChargingStationTemplate] != null) {
     const logMsg = `Deprecated template key '${key}' usage in file '${templateFile}'${
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
     }`
@@ -784,8 +784,8 @@ const convertDeprecatedTemplateKey = (
   deprecatedKey: string,
   key?: string
 ): void => {
-  if (template[deprecatedKey as keyof ChargingStationTemplate] !== undefined) {
-    if (key !== undefined) {
+  if (template[deprecatedKey as keyof ChargingStationTemplate] != null) {
+    if (key != null) {
       (template as unknown as Record<string, unknown>)[key] =
         template[deprecatedKey as keyof ChargingStationTemplate]
     }

@@ -1038,15 +1038,14 @@ export class ChargingStation extends EventEmitter {
     connectorId?: number
   ): boolean {
     const reservation = this.getReservationBy('reservationId', reservationId)
-    const reservationExists = reservation !== undefined && !hasReservationExpired(reservation)
+    const reservationExists = reservation != null && !hasReservationExpired(reservation)
     if (arguments.length === 1) {
       return !reservationExists
     } else if (arguments.length > 1) {
-      const userReservation =
-        idTag !== undefined ? this.getReservationBy('idTag', idTag) : undefined
+      const userReservation = idTag != null ? this.getReservationBy('idTag', idTag) : undefined
       const userReservationExists =
-        userReservation !== undefined && !hasReservationExpired(userReservation)
-      const notConnectorZero = connectorId === undefined ? true : connectorId > 0
+        userReservation != null && !hasReservationExpired(userReservation)
+      const notConnectorZero = connectorId == null ? true : connectorId > 0
       const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0
       return (
         !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
