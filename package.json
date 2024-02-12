@@ -92,10 +92,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^6.1.1",
-    "@mikro-orm/mariadb": "^6.1.1",
-    "@mikro-orm/reflection": "^6.1.1",
-    "@mikro-orm/sqlite": "^6.1.1",
+    "@mikro-orm/core": "^6.1.2",
+    "@mikro-orm/mariadb": "^6.1.2",
+    "@mikro-orm/reflection": "^6.1.2",
+    "@mikro-orm/sqlite": "^6.1.2",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "basic-ftp": "^5.0.4",
@@ -119,7 +119,7 @@
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",
     "@commitlint/config-conventional": "^18.6.0",
-    "@mikro-orm/cli": "^6.1.1",
+    "@mikro-orm/cli": "^6.1.2",
     "@release-it/bumper": "^6.0.1",
     "@types/node": "^20.11.17",
     "@types/tar": "^6.1.11",
