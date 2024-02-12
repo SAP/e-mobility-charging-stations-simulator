@@ -335,9 +335,13 @@ export const buildConnectorsMap = (
 }
 
 export const setChargingStationOptions = (
+  chargingStation: ChargingStation,
   stationInfo: ChargingStationInfo,
   options?: ChargingStationOptions
 ): ChargingStationInfo => {
+  if (options?.supervisionUrls != null) {
+    chargingStation.setSupervisionUrls(options.supervisionUrls, false)
+  }
   if (options?.persistentConfiguration != null) {
     stationInfo.stationInfoPersistentConfiguration = options.persistentConfiguration
     stationInfo.ocppPersistentConfiguration = options.persistentConfiguration

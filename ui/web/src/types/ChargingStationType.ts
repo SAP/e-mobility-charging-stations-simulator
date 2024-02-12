@@ -33,6 +33,7 @@ export type FirmwareStatus = OCPP16FirmwareStatus
 
 export type ChargingStationInfo = {
   hashId: string
+  templateIndex: number
   templateName: string
   chargingStationId?: string
   chargePointModel: string

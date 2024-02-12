@@ -67,7 +67,7 @@ export class Bootstrap extends EventEmitter {
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
   private readonly uiServer?: AbstractUIServer
   private storage?: Storage
-  private readonly chargingStationsByTemplate: Map<string, TemplateChargingStations>
+  private readonly templatesChargingStations: Map<string, TemplateChargingStations>
   private readonly version: string = version
   private initializedCounters: boolean
   private started: boolean
@@ -85,7 +85,7 @@ export class Bootstrap extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
-    this.chargingStationsByTemplate = new Map<string, TemplateChargingStations>()
+    this.templatesChargingStations = new Map<string, TemplateChargingStations>()
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
@@ -106,11 +106,11 @@ export class Bootstrap extends EventEmitter {
   }
 
   public get numberOfChargingStationTemplates (): number {
-    return this.chargingStationsByTemplate.size
+    return this.templatesChargingStations.size
   }
 
   public get numberOfConfiguredChargingStations (): number {
-    return [...this.chargingStationsByTemplate.values()].reduce(
+    return [...this.templatesChargingStations.values()].reduce(
       (accumulator, value) => accumulator + value.configured,
       0
     )
@@ -118,7 +118,7 @@ export class Bootstrap extends EventEmitter {
 
   public getLastIndex (templateName: string): number {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const indexes = [...this.chargingStationsByTemplate.get(templateName)!.indexes]
+    const indexes = [...this.templatesChargingStations.get(templateName)!.indexes]
       .concat(0)
       .sort((a, b) => a - b)
     for (let i = 0; i < indexes.length - 1; i++) {
@@ -134,14 +134,14 @@ export class Bootstrap extends EventEmitter {
   }
 
   private get numberOfAddedChargingStations (): number {
-    return [...this.chargingStationsByTemplate.values()].reduce(
+    return [...this.templatesChargingStations.values()].reduce(
       (accumulator, value) => accumulator + value.added,
       0
     )
   }
 
   private get numberOfStartedChargingStations (): number {
-    return [...this.chargingStationsByTemplate.values()].reduce(
+    return [...this.templatesChargingStations.values()].reduce(
       (accumulator, value) => accumulator + value.started,
       0
     )
@@ -196,8 +196,8 @@ export class Bootstrap extends EventEmitter {
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
             const nbStations =
-              this.chargingStationsByTemplate.get(parse(stationTemplateUrl.file).name)
-                ?.configured ?? stationTemplateUrl.numberOfStations
+              this.templatesChargingStations.get(parse(stationTemplateUrl.file).name)?.configured ??
+              stationTemplateUrl.numberOfStations
             for (let index = 1; index <= nbStations; index++) {
               await this.addChargingStation(index, stationTemplateUrl.file)
             }
@@ -412,10 +412,11 @@ export class Bootstrap extends EventEmitter {
   private readonly workerEventDeleted = (data: ChargingStationData): void => {
     this.uiServer?.chargingStations.delete(data.stationInfo.hashId)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    --this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.added
-    this.chargingStationsByTemplate
-      .get(data.stationInfo.templateName)
-      ?.indexes.delete(data.stationInfo.templateIndex)
+    const templateChargingStations = this.templatesChargingStations.get(
+      data.stationInfo.templateName
+    )!
+    --templateChargingStations.added
+    templateChargingStations.indexes.delete(data.stationInfo.templateIndex)
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventDeleted: Charging station ${
         data.stationInfo.chargingStationId
@@ -428,7 +429,7 @@ export class Bootstrap extends EventEmitter {
   private readonly workerEventStarted = (data: ChargingStationData): void => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ++this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.started
+    ++this.templatesChargingStations.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station ${
         data.stationInfo.chargingStationId
@@ -441,7 +442,7 @@ export class Bootstrap extends EventEmitter {
   private readonly workerEventStopped = (data: ChargingStationData): void => {
     this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    --this.chargingStationsByTemplate.get(data.stationInfo.templateName)!.started
+    --this.templatesChargingStations.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station ${
         data.stationInfo.chargingStationId
@@ -477,7 +478,7 @@ export class Bootstrap extends EventEmitter {
       if (isNotEmptyArray(stationTemplateUrls)) {
         for (const stationTemplateUrl of stationTemplateUrls) {
           const templateName = parse(stationTemplateUrl.file).name
-          this.chargingStationsByTemplate.set(templateName, {
+          this.templatesChargingStations.set(templateName, {
             configured: stationTemplateUrl.numberOfStations,
             added: 0,
             started: 0,
@@ -485,7 +486,7 @@ export class Bootstrap extends EventEmitter {
           })
           this.uiServer?.chargingStationTemplates.add(templateName)
         }
-        if (this.chargingStationsByTemplate.size !== stationTemplateUrls.length) {
+        if (this.templatesChargingStations.size !== stationTemplateUrls.length) {
           console.error(
             chalk.red(
               "'stationTemplateUrls' contains duplicate entries, please check your configuration"
@@ -530,10 +531,12 @@ export class Bootstrap extends EventEmitter {
       ),
       options
     })
-    const templateName = parse(stationTemplateFile).name
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ++this.chargingStationsByTemplate.get(templateName)!.added
-    this.chargingStationsByTemplate.get(templateName)?.indexes.add(index)
+    const templateChargingStations = this.templatesChargingStations.get(
+      parse(stationTemplateFile).name
+    )!
+    ++templateChargingStations.added
+    templateChargingStations.indexes.add(index)
   }
 
   private gracefulShutdown (): void {

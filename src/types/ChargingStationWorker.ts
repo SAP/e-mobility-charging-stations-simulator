@@ -12,6 +12,7 @@ import type { Statistics } from './Statistics.js'
 import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 
 export interface ChargingStationOptions extends JsonObject {
+  supervisionUrls?: string | string[]
   persistentConfiguration?: boolean
   autoStart?: boolean
   autoRegister?: boolean
