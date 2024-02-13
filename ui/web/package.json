@@ -9,7 +9,7 @@
   },
   "volta": {
     "node": "20.11.0",
-    "pnpm": "8.15.1"
+    "pnpm": "8.15.2"
   },
   "pnpm": {
     "overrides": {
@@ -34,7 +34,7 @@
   "dependencies": {
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.4.18",
+    "vue": "^3.4.19",
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
@@ -42,8 +42,8 @@
     "@tsconfig/node20": "^20.1.2",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^20.11.17",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
     "@vitest/coverage-v8": "^1.2.2",
