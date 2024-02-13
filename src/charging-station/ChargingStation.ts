@@ -1223,6 +1223,7 @@ export class ChargingStation extends EventEmitter {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
         delete stationInfo.infoHash
+        delete (stationInfo as ChargingStationTemplate).numberOfConnectors
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (stationInfo.templateIndex == null) {
           stationInfo.templateIndex = this.index
