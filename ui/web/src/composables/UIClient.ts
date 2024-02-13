@@ -5,7 +5,7 @@ import {
   type ResponsePayload,
   ResponseStatus
 } from '@/types'
-import config from '@/assets/config'
+import configuration from '@/assets/config'
 
 type ResponseHandler = {
   procedureName: ProcedureName
@@ -111,8 +111,8 @@ export class UIClient {
 
   private openWS(): void {
     this.ws = new WebSocket(
-      `ws://${config.uiServer.host}:${config.uiServer.port}`,
-      config.uiServer.protocol
+      `ws://${configuration.uiServer.host}:${configuration.uiServer.port}`,
+      configuration.uiServer.protocol
     )
     this.ws.onmessage = this.responseHandler.bind(this)
     this.ws.onerror = errorEvent => {

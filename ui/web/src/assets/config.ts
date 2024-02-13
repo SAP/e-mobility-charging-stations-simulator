@@ -1,6 +1,6 @@
-import type { BaseConfig } from '@/types'
+import type { ConfigurationData } from '@/types'
 
-const config: BaseConfig = {
+const configuration: ConfigurationData = {
   uiServer: {
     host: 'localhost',
     port: 8080,
@@ -8,4 +8,4 @@ const config: BaseConfig = {
   }
 }
 
-export default config
+export default configuration

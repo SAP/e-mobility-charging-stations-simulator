@@ -1,8 +1,8 @@
-export type BaseConfig = {
-  uiServer: UIServerConfig
+export type ConfigurationData = {
+  uiServer: UIServerConfigurationSection
 }
 
-type UIServerConfig = {
+type UIServerConfigurationSection = {
   host: string
   port: number
   protocol: string
