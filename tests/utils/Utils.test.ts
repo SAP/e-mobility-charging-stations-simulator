@@ -341,14 +341,17 @@ await describe('Utils test suite', async () => {
     const date = new Date()
     expect(clone(date)).toStrictEqual(date)
     expect(clone(date) === date).toBe(false)
+    // The URL object seems to have not enumerable properties
+    const url = new URL('https://domain.tld')
+    expect(clone(url)).toStrictEqual({})
     const map = new Map([['1', '2']])
-    expect(clone(map)).toStrictEqual({})
+    expect(clone(map)).toStrictEqual(map)
     const set = new Set(['1'])
-    expect(clone(set)).toStrictEqual({})
+    expect(clone(set)).toStrictEqual(set)
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    expect(clone(weakMap)).toStrictEqual({})
+    expect(() => clone(weakMap)).toThrow(new Error('#<WeakMap> could not be cloned.'))
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    expect(clone(weakSet)).toStrictEqual({})
+    expect(() => clone(weakSet)).toThrow(new Error('#<WeakSet> could not be cloned.'))
   })
 
   await it('Verify hasOwnProp()', () => {
