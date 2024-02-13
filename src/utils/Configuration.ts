@@ -4,7 +4,7 @@ import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import chalk from 'chalk'
-import { merge } from 'lodash-es'
+import { mergeDeepRight } from 'rambda'
 
 import {
   buildPerformanceUriFilePath,
@@ -161,7 +161,7 @@ export class Configuration {
       }
     }
     if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.uiServer)) {
-      uiServerConfiguration = merge(
+      uiServerConfiguration = mergeDeepRight(
         uiServerConfiguration,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         Configuration.getConfigurationData()!.uiServer!

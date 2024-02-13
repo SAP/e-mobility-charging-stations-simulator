@@ -12,6 +12,7 @@ import {
   minutesToSeconds,
   secondsToMilliseconds
 } from 'date-fns'
+import { clone as cloneDeep } from 'rambda'
 
 import { Constants } from './Constants.js'
 import {
@@ -211,55 +212,8 @@ export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[]
   return timeSeries.map(timeSeriesItem => timeSeriesItem.value)
 }
 
-type CloneableData =
-  | number
-  | string
-  | boolean
-  | null
-  | undefined
-  | Date
-  | CloneableData[]
-  | { [key: string]: CloneableData }
-
-type FormatKey = (key: string) => string
-
-const deepClone = <I extends CloneableData, O extends CloneableData = I>(
-  value: I,
-  formatKey?: FormatKey,
-  refs: Map<I, O> = new Map<I, O>()
-): O => {
-  const ref = refs.get(value)
-  if (ref !== undefined) {
-    return ref
-  }
-  if (Array.isArray(value)) {
-    const clone: CloneableData[] = []
-    refs.set(value, clone as O)
-    for (let i = 0; i < value.length; i++) {
-      clone[i] = deepClone(value[i], formatKey, refs)
-    }
-    return clone as O
-  }
-  if (value instanceof Date) {
-    return new Date(value.getTime()) as O
-  }
-  if (typeof value !== 'object' || value === null) {
-    return value as unknown as O
-  }
-  const clone: Record<string, CloneableData> = {}
-  refs.set(value, clone as O)
-  for (const key of Object.keys(value)) {
-    clone[typeof formatKey === 'function' ? formatKey(key) : key] = deepClone(
-      value[key],
-      formatKey,
-      refs
-    )
-  }
-  return clone as O
-}
-
 export const clone = <T>(object: T): T => {
-  return deepClone(object as CloneableData) as T
+  return cloneDeep(object)
 }
 
 /**

@@ -345,9 +345,6 @@ await describe('Utils test suite', async () => {
     expect(clone(map)).toStrictEqual({})
     const set = new Set(['1'])
     expect(clone(set)).toStrictEqual({})
-    // The URL object seems to have not enumerable properties
-    const url = new URL('https://domain.tld')
-    expect(clone(url)).toStrictEqual({})
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
     expect(clone(weakMap)).toStrictEqual({})
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])

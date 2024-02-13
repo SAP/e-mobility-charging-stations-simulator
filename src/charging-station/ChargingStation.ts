@@ -8,7 +8,7 @@ import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
 import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
-import { merge } from 'lodash-es'
+import { mergeDeepRight } from 'rambda'
 import { type RawData, WebSocket } from 'ws'
 
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
@@ -1198,7 +1198,7 @@ export class ChargingStation extends EventEmitter {
         } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
       )
     }
-    stationInfo.firmwareUpgrade = merge(
+    stationInfo.firmwareUpgrade = mergeDeepRight(
       {
         versionUpgrade: {
           step: 1
@@ -1730,7 +1730,7 @@ export class ChargingStation extends EventEmitter {
         } else {
           delete configurationData.configurationKey
         }
-        configurationData = merge(
+        configurationData = mergeDeepRight(
           configurationData,
           buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
         )
