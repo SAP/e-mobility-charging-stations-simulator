@@ -23,7 +23,7 @@ await build({
     'chalk',
     'date-fns',
     'http-status-codes',
-    'just-merge',
+    'lodash-es',
     'logform',
     'mnemonist',
     'mongodb',
