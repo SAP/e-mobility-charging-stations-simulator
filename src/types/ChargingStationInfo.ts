@@ -3,10 +3,11 @@ import type { FirmwareStatus } from './ocpp/Requests.js'
 
 export type ChargingStationInfo = Omit<
 ChargingStationTemplate,
-| 'AutomaticTransactionGenerator'
-| 'Configuration'
 | 'Connectors'
 | 'Evses'
+| 'Configuration'
+| 'AutomaticTransactionGenerator'
+| 'numberOfConnectors'
 | 'power'
 | 'powerUnit'
 | 'chargeBoxSerialNumberPrefix'

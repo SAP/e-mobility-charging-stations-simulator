@@ -26,6 +26,15 @@ export enum OCPP16FirmwareStatus {
   Installed = 'Installed'
 }
 
+export interface FirmwareUpgrade {
+  versionUpgrade?: {
+    patternGroup?: number
+    step?: number
+  }
+  reset?: boolean
+  failureStatus?: FirmwareStatus
+}
+
 export const FirmwareStatus = {
   ...OCPP16FirmwareStatus
 } as const
@@ -36,32 +45,34 @@ export type ChargingStationInfo = {
   templateIndex: number
   templateName: string
   chargingStationId?: string
-  chargePointModel: string
-  chargePointVendor: string
-  firmwareVersionPattern?: string
-  firmwareVersion?: string
-  firmwareStatus?: FirmwareStatus
-  numberOfConnectors?: number | number[]
-  baseName: string
-  templateHash?: string
   chargeBoxSerialNumber?: string
   chargePointSerialNumber?: string
   meterSerialNumber?: string
   maximumPower?: number // Always in Watt
   maximumAmperage?: number // Always in Ampere
+  firmwareStatus?: FirmwareStatus
+  templateHash?: string
   supervisionUrls?: string | string[]
   supervisionUrlOcppConfiguration?: boolean
   supervisionUrlOcppKey?: string
   supervisionUser?: string
   supervisionPassword?: string
+  autoStart?: boolean
   ocppVersion?: OCPPVersion
   ocppProtocol?: OCPPProtocol
   ocppStrictCompliance?: boolean
   ocppPersistentConfiguration?: boolean
   stationInfoPersistentConfiguration?: boolean
+  automaticTransactionGeneratorPersistentConfiguration?: boolean
   idTagsFile?: string
+  baseName: string
   nameSuffix?: string
   fixedName?: boolean
+  chargePointModel: string
+  chargePointVendor: string
+  firmwareVersionPattern?: string
+  firmwareVersion?: string
+  firmwareUpgrade?: FirmwareUpgrade
   iccid?: string
   imsi?: string
   meterType?: string
@@ -84,6 +95,7 @@ export type ChargingStationInfo = {
   outOfOrderEndMeterValues?: boolean
   meteringPerTransaction?: boolean
   transactionDataMeterValues?: boolean
+  stopTransactionsOnStopped?: boolean
   mainVoltageMeterValues?: boolean
   phaseLineToLineVoltageMeterValues?: boolean
   customValueLimitationMeterValues?: boolean
