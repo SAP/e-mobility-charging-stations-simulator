@@ -213,7 +213,7 @@ export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[]
 }
 
 export const clone = <T>(object: T): T => {
-  return cloneDeep(object)
+  return cloneDeep<T>(object)
 }
 
 /**
