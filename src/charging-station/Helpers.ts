@@ -500,6 +500,7 @@ export const stationTemplateToStationInfo = (
   delete stationTemplate.Evses
   delete stationTemplate.Configuration
   delete stationTemplate.AutomaticTransactionGenerator
+  delete stationTemplate.numberOfConnectors
   delete stationTemplate.chargeBoxSerialNumberPrefix
   delete stationTemplate.chargePointSerialNumberPrefix
   delete stationTemplate.meterSerialNumberPrefix
