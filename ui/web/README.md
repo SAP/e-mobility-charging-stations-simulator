@@ -35,7 +35,7 @@ See [here](./../../README.md#charging-stations-simulator-configuration) for more
 
 #### Web UI configuration
 
-Copy the configuration template [assets/config-template.ts](assets/config-template.ts) to `assets/config.ts`.
+Copy the configuration template [src/assets/config-template.ts](src/assets/config-template.ts) to `src/assets/config.ts`.
 
 ### Run
 
