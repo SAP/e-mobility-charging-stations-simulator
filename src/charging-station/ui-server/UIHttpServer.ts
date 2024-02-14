@@ -95,7 +95,7 @@ export class UIHttpServer extends AbstractUIServer {
             'WWW-Authenticate': 'Basic realm=users'
           })
           .end(`${StatusCodes.UNAUTHORIZED} Unauthorized`)
-          .destroy()
+        res.destroy()
         req.destroy()
       }
     })
