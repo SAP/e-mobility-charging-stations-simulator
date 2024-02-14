@@ -39,27 +39,15 @@ Copy the configuration template [src/assets/config-template.json](src/assets/con
 
 ### Run
 
-#### Compiles for production
-
-```shell
-pnpm build
-```
-
-#### Compiles and preview locally for production
+#### Compiles for production and preview locally
 
 ```shell
 pnpm preview
 ```
 
-#### Compiles and run for production
-
-```shell
-pnpm start
-```
-
 #### Try it out
 
-For both options above you can then follow the link displayed in the terminal at the end of compilation. The Web UI looks like the following
+You can now follow the link displayed in the terminal. The Web UI looks like the following:
 
 ![webui](./src/assets/webui.png)
 

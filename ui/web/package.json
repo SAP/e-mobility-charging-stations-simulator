@@ -19,10 +19,10 @@
   "type": "module",
   "scripts": {
     "preinstall": "npx --yes only-allow pnpm",
+    "build": "vite build",
+    "preview": "pnpm build && vite preview",
     "start": "pnpm build && node start.js",
     "dev": "vite",
-    "preview": "vite preview",
-    "build": "vite build",
     "clean:dist": "npx rimraf dist",
     "clean:node_modules": "npx rimraf node_modules",
     "lint": "cross-env TIMING=1 eslint . --cache --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore",
@@ -60,7 +60,6 @@
     "jsdom": "^24.0.0",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
-    "shelljs": "^0.8.5",
     "typescript": "~5.3.3",
     "vite": "^5.1.2",
     "vitest": "^1.2.2"

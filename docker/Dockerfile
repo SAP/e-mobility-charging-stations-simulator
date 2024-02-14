@@ -25,6 +25,7 @@ RUN set -ex \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
   && pnpm install --ignore-scripts --frozen-lockfile \
+  && cp src/assets/config-template.json public/config.json \
   && pnpm build
 
 FROM node:lts-alpine
