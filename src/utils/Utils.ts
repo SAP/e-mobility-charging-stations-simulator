@@ -12,7 +12,6 @@ import {
   minutesToSeconds,
   secondsToMilliseconds
 } from 'date-fns'
-import { clone as cloneDeep } from 'rambda'
 
 import { Constants } from './Constants.js'
 import {
@@ -213,7 +212,7 @@ export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[]
 }
 
 export const clone = <T>(object: T): T => {
-  return cloneDeep(object)
+  return structuredClone<T>(object)
 }
 
 /**

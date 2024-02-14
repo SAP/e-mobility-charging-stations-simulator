@@ -1,7 +1,9 @@
+import { version } from 'node:process'
 import { describe, it } from 'node:test'
 
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
 import { expect } from 'expect'
+import { satisfies } from 'semver'
 
 import { Constants } from '../../src/utils/Constants.js'
 import {
@@ -341,14 +343,20 @@ await describe('Utils test suite', async () => {
     const date = new Date()
     expect(clone(date)).toStrictEqual(date)
     expect(clone(date) === date).toBe(false)
+    if (satisfies(version, '>=21.0.0')) {
+      const url = new URL('https://domain.tld')
+      expect(() => clone(url)).toThrowError(new Error('Cannot clone object of unsupported type.'))
+    }
     const map = new Map([['1', '2']])
-    expect(clone(map)).toStrictEqual({})
+    expect(clone(map)).toStrictEqual(map)
+    expect(clone(map) === map).toBe(false)
     const set = new Set(['1'])
-    expect(clone(set)).toStrictEqual({})
+    expect(clone(set)).toStrictEqual(set)
+    expect(clone(set) === set).toBe(false)
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    expect(clone(weakMap)).toStrictEqual({})
+    expect(() => clone(weakMap)).toThrowError(new Error('#<WeakMap> could not be cloned.'))
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    expect(clone(weakSet)).toStrictEqual({})
+    expect(() => clone(weakSet)).toThrowError(new Error('#<WeakSet> could not be cloned.'))
   })
 
   await it('Verify hasOwnProp()', () => {
