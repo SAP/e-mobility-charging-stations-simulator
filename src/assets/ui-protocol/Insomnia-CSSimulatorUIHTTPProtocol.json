@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2024-02-11T11:11:14.532Z",
+  "__export_date": "2024-02-14T09:28:32.908Z",
   "__export_source": "insomnia.desktop.app:v8.6.1",
   "resources": [
     {
@@ -882,9 +882,9 @@
     {
       "_id": "env_f128bddd5e284e0288a11c89bf7287b4",
       "parentId": "env_9866e32d3029450ab75e8dc2b67f6246",
-      "modified": 1671183736953,
+      "modified": 1707902894385,
       "created": 1661789624972,
-      "name": "CSSimulatorUIProtocolEnvironment",
+      "name": "CSSimulatorUIHTTProtocolEnvironment",
       "data": {
         "baseUrl": "http://localhost:8080",
         "protocol": "ui",
