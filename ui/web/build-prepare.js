@@ -1,3 +1,3 @@
-import { cp } from 'shelljs'
+import shell from 'shelljs'
 
-cp('src/assets/config-template.ts', 'src/assets/config.ts')
+shell.cp('src/assets/config-template.ts', 'src/assets/config.ts')
