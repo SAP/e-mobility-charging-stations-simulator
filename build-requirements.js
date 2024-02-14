@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import semVer from 'semver'
+import { satisfies } from 'semver'
 import packageJson from './package.json' assert { type: 'json' }
 import { version, exit } from 'node:process'
 
@@ -8,7 +8,7 @@ import { version, exit } from 'node:process'
  */
 export const checkNodeVersion = () => {
   const enginesNodeVersion = packageJson.engines.node
-  if (semVer.satisfies(version, enginesNodeVersion) === false) {
+  if (satisfies(version, enginesNodeVersion) === false) {
     console.error(
       chalk.red(
         `Required node version ${enginesNodeVersion} not satisfied with current version ${version}`
