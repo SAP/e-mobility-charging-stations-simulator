@@ -1,10 +1,13 @@
 import {
+  ApplicationProtocol,
   ProcedureName,
   type ProtocolResponse,
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus
 } from '@/types'
+// @ts-expect-error: configuration file can be non existent
+// eslint-disable-next-line import/no-unresolved
 import configuration from '@/assets/config'
 
 type ResponseHandler = {
@@ -111,8 +114,8 @@ export class UIClient {
 
   private openWS(): void {
     this.ws = new WebSocket(
-      `ws://${configuration.uiServer.host}:${configuration.uiServer.port}`,
-      configuration.uiServer.protocol
+      `${configuration.uiServer.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${configuration.uiServer.host}:${configuration.uiServer.port}`,
+      `${configuration.uiServer.protocol}${configuration.uiServer.version}`
     )
     this.ws.onmessage = this.responseHandler.bind(this)
     this.ws.onerror = errorEvent => {

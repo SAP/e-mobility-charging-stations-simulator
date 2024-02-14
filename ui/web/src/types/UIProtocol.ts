@@ -5,12 +5,16 @@ export enum Protocol {
 }
 
 export enum ApplicationProtocol {
-  HTTP = 'http',
-  WS = 'ws'
+  WS = 'ws',
+  WSS = 'wss'
 }
 
 export enum ProtocolVersion {
   '0.0.1' = '0.0.1'
+}
+
+export enum AuthenticationType {
+  BASIC_AUTH = 'basic-auth'
 }
 
 export type ProtocolRequest = [string, ProcedureName, RequestPayload]

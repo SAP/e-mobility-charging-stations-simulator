@@ -1,3 +1,5 @@
+import type { AuthenticationType, Protocol, ProtocolVersion } from './UIProtocol'
+
 export type ConfigurationData = {
   uiServer: UIServerConfigurationSection
 }
@@ -5,7 +7,13 @@ export type ConfigurationData = {
 type UIServerConfigurationSection = {
   host: string
   port: number
-  protocol: string
-  username?: string
-  password?: string
+  secure?: boolean
+  protocol: Protocol
+  version: ProtocolVersion
+  authentication?: {
+    enabled: boolean
+    type: AuthenticationType
+    username?: string
+    password?: string
+  }
 }
