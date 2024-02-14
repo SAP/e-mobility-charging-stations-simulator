@@ -112,7 +112,9 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         run: pnpm lint
       - name: pnpm build
-        run: pnpm build
+        run: |
+          pnpm build:prepare
+          pnpm build
       - name: pnpm test
         run: pnpm test
       - name: pnpm coverage
