@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import Button from '../buttons/Button.vue'
+import Button from '@/components/buttons/Button.vue'
 import Modal from '@/components/Modal.vue'
 
 const props = defineProps<{

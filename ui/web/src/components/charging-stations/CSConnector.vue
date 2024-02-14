@@ -23,12 +23,12 @@
 </template>
 
 <script setup lang="ts">
-// import { reactive } from 'vue'
-import Button from '../buttons/Button.vue'
-// import IdTagInputModal from './IdTagInputModal.vue'
+import { getCurrentInstance } from 'vue'
+// import { reactive } from 'vue';
+// import IdTagInputModal from '@/components/charging-stations/IdTagInputModal.vue'
+import Button from '@/components/buttons/Button.vue'
 import type { ConnectorStatus } from '@/types'
-import { UIClient } from '@/composables/UIClient'
-// import { compose } from '@/composables/Utils'
+// import { compose } from '@/composables'
 
 const props = defineProps<{
   hashId: string
@@ -62,28 +62,30 @@ const props = defineProps<{
 //   state.isIdTagModalVisible = false
 // }
 
+const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
+
 function startChargingStation(): void {
-  UIClient.getInstance().startChargingStation(props.hashId)
+  UIClient.startChargingStation(props.hashId)
 }
 function stopChargingStation(): void {
-  UIClient.getInstance().stopChargingStation(props.hashId)
+  UIClient.stopChargingStation(props.hashId)
 }
 function openConnection(): void {
-  UIClient.getInstance().openConnection(props.hashId)
+  UIClient.openConnection(props.hashId)
 }
 function closeConnection(): void {
-  UIClient.getInstance().closeConnection(props.hashId)
+  UIClient.closeConnection(props.hashId)
 }
 function startTransaction(): void {
-  UIClient.getInstance().startTransaction(props.hashId, props.connectorId, props.idTag)
+  UIClient.startTransaction(props.hashId, props.connectorId, props.idTag)
 }
 function stopTransaction(): void {
-  UIClient.getInstance().stopTransaction(props.hashId, props.transactionId)
+  UIClient.stopTransaction(props.hashId, props.transactionId)
 }
 function startAutomaticTransactionGenerator(): void {
-  UIClient.getInstance().startAutomaticTransactionGenerator(props.hashId, props.connectorId)
+  UIClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId)
 }
 function stopAutomaticTransactionGenerator(): void {
-  UIClient.getInstance().stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
+  UIClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
 }
 </script>

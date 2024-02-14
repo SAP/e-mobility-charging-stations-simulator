@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import CSData from './CSData.vue'
+import CSData from '@/components/charging-stations/CSData.vue'
 import type { ChargingStationData } from '@/types'
 
 const props = defineProps<{

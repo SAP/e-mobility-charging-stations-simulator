@@ -22,7 +22,6 @@
     "start": "pnpm build && node start.js",
     "dev": "vite",
     "preview": "vite preview",
-    "build:prepare": "node build-prepare.js",
     "build": "vite build",
     "clean:dist": "npx rimraf dist",
     "clean:node_modules": "npx rimraf node_modules",

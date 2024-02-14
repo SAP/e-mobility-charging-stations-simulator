@@ -1,5 +1,13 @@
 import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
+import router from '@/router'
+import { UIClient } from '@/composables'
+import App from '@/App.vue'
 
-createApp(App).use(router).mount('#app')
+const app = createApp(App)
+
+fetch('/config.json')
+  .then(response => response.json())
+  .then(config => {
+    app.config.globalProperties.$UIClient = UIClient.getInstance(config)
+    app.use(router).mount('#app')
+  })

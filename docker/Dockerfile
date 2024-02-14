@@ -25,7 +25,6 @@ RUN set -ex \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
   && pnpm install --ignore-scripts --frozen-lockfile \
-  && pnpm build:prepare \
   && pnpm build
 
 FROM node:lts-alpine

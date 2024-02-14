@@ -1,7 +1,7 @@
 .DS_Store
 node_modules
 /dist
-/src/assets/config.ts
+/public/config.json
 
 # Created by git for backups. To disable backups in git:
 # $ git config --global mergetool.keepBackup false

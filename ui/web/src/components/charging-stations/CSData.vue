@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 // import { reactive } from 'vue'
-import CSConnector from './CSConnector.vue'
+import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import type { ChargingStationData, ChargingStationInfo, ConnectorStatus } from '@/types'
 
 const props = defineProps<{
