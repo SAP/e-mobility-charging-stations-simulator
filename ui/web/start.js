@@ -15,4 +15,4 @@ const server = createServer(function onRequest(req, res) {
   serve(req, res, finalhandler(req, res))
 })
 
-server.listen(PORT, () => console.info(`App running at: http://localhost:${PORT}`))
+server.listen(PORT, () => console.info(`Web UI running at: http://localhost:${PORT}`))

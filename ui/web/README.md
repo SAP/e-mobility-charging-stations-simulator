@@ -35,7 +35,7 @@ See [here](./../../README.md#charging-stations-simulator-configuration) for more
 
 #### Web UI configuration
 
-Copy the configuration template [src/assets/config-template.json](src/assets/config-template.json) to `public/config.json`.
+Copy the configuration template [src/assets/config-template.json](./src/assets/config-template.json) to `public/config.json`.
 
 ### Run
 
