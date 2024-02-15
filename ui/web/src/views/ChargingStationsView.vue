@@ -42,12 +42,12 @@ const state: State = reactive({
 })
 
 async function load(): Promise<void> {
-  if (state.isLoading === true) return
-  state.isLoading = true
-  const listChargingStationsPayload = await UIClient.listChargingStations()
-  state.chargingStations =
-    listChargingStationsPayload.chargingStations as unknown as ChargingStationData[]
-  state.isLoading = false
+  if (state.isLoading === false) {
+    state.isLoading = true
+    state.chargingStations = (await UIClient.listChargingStations())
+      .chargingStations as ChargingStationData[]
+    state.isLoading = false
+  }
 }
 
 function startSimulator(): void {
