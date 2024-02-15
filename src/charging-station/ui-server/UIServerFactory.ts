@@ -36,11 +36,14 @@ export class UIServerFactory {
     ) {
       throw new BaseError('Protocol basic authentication is not supported for HTTP UI server')
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (!UIServerUtils.isLoopback(uiServerConfiguration.options!.host!)) {
+    if (
+      uiServerConfiguration.authentication?.enabled !== true &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      !UIServerUtils.isLoopback(uiServerConfiguration.options!.host!)
+    ) {
       console.warn(
         chalk.yellow(
-          'Loopback address not detected in UI server configuration. This is not recommended'
+          'Non loopback address in UI server configuration without authentication enabled. This is not recommended'
         )
       )
     }

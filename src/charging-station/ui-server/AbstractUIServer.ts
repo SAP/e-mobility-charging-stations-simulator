@@ -137,7 +137,7 @@ export abstract class AbstractUIServer {
   }
 
   private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
-    const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(',').pop()?.trim()
+    const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
     const [username, password] = this.getUsernameAndPasswordFromAuthorizationToken(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join('=')}`
