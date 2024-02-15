@@ -8,7 +8,7 @@
     "pnpm": ">=8.6.0"
   },
   "volta": {
-    "node": "20.11.0",
+    "node": "20.11.1",
     "pnpm": "8.15.2"
   },
   "pnpm": {
@@ -41,7 +41,7 @@
     "@rushstack/eslint-patch": "^1.7.2",
     "@tsconfig/node20": "^20.1.2",
     "@types/jsdom": "^21.1.6",
-    "@types/node": "^20.11.17",
+    "@types/node": "^20.11.18",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "@vitejs/plugin-vue": "^5.0.4",
