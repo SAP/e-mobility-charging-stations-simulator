@@ -4,7 +4,7 @@ import type { AbstractUIServer } from './AbstractUIServer.js'
 import { UIHttpServer } from './UIHttpServer.js'
 import { UIServerUtils } from './UIServerUtils.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
-import { BaseError } from '../../exception/BaseError.js'
+import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
