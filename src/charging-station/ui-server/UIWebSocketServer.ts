@@ -5,7 +5,11 @@ import { StatusCodes } from 'http-status-codes'
 import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
 import { AbstractUIServer } from './AbstractUIServer.js'
-import { UIServerUtils } from './UIServerUtils.js'
+import {
+  getProtocolAndVersion,
+  handleProtocols,
+  isProtocolAndVersionSupported
+} from './UIServerUtils.js'
 import {
   type ProtocolRequest,
   type ProtocolResponse,
@@ -30,14 +34,14 @@ export class UIWebSocketServer extends AbstractUIServer {
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
-      handleProtocols: UIServerUtils.handleProtocols,
+      handleProtocols,
       noServer: true
     })
   }
 
   public start (): void {
     this.webSocketServer.on('connection', (ws: WebSocket, _req: IncomingMessage): void => {
-      if (!UIServerUtils.isProtocolAndVersionSupported(ws.protocol)) {
+      if (!isProtocolAndVersionSupported(ws.protocol)) {
         logger.error(
           `${this.logPrefix(
             moduleName,
@@ -46,7 +50,7 @@ export class UIWebSocketServer extends AbstractUIServer {
         )
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR)
       }
-      const [, version] = UIServerUtils.getProtocolAndVersion(ws.protocol)
+      const [, version] = getProtocolAndVersion(ws.protocol)
       this.registerProtocolVersionUIService(version)
       ws.on('message', rawData => {
         const request = this.validateRawDataRequest(rawData)

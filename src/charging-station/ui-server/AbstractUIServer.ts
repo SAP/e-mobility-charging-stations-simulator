@@ -5,6 +5,7 @@ import type { WebSocket } from 'ws'
 
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
+import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
@@ -129,7 +130,7 @@ export abstract class AbstractUIServer {
   }
 
   private isValidBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
-    const [username, password] = this.getUsernameAndPasswordFromAuthorizationToken(
+    const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
       req.headers.authorization?.split(/\s+/).pop() ?? '',
       next
     )
@@ -138,7 +139,7 @@ export abstract class AbstractUIServer {
 
   private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
     const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
-    const [username, password] = this.getUsernameAndPasswordFromAuthorizationToken(
+    const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join('=')}`
         .split('.')
@@ -146,21 +147,6 @@ export abstract class AbstractUIServer {
       next
     )
     return this.isValidUsernameAndPassword(username, password)
-  }
-
-  private getUsernameAndPasswordFromAuthorizationToken (
-    authorizationToken: string,
-    next: (err?: Error) => void
-  ): [string, string] {
-    if (
-      !/^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/.test(authorizationToken)
-    ) {
-      next(new BaseError('Invalid basic authentication token format'))
-    }
-    const authentication = Buffer.from(authorizationToken, 'base64').toString()
-    const authenticationParts = authentication.split(/:/)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return [authenticationParts.shift()!, authenticationParts.join(':')]
   }
 
   private isValidUsernameAndPassword (username: string, password: string): boolean {

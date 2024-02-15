@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { StatusCodes } from 'http-status-codes'
 
 import { AbstractUIServer } from './AbstractUIServer.js'
-import { UIServerUtils } from './UIServerUtils.js'
+import { isProtocolAndVersionSupported } from './UIServerUtils.js'
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
@@ -109,7 +109,7 @@ export class UIHttpServer extends AbstractUIServer {
     this.responseHandlers.set(uuid, res)
     try {
       const fullProtocol = `${protocol}${version}`
-      if (!UIServerUtils.isProtocolAndVersionSupported(fullProtocol)) {
+      if (!isProtocolAndVersionSupported(fullProtocol)) {
         throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`)
       }
       this.registerProtocolVersionUIService(version)

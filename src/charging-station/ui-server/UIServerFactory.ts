@@ -2,7 +2,7 @@ import chalk from 'chalk'
 
 import type { AbstractUIServer } from './AbstractUIServer.js'
 import { UIHttpServer } from './UIHttpServer.js'
-import { UIServerUtils } from './UIServerUtils.js'
+import { isLoopback } from './UIServerUtils.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
 import { BaseError } from '../../exception/index.js'
 import {
@@ -39,7 +39,7 @@ export class UIServerFactory {
     if (
       uiServerConfiguration.authentication?.enabled !== true &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !UIServerUtils.isLoopback(uiServerConfiguration.options!.host!)
+      !isLoopback(uiServerConfiguration.options!.host!)
     ) {
       console.warn(
         chalk.yellow(
