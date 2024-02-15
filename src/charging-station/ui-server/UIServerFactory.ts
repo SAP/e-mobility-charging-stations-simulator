@@ -4,9 +4,11 @@ import type { AbstractUIServer } from './AbstractUIServer.js'
 import { UIHttpServer } from './UIHttpServer.js'
 import { UIServerUtils } from './UIServerUtils.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
+import { BaseError } from '../../exception/BaseError.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
+  AuthenticationType,
   type UIServerConfiguration
 } from '../../types/index.js'
 
@@ -19,6 +21,21 @@ export class UIServerFactory {
   public static getUIServerImplementation (
     uiServerConfiguration: UIServerConfiguration
   ): AbstractUIServer | undefined {
+    if (
+      uiServerConfiguration.authentication?.enabled === true &&
+      !Object.values(AuthenticationType).includes(uiServerConfiguration.authentication.type)
+    ) {
+      throw new BaseError(
+        `Unknown authentication type '${uiServerConfiguration.authentication.type}' for UI server`
+      )
+    }
+    if (
+      uiServerConfiguration.type === ApplicationProtocol.HTTP &&
+      uiServerConfiguration.authentication?.enabled === true &&
+      uiServerConfiguration.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
+    ) {
+      throw new BaseError('Protocol basic authentication is not supported for HTTP UI server')
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (!UIServerUtils.isLoopback(uiServerConfiguration.options!.host!)) {
       console.warn(
@@ -26,10 +43,6 @@ export class UIServerFactory {
           'Loopback address not detected in UI server configuration. This is not recommended'
         )
       )
-    }
-    uiServerConfiguration = {
-      version: ApplicationProtocolVersion.VERSION_11,
-      ...uiServerConfiguration
     }
     if (
       uiServerConfiguration.type === ApplicationProtocol.WS &&

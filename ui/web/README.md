@@ -23,8 +23,8 @@ The simulator UI server must be enabled, use WebSocket transport type and have a
     "enabled": true,
     "type": "ws",
     "authentication": {
-      "enabled": false,
-      "type": "basic-auth",
+      "enabled": true,
+      "type": "protocol-basic-auth",
       "username": "admin",
       "password": "admin"
     }

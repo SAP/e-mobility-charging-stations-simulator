@@ -14,7 +14,14 @@
     "poolMaxSize": 16
   },
   "uiServer": {
-    "enabled": true
+    "enabled": true,
+    "type": "ws",
+    "authentication": {
+      "enabled": true,
+      "type": "protocol-basic-auth",
+      "username": "admin",
+      "password": "admin"
+    }
   },
   "stationTemplateUrls": [
     {

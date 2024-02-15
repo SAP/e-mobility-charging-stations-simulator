@@ -91,11 +91,19 @@ export abstract class AbstractUIServer {
   }
 
   protected authenticate (req: IncomingMessage, next: (err?: Error) => void): void {
+    const authorizationError = new BaseError('Unauthorized')
     if (this.isBasicAuthEnabled()) {
-      if (!this.isValidBasicAuth(req)) {
-        next(new BaseError('Unauthorized'))
+      if (!this.isValidBasicAuth(req, next)) {
+        next(authorizationError)
       }
       next()
+    } else if (this.isProtocolBasicAuthEnabled()) {
+      if (!this.isValidProtocolBasicAuth(req, next)) {
+        next(authorizationError)
+      }
+      next()
+    } else if (this.uiServerConfiguration.authentication?.enabled === true) {
+      next(authorizationError)
     }
     next()
   }
@@ -109,21 +117,56 @@ export abstract class AbstractUIServer {
   private isBasicAuthEnabled (): boolean {
     return (
       this.uiServerConfiguration.authentication?.enabled === true &&
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       this.uiServerConfiguration.authentication.type === AuthenticationType.BASIC_AUTH
     )
   }
 
-  private isValidBasicAuth (req: IncomingMessage): boolean {
-    const authorizationHeader = req.headers.authorization ?? ''
-    const authorizationToken = authorizationHeader.split(/\s+/).pop() ?? ''
+  private isProtocolBasicAuthEnabled (): boolean {
+    return (
+      this.uiServerConfiguration.authentication?.enabled === true &&
+      this.uiServerConfiguration.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
+    )
+  }
+
+  private isValidBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
+    const [username, password] = this.getUsernameAndPasswordFromAuthorizationToken(
+      req.headers.authorization?.split(/\s+/).pop() ?? '',
+      next
+    )
+    return this.isValidUsernameAndPassword(username, password)
+  }
+
+  private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
+    const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(',').pop()?.trim()
+    const [username, password] = this.getUsernameAndPasswordFromAuthorizationToken(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join('=')}`
+        .split('.')
+        .pop() ?? '',
+      next
+    )
+    return this.isValidUsernameAndPassword(username, password)
+  }
+
+  private getUsernameAndPasswordFromAuthorizationToken (
+    authorizationToken: string,
+    next: (err?: Error) => void
+  ): [string, string] {
+    if (
+      !/^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/.test(authorizationToken)
+    ) {
+      next(new BaseError('Invalid basic authentication token format'))
+    }
     const authentication = Buffer.from(authorizationToken, 'base64').toString()
     const authenticationParts = authentication.split(/:/)
-    const username = authenticationParts.shift()
-    const password = authenticationParts.join(':')
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return [authenticationParts.shift()!, authenticationParts.join(':')]
+  }
+
+  private isValidUsernameAndPassword (username: string, password: string): boolean {
     return (
       this.uiServerConfiguration.authentication?.username === username &&
-      this.uiServerConfiguration.authentication?.password === password
+      this.uiServerConfiguration.authentication.password === password
     )
   }
 

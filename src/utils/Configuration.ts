@@ -18,6 +18,7 @@ import { Constants } from './Constants.js'
 import { hasOwnProp, isCFEnvironment, once } from './Utils.js'
 import {
   ApplicationProtocol,
+  ApplicationProtocolVersion,
   type ConfigurationData,
   ConfigurationSection,
   FileType,
@@ -155,6 +156,7 @@ export class Configuration {
     let uiServerConfiguration: UIServerConfiguration = {
       enabled: false,
       type: ApplicationProtocol.WS,
+      version: ApplicationProtocolVersion.VERSION_11,
       options: {
         host: Constants.DEFAULT_UI_SERVER_HOST,
         port: Constants.DEFAULT_UI_SERVER_PORT

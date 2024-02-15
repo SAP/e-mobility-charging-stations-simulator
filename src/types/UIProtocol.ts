@@ -11,7 +11,8 @@ export enum ApplicationProtocol {
 }
 
 export enum AuthenticationType {
-  BASIC_AUTH = 'basic-auth'
+  BASIC_AUTH = 'basic-auth',
+  PROTOCOL_BASIC_AUTH = 'protocol-basic-auth'
 }
 
 export enum ProtocolVersion {

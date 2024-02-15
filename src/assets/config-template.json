@@ -19,7 +19,7 @@
     "type": "ws",
     "authentication": {
       "enabled": true,
-      "type": "basic-auth",
+      "type": "protocol-basic-auth",
       "username": "admin",
       "password": "admin"
     }

@@ -14,7 +14,7 @@ export enum ProtocolVersion {
 }
 
 export enum AuthenticationType {
-  BASIC_AUTH = 'basic-auth'
+  PROTOCOL_BASIC_AUTH = 'protocol-basic-auth'
 }
 
 export type ProtocolRequest = [string, ProcedureName, RequestPayload]

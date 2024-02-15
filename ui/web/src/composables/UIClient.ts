@@ -1,5 +1,6 @@
 import {
   ApplicationProtocol,
+  AuthenticationType,
   type ConfigurationData,
   ProcedureName,
   type ProtocolResponse,
@@ -111,9 +112,17 @@ export class UIClient {
   }
 
   private openWS(): void {
+    const protocols =
+      this.configuration.uiServer.authentication?.enabled === true &&
+      this.configuration.uiServer.authentication?.type === AuthenticationType.PROTOCOL_BASIC_AUTH
+        ? [
+            `${this.configuration.uiServer.protocol}${this.configuration.uiServer.version}`,
+            `authorization.basic.${btoa(`${this.configuration.uiServer.authentication.username}:${this.configuration.uiServer.authentication.password}`).replace(/={1,2}$/, '')}`
+          ]
+        : `${this.configuration.uiServer.protocol}${this.configuration.uiServer.version}`
     this.ws = new WebSocket(
       `${this.configuration.uiServer.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${this.configuration.uiServer.host}:${this.configuration.uiServer.port}`,
-      `${this.configuration.uiServer.protocol}${this.configuration.uiServer.version}`
+      protocols
     )
     this.ws.onmessage = this.responseHandler.bind(this)
     this.ws.onerror = errorEvent => {
