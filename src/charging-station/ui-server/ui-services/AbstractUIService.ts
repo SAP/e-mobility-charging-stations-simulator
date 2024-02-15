@@ -232,8 +232,8 @@ export abstract class AbstractUIService {
   }
 
   private async handleAddChargingStations (
-    messageId?: string,
-    procedureName?: ProcedureName,
+    _messageId?: string,
+    _procedureName?: ProcedureName,
     requestPayload?: RequestPayload
   ): Promise<ResponsePayload> {
     const { template, numberOfStations, options } = requestPayload as {
