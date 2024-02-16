@@ -75,7 +75,7 @@ function stopSimulator(): void {
   flex: auto;
   color: white;
   background-color: blue;
-  font-size: 35px;
+  font-size: 2rem;
   font-weight: bold;
 }
 

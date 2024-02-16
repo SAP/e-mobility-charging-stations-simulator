@@ -172,6 +172,7 @@ function closeConnection(): void {
 }
 
 .connectors-table__row {
+  min-height: 4rem;
   display: flex;
   justify-content: center;
   align-items: center;
