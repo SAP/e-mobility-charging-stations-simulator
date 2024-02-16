@@ -1,6 +1,6 @@
 <template>
   <Modal :visibility="props.isVisible">
-    <div class="card-info">vendor: {{ props.stationInfo.chargePointVendor }}</div>
+    <div>vendor: {{ props.stationInfo.chargePointVendor }}</div>
   </Modal>
 </template>
 
@@ -13,9 +13,3 @@ const props = defineProps<{
   isVisible: boolean
 }>()
 </script>
-
-<style>
-.card-info {
-  background-color: white;
-}
-</style>

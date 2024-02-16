@@ -25,6 +25,6 @@ function close() {
   justify-content: center;
   align-items: center;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: black;
 }
 </style>

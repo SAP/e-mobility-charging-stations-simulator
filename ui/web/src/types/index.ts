@@ -1,7 +1,8 @@
 export type {
   ChargingStationData,
   ChargingStationInfo,
-  ConnectorStatus
+  ConnectorStatus,
+  Status
 } from './ChargingStationType'
 export type { ConfigurationData } from './ConfigurationType'
 export {

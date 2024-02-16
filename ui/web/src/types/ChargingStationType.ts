@@ -1,5 +1,29 @@
 import type { JsonObject } from './JsonType'
 
+export enum IdTagDistribution {
+  RANDOM = 'random',
+  ROUND_ROBIN = 'round-robin',
+  CONNECTOR_AFFINITY = 'connector-affinity'
+}
+
+export interface AutomaticTransactionGeneratorConfiguration {
+  enable: boolean
+  minDuration: number
+  maxDuration: number
+  minDelayBetweenTwoTransactions: number
+  maxDelayBetweenTwoTransactions: number
+  probabilityOfStart: number
+  stopAfterHours: number
+  stopAbsoluteDuration: boolean
+  requireAuthorize?: boolean
+  idTagDistribution?: IdTagDistribution
+}
+
+export interface ChargingStationAutomaticTransactionGeneratorConfiguration {
+  automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
+  automaticTransactionGeneratorStatuses?: Status[]
+}
+
 export type ChargingStationData = {
   started: boolean
   stationInfo: ChargingStationInfo
@@ -13,7 +37,7 @@ export type ChargingStationData = {
     | typeof WebSocket.CLOSING
     | typeof WebSocket.CLOSED
   bootNotificationResponse?: BootNotificationResponse
-  automaticTransactionGenerator?: Status[]
+  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
 }
 
 export enum OCPP16FirmwareStatus {

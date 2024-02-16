@@ -1,39 +1,43 @@
 <template>
-  <td class="cs-table__column">
-    <Button @click="startChargingStation()">Start Charging Station</Button>
-    <Button @click="stopChargingStation()">Stop Charging Station</Button>
-    <Button @click="openConnection()">Open Connection</Button>
-    <Button @click="closeConnection()">Close Connection</Button>
-    <Button @click="startTransaction()">Start Transaction</Button>
-    <!-- <IdTagInputModal
-      :visibility="state.isIdTagModalVisible"
-      :id-tag="state.idTag"
-      @close="hideIdTagModal()"
-      @done="compose(state.transaction, hideIdTagModal)()"
-    >
-      Start Transaction
-    </IdTagInputModal> -->
-    <Button @click="stopTransaction()">Stop Transaction</Button>
-    <Button @click="startAutomaticTransactionGenerator()">Start ATG</Button>
-    <Button @click="stopAutomaticTransactionGenerator()">Stop ATG</Button>
-  </td>
-  <td class="cs-table__column">{{ connectorId }}</td>
-  <td class="cs-table__column">{{ connector.status ?? 'Ø' }}</td>
-  <td class="cs-table__column">{{ connector.transactionStarted === true ? 'Yes' : 'No' }}</td>
+  <tr class="connectors-table__row">
+    <td class="connectors-table__column">{{ connectorId }}</td>
+    <td class="connectors-table__column">{{ connector.status ?? 'Ø' }}</td>
+    <td class="connectors-table__column">
+      {{ connector.transactionStarted === true ? 'Yes' : 'No' }}
+    </td>
+    <td class="connectors-table__column">
+      {{ atgStatus?.start === true ? 'Yes' : 'No' }}
+    </td>
+    <td class="connectors-table__column">
+      <Button @click="startTransaction()">Start Transaction</Button>
+      <!-- <IdTagInputModal
+        :visibility="state.isIdTagModalVisible"
+        :id-tag="state.idTag"
+        @close="hideIdTagModal()"
+        @done="compose(state.transaction, hideIdTagModal)()"
+      >
+        Start Transaction
+      </IdTagInputModal> -->
+      <Button @click="stopTransaction()">Stop Transaction</Button>
+      <Button @click="startAutomaticTransactionGenerator()">Start ATG</Button>
+      <Button @click="stopAutomaticTransactionGenerator()">Stop ATG</Button>
+    </td>
+  </tr>
 </template>
 
 <script setup lang="ts">
 import { getCurrentInstance } from 'vue'
-// import { reactive } from 'vue';
+// import { reactive } from 'vue'
 // import IdTagInputModal from '@/components/charging-stations/IdTagInputModal.vue'
 import Button from '@/components/buttons/Button.vue'
-import type { ConnectorStatus } from '@/types'
+import type { ConnectorStatus, Status } from '@/types'
 // import { compose } from '@/composables'
 
 const props = defineProps<{
   hashId: string
-  connector: ConnectorStatus
   connectorId: number
+  connector: ConnectorStatus
+  atgStatus?: Status
   transactionId?: number
   idTag?: string
 }>()
@@ -64,18 +68,6 @@ const props = defineProps<{
 
 const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
 
-function startChargingStation(): void {
-  UIClient.startChargingStation(props.hashId)
-}
-function stopChargingStation(): void {
-  UIClient.stopChargingStation(props.hashId)
-}
-function openConnection(): void {
-  UIClient.openConnection(props.hashId)
-}
-function closeConnection(): void {
-  UIClient.closeConnection(props.hashId)
-}
 function startTransaction(): void {
   UIClient.startTransaction(props.hashId, props.connectorId, props.idTag)
 }

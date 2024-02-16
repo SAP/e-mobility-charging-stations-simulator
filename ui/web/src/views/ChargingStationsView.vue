@@ -62,7 +62,6 @@ function stopSimulator(): void {
 #charging-stations {
   height: fit-content;
   width: 100%;
-  background-color: rgb(233, 227, 227);
   display: flex;
   flex-direction: column;
 }
@@ -74,18 +73,18 @@ function stopSimulator(): void {
 
 #reload-button {
   flex: auto;
-  background-color: rgb(25, 118, 210);
   color: white;
+  background-color: blue;
   font-size: 35px;
   font-weight: bold;
 }
 
 #reload-button:hover {
-  background-color: rgb(10, 113, 195);
+  background-color: rgb(0, 0, 225);
 }
 
 #reload-button:active {
-  background-color: rgb(255, 113, 195);
+  background-color: red;
 }
 
 #simulator-button {

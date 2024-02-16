@@ -5,10 +5,6 @@
     </caption>
     <thead id="cs-table__head">
       <tr class="cs-table__row">
-        <th scope="col" class="cs-table__column">Action</th>
-        <th scope="col" class="cs-table__column">Connector</th>
-        <th scope="col" class="cs-table__column">Status</th>
-        <th scope="col" class="cs-table__column">Transaction</th>
         <th scope="col" class="cs-table__column">Name</th>
         <th scope="col" class="cs-table__column">Started</th>
         <th scope="col" class="cs-table__column">Supervision Url</th>
@@ -17,7 +13,9 @@
         <th scope="col" class="cs-table__column">Template</th>
         <th scope="col" class="cs-table__column">Vendor</th>
         <th scope="col" class="cs-table__column">Model</th>
-        <th scope="col" class="cs-table__column">Firmware Version</th>
+        <th scope="col" class="cs-table__column">Firmware</th>
+        <th scope="col" class="cs-table__column">Actions</th>
+        <th scope="col" class="cs-table__connectors-column">Connector(s)</th>
       </tr>
     </thead>
     <tbody id="cs-table__body">
@@ -61,11 +59,9 @@ const props = defineProps<{
   flex-direction: column;
 }
 
-#cs-table__body {
-  overflow: visible overlay;
-}
-
 #cs-table__caption {
+  color: white;
+  background-color: black;
   font-size: 1.5rem;
   font-weight: bold;
   padding: 0.5rem;
@@ -80,16 +76,22 @@ const props = defineProps<{
 }
 
 #cs-table__head .cs-table__row {
-  background-color: rgb(194, 188, 188);
+  background-color: lightgrey;
 }
 
 .cs-table__row:nth-of-type(even) {
-  background-color: rgb(223, 217, 217);
+  background-color: whitesmoke;
 }
 
 .cs-table__column {
   height: fit-content;
-  width: calc(100% / 13);
+  width: calc(65% / 10);
+  text-align: center;
+}
+
+.cs-table__connectors-column {
+  height: fit-content;
+  width: 35%;
   text-align: center;
 }
 </style>
