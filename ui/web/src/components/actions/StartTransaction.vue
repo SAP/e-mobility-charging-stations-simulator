@@ -20,6 +20,7 @@
     "
     >Start Transaction</Button
   >
+  <Button @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">
