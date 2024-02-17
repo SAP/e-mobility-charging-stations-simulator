@@ -45,6 +45,10 @@ export class UIClient {
     return this.sendRequest(ProcedureName.STOP_SIMULATOR, {})
   }
 
+  public async deleteChargingStation(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, { hashIds: [hashId] })
+  }
+
   public async listChargingStations(): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {})
   }
@@ -111,7 +115,7 @@ export class UIClient {
     })
   }
 
-  private openWS(): void {
+  public openWS(): void {
     const protocols =
       this.configuration.uiServer.authentication?.enabled === true &&
       this.configuration.uiServer.authentication?.type === AuthenticationType.PROTOCOL_BASIC_AUTH
@@ -141,9 +145,6 @@ export class UIClient {
     payload: RequestPayload
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
-      if (this.ws.readyState !== WebSocket.OPEN) {
-        this.openWS()
-      }
       if (this.ws.readyState === WebSocket.OPEN) {
         const uuid = crypto.randomUUID()
         const msg = JSON.stringify([uuid, procedureName, payload])

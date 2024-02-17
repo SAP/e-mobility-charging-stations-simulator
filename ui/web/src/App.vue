@@ -16,7 +16,7 @@
 body {
   height: fit-content;
   width: fit-content;
-  margin: 0.001%;
-  padding: 0.001%;
+  margin: 0.005%;
+  padding: 0.005%;
 }
 </style>

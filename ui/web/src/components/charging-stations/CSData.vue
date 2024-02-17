@@ -22,6 +22,7 @@
       <Button @click="stopChargingStation()">Stop Charging Station</Button>
       <Button @click="openConnection()">Open Connection</Button>
       <Button @click="closeConnection()">Close Connection</Button>
+      <Button @click="deleteChargingStation()">Delete Charging Station</Button>
     </td>
     <td class="cs-table__connectors-column">
       <table id="connectors-table">
@@ -147,6 +148,9 @@ function openConnection(): void {
 function closeConnection(): void {
   UIClient.closeConnection(getHashId())
 }
+function deleteChargingStation(): void {
+  UIClient.deleteChargingStation(getHashId())
+}
 // function showTagModal(): void {
 //   state.isTagModalVisible = true
 // }
@@ -172,7 +176,6 @@ function closeConnection(): void {
 }
 
 .connectors-table__row {
-  min-height: 4rem;
   display: flex;
   justify-content: center;
   align-items: center;
