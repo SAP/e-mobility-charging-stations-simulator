@@ -85,7 +85,8 @@ function stopSimulator(): void {
   background-color: blue;
   font-size: 1.5rem;
   font-weight: bold;
-  text-align: center;
+  align-items: center;
+  justify-content: center;
 }
 
 #reload-button:hover {
