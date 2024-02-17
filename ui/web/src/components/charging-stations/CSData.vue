@@ -1,21 +1,23 @@
 <template>
   <tr class="cs-table__row">
-    <td class="cs-table__column">{{ getId() }}</td>
-    <td class="cs-table__column">{{ getStarted() }}</td>
+    <td class="cs-table__column">
+      {{ props.chargingStation.stationInfo.chargingStationId ?? 'Ø' }}
+    </td>
+    <td class="cs-table__column">{{ props.chargingStation.started === true ? 'Yes' : 'No' }}</td>
     <td class="cs-table__column">
       {{ getSupervisionUrl() }}
     </td>
     <td class="cs-table__column">{{ getWsState() }}</td>
     <td class="cs-table__column">
-      {{ getRegistrationStatus() }}
+      {{ props.chargingStation?.bootNotificationResponse?.status ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
-      {{ getInfo().templateName }}
+      {{ props.chargingStation.stationInfo.templateName }}
     </td>
-    <td class="cs-table__column">{{ getVendor() }}</td>
-    <td class="cs-table__column">{{ getModel() }}</td>
+    <td class="cs-table__column">{{ props.chargingStation.stationInfo.chargePointVendor }}</td>
+    <td class="cs-table__column">{{ props.chargingStation.stationInfo.chargePointModel }}</td>
     <td class="cs-table__column">
-      {{ getFirmwareVersion() }}
+      {{ props.chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
       <Button @click="startChargingStation()">Start Charging Station</Button>
@@ -39,7 +41,7 @@
           <!-- eslint-disable-next-line vue/valid-v-for -->
           <CSConnector
             v-for="(connector, index) in getConnectors()"
-            :hash-id="getHashId()"
+            :hash-id="props.chargingStation.stationInfo.hashId"
             :connector-id="index + 1"
             :connector="connector"
             :atg-status="getATGStatus(index + 1)"
@@ -55,37 +57,30 @@
 <script setup lang="ts">
 import { getCurrentInstance } from 'vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
-import type { ChargingStationData, ChargingStationInfo, ConnectorStatus, Status } from '@/types'
+import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 const props = defineProps<{
   chargingStation: ChargingStationData
   idTag: string
 }>()
 
-function getStarted(): string {
-  return props.chargingStation.started === true ? 'Yes' : 'No'
+function getConnectors(): ConnectorStatus[] {
+  if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
+    const connectorsStatus: ConnectorStatus[] = []
+    for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
+      if (evseId > 0 && Array.isArray(evseStatus.connectors) && evseStatus.connectors.length > 0) {
+        for (const connectorStatus of evseStatus.connectors) {
+          connectorsStatus.push(connectorStatus)
+        }
+      }
+    }
+    return connectorsStatus
+  }
+  return props.chargingStation.connectors?.slice(1)
 }
 function getATGStatus(connectorId: number): Status | undefined {
   return props.chargingStation.automaticTransactionGenerator
     ?.automaticTransactionGeneratorStatuses?.[connectorId - 1]
-}
-function getInfo(): ChargingStationInfo {
-  return props.chargingStation.stationInfo
-}
-function getHashId(): string {
-  return getInfo().hashId
-}
-function getId(): string {
-  return getInfo().chargingStationId ?? 'Ø'
-}
-function getModel(): string {
-  return getInfo().chargePointModel
-}
-function getVendor(): string {
-  return getInfo().chargePointVendor
-}
-function getFirmwareVersion(): string {
-  return getInfo().firmwareVersion ?? 'Ø'
 }
 function getSupervisionUrl(): string {
   const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
@@ -105,40 +100,23 @@ function getWsState(): string {
       return 'Ø'
   }
 }
-function getRegistrationStatus(): string {
-  return props.chargingStation?.bootNotificationResponse?.status ?? 'Ø'
-}
-function getConnectors(): ConnectorStatus[] {
-  if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
-    const connectorsStatus: ConnectorStatus[] = []
-    for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
-      if (evseId > 0 && Array.isArray(evseStatus.connectors) && evseStatus.connectors.length > 0) {
-        for (const connectorStatus of evseStatus.connectors) {
-          connectorsStatus.push(connectorStatus)
-        }
-      }
-    }
-    return connectorsStatus
-  }
-  return props.chargingStation.connectors?.slice(1)
-}
 
 const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
 
 function startChargingStation(): void {
-  UIClient.startChargingStation(getHashId())
+  UIClient.startChargingStation(props.chargingStation.stationInfo.hashId)
 }
 function stopChargingStation(): void {
-  UIClient.stopChargingStation(getHashId())
+  UIClient.stopChargingStation(props.chargingStation.stationInfo.hashId)
 }
 function openConnection(): void {
-  UIClient.openConnection(getHashId())
+  UIClient.openConnection(props.chargingStation.stationInfo.hashId)
 }
 function closeConnection(): void {
-  UIClient.closeConnection(getHashId())
+  UIClient.closeConnection(props.chargingStation.stationInfo.hashId)
 }
 function deleteChargingStation(): void {
-  UIClient.deleteChargingStation(getHashId())
+  UIClient.deleteChargingStation(props.chargingStation.stationInfo.hashId)
 }
 </script>
 
