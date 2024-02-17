@@ -68,7 +68,7 @@ function stopSimulator(): void {
 
 #inputs-container {
   display: flex;
-  justify-content: space-between;
+  flex-direction: row;
 }
 
 #reload-button {

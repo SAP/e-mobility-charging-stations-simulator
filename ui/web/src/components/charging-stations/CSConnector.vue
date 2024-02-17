@@ -10,14 +10,6 @@
     </td>
     <td class="connectors-table__column">
       <Button @click="startTransaction()">Start Transaction</Button>
-      <!-- <IdTagInputModal
-        :visibility="state.isIdTagModalVisible"
-        :id-tag="state.idTag"
-        @close="hideIdTagModal()"
-        @done="compose(state.transaction, hideIdTagModal)()"
-      >
-        Start Transaction
-      </IdTagInputModal> -->
       <Button @click="stopTransaction()">Stop Transaction</Button>
       <Button @click="startAutomaticTransactionGenerator()">Start ATG</Button>
       <Button @click="stopAutomaticTransactionGenerator()">Stop ATG</Button>
@@ -27,11 +19,8 @@
 
 <script setup lang="ts">
 import { getCurrentInstance } from 'vue'
-// import { reactive } from 'vue'
-// import IdTagInputModal from '@/components/charging-stations/IdTagInputModal.vue'
 import Button from '@/components/buttons/Button.vue'
 import type { ConnectorStatus, Status } from '@/types'
-// import { compose } from '@/composables'
 
 const props = defineProps<{
   hashId: string
@@ -41,30 +30,6 @@ const props = defineProps<{
   transactionId?: number
   idTag?: string
 }>()
-
-// type State = {
-//   isIdTagModalVisible: boolean
-//   idTag: string
-//   transaction: () => void
-// }
-
-// const state: State = reactive({
-//   isIdTagModalVisible: false,
-//   idTag: '',
-//   transaction: startTransaction
-// })
-
-// function getIdTag(transaction: () => void): void {
-//   state.transaction = transaction
-//   showTagModal()
-// }
-
-// function showTagModal(): void {
-//   state.isIdTagModalVisible = true
-// }
-// function hideIdTagModal(): void {
-//   state.isIdTagModalVisible = false
-// }
 
 const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
 

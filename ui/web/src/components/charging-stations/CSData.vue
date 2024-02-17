@@ -53,7 +53,6 @@
 </template>
 
 <script setup lang="ts">
-// import { reactive } from 'vue'
 import { getCurrentInstance } from 'vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import type { ChargingStationData, ChargingStationInfo, ConnectorStatus, Status } from '@/types'
@@ -62,16 +61,6 @@ const props = defineProps<{
   chargingStation: ChargingStationData
   idTag: string
 }>()
-
-// type State = {
-//   isTagModalVisible: boolean
-//   idTag: string
-// }
-
-// const state: State = reactive({
-//   isTagModalVisible: false,
-//   idTag: ''
-// })
 
 function getStarted(): string {
   return props.chargingStation.started === true ? 'Yes' : 'No'
@@ -151,12 +140,6 @@ function closeConnection(): void {
 function deleteChargingStation(): void {
   UIClient.deleteChargingStation(getHashId())
 }
-// function showTagModal(): void {
-//   state.isTagModalVisible = true
-// }
-// function hideTagModal(): void {
-//   state.isTagModalVisible = false
-// }
 </script>
 
 <style>
