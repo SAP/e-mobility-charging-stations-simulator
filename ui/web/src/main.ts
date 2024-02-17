@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import type { ConfigurationData } from './types'
-import router from '@/router'
+import { router } from '@/router'
 import { UIClient } from '@/composables'
 import App from '@/App.vue'
 

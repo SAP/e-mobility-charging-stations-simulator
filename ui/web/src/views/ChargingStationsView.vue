@@ -1,7 +1,10 @@
 <template>
   <Container id="charging-stations">
-    <Button id="simulator-button" @click="startSimulator()">Start Simulator</Button>
-    <Button id="simulator-button" @click="stopSimulator()">Stop Simulator</Button>
+    <Container id="buttons-container">
+      <Button id="simulator-button" @click="startSimulator()">Start Simulator</Button>
+      <Button id="simulator-button" @click="stopSimulator()">Stop Simulator</Button>
+      <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
+    </Container>
     <Container id="inputs-container">
       <input
         id="idtag-field"
@@ -10,7 +13,6 @@
         name="idtag-field"
         placeholder="RFID tag"
       />
-      <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
     </Container>
     <CSTable :charging-stations="state.chargingStations" :id-tag="state.idTag" />
   </Container>
@@ -22,6 +24,7 @@ import CSTable from '@/components/charging-stations/CSTable.vue'
 import type { ChargingStationData } from '@/types'
 import Container from '@/components/Container.vue'
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
+import Button from '@/components/buttons/Button.vue'
 
 const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
 
@@ -66,6 +69,11 @@ function stopSimulator(): void {
   flex-direction: column;
 }
 
+#buttons-container {
+  display: flex;
+  flex-direction: row;
+}
+
 #inputs-container {
   display: flex;
   flex-direction: row;
@@ -75,8 +83,9 @@ function stopSimulator(): void {
   flex: auto;
   color: white;
   background-color: blue;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
+  text-align: center;
 }
 
 #reload-button:hover {
@@ -93,6 +102,7 @@ function stopSimulator(): void {
 
 #idtag-field {
   flex: auto;
+  font-size: 1.5rem;
   text-align: center;
 }
 </style>

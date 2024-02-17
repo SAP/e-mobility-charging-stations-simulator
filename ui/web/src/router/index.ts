@@ -1,17 +1,15 @@
-import { type RouteRecordRaw, createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import ChargingStationsView from '@/views/ChargingStationsView.vue'
 
-const routes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    name: 'charging-stations',
-    component: ChargingStationsView
-  }
-]
-
-const router = createRouter({
+export const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes: [
+    {
+      path: '/',
+      name: 'charging-stations',
+      components: {
+        default: ChargingStationsView
+      }
+    }
+  ]
 })
-
-export default router

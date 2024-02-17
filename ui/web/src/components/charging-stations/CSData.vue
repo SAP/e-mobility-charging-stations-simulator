@@ -57,6 +57,7 @@
 <script setup lang="ts">
 import { getCurrentInstance } from 'vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
+import Button from '@/components/buttons/Button.vue'
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 const props = defineProps<{
