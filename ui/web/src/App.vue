@@ -1,6 +1,6 @@
 <template>
   <router-view />
-  <Container id="action">
+  <Container id="action-container">
     <router-view name="action" />
   </Container>
 </template>
@@ -22,7 +22,7 @@ import Container from '@/components/Container.vue'
   background-color: white;
 }
 
-#action {
+#action-container {
   min-width: max-content;
   display: flex;
   flex-direction: column;

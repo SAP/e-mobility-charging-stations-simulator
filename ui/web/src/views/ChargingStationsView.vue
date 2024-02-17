@@ -1,5 +1,5 @@
 <template>
-  <Container id="charging-stations">
+  <Container id="charging-stations-container">
     <Container id="buttons-container">
       <Button id="simulator-button" @click="startSimulator()">Start Simulator</Button>
       <Button id="simulator-button" @click="stopSimulator()">Stop Simulator</Button>
@@ -60,7 +60,7 @@ function stopSimulator(): void {
 </script>
 
 <style>
-#charging-stations {
+#charging-stations-container {
   height: fit-content;
   width: 100%;
   display: flex;
