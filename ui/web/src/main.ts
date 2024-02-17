@@ -13,7 +13,7 @@ const initializeApp = (config: ConfigurationData) => {
     // TODO: Add code for UI notifications or other error handling logic
   }
   app.config.globalProperties.$uiClient = UIClient.getInstance(config)
-  app.config.globalProperties.$uiClient.registerWSonOpenListener(async () => {
+  app.config.globalProperties.$uiClient.registerWSonOpenListener(() => {
     app.config.globalProperties.$uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
