@@ -102,22 +102,22 @@ function getWsState(): string {
   }
 }
 
-const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
+const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 
 function startChargingStation(): void {
-  UIClient.startChargingStation(props.chargingStation.stationInfo.hashId)
+  uiClient.startChargingStation(props.chargingStation.stationInfo.hashId)
 }
 function stopChargingStation(): void {
-  UIClient.stopChargingStation(props.chargingStation.stationInfo.hashId)
+  uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId)
 }
 function openConnection(): void {
-  UIClient.openConnection(props.chargingStation.stationInfo.hashId)
+  uiClient.openConnection(props.chargingStation.stationInfo.hashId)
 }
 function closeConnection(): void {
-  UIClient.closeConnection(props.chargingStation.stationInfo.hashId)
+  uiClient.closeConnection(props.chargingStation.stationInfo.hashId)
 }
 function deleteChargingStation(): void {
-  UIClient.deleteChargingStation(props.chargingStation.stationInfo.hashId)
+  uiClient.deleteChargingStation(props.chargingStation.stationInfo.hashId)
 }
 </script>
 

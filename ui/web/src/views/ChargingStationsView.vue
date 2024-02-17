@@ -3,7 +3,7 @@
     <Container id="buttons-container">
       <Button id="simulator-button" @click="startSimulator()">Start Simulator</Button>
       <Button id="simulator-button" @click="stopSimulator()">Stop Simulator</Button>
-      <ReloadButton id="reload-button" :loading="state.isLoading" @click="load()" />
+      <ReloadButton id="reload-button" :loading="state.isLoading" @click="loadChargingStations()" />
     </Container>
     <Container id="inputs-container">
       <input
@@ -14,50 +14,55 @@
         placeholder="RFID tag"
       />
     </Container>
-    <CSTable :charging-stations="state.chargingStations" :id-tag="state.idTag" />
+    <CSTable
+      :charging-stations="
+        getCurrentInstance()?.appContext.config.globalProperties.$chargingStations
+      "
+      :id-tag="state.idTag"
+    />
   </Container>
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, reactive } from 'vue'
+import { getCurrentInstance, reactive } from 'vue'
 import CSTable from '@/components/charging-stations/CSTable.vue'
-import type { ChargingStationData } from '@/types'
+import type { ResponsePayload } from '@/types'
 import Container from '@/components/Container.vue'
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import Button from '@/components/buttons/Button.vue'
 
-const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
-
-onMounted(() => {
-  UIClient.registerWSonOpenListener(load)
-})
-
-type State = {
-  isLoading: boolean
-  chargingStations: ChargingStationData[]
-  idTag: string
-}
-
-const state: State = reactive({
+const state = reactive({
   isLoading: false,
-  chargingStations: [],
   idTag: ''
 })
 
-async function load(): Promise<void> {
+const app = getCurrentInstance()
+const uiClient = app?.appContext.config.globalProperties.$uiClient
+
+function loadChargingStations(): void {
   if (state.isLoading === false) {
     state.isLoading = true
-    state.chargingStations = (await UIClient.listChargingStations())
-      .chargingStations as ChargingStationData[]
-    state.isLoading = false
+    uiClient
+      .listChargingStations()
+      .then((response: ResponsePayload) => {
+        if (app != null) {
+          app.appContext.config.globalProperties.$chargingStations = response.chargingStations
+        }
+      })
+      .catch((error: Error) => {
+        console.error('Error at fetching charging stations:', error)
+      })
+      .finally(() => {
+        state.isLoading = false
+      })
   }
 }
 
 function startSimulator(): void {
-  UIClient.startSimulator()
+  uiClient.startSimulator()
 }
 function stopSimulator(): void {
-  UIClient.stopSimulator()
+  uiClient.stopSimulator()
 }
 </script>
 

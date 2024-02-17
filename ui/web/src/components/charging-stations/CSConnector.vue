@@ -31,18 +31,18 @@ const props = defineProps<{
   idTag?: string
 }>()
 
-const UIClient = getCurrentInstance()?.appContext.config.globalProperties.$UIClient
+const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 
 function startTransaction(): void {
-  UIClient.startTransaction(props.hashId, props.connectorId, props.idTag)
+  uiClient.startTransaction(props.hashId, props.connectorId, props.idTag)
 }
 function stopTransaction(): void {
-  UIClient.stopTransaction(props.hashId, props.transactionId)
+  uiClient.stopTransaction(props.hashId, props.transactionId)
 }
 function startAutomaticTransactionGenerator(): void {
-  UIClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId)
+  uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId)
 }
 function stopAutomaticTransactionGenerator(): void {
-  UIClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
+  uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
 }
 </script>

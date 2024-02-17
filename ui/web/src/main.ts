@@ -1,10 +1,10 @@
 import { createApp } from 'vue'
-import type { ConfigurationData } from './types'
+import type { ConfigurationData, ResponsePayload } from './types'
 import { router } from '@/router'
 import { UIClient } from '@/composables'
 import App from '@/App.vue'
 
-const initializeApp = async (config: ConfigurationData) => {
+const initializeApp = (config: ConfigurationData) => {
   const app = createApp(App)
   app.config.errorHandler = (error, instance, info) => {
     console.error('Error:', error)
@@ -12,8 +12,21 @@ const initializeApp = async (config: ConfigurationData) => {
     console.info('Error info:', info)
     // TODO: Add code for UI notifications or other error handling logic
   }
-  app.config.globalProperties.$UIClient = UIClient.getInstance(config)
-  app.use(router).mount('#app')
+  app.config.globalProperties.$uiClient = UIClient.getInstance(config)
+  app.config.globalProperties.$uiClient.registerWSonOpenListener(async () => {
+    app.config.globalProperties.$uiClient
+      .listChargingStations()
+      .then((response: ResponsePayload) => {
+        app.config.globalProperties.$chargingStations = response.chargingStations
+      })
+      .catch((error: Error) => {
+        console.error('Error at fetching charging stations:', error)
+        throw error
+      })
+      .finally(() => {
+        app.use(router).mount('#app')
+      })
+  })
 }
 
 fetch('/config.json')
