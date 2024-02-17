@@ -51,7 +51,6 @@ const props = defineProps<{
   empty-cells: show;
 }
 
-#cs-table__head,
 #cs-table__body {
   height: fit-content;
   width: 100%;
@@ -71,12 +70,9 @@ const props = defineProps<{
   height: fit-content;
   width: 100%;
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-}
-
-#cs-table__head .cs-table__row {
-  background-color: lightgrey;
 }
 
 .cs-table__row:nth-of-type(even) {
@@ -89,9 +85,12 @@ const props = defineProps<{
   text-align: center;
 }
 
+#cs-table__head .cs-table__row {
+  background-color: lightgrey;
+}
+
 .cs-table__connectors-column {
   height: fit-content;
   width: 35%;
-  text-align: center;
 }
 </style>

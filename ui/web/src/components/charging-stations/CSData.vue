@@ -162,14 +162,13 @@ function deleteChargingStation(): void {
 <style>
 #connectors-table {
   display: flex;
-  background-color: white;
   flex-direction: column;
+  background-color: white;
   overflow: auto hidden;
   border-collapse: collapse;
   empty-cells: show;
 }
 
-#connectors-table__head,
 #connectors-table__body {
   display: flex;
   flex-direction: column;
@@ -177,16 +176,17 @@ function deleteChargingStation(): void {
 
 .connectors-table__row {
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
 }
 
-#connectors-table__head .connectors-table__row {
-  background-color: lightgrey;
-}
-
 .connectors-table__row:nth-of-type(even) {
   background-color: whitesmoke;
+}
+
+#connectors-table__head .connectors-table__row {
+  background-color: lightgrey;
 }
 
 .connectors-table__column {
