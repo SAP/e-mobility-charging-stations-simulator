@@ -9,11 +9,17 @@ const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 
 onMounted(() => {
-  uiClient.listTemplates().then((response: ResponsePayload) => {
-    if (app != null && app.appContext.config.globalProperties.$templates == null) {
-      app.appContext.config.globalProperties.$templates = response.templates
-    }
-  })
+  uiClient
+    .listTemplates()
+    .then((response: ResponsePayload) => {
+      if (app != null && app.appContext.config.globalProperties.$templates == null) {
+        app.appContext.config.globalProperties.$templates = response.templates
+      }
+    })
+    .catch((error: Error) => {
+      // TODO: add code for UI notifications or other error handling logic
+      console.error('Error at fetching charging station templates:', error)
+    })
 })
 </script>
 

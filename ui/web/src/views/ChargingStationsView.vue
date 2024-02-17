@@ -3,13 +3,13 @@
     <Container id="buttons-container">
       <Button id="simulator-button" @click="startSimulator()">Start Simulator</Button>
       <Button id="simulator-button" @click="stopSimulator()">Stop Simulator</Button>
-      <ReloadButton id="reload-button" :loading="state.isLoading" @click="loadChargingStations()" />
+      <ReloadButton
+        id="reload-button"
+        :loading="state.isLoading"
+        @click="loadChargingStations(() => $router.go(0))"
+      />
     </Container>
-    <CSTable
-      :charging-stations="
-        getCurrentInstance()?.appContext.config.globalProperties.$chargingStations ?? []
-      "
-    />
+    <CSTable :charging-stations="app?.appContext.config.globalProperties.$chargingStations ?? []" />
   </Container>
 </template>
 
@@ -28,7 +28,7 @@ const state = reactive({
 const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 
-function loadChargingStations(): void {
+function loadChargingStations(reloadCallback?: () => void): void {
   if (state.isLoading === false) {
     state.isLoading = true
     uiClient
@@ -43,6 +43,9 @@ function loadChargingStations(): void {
         console.error('Error at fetching charging stations:', error)
       })
       .finally(() => {
+        if (reloadCallback != null) {
+          reloadCallback()
+        }
         state.isLoading = false
       })
   }
