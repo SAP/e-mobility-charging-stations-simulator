@@ -16,7 +16,7 @@
     </Container>
     <CSTable
       :charging-stations="
-        getCurrentInstance()?.appContext.config.globalProperties.$chargingStations
+        getCurrentInstance()?.appContext.config.globalProperties.$chargingStations ?? []
       "
       :id-tag="state.idTag"
     />
