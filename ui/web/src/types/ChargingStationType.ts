@@ -68,7 +68,7 @@ export type ChargingStationInfo = {
   hashId: string
   templateIndex: number
   templateName: string
-  chargingStationId?: string
+  chargingStationId: string
   chargeBoxSerialNumber?: string
   chargePointSerialNumber?: string
   meterSerialNumber?: string

@@ -45,12 +45,23 @@ export class UIClient {
     return this.sendRequest(ProcedureName.STOP_SIMULATOR, {})
   }
 
-  public async deleteChargingStation(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, { hashIds: [hashId] })
+  public async listTemplates(): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.LIST_TEMPLATES, {})
   }
 
   public async listChargingStations(): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {})
+  }
+
+  public async addChargingStations(
+    template: string,
+    numberOfStations: number
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.ADD_CHARGING_STATIONS, { template, numberOfStations })
+  }
+
+  public async deleteChargingStation(hashId: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, { hashIds: [hashId] })
   }
 
   public async startChargingStation(hashId: string): Promise<ResponsePayload> {

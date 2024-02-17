@@ -5,20 +5,10 @@
       <Button id="simulator-button" @click="stopSimulator()">Stop Simulator</Button>
       <ReloadButton id="reload-button" :loading="state.isLoading" @click="loadChargingStations()" />
     </Container>
-    <Container id="inputs-container">
-      <input
-        id="idtag-field"
-        v-model="state.idTag"
-        type="text"
-        name="idtag-field"
-        placeholder="RFID tag"
-      />
-    </Container>
     <CSTable
       :charging-stations="
         getCurrentInstance()?.appContext.config.globalProperties.$chargingStations ?? []
       "
-      :id-tag="state.idTag"
     />
   </Container>
 </template>
@@ -32,8 +22,7 @@ import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import Button from '@/components/buttons/Button.vue'
 
 const state = reactive({
-  isLoading: false,
-  idTag: ''
+  isLoading: false
 })
 
 const app = getCurrentInstance()
@@ -50,6 +39,7 @@ function loadChargingStations(): void {
         }
       })
       .catch((error: Error) => {
+        // TODO: add code for UI notifications or other error handling logic
         console.error('Error at fetching charging stations:', error)
       })
       .finally(() => {
@@ -79,11 +69,6 @@ function stopSimulator(): void {
   flex-direction: row;
 }
 
-#inputs-container {
-  display: flex;
-  flex-direction: row;
-}
-
 #reload-button {
   flex: auto;
   color: white;
@@ -104,11 +89,5 @@ function stopSimulator(): void {
 
 #simulator-button {
   flex: auto;
-}
-
-#idtag-field {
-  flex: auto;
-  font-size: 1.5rem;
-  text-align: center;
 }
 </style>

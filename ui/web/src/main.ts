@@ -10,7 +10,7 @@ const initializeApp = (config: ConfigurationData) => {
     console.error('Error:', error)
     console.info('Vue instance:', instance)
     console.info('Error info:', info)
-    // TODO: Add code for UI notifications or other error handling logic
+    // TODO: add code for UI notifications or other error handling logic
   }
   app.config.globalProperties.$uiClient = UIClient.getInstance(config)
   app.config.globalProperties.$uiClient.registerWSonOpenListener(() => {
@@ -20,6 +20,7 @@ const initializeApp = (config: ConfigurationData) => {
         app.config.globalProperties.$chargingStations = response.chargingStations
       })
       .catch((error: Error) => {
+        // TODO: add code for UI notifications or other error handling logic
         console.error('Error at fetching charging stations:', error)
         throw error
       })

@@ -23,7 +23,6 @@
         v-for="chargingStation in props.chargingStations"
         :key="chargingStation.stationInfo?.hashId"
         :charging-station="chargingStation"
-        :id-tag="props.idTag"
       />
     </tbody>
   </table>
@@ -35,7 +34,6 @@ import type { ChargingStationData } from '@/types'
 
 const props = defineProps<{
   chargingStations: ChargingStationData[]
-  idTag: string
 }>()
 </script>
 

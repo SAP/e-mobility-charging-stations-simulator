@@ -1,7 +1,7 @@
 <template>
   <tr class="cs-table__row">
     <td class="cs-table__column">
-      {{ props.chargingStation.stationInfo.chargingStationId ?? 'Ø' }}
+      {{ props.chargingStation.stationInfo.chargingStationId }}
     </td>
     <td class="cs-table__column">{{ props.chargingStation.started === true ? 'Yes' : 'No' }}</td>
     <td class="cs-table__column">
@@ -42,11 +42,10 @@
           <CSConnector
             v-for="(connector, index) in getConnectors()"
             :hash-id="props.chargingStation.stationInfo.hashId"
+            :charging-station-id="props.chargingStation.stationInfo.chargingStationId"
             :connector-id="index + 1"
             :connector="connector"
             :atg-status="getATGStatus(index + 1)"
-            :transaction-id="connector.transactionId"
-            :id-tag="props.idTag"
           />
         </tbody>
       </table>
@@ -62,7 +61,6 @@ import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 const props = defineProps<{
   chargingStation: ChargingStationData
-  idTag: string
 }>()
 
 function getConnectors(): ConnectorStatus[] {
