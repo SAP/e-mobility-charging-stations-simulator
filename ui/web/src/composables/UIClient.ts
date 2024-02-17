@@ -115,7 +115,7 @@ export class UIClient {
     })
   }
 
-  public openWS(): void {
+  private openWS(): void {
     const protocols =
       this.configuration.uiServer.authentication?.enabled === true &&
       this.configuration.uiServer.authentication?.type === AuthenticationType.PROTOCOL_BASIC_AUTH

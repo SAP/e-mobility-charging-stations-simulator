@@ -13,7 +13,6 @@ const initializeApp = async (config: ConfigurationData) => {
     // TODO: Add code for UI notifications or other error handling logic
   }
   app.config.globalProperties.$UIClient = UIClient.getInstance(config)
-  app.config.globalProperties.$UIClient.openWS()
   app.use(router).mount('#app')
 }
 
@@ -28,4 +27,5 @@ fetch('/config.json')
   })
   .catch(error => {
     console.error('Error at initializing app:', error)
+    throw error
   })
