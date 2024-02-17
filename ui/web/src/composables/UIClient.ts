@@ -124,6 +124,9 @@ export class UIClient {
       `${this.configuration.uiServer.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${this.configuration.uiServer.host}:${this.configuration.uiServer.port}`,
       protocols
     )
+    this.ws.onopen = openEvent => {
+      console.info('WebSocket opened', openEvent)
+    }
     this.ws.onmessage = this.responseHandler.bind(this)
     this.ws.onerror = errorEvent => {
       console.error('WebSocket error: ', errorEvent)
@@ -146,7 +149,7 @@ export class UIClient {
         const msg = JSON.stringify([uuid, procedureName, payload])
         const sendTimeout = setTimeout(() => {
           this.responseHandlers.delete(uuid)
-          return reject(new Error(`Send request '${procedureName}' message timeout`))
+          return reject(new Error(`Send request '${procedureName}' message: connection timeout`))
         }, 60000)
         try {
           this.ws.send(msg)
@@ -158,7 +161,7 @@ export class UIClient {
           clearTimeout(sendTimeout)
         }
       } else {
-        throw new Error(`Send request '${procedureName}' message: connection not opened`)
+        reject(new Error(`Send request '${procedureName}' message: connection closed`))
       }
     })
   }
