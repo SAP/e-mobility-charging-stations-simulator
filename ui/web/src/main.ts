@@ -1,8 +1,10 @@
 import { createApp } from 'vue'
+import ToastPlugin from 'vue-toast-notification'
 import type { ConfigurationData, ResponsePayload } from './types'
 import { router } from '@/router'
 import { UIClient } from '@/composables'
 import App from '@/App.vue'
+import 'vue-toast-notification/dist/theme-default.css'
 
 const initializeApp = (config: ConfigurationData) => {
   const app = createApp(App)
@@ -25,7 +27,7 @@ const initializeApp = (config: ConfigurationData) => {
         throw error
       })
       .finally(() => {
-        app.use(router).mount('#app')
+        app.use(router).use(ToastPlugin).mount('#app')
       })
   })
 }

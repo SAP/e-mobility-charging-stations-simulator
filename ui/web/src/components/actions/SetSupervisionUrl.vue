@@ -15,8 +15,11 @@
       () => {
         uiClient
           .setSupervisionUrl(props.hashId, state.supervisionUrl)
+          .then(() => {
+            $toast.success('Supervision url successfully set')
+          })
           .catch((error: Error) => {
-            // TODO: add code for UI notifications or other error handling logic
+            $toast.error('Error at setting supervision url')
             console.error('Error at setting supervision url:', error)
           })
           .finally(() => {

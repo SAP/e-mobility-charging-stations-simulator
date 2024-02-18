@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import { getCurrentInstance } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import Button from '@/components/buttons/Button.vue'
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
@@ -114,20 +115,62 @@ function getWsState(): string {
 
 const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 
+const $toast = useToast()
+
 function startChargingStation(): void {
-  uiClient.startChargingStation(props.chargingStation.stationInfo.hashId)
+  uiClient
+    .startChargingStation(props.chargingStation.stationInfo.hashId)
+    .then(() => {
+      $toast.success('Charging station successfully started')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at starting charging station')
+      console.error('Error at starting charging station', error)
+    })
 }
 function stopChargingStation(): void {
-  uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId)
+  uiClient
+    .stopChargingStation(props.chargingStation.stationInfo.hashId)
+    .then(() => {
+      $toast.success('Charging station successfully stopped')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at stopping charging station')
+      console.error('Error at stopping charging station', error)
+    })
 }
 function openConnection(): void {
-  uiClient.openConnection(props.chargingStation.stationInfo.hashId)
+  uiClient
+    .openConnection(props.chargingStation.stationInfo.hashId)
+    .then(() => {
+      $toast.success('Connection successfully opened')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at opening connection')
+      console.error('Error at opening connection', error)
+    })
 }
 function closeConnection(): void {
-  uiClient.closeConnection(props.chargingStation.stationInfo.hashId)
+  uiClient
+    .closeConnection(props.chargingStation.stationInfo.hashId)
+    .then(() => {
+      $toast.success('Connection successfully closed')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at closing connection')
+      console.error('Error at closing connection', error)
+    })
 }
 function deleteChargingStation(): void {
-  uiClient.deleteChargingStation(props.chargingStation.stationInfo.hashId)
+  uiClient
+    .deleteChargingStation(props.chargingStation.stationInfo.hashId)
+    .then(() => {
+      $toast.success('Charging station successfully deleted')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at deleting charging station')
+      console.error('Error at deleting charging station', error)
+    })
 }
 </script>
 

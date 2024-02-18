@@ -20,6 +20,9 @@ dependencies:
   vue-router:
     specifier: ^4.2.5
     version: 4.2.5(vue@3.4.19)
+  vue-toast-notification:
+    specifier: ^3.1.2
+    version: 3.1.2(vue@3.4.19)
 
 devDependencies:
   '@rushstack/eslint-patch':
@@ -4216,6 +4219,15 @@ packages:
       vue: ^3.2.0
     dependencies:
       '@vue/devtools-api': 6.6.1
+      vue: 3.4.19(typescript@5.3.3)
+    dev: false
+
+  /vue-toast-notification@3.1.2(vue@3.4.19):
+    resolution: {integrity: sha512-oNRL/W9aaHoeScp+iTIW7k09vM16/+8aptp2maa+7qTB43JuxmAgKdXKFYtf+uvSNOYYq2BIWgLCeJ61pwom/A==}
+    engines: {node: '>=12.15.0'}
+    peerDependencies:
+      vue: ^3.0
+    dependencies:
       vue: 3.4.19(typescript@5.3.3)
     dev: false
 

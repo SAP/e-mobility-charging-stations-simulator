@@ -18,6 +18,7 @@
 
 <script setup lang="ts">
 import { getCurrentInstance, reactive } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import type { ResponsePayload } from '@/types'
 import Container from '@/components/Container.vue'
@@ -31,6 +32,8 @@ const state = reactive({
 const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 
+const $toast = useToast()
+
 function loadChargingStations(reloadCallback?: () => void): void {
   if (state.isLoading === false) {
     state.isLoading = true
@@ -42,7 +45,7 @@ function loadChargingStations(reloadCallback?: () => void): void {
         }
       })
       .catch((error: Error) => {
-        // TODO: add code for UI notifications or other error handling logic
+        $toast.error('Error at fetching charging stations')
         console.error('Error at fetching charging stations:', error)
       })
       .finally(() => {
@@ -55,10 +58,26 @@ function loadChargingStations(reloadCallback?: () => void): void {
 }
 
 function startSimulator(): void {
-  uiClient.startSimulator()
+  uiClient
+    .startSimulator()
+    .then(() => {
+      $toast.success('Simulator successfully started')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at starting simulator')
+      console.error('Error at starting simulator:', error)
+    })
 }
 function stopSimulator(): void {
-  uiClient.stopSimulator()
+  uiClient
+    .stopSimulator()
+    .then(() => {
+      $toast.success('Simulator successfully stopped')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at stopping simulator')
+      console.error('Error at stopping simulator:', error)
+    })
 }
 </script>
 

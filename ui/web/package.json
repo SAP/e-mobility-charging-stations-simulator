@@ -35,7 +35,8 @@
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "vue": "^3.4.19",
-    "vue-router": "^4.2.5"
+    "vue-router": "^4.2.5",
+    "vue-toast-notification": "^3.1.2"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.7.2",

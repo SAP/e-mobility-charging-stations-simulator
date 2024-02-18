@@ -20,8 +20,11 @@
       () => {
         uiClient
           .addChargingStations(state.template, state.numberOfStations)
+          .then(() => {
+            $toast.success('Charging stations successfully added')
+          })
           .catch((error: Error) => {
-            // TODO: add code for UI notifications or other error handling logic
+            $toast.error('Error at adding charging stations')
             console.error('Error at adding charging stations:', error)
           })
           .finally(() => {
@@ -36,6 +39,7 @@
 
 <script setup lang="ts">
 import { getCurrentInstance, onMounted, reactive } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import Button from '@/components/buttons/Button.vue'
 import type { ResponsePayload } from '@/types'
 
@@ -48,6 +52,8 @@ const state = reactive({
 const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 
+const $toast = useToast()
+
 onMounted(() => {
   uiClient
     .listTemplates()
@@ -57,7 +63,7 @@ onMounted(() => {
       }
     })
     .catch((error: Error) => {
-      // TODO: add code for UI notifications or other error handling logic
+      $toast.error('Error at fetching charging station templates')
       console.error('Error at fetching charging station templates:', error)
     })
     .finally(() => {

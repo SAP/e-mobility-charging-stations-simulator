@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { getCurrentInstance } from 'vue'
+import { useToast } from 'vue-toast-notification'
 import Button from '@/components/buttons/Button.vue'
 import type { ConnectorStatus, Status } from '@/types'
 
@@ -40,13 +41,39 @@ const props = defineProps<{
 
 const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 
+const $toast = useToast()
+
 function stopTransaction(): void {
-  uiClient.stopTransaction(props.hashId, props.connector.transactionId)
+  uiClient
+    .stopTransaction(props.hashId, props.connector.transactionId)
+    .then(() => {
+      $toast.success('Transaction successfully stopped')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at stopping transaction')
+      console.error('Error at stopping transaction:', error)
+    })
 }
 function startAutomaticTransactionGenerator(): void {
-  uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId)
+  uiClient
+    .startAutomaticTransactionGenerator(props.hashId, props.connectorId)
+    .then(() => {
+      $toast.success('Automatic transaction generator successfully started')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at starting automatic transaction generator')
+      console.error('Error at starting automatic transaction generator:', error)
+    })
 }
 function stopAutomaticTransactionGenerator(): void {
-  uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
+  uiClient
+    .stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
+    .then(() => {
+      $toast.success('Automatic transaction generator successfully stopped')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at stopping automatic transaction generator')
+      console.error('Error at stopping automatic transaction generator:', error)
+    })
 }
 </script>

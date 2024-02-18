@@ -9,8 +9,11 @@
       () => {
         uiClient
           .startTransaction(props.hashId, parseInt(props.connectorId), state.idTag)
+          .then(() => {
+            $toast.success('Transaction successfully started')
+          })
           .catch((error: Error) => {
-            // TODO: add code for UI notifications or other error handling logic
+            $toast.error('Error at starting transaction')
             console.error('Error at starting transaction:', error)
           })
           .finally(() => {
