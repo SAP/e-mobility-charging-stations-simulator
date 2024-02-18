@@ -11,7 +11,8 @@
   <input
     id="number-of-stations"
     v-model="state.numberOfStations"
-    type="text"
+    type="number"
+    min="1"
     name="number-of-stations"
     placeholder="number of stations"
   />
@@ -75,6 +76,7 @@ onMounted(() => {
 
 <style>
 #number-of-stations {
+  width: 15%;
   text-align: center;
 }
 </style>

@@ -4,7 +4,7 @@
   <p>Supervision Url:</p>
   <input
     id="supervision-url"
-    v-model="state.supervisionUrl"
+    v-model.trim="state.supervisionUrl"
     type="text"
     name="supervision-url"
     placeholder="supervision url"
