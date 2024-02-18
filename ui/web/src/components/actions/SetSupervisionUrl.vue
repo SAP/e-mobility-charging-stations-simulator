@@ -42,7 +42,7 @@ const props = defineProps<{
 }>()
 
 const state = reactive({
-  supervisionUrl: ''
+  supervisionUrl: 'ws://'
 })
 
 const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
@@ -50,6 +50,7 @@ const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiCli
 
 <style>
 #supervision-url {
-  text-align: center;
+  width: 90%;
+  text-align: left;
 }
 </style>

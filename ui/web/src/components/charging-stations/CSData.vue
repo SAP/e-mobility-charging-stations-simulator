@@ -52,7 +52,7 @@
         <tbody id="connectors-table__body">
           <!-- eslint-disable-next-line vue/valid-v-for -->
           <CSConnector
-            v-for="(connector, index) in getConnectors()"
+            v-for="(connector, index) in getConnectorStatuses()"
             :hash-id="props.chargingStation.stationInfo.hashId"
             :charging-station-id="props.chargingStation.stationInfo.chargingStationId"
             :connector-id="index + 1"
@@ -76,7 +76,7 @@ const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
 
-const getConnectors = (): ConnectorStatus[] => {
+const getConnectorStatuses = (): ConnectorStatus[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
     const connectorsStatus: ConnectorStatus[] = []
     for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {

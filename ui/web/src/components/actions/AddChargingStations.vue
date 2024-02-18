@@ -2,6 +2,7 @@
   <h2>Action Add Charging Stations</h2>
   <p>Template:</p>
   <select v-if="state.ready" v-model="state.template">
+    <option disabled value="">Please select a template</option>
     <option v-for="template in app?.appContext.config.globalProperties.$templates">
       {{ template }}
     </option>
