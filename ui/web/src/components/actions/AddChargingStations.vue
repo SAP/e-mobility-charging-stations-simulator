@@ -1,9 +1,48 @@
 <template>
   <h2>Action Add Charging Stations</h2>
+  <p>Template:</p>
+  <select v-if="state.ready" v-model="state.template">
+    <option v-for="template in app?.appContext.config.globalProperties.$templates">
+      {{ template }}
+    </option>
+  </select>
+  <p>Number of stations:</p>
+  <input
+    id="number-of-stations"
+    v-model="state.numberOfStations"
+    type="text"
+    name="number-of-station"
+    placeholder="number of stations"
+  />
+  <br />
+  <Button
+    @click="
+      () => {
+        uiClient
+          .addChargingStations(state.template, state.numberOfStations)
+          .catch((error: Error) => {
+            // TODO: add code for UI notifications or other error handling logic
+            console.error('Error at adding charging stations:', error)
+          })
+          .finally(() => {
+            $router.push({ name: 'charging-stations' })
+          })
+      }
+    "
+    >Add Charging Stations</Button
+  >
+  <Button @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted } from 'vue'
+import { getCurrentInstance, onMounted, reactive } from 'vue'
+import Button from '@/components/buttons/Button.vue'
+
+const state = reactive({
+  ready: false,
+  template: '',
+  numberOfStations: 1
+})
 
 const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
@@ -20,7 +59,14 @@ onMounted(() => {
       // TODO: add code for UI notifications or other error handling logic
       console.error('Error at fetching charging station templates:', error)
     })
+    .finally(() => {
+      state.ready = true
+    })
 })
 </script>
 
-<style></style>
+<style>
+#number-of-stations {
+  text-align: center;
+}
+</style>
