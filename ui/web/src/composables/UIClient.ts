@@ -212,8 +212,10 @@ export class UIClient {
           reject(responsePayload)
           break
         default:
-          console.error(
-            `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
+          reject(
+            new Error(
+              `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
+            )
           )
       }
       this.responseHandlers.delete(uuid)
