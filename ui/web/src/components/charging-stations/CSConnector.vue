@@ -16,8 +16,9 @@
             params: { hashId, chargingStationId, connectorId }
           })
         "
-        >Start Transaction</Button
       >
+        Start Transaction
+      </Button>
       <Button @click="stopTransaction()">Stop Transaction</Button>
       <Button @click="startAutomaticTransactionGenerator()">Start ATG</Button>
       <Button @click="stopAutomaticTransactionGenerator()">Stop ATG</Button>

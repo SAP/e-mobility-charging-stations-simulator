@@ -27,8 +27,9 @@
           })
       }
     "
-    >Set Supervision Url</Button
   >
+    Set Supervision Url
+  </Button>
   <Button @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 

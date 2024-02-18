@@ -34,8 +34,9 @@
           })
       }
     "
-    >Add Charging Stations</Button
   >
+    Add Charging Stations
+  </Button>
   <Button @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 

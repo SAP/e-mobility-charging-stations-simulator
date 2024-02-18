@@ -3,9 +3,9 @@
     <Container id="buttons-container">
       <Button id="button" @click="startSimulator()">Start Simulator</Button>
       <Button id="button" @click="stopSimulator()">Stop Simulator</Button>
-      <Button id="button" @click="$router.push({ name: 'add-charging-stations' })"
-        >Add Charging Stations</Button
-      >
+      <Button id="button" @click="$router.push({ name: 'add-charging-stations' })">
+        Add Charging Stations
+      </Button>
       <ReloadButton
         id="reload-button"
         :loading="state.isLoading"

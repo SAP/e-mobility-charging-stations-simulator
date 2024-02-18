@@ -32,8 +32,9 @@
             }
           })
         "
-        >Set Supervision Url</Button
       >
+        Set Supervision Url
+      </Button>
       <Button @click="openConnection()">Open Connection</Button>
       <Button @click="closeConnection()">Close Connection</Button>
       <Button @click="deleteChargingStation()">Delete Charging Station</Button>
