@@ -7,7 +7,7 @@
     v-model.trim="state.supervisionUrl"
     type="url"
     name="supervision-url"
-    placeholder="supervision url"
+    placeholder="wss://"
   />
   <br />
   <Button
@@ -42,7 +42,7 @@ const props = defineProps<{
 }>()
 
 const state = reactive({
-  supervisionUrl: 'ws://'
+  supervisionUrl: ''
 })
 
 const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
