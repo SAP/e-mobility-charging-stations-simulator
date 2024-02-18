@@ -43,7 +43,7 @@ const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiCli
 
 const $toast = useToast()
 
-function stopTransaction(): void {
+const stopTransaction = (): void => {
   uiClient
     .stopTransaction(props.hashId, props.connector.transactionId)
     .then(() => {
@@ -54,7 +54,7 @@ function stopTransaction(): void {
       console.error('Error at stopping transaction:', error)
     })
 }
-function startAutomaticTransactionGenerator(): void {
+const startAutomaticTransactionGenerator = (): void => {
   uiClient
     .startAutomaticTransactionGenerator(props.hashId, props.connectorId)
     .then(() => {
@@ -65,7 +65,7 @@ function startAutomaticTransactionGenerator(): void {
       console.error('Error at starting automatic transaction generator:', error)
     })
 }
-function stopAutomaticTransactionGenerator(): void {
+const stopAutomaticTransactionGenerator = (): void => {
   uiClient
     .stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
     .then(() => {

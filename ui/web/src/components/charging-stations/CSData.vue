@@ -76,7 +76,7 @@ const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
 
-function getConnectors(): ConnectorStatus[] {
+const getConnectors = (): ConnectorStatus[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
     const connectorsStatus: ConnectorStatus[] = []
     for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
@@ -90,15 +90,15 @@ function getConnectors(): ConnectorStatus[] {
   }
   return props.chargingStation.connectors?.slice(1)
 }
-function getATGStatus(connectorId: number): Status | undefined {
+const getATGStatus = (connectorId: number): Status | undefined => {
   return props.chargingStation.automaticTransactionGenerator
     ?.automaticTransactionGeneratorStatuses?.[connectorId - 1]
 }
-function getSupervisionUrl(): string {
+const getSupervisionUrl = (): string => {
   const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
   return `${supervisionUrl.protocol}//${supervisionUrl.host.split('.').join('.\u200b')}`
 }
-function getWsState(): string {
+const getWsState = (): string => {
   switch (props.chargingStation?.wsState) {
     case WebSocket.CONNECTING:
       return 'Connecting'
@@ -117,7 +117,7 @@ const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiCli
 
 const $toast = useToast()
 
-function startChargingStation(): void {
+const startChargingStation = (): void => {
   uiClient
     .startChargingStation(props.chargingStation.stationInfo.hashId)
     .then(() => {
@@ -128,7 +128,7 @@ function startChargingStation(): void {
       console.error('Error at starting charging station', error)
     })
 }
-function stopChargingStation(): void {
+const stopChargingStation = (): void => {
   uiClient
     .stopChargingStation(props.chargingStation.stationInfo.hashId)
     .then(() => {
@@ -139,7 +139,7 @@ function stopChargingStation(): void {
       console.error('Error at stopping charging station', error)
     })
 }
-function openConnection(): void {
+const openConnection = (): void => {
   uiClient
     .openConnection(props.chargingStation.stationInfo.hashId)
     .then(() => {
@@ -150,7 +150,7 @@ function openConnection(): void {
       console.error('Error at opening connection', error)
     })
 }
-function closeConnection(): void {
+const closeConnection = (): void => {
   uiClient
     .closeConnection(props.chargingStation.stationInfo.hashId)
     .then(() => {
@@ -161,7 +161,7 @@ function closeConnection(): void {
       console.error('Error at closing connection', error)
     })
 }
-function deleteChargingStation(): void {
+const deleteChargingStation = (): void => {
   uiClient
     .deleteChargingStation(props.chargingStation.stationInfo.hashId)
     .then(() => {

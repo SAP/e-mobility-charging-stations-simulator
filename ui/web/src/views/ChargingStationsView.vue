@@ -34,7 +34,7 @@ const uiClient = app?.appContext.config.globalProperties.$uiClient
 
 const $toast = useToast()
 
-function loadChargingStations(reloadCallback?: () => void): void {
+const loadChargingStations = (reloadCallback?: () => void): void => {
   if (state.isLoading === false) {
     state.isLoading = true
     uiClient
@@ -57,7 +57,7 @@ function loadChargingStations(reloadCallback?: () => void): void {
   }
 }
 
-function startSimulator(): void {
+const startSimulator = (): void => {
   uiClient
     .startSimulator()
     .then(() => {
@@ -68,7 +68,7 @@ function startSimulator(): void {
       console.error('Error at starting simulator:', error)
     })
 }
-function stopSimulator(): void {
+const stopSimulator = (): void => {
   uiClient
     .stopSimulator()
     .then(() => {
