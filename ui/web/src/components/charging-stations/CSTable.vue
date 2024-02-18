@@ -20,7 +20,7 @@
     </thead>
     <tbody id="cs-table__body">
       <CSData
-        v-for="chargingStation in props.chargingStations"
+        v-for="chargingStation in chargingStations"
         :key="chargingStation.stationInfo?.hashId"
         :charging-station="chargingStation"
       />
@@ -32,7 +32,7 @@
 import CSData from '@/components/charging-stations/CSData.vue'
 import type { ChargingStationData } from '@/types'
 
-const props = defineProps<{
+defineProps<{
   chargingStations: ChargingStationData[]
 }>()
 </script>

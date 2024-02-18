@@ -11,7 +11,7 @@
     id="number-of-stations"
     v-model="state.numberOfStations"
     type="text"
-    name="number-of-station"
+    name="number-of-stations"
     placeholder="number of stations"
   />
   <br />
@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { getCurrentInstance, onMounted, reactive } from 'vue'
 import Button from '@/components/buttons/Button.vue'
+import type { ResponsePayload } from '@/types'
 
 const state = reactive({
   ready: false,
