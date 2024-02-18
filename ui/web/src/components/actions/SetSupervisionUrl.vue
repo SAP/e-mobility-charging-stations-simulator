@@ -5,7 +5,7 @@
   <input
     id="supervision-url"
     v-model.trim="state.supervisionUrl"
-    type="text"
+    type="url"
     name="supervision-url"
     placeholder="supervision url"
   />
