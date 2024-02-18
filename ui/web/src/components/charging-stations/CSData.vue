@@ -7,7 +7,7 @@
     <td class="cs-table__column">
       {{ getSupervisionUrl() }}
     </td>
-    <td class="cs-table__column">{{ getWsState() }}</td>
+    <td class="cs-table__column">{{ getWSState() }}</td>
     <td class="cs-table__column">
       {{ props.chargingStation?.bootNotificationResponse?.status ?? 'Ø' }}
     </td>
@@ -98,7 +98,7 @@ const getSupervisionUrl = (): string => {
   const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
   return `${supervisionUrl.protocol}//${supervisionUrl.host.split('.').join('.\u200b')}`
 }
-const getWsState = (): string => {
+const getWSState = (): string => {
   switch (props.chargingStation?.wsState) {
     case WebSocket.CONNECTING:
       return 'Connecting'

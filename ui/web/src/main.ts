@@ -14,7 +14,10 @@ const initializeApp = (config: ConfigurationData) => {
     console.info('Error info:', info)
     // TODO: add code for UI notifications or other error handling logic
   }
-  app.config.globalProperties.$uiClient = UIClient.getInstance(config)
+  if (Array.isArray(config.uiServer)) {
+    throw new Error('Multiple UI server configurations is not yet supported')
+  }
+  app.config.globalProperties.$uiClient = UIClient.getInstance(0, config.uiServer)
   app.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
     app.config.globalProperties.$uiClient
       .listChargingStations()

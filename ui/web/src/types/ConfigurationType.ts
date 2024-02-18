@@ -1,10 +1,10 @@
 import type { AuthenticationType, Protocol, ProtocolVersion } from './UIProtocol'
 
 export type ConfigurationData = {
-  uiServer: UIServerConfigurationSection
+  uiServer: UIServerConfigurationSection | UIServerConfigurationSection[]
 }
 
-type UIServerConfigurationSection = {
+export type UIServerConfigurationSection = {
   host: string
   port: number
   secure?: boolean

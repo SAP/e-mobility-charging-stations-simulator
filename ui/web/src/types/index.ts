@@ -4,7 +4,7 @@ export type {
   ConnectorStatus,
   Status
 } from './ChargingStationType'
-export type { ConfigurationData } from './ConfigurationType'
+export type { ConfigurationData, UIServerConfigurationSection } from './ConfigurationType'
 export {
   ApplicationProtocol,
   AuthenticationType,

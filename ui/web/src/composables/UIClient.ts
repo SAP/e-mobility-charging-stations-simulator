@@ -1,12 +1,12 @@
 import {
   ApplicationProtocol,
   AuthenticationType,
-  type ConfigurationData,
   ProcedureName,
   type ProtocolResponse,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus
+  ResponseStatus,
+  type UIServerConfigurationSection
 } from '@/types'
 
 type ResponseHandler = {
@@ -16,21 +16,26 @@ type ResponseHandler = {
 }
 
 export class UIClient {
-  private static instance: UIClient | null = null
+  private static readonly instances: Map<number, UIClient> = new Map<number, UIClient>()
 
   private ws!: WebSocket
   private responseHandlers: Map<string, ResponseHandler>
 
-  private constructor(private configuration: ConfigurationData) {
+  private constructor(private uiServerConfiguration: UIServerConfigurationSection) {
     this.openWS()
     this.responseHandlers = new Map<string, ResponseHandler>()
   }
 
-  public static getInstance(configuration: ConfigurationData) {
-    if (UIClient.instance === null) {
-      UIClient.instance = new UIClient(configuration)
+  public static getInstance(
+    serverId: number,
+    uiServerConfiguration?: UIServerConfigurationSection
+  ): UIClient {
+    if (!UIClient.instances.has(serverId) && uiServerConfiguration != null) {
+      UIClient.instances.set(serverId, new UIClient(uiServerConfiguration))
+    } else if (!UIClient.instances.has(serverId)) {
+      throw new Error(`UI client instance not found for server id: ${serverId}`)
     }
-    return UIClient.instance
+    return UIClient.instances.get(serverId)!
   }
 
   public registerWSEventListener<K extends keyof WebSocketEventMap>(
@@ -138,15 +143,15 @@ export class UIClient {
 
   private openWS(): void {
     const protocols =
-      this.configuration.uiServer.authentication?.enabled === true &&
-      this.configuration.uiServer.authentication?.type === AuthenticationType.PROTOCOL_BASIC_AUTH
+      this.uiServerConfiguration.authentication?.enabled === true &&
+      this.uiServerConfiguration.authentication?.type === AuthenticationType.PROTOCOL_BASIC_AUTH
         ? [
-            `${this.configuration.uiServer.protocol}${this.configuration.uiServer.version}`,
-            `authorization.basic.${btoa(`${this.configuration.uiServer.authentication.username}:${this.configuration.uiServer.authentication.password}`).replace(/={1,2}$/, '')}`
+            `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`,
+            `authorization.basic.${btoa(`${this.uiServerConfiguration.authentication.username}:${this.uiServerConfiguration.authentication.password}`).replace(/={1,2}$/, '')}`
           ]
-        : `${this.configuration.uiServer.protocol}${this.configuration.uiServer.version}`
+        : `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`
     this.ws = new WebSocket(
-      `${this.configuration.uiServer.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${this.configuration.uiServer.host}:${this.configuration.uiServer.port}`,
+      `${this.uiServerConfiguration.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port}`,
       protocols
     )
     this.ws.onopen = openEvent => {
