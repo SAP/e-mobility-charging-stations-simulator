@@ -4,7 +4,7 @@ import type { ConfigurationData, ResponsePayload } from './types'
 import { router } from '@/router'
 import { UIClient } from '@/composables'
 import App from '@/App.vue'
-import 'vue-toast-notification/dist/theme-default.css'
+import 'vue-toast-notification/dist/theme-bootstrap.css'
 
 const initializeApp = (config: ConfigurationData) => {
   const app = createApp(App)
