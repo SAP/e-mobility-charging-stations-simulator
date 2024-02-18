@@ -67,6 +67,13 @@ export class UIClient {
     return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, { hashIds: [hashId] })
   }
 
+  public async setSupervisionUrl(hashId: string, supervisionUrl: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.SET_SUPERVISION_URL, {
+      hashIds: [hashId],
+      url: supervisionUrl
+    })
+  }
+
   public async startChargingStation(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_CHARGING_STATION, { hashIds: [hashId] })
   }

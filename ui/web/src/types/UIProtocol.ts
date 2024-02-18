@@ -31,6 +31,7 @@ export enum ProcedureName {
   LIST_CHARGING_STATIONS = 'listChargingStations',
   ADD_CHARGING_STATIONS = 'addChargingStations',
   DELETE_CHARGING_STATIONS = 'deleteChargingStations',
+  SET_SUPERVISION_URL = 'setSupervisionUrl',
   START_CHARGING_STATION = 'startChargingStation',
   STOP_CHARGING_STATION = 'stopChargingStation',
   OPEN_CONNECTION = 'openConnection',

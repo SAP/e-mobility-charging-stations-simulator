@@ -22,6 +22,18 @@
     <td class="cs-table__column">
       <Button @click="startChargingStation()">Start Charging Station</Button>
       <Button @click="stopChargingStation()">Stop Charging Station</Button>
+      <Button
+        @click="
+          $router.push({
+            name: 'set-supervision-url',
+            params: {
+              hashId: props.chargingStation.stationInfo.hashId,
+              chargingStationId: props.chargingStation.stationInfo.chargingStationId
+            }
+          })
+        "
+        >Set Supervision Url</Button
+      >
       <Button @click="openConnection()">Open Connection</Button>
       <Button @click="closeConnection()">Close Connection</Button>
       <Button @click="deleteChargingStation()">Delete Charging Station</Button>
