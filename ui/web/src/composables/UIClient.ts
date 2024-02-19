@@ -16,7 +16,7 @@ type ResponseHandler = {
 }
 
 export class UIClient {
-  private static readonly instances: Map<number, UIClient> = new Map<number, UIClient>()
+  private static instance: UIClient | null = null
 
   private ws!: WebSocket
   private responseHandlers: Map<string, ResponseHandler>
@@ -26,16 +26,11 @@ export class UIClient {
     this.responseHandlers = new Map<string, ResponseHandler>()
   }
 
-  public static getInstance(
-    serverId: number,
-    uiServerConfiguration?: UIServerConfigurationSection
-  ): UIClient {
-    if (!UIClient.instances.has(serverId) && uiServerConfiguration != null) {
-      UIClient.instances.set(serverId, new UIClient(uiServerConfiguration))
-    } else if (!UIClient.instances.has(serverId)) {
-      throw new Error(`UI client instance not found for server id: ${serverId}`)
+  public static getInstance(uiServerConfiguration: UIServerConfigurationSection): UIClient {
+    if (UIClient.instance === null) {
+      UIClient.instance = new UIClient(uiServerConfiguration)
     }
-    return UIClient.instances.get(serverId)!
+    return UIClient.instance
   }
 
   public registerWSEventListener<K extends keyof WebSocketEventMap>(
