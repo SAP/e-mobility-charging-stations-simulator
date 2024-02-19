@@ -18,6 +18,7 @@
   />
   <br />
   <Button
+    id="action-button"
     @click="
       () => {
         uiClient
@@ -37,7 +38,7 @@
   >
     Add Charging Stations
   </Button>
-  <Button @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
+  <Button id="action-button" @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">

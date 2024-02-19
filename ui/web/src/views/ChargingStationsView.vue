@@ -1,9 +1,9 @@
 <template>
   <Container id="charging-stations-container">
     <Container id="buttons-container">
-      <Button id="button" @click="startSimulator()">Start Simulator</Button>
-      <Button id="button" @click="stopSimulator()">Stop Simulator</Button>
-      <Button id="button" @click="$router.push({ name: 'add-charging-stations' })">
+      <Button @click="startSimulator()">Start Simulator</Button>
+      <Button @click="stopSimulator()">Stop Simulator</Button>
+      <Button @click="$router.push({ name: 'add-charging-stations' })">
         Add Charging Stations
       </Button>
       <ReloadButton
@@ -94,8 +94,8 @@ const stopSimulator = (): void => {
   flex-direction: row;
 }
 
-#button {
-  flex: auto;
+#action-button {
+  flex: none;
 }
 
 #reload-button {

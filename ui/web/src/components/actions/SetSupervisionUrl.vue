@@ -11,6 +11,7 @@
   />
   <br />
   <Button
+    id="action-button"
     @click="
       () => {
         uiClient
@@ -30,7 +31,7 @@
   >
     Set Supervision Url
   </Button>
-  <Button @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
+  <Button id="action-button" @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">

@@ -5,6 +5,7 @@
   <input id="idtag" v-model.trim="state.idTag" type="text" name="idtag" placeholder="RFID tag" />
   <br />
   <Button
+    id="action-button"
     @click="
       () => {
         uiClient
@@ -24,7 +25,7 @@
   >
     Start Transaction
   </Button>
-  <Button @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
+  <Button id="action-button" @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">
