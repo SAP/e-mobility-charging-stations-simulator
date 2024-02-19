@@ -79,15 +79,15 @@ const props = defineProps<{
 
 const getConnectorStatuses = (): ConnectorStatus[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
-    const connectorsStatus: ConnectorStatus[] = []
+    const connectorStatuses: ConnectorStatus[] = []
     for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
       if (evseId > 0 && Array.isArray(evseStatus.connectors) && evseStatus.connectors.length > 0) {
         for (const connectorStatus of evseStatus.connectors) {
-          connectorsStatus.push(connectorStatus)
+          connectorStatuses.push(connectorStatus)
         }
       }
     }
-    return connectorsStatus
+    return connectorStatuses
   }
   return props.chargingStation.connectors?.slice(1)
 }

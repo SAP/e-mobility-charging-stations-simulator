@@ -33,6 +33,12 @@ export class UIClient {
     return UIClient.instance
   }
 
+  public setConfiguration(uiServerConfiguration: UIServerConfigurationSection): void {
+    this.ws.close()
+    this.uiServerConfiguration = uiServerConfiguration
+    this.openWS()
+  }
+
   public registerWSEventListener<K extends keyof WebSocketEventMap>(
     event: K,
     listener: (event: WebSocketEventMap[K]) => void
