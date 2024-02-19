@@ -14,7 +14,11 @@ const initializeApp = (config: ConfigurationData) => {
     console.info('Error info:', info)
     // TODO: add code for UI notifications or other error handling logic
   }
-  app.config.globalProperties.$uiClient = UIClient.getInstance(config.uiServer)
+  app.config.globalProperties.$configuration = config
+  app.config.globalProperties.$chargingStations = []
+  app.config.globalProperties.$uiClient = UIClient.getInstance(
+    app.config.globalProperties.$configuration.uiServer
+  )
   app.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
     app.config.globalProperties.$uiClient
       .listChargingStations()

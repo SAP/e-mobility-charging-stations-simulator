@@ -12,7 +12,7 @@
         @click="loadChargingStations(() => $router.go(0))"
       />
     </Container>
-    <CSTable :charging-stations="app?.appContext.config.globalProperties.$chargingStations ?? []" />
+    <CSTable :charging-stations="app?.appContext.config.globalProperties.$chargingStations" />
   </Container>
 </template>
 
