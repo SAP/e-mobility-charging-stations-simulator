@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import ToastPlugin from 'vue-toast-notification'
-import type { ConfigurationData, ResponsePayload } from './types'
+import type { ConfigurationData, ResponsePayload } from '@/types'
 import { router } from '@/router'
 import { UIClient } from '@/composables'
 import App from '@/App.vue'
@@ -28,7 +28,6 @@ const initializeApp = (config: ConfigurationData) => {
       .catch((error: Error) => {
         // TODO: add code for UI notifications or other error handling logic
         console.error('Error at fetching charging stations:', error)
-        throw error
       })
       .finally(() => {
         app.use(router).use(ToastPlugin).mount('#app')
@@ -37,15 +36,23 @@ const initializeApp = (config: ConfigurationData) => {
 }
 
 fetch('/config.json')
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) {
+      // TODO: add code for UI notifications or other error handling logic
+      console.error('Failed to fetch app configuration')
+      return
+    }
+    response
+      .json()
+      .then(config => {
+        initializeApp(config)
+      })
+      .catch(error => {
+        // TODO: add code for UI notifications or other error handling logic
+        console.error('Error at app configuration JSON deserialization:', error)
+      })
+  })
   .catch(error => {
+    // TODO: add code for UI notifications or other error handling logic
     console.error('Error at fetching app configuration:', error)
-    throw error
-  })
-  .then(config => {
-    initializeApp(config)
-  })
-  .catch(error => {
-    console.error('Error at initializing app:', error)
-    throw error
   })
