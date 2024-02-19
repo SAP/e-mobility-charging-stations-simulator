@@ -115,4 +115,10 @@ const stopSimulator = (): void => {
 #reload-button:active {
   background-color: red;
 }
+
+#action {
+  color: white;
+  background-color: black;
+  padding: 1%;
+}
 </style>
