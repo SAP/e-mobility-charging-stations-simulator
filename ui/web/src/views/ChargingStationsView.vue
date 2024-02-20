@@ -13,7 +13,7 @@
       />
     </Container>
     <CSTable
-      v-if="
+      v-show="
         Array.isArray(app?.appContext.config.globalProperties.$chargingStations) &&
         app?.appContext.config.globalProperties.$chargingStations.length > 0
       "
@@ -94,7 +94,6 @@ const stopSimulator = (): void => {
 #charging-stations-container {
   height: fit-content;
   width: 100%;
-  position: absolute;
   display: flex;
   flex-direction: column;
 }

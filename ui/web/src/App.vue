@@ -1,6 +1,6 @@
 <template>
   <router-view />
-  <Container id="action-container">
+  <Container v-show="$route.path !== '/'" id="action-container">
     <router-view name="action" />
   </Container>
 </template>
