@@ -45,11 +45,16 @@ fetch('/config.json')
     response
       .json()
       .then(config => {
-        initializeApp(config)
+        try {
+          initializeApp(config)
+        } catch (error) {
+          // TODO: add code for UI notifications or other error handling logic
+          console.error('Error at initializing the app:', error)
+        }
       })
       .catch(error => {
         // TODO: add code for UI notifications or other error handling logic
-        console.error('Error at app configuration JSON deserialization:', error)
+        console.error('Error at deserializing JSON app configuration:', error)
       })
   })
   .catch(error => {
