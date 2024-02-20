@@ -49,7 +49,7 @@ fetch('/config.json')
           initializeApp(config)
         } catch (error) {
           // TODO: add code for UI notifications or other error handling logic
-          console.error('Error at initializing the app:', error)
+          console.error('Error at initializing app:', error)
         }
       })
       .catch(error => {
