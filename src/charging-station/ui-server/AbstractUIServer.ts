@@ -63,6 +63,10 @@ export abstract class AbstractUIServer {
     for (const uiService of this.uiServices.values()) {
       uiService.stop()
     }
+    this.clearCaches()
+  }
+
+  private clearCaches (): void {
     this.chargingStations.clear()
     this.chargingStationTemplates.clear()
   }

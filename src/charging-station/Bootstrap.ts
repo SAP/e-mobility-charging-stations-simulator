@@ -261,6 +261,7 @@ export class Bootstrap extends EventEmitter {
         await this.workerImplementation?.stop()
         delete this.workerImplementation
         this.removeAllListeners()
+        this.uiServer?.chargingStations.clear()
         await this.storage?.close()
         delete this.storage
         this.started = false

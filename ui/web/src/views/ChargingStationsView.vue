@@ -12,7 +12,13 @@
         @click="loadChargingStations(() => $router.go(0))"
       />
     </Container>
-    <CSTable :charging-stations="app?.appContext.config.globalProperties.$chargingStations" />
+    <CSTable
+      v-if="
+        Array.isArray(app?.appContext.config.globalProperties.$chargingStations) &&
+        app?.appContext.config.globalProperties.$chargingStations.length > 0
+      "
+      :charging-stations="app?.appContext.config.globalProperties.$chargingStations"
+    />
   </Container>
 </template>
 
@@ -72,6 +78,9 @@ const stopSimulator = (): void => {
   uiClient
     .stopSimulator()
     .then(() => {
+      if (app != null) {
+        app.appContext.config.globalProperties.$chargingStations = []
+      }
       $toast.success('Simulator successfully stopped')
     })
     .catch((error: Error) => {
@@ -85,6 +94,7 @@ const stopSimulator = (): void => {
 #charging-stations-container {
   height: fit-content;
   width: 100%;
+  position: absolute;
   display: flex;
   flex-direction: column;
 }

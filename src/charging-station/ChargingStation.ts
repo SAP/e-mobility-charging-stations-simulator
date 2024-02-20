@@ -1832,6 +1832,7 @@ export class ChargingStation extends EventEmitter {
 
   private async onOpen (): Promise<void> {
     if (this.isWebSocketConnectionOpened()) {
+      this.emit(ChargingStationEvents.updated)
       logger.info(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.href} succeeded`
       )
@@ -1894,6 +1895,7 @@ export class ChargingStation extends EventEmitter {
 
   private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
     this.emit(ChargingStationEvents.disconnected)
+    this.emit(ChargingStationEvents.updated)
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NORMAL:
@@ -1913,12 +1915,13 @@ export class ChargingStation extends EventEmitter {
           )}' and reason '${reason.toString()}'`
         )
         this.started &&
-          this.reconnect().catch(error =>
-            logger.error(`${this.logPrefix()} Error while reconnecting:`, error)
-          )
+          this.reconnect()
+            .then(() => {
+              this.emit(ChargingStationEvents.updated)
+            })
+            .catch(error => logger.error(`${this.logPrefix()} Error while reconnecting:`, error))
         break
     }
-    this.emit(ChargingStationEvents.updated)
   }
 
   private getCachedRequest (
