@@ -262,6 +262,7 @@ export class Bootstrap extends EventEmitter {
         delete this.workerImplementation
         this.removeAllListeners()
         this.uiServer?.chargingStations.clear()
+        this.initializedCounters = false
         await this.storage?.close()
         delete this.storage
         this.started = false
@@ -278,7 +279,6 @@ export class Bootstrap extends EventEmitter {
     await this.stop()
     Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
       .enabled !== true && this.uiServer?.stop()
-    this.initializedCounters = false
     await this.start()
   }
 
