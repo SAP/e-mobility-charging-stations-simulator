@@ -65,7 +65,7 @@ interface TemplateChargingStations {
 export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
-  private readonly uiServer?: AbstractUIServer
+  private readonly uiServer: AbstractUIServer
   private storage?: Storage
   private readonly templatesChargingStations: Map<string, TemplateChargingStations>
   private readonly version: string = version
@@ -73,6 +73,7 @@ export class Bootstrap extends EventEmitter {
   private started: boolean
   private starting: boolean
   private stopping: boolean
+  private uiServerStarted: boolean
 
   private constructor () {
     super()
@@ -85,10 +86,11 @@ export class Bootstrap extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
-    this.templatesChargingStations = new Map<string, TemplateChargingStations>()
+    this.uiServerStarted = false
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
+    this.templatesChargingStations = new Map<string, TemplateChargingStations>()
     this.initializedCounters = false
     this.initializeCounters()
     Configuration.configurationChangeCallback = async () => {
@@ -189,8 +191,15 @@ export class Bootstrap extends EventEmitter {
           )
           await this.storage?.open()
         }
-        Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
-          .enabled === true && this.uiServer?.start()
+        if (
+          !this.uiServerStarted &&
+          Configuration.getConfigurationSection<UIServerConfiguration>(
+            ConfigurationSection.uiServer
+          ).enabled === true
+        ) {
+          this.uiServer.start()
+          this.uiServerStarted = true
+        }
         // Start ChargingStation object instance in worker thread
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
@@ -246,7 +255,7 @@ export class Bootstrap extends EventEmitter {
     if (this.started) {
       if (!this.stopping) {
         this.stopping = true
-        await this.uiServer?.sendInternalRequest(
+        await this.uiServer.sendInternalRequest(
           this.uiServer.buildProtocolRequest(
             generateUUID(),
             ProcedureName.STOP_CHARGING_STATION,
@@ -261,7 +270,7 @@ export class Bootstrap extends EventEmitter {
         await this.workerImplementation?.stop()
         delete this.workerImplementation
         this.removeAllListeners()
-        this.uiServer?.chargingStations.clear()
+        this.uiServer.clearCaches()
         this.initializedCounters = false
         await this.storage?.close()
         delete this.storage
@@ -277,8 +286,14 @@ export class Bootstrap extends EventEmitter {
 
   private async restart (): Promise<void> {
     await this.stop()
-    Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
-      .enabled !== true && this.uiServer?.stop()
+    if (
+      this.uiServerStarted &&
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+        .enabled !== true
+    ) {
+      this.uiServer.stop()
+      this.uiServerStarted = false
+    }
     await this.start()
   }
 
@@ -400,7 +415,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventAdded = (data: ChargingStationData): void => {
-    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
+    this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventAdded: Charging station ${
         data.stationInfo.chargingStationId
@@ -411,7 +426,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventDeleted = (data: ChargingStationData): void => {
-    this.uiServer?.chargingStations.delete(data.stationInfo.hashId)
+    this.uiServer.chargingStations.delete(data.stationInfo.hashId)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const templateChargingStations = this.templatesChargingStations.get(
       data.stationInfo.templateName
@@ -428,7 +443,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventStarted = (data: ChargingStationData): void => {
-    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
+    this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ++this.templatesChargingStations.get(data.stationInfo.templateName)!.started
     logger.info(
@@ -441,7 +456,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventStopped = (data: ChargingStationData): void => {
-    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
+    this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     --this.templatesChargingStations.get(data.stationInfo.templateName)!.started
     logger.info(
@@ -454,7 +469,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventUpdated = (data: ChargingStationData): void => {
-    this.uiServer?.chargingStations.set(data.stationInfo.hashId, data)
+    this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
   }
 
   private readonly workerEventPerformanceStatistics = (data: Statistics): void => {
@@ -485,7 +500,7 @@ export class Bootstrap extends EventEmitter {
             started: 0,
             indexes: new Set<number>()
           })
-          this.uiServer?.chargingStationTemplates.add(templateName)
+          this.uiServer.chargingStationTemplates.add(templateName)
         }
         if (this.templatesChargingStations.size !== stationTemplateUrls.length) {
           console.error(
@@ -544,7 +559,8 @@ export class Bootstrap extends EventEmitter {
     this.stop()
       .then(() => {
         console.info(chalk.green('Graceful shutdown'))
-        this.uiServer?.stop()
+        this.uiServer.stop()
+        this.uiServerStarted = false
         this.waitChargingStationsStopped()
           .then(() => {
             exit(exitCodes.succeeded)

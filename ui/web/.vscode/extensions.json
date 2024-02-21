@@ -7,6 +7,6 @@
     "sonarsource.sonarlint-vscode",
     "streetsidesoftware.code-spell-checker",
     "Vue.volar",
-    "zixuanchen.vitest-explorer"
+    "vitest.explorer"
   ]
 }

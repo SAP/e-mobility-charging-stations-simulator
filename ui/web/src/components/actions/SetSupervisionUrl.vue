@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, getCurrentInstance, reactive } from 'vue'
+import { getCurrentInstance, reactive } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 
 const props = defineProps<{

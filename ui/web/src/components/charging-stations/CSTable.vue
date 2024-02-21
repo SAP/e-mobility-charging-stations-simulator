@@ -21,7 +21,7 @@
     <tbody id="cs-table__body">
       <CSData
         v-for="chargingStation in chargingStations"
-        :key="chargingStation.stationInfo?.hashId"
+        :key="chargingStation.stationInfo?.chargingStationId"
         :charging-station="chargingStation"
       />
     </tbody>
@@ -29,7 +29,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
 import CSData from '@/components/charging-stations/CSData.vue'
 import type { ChargingStationData } from '@/types'
 

@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, getCurrentInstance } from 'vue'
+import { getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import Button from '@/components/buttons/Button.vue'

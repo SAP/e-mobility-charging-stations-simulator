@@ -66,7 +66,7 @@ export abstract class AbstractUIServer {
     this.clearCaches()
   }
 
-  private clearCaches (): void {
+  public clearCaches (): void {
     this.chargingStations.clear()
     this.chargingStationTemplates.clear()
   }

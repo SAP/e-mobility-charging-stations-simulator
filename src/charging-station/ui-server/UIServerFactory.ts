@@ -20,7 +20,7 @@ export class UIServerFactory {
 
   public static getUIServerImplementation (
     uiServerConfiguration: UIServerConfiguration
-  ): AbstractUIServer | undefined {
+  ): AbstractUIServer {
     if (
       uiServerConfiguration.authentication?.enabled === true &&
       !Object.values(AuthenticationType).includes(uiServerConfiguration.authentication.type)
@@ -59,10 +59,11 @@ export class UIServerFactory {
       uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
     }
     switch (uiServerConfiguration.type) {
-      case ApplicationProtocol.WS:
-        return new UIWebSocketServer(uiServerConfiguration)
       case ApplicationProtocol.HTTP:
         return new UIHttpServer(uiServerConfiguration)
+      case ApplicationProtocol.WS:
+      default:
+        return new UIWebSocketServer(uiServerConfiguration)
     }
   }
 }
