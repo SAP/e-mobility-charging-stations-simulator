@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance } from 'vue'
+import { defineProps, getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import Button from '@/components/buttons/Button.vue'
 import type { ConnectorStatus, Status } from '@/types'

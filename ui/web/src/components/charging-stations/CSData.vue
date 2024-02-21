@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance } from 'vue'
+import { defineProps, getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import Button from '@/components/buttons/Button.vue'
@@ -195,6 +195,7 @@ const deleteChargingStation = (): void => {
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  border: solid 0.25px black;
 }
 
 .connectors-table__row:nth-of-type(even) {

@@ -29,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+import { defineProps } from 'vue'
 import CSData from '@/components/charging-stations/CSData.vue'
 import type { ChargingStationData } from '@/types'
 
@@ -71,6 +72,7 @@ defineProps<{
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  border: solid 0.5px black;
 }
 
 .cs-table__row:nth-of-type(even) {
@@ -79,7 +81,7 @@ defineProps<{
 
 .cs-table__column {
   height: fit-content;
-  width: calc(65% / 10);
+  width: calc(60% / 10);
   text-align: center;
 }
 
@@ -89,6 +91,6 @@ defineProps<{
 
 .cs-table__connectors-column {
   height: fit-content;
-  width: 35%;
+  width: 40%;
 }
 </style>
