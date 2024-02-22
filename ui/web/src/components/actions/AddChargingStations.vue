@@ -17,13 +17,22 @@
     name="number-of-stations"
     placeholder="number of stations"
   />
+  <p>Options:</p>
+  <ul>
+    <li>
+      Auto start:
+      <input v-model="state.autoStart" type="checkbox" true-value="true" false-value="false" />
+    </li>
+  </ul>
   <br />
   <Button
     id="action-button"
     @click="
       () => {
         uiClient
-          .addChargingStations(state.template, state.numberOfStations)
+          .addChargingStations(state.template, state.numberOfStations, {
+            autoStart: convertToBoolean(state.autoStart)
+          })
           .then(() => {
             $toast.success('Charging stations successfully added')
           })
@@ -47,11 +56,13 @@ import { getCurrentInstance, onMounted, reactive } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import Button from '@/components/buttons/Button.vue'
 import type { ResponsePayload } from '@/types'
+import { convertToBoolean } from '@/composables'
 
 const state = reactive({
   ready: false,
   template: '',
-  numberOfStations: 1
+  numberOfStations: 1,
+  autoStart: false
 })
 
 const app = getCurrentInstance()

@@ -1,6 +1,7 @@
 import {
   ApplicationProtocol,
   AuthenticationType,
+  type ChargingStationOptions,
   ProcedureName,
   type ProtocolResponse,
   type RequestPayload,
@@ -64,9 +65,14 @@ export class UIClient {
 
   public async addChargingStations(
     template: string,
-    numberOfStations: number
+    numberOfStations: number,
+    options?: ChargingStationOptions
   ): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.ADD_CHARGING_STATIONS, { template, numberOfStations })
+    return this.sendRequest(ProcedureName.ADD_CHARGING_STATIONS, {
+      template,
+      numberOfStations,
+      options
+    })
   }
 
   public async deleteChargingStation(hashId: string): Promise<ResponsePayload> {

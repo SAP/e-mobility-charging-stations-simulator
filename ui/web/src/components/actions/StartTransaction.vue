@@ -10,7 +10,7 @@
     @click="
       () => {
         uiClient
-          .startTransaction(props.hashId, parseInt(props.connectorId), state.idTag)
+          .startTransaction(props.hashId, convertToInt(props.connectorId), state.idTag)
           .then(() => {
             $toast.success('Transaction successfully started')
           })
@@ -32,6 +32,7 @@
 <script setup lang="ts">
 import { getCurrentInstance, reactive } from 'vue'
 import Button from '@/components/buttons/Button.vue'
+import { convertToInt } from '@/composables'
 
 const props = defineProps<{
   hashId: string

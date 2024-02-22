@@ -64,6 +64,16 @@ export const FirmwareStatus = {
 } as const
 export type FirmwareStatus = OCPP16FirmwareStatus
 
+export interface ChargingStationOptions extends JsonObject {
+  supervisionUrls?: string | string[]
+  persistentConfiguration?: boolean
+  autoStart?: boolean
+  autoRegister?: boolean
+  enableStatistics?: boolean
+  ocppStrictCompliance?: boolean
+  stopTransactionsOnStopped?: boolean
+}
+
 export type ChargingStationInfo = {
   hashId: string
   templateIndex: number
