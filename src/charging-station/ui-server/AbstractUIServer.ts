@@ -19,6 +19,9 @@ import {
   type ResponsePayload,
   type UIServerConfiguration
 } from '../../types/index.js'
+import { logger } from '../../utils/index.js'
+
+const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>
@@ -84,6 +87,12 @@ export abstract class AbstractUIServer {
   }
 
   protected startHttpServer (): void {
+    this.httpServer.on('error', error => {
+      logger.error(
+        `${this.logPrefix(moduleName, 'start.httpServer.on.error')} HTTP server error:`,
+        error
+      )
+    })
     if (!this.httpServer.listening) {
       this.httpServer.listen(this.uiServerConfiguration.options)
     }
@@ -116,6 +125,7 @@ export abstract class AbstractUIServer {
   private stopHttpServer (): void {
     if (this.httpServer.listening) {
       this.httpServer.close()
+      this.httpServer.removeAllListeners()
     }
   }
 

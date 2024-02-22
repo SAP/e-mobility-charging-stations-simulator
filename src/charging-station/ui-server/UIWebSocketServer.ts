@@ -91,6 +91,16 @@ export class UIWebSocketServer extends AbstractUIServer {
       }
     })
     this.httpServer.on('upgrade', (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
+      const onSocketError = (error: Error): void => {
+        logger.error(
+          `${this.logPrefix(
+            moduleName,
+            'start.httpServer.on.upgrade'
+          )} Socket error at connection upgrade event handling:`,
+          error
+        )
+      }
+      socket.on('error', onSocketError)
       this.authenticate(req, err => {
         if (err != null) {
           socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`)
@@ -106,11 +116,12 @@ export class UIWebSocketServer extends AbstractUIServer {
             `${this.logPrefix(
               moduleName,
               'start.httpServer.on.upgrade'
-            )} Error at handling connection upgrade:`,
+            )} Error at connection upgrade event handling:`,
             error
           )
         }
       })
+      socket.removeListener('error', onSocketError)
     })
     this.startHttpServer()
   }
