@@ -23,6 +23,33 @@
       Auto start:
       <input v-model="state.autoStart" type="checkbox" true-value="true" false-value="false" />
     </li>
+    <li>
+      Persistent configuration:
+      <input
+        v-model="state.persistentConfiguration"
+        type="checkbox"
+        true-value="true"
+        false-value="false"
+      />
+    </li>
+    <li>
+      OCPP strict compliance:
+      <input
+        v-model="state.ocppStrictCompliance"
+        type="checkbox"
+        true-value="true"
+        false-value="false"
+      />
+    </li>
+    <li>
+      Performance statistics:
+      <input
+        v-model="state.enableStatistics"
+        type="checkbox"
+        true-value="true"
+        false-value="false"
+      />
+    </li>
   </ul>
   <br />
   <Button
@@ -31,7 +58,10 @@
       () => {
         uiClient
           .addChargingStations(state.template, state.numberOfStations, {
-            autoStart: convertToBoolean(state.autoStart)
+            autoStart: convertToBoolean(state.autoStart),
+            persistentConfiguration: convertToBoolean(state.persistentConfiguration),
+            ocppStrictCompliance: convertToBoolean(state.ocppStrictCompliance),
+            enableStatistics: convertToBoolean(state.enableStatistics)
           })
           .then(() => {
             $toast.success('Charging stations successfully added')
@@ -62,7 +92,10 @@ const state = reactive({
   ready: false,
   template: '',
   numberOfStations: 1,
-  autoStart: false
+  autoStart: false,
+  persistentConfiguration: true,
+  ocppStrictCompliance: true,
+  enableStatistics: false
 })
 
 const app = getCurrentInstance()
