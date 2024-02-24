@@ -102,13 +102,13 @@ export const convertToInt = (value: unknown): number => {
   if (value == null) {
     return 0
   }
-  let changedValue: number = value as number
   if (Number.isSafeInteger(value)) {
     return value as number
   }
   if (typeof value === 'number') {
     return Math.trunc(value)
   }
+  let changedValue: number = value as number
   if (isString(value)) {
     changedValue = parseInt(value)
   }
