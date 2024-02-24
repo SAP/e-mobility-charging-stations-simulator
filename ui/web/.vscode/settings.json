@@ -15,6 +15,7 @@
     "ocpp",
     "preinstall",
     "RFID",
+    "rushstack",
     "webui"
   ],
   "sonarlint.connectedMode.project": {

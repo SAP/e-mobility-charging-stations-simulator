@@ -9,6 +9,7 @@
 .eslintrc.json
 .eslintrc.js
 .eslintrc.cjs
+.eslintrc.mjs
 .eslintignore
 .eslintcache
 .lintstagedrc.json
@@ -62,6 +63,7 @@ bundle.js
 mikro-orm.config.ts
 mta.yaml
 mta_archives
+pnpm-lock.yaml
 docker
 src
 tests
