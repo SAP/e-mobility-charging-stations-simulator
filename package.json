@@ -134,7 +134,7 @@
     "esbuild": "^0.20.1",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-config-standard-with-typescript": "^43.0.1",
     "eslint-define-config": "^2.1.0",
