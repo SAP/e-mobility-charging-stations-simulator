@@ -51,7 +51,7 @@ You can now follow the link displayed in the terminal. The Web UI looks like the
 
 ![webui](./src/assets/webui.png)
 
-1. With the buttons on the top you can stop, start the simulator, add new charging stations and refresh the content.
+1. With the buttons on the top you can start/stop the simulator, add new charging stations and refresh the content.
 2. Each charging station is a row in the table with specific 'Actions' to execute. Try 'Stop Charging Station' and refresh with the large blue button and see the status 'Started' turns from 'Yes' into 'No'.
 
 ### Development
