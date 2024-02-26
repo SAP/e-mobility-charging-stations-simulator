@@ -138,4 +138,9 @@ onMounted(() => {
   width: 15%;
   text-align: center;
 }
+
+#supervision-url {
+  width: 90%;
+  text-align: left;
+}
 </style>
