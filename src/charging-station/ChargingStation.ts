@@ -534,15 +534,6 @@ export class ChargingStation extends EventEmitter {
     return Constants.DEFAULT_HEARTBEAT_INTERVAL
   }
 
-  public setSupervisionUrls (urls: string | string[], saveStationInfo = true): void {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.stationInfo!.supervisionUrls = urls
-    if (saveStationInfo) {
-      this.saveStationInfo()
-    }
-    this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
-  }
-
   public setSupervisionUrl (url: string): void {
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
@@ -550,7 +541,10 @@ export class ChargingStation extends EventEmitter {
     ) {
       setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
     } else {
-      this.setSupervisionUrls(url)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.stationInfo!.supervisionUrls = url
+      this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
+      this.saveStationInfo()
     }
   }
 
@@ -1251,7 +1245,6 @@ export class ChargingStation extends EventEmitter {
       stationInfoFromFile.templateHash === stationInfoFromTemplate.templateHash
     ) {
       return setChargingStationOptions(
-        this,
         { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromFile },
         options
       )
@@ -1263,7 +1256,6 @@ export class ChargingStation extends EventEmitter {
         stationInfoFromTemplate
       )
     return setChargingStationOptions(
-      this,
       { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromTemplate },
       options
     )

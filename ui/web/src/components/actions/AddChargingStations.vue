@@ -17,8 +17,18 @@
     name="number-of-stations"
     placeholder="number of stations"
   />
-  <p>Options:</p>
+  <p>Template options overrides:</p>
   <ul>
+    <li>
+      Supervision url:
+      <input
+        id="supervision-url"
+        v-model.trim="state.supervisionUrl"
+        type="url"
+        name="supervision-url"
+        placeholder="wss://"
+      />
+    </li>
     <li>
       Auto start:
       <input v-model="state.autoStart" type="checkbox" true-value="true" false-value="false" />
@@ -58,6 +68,7 @@
       () => {
         uiClient
           .addChargingStations(state.template, state.numberOfStations, {
+            supervisionUrls: state.supervisionUrl.length > 0 ? state.supervisionUrl : undefined,
             autoStart: convertToBoolean(state.autoStart),
             persistentConfiguration: convertToBoolean(state.persistentConfiguration),
             ocppStrictCompliance: convertToBoolean(state.ocppStrictCompliance),
@@ -92,6 +103,7 @@ const state = reactive({
   ready: false,
   template: '',
   numberOfStations: 1,
+  supervisionUrl: '',
   autoStart: false,
   persistentConfiguration: true,
   ocppStrictCompliance: true,
