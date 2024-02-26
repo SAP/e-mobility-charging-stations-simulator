@@ -1,2 +1,2 @@
 export { UIClient } from './UIClient'
-export { convertToBoolean, convertToInt } from './Utils'
+export { convertToBoolean, convertToInt, getFromLocalStorage, setToLocalStorage } from './Utils'

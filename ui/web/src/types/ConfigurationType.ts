@@ -1,7 +1,7 @@
 import type { AuthenticationType, Protocol, ProtocolVersion } from './UIProtocol'
 
 export type ConfigurationData = {
-  uiServer: UIServerConfigurationSection
+  uiServer: UIServerConfigurationSection | UIServerConfigurationSection[]
 }
 
 export type UIServerConfigurationSection = {

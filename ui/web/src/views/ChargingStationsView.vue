@@ -1,5 +1,38 @@
 <template>
   <Container id="charging-stations-container">
+    <Container id="ui-server-container">
+      <select
+        v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
+        id="ui-server-selector"
+        v-model="state.uiServerIndex"
+        @change="
+          () => {
+            try {
+              if (
+                getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
+              ) {
+                setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                app!.appContext.config.globalProperties.$uiClient.setConfiguration(
+                  app?.appContext.config.globalProperties.$configuration.uiServer[
+                    getFromLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                  ]
+                )
+              }
+            } catch (error) {
+              $toast.error('Error at changing UI server configuration')
+              console.error('Error at changing UI server configuration:', error)
+            }
+          }
+        "
+      >
+        <option
+          v-for="uiServerConfiguration in uiServerConfigurations"
+          :value="uiServerConfiguration.index"
+        >
+          {{ uiServerConfiguration.configuration.host }}
+        </option>
+      </select>
+    </Container>
     <Container id="buttons-container">
       <Button @click="startSimulator()">Start Simulator</Button>
       <Button @click="stopSimulator()">Stop Simulator</Button>
@@ -26,17 +59,26 @@
 import { getCurrentInstance, reactive } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
-import type { ResponsePayload } from '@/types'
+import type { ResponsePayload, UIServerConfigurationSection } from '@/types'
 import Container from '@/components/Container.vue'
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import Button from '@/components/buttons/Button.vue'
+import { getFromLocalStorage, setToLocalStorage } from '@/composables'
 
 const state = reactive({
-  isLoading: false
+  isLoading: false,
+  uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
 })
 
 const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
+const uiServerConfigurations: { configuration: UIServerConfigurationSection; index: number }[] =
+  app?.appContext.config.globalProperties.$configuration.uiServer.map(
+    (configuration: UIServerConfigurationSection, index: number) => ({
+      configuration,
+      index
+    })
+  )
 
 const $toast = useToast()
 
@@ -96,6 +138,16 @@ const stopSimulator = (): void => {
   width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+#ui-server-container {
+  display: flex;
+  flex-direction: row;
+}
+
+#ui-server-selector {
+  width: 100%;
+  text-align: center;
 }
 
 #buttons-container {

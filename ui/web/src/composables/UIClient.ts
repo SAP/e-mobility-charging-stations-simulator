@@ -1,3 +1,4 @@
+import { useToast } from 'vue-toast-notification'
 import {
   ApplicationProtocol,
   AuthenticationType,
@@ -161,15 +162,21 @@ export class UIClient {
       `${this.uiServerConfiguration.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port}`,
       protocols
     )
-    this.ws.onopen = openEvent => {
-      console.info('WebSocket opened', openEvent)
+    this.ws.onopen = () => {
+      useToast().success(
+        `WebSocket to UI server '${this.uiServerConfiguration.host}' successfully opened`
+      )
     }
     this.ws.onmessage = this.responseHandler.bind(this)
     this.ws.onerror = errorEvent => {
-      console.error('WebSocket error: ', errorEvent)
+      useToast().error(`Error in WebSocket to UI server '${this.uiServerConfiguration.host}'`)
+      console.error(
+        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}'`,
+        errorEvent
+      )
     }
-    this.ws.onclose = closeEvent => {
-      console.info('WebSocket closed: ', closeEvent)
+    this.ws.onclose = () => {
+      useToast().info(`WebSocket to UI server '${this.uiServerConfiguration.host}' closed`)
     }
   }
 

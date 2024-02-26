@@ -32,3 +32,12 @@ export const convertToInt = (value: unknown): number => {
   }
   return changedValue
 }
+
+export const setToLocalStorage = <T>(key: string, value: T): void => {
+  localStorage.setItem(key, JSON.stringify(value))
+}
+
+export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
+  const item = localStorage.getItem(key)
+  return item != null ? (JSON.parse(item) as T) : defaultValue
+}
