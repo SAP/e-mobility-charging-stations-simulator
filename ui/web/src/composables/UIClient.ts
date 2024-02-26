@@ -176,7 +176,7 @@ export class UIClient {
       )
     }
     this.ws.onclose = () => {
-      useToast().info(`WebSocket to UI server '${this.uiServerConfiguration.host}' closed`)
+      useToast().info(`WebSocket to UI server closed`)
     }
   }
 
