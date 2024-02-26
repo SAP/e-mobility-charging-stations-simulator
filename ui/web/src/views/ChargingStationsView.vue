@@ -1,8 +1,10 @@
 <template>
   <Container id="charging-stations-container">
-    <Container id="ui-server-container">
+    <Container
+      v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
+      id="ui-server-container"
+    >
       <select
-        v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
         id="ui-server-selector"
         v-model="state.uiServerIndex"
         @change="
