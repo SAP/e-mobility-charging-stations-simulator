@@ -43,9 +43,10 @@ export class UIClient {
 
   public registerWSEventListener<K extends keyof WebSocketEventMap>(
     event: K,
-    listener: (event: WebSocketEventMap[K]) => void
+    listener: (event: WebSocketEventMap[K]) => void,
+    options?: boolean | AddEventListenerOptions
   ) {
-    this.ws.addEventListener(event, listener)
+    this.ws.addEventListener(event, listener, options)
   }
 
   public async startSimulator(): Promise<ResponsePayload> {

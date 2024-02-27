@@ -41,6 +41,7 @@
     </td>
     <td class="cs-table__connectors-column">
       <table id="connectors-table">
+        <caption></caption>
         <thead id="connectors-table__head">
           <tr class="connectors-table__row">
             <th scope="col" class="connectors-table__column">Identifier</th>

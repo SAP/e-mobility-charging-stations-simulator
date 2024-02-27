@@ -14,10 +14,24 @@
                 getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
               ) {
                 setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
-                app!.appContext.config.globalProperties.$uiClient.setConfiguration(
+                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                  'close',
+                  () => {
+                    app!.appContext.config.globalProperties.$chargingStations = []
+                  },
+                  { once: true }
+                )
+                app?.appContext.config.globalProperties.$uiClient.setConfiguration(
                   app?.appContext.config.globalProperties.$configuration.uiServer[
                     getFromLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
                   ]
+                )
+                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                  'open',
+                  () => {
+                    loadChargingStations(() => (state.renderChargingStationsList = randomUUID()))
+                  },
+                  { once: true }
                 )
               }
             } catch (error) {

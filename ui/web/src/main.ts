@@ -37,20 +37,24 @@ const initializeApp = (app: AppType, config: ConfigurationData) => {
         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
       ]
     )
-    app.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
-      app.config.globalProperties.$uiClient
-        .listChargingStations()
-        .then((response: ResponsePayload) => {
-          app.config.globalProperties.$chargingStations = response.chargingStations
-        })
-        .catch((error: Error) => {
-          // TODO: add code for UI notifications or other error handling logic
-          console.error('Error at fetching charging stations:', error)
-        })
-        .finally(() => {
-          app.use(router).use(ToastPlugin).mount('#app')
-        })
-    })
+    app.config.globalProperties.$uiClient.registerWSEventListener(
+      'open',
+      () => {
+        app.config.globalProperties.$uiClient
+          .listChargingStations()
+          .then((response: ResponsePayload) => {
+            app.config.globalProperties.$chargingStations = response.chargingStations
+          })
+          .catch((error: Error) => {
+            // TODO: add code for UI notifications or other error handling logic
+            console.error('Error at fetching charging stations:', error)
+          })
+          .finally(() => {
+            app.use(router).use(ToastPlugin).mount('#app')
+          })
+      },
+      { once: true }
+    )
   }
 }
 
