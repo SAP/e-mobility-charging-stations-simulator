@@ -43,8 +43,8 @@
       </Button>
       <ReloadButton
         id="reload-button"
-        :loading="state.isLoading"
-        @click="loadChargingStations(() => $router.go(0))"
+        :loading="state.loading"
+        @click="loadChargingStations(() => (state.reload = randomUUID()))"
       />
     </Container>
     <CSTable
@@ -52,6 +52,7 @@
         Array.isArray(app?.appContext.config.globalProperties.$chargingStations) &&
         app?.appContext.config.globalProperties.$chargingStations.length > 0
       "
+      :key="state.reload"
       :charging-stations="app?.appContext.config.globalProperties.$chargingStations"
     />
   </Container>
@@ -67,8 +68,13 @@ import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import Button from '@/components/buttons/Button.vue'
 import { getFromLocalStorage, setToLocalStorage } from '@/composables'
 
+const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
+  return crypto.randomUUID()
+}
+
 const state = reactive({
-  isLoading: false,
+  loading: false,
+  reload: randomUUID(),
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
 })
 
@@ -85,8 +91,8 @@ const uiServerConfigurations: { configuration: UIServerConfigurationSection; ind
 const $toast = useToast()
 
 const loadChargingStations = (reloadCallback?: () => void): void => {
-  if (state.isLoading === false) {
-    state.isLoading = true
+  if (state.loading === false) {
+    state.loading = true
     uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
@@ -102,7 +108,7 @@ const loadChargingStations = (reloadCallback?: () => void): void => {
         if (reloadCallback != null) {
           reloadCallback()
         }
-        state.isLoading = false
+        state.loading = false
       })
   }
 }
