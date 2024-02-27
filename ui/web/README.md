@@ -37,6 +37,59 @@ See [here](./../../README.md#charging-stations-simulator-configuration) for more
 
 Copy the configuration template [src/assets/config-template.json](./src/assets/config-template.json) to `public/config.json`.
 
+##### Unique UI server:
+
+```json
+{
+  "uiServer": {
+    "host": "localhost",
+    "port": 8080,
+    "protocol": "ui",
+    "version": "0.0.1",
+    "authentication": {
+      "enabled": true,
+      "type": "protocol-basic-auth",
+      "username": "admin",
+      "password": "admin"
+    }
+  }
+}
+```
+
+##### Multiple UI servers:
+
+```json
+{
+  "uiServer": [
+    {
+      "host": "server1.domain.tld",
+      "port": 8080,
+      "protocol": "ui",
+      "version": "0.0.1",
+      "authentication": {
+        "enabled": true,
+        "type": "protocol-basic-auth",
+        "username": "admin",
+        "password": "admin"
+      }
+    },
+    ...
+    {
+      "host": "serverN.domain.tld",
+      "port": 8080,
+      "protocol": "ui",
+      "version": "0.0.1",
+      "authentication": {
+        "enabled": true,
+        "type": "protocol-basic-auth",
+        "username": "admin",
+        "password": "admin"
+      }
+    }
+  ]
+}
+```
+
 ### Run
 
 #### Compiles for production and preview locally
@@ -51,8 +104,8 @@ You can now follow the link displayed in the terminal. The Web UI looks like the
 
 ![webui](./src/assets/webui.png)
 
-1. With the buttons on the top you can start/stop the simulator, add new charging stations and refresh the content.
-2. Each charging station is a row in the table with specific 'Actions' to execute. Try 'Stop Charging Station' and refresh with the large blue button and see the status 'Started' turns from 'Yes' into 'No'.
+1. With the buttons on the top you can change UI server, start/stop the simulator, add new charging stations and refresh the content.
+2. Each charging station is a row in the table with specific 'Actions' to execute on. Try 'Stop Charging Station' and refresh with the large blue button and see the status 'Started' turns from 'Yes' into 'No'.
 
 ### Development
 
