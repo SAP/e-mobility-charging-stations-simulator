@@ -44,7 +44,7 @@
       <ReloadButton
         id="reload-button"
         :loading="state.loading"
-        @click="loadChargingStations(() => (state.reload = randomUUID()))"
+        @click="loadChargingStations(() => (state.renderChargingStationsList = randomUUID()))"
       />
     </Container>
     <CSTable
@@ -52,7 +52,7 @@
         Array.isArray(app?.appContext.config.globalProperties.$chargingStations) &&
         app?.appContext.config.globalProperties.$chargingStations.length > 0
       "
-      :key="state.reload"
+      :key="state.renderChargingStationsList"
       :charging-stations="app?.appContext.config.globalProperties.$chargingStations"
     />
   </Container>
@@ -73,8 +73,8 @@ const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
 }
 
 const state = reactive({
+  renderChargingStationsList: randomUUID(),
   loading: false,
-  reload: randomUUID(),
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
 })
 
@@ -90,7 +90,7 @@ const uiServerConfigurations: { configuration: UIServerConfigurationSection; ind
 
 const $toast = useToast()
 
-const loadChargingStations = (reloadCallback?: () => void): void => {
+const loadChargingStations = (renderCallback?: () => void): void => {
   if (state.loading === false) {
     state.loading = true
     uiClient
@@ -105,8 +105,8 @@ const loadChargingStations = (reloadCallback?: () => void): void => {
         console.error('Error at fetching charging stations:', error)
       })
       .finally(() => {
-        if (reloadCallback != null) {
-          reloadCallback()
+        if (renderCallback != null) {
+          renderCallback()
         }
         state.loading = false
       })
