@@ -34,7 +34,7 @@
   "dependencies": {
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.4.20",
+    "vue": "^3.4.21",
     "vue-router": "^4.3.0",
     "vue-toast-notification": "^3.1.2"
   },
@@ -42,7 +42,7 @@
     "@rushstack/eslint-patch": "^1.7.2",
     "@tsconfig/node20": "^20.1.2",
     "@types/jsdom": "^21.1.6",
-    "@types/node": "^20.11.20",
+    "@types/node": "^20.11.22",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",
     "@vitejs/plugin-vue": "^5.0.4",
