@@ -9,34 +9,33 @@
         v-model="state.uiServerIndex"
         @change="
           () => {
-            try {
-              if (
-                getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
-              ) {
-                setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
-                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-                  'close',
-                  () => {
-                    app!.appContext.config.globalProperties.$chargingStations = []
-                  },
-                  { once: true }
-                )
-                app?.appContext.config.globalProperties.$uiClient.setConfiguration(
-                  app?.appContext.config.globalProperties.$configuration.uiServer[
-                    getFromLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
-                  ]
-                )
-                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-                  'open',
-                  () => {
-                    loadChargingStations(() => (state.renderChargingStationsList = randomUUID()))
-                  },
-                  { once: true }
-                )
-              }
-            } catch (error) {
-              $toast.error('Error at changing UI server configuration')
-              console.error('Error at changing UI server configuration:', error)
+            if (
+              getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
+            ) {
+              app?.appContext.config.globalProperties.$uiClient.setConfiguration(
+                app?.appContext.config.globalProperties.$configuration.uiServer[state.uiServerIndex]
+              )
+              initializeWSEventListeners()
+              app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                'open',
+                () => {
+                  setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                },
+                { once: true }
+              )
+              app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                'error',
+                () => {
+                  state.uiServerIndex = getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+                  app?.appContext.config.globalProperties.$uiClient.setConfiguration(
+                    app?.appContext.config.globalProperties.$configuration.uiServer[
+                      getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+                    ]
+                  )
+                  initializeWSEventListeners()
+                },
+                { once: true }
+              )
             }
           }
         "
@@ -73,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, reactive } from 'vue'
+import { getCurrentInstance, onMounted, reactive } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import type { ResponsePayload, UIServerConfigurationSection } from '@/types'
@@ -86,13 +85,32 @@ const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
   return crypto.randomUUID()
 }
 
+const app = getCurrentInstance()
+
+const initializeWSEventListeners = () => {
+  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
+    loadChargingStations(() => (state.renderChargingStationsList = randomUUID()))
+  })
+  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('error', () => {
+    app.appContext.config.globalProperties.$chargingStations = []
+    state.renderChargingStationsList = randomUUID()
+  })
+  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('close', () => {
+    app.appContext.config.globalProperties.$chargingStations = []
+    state.renderChargingStationsList = randomUUID()
+  })
+}
+
+onMounted(() => {
+  initializeWSEventListeners()
+})
+
 const state = reactive({
   renderChargingStationsList: randomUUID(),
   loading: false,
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
 })
 
-const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 const uiServerConfigurations: { configuration: UIServerConfigurationSection; index: number }[] =
   app?.appContext.config.globalProperties.$configuration.uiServer.map(
@@ -115,6 +133,9 @@ const loadChargingStations = (renderCallback?: () => void): void => {
         }
       })
       .catch((error: Error) => {
+        if (app != null) {
+          app.appContext.config.globalProperties.$chargingStations = []
+        }
         $toast.error('Error at fetching charging stations')
         console.error('Error at fetching charging stations:', error)
       })

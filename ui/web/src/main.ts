@@ -1,6 +1,6 @@
 import { type App as AppType, createApp } from 'vue'
 import ToastPlugin from 'vue-toast-notification'
-import type { ConfigurationData, ResponsePayload } from '@/types'
+import type { ConfigurationData } from '@/types'
 import { router } from '@/router'
 import { UIClient, getFromLocalStorage, setToLocalStorage } from '@/composables'
 import App from '@/App.vue'
@@ -37,25 +37,8 @@ const initializeApp = (app: AppType, config: ConfigurationData) => {
         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
       ]
     )
-    app.config.globalProperties.$uiClient.registerWSEventListener(
-      'open',
-      () => {
-        app.config.globalProperties.$uiClient
-          .listChargingStations()
-          .then((response: ResponsePayload) => {
-            app.config.globalProperties.$chargingStations = response.chargingStations
-          })
-          .catch((error: Error) => {
-            // TODO: add code for UI notifications or other error handling logic
-            console.error('Error at fetching charging stations:', error)
-          })
-          .finally(() => {
-            app.use(router).use(ToastPlugin).mount('#app')
-          })
-      },
-      { once: true }
-    )
   }
+  app.use(router).use(ToastPlugin).mount('#app')
 }
 
 fetch('/config.json')
@@ -68,12 +51,7 @@ fetch('/config.json')
     response
       .json()
       .then(config => {
-        try {
-          initializeApp(app, config)
-        } catch (error) {
-          // TODO: add code for UI notifications or other error handling logic
-          console.error('Error at initializing app:', error)
-        }
+        initializeApp(app, config)
       })
       .catch(error => {
         // TODO: add code for UI notifications or other error handling logic

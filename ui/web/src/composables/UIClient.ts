@@ -20,7 +20,7 @@ type ResponseHandler = {
 export class UIClient {
   private static instance: UIClient | null = null
 
-  private ws!: WebSocket
+  private ws?: WebSocket
   private responseHandlers: Map<string, ResponseHandler>
 
   private constructor(private uiServerConfiguration: UIServerConfigurationSection) {
@@ -36,7 +36,10 @@ export class UIClient {
   }
 
   public setConfiguration(uiServerConfiguration: UIServerConfigurationSection): void {
-    this.ws.close()
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.close()
+      delete this.ws
+    }
     this.uiServerConfiguration = uiServerConfiguration
     this.openWS()
   }
@@ -46,7 +49,7 @@ export class UIClient {
     listener: (event: WebSocketEventMap[K]) => void,
     options?: boolean | AddEventListenerOptions
   ) {
-    this.ws.addEventListener(event, listener, options)
+    this.ws?.addEventListener(event, listener, options)
   }
 
   public async startSimulator(): Promise<ResponsePayload> {
@@ -186,7 +189,7 @@ export class UIClient {
     payload: RequestPayload
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
-      if (this.ws.readyState === WebSocket.OPEN) {
+      if (this.ws?.readyState === WebSocket.OPEN) {
         const uuid = crypto.randomUUID()
         const msg = JSON.stringify([uuid, procedureName, payload])
         const sendTimeout = setTimeout(() => {
