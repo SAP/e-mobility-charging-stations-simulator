@@ -20,6 +20,7 @@
                 'open',
                 () => {
                   setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                  delete app?.appContext.config.globalProperties.$templates
                 },
                 { once: true }
               )
