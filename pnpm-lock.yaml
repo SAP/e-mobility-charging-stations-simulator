@@ -18,8 +18,8 @@ dependencies:
     specifier: ^6.1.5
     version: 6.1.5
   '@mikro-orm/mariadb':
-    specifier: ^6.1.5
-    version: 6.1.5(@mikro-orm/core@6.1.5)
+    specifier: ^6.1.6
+    version: 6.1.6(@mikro-orm/core@6.1.5)
   '@mikro-orm/reflection':
     specifier: ^6.1.5
     version: 6.1.5(@mikro-orm/core@6.1.5)
@@ -1224,14 +1224,35 @@ packages:
       - supports-color
       - tedious
 
-  /@mikro-orm/mariadb@6.1.5(@mikro-orm/core@6.1.5):
-    resolution: {integrity: sha512-l8sYrE3ZYgls3OpD//1kAyPKw+1lKMzvLhi/R+Dq93gH2h+qxYVDzaMH63Knr0MRc7WG7STyhX10QpWXaBdPIg==}
+  /@mikro-orm/knex@6.1.6(@mikro-orm/core@6.1.5):
+    resolution: {integrity: sha512-oLSke1/iIJRiV4ur/ywoKvFT2IPYCQns5S6PCLHV7hfxgmhySpK1JwmFiz2bROht5TDcadi5KN2JlG9XaHDx+Q==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
     dependencies:
       '@mikro-orm/core': 6.1.5
-      '@mikro-orm/knex': 6.1.5(@mikro-orm/core@6.1.5)(sqlite3@5.1.7)
+      fs-extra: 11.2.0
+      knex: 3.1.0(sqlite3@5.1.7)
+      sqlstring: 2.3.3
+    transitivePeerDependencies:
+      - better-sqlite3
+      - mysql
+      - mysql2
+      - pg
+      - pg-native
+      - sqlite3
+      - supports-color
+      - tedious
+    dev: false
+
+  /@mikro-orm/mariadb@6.1.6(@mikro-orm/core@6.1.5):
+    resolution: {integrity: sha512-9/LoISqCb0kUs/LaTaZs6TE3T922wUWAYIp9Sah05nuB7bU1BTVrdJRWfgNXLEAAytmDFZTq3rBYP5L/IBPa+Q==}
+    engines: {node: '>= 18.12.0'}
+    peerDependencies:
+      '@mikro-orm/core': ^6.0.0
+    dependencies:
+      '@mikro-orm/core': 6.1.5
+      '@mikro-orm/knex': 6.1.6(@mikro-orm/core@6.1.5)
       mariadb: 2.5.6
     transitivePeerDependencies:
       - better-sqlite3
