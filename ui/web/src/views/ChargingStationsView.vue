@@ -45,7 +45,7 @@
           v-for="uiServerConfiguration in uiServerConfigurations"
           :value="uiServerConfiguration.index"
         >
-          {{ uiServerConfiguration.configuration.host }}
+          {{ uiServerConfiguration.configuration.name ?? uiServerConfiguration.configuration.host }}
         </option>
       </select>
     </Container>

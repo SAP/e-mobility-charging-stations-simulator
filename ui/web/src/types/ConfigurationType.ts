@@ -5,6 +5,7 @@ export type ConfigurationData = {
 }
 
 export type UIServerConfigurationSection = {
+  name?: string
   host: string
   port: number
   secure?: boolean
