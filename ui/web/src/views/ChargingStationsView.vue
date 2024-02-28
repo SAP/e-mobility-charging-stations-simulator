@@ -21,6 +21,8 @@
                 () => {
                   setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
                   delete app?.appContext.config.globalProperties.$templates
+                  $router.currentRoute.value.name === 'add-charging-stations' &&
+                    $router.push({ name: 'charging-stations' })
                 },
                 { once: true }
               )
