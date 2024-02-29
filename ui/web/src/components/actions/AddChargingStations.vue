@@ -2,7 +2,13 @@
   <h1 id="action">Action</h1>
   <h2>Add Charging Stations</h2>
   <p>Template:</p>
-  <select v-show="state.ready" v-model="state.template">
+  <select
+    v-show="
+      Array.isArray(app?.appContext.config.globalProperties.$templates) &&
+      app?.appContext.config.globalProperties.$templates.length > 0
+    "
+    v-model="state.template"
+  >
     <option disabled value="">Please select a template</option>
     <option v-for="template in app?.appContext.config.globalProperties.$templates">
       {{ template }}
@@ -93,14 +99,12 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, reactive } from 'vue'
+import { getCurrentInstance, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import Button from '@/components/buttons/Button.vue'
-import type { ResponsePayload } from '@/types'
 import { convertToBoolean } from '@/composables'
 
-const state = reactive({
-  ready: false,
+const state = ref({
   template: '',
   numberOfStations: 1,
   supervisionUrl: '',
@@ -114,23 +118,6 @@ const app = getCurrentInstance()
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 
 const $toast = useToast()
-
-onMounted(() => {
-  uiClient
-    .listTemplates()
-    .then((response: ResponsePayload) => {
-      if (app != null && app.appContext.config.globalProperties.$templates == null) {
-        app.appContext.config.globalProperties.$templates = response.templates
-      }
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at fetching charging station templates')
-      console.error('Error at fetching charging station templates:', error)
-    })
-    .finally(() => {
-      state.ready = true
-    })
-})
 </script>
 
 <style>

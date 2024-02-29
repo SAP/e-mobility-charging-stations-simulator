@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, reactive } from 'vue'
+import { getCurrentInstance, ref } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 import { convertToInt } from '@/composables'
 
@@ -40,7 +40,7 @@ const props = defineProps<{
   connectorId: string
 }>()
 
-const state = reactive({
+const state = ref({
   idTag: ''
 })
 

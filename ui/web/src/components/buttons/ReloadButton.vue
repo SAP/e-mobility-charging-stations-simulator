@@ -1,6 +1,6 @@
 <template>
   <FlatButton>
-    <span style="display: inline-block" :class="{ spin: loading }"> &#8635; </span>
+    <span :class="{ spin: loading }"> &#8635; </span>
   </FlatButton>
 </template>
 

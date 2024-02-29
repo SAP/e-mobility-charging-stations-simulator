@@ -21,6 +21,9 @@ const initializeApp = (app: AppType, config: ConfigurationData) => {
   if (app.config.globalProperties.$configuration == null) {
     app.config.globalProperties.$configuration = config
   }
+  if (!Array.isArray(app.config.globalProperties.$templates)) {
+    app.config.globalProperties.$templates = []
+  }
   if (!Array.isArray(app.config.globalProperties.$chargingStations)) {
     app.config.globalProperties.$chargingStations = []
   }

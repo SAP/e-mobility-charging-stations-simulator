@@ -20,7 +20,6 @@
                 'open',
                 () => {
                   setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
-                  delete app?.appContext.config.globalProperties.$templates
                   $router.currentRoute.value.name !== 'charging-stations' &&
                     $router.push({ name: 'charging-stations' })
                 },
@@ -75,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, reactive } from 'vue'
+import { getCurrentInstance, onMounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import type { ResponsePayload, UIServerConfigurationSection } from '@/types'
@@ -92,15 +91,29 @@ const app = getCurrentInstance()
 
 const initializeWSEventListeners = () => {
   app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
-    loadChargingStations(() => (state.renderChargingStationsList = randomUUID()))
+    uiClient
+      .listTemplates()
+      .then((response: ResponsePayload) => {
+        if (app != null) {
+          app.appContext.config.globalProperties.$templates = response.templates
+        }
+      })
+      .catch((error: Error) => {
+        if (app != null) {
+          app.appContext.config.globalProperties.$templates = []
+        }
+        $toast.error('Error at fetching charging station templates')
+        console.error('Error at fetching charging station templates:', error)
+      })
+    loadChargingStations(() => (state.value.renderChargingStationsList = randomUUID()))
   })
   app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('error', () => {
     app.appContext.config.globalProperties.$chargingStations = []
-    state.renderChargingStationsList = randomUUID()
+    state.value.renderChargingStationsList = randomUUID()
   })
   app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('close', () => {
     app.appContext.config.globalProperties.$chargingStations = []
-    state.renderChargingStationsList = randomUUID()
+    state.value.renderChargingStationsList = randomUUID()
   })
 }
 
@@ -108,7 +121,7 @@ onMounted(() => {
   initializeWSEventListeners()
 })
 
-const state = reactive({
+const state = ref({
   renderChargingStationsList: randomUUID(),
   loading: false,
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
@@ -126,8 +139,8 @@ const uiServerConfigurations: { configuration: UIServerConfigurationSection; ind
 const $toast = useToast()
 
 const loadChargingStations = (renderCallback?: () => void): void => {
-  if (state.loading === false) {
-    state.loading = true
+  if (state.value.loading === false) {
+    state.value.loading = true
     uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
@@ -146,7 +159,7 @@ const loadChargingStations = (renderCallback?: () => void): void => {
         if (renderCallback != null) {
           renderCallback()
         }
-        state.loading = false
+        state.value.loading = false
       })
   }
 }

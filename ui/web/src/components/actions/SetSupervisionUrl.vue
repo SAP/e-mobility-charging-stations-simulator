@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, reactive } from 'vue'
+import { getCurrentInstance, ref } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 
 const props = defineProps<{
@@ -44,7 +44,7 @@ const props = defineProps<{
   chargingStationId: string
 }>()
 
-const state = reactive({
+const state = ref({
   supervisionUrl: ''
 })
 
