@@ -118,6 +118,12 @@ export class Bootstrap extends EventEmitter {
     )
   }
 
+  public getState (): { started: boolean } {
+    return {
+      started: this.started
+    }
+  }
+
   public getLastIndex (templateName: string): number {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const indexes = [...this.templatesChargingStations.get(templateName)!.indexes]

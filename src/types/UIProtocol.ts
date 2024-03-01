@@ -29,6 +29,7 @@ export type ProtocolRequestHandler = (
 ) => undefined | Promise<undefined> | ResponsePayload | Promise<ResponsePayload>
 
 export enum ProcedureName {
+  SIMULATOR_STATE = 'simulatorState',
   START_SIMULATOR = 'startSimulator',
   STOP_SIMULATOR = 'stopSimulator',
   LIST_TEMPLATES = 'listTemplates',

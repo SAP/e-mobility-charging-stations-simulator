@@ -76,6 +76,7 @@ export abstract class AbstractUIService {
       [ProcedureName.LIST_CHARGING_STATIONS, this.handleListChargingStations.bind(this)],
       [ProcedureName.ADD_CHARGING_STATIONS, this.handleAddChargingStations.bind(this)],
       [ProcedureName.PERFORMANCE_STATISTICS, this.handlePerformanceStatistics.bind(this)],
+      [ProcedureName.SIMULATOR_STATE, this.handleSimulatorState.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)]
     ])
@@ -98,7 +99,7 @@ export abstract class AbstractUIService {
 
       if (!this.requestHandlers.has(command)) {
         throw new BaseError(
-          `${command} is not implemented to handle message payload ${JSON.stringify(
+          `'${command}' is not implemented to handle message payload ${JSON.stringify(
             requestPayload,
             undefined,
             2
@@ -286,6 +287,21 @@ export abstract class AbstractUIService {
           ...Bootstrap.getInstance().getPerformanceStatistics()!
         ] as JsonType[]
       }
+    } catch (error) {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage: (error as Error).message,
+        errorStack: (error as Error).stack
+      } satisfies ResponsePayload
+    }
+  }
+
+  private handleSimulatorState (): ResponsePayload {
+    try {
+      return {
+        status: ResponseStatus.SUCCESS,
+        state: Bootstrap.getInstance().getState()
+      } satisfies ResponsePayload
     } catch (error) {
       return {
         status: ResponseStatus.FAILURE,

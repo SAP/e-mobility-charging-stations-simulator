@@ -15,6 +15,8 @@ const props = defineProps<{
   shared?: boolean
   on?: () => void
   off?: () => void
+  onStyle?: string
+  offStyle?: string
 }>()
 
 const $emit = defineEmits(['clicked'])
@@ -26,7 +28,7 @@ const state = ref({
 })
 
 const click = (): void => {
-  if (props.shared) {
+  if (props.shared === true) {
     for (const key in localStorage) {
       if (key !== id && key.startsWith('shared-toggle-button-')) {
         setToLocalStorage<boolean>(key, false)

@@ -53,6 +53,10 @@ export class UIClient {
     this.ws?.addEventListener(event, listener, options)
   }
 
+  public async simulatorState(): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.SIMULATOR_STATE, {})
+  }
+
   public async startSimulator(): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_SIMULATOR, {})
   }
