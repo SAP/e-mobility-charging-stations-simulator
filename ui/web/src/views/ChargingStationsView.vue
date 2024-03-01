@@ -20,11 +20,6 @@
                 'open',
                 () => {
                   setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
-                  for (const key in getLocalStorage()) {
-                    if (key.includes('toggle-button')) {
-                      removeFromLocalStorage(key)
-                    }
-                  }
                   $router.currentRoute.value.name !== 'charging-stations' &&
                     $router.push({ name: 'charging-stations' })
                 },
@@ -60,6 +55,7 @@
       <Button @click="stopSimulator()">Stop Simulator</Button>
       <ToggleButton
         :id="'add-charging-stations'"
+        :key="state.renderAddChargingStations"
         :shared="true"
         :on="
           () => {
@@ -110,6 +106,21 @@ import ToggleButton from '@/components/buttons/ToggleButton.vue'
 
 const app = getCurrentInstance()
 
+const clearToggleButtons = (): void => {
+  for (const key in getLocalStorage()) {
+    if (key.includes('toggle-button')) {
+      removeFromLocalStorage(key)
+    }
+  }
+}
+
+const clearChargingStations = (): void => {
+  clearToggleButtons()
+  app!.appContext.config.globalProperties.$chargingStations = []
+  state.value.renderAddChargingStations = randomUUID()
+  state.value.renderChargingStationsList = randomUUID()
+}
+
 const initializeWSEventListeners = () => {
   app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
     uiClient
@@ -126,16 +137,20 @@ const initializeWSEventListeners = () => {
         $toast.error('Error at fetching charging station templates')
         console.error('Error at fetching charging station templates:', error)
       })
-    loadChargingStations(() => (state.value.renderChargingStationsList = randomUUID()))
+    clearToggleButtons()
+    loadChargingStations(() => {
+      state.value.renderAddChargingStations = randomUUID()
+      state.value.renderChargingStationsList = randomUUID()
+    })
   })
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('error', () => {
-    app.appContext.config.globalProperties.$chargingStations = []
-    state.value.renderChargingStationsList = randomUUID()
-  })
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('close', () => {
-    app.appContext.config.globalProperties.$chargingStations = []
-    state.value.renderChargingStationsList = randomUUID()
-  })
+  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+    'error',
+    clearChargingStations
+  )
+  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+    'close',
+    clearChargingStations
+  )
 }
 
 onMounted(() => {
@@ -143,6 +158,7 @@ onMounted(() => {
 })
 
 const state = ref({
+  renderAddChargingStations: randomUUID(),
   renderChargingStationsList: randomUUID(),
   loading: false,
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)

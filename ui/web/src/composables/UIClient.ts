@@ -1,4 +1,5 @@
 import { useToast } from 'vue-toast-notification'
+import { randomUUID } from './Utils'
 import {
   ApplicationProtocol,
   AuthenticationType,
@@ -10,7 +11,6 @@ import {
   ResponseStatus,
   type UIServerConfigurationSection
 } from '@/types'
-import { randomUUID } from '@/composables'
 
 type ResponseHandler = {
   procedureName: ProcedureName
