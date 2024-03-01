@@ -17,8 +17,7 @@ body:
       label: Duplicate issue
       options:
         - label: I've searched for any related issues and avoided creating a duplicate issue.
-    validations:
-      required: true
+          required: true
   - type: dropdown
     attributes:
       label: Component
