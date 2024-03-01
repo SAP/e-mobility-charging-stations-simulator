@@ -42,7 +42,7 @@ export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
   return item != null ? (JSON.parse(item) as T) : defaultValue
 }
 
-export const removeFromLocalStorage = (key: string): void => {
+export const deleteFromLocalStorage = (key: string): void => {
   localStorage.removeItem(key)
 }
 

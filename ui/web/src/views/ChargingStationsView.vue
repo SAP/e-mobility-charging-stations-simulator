@@ -119,10 +119,10 @@ import type { ResponsePayload, UIServerConfigurationSection } from '@/types'
 import Container from '@/components/Container.vue'
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import {
+  deleteFromLocalStorage,
   getFromLocalStorage,
   getLocalStorage,
   randomUUID,
-  removeFromLocalStorage,
   setToLocalStorage
 } from '@/composables'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
@@ -147,7 +147,7 @@ const app = getCurrentInstance()
 const clearToggleButtons = (): void => {
   for (const key in getLocalStorage()) {
     if (key.includes('toggle-button')) {
-      removeFromLocalStorage(key)
+      deleteFromLocalStorage(key)
     }
   }
 }
