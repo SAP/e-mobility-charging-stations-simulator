@@ -16,7 +16,7 @@
     @click="
       () => {
         uiClient
-          .setSupervisionUrl(props.hashId, state.supervisionUrl)
+          .setSupervisionUrl(hashId, state.supervisionUrl)
           .then(() => {
             $toast.success('Supervision url successfully set')
           })
@@ -38,7 +38,7 @@
 import { getCurrentInstance, ref } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 
-const props = defineProps<{
+defineProps<{
   hashId: string
   chargingStationId: string
 }>()

@@ -318,7 +318,7 @@ const stopSimulator = (): void => {
 }
 
 #reload-button:active {
-  background-color: seagreen;
+  background-color: darkblue;
 }
 
 #action {

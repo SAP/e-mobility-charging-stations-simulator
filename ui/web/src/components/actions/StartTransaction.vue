@@ -10,7 +10,7 @@
     @click="
       () => {
         uiClient
-          .startTransaction(props.hashId, convertToInt(props.connectorId), state.idTag)
+          .startTransaction(hashId, convertToInt(connectorId), state.idTag)
           .then(() => {
             $toast.success('Transaction successfully started')
           })
@@ -33,7 +33,7 @@ import { getCurrentInstance, ref } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 import { convertToInt } from '@/composables'
 
-const props = defineProps<{
+defineProps<{
   hashId: string
   chargingStationId: string
   connectorId: string
