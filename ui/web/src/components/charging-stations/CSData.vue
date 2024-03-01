@@ -41,6 +41,11 @@
             $router.push({ name: 'charging-stations' })
           }
         "
+        @clicked="
+          () => {
+            $emit('need-refresh')
+          }
+        "
       >
         Set Supervision Url
       </ToggleButton>
@@ -69,6 +74,7 @@
             :connector-id="index + 1"
             :connector="connector"
             :atg-status="getATGStatus(index + 1)"
+            @need-refresh="$emit('need-refresh')"
           />
         </tbody>
       </table>
@@ -87,6 +93,8 @@ import ToggleButton from '@/components/buttons/ToggleButton.vue'
 const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
+
+const $emit = defineEmits(['need-refresh'])
 
 const getConnectorStatuses = (): ConnectorStatus[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {

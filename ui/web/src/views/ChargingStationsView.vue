@@ -67,6 +67,11 @@
             $router.push({ name: 'charging-stations' })
           }
         "
+        @clicked="
+          () => {
+            state.renderChargingStations = randomUUID()
+          }
+        "
       >
         Add Charging Stations
       </ToggleButton>
@@ -83,6 +88,12 @@
       "
       :key="state.renderChargingStations"
       :charging-stations="app?.appContext.config.globalProperties.$chargingStations"
+      @need-refresh="
+        () => {
+          state.renderAddChargingStations = randomUUID()
+          state.renderChargingStations = randomUUID()
+        }
+      "
     />
   </Container>
 </template>

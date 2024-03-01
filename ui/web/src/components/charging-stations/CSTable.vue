@@ -23,6 +23,7 @@
         v-for="chargingStation in chargingStations"
         :key="chargingStation.stationInfo.hashId"
         :charging-station="chargingStation"
+        @need-refresh="$emit('need-refresh')"
       />
     </tbody>
   </table>
@@ -35,6 +36,8 @@ import type { ChargingStationData } from '@/types'
 defineProps<{
   chargingStations: ChargingStationData[]
 }>()
+
+const $emit = defineEmits(['need-refresh'])
 </script>
 
 <style>

@@ -10,7 +10,7 @@
     </td>
     <td class="connectors-table__column">
       <ToggleButton
-        :id="`${hashId}-start-transaction`"
+        :id="`${hashId}-${connectorId}-start-transaction`"
         :shared="true"
         :on="
           () => {
@@ -23,6 +23,11 @@
         :off="
           () => {
             $router.push({ name: 'charging-stations' })
+          }
+        "
+        @clicked="
+          () => {
+            $emit('need-refresh')
           }
         "
       >
@@ -49,6 +54,8 @@ const props = defineProps<{
   connector: ConnectorStatus
   atgStatus?: Status
 }>()
+
+const $emit = defineEmits(['need-refresh'])
 
 const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 
