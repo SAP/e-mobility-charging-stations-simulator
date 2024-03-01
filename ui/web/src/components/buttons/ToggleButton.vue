@@ -34,13 +34,6 @@ const click = (): void => {
   }
   setToLocalStorage<boolean>(id, !getFromLocalStorage<boolean>(id, props.status ?? false))
   state.value.status = getFromLocalStorage<boolean>(id, props.status ?? false)
-  // console.log(`----begin----`)
-  // for (const key in localStorage) {
-  //   if (key.startsWith('shared-toggle-button-')) {
-  //     console.log(key, getFromLocalStorage<boolean>(key, props.status ?? false))
-  //   }
-  // }
-  // console.log(`----end----`)
   if (getFromLocalStorage<boolean>(id, props.status ?? false)) {
     props.on?.()
   } else {

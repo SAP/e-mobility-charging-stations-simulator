@@ -8,7 +8,7 @@
       v-for="template in app?.appContext.config.globalProperties.$templates"
       v-show="
         Array.isArray(app?.appContext.config.globalProperties.$templates) &&
-        app?.appContext.config.globalProperties.$templates.length > 0
+        app.appContext.config.globalProperties.$templates.length > 0
       "
     >
       {{ template }}

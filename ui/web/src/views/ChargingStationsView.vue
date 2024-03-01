@@ -73,15 +73,15 @@
       <ReloadButton
         id="reload-button"
         :loading="state.loading"
-        @click="loadChargingStations(() => (state.renderChargingStationsList = randomUUID()))"
+        @click="loadChargingStations(() => (state.renderChargingStations = randomUUID()))"
       />
     </Container>
     <CSTable
       v-show="
         Array.isArray(app?.appContext.config.globalProperties.$chargingStations) &&
-        app?.appContext.config.globalProperties.$chargingStations.length > 0
+        app.appContext.config.globalProperties.$chargingStations.length > 0
       "
-      :key="state.renderChargingStationsList"
+      :key="state.renderChargingStations"
       :charging-stations="app?.appContext.config.globalProperties.$chargingStations"
     />
   </Container>
@@ -118,7 +118,7 @@ const clearChargingStations = (): void => {
   clearToggleButtons()
   app!.appContext.config.globalProperties.$chargingStations = []
   state.value.renderAddChargingStations = randomUUID()
-  state.value.renderChargingStationsList = randomUUID()
+  state.value.renderChargingStations = randomUUID()
 }
 
 const initializeWSEventListeners = () => {
@@ -139,7 +139,7 @@ const initializeWSEventListeners = () => {
       })
     loadChargingStations(() => {
       state.value.renderAddChargingStations = randomUUID()
-      state.value.renderChargingStationsList = randomUUID()
+      state.value.renderChargingStations = randomUUID()
     })
   })
   app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
@@ -158,7 +158,7 @@ onMounted(() => {
 
 const state = ref({
   renderAddChargingStations: randomUUID(),
-  renderChargingStationsList: randomUUID(),
+  renderChargingStations: randomUUID(),
   loading: false,
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
 })
