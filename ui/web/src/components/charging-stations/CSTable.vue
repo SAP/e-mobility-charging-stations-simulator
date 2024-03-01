@@ -80,7 +80,7 @@ defineProps<{
 
 .cs-table__column {
   height: fit-content;
-  width: calc(60% / 10);
+  width: calc(65% / 10);
   text-align: center;
 }
 
@@ -90,6 +90,6 @@ defineProps<{
 
 .cs-table__connectors-column {
   height: fit-content;
-  width: 40%;
+  width: 35%;
 }
 </style>

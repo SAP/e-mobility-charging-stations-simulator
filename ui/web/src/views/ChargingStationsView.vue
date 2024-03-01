@@ -137,7 +137,6 @@ const initializeWSEventListeners = () => {
         $toast.error('Error at fetching charging station templates')
         console.error('Error at fetching charging station templates:', error)
       })
-    clearToggleButtons()
     loadChargingStations(() => {
       state.value.renderAddChargingStations = randomUUID()
       state.value.renderChargingStationsList = randomUUID()
