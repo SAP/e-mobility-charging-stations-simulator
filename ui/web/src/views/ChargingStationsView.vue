@@ -308,7 +308,7 @@ const stopSimulator = (): void => {
 }
 
 #ui-server-selector:hover {
-  background-color: lightgrey;
+  background-color: rgb(229, 229, 229);
 }
 
 #buttons-container {
