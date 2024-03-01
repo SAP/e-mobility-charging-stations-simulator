@@ -60,8 +60,8 @@
         :off="() => stopSimulator()"
         :class="
           state.simulatorState?.started === true
-            ? 'simulator-button-stop'
-            : 'simulator-button-start'
+            ? 'simulator-stop-button'
+            : 'simulator-start-button'
         "
       >
         {{ state.simulatorState?.started === true ? 'Stop' : 'Start' }} Simulator
@@ -304,12 +304,12 @@ const stopSimulator = (): void => {
   flex-direction: row;
 }
 
-.simulator-button-start {
+.simulator-start-button {
   color: ivory;
   background-color: green;
 }
 
-.simulator-button-stop {
+.simulator-stop-button {
   color: ivory;
   background-color: red;
 }
