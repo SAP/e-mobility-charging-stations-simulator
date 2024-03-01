@@ -1,57 +1,64 @@
 <template>
   <Container id="charging-stations-container">
-    <Container
-      v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
-      id="ui-server-container"
-    >
-      <select
-        id="ui-server-selector"
-        v-model="state.uiServerIndex"
-        @change="
-          () => {
-            if (
-              getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
-            ) {
-              app?.appContext.config.globalProperties.$uiClient.setConfiguration(
-                app?.appContext.config.globalProperties.$configuration.uiServer[state.uiServerIndex]
-              )
-              initializeWSEventListeners()
-              app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-                'open',
-                () => {
-                  setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
-                  clearToggleButtons()
-                  $router.currentRoute.value.name !== 'charging-stations' &&
-                    $router.push({ name: 'charging-stations' })
-                },
-                { once: true }
-              )
-              app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-                'error',
-                () => {
-                  state.uiServerIndex = getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
-                  app?.appContext.config.globalProperties.$uiClient.setConfiguration(
-                    app?.appContext.config.globalProperties.$configuration.uiServer[
-                      getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
-                    ]
-                  )
-                  initializeWSEventListeners()
-                },
-                { once: true }
-              )
-            }
-          }
-        "
-      >
-        <option
-          v-for="uiServerConfiguration in uiServerConfigurations"
-          :value="uiServerConfiguration.index"
-        >
-          {{ uiServerConfiguration.configuration.name ?? uiServerConfiguration.configuration.host }}
-        </option>
-      </select>
-    </Container>
     <Container id="buttons-container">
+      <Container
+        v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
+        id="ui-server-container"
+      >
+        <select
+          id="ui-server-selector"
+          v-model="state.uiServerIndex"
+          @change="
+            () => {
+              if (
+                getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
+              ) {
+                app?.appContext.config.globalProperties.$uiClient.setConfiguration(
+                  app?.appContext.config.globalProperties.$configuration.uiServer[
+                    state.uiServerIndex
+                  ]
+                )
+                initializeWSEventListeners()
+                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                  'open',
+                  () => {
+                    setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                    clearToggleButtons()
+                    $router.currentRoute.value.name !== 'charging-stations' &&
+                      $router.push({ name: 'charging-stations' })
+                  },
+                  { once: true }
+                )
+                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                  'error',
+                  () => {
+                    state.uiServerIndex = getFromLocalStorage<number>(
+                      'uiServerConfigurationIndex',
+                      0
+                    )
+                    app?.appContext.config.globalProperties.$uiClient.setConfiguration(
+                      app?.appContext.config.globalProperties.$configuration.uiServer[
+                        getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+                      ]
+                    )
+                    initializeWSEventListeners()
+                  },
+                  { once: true }
+                )
+              }
+            }
+          "
+        >
+          <option
+            v-for="uiServerConfiguration in uiServerConfigurations"
+            :value="uiServerConfiguration.index"
+          >
+            {{
+              uiServerConfiguration.configuration.name ?? uiServerConfiguration.configuration.host
+            }}
+          </option>
+        </select>
+      </Container>
       <ToggleButton
         :id="'simulator'"
         :key="state.renderSimulator"
@@ -291,12 +298,17 @@ const stopSimulator = (): void => {
 
 #ui-server-container {
   display: flex;
-  flex-direction: row;
+  justify-content: center;
 }
 
 #ui-server-selector {
   width: 100%;
+  background-color: rgb(239, 239, 239);
   text-align: center;
+}
+
+#ui-server-selector:hover {
+  background-color: lightgrey;
 }
 
 #buttons-container {

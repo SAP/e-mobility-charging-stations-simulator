@@ -8,7 +8,7 @@
 .button {
   display: flex;
   flex: auto;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 </style>
