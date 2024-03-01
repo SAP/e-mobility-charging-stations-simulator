@@ -21,7 +21,7 @@
     <tbody id="cs-table__body">
       <CSData
         v-for="chargingStation in chargingStations"
-        :key="chargingStation.stationInfo?.chargingStationId"
+        :key="chargingStation.stationInfo.hashId"
         :charging-station="chargingStation"
       />
     </tbody>

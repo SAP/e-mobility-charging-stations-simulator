@@ -1,40 +1,49 @@
 <template>
   <tr class="cs-table__row">
     <td class="cs-table__column">
-      {{ props.chargingStation.stationInfo.chargingStationId }}
+      {{ chargingStation.stationInfo.chargingStationId }}
     </td>
-    <td class="cs-table__column">{{ props.chargingStation.started === true ? 'Yes' : 'No' }}</td>
+    <td class="cs-table__column">{{ chargingStation.started === true ? 'Yes' : 'No' }}</td>
     <td class="cs-table__column">
       {{ getSupervisionUrl() }}
     </td>
     <td class="cs-table__column">{{ getWSState() }}</td>
     <td class="cs-table__column">
-      {{ props.chargingStation?.bootNotificationResponse?.status ?? 'Ø' }}
+      {{ chargingStation?.bootNotificationResponse?.status ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
-      {{ props.chargingStation.stationInfo.templateName }}
+      {{ chargingStation.stationInfo.templateName }}
     </td>
-    <td class="cs-table__column">{{ props.chargingStation.stationInfo.chargePointVendor }}</td>
-    <td class="cs-table__column">{{ props.chargingStation.stationInfo.chargePointModel }}</td>
+    <td class="cs-table__column">{{ chargingStation.stationInfo.chargePointVendor }}</td>
+    <td class="cs-table__column">{{ chargingStation.stationInfo.chargePointModel }}</td>
     <td class="cs-table__column">
-      {{ props.chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
+      {{ chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
       <Button @click="startChargingStation()">Start Charging Station</Button>
       <Button @click="stopChargingStation()">Stop Charging Station</Button>
-      <Button
-        @click="
-          $router.push({
-            name: 'set-supervision-url',
-            params: {
-              hashId: props.chargingStation.stationInfo.hashId,
-              chargingStationId: props.chargingStation.stationInfo.chargingStationId
-            }
-          })
+      <ToggleButton
+        :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
+        :shared="true"
+        :on="
+          () => {
+            $router.push({
+              name: 'set-supervision-url',
+              params: {
+                hashId: chargingStation.stationInfo.hashId,
+                chargingStationId: chargingStation.stationInfo.chargingStationId
+              }
+            })
+          }
+        "
+        :off="
+          () => {
+            $router.push({ name: 'charging-stations' })
+          }
         "
       >
         Set Supervision Url
-      </Button>
+      </ToggleButton>
       <Button @click="openConnection()">Open Connection</Button>
       <Button @click="closeConnection()">Close Connection</Button>
       <Button @click="deleteChargingStation()">Delete Charging Station</Button>
@@ -55,8 +64,8 @@
           <!-- eslint-disable-next-line vue/valid-v-for -->
           <CSConnector
             v-for="(connector, index) in getConnectorStatuses()"
-            :hash-id="props.chargingStation.stationInfo.hashId"
-            :charging-station-id="props.chargingStation.stationInfo.chargingStationId"
+            :hash-id="chargingStation.stationInfo.hashId"
+            :charging-station-id="chargingStation.stationInfo.chargingStationId"
             :connector-id="index + 1"
             :connector="connector"
             :atg-status="getATGStatus(index + 1)"
@@ -73,6 +82,7 @@ import { useToast } from 'vue-toast-notification'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import Button from '@/components/buttons/Button.vue'
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
+import ToggleButton from '@/components/buttons/ToggleButton.vue'
 
 const props = defineProps<{
   chargingStation: ChargingStationData

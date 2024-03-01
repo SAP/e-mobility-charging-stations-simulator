@@ -20,6 +20,11 @@
                 'open',
                 () => {
                   setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                  for (const key in getLocalStorage()) {
+                    if (key.includes('toggle-button')) {
+                      removeFromLocalStorage(key)
+                    }
+                  }
                   $router.currentRoute.value.name !== 'charging-stations' &&
                     $router.push({ name: 'charging-stations' })
                 },
@@ -53,9 +58,22 @@
     <Container id="buttons-container">
       <Button @click="startSimulator()">Start Simulator</Button>
       <Button @click="stopSimulator()">Stop Simulator</Button>
-      <Button @click="$router.push({ name: 'add-charging-stations' })">
+      <ToggleButton
+        :id="'add-charging-stations'"
+        :shared="true"
+        :on="
+          () => {
+            $router.push({ name: 'add-charging-stations' })
+          }
+        "
+        :off="
+          () => {
+            $router.push({ name: 'charging-stations' })
+          }
+        "
+      >
         Add Charging Stations
-      </Button>
+      </ToggleButton>
       <ReloadButton
         id="reload-button"
         :loading="state.loading"
@@ -81,11 +99,14 @@ import type { ResponsePayload, UIServerConfigurationSection } from '@/types'
 import Container from '@/components/Container.vue'
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import Button from '@/components/buttons/Button.vue'
-import { getFromLocalStorage, setToLocalStorage } from '@/composables'
-
-const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
-  return crypto.randomUUID()
-}
+import {
+  getFromLocalStorage,
+  getLocalStorage,
+  randomUUID,
+  removeFromLocalStorage,
+  setToLocalStorage
+} from '@/composables'
+import ToggleButton from '@/components/buttons/ToggleButton.vue'
 
 const app = getCurrentInstance()
 

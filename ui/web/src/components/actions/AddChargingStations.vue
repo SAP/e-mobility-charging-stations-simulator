@@ -2,15 +2,15 @@
   <h1 id="action">Action</h1>
   <h2>Add Charging Stations</h2>
   <p>Template:</p>
-  <select
-    v-show="
-      Array.isArray(app?.appContext.config.globalProperties.$templates) &&
-      app?.appContext.config.globalProperties.$templates.length > 0
-    "
-    v-model="state.template"
-  >
+  <select v-model="state.template">
     <option disabled value="">Please select a template</option>
-    <option v-for="template in app?.appContext.config.globalProperties.$templates">
+    <option
+      v-for="template in app?.appContext.config.globalProperties.$templates"
+      v-show="
+        Array.isArray(app?.appContext.config.globalProperties.$templates) &&
+        app?.appContext.config.globalProperties.$templates.length > 0
+      "
+    >
       {{ template }}
     </option>
   </select>
@@ -95,7 +95,6 @@
   >
     Add Charging Stations
   </Button>
-  <Button id="action-button" @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">

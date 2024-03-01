@@ -10,6 +10,7 @@ import {
   ResponseStatus,
   type UIServerConfigurationSection
 } from '@/types'
+import { randomUUID } from '@/composables'
 
 type ResponseHandler = {
   procedureName: ProcedureName
@@ -190,7 +191,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        const uuid = crypto.randomUUID()
+        const uuid = randomUUID()
         const msg = JSON.stringify([uuid, procedureName, payload])
         const sendTimeout = setTimeout(() => {
           this.responseHandlers.delete(uuid)

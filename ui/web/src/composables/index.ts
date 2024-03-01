@@ -1,2 +1,10 @@
 export { UIClient } from './UIClient'
-export { convertToBoolean, convertToInt, getFromLocalStorage, setToLocalStorage } from './Utils'
+export {
+  convertToBoolean,
+  convertToInt,
+  getFromLocalStorage,
+  getLocalStorage,
+  randomUUID,
+  removeFromLocalStorage,
+  setToLocalStorage
+} from './Utils'

@@ -41,3 +41,15 @@ export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
   const item = localStorage.getItem(key)
   return item != null ? (JSON.parse(item) as T) : defaultValue
 }
+
+export const removeFromLocalStorage = (key: string): void => {
+  localStorage.removeItem(key)
+}
+
+export const getLocalStorage = (): Storage => {
+  return localStorage
+}
+
+export const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
+  return crypto.randomUUID()
+}

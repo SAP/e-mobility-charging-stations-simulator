@@ -1,0 +1,56 @@
+<template>
+  <Button :class="{ on: state.status }" @click="click()">
+    <slot></slot>
+  </Button>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import Button from '@/components/buttons/Button.vue'
+import { getFromLocalStorage, setToLocalStorage } from '@/composables'
+
+const props = defineProps<{
+  id: string
+  status?: boolean
+  shared?: boolean
+  on?: () => void
+  off?: () => void
+}>()
+
+const id = props.shared === true ? `shared-toggle-button-${props.id}` : `toggle-button-${props.id}`
+
+const state = ref({
+  status: getFromLocalStorage<boolean>(id, props.status ?? false)
+})
+
+const click = (): void => {
+  if (props.shared) {
+    for (const key in localStorage) {
+      if (key !== id && key.startsWith('shared-toggle-button-')) {
+        setToLocalStorage<boolean>(key, false)
+        state.value.status = getFromLocalStorage<boolean>(key, false)
+      }
+    }
+  }
+  setToLocalStorage<boolean>(id, !getFromLocalStorage<boolean>(id, props.status ?? false))
+  state.value.status = getFromLocalStorage<boolean>(id, props.status ?? false)
+  // console.log(`----begin----`)
+  // for (const key in localStorage) {
+  //   if (key.startsWith('shared-toggle-button-')) {
+  //     console.log(key, getFromLocalStorage<boolean>(key, props.status ?? false))
+  //   }
+  // }
+  // console.log(`----end----`)
+  if (getFromLocalStorage<boolean>(id, props.status ?? false)) {
+    props.on?.()
+  } else {
+    props.off?.()
+  }
+}
+</script>
+
+<style>
+.on {
+  background-color: lightgrey;
+}
+</style>
