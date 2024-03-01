@@ -1,11 +1,11 @@
 <template>
-  <FlatButton>
+  <Button>
     <span :class="{ spin: loading }"> &#8635; </span>
-  </FlatButton>
+  </Button>
 </template>
 
 <script setup lang="ts">
-import FlatButton from '@/components/buttons/FlatButton.vue'
+import Button from '@/components/buttons/Button.vue'
 
 defineProps<{
   loading: boolean

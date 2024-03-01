@@ -6,6 +6,9 @@
 
 <style>
 .button {
+  display: flex;
   flex: auto;
+  align-items: center;
+  justify-content: center;
 }
 </style>

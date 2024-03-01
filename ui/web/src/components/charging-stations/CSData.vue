@@ -227,6 +227,8 @@ const deleteChargingStation = (): void => {
 
 .connectors-table__column {
   width: calc(100% / 5);
+  display: flex;
+  flex-direction: column;
   text-align: center;
 }
 </style>

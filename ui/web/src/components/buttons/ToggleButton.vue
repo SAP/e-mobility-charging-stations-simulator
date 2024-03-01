@@ -15,8 +15,6 @@ const props = defineProps<{
   shared?: boolean
   on?: () => void
   off?: () => void
-  onStyle?: string
-  offStyle?: string
 }>()
 
 const $emit = defineEmits(['clicked'])

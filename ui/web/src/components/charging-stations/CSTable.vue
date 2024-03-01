@@ -60,7 +60,7 @@ const $emit = defineEmits(['need-refresh'])
 }
 
 #cs-table__caption {
-  color: white;
+  color: ivory;
   background-color: black;
   font-size: 1.5rem;
   font-weight: bold;
@@ -74,7 +74,7 @@ const $emit = defineEmits(['need-refresh'])
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  border: solid 0.5px black;
+  border: solid 0.25px black;
 }
 
 .cs-table__row:nth-of-type(even) {
@@ -84,6 +84,8 @@ const $emit = defineEmits(['need-refresh'])
 .cs-table__column {
   height: fit-content;
   width: calc(65% / 10);
+  display: flex;
+  flex-direction: column;
   text-align: center;
 }
 

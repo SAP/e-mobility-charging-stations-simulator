@@ -58,6 +58,11 @@
         :status="state.simulatorState?.started"
         :on="() => startSimulator()"
         :off="() => stopSimulator()"
+        :class="
+          state.simulatorState?.started === true
+            ? 'simulator-button-stop'
+            : 'simulator-button-start'
+        "
       >
         {{ state.simulatorState?.started === true ? 'Stop' : 'Start' }} Simulator
       </ToggleButton>
@@ -299,18 +304,25 @@ const stopSimulator = (): void => {
   flex-direction: row;
 }
 
+.simulator-button-start {
+  color: ivory;
+  background-color: green;
+}
+
+.simulator-button-stop {
+  color: ivory;
+  background-color: red;
+}
+
 #action-button {
   flex: none;
 }
 
 #reload-button {
-  flex: auto;
-  color: white;
+  color: ivory;
   background-color: blue;
   font-size: 1.5rem;
   font-weight: bold;
-  align-items: center;
-  justify-content: center;
 }
 
 #reload-button:hover {
@@ -322,7 +334,7 @@ const stopSimulator = (): void => {
 }
 
 #action {
-  color: white;
+  color: ivory;
   background-color: black;
   padding: 1%;
 }
