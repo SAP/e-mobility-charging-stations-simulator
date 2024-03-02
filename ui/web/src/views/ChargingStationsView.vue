@@ -72,6 +72,7 @@
         "
       >
         {{ state.simulatorState?.started === true ? 'Stop' : 'Start' }} Simulator
+        {{ state.simulatorState?.version != null ? ` (${state.simulatorState?.version})` : '' }}
       </ToggleButton>
       <ToggleButton
         :id="'add-charging-stations'"
@@ -122,7 +123,7 @@
 import { getCurrentInstance, onMounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
-import type { ResponsePayload, UIServerConfigurationSection } from '@/types'
+import type { ResponsePayload, SimulatorState, UIServerConfigurationSection } from '@/types'
 import Container from '@/components/Container.vue'
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import {
@@ -139,7 +140,7 @@ const state = ref<{
   renderAddChargingStations: `${string}-${string}-${string}-${string}-${string}`
   renderChargingStations: `${string}-${string}-${string}-${string}-${string}`
   loading: boolean
-  simulatorState?: { started: boolean }
+  simulatorState?: SimulatorState
   uiServerIndex: number
 }>({
   renderSimulator: randomUUID(),
@@ -170,7 +171,7 @@ const getSimulatorState = (): void => {
   uiClient
     .simulatorState()
     .then((response: ResponsePayload) => {
-      state.value.simulatorState = response.state as { started: boolean }
+      state.value.simulatorState = response.state as SimulatorState
     })
     .catch((error: Error) => {
       $toast.error('Error at fetching simulator state')

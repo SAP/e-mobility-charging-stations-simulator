@@ -57,3 +57,16 @@ export interface ResponsePayload extends JsonObject {
   status: ResponseStatus
   hashIds?: string[]
 }
+
+interface TemplateStatistics extends JsonObject {
+  configured: number
+  added: number
+  started: number
+  indexes: number[]
+}
+
+export interface SimulatorState extends JsonObject {
+  version: string
+  started: boolean
+  templateStatistics: Record<string, TemplateStatistics>
+}

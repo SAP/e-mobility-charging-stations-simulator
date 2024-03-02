@@ -31,3 +31,10 @@ export type Statistics = {
   updatedAt?: Date
   statisticsData: Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
 } & WorkerData
+
+export interface InternalTemplateStatistics {
+  configured: number
+  added: number
+  started: number
+  indexes: Set<number>
+}

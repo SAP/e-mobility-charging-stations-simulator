@@ -24,6 +24,7 @@ export {
   buildPerformanceStatisticsMessage,
   buildStartedMessage,
   buildStoppedMessage,
+  buildTemplateStatisticsPayload,
   buildUpdatedMessage
 } from './MessageChannelUtils.js'
 export {

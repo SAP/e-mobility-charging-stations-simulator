@@ -9,7 +9,9 @@ export {
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus
+  ResponseStatus,
+  type SimulatorState,
+  type TemplateStatistics
 } from './UIProtocol.js'
 export {
   type AutomaticTransactionGeneratorConfiguration,
@@ -263,7 +265,12 @@ export type {
 export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
 export { OCPPVersion } from './ocpp/OCPPVersion.js'
 export { PerformanceRecord } from './orm/entities/PerformanceRecord.js'
-export type { Statistics, StatisticsData, TimestampedData } from './Statistics.js'
+export type {
+  InternalTemplateStatistics,
+  Statistics,
+  StatisticsData,
+  TimestampedData
+} from './Statistics.js'
 export {
   type WSError,
   WebSocketCloseEventStatusCode,

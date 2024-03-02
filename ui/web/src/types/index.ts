@@ -15,5 +15,6 @@ export {
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus
+  ResponseStatus,
+  type SimulatorState
 } from './UIProtocol'
