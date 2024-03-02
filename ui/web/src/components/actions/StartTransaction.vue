@@ -39,7 +39,7 @@ defineProps<{
   connectorId: string
 }>()
 
-const state = ref({
+const state = ref<{ idTag: string }>({
   idTag: ''
 })
 

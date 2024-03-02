@@ -21,7 +21,7 @@ const $emit = defineEmits(['clicked'])
 
 const id = props.shared === true ? `shared-toggle-button-${props.id}` : `toggle-button-${props.id}`
 
-const state = ref({
+const state = ref<{ status: boolean }>({
   status: getFromLocalStorage<boolean>(id, props.status ?? false)
 })
 

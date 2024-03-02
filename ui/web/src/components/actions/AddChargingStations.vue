@@ -103,7 +103,15 @@ import { useToast } from 'vue-toast-notification'
 import Button from '@/components/buttons/Button.vue'
 import { convertToBoolean } from '@/composables'
 
-const state = ref({
+const state = ref<{
+  template: string
+  numberOfStations: number
+  supervisionUrl: string
+  autoStart: boolean
+  persistentConfiguration: boolean
+  ocppStrictCompliance: boolean
+  enableStatistics: boolean
+}>({
   template: '',
   numberOfStations: 1,
   supervisionUrl: '',

@@ -43,7 +43,7 @@ defineProps<{
   chargingStationId: string
 }>()
 
-const state = ref({
+const state = ref<{ supervisionUrl: string }>({
   supervisionUrl: ''
 })
 
