@@ -96,5 +96,7 @@ const $emit = defineEmits(['need-refresh'])
 .cs-table__connectors-column {
   height: fit-content;
   width: 35%;
+  display: flex;
+  flex-direction: column;
 }
 </style>
