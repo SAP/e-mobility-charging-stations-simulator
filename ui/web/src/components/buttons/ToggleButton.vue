@@ -48,5 +48,6 @@ const click = (): void => {
 <style>
 .on {
   background-color: lightgrey;
+  border-style: inset;
 }
 </style>

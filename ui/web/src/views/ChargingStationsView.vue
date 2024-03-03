@@ -300,6 +300,7 @@ const stopSimulator = (): void => {
 #ui-server-container {
   display: flex;
   justify-content: center;
+  border-style: outset;
 }
 
 #ui-server-selector {
@@ -324,7 +325,6 @@ const stopSimulator = (): void => {
 }
 
 .simulator-start-button:hover {
-  color: ivory;
   background-color: rgb(0, 98, 0);
 }
 
