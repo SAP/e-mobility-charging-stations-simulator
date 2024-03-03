@@ -1138,8 +1138,8 @@ packages:
     resolution: {integrity: sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==}
     dev: true
 
-  /@jridgewell/trace-mapping@0.3.24:
-    resolution: {integrity: sha512-+VaWXDa6+l6MhflBvVXjIEAzb59nQ2JUK3bwRp2zRpPtU+8TFRy9Gg/5oIcNlkEL5PGlBFGfemUVvIgLnTzq7Q==}
+  /@jridgewell/trace-mapping@0.3.25:
+    resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.15
@@ -1388,11 +1388,11 @@ packages:
       '@octokit/core': 5.1.0
     dev: true
 
-  /@octokit/plugin-rest-endpoint-methods@10.4.0(@octokit/core@5.1.0):
-    resolution: {integrity: sha512-INw5rGXWlbv/p/VvQL63dhlXr38qYTHkQ5bANi9xofrF9OraqmjHsIGyenmjmul1JVRHpUlw5heFOj1UZLEolA==}
+  /@octokit/plugin-rest-endpoint-methods@10.4.1(@octokit/core@5.1.0):
+    resolution: {integrity: sha512-xV1b+ceKV9KytQe3zCVqjg+8GTGfDYwaT1ATU5isiUyVtlVAO3HNdzpS4sr4GBx4hxQ46s7ITtZrAsxG22+rVg==}
     engines: {node: '>= 18'}
     peerDependencies:
-      '@octokit/core': '>=5'
+      '@octokit/core': '5'
     dependencies:
       '@octokit/core': 5.1.0
       '@octokit/types': 12.6.0
@@ -1424,7 +1424,7 @@ packages:
       '@octokit/core': 5.1.0
       '@octokit/plugin-paginate-rest': 9.2.1(@octokit/core@5.1.0)
       '@octokit/plugin-request-log': 4.0.1(@octokit/core@5.1.0)
-      '@octokit/plugin-rest-endpoint-methods': 10.4.0(@octokit/core@5.1.0)
+      '@octokit/plugin-rest-endpoint-methods': 10.4.1(@octokit/core@5.1.0)
     dev: true
 
   /@octokit/types@12.6.0:
@@ -3460,11 +3460,12 @@ packages:
       d3-transition: 1.3.2
     dev: true
 
-  /d@1.0.1:
-    resolution: {integrity: sha512-m62ShEObQ39CfralilEQRjH6oAMtNCV1xJyEx5LpRYUVN+EviphDgUc/F3hnYbADmkiNs67Y+3ylmlG7Lnu+FA==}
+  /d@1.0.2:
+    resolution: {integrity: sha512-MOqHvMWF9/9MX6nza0KgvFH4HpMU0EF5uUDXqX/BtxtU8NfB0QzRtJ8Oe/6SuS4kbhyzVJwjd97EA4PKrzJ8bw==}
+    engines: {node: '>=0.12'}
     dependencies:
       es5-ext: 0.10.64
-      type: 1.2.0
+      type: 2.7.2
     dev: true
 
   /dargs@7.0.0:
@@ -3971,7 +3972,7 @@ packages:
     requiresBuild: true
     dependencies:
       es6-iterator: 2.0.3
-      es6-symbol: 3.1.3
+      es6-symbol: 3.1.4
       esniff: 2.0.1
       next-tick: 1.1.0
     dev: true
@@ -3979,19 +3980,19 @@ packages:
   /es6-iterator@2.0.3:
     resolution: {integrity: sha512-zw4SRzoUkd+cl+ZoE15A9o1oQd920Bb0iOJMQkQhl3jNc03YqVjAhG7scf9C5KWRU/R13Orf588uCC6525o02g==}
     dependencies:
-      d: 1.0.1
+      d: 1.0.2
       es5-ext: 0.10.64
-      es6-symbol: 3.1.3
+      es6-symbol: 3.1.4
     dev: true
 
   /es6-map@0.1.5:
     resolution: {integrity: sha512-mz3UqCh0uPCIqsw1SSAkB/p0rOzF/M0V++vyN7JqlPtSW/VsYgQBvVvqMLmfBuyMzTpLnNqi6JmcSizs4jy19A==}
     dependencies:
-      d: 1.0.1
+      d: 1.0.2
       es5-ext: 0.10.64
       es6-iterator: 2.0.3
       es6-set: 0.1.6
-      es6-symbol: 3.1.3
+      es6-symbol: 3.1.4
       event-emitter: 0.3.5
     dev: true
 
@@ -3999,18 +4000,19 @@ packages:
     resolution: {integrity: sha512-TE3LgGLDIBX332jq3ypv6bcOpkLO0AslAQo7p2VqX/1N46YNsvIWgvjojjSEnWEGWMhr1qUbYeTSir5J6mFHOw==}
     engines: {node: '>=0.12'}
     dependencies:
-      d: 1.0.1
+      d: 1.0.2
       es5-ext: 0.10.64
       es6-iterator: 2.0.3
-      es6-symbol: 3.1.3
+      es6-symbol: 3.1.4
       event-emitter: 0.3.5
       type: 2.7.2
     dev: true
 
-  /es6-symbol@3.1.3:
-    resolution: {integrity: sha512-NJ6Yn3FuDinBaBRWl/q5X/s4koRHBrgKAu+yGI6JCBeiu3qrcbJhwT2GeR/EXVfylRk8dpQVJoLEFhK+Mu31NA==}
+  /es6-symbol@3.1.4:
+    resolution: {integrity: sha512-U9bFFjX8tFiATgtkJ1zg25+KviIXpgRvRHS8sau3GfhVzThRQrOeksPeT0BWW2MNZs1OEWJ1DPXOQMn0KKRkvg==}
+    engines: {node: '>=0.12'}
     dependencies:
-      d: 1.0.1
+      d: 1.0.2
       ext: 1.7.0
     dev: true
 
@@ -4437,7 +4439,7 @@ packages:
     resolution: {integrity: sha512-kTUIGKQ/mDPFoJ0oVfcmyJn4iBDRptjNVIzwIFR7tqWXdVI9xfA2RMwY/gbSpJG3lkdWNEjLap/NqVHZiJsdfg==}
     engines: {node: '>=0.10'}
     dependencies:
-      d: 1.0.1
+      d: 1.0.2
       es5-ext: 0.10.64
       event-emitter: 0.3.5
       type: 2.7.2
@@ -4497,7 +4499,7 @@ packages:
   /event-emitter@0.3.5:
     resolution: {integrity: sha512-D9rRn9y7kLPnJ+hMq7S/nhvoKwwvVJahBi2BPmx3bvbsEdK3W9ii8cBSGjP+72/LnM4n6fo3+dkCX5FeTQruXA==}
     dependencies:
-      d: 1.0.1
+      d: 1.0.2
       es5-ext: 0.10.64
     dev: true
 
@@ -8353,7 +8355,7 @@ packages:
       dash-ast: 2.0.1
       es6-map: 0.1.5
       es6-set: 0.1.6
-      es6-symbol: 3.1.3
+      es6-symbol: 3.1.4
       estree-is-function: 1.0.0
       get-assigned-identifiers: 1.2.0
     dev: true
@@ -9300,10 +9302,6 @@ packages:
     engines: {node: '>=14.16'}
     dev: true
 
-  /type@1.2.0:
-    resolution: {integrity: sha512-+5nt5AAniqsCnu2cEQQdpzCAh33kVx8n0VoFidKpB1dVVLAN/F+bgVOqOJqOnEnrhp222clB5p3vUlD+1QAnfg==}
-    dev: true
-
   /type@2.7.2:
     resolution: {integrity: sha512-dzlvlNlt6AXU7EBSfpAscydQ7gXB+pPGsPnfJnZpiNJBDj7IaJzQlBZYGdEi4R9HmPdBv2XmWJ6YUtoTa7lmCw==}
     dev: true
@@ -9576,7 +9574,7 @@ packages:
     resolution: {integrity: sha512-/EH/sDgxU2eGxajKdwLCDmQ4FWq+kpi3uCmBGpw1xJtnAxEjlD8j8PEiGWpCIMIs3ciNAgH0d3TTJiUkYzyZjA==}
     engines: {node: '>=10.12.0'}
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.24
+      '@jridgewell/trace-mapping': 0.3.25
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
     dev: true
