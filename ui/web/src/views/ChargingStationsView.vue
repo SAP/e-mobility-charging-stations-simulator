@@ -65,14 +65,9 @@
         :status="state.simulatorState?.started"
         :on="() => startSimulator()"
         :off="() => stopSimulator()"
-        :class="
-          state.simulatorState?.started === true
-            ? 'simulator-stop-button'
-            : 'simulator-start-button'
-        "
+        :class="simulatorButtonClass"
       >
-        {{ state.simulatorState?.started === true ? 'Stop' : 'Start' }} Simulator
-        {{ state.simulatorState?.version != null ? ` (${state.simulatorState?.version})` : '' }}
+        {{ simulatorButtonMessage }}
       </ToggleButton>
       <ToggleButton
         :id="'add-charging-stations'"
@@ -120,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, ref } from 'vue'
+import { computed, getCurrentInstance, onMounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import type { ResponsePayload, SimulatorState, UIServerConfigurationSection } from '@/types'
@@ -149,6 +144,14 @@ const state = ref<{
   loading: false,
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
 })
+
+const simulatorButtonClass = computed<string>(() =>
+  state.value.simulatorState?.started === true ? 'simulator-stop-button' : 'simulator-start-button'
+)
+const simulatorButtonMessage = computed<string>(
+  () =>
+    `${state.value.simulatorState?.started === true ? 'Stop' : 'Start'} Simulator ${state.value.simulatorState?.version != null ? `(${state.value.simulatorState.version})` : ''}`
+)
 
 const app = getCurrentInstance()
 

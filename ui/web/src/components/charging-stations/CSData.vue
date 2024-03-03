@@ -9,7 +9,7 @@
     </td>
     <td class="cs-table__column">{{ getWSState() }}</td>
     <td class="cs-table__column">
-      {{ chargingStation?.bootNotificationResponse?.status ?? 'Ø' }}
+      {{ chargingStation.bootNotificationResponse?.status ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
       {{ chargingStation.stationInfo.templateName }}
