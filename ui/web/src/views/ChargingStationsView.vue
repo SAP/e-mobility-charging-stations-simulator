@@ -323,9 +323,18 @@ const stopSimulator = (): void => {
   background-color: green;
 }
 
+.simulator-start-button:hover {
+  color: ivory;
+  background-color: rgb(0, 98, 0);
+}
+
 .simulator-stop-button {
   color: ivory;
   background-color: red;
+}
+
+.simulator-stop-button:hover {
+  background-color: rgb(225, 0, 0);
 }
 
 #action-button {
