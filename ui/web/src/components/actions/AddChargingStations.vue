@@ -24,7 +24,7 @@
     placeholder="number of stations"
   />
   <p>Template options overrides:</p>
-  <ul>
+  <ul id="template-options">
     <li>
       Supervision url:
       <input
@@ -135,6 +135,11 @@ const $toast = useToast()
 
 #supervision-url {
   width: 90%;
+  text-align: left;
+}
+
+#template-options {
+  list-style: circle inside;
   text-align: left;
 }
 </style>
