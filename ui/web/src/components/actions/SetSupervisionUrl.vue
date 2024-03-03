@@ -1,7 +1,6 @@
 <template>
-  <h1 id="action">Action</h1>
-  <h2>Set Supervision Url</h2>
-  <h3>Charging Station {{ chargingStationId }}</h3>
+  <h1 id="action">Set Supervision Url</h1>
+  <h2>{{ chargingStationId }}</h2>
   <p>Supervision Url:</p>
   <input
     id="supervision-url"

@@ -29,13 +29,13 @@ import Container from '@/components/Container.vue'
   justify-content: center;
   align-items: center;
   text-align: center;
-  margin: 0.1%;
-  padding: 0.1%;
+  margin: 0.4%;
+  padding: 0.4%;
   border: solid black;
 }
 
 body {
-  margin: 0.005%;
-  padding: 0.005%;
+  margin: 0.008%;
+  padding: 0.008%;
 }
 </style>

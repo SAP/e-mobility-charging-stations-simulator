@@ -356,8 +356,9 @@ const stopSimulator = (): void => {
 }
 
 #action {
+  min-width: max-content;
   color: ivory;
   background-color: black;
-  padding: 1%;
+  padding: 0.8%;
 }
 </style>

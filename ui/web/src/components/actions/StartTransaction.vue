@@ -1,7 +1,7 @@
 <template>
-  <h1 id="action">Action</h1>
-  <h2>Start Transaction</h2>
-  <h3>Connector {{ connectorId }} on {{ chargingStationId }}</h3>
+  <h1 id="action">Start Transaction</h1>
+  <h2>{{ chargingStationId }}</h2>
+  <h3>Connector {{ connectorId }}</h3>
   <p>Scan RFID tag:</p>
   <input id="idtag" v-model.trim="state.idTag" type="text" name="idtag" placeholder="RFID tag" />
   <br />

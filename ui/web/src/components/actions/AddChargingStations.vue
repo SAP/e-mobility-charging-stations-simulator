@@ -1,6 +1,5 @@
 <template>
-  <h1 id="action">Action</h1>
-  <h2>Add Charging Stations</h2>
+  <h1 id="action">Add Charging Stations</h1>
   <p>Template:</p>
   <select v-model="state.template">
     <option disabled value="">Please select a template</option>
