@@ -150,7 +150,7 @@ const simulatorButtonClass = computed<string>(() =>
 )
 const simulatorButtonMessage = computed<string>(
   () =>
-    `${state.value.simulatorState?.started === true ? 'Stop' : 'Start'} Simulator ${state.value.simulatorState?.version != null ? `(${state.value.simulatorState.version})` : ''}`
+    `${state.value.simulatorState?.started === true ? 'Stop' : 'Start'} Simulator${state.value.simulatorState?.version != null ? ` (${state.value.simulatorState.version})` : ''}`
 )
 
 const app = getCurrentInstance()
