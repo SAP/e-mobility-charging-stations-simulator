@@ -220,11 +220,11 @@ onMounted(() => {
   initializeWSEventListeners()
 })
 
-const uiServerConfigurations: { configuration: UIServerConfigurationSection; index: number }[] =
+const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] =
   app?.appContext.config.globalProperties.$configuration.uiServer.map(
     (configuration: UIServerConfigurationSection, index: number) => ({
-      configuration,
-      index
+      index,
+      configuration
     })
   )
 
