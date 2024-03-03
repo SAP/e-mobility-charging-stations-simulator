@@ -23,9 +23,6 @@ defineProps<{
 }
 
 .spin {
-  animation-name: rotation;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
+  animation: rotation 2s linear infinite;
 }
 </style>

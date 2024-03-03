@@ -12,8 +12,8 @@ import Container from '@/components/Container.vue'
 <style>
 #app {
   height: fit-content;
-  width: fit-content;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  width: 100%;
+  font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: flex;
@@ -23,7 +23,6 @@ import Container from '@/components/Container.vue'
 }
 
 #action-container {
-  min-width: max-content;
   display: flex;
   flex-direction: column;
   justify-content: center;

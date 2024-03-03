@@ -305,6 +305,7 @@ const stopSimulator = (): void => {
 #ui-server-selector {
   width: 100%;
   background-color: rgb(239, 239, 239);
+  font: small-caption;
   text-align: center;
 }
 
@@ -334,8 +335,7 @@ const stopSimulator = (): void => {
 #reload-button {
   color: ivory;
   background-color: blue;
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 2rem;
 }
 
 #reload-button:hover {
