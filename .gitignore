@@ -4,6 +4,7 @@ src/assets/config*.json
 src/scripts/scriptConfig.json
 src/assets/*idtags*.json
 !src/assets/idtags-template.json
+src/assets/configs-docker/*.json
 mikro-orm.config*.ts
 !mikro-orm.config-template.ts
 manifest*.yml
