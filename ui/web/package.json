@@ -11,11 +11,6 @@
     "node": "20.11.1",
     "pnpm": "8.15.4"
   },
-  "pnpm": {
-    "overrides": {
-      "semver": "^7.5.3"
-    }
-  },
   "type": "module",
   "scripts": {
     "preinstall": "npx --yes only-allow pnpm",

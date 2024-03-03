@@ -1,11 +1,8 @@
 FROM node:lts-alpine AS builder
 
-# Build simulator
+# Build simulator and dashboard
 WORKDIR /usr/builder
-COPY package.json pnpm-lock.yaml tsconfig.json bundle.js build-requirements.js skip-preinstall.js prepare.js ./
-COPY src ./src
-COPY docker/config.json ./src/assets/config.json
-COPY docker/idtags.json ./src/assets/idtags.json
+COPY . ./
 RUN set -ex \
   && apk add --no-cache --virtual .gyp build-base python3 \
   && corepack enable \
@@ -13,18 +10,11 @@ RUN set -ex \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
   && pnpm install --ignore-scripts --frozen-lockfile \
+  && cp docker/config.json src/assets/config.json \
+  && cp docker/idtags.json src/assets/idtags.json \
   && pnpm build \
-  && apk del .gyp
-
-# Build simulator dashboard
-WORKDIR /usr/builder/webui
-COPY ui/web ./
-RUN set -ex \
-  && corepack enable \
-  && corepack prepare pnpm@latest --activate \
-  && pnpm set progress=false \
-  && pnpm config set depth 0 \
-  && pnpm install --ignore-scripts --frozen-lockfile \
+  && apk del .gyp \
+  && cd ui/web \
   && cp src/assets/config-template.json public/config.json \
   && pnpm build
 
@@ -36,7 +26,7 @@ ARG MAX_OLD_SPACE_SIZE=768
 ENV NODE_OPTIONS="--stack-trace-limit=${STACK_TRACE_LIMIT} --max-old-space-size=${MAX_OLD_SPACE_SIZE}"
 
 WORKDIR /usr/app
-COPY --from=builder /usr/builder/webui ./webui
+COPY --from=builder /usr/builder/ui/web ./ui/web
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist
 COPY package.json README.md LICENSE ./

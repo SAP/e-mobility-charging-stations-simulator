@@ -4,14 +4,6 @@ The Web UI code and configuration is in the repository directory [ui/web](./../.
 
 ## Project setup
 
-### Dependencies
-
-```shell
-corepack enable
-corepack prepare pnpm@latest --activate
-pnpm install
-```
-
 ### Configuration
 
 #### Simulator UI Server Configuration
