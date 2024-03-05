@@ -13,13 +13,9 @@
               if (
                 getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
               ) {
-                uiClient.setConfiguration(
-                  app?.appContext.config.globalProperties.$configuration.uiServer[
-                    state.uiServerIndex
-                  ]
-                )
+                $uiClient.setConfiguration($configuration.value.uiServer[state.uiServerIndex])
                 registerWSEventListeners()
-                uiClient.registerWSEventListener(
+                $uiClient.registerWSEventListener(
                   'open',
                   () => {
                     setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
@@ -29,15 +25,15 @@
                   },
                   { once: true }
                 )
-                uiClient.registerWSEventListener(
+                $uiClient.registerWSEventListener(
                   'error',
                   () => {
                     state.uiServerIndex = getFromLocalStorage<number>(
                       'uiServerConfigurationIndex',
                       0
                     )
-                    uiClient.setConfiguration(
-                      app?.appContext.config.globalProperties.$configuration.uiServer[
+                    $uiClient.setConfiguration(
+                      $configuration.value.uiServer[
                         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
                       ]
                     )
@@ -98,12 +94,9 @@
       />
     </Container>
     <CSTable
-      v-show="
-        Array.isArray(app?.appContext.config.globalProperties.$chargingStations) &&
-        app.appContext.config.globalProperties.$chargingStations.length > 0
-      "
+      v-show="Array.isArray($chargingStations.value) && $chargingStations.value.length > 0"
       :key="state.renderChargingStations"
-      :charging-stations="app?.appContext.config.globalProperties.$chargingStations"
+      :charging-stations="$chargingStations.value"
       @need-refresh="
         () => {
           state.renderAddChargingStations = randomUUID()
@@ -171,7 +164,7 @@ const app = getCurrentInstance()
 
 const clearChargingStations = (): void => {
   if (app != null) {
-    app.appContext.config.globalProperties.$chargingStations = []
+    app.appContext.config.globalProperties.$chargingStations.value = []
   }
   state.value.renderChargingStations = randomUUID()
 }
@@ -206,12 +199,12 @@ const getTemplates = (): void => {
       .listTemplates()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$templates = response.templates
+          app.appContext.config.globalProperties.$templates.value = response.templates
         }
       })
       .catch((error: Error) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$templates = []
+          app.appContext.config.globalProperties.$templates.value = []
         }
         $toast.error('Error at fetching charging station templates')
         console.error('Error at fetching charging station templates:', error)
@@ -229,12 +222,12 @@ const getChargingStations = (): void => {
       .listChargingStations()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$chargingStations = response.chargingStations
+          app.appContext.config.globalProperties.$chargingStations.value = response.chargingStations
         }
       })
       .catch((error: Error) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$chargingStations = []
+          app.appContext.config.globalProperties.$chargingStations.value = []
         }
         $toast.error('Error at fetching charging stations')
         console.error('Error at fetching charging stations:', error)
@@ -273,7 +266,7 @@ onUnmounted(() => {
 })
 
 const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] =
-  app?.appContext.config.globalProperties.$configuration.uiServer.map(
+  app?.appContext.config.globalProperties.$configuration.value.uiServer.map(
     (configuration: UIServerConfigurationSection, index: number) => ({
       index,
       configuration
@@ -299,7 +292,7 @@ const stopSimulator = (): void => {
     .stopSimulator()
     .then(() => {
       if (app != null) {
-        app.appContext.config.globalProperties.$chargingStations = []
+        app.appContext.config.globalProperties.$chargingStations.value = []
       }
       $toast.success('Simulator successfully stopped')
     })

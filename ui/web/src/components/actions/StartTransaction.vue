@@ -9,7 +9,7 @@
     id="action-button"
     @click="
       () => {
-        uiClient
+        $uiClient
           .startTransaction(hashId, convertToInt(connectorId), state.idTag)
           .then(() => {
             $toast.success('Transaction successfully started')
@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref } from 'vue'
+import { ref } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 import { convertToInt } from '@/composables'
 
@@ -42,8 +42,6 @@ defineProps<{
 const state = ref<{ idTag: string }>({
   idTag: ''
 })
-
-const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 </script>
 
 <style>

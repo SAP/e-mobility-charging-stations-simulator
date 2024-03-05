@@ -14,7 +14,7 @@
     id="action-button"
     @click="
       () => {
-        uiClient
+        $uiClient
           .setSupervisionUrl(hashId, state.supervisionUrl)
           .then(() => {
             $toast.success('Supervision url successfully set')
@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref } from 'vue'
+import { ref } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 
 defineProps<{
@@ -45,8 +45,6 @@ defineProps<{
 const state = ref<{ supervisionUrl: string }>({
   supervisionUrl: ''
 })
-
-const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 </script>
 
 <style>

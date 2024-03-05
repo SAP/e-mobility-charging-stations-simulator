@@ -4,11 +4,8 @@
   <select v-model="state.template">
     <option disabled value="">Please select a template</option>
     <option
-      v-for="template in app?.appContext.config.globalProperties.$templates"
-      v-show="
-        Array.isArray(app?.appContext.config.globalProperties.$templates) &&
-        app.appContext.config.globalProperties.$templates.length > 0
-      "
+      v-for="template in $templates.value"
+      v-show="Array.isArray($templates.value) && $templates.value.length > 0"
     >
       {{ template }}
     </option>
@@ -71,7 +68,7 @@
     id="action-button"
     @click="
       () => {
-        uiClient
+        $uiClient
           .addChargingStations(state.template, state.numberOfStations, {
             supervisionUrls: state.supervisionUrl.length > 0 ? state.supervisionUrl : undefined,
             autoStart: convertToBoolean(state.autoStart),
@@ -97,8 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref } from 'vue'
-import { useToast } from 'vue-toast-notification'
+import { ref } from 'vue'
 import Button from '@/components/buttons/Button.vue'
 import { convertToBoolean } from '@/composables'
 
@@ -119,12 +115,6 @@ const state = ref<{
   ocppStrictCompliance: true,
   enableStatistics: false
 })
-
-const app = getCurrentInstance()
-
-const uiClient = app?.appContext.config.globalProperties.$uiClient
-
-const $toast = useToast()
 </script>
 
 <style>
