@@ -93,8 +93,8 @@
       </ToggleButton>
       <ReloadButton
         id="reload-button"
-        :loading="state.loading"
-        @click="loadChargingStations(() => (state.renderChargingStations = randomUUID()))"
+        :loading="state.gettingChargingStations"
+        @click="getChargingStations()"
       />
     </Container>
     <CSTable
@@ -134,14 +134,18 @@ const state = ref<{
   renderSimulator: `${string}-${string}-${string}-${string}-${string}`
   renderAddChargingStations: `${string}-${string}-${string}-${string}-${string}`
   renderChargingStations: `${string}-${string}-${string}-${string}-${string}`
-  loading: boolean
+  gettingSimulatorState: boolean
+  gettingTemplates: boolean
+  gettingChargingStations: boolean
   simulatorState?: SimulatorState
   uiServerIndex: number
 }>({
   renderSimulator: randomUUID(),
   renderAddChargingStations: randomUUID(),
   renderChargingStations: randomUUID(),
-  loading: false,
+  gettingSimulatorState: false,
+  gettingTemplates: false,
+  gettingChargingStations: false,
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
 })
 
@@ -161,53 +165,62 @@ const clearToggleButtons = (): void => {
       deleteFromLocalStorage(key)
     }
   }
+  state.value.renderChargingStations = randomUUID()
+  state.value.renderAddChargingStations = randomUUID()
 }
 
 const clearChargingStations = (): void => {
-  app!.appContext.config.globalProperties.$chargingStations = []
+  if (app != null) {
+    app.appContext.config.globalProperties.$chargingStations = []
+  }
   state.value.renderChargingStations = randomUUID()
 }
 
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 
 const getSimulatorState = (): void => {
-  uiClient
-    .simulatorState()
-    .then((response: ResponsePayload) => {
-      state.value.simulatorState = response.state as SimulatorState
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at fetching simulator state')
-      console.error('Error at fetching simulator state:', error)
-    })
-    .finally(() => {
-      state.value.renderSimulator = randomUUID()
-    })
+  if (state.value.gettingSimulatorState === false) {
+    state.value.gettingSimulatorState = true
+    uiClient
+      .simulatorState()
+      .then((response: ResponsePayload) => {
+        state.value.simulatorState = response.state as SimulatorState
+      })
+      .catch((error: Error) => {
+        $toast.error('Error at fetching simulator state')
+        console.error('Error at fetching simulator state:', error)
+      })
+      .finally(() => {
+        state.value.renderSimulator = randomUUID()
+        state.value.gettingSimulatorState = false
+      })
+  }
 }
 
 const initializeWSEventListeners = () => {
   app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
     getSimulatorState()
-    uiClient
-      .listTemplates()
-      .then((response: ResponsePayload) => {
-        if (app != null) {
-          app.appContext.config.globalProperties.$templates = response.templates
-        }
-      })
-      .catch((error: Error) => {
-        if (app != null) {
-          app.appContext.config.globalProperties.$templates = []
-        }
-        $toast.error('Error at fetching charging station templates')
-        console.error('Error at fetching charging station templates:', error)
-      })
-      .finally(() => {
-        state.value.renderAddChargingStations = randomUUID()
-      })
-    loadChargingStations(() => {
-      state.value.renderChargingStations = randomUUID()
-    })
+    if (state.value.gettingTemplates === false) {
+      state.value.gettingTemplates = true
+      uiClient
+        .listTemplates()
+        .then((response: ResponsePayload) => {
+          if (app != null) {
+            app.appContext.config.globalProperties.$templates = response.templates
+          }
+        })
+        .catch((error: Error) => {
+          if (app != null) {
+            app.appContext.config.globalProperties.$templates = []
+          }
+          $toast.error('Error at fetching charging station templates')
+          console.error('Error at fetching charging station templates:', error)
+        })
+        .finally(() => {
+          state.value.gettingTemplates = false
+        })
+    }
+    getChargingStations()
   })
   app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
     'error',
@@ -233,9 +246,9 @@ const uiServerConfigurations: { index: number; configuration: UIServerConfigurat
 
 const $toast = useToast()
 
-const loadChargingStations = (renderCallback?: () => void): void => {
-  if (state.value.loading === false) {
-    state.value.loading = true
+const getChargingStations = (): void => {
+  if (state.value.gettingChargingStations === false) {
+    state.value.gettingChargingStations = true
     uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
@@ -251,10 +264,8 @@ const loadChargingStations = (renderCallback?: () => void): void => {
         console.error('Error at fetching charging stations:', error)
       })
       .finally(() => {
-        if (renderCallback != null) {
-          renderCallback()
-        }
-        state.value.loading = false
+        state.value.renderChargingStations = randomUUID()
+        state.value.gettingChargingStations = false
       })
   }
 }
