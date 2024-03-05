@@ -21,10 +21,10 @@ const initializeApp = (app: AppType, config: ConfigurationData) => {
   if (app.config.globalProperties.$configuration == null) {
     app.config.globalProperties.$configuration = ref<ConfigurationData>(config)
   }
-  if (!Array.isArray(app.config.globalProperties.$templates.value)) {
+  if (!Array.isArray(app.config.globalProperties.$templates?.value)) {
     app.config.globalProperties.$templates = ref<string[]>([])
   }
-  if (!Array.isArray(app.config.globalProperties.$chargingStations.value)) {
+  if (!Array.isArray(app.config.globalProperties.$chargingStations?.value)) {
     app.config.globalProperties.$chargingStations = ref<ChargingStationData[]>([])
   }
   if (
