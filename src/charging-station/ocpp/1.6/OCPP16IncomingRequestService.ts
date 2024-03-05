@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { createWriteStream, readdirSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, extname, join, resolve } from 'node:path'
 import { URL, fileURLToPath } from 'node:url'
 
 import type { ValidateFunction } from 'ajv'
@@ -32,6 +32,7 @@ import { OCPPError } from '../../../exception/index.js'
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
+  ConfigurationSection,
   ErrorType,
   type GenericResponse,
   GenericStatus,
@@ -41,6 +42,7 @@ import {
   type GetDiagnosticsResponse,
   type IncomingRequestHandler,
   type JsonType,
+  type LogConfiguration,
   OCPP16AuthorizationStatus,
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
@@ -98,6 +100,7 @@ import {
   type UnlockConnectorResponse
 } from '../../../types/index.js'
 import {
+  Configuration,
   Constants,
   convertToDate,
   convertToInt,
@@ -1465,9 +1468,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (uri.protocol.startsWith('ftp:')) {
       let ftpClient: Client | undefined
       try {
+        const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
+          ConfigurationSection.log
+        )
         const logFiles = readdirSync(resolve(dirname(fileURLToPath(import.meta.url)), '../'))
-          .filter(file => file.endsWith('.log'))
-          .map(file => join('./', file))
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          .filter(file => file.endsWith(extname(logConfiguration.file!)))
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          .map(file => join(dirname(logConfiguration.file!), file))
         const diagnosticsArchive = `${chargingStation.stationInfo?.chargingStationId}_logs.tar.gz`
         create({ gzip: true }, logFiles).pipe(createWriteStream(diagnosticsArchive))
         ftpClient = new Client()
