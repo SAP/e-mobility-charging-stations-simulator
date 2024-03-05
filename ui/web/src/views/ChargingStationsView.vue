@@ -13,13 +13,13 @@
               if (
                 getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
               ) {
-                app?.appContext.config.globalProperties.$uiClient.setConfiguration(
+                uiClient.setConfiguration(
                   app?.appContext.config.globalProperties.$configuration.uiServer[
                     state.uiServerIndex
                   ]
                 )
                 initializeWSEventListeners()
-                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                uiClient.registerWSEventListener(
                   'open',
                   () => {
                     setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
@@ -29,14 +29,14 @@
                   },
                   { once: true }
                 )
-                app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
+                uiClient.registerWSEventListener(
                   'error',
                   () => {
                     state.uiServerIndex = getFromLocalStorage<number>(
                       'uiServerConfigurationIndex',
                       0
                     )
-                    app?.appContext.config.globalProperties.$uiClient.setConfiguration(
+                    uiClient.setConfiguration(
                       app?.appContext.config.globalProperties.$configuration.uiServer[
                         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
                       ]
@@ -157,8 +157,6 @@ const simulatorButtonMessage = computed<string>(
     `${state.value.simulatorState?.started === true ? 'Stop' : 'Start'} Simulator${state.value.simulatorState?.version != null ? ` (${state.value.simulatorState.version})` : ''}`
 )
 
-const app = getCurrentInstance()
-
 const clearToggleButtons = (): void => {
   for (const key in getLocalStorage()) {
     if (key.includes('toggle-button')) {
@@ -169,6 +167,8 @@ const clearToggleButtons = (): void => {
   state.value.renderAddChargingStations = randomUUID()
 }
 
+const app = getCurrentInstance()
+
 const clearChargingStations = (): void => {
   if (app != null) {
     app.appContext.config.globalProperties.$chargingStations = []
@@ -177,6 +177,8 @@ const clearChargingStations = (): void => {
 }
 
 const uiClient = app?.appContext.config.globalProperties.$uiClient
+
+const $toast = useToast()
 
 const getSimulatorState = (): void => {
   if (state.value.gettingSimulatorState === false) {
@@ -197,54 +199,28 @@ const getSimulatorState = (): void => {
   }
 }
 
-const initializeWSEventListeners = () => {
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
-    getSimulatorState()
-    if (state.value.gettingTemplates === false) {
-      state.value.gettingTemplates = true
-      uiClient
-        .listTemplates()
-        .then((response: ResponsePayload) => {
-          if (app != null) {
-            app.appContext.config.globalProperties.$templates = response.templates
-          }
-        })
-        .catch((error: Error) => {
-          if (app != null) {
-            app.appContext.config.globalProperties.$templates = []
-          }
-          $toast.error('Error at fetching charging station templates')
-          console.error('Error at fetching charging station templates:', error)
-        })
-        .finally(() => {
-          state.value.gettingTemplates = false
-        })
-    }
-    getChargingStations()
-  })
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-    'error',
-    clearChargingStations
-  )
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-    'close',
-    clearChargingStations
-  )
+const getTemplates = (): void => {
+  if (state.value.gettingTemplates === false) {
+    state.value.gettingTemplates = true
+    uiClient
+      .listTemplates()
+      .then((response: ResponsePayload) => {
+        if (app != null) {
+          app.appContext.config.globalProperties.$templates = response.templates
+        }
+      })
+      .catch((error: Error) => {
+        if (app != null) {
+          app.appContext.config.globalProperties.$templates = []
+        }
+        $toast.error('Error at fetching charging station templates')
+        console.error('Error at fetching charging station templates:', error)
+      })
+      .finally(() => {
+        state.value.gettingTemplates = false
+      })
+  }
 }
-
-onMounted(() => {
-  initializeWSEventListeners()
-})
-
-const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] =
-  app?.appContext.config.globalProperties.$configuration.uiServer.map(
-    (configuration: UIServerConfigurationSection, index: number) => ({
-      index,
-      configuration
-    })
-  )
-
-const $toast = useToast()
 
 const getChargingStations = (): void => {
   if (state.value.gettingChargingStations === false) {
@@ -269,6 +245,28 @@ const getChargingStations = (): void => {
       })
   }
 }
+
+const initializeWSEventListeners = () => {
+  uiClient.registerWSEventListener('open', () => {
+    getSimulatorState()
+    getTemplates()
+    getChargingStations()
+  })
+  uiClient.registerWSEventListener('error', clearChargingStations)
+  uiClient.registerWSEventListener('close', clearChargingStations)
+}
+
+onMounted(() => {
+  initializeWSEventListeners()
+})
+
+const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] =
+  app?.appContext.config.globalProperties.$configuration.uiServer.map(
+    (configuration: UIServerConfigurationSection, index: number) => ({
+      index,
+      configuration
+    })
+  )
 
 const startSimulator = (): void => {
   uiClient

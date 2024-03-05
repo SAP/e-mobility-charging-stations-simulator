@@ -121,6 +121,7 @@ const state = ref<{
 })
 
 const app = getCurrentInstance()
+
 const uiClient = app?.appContext.config.globalProperties.$uiClient
 
 const $toast = useToast()
