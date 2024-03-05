@@ -1472,7 +1472,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         create({ gzip: true }, logFiles).pipe(createWriteStream(diagnosticsArchive))
         ftpClient = new Client()
         const accessResponse = await ftpClient.access({
-          host: uri.host,
+          host: uri.hostname,
           ...(isNotEmptyString(uri.port) && { port: convertToInt(uri.port) }),
           ...(isNotEmptyString(uri.username) && { user: uri.username }),
           ...(isNotEmptyString(uri.password) && { password: uri.password })
