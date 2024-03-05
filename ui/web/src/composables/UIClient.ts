@@ -53,6 +53,14 @@ export class UIClient {
     this.ws?.addEventListener(event, listener, options)
   }
 
+  public unregisterWSEventListener<K extends keyof WebSocketEventMap>(
+    event: K,
+    listener: (event: WebSocketEventMap[K]) => void,
+    options?: boolean | AddEventListenerOptions
+  ) {
+    this.ws?.removeEventListener(event, listener, options)
+  }
+
   public async simulatorState(): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.SIMULATOR_STATE, {})
   }

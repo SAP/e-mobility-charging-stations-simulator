@@ -18,7 +18,7 @@
                     state.uiServerIndex
                   ]
                 )
-                initializeWSEventListeners()
+                registerWSEventListeners()
                 uiClient.registerWSEventListener(
                   'open',
                   () => {
@@ -41,7 +41,7 @@
                         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
                       ]
                     )
-                    initializeWSEventListeners()
+                    registerWSEventListeners()
                   },
                   { once: true }
                 )
@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, ref } from 'vue'
+import { computed, getCurrentInstance, onMounted, onUnmounted, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import type { ResponsePayload, SimulatorState, UIServerConfigurationSection } from '@/types'
@@ -246,18 +246,30 @@ const getChargingStations = (): void => {
   }
 }
 
-const initializeWSEventListeners = () => {
-  uiClient.registerWSEventListener('open', () => {
-    getSimulatorState()
-    getTemplates()
-    getChargingStations()
-  })
+const getData = (): void => {
+  getSimulatorState()
+  getTemplates()
+  getChargingStations()
+}
+
+const registerWSEventListeners = () => {
+  uiClient.registerWSEventListener('open', getData)
   uiClient.registerWSEventListener('error', clearChargingStations)
   uiClient.registerWSEventListener('close', clearChargingStations)
 }
 
+const unregisterWSEventListeners = () => {
+  uiClient.unregisterWSEventListener('open', getData)
+  uiClient.unregisterWSEventListener('error', clearChargingStations)
+  uiClient.unregisterWSEventListener('close', clearChargingStations)
+}
+
 onMounted(() => {
-  initializeWSEventListeners()
+  registerWSEventListeners()
+})
+
+onUnmounted(() => {
+  unregisterWSEventListeners()
 })
 
 const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] =
