@@ -119,7 +119,8 @@ import {
   getFromLocalStorage,
   getLocalStorage,
   randomUUID,
-  setToLocalStorage
+  setToLocalStorage,
+  useUIClient
 } from '@/composables'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 
@@ -169,7 +170,7 @@ const clearChargingStations = (): void => {
   state.value.renderChargingStations = randomUUID()
 }
 
-const uiClient = app?.appContext.config.globalProperties.$uiClient
+const uiClient = useUIClient()
 
 const $toast = useToast()
 

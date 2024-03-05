@@ -83,12 +83,12 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import Button from '@/components/buttons/Button.vue'
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
+import { useUIClient } from '@/composables'
 
 const props = defineProps<{
   chargingStation: ChargingStationData
@@ -133,7 +133,7 @@ const getWSState = (): string => {
   }
 }
 
-const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
+const uiClient = useUIClient()
 
 const $toast = useToast()
 

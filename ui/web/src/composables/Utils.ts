@@ -1,3 +1,5 @@
+import { UIClient } from './UIClient'
+
 export const convertToBoolean = (value: unknown): boolean => {
   let result = false
   if (value != null) {
@@ -52,4 +54,8 @@ export const getLocalStorage = (): Storage => {
 
 export const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
   return crypto.randomUUID()
+}
+
+export const useUIClient = (): UIClient => {
+  return UIClient.getInstance()
 }

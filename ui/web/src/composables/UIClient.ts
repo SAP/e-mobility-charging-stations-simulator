@@ -29,8 +29,11 @@ export class UIClient {
     this.responseHandlers = new Map<string, ResponseHandler>()
   }
 
-  public static getInstance(uiServerConfiguration: UIServerConfigurationSection): UIClient {
+  public static getInstance(uiServerConfiguration?: UIServerConfigurationSection): UIClient {
     if (UIClient.instance === null) {
+      if (uiServerConfiguration == null) {
+        throw new Error('Cannot initialize UIClient if no configuration is provided')
+      }
       UIClient.instance = new UIClient(uiServerConfiguration)
     }
     return UIClient.instance
