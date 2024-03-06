@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { EventEmitter } from 'node:events'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
@@ -72,6 +72,17 @@ import {
 } from '../utils/index.js'
 
 const moduleName = 'Helpers'
+
+export const buildTemplateName = (templateFile: string): string => {
+  if (isAbsolute(templateFile)) {
+    templateFile = relative(
+      resolve(join(dirname(fileURLToPath(import.meta.url)), 'assets', 'station-templates')),
+      templateFile
+    )
+  }
+  const templateFileParsedPath = parse(templateFile)
+  return join(templateFileParsedPath.dir, templateFileParsedPath.name)
+}
 
 export const getChargingStationId = (
   index: number,

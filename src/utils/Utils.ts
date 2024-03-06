@@ -1,7 +1,5 @@
 import { getRandomValues, randomBytes, randomInt, randomUUID } from 'node:crypto'
-import { dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import { env, nextTick } from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import {
   formatDuration,
@@ -207,17 +205,6 @@ export const getRandomFloatFluctuatedRounded = (
     staticValue * (1 - fluctuationRatio),
     scale
   )
-}
-
-export const buildTemplateName = (templateFile: string): string => {
-  if (isAbsolute(templateFile)) {
-    templateFile = relative(
-      resolve(join(dirname(fileURLToPath(import.meta.url)), 'assets', 'station-templates')),
-      templateFile
-    )
-  }
-  const templateFileParsedPath = parse(templateFile)
-  return join(templateFileParsedPath.dir, templateFileParsedPath.name)
 }
 
 export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[] => {

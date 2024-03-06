@@ -21,6 +21,7 @@ import {
 } from './ConfigurationKeyUtils.js'
 import {
   buildConnectorsMap,
+  buildTemplateName,
   checkChargingStation,
   checkConfiguration,
   checkConnectorsConfiguration,
@@ -131,7 +132,6 @@ import {
   buildEvsesStatus,
   buildStartedMessage,
   buildStoppedMessage,
-  buildTemplateName,
   buildUpdatedMessage,
   clone,
   convertToBoolean,

@@ -10,7 +10,7 @@ import type { Worker } from 'worker_threads'
 import chalk from 'chalk'
 import { type MessageHandler, availableParallelism } from 'poolifier'
 
-import { waitChargingStationEvents } from './Helpers.js'
+import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 import { UIServerFactory } from './ui-server/UIServerFactory.js'
 import { version } from '../../package.json'
@@ -36,7 +36,6 @@ import {
 import {
   Configuration,
   Constants,
-  buildTemplateName,
   buildTemplateStatisticsPayload,
   formatDurationMilliSeconds,
   generateUUID,
