@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { EventEmitter } from 'node:events'
-import { dirname, extname, join, parse } from 'node:path'
+import { dirname, extname, join } from 'node:path'
 import process, { exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { isMainThread } from 'node:worker_threads'
@@ -36,6 +36,7 @@ import {
 import {
   Configuration,
   Constants,
+  buildTemplateName,
   buildTemplateStatisticsPayload,
   formatDurationMilliSeconds,
   generateUUID,
@@ -208,9 +209,7 @@ export class Bootstrap extends EventEmitter {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
-            const nbStations =
-              this.templateStatistics.get(parse(stationTemplateUrl.file).name)?.configured ??
-              stationTemplateUrl.numberOfStations
+            const nbStations = stationTemplateUrl.numberOfStations
             for (let index = 1; index <= nbStations; index++) {
               await this.addChargingStation(index, stationTemplateUrl.file)
             }
@@ -495,10 +494,7 @@ export class Bootstrap extends EventEmitter {
       const stationTemplateUrls = Configuration.getStationTemplateUrls()!
       if (isNotEmptyArray(stationTemplateUrls)) {
         for (const stationTemplateUrl of stationTemplateUrls) {
-          const templateName = join(
-            parse(stationTemplateUrl.file).dir,
-            parse(stationTemplateUrl.file).name
-          )
+          const templateName = buildTemplateName(stationTemplateUrl.file)
           this.templateStatistics.set(templateName, {
             configured: stationTemplateUrl.numberOfStations,
             added: 0,
@@ -539,7 +535,7 @@ export class Bootstrap extends EventEmitter {
 
   public async addChargingStation (
     index: number,
-    stationTemplateFile: string,
+    templateFile: string,
     options?: ChargingStationOptions
   ): Promise<void> {
     await this.workerImplementation?.addElement({
@@ -548,12 +544,12 @@ export class Bootstrap extends EventEmitter {
         dirname(fileURLToPath(import.meta.url)),
         'assets',
         'station-templates',
-        stationTemplateFile
+        templateFile
       ),
       options
     })
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const templateStatistics = this.templateStatistics.get(parse(stationTemplateFile).name)!
+    const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))!
     ++templateStatistics.added
     templateStatistics.indexes.add(index)
   }

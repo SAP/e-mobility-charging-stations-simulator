@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 import { type FSWatcher, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join, parse } from 'node:path'
+import { dirname, join } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
@@ -131,6 +131,7 @@ import {
   buildEvsesStatus,
   buildStartedMessage,
   buildStoppedMessage,
+  buildTemplateName,
   buildUpdatedMessage,
   clone,
   convertToBoolean,
@@ -1163,7 +1164,7 @@ export class ChargingStation extends EventEmitter {
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
     stationInfo.templateIndex = this.index
-    stationInfo.templateName = parse(this.templateFile).name
+    stationInfo.templateName = buildTemplateName(this.templateFile)
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
@@ -1223,7 +1224,7 @@ export class ChargingStation extends EventEmitter {
         }
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (stationInfo.templateName == null) {
-          stationInfo.templateName = parse(this.templateFile).name
+          stationInfo.templateName = buildTemplateName(this.templateFile)
         }
       }
     }
