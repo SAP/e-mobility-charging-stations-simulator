@@ -43,7 +43,6 @@ import {
   handleUnhandledRejection,
   isAsyncFunction,
   isNotEmptyArray,
-  isNotEmptyString,
   logPrefix,
   logger
 } from '../utils/index.js'
@@ -496,7 +495,10 @@ export class Bootstrap extends EventEmitter {
       const stationTemplateUrls = Configuration.getStationTemplateUrls()!
       if (isNotEmptyArray(stationTemplateUrls)) {
         for (const stationTemplateUrl of stationTemplateUrls) {
-          const templateName = `${isNotEmptyString(parse(stationTemplateUrl.file).dir) ? `${parse(stationTemplateUrl.file).dir}/` : ''}${parse(stationTemplateUrl.file).name}`
+          const templateName = join(
+            parse(stationTemplateUrl.file).dir,
+            parse(stationTemplateUrl.file).name
+          )
           this.templateStatistics.set(templateName, {
             configured: stationTemplateUrl.numberOfStations,
             added: 0,
