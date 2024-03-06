@@ -1,6 +1,9 @@
 <template>
   <router-view />
-  <Container v-show="$route.path !== '/'" id="action-container">
+  <Container
+    v-show="$route.name !== 'charging-stations' && $route.name !== 'not-found'"
+    id="action-container"
+  >
     <router-view name="action" />
   </Container>
 </template>

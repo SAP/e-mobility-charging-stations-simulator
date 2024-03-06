@@ -20,7 +20,7 @@
                   () => {
                     setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
                     clearToggleButtons()
-                    $router.currentRoute.value.name !== 'charging-stations' &&
+                    $route.name !== 'charging-stations' &&
                       $router.push({ name: 'charging-stations' })
                   },
                   { once: true }
