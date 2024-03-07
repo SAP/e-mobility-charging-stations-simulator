@@ -51,6 +51,7 @@
         >
           <option
             v-for="uiServerConfiguration in uiServerConfigurations"
+            :key="uiServerConfiguration.index"
             :value="uiServerConfiguration.index"
           >
             {{
@@ -114,15 +115,11 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
-import CSTable from '@/components/charging-stations/CSTable.vue'
-import type {
-  ChargingStationData,
-  ResponsePayload,
-  SimulatorState,
-  UIServerConfigurationSection
-} from '@/types'
-import Container from '@/components/Container.vue'
+
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
+import ToggleButton from '@/components/buttons/ToggleButton.vue'
+import CSTable from '@/components/charging-stations/CSTable.vue'
+import Container from '@/components/Container.vue'
 import {
   deleteFromLocalStorage,
   getFromLocalStorage,
@@ -131,7 +128,12 @@ import {
   setToLocalStorage,
   useUIClient
 } from '@/composables'
-import ToggleButton from '@/components/buttons/ToggleButton.vue'
+import type {
+  ChargingStationData,
+  ResponsePayload,
+  SimulatorState,
+  UIServerConfigurationSection
+} from '@/types'
 
 const simulatorState = ref<SimulatorState | undefined>(undefined)
 

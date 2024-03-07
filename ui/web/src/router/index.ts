@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import ChargingStationsView from '@/views/ChargingStationsView.vue'
-import StartTransaction from '@/components/actions/StartTransaction.vue'
+
 import AddChargingStations from '@/components/actions/AddChargingStations.vue'
 import SetSupervisionUrl from '@/components/actions/SetSupervisionUrl.vue'
+import StartTransaction from '@/components/actions/StartTransaction.vue'
+import ChargingStationsView from '@/views/ChargingStationsView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
 export const router = createRouter({

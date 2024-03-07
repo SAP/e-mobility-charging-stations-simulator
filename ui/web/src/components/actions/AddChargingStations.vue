@@ -6,6 +6,7 @@
     <option
       v-for="template in $templates.value"
       v-show="Array.isArray($templates.value) && $templates.value.length > 0"
+      :key="template"
     >
       {{ template }}
     </option>
@@ -95,6 +96,7 @@
 
 <script setup lang="ts">
 import { getCurrentInstance, ref, watch } from 'vue'
+
 import Button from '@/components/buttons/Button.vue'
 import { convertToBoolean, randomUUID } from '@/composables'
 

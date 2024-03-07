@@ -42,10 +42,11 @@
 
 <script setup lang="ts">
 import { useToast } from 'vue-toast-notification'
+
 import Button from '@/components/buttons/Button.vue'
-import type { ConnectorStatus, Status } from '@/types'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import { useUIClient } from '@/composables'
+import type { ConnectorStatus, Status } from '@/types'
 
 const props = defineProps<{
   hashId: string

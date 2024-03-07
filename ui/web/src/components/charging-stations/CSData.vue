@@ -66,9 +66,9 @@
           </tr>
         </thead>
         <tbody id="connectors-table__body">
-          <!-- eslint-disable-next-line vue/valid-v-for -->
           <CSConnector
             v-for="(connector, index) in getConnectorStatuses()"
+            :key="index + 1"
             :hash-id="chargingStation.stationInfo.hashId"
             :charging-station-id="chargingStation.stationInfo.chargingStationId"
             :connector-id="index + 1"
@@ -84,11 +84,12 @@
 
 <script setup lang="ts">
 import { useToast } from 'vue-toast-notification'
-import CSConnector from '@/components/charging-stations/CSConnector.vue'
+
 import Button from '@/components/buttons/Button.vue'
-import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
+import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { useUIClient } from '@/composables'
+import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 const props = defineProps<{
   chargingStation: ChargingStationData

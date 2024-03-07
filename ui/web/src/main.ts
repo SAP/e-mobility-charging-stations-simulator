@@ -1,10 +1,12 @@
+import 'vue-toast-notification/dist/theme-bootstrap.css'
+
 import { type App as AppType, createApp, ref } from 'vue'
 import ToastPlugin from 'vue-toast-notification'
-import type { ChargingStationData, ConfigurationData, UIServerConfigurationSection } from '@/types'
-import { router } from '@/router'
-import { UIClient, getFromLocalStorage, setToLocalStorage } from '@/composables'
+
 import App from '@/App.vue'
-import 'vue-toast-notification/dist/theme-bootstrap.css'
+import { getFromLocalStorage, setToLocalStorage, UIClient } from '@/composables'
+import { router } from '@/router'
+import type { ChargingStationData, ConfigurationData, UIServerConfigurationSection } from '@/types'
 
 const app = createApp(App)
 
