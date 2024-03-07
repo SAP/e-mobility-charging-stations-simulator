@@ -44,8 +44,8 @@ export enum ConnectorPhaseRotation {
 
 export type ConfigurationKeyType = string | StandardParametersKey | VendorParametersKey
 
-export type OCPPConfigurationKey = {
+export interface OCPPConfigurationKey extends JsonObject {
   key: ConfigurationKeyType
   readonly: boolean
   value?: string
-} & JsonObject
+}

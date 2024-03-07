@@ -118,7 +118,7 @@ const state = ref<{
   enableStatistics: false
 })
 
-watch(getCurrentInstance()?.appContext.config.globalProperties.$templates, () => {
+watch(getCurrentInstance()!.appContext.config.globalProperties.$templates, () => {
   state.value.renderTemplates = randomUUID()
 })
 </script>

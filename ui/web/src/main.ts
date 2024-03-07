@@ -1,6 +1,6 @@
 import { type App as AppType, createApp, ref } from 'vue'
 import ToastPlugin from 'vue-toast-notification'
-import type { ChargingStationData, ConfigurationData } from '@/types'
+import type { ChargingStationData, ConfigurationData, UIServerConfigurationSection } from '@/types'
 import { router } from '@/router'
 import { UIClient, getFromLocalStorage, setToLocalStorage } from '@/composables'
 import App from '@/App.vue'
@@ -30,13 +30,15 @@ const initializeApp = (app: AppType, config: ConfigurationData) => {
   if (
     getFromLocalStorage<number | undefined>('uiServerConfigurationIndex', undefined) == null ||
     getFromLocalStorage<number>('uiServerConfigurationIndex', 0) >
-      app.config.globalProperties.$configuration.value.uiServer.length - 1
+      (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])
+        .length -
+        1
   ) {
     setToLocalStorage<number>('uiServerConfigurationIndex', 0)
   }
   if (app.config.globalProperties.$uiClient == null) {
     app.config.globalProperties.$uiClient = UIClient.getInstance(
-      app.config.globalProperties.$configuration.value.uiServer[
+      (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])[
         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
       ]
     )

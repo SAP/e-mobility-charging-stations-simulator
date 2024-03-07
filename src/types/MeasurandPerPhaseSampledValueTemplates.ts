@@ -1,6 +1,6 @@
 import type { SampledValue } from './ocpp/MeterValues.js'
 
-export type SampledValueTemplate = SampledValue & {
+export interface SampledValueTemplate extends SampledValue {
   fluctuationPercent?: number
   minimumValue?: number
 }

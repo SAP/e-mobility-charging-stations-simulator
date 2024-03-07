@@ -6,7 +6,7 @@ export enum IdTagDistribution {
   CONNECTOR_AFFINITY = 'connector-affinity'
 }
 
-export interface AutomaticTransactionGeneratorConfiguration {
+export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
   enable: boolean
   minDuration: number
   maxDuration: number
@@ -19,12 +19,12 @@ export interface AutomaticTransactionGeneratorConfiguration {
   idTagDistribution?: IdTagDistribution
 }
 
-export interface ChargingStationAutomaticTransactionGeneratorConfiguration {
+export interface ChargingStationAutomaticTransactionGeneratorConfiguration extends JsonObject {
   automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
   automaticTransactionGeneratorStatuses?: Status[]
 }
 
-export type ChargingStationData = {
+export interface ChargingStationData extends JsonObject {
   started: boolean
   stationInfo: ChargingStationInfo
   connectors: ConnectorStatus[]
@@ -50,7 +50,7 @@ export enum OCPP16FirmwareStatus {
   Installed = 'Installed'
 }
 
-export interface FirmwareUpgrade {
+export interface FirmwareUpgrade extends JsonObject {
   versionUpgrade?: {
     patternGroup?: number
     step?: number
@@ -74,7 +74,7 @@ export interface ChargingStationOptions extends JsonObject {
   stopTransactionsOnStopped?: boolean
 }
 
-export type ChargingStationInfo = {
+export interface ChargingStationInfo extends JsonObject {
   hashId: string
   templateIndex: number
   templateName: string
@@ -137,20 +137,20 @@ export type ChargingStationInfo = {
   messageTriggerSupport?: Record<MessageTrigger, boolean>
 }
 
-export interface ChargingStationOcppConfiguration {
+export interface ChargingStationOcppConfiguration extends JsonObject {
   configurationKey?: ConfigurationKey[]
 }
 
-export type ConfigurationKey = OCPPConfigurationKey & {
+export interface ConfigurationKey extends OCPPConfigurationKey {
   visible?: boolean
   reboot?: boolean
 }
 
-export type OCPPConfigurationKey = {
+export interface OCPPConfigurationKey extends JsonObject {
   key: string
   readonly: boolean
   value?: string
-} & JsonObject
+}
 
 export enum OCPP16IncomingRequestCommand {
   RESET = 'Reset',
@@ -216,7 +216,7 @@ export const MessageTrigger = {
 } as const
 export type MessageTrigger = OCPP16MessageTrigger
 
-type CommandsSupport = {
+interface CommandsSupport extends JsonObject {
   incomingCommands: Record<IncomingRequestCommand, boolean>
   outgoingCommands?: Record<RequestCommand, boolean>
 }
@@ -250,7 +250,7 @@ export enum AmpereUnits {
   AMPERE = 'A'
 }
 
-export type ConnectorStatus = {
+export interface ConnectorStatus extends JsonObject {
   availability: AvailabilityType
   bootStatus?: ChargePointStatus
   status?: ChargePointStatus
@@ -266,7 +266,7 @@ export type ConnectorStatus = {
   transactionEnergyActiveImportRegisterValue?: number // In Wh
 }
 
-export type EvseStatus = {
+export interface EvseStatus extends JsonObject {
   availability: AvailabilityType
   connectors?: ConnectorStatus[]
 }
@@ -291,7 +291,7 @@ export enum OCPP16ChargePointStatus {
 }
 export type ChargePointStatus = OCPP16ChargePointStatus
 
-export type Status = {
+export interface Status extends JsonObject {
   start?: boolean
   startDate?: Date
   lastRunDate?: Date

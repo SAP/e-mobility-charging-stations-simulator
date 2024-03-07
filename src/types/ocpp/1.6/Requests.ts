@@ -148,9 +148,9 @@ export enum OCPP16FirmwareStatus {
   Installed = 'Installed'
 }
 
-export type OCPP16FirmwareStatusNotificationRequest = {
+export interface OCPP16FirmwareStatusNotificationRequest extends JsonObject {
   status: OCPP16FirmwareStatus
-} & JsonObject
+}
 
 export interface GetDiagnosticsRequest extends JsonObject {
   location: string

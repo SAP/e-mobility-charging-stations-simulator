@@ -1,10 +1,10 @@
 import type { AuthenticationType, Protocol, ProtocolVersion } from './UIProtocol'
 
-export type ConfigurationData = {
+export interface ConfigurationData {
   uiServer: UIServerConfigurationSection | UIServerConfigurationSection[]
 }
 
-export type UIServerConfigurationSection = {
+export interface UIServerConfigurationSection {
   name?: string
   host: string
   port: number

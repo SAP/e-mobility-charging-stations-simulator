@@ -13,7 +13,11 @@
               if (
                 getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
               ) {
-                $uiClient.setConfiguration($configuration.value.uiServer[state.uiServerIndex])
+                $uiClient.setConfiguration(
+                  ($configuration.value.uiServer as UIServerConfigurationSection[])[
+                    state.uiServerIndex
+                  ]
+                )
                 registerWSEventListeners()
                 $uiClient.registerWSEventListener(
                   'open',
@@ -33,7 +37,7 @@
                       0
                     )
                     $uiClient.setConfiguration(
-                      $configuration.value.uiServer[
+                      ($configuration.value.uiServer as UIServerConfigurationSection[])[
                         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
                       ]
                     )
@@ -111,7 +115,12 @@
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import CSTable from '@/components/charging-stations/CSTable.vue'
-import type { ResponsePayload, SimulatorState, UIServerConfigurationSection } from '@/types'
+import type {
+  ChargingStationData,
+  ResponsePayload,
+  SimulatorState,
+  UIServerConfigurationSection
+} from '@/types'
 import Container from '@/components/Container.vue'
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import {
@@ -164,7 +173,7 @@ const clearToggleButtons = (): void => {
 
 const app = getCurrentInstance()
 
-watch(app?.appContext.config.globalProperties.$chargingStations, () => {
+watch(app!.appContext.config.globalProperties.$chargingStations, () => {
   state.value.renderChargingStations = randomUUID()
 })
 
@@ -213,7 +222,7 @@ const getTemplates = (): void => {
       .listTemplates()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$templates.value = response.templates
+          app.appContext.config.globalProperties.$templates.value = response.templates as string[]
         }
       })
       .catch((error: Error) => {
@@ -234,7 +243,8 @@ const getChargingStations = (): void => {
       .listChargingStations()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$chargingStations.value = response.chargingStations
+          app.appContext.config.globalProperties.$chargingStations.value =
+            response.chargingStations as ChargingStationData[]
         }
       })
       .catch((error: Error) => {
@@ -274,13 +284,13 @@ onUnmounted(() => {
   unregisterWSEventListeners()
 })
 
-const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] =
-  app?.appContext.config.globalProperties.$configuration.value.uiServer.map(
-    (configuration: UIServerConfigurationSection, index: number) => ({
-      index,
-      configuration
-    })
-  )
+const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] = (
+  app?.appContext.config.globalProperties.$configuration.value
+    .uiServer as UIServerConfigurationSection[]
+).map((configuration: UIServerConfigurationSection, index: number) => ({
+  index,
+  configuration
+}))
 
 const startSimulator = (): void => {
   uiClient

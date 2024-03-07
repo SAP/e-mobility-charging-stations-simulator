@@ -23,14 +23,14 @@ export type StatisticsData = Partial<{
   stdDevTimeMeasurement: number
 }>
 
-export type Statistics = {
+export interface Statistics extends WorkerData {
   id: string
   name: string
   uri: string
   createdAt: Date
   updatedAt?: Date
   statisticsData: Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
-} & WorkerData
+}
 
 export interface InternalTemplateStatistics {
   configured: number

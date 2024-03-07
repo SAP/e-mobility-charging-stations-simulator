@@ -1,10 +1,12 @@
+import type { JsonObject } from './JsonType.js'
+
 export enum IdTagDistribution {
   RANDOM = 'random',
   ROUND_ROBIN = 'round-robin',
   CONNECTOR_AFFINITY = 'connector-affinity'
 }
 
-export interface AutomaticTransactionGeneratorConfiguration {
+export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
   enable: boolean
   minDuration: number
   maxDuration: number
