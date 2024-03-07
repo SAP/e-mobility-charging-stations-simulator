@@ -6,7 +6,7 @@ import type {
   JsonType,
   MessageEvent
 } from '../../types/index.js'
-import { logPrefix, logger, validateUUID } from '../../utils/index.js'
+import { logger, logPrefix, validateUUID } from '../../utils/index.js'
 
 const moduleName = 'WorkerBroadcastChannel'
 

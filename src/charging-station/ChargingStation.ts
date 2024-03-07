@@ -2,7 +2,7 @@
 
 import { createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { type FSWatcher, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
@@ -11,58 +11,6 @@ import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
 import { mergeDeepRight } from 'rambda'
 import { type RawData, WebSocket } from 'ws'
 
-import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
-import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
-import {
-  addConfigurationKey,
-  deleteConfigurationKey,
-  getConfigurationKey,
-  setConfigurationKeyValue
-} from './ConfigurationKeyUtils.js'
-import {
-  buildConnectorsMap,
-  buildTemplateName,
-  checkChargingStation,
-  checkConfiguration,
-  checkConnectorsConfiguration,
-  checkStationInfoConnectorStatus,
-  checkTemplate,
-  createBootNotificationRequest,
-  createSerialNumber,
-  getAmperageLimitationUnitDivider,
-  getBootConnectorStatus,
-  getChargingStationConnectorChargingProfilesPowerLimit,
-  getChargingStationId,
-  getDefaultVoltageOut,
-  getHashId,
-  getIdTagsFile,
-  getMaxNumberOfEvses,
-  getNumberOfReservableConnectors,
-  getPhaseRotationValue,
-  hasFeatureProfile,
-  hasReservationExpired,
-  initializeConnectorsMapStatus,
-  propagateSerialNumber,
-  setChargingStationOptions,
-  stationTemplateToStationInfo,
-  warnTemplateKeysDeprecation
-} from './Helpers.js'
-import { IdTagsCache } from './IdTagsCache.js'
-import {
-  OCPP16IncomingRequestService,
-  OCPP16RequestService,
-  OCPP16ResponseService,
-  OCPP20IncomingRequestService,
-  OCPP20RequestService,
-  OCPP20ResponseService,
-  type OCPPIncomingRequestService,
-  type OCPPRequestService,
-  buildMeterValue,
-  buildTransactionEndMeterValue,
-  getMessageTypeString,
-  sendAndSetConnectorStatus
-} from './ocpp/index.js'
-import { SharedLRUCache } from './SharedLRUCache.js'
 import { BaseError, OCPPError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
@@ -114,17 +62,14 @@ import {
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
   type Voltage,
-  type WSError,
   WebSocketCloseEventStatusCode,
+  type WSError,
   type WsOptions
 } from '../types/index.js'
 import {
   ACElectricUtils,
   AsyncLock,
   AsyncLockType,
-  Configuration,
-  Constants,
-  DCElectricUtils,
   buildAddedMessage,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
@@ -134,9 +79,12 @@ import {
   buildStoppedMessage,
   buildUpdatedMessage,
   clone,
+  Configuration,
+  Constants,
   convertToBoolean,
   convertToDate,
   convertToInt,
+  DCElectricUtils,
   exponentialDelay,
   formatDurationMilliSeconds,
   formatDurationSeconds,
@@ -145,8 +93,8 @@ import {
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
-  logPrefix,
   logger,
+  logPrefix,
   min,
   once,
   roundTo,
@@ -154,6 +102,58 @@ import {
   sleep,
   watchJsonFile
 } from '../utils/index.js'
+import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
+import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
+import {
+  addConfigurationKey,
+  deleteConfigurationKey,
+  getConfigurationKey,
+  setConfigurationKeyValue
+} from './ConfigurationKeyUtils.js'
+import {
+  buildConnectorsMap,
+  buildTemplateName,
+  checkChargingStation,
+  checkConfiguration,
+  checkConnectorsConfiguration,
+  checkStationInfoConnectorStatus,
+  checkTemplate,
+  createBootNotificationRequest,
+  createSerialNumber,
+  getAmperageLimitationUnitDivider,
+  getBootConnectorStatus,
+  getChargingStationConnectorChargingProfilesPowerLimit,
+  getChargingStationId,
+  getDefaultVoltageOut,
+  getHashId,
+  getIdTagsFile,
+  getMaxNumberOfEvses,
+  getNumberOfReservableConnectors,
+  getPhaseRotationValue,
+  hasFeatureProfile,
+  hasReservationExpired,
+  initializeConnectorsMapStatus,
+  propagateSerialNumber,
+  setChargingStationOptions,
+  stationTemplateToStationInfo,
+  warnTemplateKeysDeprecation
+} from './Helpers.js'
+import { IdTagsCache } from './IdTagsCache.js'
+import {
+  buildMeterValue,
+  buildTransactionEndMeterValue,
+  getMessageTypeString,
+  OCPP16IncomingRequestService,
+  OCPP16RequestService,
+  OCPP16ResponseService,
+  OCPP20IncomingRequestService,
+  OCPP20RequestService,
+  OCPP20ResponseService,
+  type OCPPIncomingRequestService,
+  type OCPPRequestService,
+  sendAndSetConnectorStatus
+} from './ocpp/index.js'
+import { SharedLRUCache } from './SharedLRUCache.js'
 
 export class ChargingStation extends EventEmitter {
   public readonly index: number

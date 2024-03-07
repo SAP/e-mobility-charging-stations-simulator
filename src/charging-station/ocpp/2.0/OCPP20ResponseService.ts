@@ -2,8 +2,7 @@
 
 import type { ValidateFunction } from 'ajv'
 
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
-import { type ChargingStation, addConfigurationKey } from '../../../charging-station/index.js'
+import { addConfigurationKey, type ChargingStation } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   ErrorType,
@@ -21,6 +20,7 @@ import {
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20ResponseService'
 

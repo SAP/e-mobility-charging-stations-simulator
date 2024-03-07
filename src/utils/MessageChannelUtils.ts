@@ -1,10 +1,3 @@
-import {
-  OutputFormat,
-  buildChargingStationAutomaticTransactionGeneratorConfiguration,
-  buildConnectorsStatus,
-  buildEvsesStatus
-} from './ChargingStationConfigurationUtils.js'
-import { clone } from './Utils.js'
 import type { ChargingStation } from '../charging-station/index.js'
 import {
   type ChargingStationData,
@@ -14,6 +7,13 @@ import {
   type Statistics,
   type TemplateStatistics
 } from '../types/index.js'
+import {
+  buildChargingStationAutomaticTransactionGeneratorConfiguration,
+  buildConnectorsStatus,
+  buildEvsesStatus,
+  OutputFormat
+} from './ChargingStationConfigurationUtils.js'
+import { clone } from './Utils.js'
 
 export const buildAddedMessage = (
   chargingStation: ChargingStation

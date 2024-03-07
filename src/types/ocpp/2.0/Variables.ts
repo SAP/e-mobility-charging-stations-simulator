@@ -1,5 +1,5 @@
-import type { EVSEType, StatusInfoType } from './Common.js'
 import type { JsonObject } from '../../JsonType.js'
+import type { EVSEType, StatusInfoType } from './Common.js'
 
 enum OCPP20ComponentName {
   AlignedDataCtrlr = 'AlignedDataCtrlr',

@@ -1,12 +1,12 @@
+import type { EmptyObject } from '../../EmptyObject.js'
+import type { JsonObject } from '../../JsonType.js'
+import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
   GenericStatusEnumType,
   InstallCertificateStatusEnumType,
   StatusInfoType
 } from './Common.js'
 import type { OCPP20SetVariableResultType } from './Variables.js'
-import type { EmptyObject } from '../../EmptyObject.js'
-import type { JsonObject } from '../../JsonType.js'
-import type { RegistrationStatusEnumType } from '../Common.js'
 
 export interface OCPP20BootNotificationResponse extends JsonObject {
   currentTime: Date

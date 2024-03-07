@@ -1,5 +1,6 @@
 import type { WebSocket } from 'ws'
 
+import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js'
 import { ChargingStationEvents } from './ChargingStationEvents.js'
 import type { ChargingStationInfo } from './ChargingStationInfo.js'
@@ -9,7 +10,6 @@ import type { EvseStatus } from './Evse.js'
 import type { JsonObject } from './JsonType.js'
 import type { BootNotificationResponse } from './ocpp/Responses.js'
 import type { Statistics } from './Statistics.js'
-import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 
 export interface ChargingStationOptions extends JsonObject {
   supervisionUrls?: string | string[]

@@ -1,3 +1,5 @@
+import type { EmptyObject } from '../../EmptyObject.js'
+import type { JsonObject } from '../../JsonType.js'
 import type { OCPP16ChargePointErrorCode } from './ChargePointErrorCode.js'
 import type { OCPP16ChargePointStatus } from './ChargePointStatus.js'
 import type {
@@ -7,8 +9,6 @@ import type {
 } from './ChargingProfile.js'
 import type { OCPP16StandardParametersKey, OCPP16VendorParametersKey } from './Configuration.js'
 import type { OCPP16DiagnosticsStatus } from './DiagnosticsStatus.js'
-import type { EmptyObject } from '../../EmptyObject.js'
-import type { JsonObject } from '../../JsonType.js'
 
 export enum OCPP16RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',

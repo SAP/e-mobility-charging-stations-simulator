@@ -13,13 +13,13 @@ import {
   secondsToMilliseconds
 } from 'date-fns'
 
-import { Constants } from './Constants.js'
 import {
   type EmptyObject,
   type ProtocolResponse,
   type TimestampedData,
   WebSocketCloseEventStatusString
 } from '../types/index.js'
+import { Constants } from './Constants.js'
 
 export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`

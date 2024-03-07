@@ -3,9 +3,9 @@ import { createLogger, format, type transport } from 'winston'
 import TransportType from 'winston/lib/winston/transports/index.js'
 import DailyRotateFile from 'winston-daily-rotate-file'
 
+import { ConfigurationSection, type LogConfiguration } from '../types/index.js'
 import { Configuration } from './Configuration.js'
 import { insertAt } from './Utils.js'
-import { ConfigurationSection, type LogConfiguration } from '../types/index.js'
 
 const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
   ConfigurationSection.log

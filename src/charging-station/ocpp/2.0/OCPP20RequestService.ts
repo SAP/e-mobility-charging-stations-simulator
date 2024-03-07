@@ -2,8 +2,6 @@
 
 import type { ValidateFunction } from 'ajv'
 
-import { OCPP20Constants } from './OCPP20Constants.js'
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import type { ChargingStation } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -20,6 +18,8 @@ import {
 import { generateUUID } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
+import { OCPP20Constants } from './OCPP20Constants.js'
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20RequestService'
 

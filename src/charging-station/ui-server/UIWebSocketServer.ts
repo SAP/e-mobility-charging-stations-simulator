@@ -4,12 +4,6 @@ import type { Duplex } from 'node:stream'
 import { StatusCodes } from 'http-status-codes'
 import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
-import { AbstractUIServer } from './AbstractUIServer.js'
-import {
-  getProtocolAndVersion,
-  handleProtocols,
-  isProtocolAndVersionSupported
-} from './UIServerUtils.js'
 import {
   type ProtocolRequest,
   type ProtocolResponse,
@@ -18,13 +12,19 @@ import {
 } from '../../types/index.js'
 import {
   Constants,
-  JSONStringifyWithMapSupport,
   getWebSocketCloseEventStatusString,
   isNotEmptyString,
-  logPrefix,
+  JSONStringifyWithMapSupport,
   logger,
+  logPrefix,
   validateUUID
 } from '../../utils/index.js'
+import { AbstractUIServer } from './AbstractUIServer.js'
+import {
+  getProtocolAndVersion,
+  handleProtocols,
+  isProtocolAndVersionSupported
+} from './UIServerUtils.js'
 
 const moduleName = 'UIWebSocketServer'
 

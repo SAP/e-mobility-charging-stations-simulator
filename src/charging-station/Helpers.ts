@@ -6,13 +6,13 @@ import { fileURLToPath } from 'node:url'
 
 import chalk from 'chalk'
 import {
-  type Interval,
   addDays,
   addSeconds,
   addWeeks,
   differenceInDays,
   differenceInSeconds,
   differenceInWeeks,
+  type Interval,
   isAfter,
   isBefore,
   isDate,
@@ -22,8 +22,6 @@ import {
 } from 'date-fns'
 import { maxTime } from 'date-fns/constants'
 
-import type { ChargingStation } from './ChargingStation.js'
-import { getConfigurationKey } from './ConfigurationKeyUtils.js'
 import { BaseError } from '../exception/index.js'
 import {
   AmpereUnits,
@@ -56,11 +54,11 @@ import {
 } from '../types/index.js'
 import {
   ACElectricUtils,
-  Constants,
-  DCElectricUtils,
   clone,
+  Constants,
   convertToDate,
   convertToInt,
+  DCElectricUtils,
   isArraySorted,
   isEmptyObject,
   isEmptyString,
@@ -70,6 +68,8 @@ import {
   logger,
   secureRandom
 } from '../utils/index.js'
+import type { ChargingStation } from './ChargingStation.js'
+import { getConfigurationKey } from './ConfigurationKeyUtils.js'
 
 const moduleName = 'Helpers'
 

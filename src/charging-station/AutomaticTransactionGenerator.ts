@@ -2,10 +2,6 @@
 
 import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns'
 
-import type { ChargingStation } from './ChargingStation.js'
-import { checkChargingStation } from './Helpers.js'
-import { IdTagsCache } from './IdTagsCache.js'
-import { isIdTagAuthorized } from './ocpp/index.js'
 import { BaseError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
@@ -18,17 +14,21 @@ import {
   type StopTransactionResponse
 } from '../types/index.js'
 import {
-  Constants,
   clone,
+  Constants,
   convertToDate,
   formatDurationMilliSeconds,
   getRandomInteger,
   isValidDate,
-  logPrefix,
   logger,
+  logPrefix,
   secureRandom,
   sleep
 } from '../utils/index.js'
+import type { ChargingStation } from './ChargingStation.js'
+import { checkChargingStation } from './Helpers.js'
+import { IdTagsCache } from './IdTagsCache.js'
+import { isIdTagAuthorized } from './ocpp/index.js'
 
 export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<

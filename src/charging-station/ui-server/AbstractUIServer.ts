@@ -1,11 +1,8 @@
 import { type IncomingMessage, Server, type ServerResponse } from 'node:http'
-import { type Http2Server, createServer } from 'node:http2'
+import { createServer, type Http2Server } from 'node:http2'
 
 import type { WebSocket } from 'ws'
 
-import type { AbstractUIService } from './ui-services/AbstractUIService.js'
-import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
-import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
@@ -20,6 +17,9 @@ import {
   type UIServerConfiguration
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
+import type { AbstractUIService } from './ui-services/AbstractUIService.js'
+import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
+import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
 const moduleName = 'AbstractUIServer'
 

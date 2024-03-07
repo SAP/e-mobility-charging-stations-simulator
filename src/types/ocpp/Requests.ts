@@ -1,3 +1,6 @@
+import type { ChargingStation } from '../../charging-station/index.js'
+import type { OCPPError } from '../../exception/index.js'
+import type { JsonType } from '../JsonType.js'
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus.js'
 import type { OCPP16MeterValuesRequest } from './1.6/MeterValues.js'
 import {
@@ -23,9 +26,6 @@ import {
   type OCPP20StatusNotificationRequest
 } from './2.0/Requests.js'
 import type { MessageType } from './MessageType.js'
-import type { ChargingStation } from '../../charging-station/index.js'
-import type { OCPPError } from '../../exception/index.js'
-import type { JsonType } from '../JsonType.js'
 
 export const RequestCommand = {
   ...OCPP16RequestCommand,

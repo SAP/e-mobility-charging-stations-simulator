@@ -7,16 +7,6 @@ import chalk from 'chalk'
 import { mergeDeepRight } from 'rambda'
 
 import {
-  buildPerformanceUriFilePath,
-  checkWorkerElementsPerWorker,
-  checkWorkerProcessType,
-  getDefaultPerformanceStorageUri,
-  handleFileException,
-  logPrefix
-} from './ConfigurationUtils.js'
-import { Constants } from './Constants.js'
-import { hasOwnProp, isCFEnvironment, once } from './Utils.js'
-import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
   type ConfigurationData,
@@ -37,6 +27,16 @@ import {
   DEFAULT_WORKER_START_DELAY,
   WorkerProcessType
 } from '../worker/index.js'
+import {
+  buildPerformanceUriFilePath,
+  checkWorkerElementsPerWorker,
+  checkWorkerProcessType,
+  getDefaultPerformanceStorageUri,
+  handleFileException,
+  logPrefix
+} from './ConfigurationUtils.js'
+import { Constants } from './Constants.js'
+import { hasOwnProp, isCFEnvironment, once } from './Utils.js'
 
 type ConfigurationSectionType =
   | LogConfiguration

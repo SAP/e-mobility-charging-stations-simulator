@@ -1,9 +1,5 @@
 import chalk from 'chalk'
 
-import type { AbstractUIServer } from './AbstractUIServer.js'
-import { UIHttpServer } from './UIHttpServer.js'
-import { isLoopback } from './UIServerUtils.js'
-import { UIWebSocketServer } from './UIWebSocketServer.js'
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocol,
@@ -11,6 +7,10 @@ import {
   AuthenticationType,
   type UIServerConfiguration
 } from '../../types/index.js'
+import type { AbstractUIServer } from './AbstractUIServer.js'
+import { UIHttpServer } from './UIHttpServer.js'
+import { isLoopback } from './UIServerUtils.js'
+import { UIWebSocketServer } from './UIWebSocketServer.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServerFactory {

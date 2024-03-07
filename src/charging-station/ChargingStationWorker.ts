@@ -4,7 +4,6 @@ import { parentPort } from 'node:worker_threads'
 
 import { ThreadWorker } from 'poolifier'
 
-import { ChargingStation } from './ChargingStation.js'
 import { BaseError } from '../exception/index.js'
 import type {
   ChargingStationData,
@@ -12,8 +11,9 @@ import type {
   ChargingStationWorkerEventError,
   ChargingStationWorkerMessage
 } from '../types/index.js'
-import { Configuration, buildChargingStationDataPayload } from '../utils/index.js'
+import { buildChargingStationDataPayload, Configuration } from '../utils/index.js'
 import { type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
+import { ChargingStation } from './ChargingStation.js'
 
 export let chargingStationWorker: object
 if (Configuration.workerPoolInUse()) {

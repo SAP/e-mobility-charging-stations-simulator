@@ -8,10 +8,10 @@ module.exports = defineConfig({
     node: true
   },
   parserOptions: {
-    ecmaVersion: 2022,
-    sourceType: 'module'
+    sourceType: 'module',
+    ecmaVersion: 2022
   },
-  plugins: ['import'],
+  plugins: ['simple-import-sort', 'import'],
   extends: ['eslint:recommended', 'plugin:import/recommended'],
   settings: {
     'import/resolver': {
@@ -21,36 +21,38 @@ module.exports = defineConfig({
     }
   },
   rules: {
-    'sort-imports': [
-      'error',
-      {
-        ignoreCase: false,
-        ignoreDeclarationSort: true,
-        ignoreMemberSort: false,
-        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-        allowSeparatedGroups: true
-      }
-    ],
-    'import/order': [
-      'error',
-      {
-        groups: [
-          'builtin', // Built-in imports (come from NodeJS native) go first
-          'external', // <- External imports
-          'internal', // <- Absolute imports
-          ['sibling', 'parent'], // <- Relative imports, the sibling and parent types they can be mingled together
-          'index', // <- Index imports
-          'unknown' // <- Unknown
-        ],
-        'newlines-between': 'always',
-        alphabetize: {
-          /* Sort in ascending order. Options: ["ignore", "asc", "desc"] */
-          order: 'asc',
-          /* Ignore case. Options: [true, false] */
-          caseInsensitive: true
-        }
-      }
-    ]
+    'simple-import-sort/imports': 'error',
+    'simple-import-sort/exports': 'error'
+    // 'sort-imports': [
+    //   'error',
+    //   {
+    //     ignoreCase: false,
+    //     ignoreDeclarationSort: true,
+    //     ignoreMemberSort: false,
+    //     memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+    //     allowSeparatedGroups: true
+    //   }
+    // ],
+    // 'import/order': [
+    //   'error',
+    //   {
+    //     groups: [
+    //       'builtin', // Built-in imports (come from NodeJS native) go first
+    //       'external', // <- External imports
+    //       'internal', // <- Absolute imports
+    //       ['sibling', 'parent'], // <- Relative imports, the sibling and parent types they can be mingled together
+    //       'index', // <- Index imports
+    //       'unknown' // <- Unknown
+    //     ],
+    //     'newlines-between': 'always',
+    //     alphabetize: {
+    //       /* Sort in ascending order. Options: ["ignore", "asc", "desc"] */
+    //       order: 'asc',
+    //       /* Ignore case. Options: [true, false] */
+    //       caseInsensitive: true
+    //     }
+    //   }
+    // ]
   },
   overrides: [
     {

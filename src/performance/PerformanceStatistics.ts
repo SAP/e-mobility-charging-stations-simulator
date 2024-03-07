@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import { type PerformanceEntry, PerformanceObserver, performance } from 'node:perf_hooks'
+import { performance, type PerformanceEntry, PerformanceObserver } from 'node:perf_hooks'
 import type { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
@@ -19,17 +19,17 @@ import {
   type TimestampedData
 } from '../types/index.js'
 import {
+  average,
+  buildPerformanceStatisticsMessage,
   CircularArray,
   Configuration,
   Constants,
-  JSONStringifyWithMapSupport,
-  average,
-  buildPerformanceStatisticsMessage,
   extractTimeSeriesValues,
   formatDurationSeconds,
   generateUUID,
-  logPrefix,
+  JSONStringifyWithMapSupport,
   logger,
+  logPrefix,
   max,
   median,
   min,

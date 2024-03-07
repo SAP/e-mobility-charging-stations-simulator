@@ -3,8 +3,6 @@ import { EventEmitter } from 'node:events'
 import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 
-import { OCPPConstants } from './OCPPConstants.js'
-import { OCPPServiceUtils } from './OCPPServiceUtils.js'
 import { type ChargingStation, getIdTagsFile } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import type {
@@ -15,6 +13,8 @@ import type {
   OCPPVersion
 } from '../../types/index.js'
 import { logger, setDefaultErrorParams } from '../../utils/index.js'
+import { OCPPConstants } from './OCPPConstants.js'
+import { OCPPServiceUtils } from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default

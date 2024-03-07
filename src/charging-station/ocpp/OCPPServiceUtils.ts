@@ -5,9 +5,6 @@ import { fileURLToPath } from 'node:url'
 import type { DefinedError, ErrorObject, JSONSchemaType } from 'ajv'
 import { isDate } from 'date-fns'
 
-import { OCPP16Constants } from './1.6/OCPP16Constants.js'
-import { OCPP20Constants } from './2.0/OCPP20Constants.js'
-import { OCPPConstants } from './OCPPConstants.js'
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -51,21 +48,24 @@ import {
 import {
   ACElectricUtils,
   Constants,
-  DCElectricUtils,
   convertToFloat,
   convertToInt,
+  DCElectricUtils,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   getRandomInteger,
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
-  logPrefix,
   logger,
+  logPrefix,
   max,
   min,
   roundTo
 } from '../../utils/index.js'
+import { OCPP16Constants } from './1.6/OCPP16Constants.js'
+import { OCPP20Constants } from './2.0/OCPP20Constants.js'
+import { OCPPConstants } from './OCPPConstants.js'
 
 export const getMessageTypeString = (messageType: MessageType | undefined): string => {
   switch (messageType) {

@@ -2,10 +2,10 @@
 
 import { MongoClient } from 'mongodb'
 
-import { Storage } from './Storage.js'
 import { BaseError } from '../../exception/index.js'
 import { type Statistics, StorageType } from '../../types/index.js'
 import { Constants } from '../../utils/index.js'
+import { Storage } from './Storage.js'
 
 export class MongoDBStorage extends Storage {
   private readonly client?: MongoClient

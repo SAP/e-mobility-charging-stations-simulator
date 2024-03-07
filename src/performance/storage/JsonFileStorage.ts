@@ -3,15 +3,15 @@
 import { closeSync, existsSync, mkdirSync, openSync, writeSync } from 'node:fs'
 import { dirname } from 'node:path'
 
-import { Storage } from './Storage.js'
 import { BaseError } from '../../exception/index.js'
 import { FileType, type Statistics } from '../../types/index.js'
 import {
   AsyncLock,
   AsyncLockType,
-  JSONStringifyWithMapSupport,
-  handleFileException
+  handleFileException,
+  JSONStringifyWithMapSupport
 } from '../../utils/index.js'
+import { Storage } from './Storage.js'
 
 export class JsonFileStorage extends Storage {
   private fd?: number

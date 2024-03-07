@@ -3,9 +3,9 @@ import type { ResourceLimits } from 'node:worker_threads'
 
 import type { WorkerChoiceStrategy } from 'poolifier'
 
+import type { WorkerProcessType } from '../worker/index.js'
 import type { StorageType } from './Storage.js'
 import type { ApplicationProtocol, AuthenticationType } from './UIProtocol.js'
-import type { WorkerProcessType } from '../worker/index.js'
 
 type ServerOptions = ListenOptions
 

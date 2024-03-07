@@ -5,14 +5,11 @@ import { dirname, extname, join } from 'node:path'
 import process, { exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { isMainThread } from 'node:worker_threads'
-import type { Worker } from 'worker_threads'
 
 import chalk from 'chalk'
-import { type MessageHandler, availableParallelism } from 'poolifier'
+import { availableParallelism, type MessageHandler } from 'poolifier'
+import type { Worker } from 'worker_threads'
 
-import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
-import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
-import { UIServerFactory } from './ui-server/UIServerFactory.js'
 import { version } from '../../package.json'
 import { BaseError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
@@ -34,19 +31,22 @@ import {
   type WorkerConfiguration
 } from '../types/index.js'
 import {
+  buildTemplateStatisticsPayload,
   Configuration,
   Constants,
-  buildTemplateStatisticsPayload,
   formatDurationMilliSeconds,
   generateUUID,
   handleUncaughtException,
   handleUnhandledRejection,
   isAsyncFunction,
   isNotEmptyArray,
-  logPrefix,
-  logger
+  logger,
+  logPrefix
 } from '../utils/index.js'
 import { type WorkerAbstract, WorkerFactory } from '../worker/index.js'
+import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
+import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
+import { UIServerFactory } from './ui-server/UIServerFactory.js'
 
 const moduleName = 'Bootstrap'
 
