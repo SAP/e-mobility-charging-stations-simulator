@@ -539,10 +539,10 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure'  
+   `status`: 'success' | 'failure',  
    `state`: {  
-   `version`: string  
-   `started`: boolean  
+   `version`: string,  
+   `started`: boolean,  
    `templateStatistics`: Record<string, TemplateStatistics>  
    }  
   }
@@ -646,7 +646,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure'  
+   `status`: 'success' | 'failure',  
    `performanceStatistics`: Statistics[]  
   }
 
