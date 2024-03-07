@@ -9,7 +9,7 @@ module.exports = defineConfig({
     node: true
   },
 
-  plugins: ['simple-import-sort', 'import'],
+  plugins: ['simple-import-sort'],
 
   extends: [
     'eslint:recommended',

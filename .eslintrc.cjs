@@ -11,7 +11,7 @@ module.exports = defineConfig({
     sourceType: 'module',
     ecmaVersion: 2022
   },
-  plugins: ['simple-import-sort', 'import'],
+  plugins: ['simple-import-sort'],
   extends: ['eslint:recommended', 'plugin:import/recommended'],
   settings: {
     'import/resolver': {
