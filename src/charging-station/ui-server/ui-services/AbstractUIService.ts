@@ -242,6 +242,19 @@ export abstract class AbstractUIService {
       numberOfStations: number
       options?: ChargingStationOptions
     }
+    if (!Bootstrap.getInstance().getState().started) {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage:
+          'Cannot add charging station(s) while the charging stations simulator is not started'
+      } satisfies ResponsePayload
+    }
+    if (typeof template !== 'string' || typeof numberOfStations !== 'number') {
+      return {
+        status: ResponseStatus.FAILURE,
+        errorMessage: 'Invalid request payload'
+      } satisfies ResponsePayload
+    }
     if (!this.uiServer.chargingStationTemplates.has(template)) {
       return {
         status: ResponseStatus.FAILURE,
