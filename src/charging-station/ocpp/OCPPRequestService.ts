@@ -303,7 +303,7 @@ export abstract class OCPPRequestService {
         }
 
         const handleSendError = (ocppError: OCPPError): void => {
-          if (params?.skipBufferingOnError === false) {
+          if (params.skipBufferingOnError === false) {
             // Buffer
             chargingStation.bufferMessage(messageToSend)
             if (messageType === MessageType.CALL_MESSAGE) {
@@ -317,7 +317,7 @@ export abstract class OCPPRequestService {
               )
             }
           } else if (
-            params?.skipBufferingOnError === true &&
+            params.skipBufferingOnError === true &&
             messageType === MessageType.CALL_MESSAGE
           ) {
             // Remove request from the cache
@@ -346,7 +346,7 @@ export abstract class OCPPRequestService {
                 `Timeout ${formatDurationMilliSeconds(
                   OCPPConstants.OCPP_WEBSOCKET_TIMEOUT
                 )} reached for ${
-                  params?.skipBufferingOnError === false ? '' : 'non '
+                  params.skipBufferingOnError === false ? '' : 'non '
                 }buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
                 (messagePayload as OCPPError).details
@@ -380,7 +380,7 @@ export abstract class OCPPRequestService {
                 new OCPPError(
                   ErrorType.GENERIC_ERROR,
                   `WebSocket errored for ${
-                    params?.skipBufferingOnError === false ? '' : 'non '
+                    params.skipBufferingOnError === false ? '' : 'non '
                   }buffered message id '${messageId}' with content '${messageToSend}'`,
                   commandName,
                   { name: error.name, message: error.message, stack: error.stack }
@@ -393,7 +393,7 @@ export abstract class OCPPRequestService {
             new OCPPError(
               ErrorType.GENERIC_ERROR,
               `WebSocket closed for ${
-                params?.skipBufferingOnError === false ? '' : 'non '
+                params.skipBufferingOnError === false ? '' : 'non '
               }buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
               (messagePayload as OCPPError).details
