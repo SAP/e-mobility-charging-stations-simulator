@@ -23,36 +23,6 @@ module.exports = defineConfig({
   rules: {
     'simple-import-sort/imports': 'error',
     'simple-import-sort/exports': 'error'
-    // 'sort-imports': [
-    //   'error',
-    //   {
-    //     ignoreCase: false,
-    //     ignoreDeclarationSort: true,
-    //     ignoreMemberSort: false,
-    //     memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-    //     allowSeparatedGroups: true
-    //   }
-    // ],
-    // 'import/order': [
-    //   'error',
-    //   {
-    //     groups: [
-    //       'builtin', // Built-in imports (come from NodeJS native) go first
-    //       'external', // <- External imports
-    //       'internal', // <- Absolute imports
-    //       ['sibling', 'parent'], // <- Relative imports, the sibling and parent types they can be mingled together
-    //       'index', // <- Index imports
-    //       'unknown' // <- Unknown
-    //     ],
-    //     'newlines-between': 'always',
-    //     alphabetize: {
-    //       /* Sort in ascending order. Options: ["ignore", "asc", "desc"] */
-    //       order: 'asc',
-    //       /* Ignore case. Options: [true, false] */
-    //       caseInsensitive: true
-    //     }
-    //   }
-    // ]
   },
   overrides: [
     {
