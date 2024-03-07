@@ -537,6 +537,11 @@ export class Bootstrap extends EventEmitter {
     templateFile: string,
     options?: ChargingStationOptions
   ): Promise<void> {
+    if (!this.started && !this.starting) {
+      throw new BaseError(
+        'Cannot add a charging station while charging stations simulator is not started'
+      )
+    }
     await this.workerImplementation?.addElement({
       index,
       templateFile: join(

@@ -1,7 +1,7 @@
 <template>
   <h1 id="action">Add Charging Stations</h1>
   <p>Template:</p>
-  <select v-model="state.template">
+  <select :key="state.renderTemplates" v-model="state.template">
     <option disabled value="">Please select a template</option>
     <option
       v-for="template in $templates.value"
@@ -94,11 +94,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { getCurrentInstance, ref, watch } from 'vue'
 import Button from '@/components/buttons/Button.vue'
-import { convertToBoolean } from '@/composables'
+import { convertToBoolean, randomUUID } from '@/composables'
 
 const state = ref<{
+  renderTemplates: `${string}-${string}-${string}-${string}-${string}`
   template: string
   numberOfStations: number
   supervisionUrl: string
@@ -107,6 +108,7 @@ const state = ref<{
   ocppStrictCompliance: boolean
   enableStatistics: boolean
 }>({
+  renderTemplates: randomUUID(),
   template: '',
   numberOfStations: 1,
   supervisionUrl: '',
@@ -114,6 +116,10 @@ const state = ref<{
   persistentConfiguration: true,
   ocppStrictCompliance: true,
   enableStatistics: false
+})
+
+watch(getCurrentInstance()?.appContext.config.globalProperties.$templates, () => {
+  state.value.renderTemplates = randomUUID()
 })
 </script>
 
