@@ -531,6 +531,22 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 ##### Procedures
 
+###### Simulator State
+
+- Request:  
+  `ProcedureName`: 'simulatorState'  
+  `PDU`: {}
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure'  
+   `state`: {  
+   `version`: string  
+   `started`: boolean  
+   `templateStatistics`: Record<string, TemplateStatistics>  
+   }  
+  }
+
 ###### Start Simulator
 
 - Request:  
