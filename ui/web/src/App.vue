@@ -27,12 +27,16 @@ import Container from '@/components/Container.vue'
 
 #action-container {
   min-width: max-content;
+  height: fit-content;
   display: flex;
+  position: sticky;
+  top: 0.008%;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  margin: 0.4%;
+  margin-right: 0.2%;
+  margin-left: 0.2%;
   padding: 0.4%;
   border: solid black;
 }
