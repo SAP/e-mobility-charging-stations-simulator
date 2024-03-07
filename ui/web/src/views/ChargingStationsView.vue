@@ -353,6 +353,8 @@ const stopSimulator = (): void => {
 #buttons-container {
   display: flex;
   flex-direction: row;
+  position: sticky;
+  top: 0;
 }
 
 .simulator-start-button {
