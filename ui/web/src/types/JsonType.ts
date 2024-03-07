@@ -1,3 +1,3 @@
-export type JsonType = JsonPrimitive | JsonType[] | JsonObject
+type JsonPrimitive = string | number | boolean | Date | null
 export type JsonObject = { [key in string]?: JsonType }
-export type JsonPrimitive = string | number | boolean | Date | null
+export type JsonType = JsonPrimitive | JsonType[] | JsonObject
