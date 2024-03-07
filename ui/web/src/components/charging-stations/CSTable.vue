@@ -48,6 +48,7 @@ const $emit = defineEmits(['need-refresh'])
   display: flex;
   flex-direction: column;
   overflow: auto hidden;
+  border: solid 0.25px black;
   border-collapse: collapse;
   empty-cells: show;
 }

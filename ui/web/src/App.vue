@@ -38,7 +38,7 @@ import Container from '@/components/Container.vue'
   margin-right: 0.2%;
   margin-left: 0.2%;
   padding: 0.4%;
-  border: solid black;
+  border: solid 0.25px black;
 }
 
 body {
