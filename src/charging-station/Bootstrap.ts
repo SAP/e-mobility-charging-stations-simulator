@@ -539,7 +539,7 @@ export class Bootstrap extends EventEmitter {
   ): Promise<void> {
     if (!this.started && !this.starting) {
       throw new BaseError(
-        'Cannot add charging station while charging stations simulator is not started'
+        'Cannot add charging station while the charging stations simulator is not started'
       )
     }
     await this.workerImplementation?.addElement({
