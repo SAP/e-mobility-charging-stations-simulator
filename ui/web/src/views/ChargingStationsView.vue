@@ -382,7 +382,7 @@ const stopSimulator = (): void => {
 #reload-button {
   color: ivory;
   background-color: blue;
-  font-size: 2rem;
+  font-size: 1.5rem;
 }
 
 #reload-button:hover {
