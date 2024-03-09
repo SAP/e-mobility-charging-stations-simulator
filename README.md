@@ -96,7 +96,7 @@ Tweak them to your needs by following the section [configuration files syntax](.
 
 ## Start simulator
 
-To start the program, run: `pnpm start`.
+Run: `pnpm start`.
 
 ## Start Web UI
 
