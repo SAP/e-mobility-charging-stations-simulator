@@ -18,7 +18,7 @@
     - [GNU/Linux](#gnulinux)
   - [Dependencies](#dependencies)
 - [Initial configuration](#initial-configuration)
-- [Start](#start)
+- [Start simulator](#start-simulator)
 - [Start Web UI](#start-web-ui)
 - [Configuration files syntax](#configuration-files-syntax)
   - [Charging stations simulator configuration](#charging-stations-simulator-configuration)
@@ -90,7 +90,7 @@ Copy the RFID tags template file [src/assets/idtags-template.json](./src/assets/
 
 Tweak them to your needs by following the section [configuration files syntax](./README.md#configuration-files-syntax): OCPP server supervision URL(s), charging station templates, etc.
 
-## Start
+## Start simulator
 
 To start the program, run: `pnpm start`.
 
@@ -100,7 +100,7 @@ See Web UI [README.md](./ui/web/README.md) for more information.
 
 ## Configuration files syntax
 
-All configuration files are in the JSON standard format.
+All configuration files are using the JSON standard syntax.
 
 **Configuration files locations**:
 
