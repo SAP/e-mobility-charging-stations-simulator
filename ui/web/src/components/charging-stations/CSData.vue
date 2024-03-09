@@ -146,7 +146,7 @@ const startChargingStation = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at starting charging station')
-      console.error('Error at starting charging station', error)
+      console.error('Error at starting charging station:', error)
     })
 }
 const stopChargingStation = (): void => {
@@ -157,7 +157,7 @@ const stopChargingStation = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at stopping charging station')
-      console.error('Error at stopping charging station', error)
+      console.error('Error at stopping charging station:', error)
     })
 }
 const openConnection = (): void => {
@@ -168,7 +168,7 @@ const openConnection = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at opening connection')
-      console.error('Error at opening connection', error)
+      console.error('Error at opening connection:', error)
     })
 }
 const closeConnection = (): void => {
@@ -179,7 +179,7 @@ const closeConnection = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at closing connection')
-      console.error('Error at closing connection', error)
+      console.error('Error at closing connection:', error)
     })
 }
 const deleteChargingStation = (): void => {
@@ -190,7 +190,7 @@ const deleteChargingStation = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at deleting charging station')
-      console.error('Error at deleting charging station', error)
+      console.error('Error at deleting charging station:', error)
     })
 }
 </script>
