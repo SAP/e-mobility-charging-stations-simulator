@@ -31,7 +31,7 @@
 - [OCPP-J standard parameters supported](#ocpp-j-standard-parameters-supported)
   - [Version 1.6](#version-16-1)
   - [Version 2.x.x](#version-2xx-1)
-- [UI protocol](#ui-protocol)
+- [UI Protocol](#ui-protocol)
   - [Websocket Protocol](#websocket-protocol)
   - [HTTP Protocol](#http-protocol)
 - [Support, Feedback, Contributing](#support-feedback-contributing)
@@ -529,7 +529,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ### Version 2.x.x
 
-## UI protocol
+## UI Protocol
 
 Protocol to control the simulator via a Websocket or HTTP server:
 
