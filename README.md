@@ -8,15 +8,47 @@
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator)
 [![Javascript Standard Style Guide](<https://badgen.net/static/code style/standard/green>)](https://standardjs.com)
 
+## Table of contents
+
+- [Summary](#summary)
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+    - [Windows](#windows)
+    - [MacOSX](#macosx)
+    - [GNU/Linux](#gnulinux)
+  - [Dependencies](#dependencies)
+- [Initial configuration](#initial-configuration)
+- [Start](#start)
+- [Start Web UI](#start-web-ui)
+- [Configuration files syntax](#configuration-files-syntax)
+  - [Charging stations simulator configuration](#charging-stations-simulator-configuration)
+  - [Charging station configuration template](#charging-station-configuration-template)
+  - [Charging station configuration](#charging-station-configuration)
+- [Docker](#docker)
+- [OCPP-J commands supported](#ocpp-j-commands-supported)
+  - [Version 1.6](#version-16)
+  - [Version 2.x.x](#version-2xx)
+- [OCPP-J standard parameters supported](#ocpp-j-standard-parameters-supported)
+  - [Version 1.6](#version-16-1)
+  - [Version 2.x.x](#version-2xx-1)
+- [UI protocol](#ui-protocol)
+  - [Websocket Protocol](#websocket-protocol)
+  - [HTTP Protocol](#http-protocol)
+- [Support, Feedback, Contributing](#support-feedback-contributing)
+- [Code of Conduct](#code-of-conduct)
+- [Licensing](#licensing)
+
 ## Summary
 
 Simple [node.js](https://nodejs.org/) software to simulate and scale a set of charging stations based on the OCPP-J protocol as part of [SAP e-Mobility](https://www.sap.com/products/scm/e-mobility.html) solution.
 
-## Prerequisites
+## Installation
+
+### Prerequisites
 
 Install the [node.js](https://nodejs.org/) current LTS or superior version runtime environment:
 
-### Windows
+#### Windows
 
 - [Chocolatey](https://chocolatey.org/):
 
@@ -24,7 +56,7 @@ Install the [node.js](https://nodejs.org/) current LTS or superior version runti
 choco install -y nodejs
 ```
 
-### MacOSX
+#### MacOSX
 
 - [Homebrew](https://brew.sh/):
 
@@ -32,11 +64,11 @@ choco install -y nodejs
 brew install node
 ```
 
-### GNU/Linux
+#### GNU/Linux
 
 - [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for all supported versions.
 
-## Installation
+#### Dependencies
 
 Enable corepack if not already done and install latest pnpm version:
 
