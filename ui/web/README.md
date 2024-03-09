@@ -1,4 +1,8 @@
+</div align="center"
+
 # Web UI
+
+</div>
 
 The Web UI code and configuration is in the repository directory [ui/web](./../../ui/web/). Commands execution is relative to that directory.
 
