@@ -537,7 +537,7 @@ Protocol to control the simulator via a Websocket or HTTP server:
 sequenceDiagram
 Client->>UI Server: request
 UI Server->>Client: response
-Note over UI Server,Client: Transport protocol: HTTP, Websocket
+Note over UI Server,Client: HTTP or Websocket
 ```
 
 ### Websocket Protocol
