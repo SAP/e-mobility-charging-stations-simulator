@@ -2,6 +2,8 @@
 
 # [e-mobility charging stations simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
 
+Simple [node.js](https://nodejs.org/) software to simulate and scale a set of charging stations based on the OCPP-J protocol as part of [SAP e-Mobility](https://www.sap.com/products/scm/e-mobility.html) solution.
+
 [![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Clone&query=count&url=https://gist.githubusercontent.com/jerome-benoit/c7c669b881d5b27dc0b44a639504ff93/raw/clone.json&logo=github)](https://github.com/SAP/e-mobility-charging-stations-simulator/graphs/traffic)
 [![GitHub commit activity (main)](https://img.shields.io/github/commit-activity/m/SAP/e-mobility-charging-stations-simulator/main?color=brightgreen&logo=github)](https://github.com/SAP/e-mobility-charging-stations-simulator/graphs/commit-activity)
 [![CI workflow](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml)
@@ -10,7 +12,6 @@
 
 ## Table of contents
 
-- [Summary](#summary)
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
     - [Windows](#windows)
@@ -37,10 +38,6 @@
 - [Support, Feedback, Contributing](#support-feedback-contributing)
 - [Code of Conduct](#code-of-conduct)
 - [Licensing](#licensing)
-
-## Summary
-
-Simple [node.js](https://nodejs.org/) software to simulate and scale a set of charging stations based on the OCPP-J protocol as part of [SAP e-Mobility](https://www.sap.com/products/scm/e-mobility.html) solution.
 
 ## Installation
 
