@@ -24,11 +24,17 @@ export class UIClient {
   private static instance: UIClient | null = null
 
   private ws?: WebSocket
-  private responseHandlers: Map<string, ResponseHandler>
+  private responseHandlers: Map<
+    `${string}-${string}-${string}-${string}-${string}`,
+    ResponseHandler
+  >
 
   private constructor(private uiServerConfiguration: UIServerConfigurationSection) {
     this.openWS()
-    this.responseHandlers = new Map<string, ResponseHandler>()
+    this.responseHandlers = new Map<
+      `${string}-${string}-${string}-${string}-${string}`,
+      ResponseHandler
+    >()
   }
 
   public static getInstance(uiServerConfiguration?: UIServerConfigurationSection): UIClient {
@@ -230,15 +236,24 @@ export class UIClient {
   }
 
   private responseHandler(messageEvent: MessageEvent<string>): void {
-    const response = JSON.parse(messageEvent.data) as ProtocolResponse
+    let response: ProtocolResponse
+    try {
+      response = JSON.parse(messageEvent.data) as ProtocolResponse
+    } catch (error) {
+      useToast().error('Invalid response format')
+      console.error('Invalid response format', error)
+      return
+    }
 
-    if (Array.isArray(response) === false) {
-      throw new Error(`Response not an array: ${JSON.stringify(response, undefined, 2)}`)
+    if (!Array.isArray(response)) {
+      useToast().error(`Response not an array`)
+      console.error(`Response not an array:`, response)
+      return
     }
 
     const [uuid, responsePayload] = response
 
-    if (this.responseHandlers.has(uuid) === true) {
+    if (this.responseHandlers.has(uuid)) {
       const { procedureName, resolve, reject } = this.responseHandlers.get(uuid)!
       switch (responsePayload.status) {
         case ResponseStatus.SUCCESS:

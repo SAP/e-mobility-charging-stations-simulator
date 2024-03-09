@@ -1,11 +1,14 @@
 import type { RequestPayload, ResponsePayload } from './UIProtocol.js'
 
 export type BroadcastChannelRequest = [
-  string,
+  `${string}-${string}-${string}-${string}-${string}`,
   BroadcastChannelProcedureName,
   BroadcastChannelRequestPayload
 ]
-export type BroadcastChannelResponse = [string, BroadcastChannelResponsePayload]
+export type BroadcastChannelResponse = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  BroadcastChannelResponsePayload
+]
 
 export enum BroadcastChannelProcedureName {
   START_CHARGING_STATION = 'startChargingStation',

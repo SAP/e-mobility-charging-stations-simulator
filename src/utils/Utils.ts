@@ -25,11 +25,13 @@ export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
 }
 
-export const generateUUID = (): string => {
+export const generateUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
   return randomUUID()
 }
 
-export const validateUUID = (uuid: string): boolean => {
+export const validateUUID = (
+  uuid: `${string}-${string}-${string}-${string}-${string}`
+): uuid is `${string}-${string}-${string}-${string}-${string}` => {
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid)
 }
 
@@ -263,7 +265,7 @@ export const isNotEmptyString = (value: unknown): value is string => {
   return isString(value) && value.trim().length > 0
 }
 
-export const isEmptyArray = (value: unknown): value is never[] => {
+export const isEmptyArray = (value: unknown): value is [] => {
   return Array.isArray(value) && value.length === 0
 }
 

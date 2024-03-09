@@ -17,8 +17,15 @@ export enum AuthenticationType {
   PROTOCOL_BASIC_AUTH = 'protocol-basic-auth'
 }
 
-export type ProtocolRequest = [string, ProcedureName, RequestPayload]
-export type ProtocolResponse = [string, ResponsePayload]
+export type ProtocolRequest = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ProcedureName,
+  RequestPayload
+]
+export type ProtocolResponse = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ResponsePayload
+]
 
 export type ProtocolRequestHandler = (
   payload: RequestPayload

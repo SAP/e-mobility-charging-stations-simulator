@@ -27,7 +27,11 @@ export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>
   public readonly chargingStationTemplates: Set<string>
   protected readonly httpServer: Server | Http2Server
-  protected readonly responseHandlers: Map<string, ServerResponse | WebSocket>
+  protected readonly responseHandlers: Map<
+    `${string}-${string}-${string}-${string}-${string}`,
+  ServerResponse | WebSocket
+  >
+
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
@@ -45,20 +49,26 @@ export abstract class AbstractUIServer {
           `Unsupported application protocol version ${this.uiServerConfiguration.version}`
         )
     }
-    this.responseHandlers = new Map<string, ServerResponse | WebSocket>()
+    this.responseHandlers = new Map<
+      `${string}-${string}-${string}-${string}-${string}`,
+    ServerResponse | WebSocket
+    >()
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
 
   public buildProtocolRequest (
-    id: string,
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
     procedureName: ProcedureName,
     requestPayload: RequestPayload
   ): ProtocolRequest {
-    return [id, procedureName, requestPayload]
+    return [uuid, procedureName, requestPayload]
   }
 
-  public buildProtocolResponse (id: string, responsePayload: ResponsePayload): ProtocolResponse {
-    return [id, responsePayload]
+  public buildProtocolResponse (
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    responsePayload: ResponsePayload
+  ): ProtocolResponse {
+    return [uuid, responsePayload]
   }
 
   public stop (): void {
@@ -82,8 +92,8 @@ export abstract class AbstractUIServer {
       ?.requestHandler(request) as Promise<ProtocolResponse>)
   }
 
-  public hasResponseHandler (id: string): boolean {
-    return this.responseHandlers.has(id)
+  public hasResponseHandler (uuid: `${string}-${string}-${string}-${string}-${string}`): boolean {
+    return this.responseHandlers.has(uuid)
   }
 
   protected startHttpServer (): void {

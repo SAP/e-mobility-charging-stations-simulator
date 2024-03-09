@@ -66,7 +66,10 @@ export abstract class AbstractUIService {
   private readonly version: ProtocolVersion
   private readonly uiServer: AbstractUIServer
   private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
-  private readonly broadcastChannelRequests: Map<string, number>
+  private readonly broadcastChannelRequests: Map<
+    `${string}-${string}-${string}-${string}-${string}`,
+  number
+  >
 
   constructor (uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.uiServer = uiServer
@@ -81,7 +84,10 @@ export abstract class AbstractUIService {
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)]
     ])
     this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this)
-    this.broadcastChannelRequests = new Map<string, number>()
+    this.broadcastChannelRequests = new Map<
+      `${string}-${string}-${string}-${string}-${string}`,
+    number
+    >()
   }
 
   public stop (): void {
@@ -90,12 +96,12 @@ export abstract class AbstractUIService {
   }
 
   public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
-    let messageId: string | undefined
+    let uuid: `${string}-${string}-${string}-${string}-${string}` | undefined
     let command: ProcedureName | undefined
     let requestPayload: RequestPayload | undefined
     let responsePayload: ResponsePayload | undefined
     try {
-      [messageId, command, requestPayload] = request
+      [uuid, command, requestPayload] = request
 
       if (!this.requestHandlers.has(command)) {
         throw new BaseError(
@@ -111,7 +117,7 @@ export abstract class AbstractUIService {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const requestHandler = this.requestHandlers.get(command)!
       if (isAsyncFunction(requestHandler)) {
-        responsePayload = await requestHandler(messageId, command, requestPayload)
+        responsePayload = await requestHandler(uuid, command, requestPayload)
       } else {
         responsePayload = (
           requestHandler as (
@@ -119,7 +125,7 @@ export abstract class AbstractUIService {
             procedureName?: ProcedureName,
             payload?: RequestPayload
           ) => undefined | ResponsePayload
-        )(messageId, command, requestPayload)
+        )(uuid, command, requestPayload)
       }
     } catch (error) {
       // Log
@@ -137,23 +143,26 @@ export abstract class AbstractUIService {
     }
     if (responsePayload != null) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.uiServer.buildProtocolResponse(messageId!, responsePayload)
+      return this.uiServer.buildProtocolResponse(uuid!, responsePayload)
     }
   }
 
   // public sendRequest (
-  //   messageId: string,
+  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
   //   procedureName: ProcedureName,
   //   requestPayload: RequestPayload
   // ): void {
   //   this.uiServer.sendRequest(
-  //     this.uiServer.buildProtocolRequest(messageId, procedureName, requestPayload)
+  //     this.uiServer.buildProtocolRequest(uuid, procedureName, requestPayload)
   //   )
   // }
 
-  public sendResponse (messageId: string, responsePayload: ResponsePayload): void {
-    if (this.uiServer.hasResponseHandler(messageId)) {
-      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(messageId, responsePayload))
+  public sendResponse (
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    responsePayload: ResponsePayload
+  ): void {
+    if (this.uiServer.hasResponseHandler(uuid)) {
+      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(uuid, responsePayload))
     }
   }
 
@@ -161,17 +170,21 @@ export abstract class AbstractUIService {
     return this.uiServer.logPrefix(modName, methodName, this.version)
   }
 
-  public deleteBroadcastChannelRequest (uuid: string): void {
+  public deleteBroadcastChannelRequest (
+    uuid: `${string}-${string}-${string}-${string}-${string}`
+  ): void {
     this.broadcastChannelRequests.delete(uuid)
   }
 
-  public getBroadcastChannelExpectedResponses (uuid: string): number {
+  public getBroadcastChannelExpectedResponses (
+    uuid: `${string}-${string}-${string}-${string}-${string}`
+  ): number {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return this.broadcastChannelRequests.get(uuid)!
   }
 
   protected handleProtocolRequest (
-    uuid: string,
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
     procedureName: ProcedureName,
     payload: RequestPayload
   ): void {
@@ -184,7 +197,7 @@ export abstract class AbstractUIService {
   }
 
   private sendBroadcastChannelRequest (
-    uuid: string,
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
     procedureName: BroadcastChannelProcedureName,
     payload: BroadcastChannelRequestPayload
   ): void {
@@ -233,7 +246,7 @@ export abstract class AbstractUIService {
   }
 
   private async handleAddChargingStations (
-    _messageId?: string,
+    _uuid?: `${string}-${string}-${string}-${string}-${string}`,
     _procedureName?: ProcedureName,
     requestPayload?: RequestPayload
   ): Promise<ResponsePayload> {
