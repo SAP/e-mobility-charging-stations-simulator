@@ -56,6 +56,12 @@ export const randomUUID = (): `${string}-${string}-${string}-${string}-${string}
   return crypto.randomUUID()
 }
 
+export const validateUUID = (
+  uuid: `${string}-${string}-${string}-${string}-${string}`
+): uuid is `${string}-${string}-${string}-${string}-${string}` => {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid)
+}
+
 export const useUIClient = (): UIClient => {
   return UIClient.getInstance()
 }

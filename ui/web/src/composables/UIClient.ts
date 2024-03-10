@@ -12,7 +12,7 @@ import {
   type UIServerConfigurationSection
 } from '@/types'
 
-import { randomUUID } from './Utils'
+import { randomUUID, validateUUID } from './Utils'
 
 type ResponseHandler = {
   procedureName: ProcedureName
@@ -240,8 +240,8 @@ export class UIClient {
     try {
       response = JSON.parse(messageEvent.data) as ProtocolResponse
     } catch (error) {
-      useToast().error('Invalid response format')
-      console.error('Invalid response format', error)
+      useToast().error('Invalid response JSON format')
+      console.error('Invalid response JSON format', error)
       return
     }
 
@@ -252,6 +252,12 @@ export class UIClient {
     }
 
     const [uuid, responsePayload] = response
+
+    if (!validateUUID(uuid)) {
+      useToast().error('Response UUID field is invalid')
+      console.error('Response UUID field is invalid:', response)
+      return
+    }
 
     if (this.responseHandlers.has(uuid)) {
       const { procedureName, resolve, reject } = this.responseHandlers.get(uuid)!
