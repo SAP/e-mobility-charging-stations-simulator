@@ -316,13 +316,13 @@ export const JSONStringify = <
       if (value instanceof Map) {
         switch (mapFormat) {
           case MapStringifyFormat.object:
-            return { ...Object.fromEntries<Map<string, T>>(value.entries()) }
+            return { ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries()) }
           case MapStringifyFormat.array:
           default:
             return [...value]
         }
       } else if (value instanceof Set) {
-        return [...value] as unknown[]
+        return [...value] as JsonType[]
       }
       return value
     },

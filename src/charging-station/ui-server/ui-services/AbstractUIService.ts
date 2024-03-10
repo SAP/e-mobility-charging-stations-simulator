@@ -4,6 +4,7 @@ import {
   type BroadcastChannelRequestPayload,
   type ChargingStationOptions,
   ConfigurationSection,
+  type JsonObject,
   type JsonType,
   ProcedureName,
   type ProtocolRequest,
@@ -326,7 +327,7 @@ export abstract class AbstractUIService {
     try {
       return {
         status: ResponseStatus.SUCCESS,
-        state: Bootstrap.getInstance().getState()
+        state: Bootstrap.getInstance().getState() as unknown as JsonObject
       } satisfies ResponsePayload
     } catch (error) {
       return {
