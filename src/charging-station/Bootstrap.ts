@@ -22,16 +22,15 @@ import {
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
   ConfigurationSection,
-  type InternalTemplateStatistics,
   ProcedureName,
   type SimulatorState,
   type Statistics,
   type StorageConfiguration,
+  type TemplateStatistics,
   type UIServerConfiguration,
   type WorkerConfiguration
 } from '../types/index.js'
 import {
-  buildTemplateStatisticsPayload,
   Configuration,
   Constants,
   formatDurationMilliSeconds,
@@ -63,7 +62,7 @@ export class Bootstrap extends EventEmitter {
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
   private readonly uiServer: AbstractUIServer
   private storage?: Storage
-  private readonly templateStatistics: Map<string, InternalTemplateStatistics>
+  private readonly templateStatistics: Map<string, TemplateStatistics>
   private readonly version: string = version
   private initializedCounters: boolean
   private started: boolean
@@ -86,7 +85,7 @@ export class Bootstrap extends EventEmitter {
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
-    this.templateStatistics = new Map<string, InternalTemplateStatistics>()
+    this.templateStatistics = new Map<string, TemplateStatistics>()
     this.initializedCounters = false
     this.initializeCounters()
     Configuration.configurationChangeCallback = async () => {
@@ -118,7 +117,7 @@ export class Bootstrap extends EventEmitter {
     return {
       version: this.version,
       started: this.started,
-      templateStatistics: buildTemplateStatisticsPayload(this.templateStatistics)
+      templateStatistics: this.templateStatistics
     }
   }
 

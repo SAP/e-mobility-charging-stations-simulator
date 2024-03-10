@@ -3,9 +3,7 @@ import {
   type ChargingStationData,
   type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
-  type InternalTemplateStatistics,
-  type Statistics,
-  type TemplateStatistics
+  type Statistics
 } from '../types/index.js'
 import {
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
@@ -13,7 +11,6 @@ import {
   buildEvsesStatus,
   OutputFormat
 } from './ChargingStationConfigurationUtils.js'
-import { clone } from './Utils.js'
 
 export const buildAddedMessage = (
   chargingStation: ChargingStation
@@ -88,14 +85,4 @@ export const buildChargingStationDataPayload = (
         buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation)
     })
   }
-}
-
-export const buildTemplateStatisticsPayload = (
-  map: Map<string, InternalTemplateStatistics>
-): Record<string, TemplateStatistics> => {
-  map = clone(map)
-  for (const value of map.values()) {
-    (value as unknown as TemplateStatistics).indexes = [...value.indexes]
-  }
-  return Object.fromEntries(map.entries() as unknown as Array<[string, TemplateStatistics]>)
 }

@@ -11,6 +11,7 @@ import {
   ConfigurationSection,
   type IncomingRequestCommand,
   type LogConfiguration,
+  MapStringifyFormat,
   MessageType,
   type RequestCommand,
   type Statistics,
@@ -27,7 +28,7 @@ import {
   extractTimeSeriesValues,
   formatDurationSeconds,
   generateUUID,
-  JSONStringifyWithMapSupport,
+  JSONStringify,
   logger,
   logPrefix,
   max,
@@ -214,7 +215,7 @@ export class PerformanceStatistics {
     logger.info(this.logPrefix(), {
       ...this.statistics,
       statisticsData: JSON.parse(
-        JSONStringifyWithMapSupport(this.statistics.statisticsData)
+        JSONStringify(this.statistics.statisticsData, undefined, MapStringifyFormat.object)
       ) as Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
     })
   }

@@ -246,12 +246,14 @@ export class UIClient {
     }
 
     if (!Array.isArray(response)) {
-      useToast().error(`Response not an array`)
-      console.error(`Response not an array:`, response)
+      useToast().error('Response not an array')
+      console.error('Response not an array:', response)
       return
     }
 
     const [uuid, responsePayload] = response
+
+    console.log('responsePayload', responsePayload.state?.templateStatistics)
 
     if (this.responseHandlers.has(uuid)) {
       const { procedureName, resolve, reject } = this.responseHandlers.get(uuid)!

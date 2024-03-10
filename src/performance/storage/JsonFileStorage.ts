@@ -4,13 +4,8 @@ import { closeSync, existsSync, mkdirSync, openSync, writeSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 import { BaseError } from '../../exception/index.js'
-import { FileType, type Statistics } from '../../types/index.js'
-import {
-  AsyncLock,
-  AsyncLockType,
-  handleFileException,
-  JSONStringifyWithMapSupport
-} from '../../utils/index.js'
+import { FileType, MapStringifyFormat, type Statistics } from '../../types/index.js'
+import { AsyncLock, AsyncLockType, handleFileException, JSONStringify } from '../../utils/index.js'
 import { Storage } from './Storage.js'
 
 export class JsonFileStorage extends Storage {
@@ -28,7 +23,7 @@ export class JsonFileStorage extends Storage {
       writeSync(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.fd!,
-        JSONStringifyWithMapSupport([...this.getPerformanceStatistics()], 2),
+        JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
         0,
         'utf8'
       )

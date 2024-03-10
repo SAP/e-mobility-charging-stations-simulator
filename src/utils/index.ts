@@ -25,7 +25,6 @@ export {
   buildPerformanceStatisticsMessage,
   buildStartedMessage,
   buildStoppedMessage,
-  buildTemplateStatisticsPayload,
   buildUpdatedMessage
 } from './MessageChannelUtils.js'
 export { average, median, nthPercentile, stdDeviation } from './StatisticUtils.js'
@@ -52,7 +51,7 @@ export {
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,
-  JSONStringifyWithMapSupport,
+  JSONStringify,
   logPrefix,
   max,
   min,

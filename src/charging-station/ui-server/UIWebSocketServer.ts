@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes'
 import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
 import {
+  MapStringifyFormat,
   type ProtocolRequest,
   type ProtocolResponse,
   type UIServerConfiguration,
@@ -14,7 +15,7 @@ import {
   Constants,
   getWebSocketCloseEventStatusString,
   isNotEmptyString,
-  JSONStringifyWithMapSupport,
+  JSONStringify,
   logger,
   logPrefix,
   validateUUID
@@ -136,7 +137,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       if (this.hasResponseHandler(responseId)) {
         const ws = this.responseHandlers.get(responseId) as WebSocket
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSONStringifyWithMapSupport(response))
+          ws.send(JSONStringify(response, undefined, MapStringifyFormat.object))
         } else {
           logger.error(
             `${this.logPrefix(

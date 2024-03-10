@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes'
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
+  MapStringifyFormat,
   type ProcedureName,
   type Protocol,
   type ProtocolRequest,
@@ -18,7 +19,7 @@ import {
   Constants,
   generateUUID,
   isNotEmptyString,
-  JSONStringifyWithMapSupport,
+  JSONStringify,
   logger,
   logPrefix
 } from '../../utils/index.js'
@@ -61,7 +62,7 @@ export class UIHttpServer extends AbstractUIServer {
           .writeHead(this.responseStatusToStatusCode(payload.status), {
             'Content-Type': 'application/json'
           })
-          .end(JSONStringifyWithMapSupport(payload))
+          .end(JSONStringify(payload, undefined, MapStringifyFormat.object))
       } else {
         logger.error(
           `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`

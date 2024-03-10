@@ -15,7 +15,8 @@ import {
 
 import {
   type EmptyObject,
-  type ProtocolResponse,
+  type JsonType,
+  MapStringifyFormat,
   type TimestampedData,
   WebSocketCloseEventStatusString
 } from '../types/index.js'
@@ -298,22 +299,26 @@ export const secureRandom = (): number => {
   return getRandomValues(new Uint32Array(1))[0] / 0x100000000
 }
 
-export const JSONStringifyWithMapSupport = (
-  object:
-  | Record<string, unknown>
-  | Array<Record<string, unknown>>
-  | Map<unknown, unknown>
-  | ProtocolResponse,
-  space?: string | number
-): string => {
+export const JSONStringify = <
+  T extends JsonType | Array<Record<string, unknown>> | Map<string, Record<string, unknown>>
+>(
+    object: T,
+    space?: string | number,
+    mapFormat?: MapStringifyFormat
+  ): string => {
   return JSON.stringify(
     object,
     (_, value: Record<string, unknown>) => {
       if (value instanceof Map) {
-        return {
-          dataType: 'Map',
-          value: [...value]
+        switch (mapFormat) {
+          case MapStringifyFormat.object:
+            return { ...Object.fromEntries<Map<string, T>>(value.entries()) }
+          case MapStringifyFormat.array:
+          default:
+            return [...value]
         }
+      } else if (value instanceof Set) {
+        return [...value] as unknown[]
       }
       return value
     },

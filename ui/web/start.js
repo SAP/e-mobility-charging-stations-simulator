@@ -12,8 +12,6 @@ const uiPath = join(dirname(fileURLToPath(import.meta.url)), './dist')
 
 const serve = serveStatic(uiPath)
 
-const server = createServer(function onRequest(req, res) {
-  serve(req, res, finalhandler(req, res))
-})
+const server = createServer((req, res) => serve(req, res, finalhandler(req, res)))
 
 server.listen(PORT, () => console.info(`Web UI running at: http://localhost:${PORT}`))

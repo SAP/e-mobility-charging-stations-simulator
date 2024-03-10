@@ -32,7 +32,7 @@ export interface Statistics extends WorkerData {
   statisticsData: Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
 }
 
-export interface InternalTemplateStatistics {
+export interface TemplateStatistics {
   configured: number
   added: number
   started: number

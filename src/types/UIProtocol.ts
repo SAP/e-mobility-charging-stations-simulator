@@ -86,9 +86,3 @@ export interface TemplateStatistics extends JsonObject {
   started: number
   indexes: number[]
 }
-
-export interface SimulatorState extends JsonObject {
-  version: string
-  started: boolean
-  templateStatistics: Record<string, TemplateStatistics>
-}

@@ -51,6 +51,7 @@ export type { HandleErrorParams } from './Error.js'
 export type { EvseStatus, EvseTemplate } from './Evse.js'
 export { FileType } from './FileType.js'
 export type { JsonObject, JsonType } from './JsonType.js'
+export { MapStringifyFormat } from './MapStringifyFormat.js'
 export type {
   MeasurandPerPhaseSampledValueTemplates,
   SampledValueTemplate
@@ -247,10 +248,11 @@ export {
   type StopTransactionResponse
 } from './ocpp/Transaction.js'
 export { PerformanceRecord } from './orm/entities/PerformanceRecord.js'
+export type { SimulatorState } from './SimulatorState.js'
 export type {
-  InternalTemplateStatistics,
   Statistics,
   StatisticsData,
+  TemplateStatistics,
   TimestampedData
 } from './Statistics.js'
 export { DBName, StorageType } from './Storage.js'
@@ -265,9 +267,7 @@ export {
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
-  ResponseStatus,
-  type SimulatorState,
-  type TemplateStatistics
+  ResponseStatus
 } from './UIProtocol.js'
 export {
   WebSocketCloseEventStatusCode,
