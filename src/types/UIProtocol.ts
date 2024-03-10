@@ -79,10 +79,3 @@ export interface ResponsePayload extends JsonObject {
   hashIdsFailed?: string[]
   responsesFailed?: BroadcastChannelResponsePayload[]
 }
-
-export interface TemplateStatistics extends JsonObject {
-  configured: number
-  added: number
-  started: number
-  indexes: number[]
-}

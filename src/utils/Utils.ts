@@ -300,7 +300,11 @@ export const secureRandom = (): number => {
 }
 
 export const JSONStringify = <
-  T extends JsonType | Array<Record<string, unknown>> | Map<string, Record<string, unknown>>
+  T extends
+  | JsonType
+  | Array<Record<string, unknown>>
+  | Set<Record<string, unknown>>
+  | Map<string, Record<string, unknown>>
 >(
     object: T,
     space?: string | number,
