@@ -21,16 +21,12 @@ import {
   hasOwnProp,
   isArraySorted,
   isAsyncFunction,
-  isEmptyArray,
-  isEmptyObject,
-  isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
   isObject,
   isValidDate,
   max,
   min,
-  once,
   roundTo,
   secureRandom,
   sleep,
@@ -375,24 +371,6 @@ await describe('Utils test suite', async () => {
     expect(hasOwnProp({ 1: '1' }, 2)).toBe(false)
   })
 
-  await it('Verify isEmptyString()', () => {
-    expect(isEmptyString('')).toBe(true)
-    expect(isEmptyString(' ')).toBe(true)
-    expect(isEmptyString('     ')).toBe(true)
-    expect(isEmptyString('test')).toBe(false)
-    expect(isEmptyString(' test')).toBe(false)
-    expect(isEmptyString('test ')).toBe(false)
-    expect(isEmptyString(undefined)).toBe(true)
-    expect(isEmptyString(null)).toBe(true)
-    expect(isEmptyString(0)).toBe(false)
-    expect(isEmptyString({})).toBe(false)
-    expect(isEmptyString([])).toBe(false)
-    expect(isEmptyString(new Map())).toBe(false)
-    expect(isEmptyString(new Set())).toBe(false)
-    expect(isEmptyString(new WeakMap())).toBe(false)
-    expect(isEmptyString(new WeakSet())).toBe(false)
-  })
-
   await it('Verify isNotEmptyString()', () => {
     expect(isNotEmptyString('')).toBe(false)
     expect(isNotEmptyString(' ')).toBe(false)
@@ -411,22 +389,6 @@ await describe('Utils test suite', async () => {
     expect(isNotEmptyString(new WeakSet())).toBe(false)
   })
 
-  await it('Verify isEmptyArray()', () => {
-    expect(isEmptyArray([])).toBe(true)
-    expect(isEmptyArray([1, 2])).toBe(false)
-    expect(isEmptyArray(['1', '2'])).toBe(false)
-    expect(isEmptyArray(undefined)).toBe(false)
-    expect(isEmptyArray(null)).toBe(false)
-    expect(isEmptyArray('')).toBe(false)
-    expect(isEmptyArray('test')).toBe(false)
-    expect(isEmptyArray(0)).toBe(false)
-    expect(isEmptyArray({})).toBe(false)
-    expect(isEmptyArray(new Map())).toBe(false)
-    expect(isEmptyArray(new Set())).toBe(false)
-    expect(isEmptyArray(new WeakMap())).toBe(false)
-    expect(isEmptyArray(new WeakSet())).toBe(false)
-  })
-
   await it('Verify isNotEmptyArray()', () => {
     expect(isNotEmptyArray([])).toBe(false)
     expect(isNotEmptyArray([1, 2])).toBe(true)
@@ -443,17 +405,6 @@ await describe('Utils test suite', async () => {
     expect(isNotEmptyArray(new WeakSet())).toBe(false)
   })
 
-  await it('Verify isEmptyObject()', () => {
-    expect(isEmptyObject({})).toBe(true)
-    expect(isEmptyObject({ 1: 1, 2: 2 })).toBe(false)
-    expect(isEmptyObject([])).toBe(false)
-    expect(isEmptyObject([1, 2])).toBe(false)
-    expect(isEmptyObject(new Map())).toBe(false)
-    expect(isEmptyObject(new Set())).toBe(false)
-    expect(isEmptyObject(new WeakMap())).toBe(false)
-    expect(isEmptyObject(new WeakSet())).toBe(false)
-  })
-
   await it('Verify isArraySorted()', () => {
     expect(
       isArraySorted([], (a, b) => {
@@ -468,21 +419,6 @@ await describe('Utils test suite', async () => {
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false)
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false)
-  })
-
-  await it('Verify once()', () => {
-    let called = 0
-    const fn = (): number => ++called
-    const onceFn = once(fn, this)
-    const result1 = onceFn()
-    expect(called).toBe(1)
-    expect(result1).toBe(1)
-    const result2 = onceFn()
-    expect(called).toBe(1)
-    expect(result2).toBe(1)
-    const result3 = onceFn()
-    expect(called).toBe(1)
-    expect(result3).toBe(1)
   })
 
   await it('Verify min()', () => {

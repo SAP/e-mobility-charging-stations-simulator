@@ -14,6 +14,7 @@ import {
   secondsToMilliseconds
 } from 'date-fns'
 import { maxTime } from 'date-fns/constants'
+import { isEmpty } from 'rambda'
 import { create } from 'tar'
 
 import {
@@ -105,7 +106,6 @@ import {
   formatDurationMilliSeconds,
   getRandomInteger,
   isAsyncFunction,
-  isEmptyArray,
   isNotEmptyArray,
   isNotEmptyString,
   logger,
@@ -943,8 +943,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (
-      isEmptyArray(connectorStatus?.chargingProfiles) &&
-      isEmptyArray(chargingStation.getConnectorStatus(0)?.chargingProfiles)
+      isEmpty(connectorStatus?.chargingProfiles) &&
+      isEmpty(chargingStation.getConnectorStatus(0)?.chargingProfiles)
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
     }

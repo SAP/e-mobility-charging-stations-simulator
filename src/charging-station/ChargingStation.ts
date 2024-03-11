@@ -8,7 +8,7 @@ import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
 import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
-import { mergeDeepRight } from 'rambda'
+import { mergeDeepRight, once } from 'rambda'
 import { type RawData, WebSocket } from 'ws'
 
 import { BaseError, OCPPError } from '../exception/index.js'
@@ -96,7 +96,6 @@ import {
   logger,
   logPrefix,
   min,
-  once,
   roundTo,
   secureRandom,
   sleep,
@@ -1156,7 +1155,7 @@ export class ChargingStation extends EventEmitter {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const stationTemplate = this.getTemplateFromFile()!
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
-    const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation, this)
+    const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation)
     warnTemplateKeysDeprecationOnce(stationTemplate, this.logPrefix(), this.templateFile)
     if (stationTemplate.Connectors != null) {
       checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile)

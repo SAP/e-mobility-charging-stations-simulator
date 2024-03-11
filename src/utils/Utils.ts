@@ -14,7 +14,6 @@ import {
 } from 'date-fns'
 
 import {
-  type EmptyObject,
   type JsonType,
   MapStringifyFormat,
   type TimestampedData,
@@ -233,19 +232,6 @@ export const isObject = (value: unknown): value is object => {
   return value != null && typeof value === 'object' && !Array.isArray(value)
 }
 
-export const isEmptyObject = (object: object): object is EmptyObject => {
-  if (object.constructor !== Object) {
-    return false
-  }
-  // Iterates over the keys of an object, if
-  // any exist, return false.
-  // eslint-disable-next-line no-unreachable-loop
-  for (const _ in object) {
-    return false
-  }
-  return true
-}
-
 export const hasOwnProp = (value: unknown, property: PropertyKey): boolean => {
   return isObject(value) && Object.hasOwn(value, property)
 }
@@ -258,16 +244,8 @@ const isString = (value: unknown): value is string => {
   return typeof value === 'string'
 }
 
-export const isEmptyString = (value: unknown): value is '' | undefined | null => {
-  return value == null || (isString(value) && value.trim().length === 0)
-}
-
 export const isNotEmptyString = (value: unknown): value is string => {
   return isString(value) && value.trim().length > 0
-}
-
-export const isEmptyArray = (value: unknown): value is [] => {
-  return Array.isArray(value) && value.length === 0
 }
 
 export const isNotEmptyArray = (value: unknown): value is unknown[] => {
@@ -366,22 +344,6 @@ export const isArraySorted = <T>(array: T[], compareFn: (a: T, b: T) => number):
     }
   }
   return true
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const once = <T, A extends any[], R>(
-  fn: (...args: A) => R,
-  context: T
-): ((...args: A) => R) => {
-  let result: R
-  return (...args: A) => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (fn != null) {
-      result = fn.apply<T, A, R>(context, args)
-      ;(fn as unknown as undefined) = (context as unknown as undefined) = undefined
-    }
-    return result
-  }
 }
 
 export const min = (...args: number[]): number =>

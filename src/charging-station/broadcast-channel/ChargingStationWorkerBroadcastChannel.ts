@@ -1,4 +1,5 @@
 import { secondsToMilliseconds } from 'date-fns'
+import { isEmpty } from 'rambda'
 
 import { BaseError, type OCPPError } from '../../exception/index.js'
 import {
@@ -36,13 +37,7 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse
 } from '../../types/index.js'
-import {
-  Constants,
-  convertToInt,
-  isAsyncFunction,
-  isEmptyObject,
-  logger
-} from '../../utils/index.js'
+import { Constants, convertToInt, isAsyncFunction, logger } from '../../utils/index.js'
 import type { ChargingStation } from '../ChargingStation.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
 import { buildMeterValue } from '../ocpp/index.js'
@@ -293,7 +288,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     let responsePayload: BroadcastChannelResponsePayload | undefined
     this.commandHandler(command, requestPayload)
       .then(commandResponse => {
-        if (commandResponse == null || isEmptyObject(commandResponse)) {
+        if (commandResponse == null || isEmpty(commandResponse)) {
           responsePayload = {
             hashId: this.chargingStation.stationInfo?.hashId,
             status: ResponseStatus.SUCCESS
@@ -420,7 +415,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         return ResponseStatus.FAILURE
       case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
       case BroadcastChannelProcedureName.METER_VALUES:
-        if (isEmptyObject(commandResponse)) {
+        if (isEmpty(commandResponse)) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE

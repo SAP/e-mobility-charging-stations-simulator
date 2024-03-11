@@ -21,6 +21,7 @@ import {
   toDate
 } from 'date-fns'
 import { maxTime } from 'date-fns/constants'
+import { isEmpty } from 'rambda'
 
 import { BaseError } from '../exception/index.js'
 import {
@@ -60,8 +61,6 @@ import {
   convertToInt,
   DCElectricUtils,
   isArraySorted,
-  isEmptyObject,
-  isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,
@@ -254,12 +253,12 @@ export const checkTemplate = (
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  if (isEmptyObject(stationTemplate)) {
+  if (isEmpty(stationTemplate)) {
     const errorMsg = `Empty charging station information from template file ${templateFile}`
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  if (stationTemplate.idTagsFile == null || isEmptyString(stationTemplate.idTagsFile)) {
+  if (stationTemplate.idTagsFile == null || isEmpty(stationTemplate.idTagsFile)) {
     logger.warn(
       `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
     )
@@ -276,7 +275,7 @@ export const checkConfiguration = (
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  if (isEmptyObject(stationConfiguration)) {
+  if (isEmpty(stationConfiguration)) {
     const errorMsg = `Empty charging station configuration from file ${configurationFile}`
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
