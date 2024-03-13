@@ -25,8 +25,6 @@ import {
   isNotEmptyString,
   isObject,
   isValidDate,
-  max,
-  min,
   roundTo,
   secureRandom,
   sleep,
@@ -419,21 +417,5 @@ await describe('Utils test suite', async () => {
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false)
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false)
-  })
-
-  await it('Verify min()', () => {
-    expect(min()).toBe(Infinity)
-    expect(min(0, 1)).toBe(0)
-    expect(min(1, 0)).toBe(0)
-    expect(min(0, -1)).toBe(-1)
-    expect(min(-1, 0)).toBe(-1)
-  })
-
-  await it('Verify max()', () => {
-    expect(max()).toBe(-Infinity)
-    expect(max(0, 1)).toBe(1)
-    expect(max(1, 0)).toBe(1)
-    expect(max(0, -1)).toBe(0)
-    expect(max(-1, 0)).toBe(0)
   })
 })

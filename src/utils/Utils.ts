@@ -346,12 +346,6 @@ export const isArraySorted = <T>(array: T[], compareFn: (a: T, b: T) => number):
   return true
 }
 
-export const min = (...args: number[]): number =>
-  args.reduce((minimum, num) => (minimum < num ? minimum : num), Infinity)
-
-export const max = (...args: number[]): number =>
-  args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity)
-
 export const throwErrorInNextTick = (error: Error): void => {
   nextTick(() => {
     throw error

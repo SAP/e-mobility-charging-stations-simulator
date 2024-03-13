@@ -5,6 +5,7 @@ import type { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
 import { secondsToMilliseconds } from 'date-fns'
+import { mean, median } from 'rambda'
 
 import { BaseError } from '../exception/index.js'
 import {
@@ -20,7 +21,6 @@ import {
   type TimestampedData
 } from '../types/index.js'
 import {
-  average,
   buildPerformanceStatisticsMessage,
   CircularArray,
   Configuration,
@@ -32,7 +32,6 @@ import {
   logger,
   logPrefix,
   max,
-  median,
   min,
   nthPercentile,
   stdDeviation
@@ -293,8 +292,7 @@ export class PerformanceStatistics {
       this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries!
     )
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement =
-      average(timeMeasurementValues)
+    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement = mean(timeMeasurementValues)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.medTimeMeasurement =
       median(timeMeasurementValues)
