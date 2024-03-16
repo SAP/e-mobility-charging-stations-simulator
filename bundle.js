@@ -35,6 +35,7 @@ await build({
     'winston-daily-rotate-file',
     'ws'
   ],
+  treeShaking: true,
   minify: true,
   sourcemap,
   entryNames: '[name]',
