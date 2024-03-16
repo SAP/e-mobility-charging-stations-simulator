@@ -57,8 +57,8 @@ importers:
         specifier: ^6.5.0
         version: 6.5.0
       poolifier:
-        specifier: ^3.1.21
-        version: 3.1.21
+        specifier: ^3.1.22
+        version: 3.1.22
       rambda:
         specifier: ^9.1.1
         version: 9.1.1
@@ -3365,7 +3365,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001597
-      electron-to-chromium: 1.4.707
+      electron-to-chromium: 1.4.708
       node-releases: 2.0.14
       update-browserslist-db: 1.0.13(browserslist@4.23.0)
     dev: true
@@ -4660,8 +4660,8 @@ packages:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
     dev: false
 
-  /electron-to-chromium@1.4.707:
-    resolution: {integrity: sha512-qRq74Mo7ChePOU6GHdfAJ0NREXU8vQTlVlfWz3wNygFay6xrd/fY2J7oGHwrhFeU30OVctGLdTh/FcnokTWpng==}
+  /electron-to-chromium@1.4.708:
+    resolution: {integrity: sha512-iWgEEvREL4GTXXHKohhh33+6Y8XkPI5eHihDmm8zUk5Zo7HICEW+wI/j5kJ2tbuNUCXJ/sNXa03ajW635DiJXA==}
     dev: true
 
   /elliptic@6.5.5:
@@ -8014,7 +8014,7 @@ packages:
       acorn: 8.11.3
       pathe: 1.1.2
       pkg-types: 1.0.3
-      ufo: 1.4.0
+      ufo: 1.5.1
     dev: true
 
   /mnemonist@0.40.0-rc1:
@@ -8926,8 +8926,8 @@ packages:
       semver-compare: 1.0.0
     dev: false
 
-  /poolifier@3.1.21:
-    resolution: {integrity: sha512-6bWowXA6RedrnEypsc+5g1qbv+m7KgiY2H/Jf+iGIjbDr6/46voj7Ap6NepzknOGCB2JmU13bvAbyQkD2fvFGw==}
+  /poolifier@3.1.22:
+    resolution: {integrity: sha512-Md/Dsz5MZVKX515MixI2i05e/mF8137dqdT09X+U+TqLxP6FajndWgoCFZe7XfpRUdt7FwmUuatoS6fIFZZqaA==}
     engines: {node: '>=18.0.0', pnpm: '>=8.6.0'}
     requiresBuild: true
     dev: false
@@ -10774,8 +10774,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  /ufo@1.4.0:
-    resolution: {integrity: sha512-Hhy+BhRBleFjpJ2vchUNN40qgkh0366FWJGqVLYBHev0vpHTrXSA0ryT+74UiW6KWsldNurQMKGqCm1M2zBciQ==}
+  /ufo@1.5.1:
+    resolution: {integrity: sha512-HGyF79+/qZ4soRvM+nHERR2pJ3VXDZ/8sL1uLahdgEDf580NkgiWOxLk33FetExqOWp352JZRsgXbG/4MaGOSg==}
     dev: true
 
   /uglify-js@3.17.4:
