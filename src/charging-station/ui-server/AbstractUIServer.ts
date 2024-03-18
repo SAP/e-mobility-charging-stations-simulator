@@ -8,6 +8,7 @@ import {
   ApplicationProtocolVersion,
   AuthenticationType,
   type ChargingStationData,
+  ConfigurationSection,
   type ProcedureName,
   type ProtocolRequest,
   type ProtocolResponse,
@@ -46,7 +47,7 @@ export abstract class AbstractUIServer {
         break
       default:
         throw new BaseError(
-          `Unsupported application protocol version ${this.uiServerConfiguration.version}`
+          `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
     this.responseHandlers = new Map<
