@@ -53,7 +53,7 @@ export class UIServerFactory {
       uiServerConfiguration.type === ApplicationProtocol.WS &&
       uiServerConfiguration.version !== ApplicationProtocolVersion.VERSION_11
     ) {
-      const logMsg = `Only version ${ApplicationProtocolVersion.VERSION_11} is with application protocol type '${uiServerConfiguration.type}' supported in '${ConfigurationSection.uiServer}' configuration section. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
+      const logMsg = `Only version ${ApplicationProtocolVersion.VERSION_11} with application protocol type '${uiServerConfiguration.type}' is supported in '${ConfigurationSection.uiServer}' configuration section. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
       logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
       console.warn(chalk.yellow(logMsg))
       uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
@@ -69,9 +69,9 @@ export class UIServerFactory {
           )
         ) {
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          const logMsg = `Unknown application protocol type '${uiServerConfiguration.type}' in '${ConfigurationSection.uiServer}' configuration section from values '${ApplicationProtocol.toString()}', defaulting to ${
+          const logMsg = `Unknown application protocol type '${uiServerConfiguration.type}' in '${ConfigurationSection.uiServer}' configuration section from values '${ApplicationProtocol.toString()}', defaulting to '${
             ApplicationProtocol.WS
-          }`
+          }'`
           logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
           console.warn(logMsg)
         }

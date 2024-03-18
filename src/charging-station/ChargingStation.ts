@@ -2366,9 +2366,9 @@ export class ChargingStation extends EventEmitter {
           ) &&
             logger.warn(
               // eslint-disable-next-line @typescript-eslint/no-base-to-string
-              `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to ${
+              `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to '${
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
-              }`
+              }'`
             )
           configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length
           break
