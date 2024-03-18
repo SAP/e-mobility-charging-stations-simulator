@@ -91,7 +91,7 @@ export const convertToDate = (
   if (isDate(value)) {
     return value
   }
-  if (isString(value) || typeof value === 'number') {
+  if (typeof value === 'string' || typeof value === 'number') {
     const valueToDate = new Date(value)
     if (isNaN(valueToDate.getTime())) {
       throw new Error(`Cannot convert to date: '${value}'`)
@@ -111,7 +111,7 @@ export const convertToInt = (value: unknown): number => {
     return Math.trunc(value)
   }
   let changedValue: number = value as number
-  if (isString(value)) {
+  if (typeof value === 'string') {
     changedValue = parseInt(value)
   }
   if (isNaN(changedValue)) {
@@ -125,7 +125,7 @@ export const convertToFloat = (value: unknown): number => {
     return 0
   }
   let changedValue: number = value as number
-  if (isString(value)) {
+  if (typeof value === 'string') {
     changedValue = parseFloat(value)
   }
   if (isNaN(changedValue)) {
@@ -140,7 +140,7 @@ export const convertToBoolean = (value: unknown): boolean => {
     // Check the type
     if (typeof value === 'boolean') {
       return value
-    } else if (isString(value) && (value.toLowerCase() === 'true' || value === '1')) {
+    } else if (typeof value === 'string' && (value.toLowerCase() === 'true' || value === '1')) {
       result = true
     } else if (typeof value === 'number' && value === 1) {
       result = true
@@ -240,12 +240,8 @@ export const isCFEnvironment = (): boolean => {
   return env.VCAP_APPLICATION != null
 }
 
-const isString = (value: unknown): value is string => {
-  return typeof value === 'string'
-}
-
 export const isNotEmptyString = (value: unknown): value is string => {
-  return isString(value) && value.trim().length > 0
+  return typeof value === 'string' && value.trim().length > 0
 }
 
 export const isNotEmptyArray = (value: unknown): value is unknown[] => {
