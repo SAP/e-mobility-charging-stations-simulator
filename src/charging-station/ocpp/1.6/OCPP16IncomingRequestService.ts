@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
+import { randomInt } from 'node:crypto'
 import { createWriteStream, readdirSync } from 'node:fs'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
@@ -104,7 +105,6 @@ import {
   convertToDate,
   convertToInt,
   formatDurationMilliSeconds,
-  getRandomInteger,
   isAsyncFunction,
   isNotEmptyArray,
   isNotEmptyString,
@@ -1346,7 +1346,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.DownloadFailed
     ) {
-      await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)))
+      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
       await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1357,7 +1357,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation.stationInfo.firmwareUpgrade.failureStatus
       return
     }
-    await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)))
+    await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
     await chargingStation.ocppRequestService.requestHandler<
     OCPP16FirmwareStatusNotificationRequest,
     OCPP16FirmwareStatusNotificationResponse
@@ -1413,8 +1413,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionsStarted = false
       }
     } while (transactionsStarted)
-    !wasTransactionsStarted &&
-      (await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay))))
+    !wasTransactionsStarted && (await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay))))
     if (!checkChargingStation(chargingStation, chargingStation.logPrefix())) {
       return
     }
@@ -1430,7 +1429,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.InstallationFailed
     ) {
-      await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)))
+      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
       await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1442,7 +1441,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return
     }
     if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
-      await sleep(secondsToMilliseconds(getRandomInteger(maxDelay, minDelay)))
+      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT)
     }
   }

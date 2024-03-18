@@ -1,4 +1,4 @@
-import { getRandomValues, randomBytes, randomInt, randomUUID } from 'node:crypto'
+import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
 import { env, nextTick } from 'node:process'
 
 import {
@@ -19,7 +19,6 @@ import {
   type TimestampedData,
   WebSocketCloseEventStatusString
 } from '../types/index.js'
-import { Constants } from './Constants.js'
 
 export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
@@ -157,15 +156,6 @@ export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
     throw new RangeError('Invalid interval')
   }
   return (randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min
-}
-
-export const getRandomInteger = (max = Constants.MAX_RANDOM_INTEGER, min = 0): number => {
-  max = Math.floor(max)
-  if (min !== 0) {
-    min = Math.ceil(min)
-    return Math.floor(randomInt(min, max + 1))
-  }
-  return Math.floor(randomInt(max + 1))
 }
 
 /**

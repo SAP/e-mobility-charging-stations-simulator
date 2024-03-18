@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -53,7 +54,6 @@ import {
   DCElectricUtils,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
-  getRandomInteger,
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
@@ -284,7 +284,7 @@ export const buildMeterValue = (
             parseInt(socSampledValueTemplate.value),
             socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
-          : getRandomInteger(socMaximumValue, socMinimumValue)
+          : randomInt(socMinimumValue, socMaximumValue)
         meterValue.sampledValue.push(
           buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue)
         )

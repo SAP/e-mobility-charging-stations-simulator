@@ -85,7 +85,7 @@ export class Constants {
     | RequestCommand
     | IncomingRequestCommand
 
-  static readonly MAX_RANDOM_INTEGER = 281474976710654
+  static readonly MAX_RANDOM_INTEGER = 281474976710655
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT = 60000 // Ms
 

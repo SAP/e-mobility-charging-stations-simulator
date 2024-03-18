@@ -1,5 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
+import { randomInt } from 'node:crypto'
+
 import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns'
 
 import { BaseError } from '../exception/index.js'
@@ -18,7 +20,6 @@ import {
   Constants,
   convertToDate,
   formatDurationMilliSeconds,
-  getRandomInteger,
   isValidDate,
   logger,
   logPrefix,
@@ -199,11 +200,11 @@ export class AutomaticTransactionGenerator {
         break
       }
       const wait = secondsToMilliseconds(
-        getRandomInteger(
+        randomInt(
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.maxDelayBetweenTwoTransactions,
+            ?.minDelayBetweenTwoTransactions,
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.minDelayBetweenTwoTransactions
+            ?.maxDelayBetweenTwoTransactions
         )
       )
       logger.info(`${this.logPrefix(connectorId)} waiting for ${formatDurationMilliSeconds(wait)}`)
@@ -221,9 +222,9 @@ export class AutomaticTransactionGenerator {
         if (startResponse?.idTagInfo.status === AuthorizationStatus.ACCEPTED) {
           // Wait until end of transaction
           const waitTrxEnd = secondsToMilliseconds(
-            getRandomInteger(
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.maxDuration,
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration
+            randomInt(
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration,
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.maxDuration
             )
           )
           logger.info(

@@ -41,7 +41,6 @@ export {
   generateUUID,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
-  getRandomInteger,
   getWebSocketCloseEventStatusString,
   isArraySorted,
   isAsyncFunction,

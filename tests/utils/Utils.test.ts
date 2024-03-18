@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import { version } from 'node:process'
 import { describe, it } from 'node:test'
 
@@ -17,7 +18,6 @@ import {
   formatDurationSeconds,
   generateUUID,
   getRandomFloat,
-  getRandomInteger,
   hasOwnProp,
   isArraySorted,
   isAsyncFunction,
@@ -95,7 +95,7 @@ await describe('Utils test suite', async () => {
     expect(convertToInt(undefined)).toBe(0)
     expect(convertToInt(null)).toBe(0)
     expect(convertToInt(0)).toBe(0)
-    const randomInteger = getRandomInteger()
+    const randomInteger = randomInt(Constants.MAX_RANDOM_INTEGER)
     expect(convertToInt(randomInteger)).toEqual(randomInteger)
     expect(convertToInt('-1')).toBe(-1)
     expect(convertToInt('1')).toBe(1)
@@ -155,36 +155,6 @@ await describe('Utils test suite', async () => {
     expect(typeof random === 'number').toBe(true)
     expect(random).toBeGreaterThanOrEqual(0)
     expect(random).toBeLessThan(1)
-  })
-
-  await it('Verify getRandomInteger()', () => {
-    let randomInteger = getRandomInteger()
-    expect(Number.isSafeInteger(randomInteger)).toBe(true)
-    expect(randomInteger).toBeGreaterThanOrEqual(0)
-    expect(randomInteger).toBeLessThanOrEqual(Constants.MAX_RANDOM_INTEGER)
-    expect(randomInteger).not.toEqual(getRandomInteger())
-    randomInteger = getRandomInteger(0, -Constants.MAX_RANDOM_INTEGER)
-    expect(randomInteger).toBeGreaterThanOrEqual(-Constants.MAX_RANDOM_INTEGER)
-    expect(randomInteger).toBeLessThanOrEqual(0)
-    expect(() => getRandomInteger(0, 1)).toThrow(
-      'The value of "max" is out of range. It must be greater than the value of "min" (1). Received 1'
-    )
-    expect(() => getRandomInteger(-1)).toThrow(
-      'The value of "max" is out of range. It must be greater than the value of "min" (0). Received 0'
-    )
-    expect(() => getRandomInteger(Constants.MAX_RANDOM_INTEGER + 1)).toThrow(
-      `The value of "max" is out of range. It must be <= ${
-        Constants.MAX_RANDOM_INTEGER + 1
-      }. Received 281_474_976_710_656`
-    )
-    randomInteger = getRandomInteger(2, 1)
-    expect(randomInteger).toBeGreaterThanOrEqual(1)
-    expect(randomInteger).toBeLessThanOrEqual(2)
-    const maximum = 2.2
-    const minimum = 1.1
-    randomInteger = getRandomInteger(maximum, minimum)
-    expect(randomInteger).toBeLessThanOrEqual(Math.floor(maximum))
-    expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(minimum))
   })
 
   await it('Verify roundTo()', () => {

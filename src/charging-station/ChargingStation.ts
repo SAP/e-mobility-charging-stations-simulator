@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import { createHash } from 'node:crypto'
+import { createHash, randomInt } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -88,7 +88,6 @@ import {
   exponentialDelay,
   formatDurationMilliSeconds,
   formatDurationSeconds,
-  getRandomInteger,
   getWebSocketCloseEventStatusString,
   handleFileException,
   isNotEmptyArray,
@@ -1554,7 +1553,7 @@ export class ChargingStation extends EventEmitter {
             }
             const templateConnectorId =
               connectorId > 0 && stationTemplate.randomConnectors === true
-                ? getRandomInteger(templateMaxAvailableConnectors, 1)
+                ? randomInt(1, templateMaxAvailableConnectors)
                 : connectorId
             const connectorStatus = stationTemplate.Connectors[templateConnectorId]
             checkStationInfoConnectorStatus(
