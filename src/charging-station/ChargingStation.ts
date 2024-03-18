@@ -228,7 +228,7 @@ export class ChargingStation extends EventEmitter {
         this.wsConnectionRetried
           ? true
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
-      ).catch(error => {
+      ).catch((error: unknown) => {
         logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
       })
       this.wsConnectionRetried = false
@@ -552,7 +552,7 @@ export class ChargingStation extends EventEmitter {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
-          .catch(error => {
+          .catch((error: unknown) => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
               error
@@ -637,7 +637,7 @@ export class ChargingStation extends EventEmitter {
             meterValue: [meterValue]
           }
         )
-          .catch(error => {
+          .catch((error: unknown) => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
               error
@@ -841,7 +841,7 @@ export class ChargingStation extends EventEmitter {
     this.wsConnection.on('close', this.onClose.bind(this))
     // Handle WebSocket open
     this.wsConnection.on('open', () => {
-      this.onOpen().catch(error =>
+      this.onOpen().catch((error: unknown) =>
         logger.error(`${this.logPrefix()} Error while opening WebSocket connection:`, error)
       )
     })
@@ -1766,7 +1766,7 @@ export class ChargingStation extends EventEmitter {
             this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
             this.sharedLRUCache.setChargingStationConfiguration(configurationData)
             this.configurationFileHash = configurationHash
-          }).catch(error => {
+          }).catch((error: unknown) => {
             handleFileException(
               this.configurationFile,
               FileType.ChargingStationConfiguration,
@@ -1910,7 +1910,9 @@ export class ChargingStation extends EventEmitter {
             .then(() => {
               this.emit(ChargingStationEvents.updated)
             })
-            .catch(error => logger.error(`${this.logPrefix()} Error while reconnecting:`, error))
+            .catch((error: unknown) =>
+              logger.error(`${this.logPrefix()} Error while reconnecting:`, error)
+            )
         break
     }
   }

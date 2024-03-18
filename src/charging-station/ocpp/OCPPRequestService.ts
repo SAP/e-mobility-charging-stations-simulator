@@ -245,7 +245,7 @@ export abstract class OCPPRequestService {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this
       // Send a message through wsConnection
-      return await new Promise<ResponseType>((resolve, reject) => {
+      return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         /**
          * Function that will receive the request's response
          *

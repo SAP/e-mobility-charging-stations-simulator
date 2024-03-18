@@ -299,7 +299,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   private async waitChargingStationsStopped (): Promise<string> {
-    return await new Promise<string>((resolve, reject) => {
+    return await new Promise<string>((resolve, reject: (reason?: unknown) => void) => {
       const waitTimeout = setTimeout(() => {
         const timeoutMessage = `Timeout ${formatDurationMilliSeconds(
           Constants.STOP_CHARGING_STATIONS_TIMEOUT
@@ -571,7 +571,7 @@ export class Bootstrap extends EventEmitter {
             exit(exitCodes.gracefulShutdownError)
           })
       })
-      .catch(error => {
+      .catch((error: unknown) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error)
         exit(exitCodes.gracefulShutdownError)
       })

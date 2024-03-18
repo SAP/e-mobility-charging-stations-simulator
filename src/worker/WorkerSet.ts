@@ -149,7 +149,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
         this.addWorkerSetElement()
       }
       worker.unref()
-      worker.terminate().catch(error => this.emitter?.emit(WorkerSetEvents.error, error))
+      worker.terminate().catch((error: unknown) => this.emitter?.emit(WorkerSetEvents.error, error))
     })
     worker.on('online', this.workerOptions.poolOptions?.onlineHandler ?? EMPTY_FUNCTION)
     worker.on('exit', this.workerOptions.poolOptions?.exitHandler ?? EMPTY_FUNCTION)

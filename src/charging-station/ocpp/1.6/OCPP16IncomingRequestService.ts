@@ -441,7 +441,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 )
               }
             })
-            .catch(error => {
+            .catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote start transaction error:`,
                 error
@@ -473,7 +473,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 )
               }
             })
-            .catch(error => {
+            .catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: Remote stop transaction error:`,
                 error
@@ -493,7 +493,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           return
         }
         const { requestedMessage, connectorId } = request
-        const errorHandler = (error: Error): void => {
+        const errorHandler = (error: unknown): void => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.constructor: Trigger ${requestedMessage} error:`,
             error
@@ -1499,7 +1499,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
               status: OCPP16DiagnosticsStatus.Uploading
             })
-              .catch(error => {
+              .catch((error: unknown) => {
                 logger.error(
                   `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: Error while sending '${
                     OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION

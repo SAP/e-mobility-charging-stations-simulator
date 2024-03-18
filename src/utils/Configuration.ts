@@ -576,7 +576,7 @@ export class Configuration {
           Configuration.configurationSectionCache.clear()
           if (Configuration.configurationChangeCallback != null) {
             Configuration.configurationChangeCallback()
-              .catch(error => {
+              .catch((error: unknown) => {
                 throw typeof error === 'string' ? new Error(error) : error
               })
               .finally(() => {

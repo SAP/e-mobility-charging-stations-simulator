@@ -301,7 +301,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           )
         }
       })
-      .catch(error => {
+      .catch((error: unknown) => {
         logger.error(
           `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: Handle request error:`,
           error
