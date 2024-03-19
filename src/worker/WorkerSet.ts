@@ -36,10 +36,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     if (!Number.isSafeInteger(this.workerOptions.elementsPerWorker)) {
       throw new TypeError('Elements per worker must be an integer')
     }
-    if (
-      typeof this.workerOptions.elementsPerWorker === 'number' &&
-      this.workerOptions.elementsPerWorker <= 0
-    ) {
+    if (this.workerOptions.elementsPerWorker <= 0) {
       throw new RangeError('Elements per worker must be greater than zero')
     }
     this.workerSet = new Set<WorkerSetElement>()

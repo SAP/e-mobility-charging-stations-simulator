@@ -64,7 +64,6 @@ export class Bootstrap extends EventEmitter {
   private storage?: Storage
   private readonly templateStatistics: Map<string, TemplateStatistics>
   private readonly version: string = version
-  private initializedCounters: boolean
   private started: boolean
   private starting: boolean
   private stopping: boolean
@@ -81,16 +80,15 @@ export class Bootstrap extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
-    this.initializedCounters = false
     this.uiServerStarted = false
     this.templateStatistics = new Map<string, TemplateStatistics>()
-    this.initializeWorkerImplementation(
-      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-    )
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
     this.initializeCounters()
+    this.initializeWorkerImplementation(
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+    )
     Configuration.configurationChangeCallback = async () => {
       if (isMainThread) {
         await Bootstrap.getInstance().restart()
@@ -177,7 +175,6 @@ export class Bootstrap extends EventEmitter {
             )
           }
         )
-        this.initializeCounters()
         // eslint-disable-next-line @typescript-eslint/unbound-method
         if (isAsyncFunction(this.workerImplementation?.start)) {
           await this.workerImplementation.start()
@@ -278,7 +275,6 @@ export class Bootstrap extends EventEmitter {
         await this.workerImplementation?.stop()
         this.removeAllListeners()
         this.uiServer.clearCaches()
-        this.initializedCounters = false
         await this.storage?.close()
         delete this.storage
         this.started = false
@@ -293,10 +289,6 @@ export class Bootstrap extends EventEmitter {
 
   private async restart (): Promise<void> {
     await this.stop()
-    // FIXME: initialize worker implementation only if the worker section has changed
-    this.initializeWorkerImplementation(
-      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-    )
     if (
       this.uiServerStarted &&
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
@@ -305,6 +297,11 @@ export class Bootstrap extends EventEmitter {
       this.uiServer.stop()
       this.uiServerStarted = false
     }
+    this.initializeCounters()
+    // FIXME: initialize worker implementation only if the worker section has changed
+    this.initializeWorkerImplementation(
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+    )
     await this.start()
   }
 
@@ -499,47 +496,44 @@ export class Bootstrap extends EventEmitter {
   }
 
   private initializeCounters (): void {
-    if (!this.initializedCounters) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const stationTemplateUrls = Configuration.getStationTemplateUrls()!
-      if (isNotEmptyArray(stationTemplateUrls)) {
-        for (const stationTemplateUrl of stationTemplateUrls) {
-          const templateName = buildTemplateName(stationTemplateUrl.file)
-          this.templateStatistics.set(templateName, {
-            configured: stationTemplateUrl.numberOfStations,
-            added: 0,
-            started: 0,
-            indexes: new Set<number>()
-          })
-          this.uiServer.chargingStationTemplates.add(templateName)
-        }
-        if (this.templateStatistics.size !== stationTemplateUrls.length) {
-          console.error(
-            chalk.red(
-              "'stationTemplateUrls' contains duplicate entries, please check your configuration"
-            )
-          )
-          exit(exitCodes.duplicateChargingStationTemplateUrls)
-        }
-      } else {
-        console.error(
-          chalk.red("'stationTemplateUrls' not defined or empty, please check your configuration")
-        )
-        exit(exitCodes.missingChargingStationsConfiguration)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const stationTemplateUrls = Configuration.getStationTemplateUrls()!
+    if (isNotEmptyArray(stationTemplateUrls)) {
+      for (const stationTemplateUrl of stationTemplateUrls) {
+        const templateName = buildTemplateName(stationTemplateUrl.file)
+        this.templateStatistics.set(templateName, {
+          configured: stationTemplateUrl.numberOfStations,
+          added: 0,
+          started: 0,
+          indexes: new Set<number>()
+        })
+        this.uiServer.chargingStationTemplates.add(templateName)
       }
-      if (
-        this.numberOfConfiguredChargingStations === 0 &&
-        Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
-          .enabled !== true
-      ) {
+      if (this.templateStatistics.size !== stationTemplateUrls.length) {
         console.error(
           chalk.red(
-            "'stationTemplateUrls' has no charging station enabled and UI server is disabled, please check your configuration"
+            "'stationTemplateUrls' contains duplicate entries, please check your configuration"
           )
         )
-        exit(exitCodes.noChargingStationTemplates)
+        exit(exitCodes.duplicateChargingStationTemplateUrls)
       }
-      this.initializedCounters = true
+    } else {
+      console.error(
+        chalk.red("'stationTemplateUrls' not defined or empty, please check your configuration")
+      )
+      exit(exitCodes.missingChargingStationsConfiguration)
+    }
+    if (
+      this.numberOfConfiguredChargingStations === 0 &&
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+        .enabled !== true
+    ) {
+      console.error(
+        chalk.red(
+          "'stationTemplateUrls' has no charging station enabled and UI server is disabled, please check your configuration"
+        )
+      )
+      exit(exitCodes.noChargingStationTemplates)
     }
   }
 
