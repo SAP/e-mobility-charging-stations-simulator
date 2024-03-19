@@ -99,7 +99,6 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     this.emitter?.emit(WorkerSetEvents.stopped, this.info)
     this.started = false
     this.emitter?.emitDestroy()
-    this.emitter?.removeAllListeners()
   }
 
   /** @inheritDoc */

@@ -39,7 +39,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
   /**
    * Starts the worker pool/set.
    */
-  public abstract start (): Promise<void>
+  public abstract start (): void | Promise<void>
   /**
    * Stops the worker pool/set.
    */

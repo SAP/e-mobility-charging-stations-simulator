@@ -41,8 +41,8 @@ export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
   }
 
   /** @inheritDoc */
-  public async start (): Promise<void> {
-    // This is intentional
+  public start (): void {
+    this.pool.start()
   }
 
   /** @inheritDoc */

@@ -974,7 +974,7 @@ export const prepareChargingProfileKind = (
       if (connectorStatus?.transactionStarted === true) {
         chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
       }
-      // FIXME: Handle relative charging profile duration
+      // FIXME: handle relative charging profile duration
       break
   }
   return true

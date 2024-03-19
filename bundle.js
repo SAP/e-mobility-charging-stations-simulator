@@ -22,6 +22,7 @@ await build({
     'basic-ftp',
     'chalk',
     'date-fns',
+    'date-fns/*',
     'http-status-codes',
     'logform',
     'mnemonist',

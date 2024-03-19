@@ -81,12 +81,15 @@ export class Bootstrap extends EventEmitter {
     this.started = false
     this.starting = false
     this.stopping = false
+    this.initializedCounters = false
     this.uiServerStarted = false
+    this.templateStatistics = new Map<string, TemplateStatistics>()
+    this.initializeWorkerImplementation(
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+    )
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
-    this.templateStatistics = new Map<string, TemplateStatistics>()
-    this.initializedCounters = false
     this.initializeCounters()
     Configuration.configurationChangeCallback = async () => {
       if (isMainThread) {
@@ -175,11 +178,12 @@ export class Bootstrap extends EventEmitter {
           }
         )
         this.initializeCounters()
-        const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
-          ConfigurationSection.worker
-        )
-        this.initializeWorkerImplementation(workerConfiguration)
-        await this.workerImplementation?.start()
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        if (isAsyncFunction(this.workerImplementation?.start)) {
+          await this.workerImplementation.start()
+        } else {
+          (this.workerImplementation?.start as () => void)()
+        }
         const performanceStorageConfiguration =
           Configuration.getConfigurationSection<StorageConfiguration>(
             ConfigurationSection.performanceStorage
@@ -220,6 +224,9 @@ export class Bootstrap extends EventEmitter {
             )
           }
         }
+        const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
+          ConfigurationSection.worker
+        )
         console.info(
           chalk.green(
             `Charging stations simulator ${
@@ -269,7 +276,6 @@ export class Bootstrap extends EventEmitter {
           console.error(chalk.red('Error while waiting for charging stations to stop: '), error)
         }
         await this.workerImplementation?.stop()
-        delete this.workerImplementation
         this.removeAllListeners()
         this.uiServer.clearCaches()
         this.initializedCounters = false
@@ -287,6 +293,10 @@ export class Bootstrap extends EventEmitter {
 
   private async restart (): Promise<void> {
     await this.stop()
+    // FIXME: initialize worker implementation only if the worker section has changed
+    this.initializeWorkerImplementation(
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+    )
     if (
       this.uiServerStarted &&
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)

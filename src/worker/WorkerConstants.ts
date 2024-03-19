@@ -22,6 +22,7 @@ export const DEFAULT_WORKER_OPTIONS: WorkerOptions = Object.freeze({
   poolMaxSize: DEFAULT_POOL_MAX_SIZE,
   elementsPerWorker: DEFAULT_ELEMENTS_PER_WORKER,
   poolOptions: {
+    startWorkers: false,
     enableEvents: true,
     restartWorkerOnError: true,
     errorHandler: defaultErrorHandler,
