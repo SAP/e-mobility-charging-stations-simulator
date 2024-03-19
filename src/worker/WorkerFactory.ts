@@ -1,5 +1,7 @@
 import { isMainThread } from 'node:worker_threads'
 
+import { mergeDeepRight } from 'rambda'
+
 import type { WorkerAbstract } from './WorkerAbstract.js'
 import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants.js'
 import { WorkerDynamicPool } from './WorkerDynamicPool.js'
@@ -21,7 +23,7 @@ export class WorkerFactory {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')
     }
-    workerOptions = { ...DEFAULT_WORKER_OPTIONS, ...workerOptions }
+    workerOptions = mergeDeepRight<WorkerOptions>(DEFAULT_WORKER_OPTIONS, workerOptions ?? {})
     let workerImplementation: WorkerAbstract<T>
     switch (workerProcessType) {
       case WorkerProcessType.workerSet:

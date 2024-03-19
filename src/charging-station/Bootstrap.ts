@@ -366,7 +366,9 @@ export class Bootstrap extends EventEmitter {
         elementsPerWorker,
         poolOptions: {
           messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
-          workerOptions: { resourceLimits: workerConfiguration.resourceLimits }
+          ...(workerConfiguration.resourceLimits != null && {
+            workerOptions: { resourceLimits: workerConfiguration.resourceLimits }
+          })
         }
       }
     )

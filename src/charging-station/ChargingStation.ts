@@ -1244,7 +1244,7 @@ export class ChargingStation extends EventEmitter {
       stationInfoFromFile.templateHash === stationInfoFromTemplate.templateHash
     ) {
       return setChargingStationOptions(
-        { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromFile },
+        mergeDeepRight(Constants.DEFAULT_STATION_INFO, stationInfoFromFile),
         options
       )
     }
@@ -1255,7 +1255,7 @@ export class ChargingStation extends EventEmitter {
         stationInfoFromTemplate
       )
     return setChargingStationOptions(
-      { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromTemplate },
+      mergeDeepRight(Constants.DEFAULT_STATION_INFO, stationInfoFromTemplate),
       options
     )
   }
