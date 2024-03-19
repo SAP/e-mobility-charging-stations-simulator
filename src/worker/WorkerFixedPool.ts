@@ -55,8 +55,8 @@ export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
     await this.pool.execute(elementData)
     // Start element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.workerOptions.elementStartDelay! > 0 &&
+    this.workerOptions.elementAddDelay! > 0 &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (await sleep(randomizeDelay(this.workerOptions.elementStartDelay!)))
+      (await sleep(randomizeDelay(this.workerOptions.elementAddDelay!)))
   }
 }

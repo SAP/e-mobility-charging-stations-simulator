@@ -17,7 +17,7 @@ ChargingStationTemplate,
   hashId: string
   templateIndex: number
   templateName: string
-  /** @deprecated Use hashId instead */
+  /** @deprecated Use `hashId` instead. */
   infoHash?: string
   chargingStationId?: string
   chargeBoxSerialNumber?: string

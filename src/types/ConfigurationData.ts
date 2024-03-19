@@ -70,7 +70,9 @@ export interface WorkerConfiguration {
   processType?: WorkerProcessType
   startDelay?: number
   elementsPerWorker?: ElementsPerWorkerType
+  /** @deprecated Use `elementAddDelay` instead. */
   elementStartDelay?: number
+  elementAddDelay?: number
   poolMinSize?: number
   poolMaxSize?: number
   resourceLimits?: ResourceLimits
@@ -84,14 +86,14 @@ export interface ConfigurationData {
   worker?: WorkerConfiguration
   uiServer?: UIServerConfiguration
   performanceStorage?: StorageConfiguration
-  /** @deprecated Moved to charging station template */
+  /** @deprecated Moved to charging station template. */
   autoReconnectMaxRetries?: number
   /** @deprecated Moved to worker configuration section. */
   workerProcess?: WorkerProcessType
   /** @deprecated Moved to worker configuration section. */
   workerStartDelay?: number
   /** @deprecated Moved to worker configuration section. */
-  elementStartDelay?: number
+  elementAddDelay?: number
   /** @deprecated Moved to worker configuration section. */
   workerPoolMinSize?: number
   /** @deprecated Moved to worker configuration section. */

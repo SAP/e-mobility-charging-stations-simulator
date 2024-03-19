@@ -36,7 +36,7 @@ export type WorkerEvents = PoolEvent | WorkerSetEvents
 
 export interface WorkerOptions {
   workerStartDelay?: number
-  elementStartDelay?: number
+  elementAddDelay?: number
   poolMaxSize: number
   poolMinSize: number
   elementsPerWorker?: number

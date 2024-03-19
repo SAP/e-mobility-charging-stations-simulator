@@ -21,7 +21,7 @@ import {
   type WorkerConfiguration
 } from '../types/index.js'
 import {
-  DEFAULT_ELEMENT_START_DELAY,
+  DEFAULT_ELEMENT_ADD_DELAY,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
   DEFAULT_WORKER_START_DELAY,
@@ -275,10 +275,11 @@ export class Configuration {
       processType: WorkerProcessType.workerSet,
       startDelay: DEFAULT_WORKER_START_DELAY,
       elementsPerWorker: 'auto',
-      elementStartDelay: DEFAULT_ELEMENT_START_DELAY,
+      elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY,
       poolMinSize: DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: DEFAULT_POOL_MAX_SIZE
     }
+
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerProcess') && {
         processType: Configuration.getConfigurationData()?.workerProcess
@@ -289,8 +290,11 @@ export class Configuration {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'chargingStationsPerWorker') && {
         elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker
       }),
-      ...(hasOwnProp(Configuration.getConfigurationData(), 'elementStartDelay') && {
-        elementStartDelay: Configuration.getConfigurationData()?.elementStartDelay
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'elementAddDelay') && {
+        elementAddDelay: Configuration.getConfigurationData()?.elementAddDelay
+      }),
+      ...(hasOwnProp(Configuration.getConfigurationData()?.worker, 'elementStartDelay') && {
+        elementAddDelay: Configuration.getConfigurationData()?.worker?.elementStartDelay
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMinSize') && {
         poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize
@@ -396,9 +400,9 @@ export class Configuration {
       `Use '${ConfigurationSection.worker}' section to define the number of element(s) per worker instead`
     )
     Configuration.warnDeprecatedConfigurationKey(
-      'elementStartDelay',
+      'elementAddDelay',
       undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker's element start delay instead`
+      `Use '${ConfigurationSection.worker}' section to define the worker's element add delay instead`
     )
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMinSize',
@@ -424,6 +428,11 @@ export class Configuration {
       'poolStrategy',
       ConfigurationSection.worker,
       'Not publicly exposed to end users'
+    )
+    Configuration.warnDeprecatedConfigurationKey(
+      'elementStartDelay',
+      ConfigurationSection.worker,
+      "Use 'elementAddDelay' instead"
     )
     if (
       Configuration.getConfigurationData()?.worker?.processType ===

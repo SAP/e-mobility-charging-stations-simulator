@@ -111,9 +111,9 @@ export interface ChargingStationTemplate {
   registrationMaxRetries?: number
   enableStatistics?: boolean
   remoteAuthorization?: boolean
-  /** @deprecated Replaced by remoteAuthorization */
+  /** @deprecated Replaced by remoteAuthorization. */
   mustAuthorizeAtRemoteStart?: boolean
-  /** @deprecated Replaced by ocppStrictCompliance */
+  /** @deprecated Replaced by ocppStrictCompliance. */
   payloadSchemaValidation?: boolean
   amperageLimitationOcppKey?: string
   amperageLimitationUnit?: AmpereUnits

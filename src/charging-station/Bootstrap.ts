@@ -348,7 +348,7 @@ export class Bootstrap extends EventEmitter {
       workerConfiguration.processType!,
       {
         workerStartDelay: workerConfiguration.startDelay,
-        elementStartDelay: workerConfiguration.elementStartDelay,
+        elementAddDelay: workerConfiguration.elementAddDelay,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         poolMaxSize: workerConfiguration.poolMaxSize!,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

@@ -115,9 +115,9 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     ++workerSetElement.numberOfWorkerElements
     // Add element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (this.workerOptions.elementStartDelay! > 0) {
+    if (this.workerOptions.elementAddDelay! > 0) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await sleep(randomizeDelay(this.workerOptions.elementStartDelay!))
+      await sleep(randomizeDelay(this.workerOptions.elementAddDelay!))
     }
   }
 
