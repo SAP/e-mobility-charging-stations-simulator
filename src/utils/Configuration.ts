@@ -513,22 +513,22 @@ export class Configuration {
 
   private static warnDeprecatedConfigurationKey (
     key: string,
-    sectionName?: string,
+    configurationSection?: ConfigurationSection,
     logMsgToAppend = ''
   ): void {
     if (
-      sectionName != null &&
-      Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] != null &&
+      configurationSection != null &&
+      Configuration.getConfigurationData()?.[configurationSection as keyof ConfigurationData] !=
+        null &&
       (
-        Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] as Record<
-        string,
-        unknown
-        >
+        Configuration.getConfigurationData()?.[
+          configurationSection as keyof ConfigurationData
+        ] as Record<string, unknown>
       )[key] != null
     ) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
-          `Deprecated configuration key '${key}' usage in section '${sectionName}'${
+          `Deprecated configuration key '${key}' usage in section '${configurationSection}'${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
           }`
         )}`
