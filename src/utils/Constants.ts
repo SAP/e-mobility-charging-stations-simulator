@@ -34,6 +34,12 @@ export class Constants {
     useConnectorId0: true,
     ocppVersion: OCPPVersion.VERSION_16,
     firmwareVersionPattern: Constants.SEMVER_PATTERN,
+    firmwareUpgrade: {
+      versionUpgrade: {
+        step: 1
+      },
+      reset: true
+    },
     ocppPersistentConfiguration: true,
     stationInfoPersistentConfiguration: true,
     automaticTransactionGeneratorPersistentConfiguration: true,

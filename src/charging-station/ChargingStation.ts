@@ -1191,15 +1191,6 @@ export class ChargingStation extends EventEmitter {
         } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
       )
     }
-    stationInfo.firmwareUpgrade = mergeDeepRight(
-      {
-        versionUpgrade: {
-          step: 1
-        },
-        reset: true
-      },
-      stationTemplate.firmwareUpgrade ?? {}
-    )
     if (stationTemplate.resetTime != null) {
       stationInfo.resetTime = secondsToMilliseconds(stationTemplate.resetTime)
     }
