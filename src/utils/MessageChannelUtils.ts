@@ -66,9 +66,7 @@ export const buildPerformanceStatisticsMessage = (
   }
 }
 
-export const buildChargingStationDataPayload = (
-  chargingStation: ChargingStation
-): ChargingStationData => {
+const buildChargingStationDataPayload = (chargingStation: ChargingStation): ChargingStationData => {
   return {
     started: chargingStation.started,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
