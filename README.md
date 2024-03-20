@@ -637,7 +637,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure'  
+   `status`: 'success' | 'failure',  
    `hashIdsSucceeded`: charging station unique identifier strings array (optional),  
    `hashIdsFailed`: charging station unique identifier strings array (optional)  
   }
@@ -876,7 +876,7 @@ Examples:
   - Request:  
     `ProcedureName`: 'heartbeat'  
     `PDU`: {  
-     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
     }
 
   - Response:  
