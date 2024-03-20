@@ -107,7 +107,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       throw new Error('Cannot add a WorkerSet element: not started')
     }
     const workerSetElement = await this.getWorkerSetElement()
-    const waitForAddedWorkerElement = new Promise<R>((resolve, reject) => {
+    const waitAddedWorkerElement = new Promise<R>((resolve, reject) => {
       const messageHandler = (message: WorkerMessage<R>): void => {
         if (message.event === WorkerMessageEvents.addedWorkerElement) {
           ++workerSetElement.numberOfWorkerElements
@@ -125,7 +125,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       event: WorkerMessageEvents.addWorkerElement,
       data: elementData
     })
-    const response = await waitForAddedWorkerElement
+    const response = await waitAddedWorkerElement
     // Add element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (this.workerOptions.elementAddDelay! > 0) {
