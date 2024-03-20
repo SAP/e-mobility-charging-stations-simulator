@@ -16,7 +16,7 @@ import {
 } from './WorkerTypes.js'
 import { randomizeDelay, sleep } from './WorkerUtils.js'
 
-export class WorkerSet extends WorkerAbstract<WorkerData> {
+export class WorkerSet<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<D, R> {
   public readonly emitter: EventEmitterAsyncResource | undefined
   private readonly workerSet: Set<WorkerSetElement>
   private started: boolean
@@ -102,22 +102,37 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
   }
 
   /** @inheritDoc */
-  public async addElement (elementData: WorkerData): Promise<void> {
+  public async addElement (elementData: D): Promise<R> {
     if (!this.started) {
       throw new Error('Cannot add a WorkerSet element: not started')
     }
     const workerSetElement = await this.getWorkerSetElement()
+    const waitForAddedWorkerElement = new Promise<R>((resolve, reject) => {
+      const messageHandler = (message: WorkerMessage<R>): void => {
+        if (message.event === WorkerMessageEvents.addedWorkerElement) {
+          ++workerSetElement.numberOfWorkerElements
+          resolve(message.data)
+          workerSetElement.worker.off('message', messageHandler)
+        } else if (message.event === WorkerMessageEvents.workerElementError) {
+          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+          reject(message.data)
+          workerSetElement.worker.off('message', messageHandler)
+        }
+      }
+      workerSetElement.worker.on('message', messageHandler)
+    })
     workerSetElement.worker.postMessage({
       event: WorkerMessageEvents.addWorkerElement,
       data: elementData
     })
-    ++workerSetElement.numberOfWorkerElements
+    const response = await waitForAddedWorkerElement
     // Add element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (this.workerOptions.elementAddDelay! > 0) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await sleep(randomizeDelay(this.workerOptions.elementAddDelay!))
     }
+    return response
   }
 
   /**
@@ -130,7 +145,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       ...this.workerOptions.poolOptions?.workerOptions
     })
     worker.on('message', this.workerOptions.poolOptions?.messageHandler ?? EMPTY_FUNCTION)
-    worker.on('message', (message: WorkerMessage<WorkerData>) => {
+    worker.on('message', (message: WorkerMessage<R>) => {
       if (message.event === WorkerMessageEvents.addedWorkerElement) {
         this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
       } else if (message.event === WorkerMessageEvents.workerElementError) {

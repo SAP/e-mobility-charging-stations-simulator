@@ -2,6 +2,7 @@ import { BaseError, type OCPPError } from '../../../exception/index.js'
 import {
   BroadcastChannelProcedureName,
   type BroadcastChannelRequestPayload,
+  type ChargingStationInfo,
   type ChargingStationOptions,
   ConfigurationSection,
   type JsonObject,
@@ -275,23 +276,30 @@ export abstract class AbstractUIService {
         errorMessage: `Template '${template}' not found`
       } satisfies ResponsePayload
     }
+    const stationInfos: ChargingStationInfo[] = []
     for (let i = 0; i < numberOfStations; i++) {
+      let stationInfo: ChargingStationInfo | undefined
       try {
-        await Bootstrap.getInstance().addChargingStation(
+        stationInfo = await Bootstrap.getInstance().addChargingStation(
           Bootstrap.getInstance().getLastIndex(template) + 1,
           `${template}.json`,
           options
         )
+        if (stationInfo != null) {
+          stationInfos.push(stationInfo)
+        }
       } catch (error) {
         return {
           status: ResponseStatus.FAILURE,
+          ...(stationInfo?.hashId != null && { hashIdsFailed: [stationInfo.hashId] }),
           errorMessage: (error as Error).message,
           errorStack: (error as Error).stack
         } satisfies ResponsePayload
       }
     }
     return {
-      status: ResponseStatus.SUCCESS
+      status: ResponseStatus.SUCCESS,
+      hashIdsSucceeded: stationInfos.map(stationInfo => stationInfo.hashId)
     }
   }
 

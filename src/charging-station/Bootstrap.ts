@@ -15,6 +15,7 @@ import { BaseError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
   type ChargingStationData,
+  type ChargingStationInfo,
   type ChargingStationOptions,
   type ChargingStationWorkerData,
   type ChargingStationWorkerEventError,
@@ -59,7 +60,7 @@ enum exitCodes {
 
 export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null
-  private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
+  private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
   private readonly uiServer: AbstractUIServer
   private storage?: Storage
   private readonly templateStatistics: Map<string, TemplateStatistics>
@@ -346,7 +347,10 @@ export class Bootstrap extends EventEmitter {
             : 1
         break
     }
-    this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
+    this.workerImplementation = WorkerFactory.getWorkerImplementation<
+    ChargingStationWorkerData,
+    ChargingStationInfo
+    >(
       join(
         dirname(fileURLToPath(import.meta.url)),
         `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`
@@ -541,13 +545,13 @@ export class Bootstrap extends EventEmitter {
     index: number,
     templateFile: string,
     options?: ChargingStationOptions
-  ): Promise<void> {
+  ): Promise<ChargingStationInfo | undefined> {
     if (!this.started && !this.starting) {
       throw new BaseError(
         'Cannot add charging station while the charging stations simulator is not started'
       )
     }
-    await this.workerImplementation?.addElement({
+    const stationInfo = await this.workerImplementation?.addElement({
       index,
       templateFile: join(
         dirname(fileURLToPath(import.meta.url)),
@@ -561,6 +565,7 @@ export class Bootstrap extends EventEmitter {
     const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))!
     ++templateStatistics.added
     templateStatistics.indexes.add(index)
+    return stationInfo
   }
 
   private gracefulShutdown (): void {

@@ -638,6 +638,8 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 - Response:  
   `PDU`: {  
    `status`: 'success' | 'failure'  
+   `hashIdsSucceeded`: charging station unique identifier strings array (optional),  
+   `hashIdsFailed`: charging station unique identifier strings array (optional)  
   }
 
 ###### Delete Charging Stations

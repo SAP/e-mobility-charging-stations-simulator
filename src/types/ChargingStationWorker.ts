@@ -70,6 +70,7 @@ export interface ChargingStationWorkerEventError extends WorkerData {
 }
 
 export type ChargingStationWorkerMessageData =
+  | ChargingStationInfo
   | ChargingStationData
   | Statistics
   | ChargingStationWorkerEventError

@@ -6,23 +6,24 @@ import { ThreadWorker } from 'poolifier'
 
 import { BaseError } from '../exception/index.js'
 import type {
-  ChargingStationData,
+  ChargingStationInfo,
   ChargingStationWorkerData,
   ChargingStationWorkerEventError,
   ChargingStationWorkerMessage
 } from '../types/index.js'
-import { buildChargingStationDataPayload, Configuration } from '../utils/index.js'
+import { Configuration } from '../utils/index.js'
 import { type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 import { ChargingStation } from './ChargingStation.js'
 
 export let chargingStationWorker: object
 if (Configuration.workerPoolInUse()) {
-  chargingStationWorker = new ThreadWorker<ChargingStationWorkerData>(
-    (data?: ChargingStationWorkerData): void => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, no-new
-      new ChargingStation(data!.index, data!.templateFile, data!.options)
-    }
-  )
+  chargingStationWorker = new ThreadWorker<
+  ChargingStationWorkerData,
+  ChargingStationInfo | undefined
+  >((data?: ChargingStationWorkerData): ChargingStationInfo | undefined => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, no-new
+    return new ChargingStation(data!.index, data!.templateFile, data!.options).stationInfo
+  })
 } else {
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   class ChargingStationWorker<Data extends ChargingStationWorkerData> {
@@ -38,13 +39,14 @@ if (Configuration.workerPoolInUse()) {
               )
               parentPort?.postMessage({
                 event: WorkerMessageEvents.addedWorkerElement,
-                data: buildChargingStationDataPayload(chargingStation)
-              } satisfies ChargingStationWorkerMessage<ChargingStationData>)
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                data: chargingStation.stationInfo!
+              } satisfies ChargingStationWorkerMessage<ChargingStationInfo>)
             } catch (error) {
               parentPort?.postMessage({
                 event: WorkerMessageEvents.workerElementError,
                 data: {
-                  event: WorkerMessageEvents.addWorkerElement,
+                  event: message.event,
                   name: (error as Error).name,
                   message: (error as Error).message,
                   stack: (error as Error).stack
