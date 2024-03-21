@@ -12,6 +12,7 @@ import {
   minutesToSeconds,
   secondsToMilliseconds
 } from 'date-fns'
+import { is } from 'rambda'
 
 import {
   type JsonType,
@@ -215,11 +216,11 @@ export const clone = <T>(object: T): T => {
  * @internal
  */
 export const isAsyncFunction = (fn: unknown): fn is (...args: unknown[]) => Promise<unknown> => {
-  return typeof fn === 'function' && fn.constructor.name === 'AsyncFunction'
+  return is(Function, fn) && fn.constructor.name === 'AsyncFunction'
 }
 
 export const isObject = (value: unknown): value is object => {
-  return value != null && typeof value === 'object' && !Array.isArray(value)
+  return value != null && !Array.isArray(value) && is(Object, value)
 }
 
 export const hasOwnProp = (value: unknown, property: PropertyKey): boolean => {
@@ -277,7 +278,7 @@ export const JSONStringify = <
   return JSON.stringify(
     object,
     (_, value: Record<string, unknown>) => {
-      if (value instanceof Map) {
+      if (is(Map, value)) {
         switch (mapFormat) {
           case MapStringifyFormat.object:
             return { ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries()) }
@@ -285,7 +286,7 @@ export const JSONStringify = <
           default:
             return [...value]
         }
-      } else if (value instanceof Set) {
+      } else if (is(Set, value)) {
         return [...value] as JsonType[]
       }
       return value

@@ -5,7 +5,7 @@ import type { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
 import { secondsToMilliseconds } from 'date-fns'
-import { mean, median } from 'rambda'
+import { is, mean, median } from 'rambda'
 
 import { BaseError } from '../exception/index.js'
 import {
@@ -107,7 +107,7 @@ export class PerformanceStatistics {
     try {
       performance.measure(name, markId)
     } catch (error) {
-      if (error instanceof Error && error.message.includes('performance mark has not been set')) {
+      if (is(Error, error) && error.message.includes('performance mark has not been set')) {
         /* Ignore */
       } else {
         throw error
