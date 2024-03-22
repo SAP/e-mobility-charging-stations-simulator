@@ -301,7 +301,7 @@ export abstract class AbstractUIService {
       }
     }
     return {
-      status: failedStationInfos.length > 0 ? ResponseStatus.FAILURE : ResponseStatus.SUCCESS,
+      status: err != null ? ResponseStatus.FAILURE : ResponseStatus.SUCCESS,
       ...(succeededStationInfos.length > 0 && {
         hashIdsSucceeded: succeededStationInfos.map(stationInfo => stationInfo.hashId)
       }),
