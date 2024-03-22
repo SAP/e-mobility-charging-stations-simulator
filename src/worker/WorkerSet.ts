@@ -153,16 +153,17 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     })
     worker.on('message', this.workerOptions.poolOptions?.messageHandler ?? EMPTY_FUNCTION)
     worker.on('message', (message: WorkerMessage<R>) => {
-      if (this.promiseResponseMap.has(message.uuid)) {
+      const { uuid, event, data } = message
+      if (this.promiseResponseMap.has(uuid)) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { resolve, reject, workerSetElement } = this.promiseResponseMap.get(message.uuid)!
-        if (message.event === WorkerMessageEvents.addedWorkerElement) {
+        const { resolve, reject, workerSetElement } = this.promiseResponseMap.get(uuid)!
+        if (event === WorkerMessageEvents.addedWorkerElement) {
           this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
           workerSetElement.numberOfWorkerElements++
-          resolve(message.data)
-        } else if (message.event === WorkerMessageEvents.workerElementError) {
-          this.emitter?.emit(WorkerSetEvents.elementError, message.data)
-          reject(message.data)
+          resolve(data)
+        } else if (event === WorkerMessageEvents.workerElementError) {
+          this.emitter?.emit(WorkerSetEvents.elementError, data)
+          reject(data)
         }
         this.promiseResponseMap.delete(message.uuid)
       }
