@@ -1227,6 +1227,7 @@ export class ChargingStation extends EventEmitter {
     const stationInfoFromFile = this.getStationInfoFromFile(
       stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
+    let stationInfo: ChargingStationInfo
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
@@ -1234,19 +1235,14 @@ export class ChargingStation extends EventEmitter {
       stationInfoFromFile != null &&
       stationInfoFromFile.templateHash === stationInfoFromTemplate.templateHash
     ) {
-      return setChargingStationOptions(
-        mergeDeepRight(Constants.DEFAULT_STATION_INFO, stationInfoFromFile),
-        options
-      )
+      stationInfo = stationInfoFromFile
+    } else {
+      stationInfo = stationInfoFromTemplate
+      stationInfoFromFile != null &&
+        propagateSerialNumber(this.getTemplateFromFile(), stationInfoFromFile, stationInfo)
     }
-    stationInfoFromFile != null &&
-      propagateSerialNumber(
-        this.getTemplateFromFile(),
-        stationInfoFromFile,
-        stationInfoFromTemplate
-      )
     return setChargingStationOptions(
-      mergeDeepRight(Constants.DEFAULT_STATION_INFO, stationInfoFromTemplate),
+      mergeDeepRight(Constants.DEFAULT_STATION_INFO, stationInfo),
       options
     )
   }
