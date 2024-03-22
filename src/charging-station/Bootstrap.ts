@@ -18,7 +18,6 @@ import {
   type ChargingStationInfo,
   type ChargingStationOptions,
   type ChargingStationWorkerData,
-  type ChargingStationWorkerEventError,
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
@@ -43,7 +42,7 @@ import {
   logger,
   logPrefix
 } from '../utils/index.js'
-import { type WorkerAbstract, WorkerFactory } from '../worker/index.js'
+import { DEFAULT_ELEMENTS_PER_WORKER, type WorkerAbstract, WorkerFactory } from '../worker/index.js'
 import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 import { UIServerFactory } from './ui-server/UIServerFactory.js'
@@ -166,15 +165,6 @@ export class Bootstrap extends EventEmitter {
         this.on(
           ChargingStationWorkerMessageEvents.performanceStatistics,
           this.workerEventPerformanceStatistics
-        )
-        this.on(
-          ChargingStationWorkerMessageEvents.workerElementError,
-          (eventError: ChargingStationWorkerEventError) => {
-            logger.error(
-              `${this.logPrefix()} ${moduleName}.start: Error occurred while handling '${eventError.event}' event on worker:`,
-              eventError
-            )
-          }
         )
         // eslint-disable-next-line @typescript-eslint/unbound-method
         if (isAsyncFunction(this.workerImplementation?.start)) {
@@ -340,12 +330,13 @@ export class Bootstrap extends EventEmitter {
         elementsPerWorker = this.numberOfConfiguredChargingStations
         break
       case 'auto':
-      default:
         elementsPerWorker =
           this.numberOfConfiguredChargingStations > availableParallelism()
             ? Math.round(this.numberOfConfiguredChargingStations / (availableParallelism() * 1.5))
             : 1
         break
+      default:
+        elementsPerWorker = workerConfiguration.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER
     }
     this.workerImplementation = WorkerFactory.getWorkerImplementation<
     ChargingStationWorkerData,
@@ -404,12 +395,6 @@ export class Bootstrap extends EventEmitter {
           break
         case ChargingStationWorkerMessageEvents.performanceStatistics:
           this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, msg.data)
-          break
-        case ChargingStationWorkerMessageEvents.addedWorkerElement:
-          this.emit(ChargingStationWorkerMessageEvents.addWorkerElement, msg.data)
-          break
-        case ChargingStationWorkerMessageEvents.workerElementError:
-          this.emit(ChargingStationWorkerMessageEvents.workerElementError, msg.data)
           break
         default:
           throw new BaseError(

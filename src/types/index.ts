@@ -27,7 +27,6 @@ export {
   type ChargingStationData,
   type ChargingStationOptions,
   type ChargingStationWorkerData,
-  type ChargingStationWorkerEventError,
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,

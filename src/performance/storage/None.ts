@@ -13,7 +13,7 @@ export class None extends Storage {
   }
 
   public open (): void {
-    /** Intentionally empty   */
+    /** Intentionally empty */
   }
 
   public close (): void {

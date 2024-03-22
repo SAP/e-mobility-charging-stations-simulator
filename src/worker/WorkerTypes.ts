@@ -51,6 +51,7 @@ export interface WorkerSetElement {
 }
 
 export interface WorkerMessage<T extends WorkerData> {
+  uuid: `${string}-${string}-${string}-${string}`
   event: WorkerMessageEvents
   data: T
 }
@@ -59,4 +60,11 @@ export enum WorkerMessageEvents {
   addWorkerElement = 'addWorkerElement',
   addedWorkerElement = 'addedWorkerElement',
   workerElementError = 'workerElementError'
+}
+
+export interface WorkerDataError extends WorkerData {
+  event: WorkerMessageEvents
+  name: string
+  message: string
+  stack?: string
 }

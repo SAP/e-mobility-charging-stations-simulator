@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws'
 
-import { type WorkerData, type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
+import { type WorkerData, type WorkerMessage } from '../worker/index.js'
 import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js'
 import { ChargingStationEvents } from './ChargingStationEvents.js'
 import type { ChargingStationInfo } from './ChargingStationInfo.js'
@@ -52,32 +52,19 @@ enum ChargingStationMessageEvents {
 }
 
 export const ChargingStationWorkerMessageEvents = {
-  ...WorkerMessageEvents,
   ...ChargingStationEvents,
   ...ChargingStationMessageEvents
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type ChargingStationWorkerMessageEvents =
-  | WorkerMessageEvents
   | ChargingStationEvents
   | ChargingStationMessageEvents
 
-export interface ChargingStationWorkerEventError extends WorkerData {
-  event: WorkerMessageEvents
-  name: string
-  message: string
-  stack?: string
-}
-
-export type ChargingStationWorkerMessageData =
-  | ChargingStationInfo
-  | ChargingStationData
-  | Statistics
-  | ChargingStationWorkerEventError
+export type ChargingStationWorkerMessageData = ChargingStationData | Statistics
 
 export type ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> = Omit<
 WorkerMessage<T>,
-'event'
+'uuid' | 'event'
 > & {
   event: ChargingStationWorkerMessageEvents
 }

@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
+import { randomUUID } from 'node:crypto'
 import { EventEmitterAsyncResource } from 'node:events'
 import { SHARE_ENV, Worker } from 'node:worker_threads'
 
@@ -16,9 +17,20 @@ import {
 } from './WorkerTypes.js'
 import { randomizeDelay, sleep } from './WorkerUtils.js'
 
+interface ResponseWrapper<R extends WorkerData> {
+  resolve: (value: R | PromiseLike<R>) => void
+  reject: (reason?: unknown) => void
+  workerSetElement: WorkerSetElement
+}
+
 export class WorkerSet<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<D, R> {
   public readonly emitter: EventEmitterAsyncResource | undefined
   private readonly workerSet: Set<WorkerSetElement>
+  private readonly promiseResponseMap: Map<
+    `${string}-${string}-${string}-${string}`,
+  ResponseWrapper<R>
+  >
+
   private started: boolean
   private workerStartup: boolean
 
@@ -40,6 +52,10 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       throw new RangeError('Elements per worker must be greater than zero')
     }
     this.workerSet = new Set<WorkerSetElement>()
+    this.promiseResponseMap = new Map<
+      `${string}-${string}-${string}-${string}`,
+    ResponseWrapper<R>
+    >()
     if (this.workerOptions.poolOptions?.enableEvents === true) {
       this.emitter = new EventEmitterAsyncResource({ name: 'workerset' })
     }
@@ -107,25 +123,16 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       throw new Error('Cannot add a WorkerSet element: not started')
     }
     const workerSetElement = await this.getWorkerSetElement()
-    const waitAddedWorkerElement = new Promise<R>((resolve, reject) => {
-      const messageHandler = (message: WorkerMessage<R>): void => {
-        if (message.event === WorkerMessageEvents.addedWorkerElement) {
-          ++workerSetElement.numberOfWorkerElements
-          resolve(message.data)
-          workerSetElement.worker.off('message', messageHandler)
-        } else if (message.event === WorkerMessageEvents.workerElementError) {
-          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-          reject(message.data)
-          workerSetElement.worker.off('message', messageHandler)
-        }
-      }
-      workerSetElement.worker.on('message', messageHandler)
+    const sendMessageToWorker = new Promise<R>((resolve, reject) => {
+      const message = {
+        uuid: randomUUID(),
+        event: WorkerMessageEvents.addWorkerElement,
+        data: elementData
+      } satisfies WorkerMessage<D>
+      workerSetElement.worker.postMessage(message)
+      this.promiseResponseMap.set(message.uuid, { resolve, reject, workerSetElement })
     })
-    workerSetElement.worker.postMessage({
-      event: WorkerMessageEvents.addWorkerElement,
-      data: elementData
-    })
-    const response = await waitAddedWorkerElement
+    const response = await sendMessageToWorker
     // Add element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (this.workerOptions.elementAddDelay! > 0) {
@@ -146,10 +153,18 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     })
     worker.on('message', this.workerOptions.poolOptions?.messageHandler ?? EMPTY_FUNCTION)
     worker.on('message', (message: WorkerMessage<R>) => {
-      if (message.event === WorkerMessageEvents.addedWorkerElement) {
-        this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
-      } else if (message.event === WorkerMessageEvents.workerElementError) {
-        this.emitter?.emit(WorkerSetEvents.elementError, message.data)
+      if (this.promiseResponseMap.has(message.uuid)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { resolve, reject, workerSetElement } = this.promiseResponseMap.get(message.uuid)!
+        if (message.event === WorkerMessageEvents.addedWorkerElement) {
+          this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
+          workerSetElement.numberOfWorkerElements++
+          resolve(message.data)
+        } else if (message.event === WorkerMessageEvents.workerElementError) {
+          this.emitter?.emit(WorkerSetEvents.elementError, message.data)
+          reject(message.data)
+        }
+        this.promiseResponseMap.delete(message.uuid)
       }
     })
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION)
