@@ -157,13 +157,26 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       if (this.promiseResponseMap.has(uuid)) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { resolve, reject, workerSetElement } = this.promiseResponseMap.get(uuid)!
-        if (event === WorkerMessageEvents.addedWorkerElement) {
-          this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
-          ++workerSetElement.numberOfWorkerElements
-          resolve(data)
-        } else if (event === WorkerMessageEvents.workerElementError) {
-          this.emitter?.emit(WorkerSetEvents.elementError, data)
-          reject(data)
+        switch (event) {
+          case WorkerMessageEvents.addedWorkerElement:
+            this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
+            ++workerSetElement.numberOfWorkerElements
+            resolve(data)
+            break
+          case WorkerMessageEvents.workerElementError:
+            this.emitter?.emit(WorkerSetEvents.elementError, data)
+            reject(data)
+            break
+          default:
+            reject(
+              new Error(
+                `Unknown worker message event: '${event}' received with data: '${JSON.stringify(
+                  data,
+                  undefined,
+                  2
+                )}'`
+              )
+            )
         }
         this.promiseResponseMap.delete(uuid)
       }

@@ -370,7 +370,7 @@ export class Bootstrap extends EventEmitter {
     msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
   ): void {
     // logger.debug(
-    //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
+    //   `${this.logPrefix()} ${moduleName}.messageHandler: Charging station worker message received: ${JSON.stringify(
     //     msg,
     //     undefined,
     //     2
@@ -404,12 +404,12 @@ export class Bootstrap extends EventEmitter {
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker event: '${event}' received with data: ${JSON.stringify(data, undefined, 2)}`
+            `Unknown charging station worker message event: '${event}' received with data: ${JSON.stringify(data, undefined, 2)}`
           )
       }
     } catch (error) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${event}' event:`,
+        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling charging station worker message event '${event}':`,
         error
       )
     }

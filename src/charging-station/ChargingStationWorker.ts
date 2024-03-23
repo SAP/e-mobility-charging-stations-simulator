@@ -26,41 +26,44 @@ if (Configuration.workerPoolInUse()) {
     constructor () {
       parentPort?.on('message', (message: WorkerMessage<Data>) => {
         const { uuid, event, data } = message
-        switch (event) {
-          case WorkerMessageEvents.addWorkerElement:
-            try {
-              const chargingStation = new ChargingStation(
-                data.index,
-                data.templateFile,
-                data.options
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (uuid != null) {
+          switch (event) {
+            case WorkerMessageEvents.addWorkerElement:
+              try {
+                const chargingStation = new ChargingStation(
+                  data.index,
+                  data.templateFile,
+                  data.options
+                )
+                parentPort?.postMessage({
+                  uuid,
+                  event: WorkerMessageEvents.addedWorkerElement,
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  data: chargingStation.stationInfo!
+                } satisfies WorkerMessage<ChargingStationInfo>)
+              } catch (error) {
+                parentPort?.postMessage({
+                  uuid,
+                  event: WorkerMessageEvents.workerElementError,
+                  data: {
+                    event,
+                    name: (error as Error).name,
+                    message: (error as Error).message,
+                    stack: (error as Error).stack
+                  }
+                } satisfies WorkerMessage<WorkerDataError>)
+              }
+              break
+            default:
+              throw new BaseError(
+                `Unknown worker message event: '${event}' received with data: '${JSON.stringify(
+                  data,
+                  undefined,
+                  2
+                )}'`
               )
-              parentPort?.postMessage({
-                uuid,
-                event: WorkerMessageEvents.addedWorkerElement,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                data: chargingStation.stationInfo!
-              } satisfies WorkerMessage<ChargingStationInfo>)
-            } catch (error) {
-              parentPort?.postMessage({
-                uuid,
-                event: WorkerMessageEvents.workerElementError,
-                data: {
-                  event,
-                  name: (error as Error).name,
-                  message: (error as Error).message,
-                  stack: (error as Error).stack
-                }
-              } satisfies WorkerMessage<WorkerDataError>)
-            }
-            break
-          default:
-            throw new BaseError(
-              `Unknown worker event: '${event}' received with data: '${JSON.stringify(
-                data,
-                undefined,
-                2
-              )}'`
-            )
+          }
         }
       })
     }
