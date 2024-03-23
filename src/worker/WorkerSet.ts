@@ -159,7 +159,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         const { resolve, reject, workerSetElement } = this.promiseResponseMap.get(uuid)!
         if (event === WorkerMessageEvents.addedWorkerElement) {
           this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
-          workerSetElement.numberOfWorkerElements++
+          ++workerSetElement.numberOfWorkerElements
           resolve(data)
         } else if (event === WorkerMessageEvents.workerElementError) {
           this.emitter?.emit(WorkerSetEvents.elementError, data)
