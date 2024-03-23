@@ -376,38 +376,35 @@ export class Bootstrap extends EventEmitter {
     //     2
     //   )}`
     // )
+    const { event, data } = msg
     try {
-      switch (msg.event) {
+      switch (event) {
         case ChargingStationWorkerMessageEvents.added:
-          this.emit(ChargingStationWorkerMessageEvents.added, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.added, data)
           break
         case ChargingStationWorkerMessageEvents.deleted:
-          this.emit(ChargingStationWorkerMessageEvents.deleted, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.deleted, data)
           break
         case ChargingStationWorkerMessageEvents.started:
-          this.emit(ChargingStationWorkerMessageEvents.started, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.started, data)
           break
         case ChargingStationWorkerMessageEvents.stopped:
-          this.emit(ChargingStationWorkerMessageEvents.stopped, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.stopped, data)
           break
         case ChargingStationWorkerMessageEvents.updated:
-          this.emit(ChargingStationWorkerMessageEvents.updated, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.updated, data)
           break
         case ChargingStationWorkerMessageEvents.performanceStatistics:
-          this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, data)
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker event: '${
-              msg.event
-            }' received with data: ${JSON.stringify(msg.data, undefined, 2)}`
+            `Unknown charging station worker event: '${event}' received with data: ${JSON.stringify(data, undefined, 2)}`
           )
       }
     } catch (error) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${
-          msg.event
-        }' event:`,
+        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${event}' event:`,
         error
       )
     }
