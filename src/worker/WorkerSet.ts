@@ -165,7 +165,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
           this.emitter?.emit(WorkerSetEvents.elementError, data)
           reject(data)
         }
-        this.promiseResponseMap.delete(message.uuid)
+        this.promiseResponseMap.delete(uuid)
       }
     })
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION)
