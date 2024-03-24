@@ -96,7 +96,9 @@ Tweak them to your needs by following the section [configuration files syntax](#
 
 ## Start simulator
 
-Run: `pnpm start`.
+```shell
+pnpm start
+```
 
 ## Start Web UI
 
