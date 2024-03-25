@@ -45,6 +45,13 @@ export interface WorkerOptions {
 
 export type WorkerData = Record<string, unknown>
 
+export interface WorkerDataError extends WorkerData {
+  event: WorkerMessageEvents
+  name: string
+  message: string
+  stack?: string
+}
+
 export interface WorkerSetElement {
   worker: Worker
   numberOfWorkerElements: number
@@ -60,11 +67,4 @@ export enum WorkerMessageEvents {
   addWorkerElement = 'addWorkerElement',
   addedWorkerElement = 'addedWorkerElement',
   workerElementError = 'workerElementError'
-}
-
-export interface WorkerDataError extends WorkerData {
-  event: WorkerMessageEvents
-  name: string
-  message: string
-  stack?: string
 }

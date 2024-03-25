@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws'
 
-import { type WorkerData, type WorkerMessage } from '../worker/index.js'
+import type { WorkerData } from '../worker/index.js'
 import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js'
 import { ChargingStationEvents } from './ChargingStationEvents.js'
 import type { ChargingStationInfo } from './ChargingStationInfo.js'
@@ -62,9 +62,7 @@ export type ChargingStationWorkerMessageEvents =
 
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics
 
-export type ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> = Omit<
-WorkerMessage<T>,
-'uuid' | 'event'
-> & {
+export interface ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> {
   event: ChargingStationWorkerMessageEvents
+  data: T
 }
