@@ -25,6 +25,7 @@ export enum SupervisionUrlDistribution {
 export interface StationTemplateUrl {
   file: string
   numberOfStations: number
+  provisionedNumberOfStations?: number
 }
 
 export interface LogConfiguration {

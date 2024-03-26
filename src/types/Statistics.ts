@@ -34,6 +34,7 @@ export interface Statistics extends WorkerData {
 
 export interface TemplateStatistics {
   configured: number
+  provisioned: number
   added: number
   started: number
   indexes: Set<number>

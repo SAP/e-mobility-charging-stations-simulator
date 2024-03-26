@@ -544,7 +544,7 @@ export class Configuration {
     }
   }
 
-  private static getConfigurationData (): ConfigurationData | undefined {
+  public static getConfigurationData (): ConfigurationData | undefined {
     if (Configuration.configurationData == null) {
       try {
         Configuration.configurationData = JSON.parse(

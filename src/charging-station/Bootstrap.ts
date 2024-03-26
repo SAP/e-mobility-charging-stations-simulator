@@ -114,9 +114,17 @@ export class Bootstrap extends EventEmitter {
     )
   }
 
+  public get numberOfProvisionedChargingStations (): number {
+    return [...this.templateStatistics.values()].reduce(
+      (accumulator, value) => accumulator + value.provisioned,
+      0
+    )
+  }
+
   public getState (): SimulatorState {
     return {
       version: this.version,
+      configuration: Configuration.getConfigurationData(),
       started: this.started,
       templateStatistics: this.templateStatistics
     }
@@ -219,7 +227,7 @@ export class Bootstrap extends EventEmitter {
           chalk.green(
             `Charging stations simulator ${
               this.version
-            } started with ${this.numberOfConfiguredChargingStations} configured charging station(s) from ${this.numberOfChargingStationTemplates} charging station template(s) and ${
+            } started with ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s) from ${this.numberOfChargingStationTemplates} charging station template(s) and ${
               Configuration.workerDynamicPoolInUse() ? `${workerConfiguration.poolMinSize}/` : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse() ? `/${workerConfiguration.poolMaxSize}` : ''
@@ -327,12 +335,18 @@ export class Bootstrap extends EventEmitter {
     let elementsPerWorker: number
     switch (workerConfiguration.elementsPerWorker) {
       case 'all':
-        elementsPerWorker = this.numberOfConfiguredChargingStations
+        elementsPerWorker =
+          this.numberOfConfiguredChargingStations + this.numberOfProvisionedChargingStations
         break
       case 'auto':
         elementsPerWorker =
-          this.numberOfConfiguredChargingStations > availableParallelism()
-            ? Math.round(this.numberOfConfiguredChargingStations / (availableParallelism() * 1.5))
+          this.numberOfConfiguredChargingStations + this.numberOfProvisionedChargingStations >
+          availableParallelism()
+            ? Math.round(
+              (this.numberOfConfiguredChargingStations +
+                  this.numberOfProvisionedChargingStations) /
+                  (availableParallelism() * 1.5)
+            )
             : 1
         break
       default:
@@ -422,7 +436,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) added (${
         this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+      } added from ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s))`
     )
   }
 
@@ -437,7 +451,7 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) deleted (${
         this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+      } added from ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s))`
     )
   }
 
@@ -494,6 +508,7 @@ export class Bootstrap extends EventEmitter {
         const templateName = buildTemplateName(stationTemplateUrl.file)
         this.templateStatistics.set(templateName, {
           configured: stationTemplateUrl.numberOfStations,
+          provisioned: stationTemplateUrl.provisionedNumberOfStations ?? 0,
           added: 0,
           started: 0,
           indexes: new Set<number>()
