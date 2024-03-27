@@ -580,6 +580,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
    `status`: 'success' | 'failure',  
    `state`: {  
    `version`: string,  
+   `configuration`: ConfigurationData,  
    `started`: boolean,  
    `templateStatistics`: Record<string, TemplateStatistics>  
    }  
