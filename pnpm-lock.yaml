@@ -167,8 +167,8 @@ importers:
         specifier: ^29.7.0
         version: 29.7.0
       glob:
-        specifier: ^10.3.10
-        version: 10.3.10
+        specifier: ^10.3.11
+        version: 10.3.11
       husky:
         specifier: ^9.0.11
         version: 9.0.11
@@ -6064,6 +6064,18 @@ packages:
       path-scurry: 1.10.2
     dev: true
 
+  /glob@10.3.11:
+    resolution: {integrity: sha512-0UAMm+R/z1E2bTR8eFnoIIlnrUK89m36i90Ez36ld9hLulfUPBgRCQtBy/v86ABx18jnGyrTvu4X3LAjIeBogw==}
+    engines: {node: '>=16 || 14 >=14.17'}
+    hasBin: true
+    dependencies:
+      foreground-child: 3.1.1
+      jackspeak: 2.3.6
+      minimatch: 9.0.3
+      minipass: 7.0.4
+      path-scurry: 1.10.2
+    dev: true
+
   /glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
     dependencies:
@@ -9583,7 +9595,7 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
     dependencies:
-      glob: 10.3.10
+      glob: 10.3.11
     dev: true
 
   /ripemd160@2.0.2:
