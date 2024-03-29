@@ -238,7 +238,7 @@ export class UIClient {
   private responseHandler(messageEvent: MessageEvent<string>): void {
     let response: ProtocolResponse
     try {
-      response = JSON.parse(messageEvent.data) as ProtocolResponse
+      response = JSON.parse(messageEvent.data)
     } catch (error) {
       useToast().error('Invalid response JSON format')
       console.error('Invalid response JSON format', error)

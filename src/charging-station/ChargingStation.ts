@@ -286,7 +286,7 @@ export class ChargingStation extends EventEmitter {
         readFileSync(this.templateFile, 'utf8')
       ) as ChargingStationTemplate
     } catch {
-      stationTemplate = undefined
+      // Ignore
     }
     return logPrefix(` ${getChargingStationId(this.index, stationTemplate)} |`)
   }
