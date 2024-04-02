@@ -9,7 +9,7 @@
   },
   "volta": {
     "node": "20.12.0",
-    "pnpm": "8.15.5"
+    "pnpm": "8.15.6"
   },
   "type": "module",
   "scripts": {
