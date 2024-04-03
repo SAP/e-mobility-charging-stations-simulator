@@ -52,7 +52,6 @@
     "useTsNode": true
   },
   "scripts": {
-    "preinstall": "node skip-preinstall.js",
     "prepare": "node prepare.js",
     "build-requirements": "node --no-warnings build-requirements.js",
     "start": "pnpm build && cross-env NODE_ENV=production node dist/start.js",
