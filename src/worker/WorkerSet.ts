@@ -182,7 +182,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       }
     })
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION)
-    worker.on('error', error => {
+    worker.once('error', error => {
       this.emitter?.emit(WorkerSetEvents.error, error)
       if (
         this.workerOptions.poolOptions?.restartWorkerOnError === true &&
