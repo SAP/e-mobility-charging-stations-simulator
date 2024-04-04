@@ -1,21 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "target": "es2022",
+    "target": "ESNext",
     "module": "NodeNext",
-    "lib": ["es2022"],
+    "lib": ["ESNext"],
     "removeComments": true,
-
     "strict": true,
-
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "verbatimModuleSyntax": true,
-
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-
     "forceConsistentCasingInFileNames": true
   },
   "exclude": ["ui/web/**/*.ts"]

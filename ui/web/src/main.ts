@@ -1,10 +1,12 @@
-import { type App as AppType, createApp } from 'vue'
-import ToastPlugin from 'vue-toast-notification'
-import type { ConfigurationData } from '@/types'
-import { router } from '@/router'
-import { UIClient, getFromLocalStorage, setToLocalStorage } from '@/composables'
-import App from '@/App.vue'
 import 'vue-toast-notification/dist/theme-bootstrap.css'
+
+import { type App as AppType, createApp, ref } from 'vue'
+import ToastPlugin from 'vue-toast-notification'
+
+import App from '@/App.vue'
+import { getFromLocalStorage, setToLocalStorage, UIClient } from '@/composables'
+import { router } from '@/router'
+import type { ChargingStationData, ConfigurationData, UIServerConfigurationSection } from '@/types'
 
 const app = createApp(App)
 
@@ -19,24 +21,26 @@ const initializeApp = (app: AppType, config: ConfigurationData) => {
     config.uiServer = [config.uiServer]
   }
   if (app.config.globalProperties.$configuration == null) {
-    app.config.globalProperties.$configuration = config
+    app.config.globalProperties.$configuration = ref<ConfigurationData>(config)
   }
-  if (!Array.isArray(app.config.globalProperties.$templates)) {
-    app.config.globalProperties.$templates = []
+  if (!Array.isArray(app.config.globalProperties.$templates?.value)) {
+    app.config.globalProperties.$templates = ref<string[]>([])
   }
-  if (!Array.isArray(app.config.globalProperties.$chargingStations)) {
-    app.config.globalProperties.$chargingStations = []
+  if (!Array.isArray(app.config.globalProperties.$chargingStations?.value)) {
+    app.config.globalProperties.$chargingStations = ref<ChargingStationData[]>([])
   }
   if (
     getFromLocalStorage<number | undefined>('uiServerConfigurationIndex', undefined) == null ||
     getFromLocalStorage<number>('uiServerConfigurationIndex', 0) >
-      app.config.globalProperties.$configuration.uiServer.length - 1
+      (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])
+        .length -
+        1
   ) {
     setToLocalStorage<number>('uiServerConfigurationIndex', 0)
   }
   if (app.config.globalProperties.$uiClient == null) {
     app.config.globalProperties.$uiClient = UIClient.getInstance(
-      app.config.globalProperties.$configuration.uiServer[
+      (app.config.globalProperties.$configuration.value.uiServer as UIServerConfigurationSection[])[
         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
       ]
     )

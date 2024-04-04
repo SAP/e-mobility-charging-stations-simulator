@@ -1,16 +1,16 @@
 import { type FSWatcher, readFileSync } from 'node:fs'
 
-import type { ChargingStation } from './ChargingStation.js'
-import { getIdTagsFile } from './Helpers.js'
 import { FileType, IdTagDistribution } from '../types/index.js'
 import {
   handleFileException,
   isNotEmptyString,
-  logPrefix,
   logger,
+  logPrefix,
   secureRandom,
   watchJsonFile
 } from '../utils/index.js'
+import type { ChargingStation } from './ChargingStation.js'
+import { getIdTagsFile } from './Helpers.js'
 
 interface IdTagsCacheValueType {
   idTags: string[]

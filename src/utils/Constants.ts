@@ -34,6 +34,12 @@ export class Constants {
     useConnectorId0: true,
     ocppVersion: OCPPVersion.VERSION_16,
     firmwareVersionPattern: Constants.SEMVER_PATTERN,
+    firmwareUpgrade: {
+      versionUpgrade: {
+        step: 1
+      },
+      reset: true
+    },
     ocppPersistentConfiguration: true,
     stationInfoPersistentConfiguration: true,
     automaticTransactionGeneratorPersistentConfiguration: true,
@@ -85,7 +91,7 @@ export class Constants {
     | RequestCommand
     | IncomingRequestCommand
 
-  static readonly MAX_RANDOM_INTEGER = 281474976710654
+  static readonly MAX_RANDOM_INTEGER = 281474976710655
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT = 60000 // Ms
 

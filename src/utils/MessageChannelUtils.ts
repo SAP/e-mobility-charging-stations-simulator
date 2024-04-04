@@ -1,9 +1,3 @@
-import {
-  OutputFormat,
-  buildChargingStationAutomaticTransactionGeneratorConfiguration,
-  buildConnectorsStatus,
-  buildEvsesStatus
-} from './ChargingStationConfigurationUtils.js'
 import type { ChargingStation } from '../charging-station/index.js'
 import {
   type ChargingStationData,
@@ -11,6 +5,12 @@ import {
   ChargingStationWorkerMessageEvents,
   type Statistics
 } from '../types/index.js'
+import {
+  buildChargingStationAutomaticTransactionGeneratorConfiguration,
+  buildConnectorsStatus,
+  buildEvsesStatus,
+  OutputFormat
+} from './ChargingStationConfigurationUtils.js'
 
 export const buildAddedMessage = (
   chargingStation: ChargingStation
@@ -66,9 +66,7 @@ export const buildPerformanceStatisticsMessage = (
   }
 }
 
-export const buildChargingStationDataPayload = (
-  chargingStation: ChargingStation
-): ChargingStationData => {
+const buildChargingStationDataPayload = (chargingStation: ChargingStation): ChargingStationData => {
   return {
     started: chargingStation.started,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

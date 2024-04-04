@@ -1,6 +1,11 @@
 <!-- markdownlint-disable-file MD033 MD024 -->
+<div align="center">
 
-# [e-mobility charging stations simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
+# [e-Mobility charging stations simulator](https://github.com/sap/e-mobility-charging-stations-simulator)
+
+</div>
+
+<div align="center">
 
 [![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Clone&query=count&url=https://gist.githubusercontent.com/jerome-benoit/c7c669b881d5b27dc0b44a639504ff93/raw/clone.json&logo=github)](https://github.com/SAP/e-mobility-charging-stations-simulator/graphs/traffic)
 [![GitHub commit activity (main)](https://img.shields.io/github/commit-activity/m/SAP/e-mobility-charging-stations-simulator/main?color=brightgreen&logo=github)](https://github.com/SAP/e-mobility-charging-stations-simulator/graphs/commit-activity)
@@ -8,15 +13,46 @@
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator)
 [![Javascript Standard Style Guide](<https://badgen.net/static/code style/standard/green>)](https://standardjs.com)
 
-## Summary
+</div>
 
 Simple [node.js](https://nodejs.org/) software to simulate and scale a set of charging stations based on the OCPP-J protocol as part of [SAP e-Mobility](https://www.sap.com/products/scm/e-mobility.html) solution.
 
-## Prerequisites
+## Table of contents
+
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+    - [Windows](#windows)
+    - [MacOSX](#macosx)
+    - [GNU/Linux](#gnulinux)
+  - [Dependencies](#dependencies)
+- [Initial configuration](#initial-configuration)
+- [Start simulator](#start-simulator)
+- [Start Web UI](#start-web-ui)
+- [Configuration files syntax](#configuration-files-syntax)
+  - [Charging stations simulator configuration](#charging-stations-simulator-configuration)
+  - [Charging station configuration template](#charging-station-configuration-template)
+  - [Charging station configuration](#charging-station-configuration)
+- [Docker](#docker)
+- [OCPP-J commands supported](#ocpp-j-commands-supported)
+  - [Version 1.6](#version-16)
+  - [Version 2.x.x](#version-2xx)
+- [OCPP-J standard parameters supported](#ocpp-j-standard-parameters-supported)
+  - [Version 1.6](#version-16-1)
+  - [Version 2.x.x](#version-2xx-1)
+- [UI Protocol](#ui-protocol)
+  - [Websocket Protocol](#websocket-protocol)
+  - [HTTP Protocol](#http-protocol)
+- [Support, Feedback, Contributing](#support-feedback-contributing)
+- [Code of Conduct](#code-of-conduct)
+- [Licensing](#licensing)
+
+## Installation
+
+### Prerequisites
 
 Install the [node.js](https://nodejs.org/) current LTS or superior version runtime environment:
 
-### Windows
+#### Windows
 
 - [Chocolatey](https://chocolatey.org/):
 
@@ -24,7 +60,7 @@ Install the [node.js](https://nodejs.org/) current LTS or superior version runti
 choco install -y nodejs
 ```
 
-### MacOSX
+#### MacOSX
 
 - [Homebrew](https://brew.sh/):
 
@@ -32,11 +68,11 @@ choco install -y nodejs
 brew install node
 ```
 
-### GNU/Linux
+#### GNU/Linux
 
 - [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for all supported versions.
 
-## Installation
+#### Dependencies
 
 Enable corepack if not already done and install latest pnpm version:
 
@@ -56,11 +92,13 @@ pnpm install
 Copy the configuration template file [src/assets/config-template.json](./src/assets/config-template.json) to [src/assets/config.json](./src/assets/config.json).  
 Copy the RFID tags template file [src/assets/idtags-template.json](./src/assets/idtags-template.json) to [src/assets/idtags.json](./src/assets/idtags.json).
 
-Tweak them to your needs by following the section [configuration files syntax](./README.md#configuration-files-syntax): OCPP server supervision URL(s), charging station templates, etc.
+Tweak them to your needs by following the section [configuration files syntax](#configuration-files-syntax): OCPP server supervision URL(s), charging station templates, etc.
 
-## Start
+## Start simulator
 
-To start the program, run: `pnpm start`.
+```shell
+pnpm start
+```
 
 ## Start Web UI
 
@@ -68,7 +106,7 @@ See Web UI [README.md](./ui/web/README.md) for more information.
 
 ## Configuration files syntax
 
-All configuration files are in the JSON standard format.
+All configuration files are using the JSON standard syntax.
 
 **Configuration files locations**:
 
@@ -101,15 +139,15 @@ But the modifications to test have to be done to the files in the build target d
 
 **src/assets/config.json**:
 
-| Key                        | Value(s)                                     | Default Value                                                                                                                                                                                                                 | Value type                                                                                                                                                                                                                                                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| supervisionUrls            |                                              | []                                                                                                                                                                                                                            | string \| string[]                                                                                                                                                                                                                                                              | string or strings array containing global connection URIs to OCPP-J servers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| supervisionUrlDistribution | round-robin/random/charging-station-affinity | charging-station-affinity                                                                                                                                                                                                     | string                                                                                                                                                                                                                                                                          | supervision urls distribution policy to simulated charging stations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| log                        |                                              | {<br />"enabled": true,<br />"file": "logs/combined.log",<br />"errorFile": "logs/error.log",<br />"statisticsInterval": 60,<br />"level": "info",<br />"console": false,<br />"format": "simple",<br />"rotate": true<br />} | {<br />enabled?: boolean;<br />file?: string;<br />errorFile?: string;<br />statisticsInterval?: number;<br />level?: string;<br />console?: boolean;<br />format?: string;<br />rotate?: boolean;<br />maxFiles?: string \| number;<br />maxSize?: string \| number;<br />}    | Log configuration section:<br />- _enabled_: enable logging<br />- _file_: log file relative path<br />- _errorFile_: error log file relative path<br />- _statisticsInterval_: seconds between charging stations statistics output in the logs<br />- _level_: emerg/alert/crit/error/warning/notice/info/debug [winston](https://github.com/winstonjs/winston) logging level</br >- _console_: output logs on the console<br />- _format_: [winston](https://github.com/winstonjs/winston) log format<br />- _rotate_: enable daily log files rotation<br />- _maxFiles_: maximum number of log files: https://github.com/winstonjs/winston-daily-rotate-file#options<br />- _maxSize_: maximum size of log files in bytes, or units of kb, mb, and gb: https://github.com/winstonjs/winston-daily-rotate-file#options                                                                                         |
-| worker                     |                                              | {<br />"processType": "workerSet",<br />"startDelay": 500,<br />"elementStartDelay": 0,<br />"elementsPerWorker": 'auto',<br />"poolMinSize": 4,<br />"poolMaxSize": 16<br />}                                                | {<br />processType?: WorkerProcessType;<br />startDelay?: number;<br />elementStartDelay?: number;<br />elementsPerWorker?: number \| 'auto' \| 'all';<br />poolMinSize?: number;<br />poolMaxSize?: number;<br />resourceLimits?: ResourceLimits;<br />}                       | Worker configuration section:<br />- _processType_: worker threads process type (`workerSet`/`fixedPool`/`dynamicPool`)<br />- _startDelay_: milliseconds to wait at worker threads startup (only for `workerSet` worker threads process type)<br />- _elementStartDelay_: milliseconds to wait at charging station startup<br />- _elementsPerWorker_: number of charging stations per worker threads for the `workerSet` process type (`auto` means (number of stations) / (number of CPUs) \* 1.5 if (number of stations) > (number of CPUs), otherwise 1; `all` means a unique worker will run all charging stations)<br />- _poolMinSize_: worker threads pool minimum number of threads</br >- _poolMaxSize_: worker threads pool maximum number of threads<br />- _resourceLimits_: worker threads [resource limits](https://nodejs.org/api/worker_threads.html#new-workerfilename-options) object option |
-| uiServer                   |                                              | {<br />"enabled": false,<br />"type": "ws",<br />"version": "1.1",<br />"options": {<br />"host": "localhost",<br />"port": 8080<br />}<br />}                                                                                | {<br />enabled?: boolean;<br />type?: ApplicationProtocol;<br />version?: ApplicationProtocolVersion;<br />options?: ServerOptions;<br />authentication?: {<br />enabled: boolean;<br />type: AuthenticationType;<br />username?: string;<br />password?: string;<br />}<br />} | UI server configuration section:<br />- _enabled_: enable UI server<br />- _type_: 'http' or 'ws'<br />- _version_: HTTP version '1.1' or '2.0'<br />- _options_: node.js net module [listen options](https://nodejs.org/api/net.html#serverlistenoptions-callback)<br />- _authentication_: authentication type configuration section                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| performanceStorage         |                                              | {<br />"enabled": true,<br />"type": "none",<br />}                                                                                                                                                                           | {<br />enabled?: boolean;<br />type?: string;<br />uri?: string;<br />}                                                                                                                                                                                                         | Performance storage configuration section:<br />- _enabled_: enable performance storage<br />- _type_: 'jsonfile', 'mongodb' or 'none'<br />- _uri_: storage URI                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| stationTemplateUrls        |                                              | {}[]                                                                                                                                                                                                                          | {<br />file: string;<br />numberOfStations: number;<br />}[]                                                                                                                                                                                                                    | array of charging station configuration templates URIs configuration section (charging station configuration template file name and number of stations)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Key                        | Value(s)                                     | Default Value                                                                                                                                                                                                                 | Value type                                                                                                                                                                                                                                                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| supervisionUrls            |                                              | []                                                                                                                                                                                                                            | string \| string[]                                                                                                                                                                                                                                                              | string or strings array containing global connection URIs to OCPP-J servers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| supervisionUrlDistribution | round-robin/random/charging-station-affinity | charging-station-affinity                                                                                                                                                                                                     | string                                                                                                                                                                                                                                                                          | supervision urls distribution policy to simulated charging stations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| log                        |                                              | {<br />"enabled": true,<br />"file": "logs/combined.log",<br />"errorFile": "logs/error.log",<br />"statisticsInterval": 60,<br />"level": "info",<br />"console": false,<br />"format": "simple",<br />"rotate": true<br />} | {<br />enabled?: boolean;<br />file?: string;<br />errorFile?: string;<br />statisticsInterval?: number;<br />level?: string;<br />console?: boolean;<br />format?: string;<br />rotate?: boolean;<br />maxFiles?: string \| number;<br />maxSize?: string \| number;<br />}    | Log configuration section:<br />- _enabled_: enable logging<br />- _file_: log file relative path<br />- _errorFile_: error log file relative path<br />- _statisticsInterval_: seconds between charging stations statistics output in the logs<br />- _level_: emerg/alert/crit/error/warning/notice/info/debug [winston](https://github.com/winstonjs/winston) logging level</br >- _console_: output logs on the console<br />- _format_: [winston](https://github.com/winstonjs/winston) log format<br />- _rotate_: enable daily log files rotation<br />- _maxFiles_: maximum number of log files: https://github.com/winstonjs/winston-daily-rotate-file#options<br />- _maxSize_: maximum size of log files in bytes, or units of kb, mb, and gb: https://github.com/winstonjs/winston-daily-rotate-file#options                                                                                        |
+| worker                     |                                              | {<br />"processType": "workerSet",<br />"startDelay": 500,<br />"elementAddDelay": 0,<br />"elementsPerWorker": 'auto',<br />"poolMinSize": 4,<br />"poolMaxSize": 16<br />}                                                  | {<br />processType?: WorkerProcessType;<br />startDelay?: number;<br />elementAddDelay?: number;<br />elementsPerWorker?: number \| 'auto' \| 'all';<br />poolMinSize?: number;<br />poolMaxSize?: number;<br />resourceLimits?: ResourceLimits;<br />}                         | Worker configuration section:<br />- _processType_: worker threads process type (`workerSet`/`fixedPool`/`dynamicPool`)<br />- _startDelay_: milliseconds to wait at worker threads startup (only for `workerSet` worker threads process type)<br />- _elementAddDelay_: milliseconds to wait between charging station add<br />- _elementsPerWorker_: number of charging stations per worker threads for the `workerSet` process type (`auto` means (number of stations) / (number of CPUs) \* 1.5 if (number of stations) > (number of CPUs), otherwise 1; `all` means a unique worker will run all charging stations)<br />- _poolMinSize_: worker threads pool minimum number of threads</br >- _poolMaxSize_: worker threads pool maximum number of threads<br />- _resourceLimits_: worker threads [resource limits](https://nodejs.org/api/worker_threads.html#new-workerfilename-options) object option |
+| uiServer                   |                                              | {<br />"enabled": false,<br />"type": "ws",<br />"version": "1.1",<br />"options": {<br />"host": "localhost",<br />"port": 8080<br />}<br />}                                                                                | {<br />enabled?: boolean;<br />type?: ApplicationProtocol;<br />version?: ApplicationProtocolVersion;<br />options?: ServerOptions;<br />authentication?: {<br />enabled: boolean;<br />type: AuthenticationType;<br />username?: string;<br />password?: string;<br />}<br />} | UI server configuration section:<br />- _enabled_: enable UI server<br />- _type_: 'http' or 'ws'<br />- _version_: HTTP version '1.1' or '2.0'<br />- _options_: node.js net module [listen options](https://nodejs.org/api/net.html#serverlistenoptions-callback)<br />- _authentication_: authentication type configuration section                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| performanceStorage         |                                              | {<br />"enabled": true,<br />"type": "none",<br />}                                                                                                                                                                           | {<br />enabled?: boolean;<br />type?: string;<br />uri?: string;<br />}                                                                                                                                                                                                         | Performance storage configuration section:<br />- _enabled_: enable performance storage<br />- _type_: 'jsonfile', 'mongodb' or 'none'<br />- _uri_: storage URI                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| stationTemplateUrls        |                                              | {}[]                                                                                                                                                                                                                          | {<br />file: string;<br />numberOfStations: number;<br />provisionedNumberOfStations?: number;<br />}[]                                                                                                                                                                         | array of charging station templates URIs configuration section:<br />- _file_: charging station configuration template file relative path<br />- _numberOfStations_: template number of stations at startup<br />- _provisionedNumberOfStations_: template provisioned number of stations after startup                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 #### Worker process model
 
@@ -497,7 +535,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ### Version 2.x.x
 
-## UI protocol
+## UI Protocol
 
 Protocol to control the simulator via a Websocket or HTTP server:
 
@@ -505,7 +543,7 @@ Protocol to control the simulator via a Websocket or HTTP server:
 sequenceDiagram
 Client->>UI Server: request
 UI Server->>Client: response
-Note over UI Server,Client: Transport protocol: HTTP, Websocket
+Note over UI Server,Client: HTTP or Websocket
 ```
 
 ### Websocket Protocol
@@ -530,6 +568,23 @@ To learn how to use the Websocket protocol to pilot the simulator, an [Insomnia]
 Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 ##### Procedures
+
+###### Simulator State
+
+- Request:  
+  `ProcedureName`: 'simulatorState'  
+  `PDU`: {}
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `state`: {  
+   `version`: string,  
+   `configuration`: ConfigurationData,  
+   `started`: boolean,  
+   `templateStatistics`: Record<string, TemplateStatistics>  
+   }  
+  }
 
 ###### Start Simulator
 
@@ -585,7 +640,9 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure'  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array (optional),  
+   `hashIdsFailed`: charging station unique identifier strings array (optional)  
   }
 
 ###### Delete Charging Stations
@@ -630,7 +687,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 - Response:  
   `PDU`: {  
-   `status`: 'success' | 'failure'  
+   `status`: 'success' | 'failure',  
    `performanceStatistics`: Statistics[]  
   }
 
@@ -822,7 +879,7 @@ Examples:
   - Request:  
     `ProcedureName`: 'heartbeat'  
     `PDU`: {  
-     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+     `hashIds`: charging station unique identifier strings array (optional, default: all charging stations)  
     }
 
   - Response:  

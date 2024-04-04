@@ -2,16 +2,15 @@
 
 import type { JSONSchemaType } from 'ajv'
 import {
-  type Interval,
   addSeconds,
   areIntervalsOverlapping,
   differenceInSeconds,
+  type Interval,
   isAfter,
   isBefore,
   isWithinInterval
 } from 'date-fns'
 
-import { OCPP16Constants } from './OCPP16Constants.js'
 import {
   type ChargingStation,
   hasFeatureProfile,
@@ -40,6 +39,7 @@ import {
 } from '../../../types/index.js'
 import { convertToDate, isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
+import { OCPP16Constants } from './OCPP16Constants.js'
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static checkFeatureProfile (

@@ -6,6 +6,7 @@ import type { AutomaticTransactionGeneratorConfiguration } from './AutomaticTran
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration.js'
 import type { ConnectorStatus } from './ConnectorStatus.js'
 import type { EvseTemplate } from './Evse.js'
+import type { JsonObject } from './JsonType.js'
 import type { OCPPProtocol } from './ocpp/OCPPProtocol.js'
 import type { OCPPVersion } from './ocpp/OCPPVersion.js'
 import type {
@@ -41,7 +42,7 @@ export enum Voltage {
 
 export type WsOptions = ClientOptions & ClientRequestArgs
 
-export interface FirmwareUpgrade {
+export interface FirmwareUpgrade extends JsonObject {
   versionUpgrade?: {
     patternGroup?: number
     step?: number
@@ -50,7 +51,7 @@ export interface FirmwareUpgrade {
   failureStatus?: FirmwareStatus
 }
 
-interface CommandsSupport {
+interface CommandsSupport extends JsonObject {
   incomingCommands: Record<IncomingRequestCommand, boolean>
   outgoingCommands?: Record<RequestCommand, boolean>
 }
@@ -110,9 +111,9 @@ export interface ChargingStationTemplate {
   registrationMaxRetries?: number
   enableStatistics?: boolean
   remoteAuthorization?: boolean
-  /** @deprecated Replaced by remoteAuthorization */
+  /** @deprecated Replaced by remoteAuthorization. */
   mustAuthorizeAtRemoteStart?: boolean
-  /** @deprecated Replaced by ocppStrictCompliance */
+  /** @deprecated Replaced by ocppStrictCompliance. */
   payloadSchemaValidation?: boolean
   amperageLimitationOcppKey?: string
   amperageLimitationUnit?: AmpereUnits

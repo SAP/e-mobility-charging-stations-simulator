@@ -1,5 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
+import { randomUUID } from 'node:crypto'
 import { EventEmitterAsyncResource } from 'node:events'
 import { SHARE_ENV, Worker } from 'node:worker_threads'
 
@@ -16,9 +17,20 @@ import {
 } from './WorkerTypes.js'
 import { randomizeDelay, sleep } from './WorkerUtils.js'
 
-export class WorkerSet extends WorkerAbstract<WorkerData> {
+interface ResponseWrapper<R extends WorkerData> {
+  resolve: (value: R | PromiseLike<R>) => void
+  reject: (reason?: unknown) => void
+  workerSetElement: WorkerSetElement
+}
+
+export class WorkerSet<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<D, R> {
   public readonly emitter: EventEmitterAsyncResource | undefined
   private readonly workerSet: Set<WorkerSetElement>
+  private readonly promiseResponseMap: Map<
+    `${string}-${string}-${string}-${string}`,
+  ResponseWrapper<R>
+  >
+
   private started: boolean
   private workerStartup: boolean
 
@@ -40,6 +52,10 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       throw new RangeError('Elements per worker must be greater than zero')
     }
     this.workerSet = new Set<WorkerSetElement>()
+    this.promiseResponseMap = new Map<
+      `${string}-${string}-${string}-${string}`,
+    ResponseWrapper<R>
+    >()
     if (this.workerOptions.poolOptions?.enableEvents === true) {
       this.emitter = new EventEmitterAsyncResource({ name: 'workerset' })
     }
@@ -99,26 +115,31 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
     this.emitter?.emit(WorkerSetEvents.stopped, this.info)
     this.started = false
     this.emitter?.emitDestroy()
-    this.emitter?.removeAllListeners()
   }
 
   /** @inheritDoc */
-  public async addElement (elementData: WorkerData): Promise<void> {
+  public async addElement (elementData: D): Promise<R> {
     if (!this.started) {
       throw new Error('Cannot add a WorkerSet element: not started')
     }
     const workerSetElement = await this.getWorkerSetElement()
-    workerSetElement.worker.postMessage({
-      event: WorkerMessageEvents.addWorkerElement,
-      data: elementData
+    const sendMessageToWorker = new Promise<R>((resolve, reject) => {
+      const message = {
+        uuid: randomUUID(),
+        event: WorkerMessageEvents.addWorkerElement,
+        data: elementData
+      } satisfies WorkerMessage<D>
+      workerSetElement.worker.postMessage(message)
+      this.promiseResponseMap.set(message.uuid, { resolve, reject, workerSetElement })
     })
-    ++workerSetElement.numberOfWorkerElements
+    const response = await sendMessageToWorker
     // Add element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (this.workerOptions.elementStartDelay! > 0) {
+    if (this.workerOptions.elementAddDelay! > 0) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await sleep(randomizeDelay(this.workerOptions.elementStartDelay!))
+      await sleep(randomizeDelay(this.workerOptions.elementAddDelay!))
     }
+    return response
   }
 
   /**
@@ -131,15 +152,37 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
       ...this.workerOptions.poolOptions?.workerOptions
     })
     worker.on('message', this.workerOptions.poolOptions?.messageHandler ?? EMPTY_FUNCTION)
-    worker.on('message', (message: WorkerMessage<WorkerData>) => {
-      if (message.event === WorkerMessageEvents.addedWorkerElement) {
-        this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
-      } else if (message.event === WorkerMessageEvents.workerElementError) {
-        this.emitter?.emit(WorkerSetEvents.elementError, message.data)
+    worker.on('message', (message: WorkerMessage<R>) => {
+      const { uuid, event, data } = message
+      if (this.promiseResponseMap.has(uuid)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { resolve, reject, workerSetElement } = this.promiseResponseMap.get(uuid)!
+        switch (event) {
+          case WorkerMessageEvents.addedWorkerElement:
+            this.emitter?.emit(WorkerSetEvents.elementAdded, this.info)
+            ++workerSetElement.numberOfWorkerElements
+            resolve(data)
+            break
+          case WorkerMessageEvents.workerElementError:
+            this.emitter?.emit(WorkerSetEvents.elementError, data)
+            reject(data)
+            break
+          default:
+            reject(
+              new Error(
+                `Unknown worker message event: '${event}' received with data: '${JSON.stringify(
+                  data,
+                  undefined,
+                  2
+                )}'`
+              )
+            )
+        }
+        this.promiseResponseMap.delete(uuid)
       }
     })
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION)
-    worker.on('error', error => {
+    worker.once('error', error => {
       this.emitter?.emit(WorkerSetEvents.error, error)
       if (
         this.workerOptions.poolOptions?.restartWorkerOnError === true &&
@@ -149,7 +192,7 @@ export class WorkerSet extends WorkerAbstract<WorkerData> {
         this.addWorkerSetElement()
       }
       worker.unref()
-      worker.terminate().catch(error => this.emitter?.emit(WorkerSetEvents.error, error))
+      worker.terminate().catch((error: unknown) => this.emitter?.emit(WorkerSetEvents.error, error))
     })
     worker.on('online', this.workerOptions.poolOptions?.onlineHandler ?? EMPTY_FUNCTION)
     worker.on('exit', this.workerOptions.poolOptions?.exitHandler ?? EMPTY_FUNCTION)

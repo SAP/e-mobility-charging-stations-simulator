@@ -3,10 +3,9 @@
 import type { ValidateFunction } from 'ajv'
 import { secondsToMilliseconds } from 'date-fns'
 
-import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 import {
-  type ChargingStation,
   addConfigurationKey,
+  type ChargingStation,
   getConfigurationKey,
   hasReservationExpired,
   resetConnectorStatus
@@ -53,6 +52,7 @@ import {
 } from '../../../types/index.js'
 import { Constants, convertToInt, isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
+import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16ResponseService'
 
@@ -468,7 +468,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle response PDU ${JSON.stringify(
+          `'${commandName}' is not implemented to handle response PDU ${JSON.stringify(
             payload,
             undefined,
             2

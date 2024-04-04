@@ -1,5 +1,7 @@
 import { isMainThread } from 'node:worker_threads'
 
+import { mergeDeepRight } from 'rambda'
+
 import type { WorkerAbstract } from './WorkerAbstract.js'
 import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants.js'
 import { WorkerDynamicPool } from './WorkerDynamicPool.js'
@@ -13,30 +15,25 @@ export class WorkerFactory {
     // This is intentional
   }
 
-  public static getWorkerImplementation<T extends WorkerData>(
+  public static getWorkerImplementation<D extends WorkerData, R extends WorkerData>(
     workerScript: string,
     workerProcessType: WorkerProcessType,
     workerOptions?: WorkerOptions
-  ): WorkerAbstract<T> | undefined {
+  ): WorkerAbstract<D, R> {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')
     }
-    workerOptions = { ...DEFAULT_WORKER_OPTIONS, ...workerOptions }
-    let workerImplementation: WorkerAbstract<T>
+    workerOptions = mergeDeepRight<WorkerOptions>(DEFAULT_WORKER_OPTIONS, workerOptions ?? {})
     switch (workerProcessType) {
       case WorkerProcessType.workerSet:
-        workerImplementation = new WorkerSet(workerScript, workerOptions)
-        break
+        return new WorkerSet<D, R>(workerScript, workerOptions)
       case WorkerProcessType.fixedPool:
-        workerImplementation = new WorkerFixedPool(workerScript, workerOptions)
-        break
+        return new WorkerFixedPool<D, R>(workerScript, workerOptions)
       case WorkerProcessType.dynamicPool:
-        workerImplementation = new WorkerDynamicPool(workerScript, workerOptions)
-        break
+        return new WorkerDynamicPool<D, R>(workerScript, workerOptions)
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Worker implementation type '${workerProcessType}' not found`)
     }
-    return workerImplementation
   }
 }

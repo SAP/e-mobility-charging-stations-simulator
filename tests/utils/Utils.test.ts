@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import { version } from 'node:process'
 import { describe, it } from 'node:test'
 
@@ -17,20 +18,13 @@ import {
   formatDurationSeconds,
   generateUUID,
   getRandomFloat,
-  getRandomInteger,
   hasOwnProp,
   isArraySorted,
   isAsyncFunction,
-  isEmptyArray,
-  isEmptyObject,
-  isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
   isObject,
   isValidDate,
-  max,
-  min,
-  once,
   roundTo,
   secureRandom,
   sleep,
@@ -101,7 +95,7 @@ await describe('Utils test suite', async () => {
     expect(convertToInt(undefined)).toBe(0)
     expect(convertToInt(null)).toBe(0)
     expect(convertToInt(0)).toBe(0)
-    const randomInteger = getRandomInteger()
+    const randomInteger = randomInt(Constants.MAX_RANDOM_INTEGER)
     expect(convertToInt(randomInteger)).toEqual(randomInteger)
     expect(convertToInt('-1')).toBe(-1)
     expect(convertToInt('1')).toBe(1)
@@ -161,36 +155,6 @@ await describe('Utils test suite', async () => {
     expect(typeof random === 'number').toBe(true)
     expect(random).toBeGreaterThanOrEqual(0)
     expect(random).toBeLessThan(1)
-  })
-
-  await it('Verify getRandomInteger()', () => {
-    let randomInteger = getRandomInteger()
-    expect(Number.isSafeInteger(randomInteger)).toBe(true)
-    expect(randomInteger).toBeGreaterThanOrEqual(0)
-    expect(randomInteger).toBeLessThanOrEqual(Constants.MAX_RANDOM_INTEGER)
-    expect(randomInteger).not.toEqual(getRandomInteger())
-    randomInteger = getRandomInteger(0, -Constants.MAX_RANDOM_INTEGER)
-    expect(randomInteger).toBeGreaterThanOrEqual(-Constants.MAX_RANDOM_INTEGER)
-    expect(randomInteger).toBeLessThanOrEqual(0)
-    expect(() => getRandomInteger(0, 1)).toThrow(
-      'The value of "max" is out of range. It must be greater than the value of "min" (1). Received 1'
-    )
-    expect(() => getRandomInteger(-1)).toThrow(
-      'The value of "max" is out of range. It must be greater than the value of "min" (0). Received 0'
-    )
-    expect(() => getRandomInteger(Constants.MAX_RANDOM_INTEGER + 1)).toThrow(
-      `The value of "max" is out of range. It must be <= ${
-        Constants.MAX_RANDOM_INTEGER + 1
-      }. Received 281_474_976_710_656`
-    )
-    randomInteger = getRandomInteger(2, 1)
-    expect(randomInteger).toBeGreaterThanOrEqual(1)
-    expect(randomInteger).toBeLessThanOrEqual(2)
-    const maximum = 2.2
-    const minimum = 1.1
-    randomInteger = getRandomInteger(maximum, minimum)
-    expect(randomInteger).toBeLessThanOrEqual(Math.floor(maximum))
-    expect(randomInteger).toBeGreaterThanOrEqual(Math.ceil(minimum))
   })
 
   await it('Verify roundTo()', () => {
@@ -375,24 +339,6 @@ await describe('Utils test suite', async () => {
     expect(hasOwnProp({ 1: '1' }, 2)).toBe(false)
   })
 
-  await it('Verify isEmptyString()', () => {
-    expect(isEmptyString('')).toBe(true)
-    expect(isEmptyString(' ')).toBe(true)
-    expect(isEmptyString('     ')).toBe(true)
-    expect(isEmptyString('test')).toBe(false)
-    expect(isEmptyString(' test')).toBe(false)
-    expect(isEmptyString('test ')).toBe(false)
-    expect(isEmptyString(undefined)).toBe(true)
-    expect(isEmptyString(null)).toBe(true)
-    expect(isEmptyString(0)).toBe(false)
-    expect(isEmptyString({})).toBe(false)
-    expect(isEmptyString([])).toBe(false)
-    expect(isEmptyString(new Map())).toBe(false)
-    expect(isEmptyString(new Set())).toBe(false)
-    expect(isEmptyString(new WeakMap())).toBe(false)
-    expect(isEmptyString(new WeakSet())).toBe(false)
-  })
-
   await it('Verify isNotEmptyString()', () => {
     expect(isNotEmptyString('')).toBe(false)
     expect(isNotEmptyString(' ')).toBe(false)
@@ -411,22 +357,6 @@ await describe('Utils test suite', async () => {
     expect(isNotEmptyString(new WeakSet())).toBe(false)
   })
 
-  await it('Verify isEmptyArray()', () => {
-    expect(isEmptyArray([])).toBe(true)
-    expect(isEmptyArray([1, 2])).toBe(false)
-    expect(isEmptyArray(['1', '2'])).toBe(false)
-    expect(isEmptyArray(undefined)).toBe(false)
-    expect(isEmptyArray(null)).toBe(false)
-    expect(isEmptyArray('')).toBe(false)
-    expect(isEmptyArray('test')).toBe(false)
-    expect(isEmptyArray(0)).toBe(false)
-    expect(isEmptyArray({})).toBe(false)
-    expect(isEmptyArray(new Map())).toBe(false)
-    expect(isEmptyArray(new Set())).toBe(false)
-    expect(isEmptyArray(new WeakMap())).toBe(false)
-    expect(isEmptyArray(new WeakSet())).toBe(false)
-  })
-
   await it('Verify isNotEmptyArray()', () => {
     expect(isNotEmptyArray([])).toBe(false)
     expect(isNotEmptyArray([1, 2])).toBe(true)
@@ -443,17 +373,6 @@ await describe('Utils test suite', async () => {
     expect(isNotEmptyArray(new WeakSet())).toBe(false)
   })
 
-  await it('Verify isEmptyObject()', () => {
-    expect(isEmptyObject({})).toBe(true)
-    expect(isEmptyObject({ 1: 1, 2: 2 })).toBe(false)
-    expect(isEmptyObject([])).toBe(false)
-    expect(isEmptyObject([1, 2])).toBe(false)
-    expect(isEmptyObject(new Map())).toBe(false)
-    expect(isEmptyObject(new Set())).toBe(false)
-    expect(isEmptyObject(new WeakMap())).toBe(false)
-    expect(isEmptyObject(new WeakSet())).toBe(false)
-  })
-
   await it('Verify isArraySorted()', () => {
     expect(
       isArraySorted([], (a, b) => {
@@ -468,36 +387,5 @@ await describe('Utils test suite', async () => {
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false)
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false)
-  })
-
-  await it('Verify once()', () => {
-    let called = 0
-    const fn = (): number => ++called
-    const onceFn = once(fn, this)
-    const result1 = onceFn()
-    expect(called).toBe(1)
-    expect(result1).toBe(1)
-    const result2 = onceFn()
-    expect(called).toBe(1)
-    expect(result2).toBe(1)
-    const result3 = onceFn()
-    expect(called).toBe(1)
-    expect(result3).toBe(1)
-  })
-
-  await it('Verify min()', () => {
-    expect(min()).toBe(Infinity)
-    expect(min(0, 1)).toBe(0)
-    expect(min(1, 0)).toBe(0)
-    expect(min(0, -1)).toBe(-1)
-    expect(min(-1, 0)).toBe(-1)
-  })
-
-  await it('Verify max()', () => {
-    expect(max()).toBe(-Infinity)
-    expect(max(0, 1)).toBe(1)
-    expect(max(1, 0)).toBe(1)
-    expect(max(0, -1)).toBe(0)
-    expect(max(-1, 0)).toBe(0)
   })
 })

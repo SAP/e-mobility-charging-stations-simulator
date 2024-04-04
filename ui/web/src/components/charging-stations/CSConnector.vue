@@ -9,16 +9,30 @@
       {{ atgStatus?.start === true ? 'Yes' : 'No' }}
     </td>
     <td class="connectors-table__column">
-      <Button
-        @click="
-          $router.push({
-            name: 'start-transaction',
-            params: { hashId, chargingStationId, connectorId }
-          })
+      <ToggleButton
+        :id="`${hashId}-${connectorId}-start-transaction`"
+        :shared="true"
+        :on="
+          () => {
+            $router.push({
+              name: 'start-transaction',
+              params: { hashId, chargingStationId, connectorId }
+            })
+          }
+        "
+        :off="
+          () => {
+            $router.push({ name: 'charging-stations' })
+          }
+        "
+        @clicked="
+          () => {
+            $emit('need-refresh')
+          }
         "
       >
         Start Transaction
-      </Button>
+      </ToggleButton>
       <Button @click="stopTransaction()">Stop Transaction</Button>
       <Button @click="startAutomaticTransactionGenerator()">Start ATG</Button>
       <Button @click="stopAutomaticTransactionGenerator()">Stop ATG</Button>
@@ -27,9 +41,11 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toast-notification'
+
 import Button from '@/components/buttons/Button.vue'
+import ToggleButton from '@/components/buttons/ToggleButton.vue'
+import { useUIClient } from '@/composables'
 import type { ConnectorStatus, Status } from '@/types'
 
 const props = defineProps<{
@@ -40,7 +56,9 @@ const props = defineProps<{
   atgStatus?: Status
 }>()
 
-const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
+const $emit = defineEmits(['need-refresh'])
+
+const uiClient = useUIClient()
 
 const $toast = useToast()
 

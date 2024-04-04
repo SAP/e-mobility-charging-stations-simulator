@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http'
 
 import { BaseError } from '../../exception/index.js'
 import { Protocol, ProtocolVersion } from '../../types/index.js'
-import { logPrefix, logger } from '../../utils/index.js'
+import { logger, logPrefix } from '../../utils/index.js'
 
 export const getUsernameAndPasswordFromAuthorizationToken = (
   authorizationToken: string,

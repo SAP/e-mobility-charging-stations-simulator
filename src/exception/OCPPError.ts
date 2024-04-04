@@ -1,8 +1,8 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import { BaseError } from './BaseError.js'
 import type { ErrorType, IncomingRequestCommand, JsonType, RequestCommand } from '../types/index.js'
 import { Constants } from '../utils/index.js'
+import { BaseError } from './BaseError.js'
 
 export class OCPPError extends BaseError {
   code: ErrorType

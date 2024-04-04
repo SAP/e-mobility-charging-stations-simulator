@@ -17,14 +17,22 @@ export enum AuthenticationType {
   PROTOCOL_BASIC_AUTH = 'protocol-basic-auth'
 }
 
-export type ProtocolRequest = [string, ProcedureName, RequestPayload]
-export type ProtocolResponse = [string, ResponsePayload]
+export type ProtocolRequest = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ProcedureName,
+  RequestPayload
+]
+export type ProtocolResponse = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ResponsePayload
+]
 
 export type ProtocolRequestHandler = (
   payload: RequestPayload
 ) => ResponsePayload | Promise<ResponsePayload>
 
 export enum ProcedureName {
+  SIMULATOR_STATE = 'simulatorState',
   START_SIMULATOR = 'startSimulator',
   STOP_SIMULATOR = 'stopSimulator',
   LIST_TEMPLATES = 'listTemplates',
@@ -55,4 +63,17 @@ export enum ResponseStatus {
 export interface ResponsePayload extends JsonObject {
   status: ResponseStatus
   hashIds?: string[]
+}
+
+interface TemplateStatistics extends JsonObject {
+  configured: number
+  added: number
+  started: number
+  indexes: number[]
+}
+
+export interface SimulatorState extends JsonObject {
+  version: string
+  started: boolean
+  templateStatistics: Record<string, TemplateStatistics>
 }

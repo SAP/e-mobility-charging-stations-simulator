@@ -4,18 +4,8 @@ import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import chalk from 'chalk'
-import { mergeDeepRight } from 'rambda'
+import { mergeDeepRight, once } from 'rambda'
 
-import {
-  buildPerformanceUriFilePath,
-  checkWorkerElementsPerWorker,
-  checkWorkerProcessType,
-  getDefaultPerformanceStorageUri,
-  handleFileException,
-  logPrefix
-} from './ConfigurationUtils.js'
-import { Constants } from './Constants.js'
-import { hasOwnProp, isCFEnvironment, once } from './Utils.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
@@ -31,12 +21,22 @@ import {
   type WorkerConfiguration
 } from '../types/index.js'
 import {
-  DEFAULT_ELEMENT_START_DELAY,
+  DEFAULT_ELEMENT_ADD_DELAY,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
   DEFAULT_WORKER_START_DELAY,
   WorkerProcessType
 } from '../worker/index.js'
+import {
+  buildPerformanceUriFilePath,
+  checkWorkerElementsPerWorker,
+  checkWorkerProcessType,
+  getDefaultPerformanceStorageUri,
+  handleFileException,
+  logPrefix
+} from './ConfigurationUtils.js'
+import { Constants } from './Constants.js'
+import { hasOwnProp, isCFEnvironment } from './Utils.js'
 
 type ConfigurationSectionType =
   | LogConfiguration
@@ -82,8 +82,7 @@ export class Configuration {
 
   public static getStationTemplateUrls (): StationTemplateUrl[] | undefined {
     const checkDeprecatedConfigurationKeysOnce = once(
-      Configuration.checkDeprecatedConfigurationKeys.bind(Configuration),
-      Configuration
+      Configuration.checkDeprecatedConfigurationKeys.bind(Configuration)
     )
     checkDeprecatedConfigurationKeysOnce()
     return Configuration.getConfigurationData()?.stationTemplateUrls
@@ -276,10 +275,11 @@ export class Configuration {
       processType: WorkerProcessType.workerSet,
       startDelay: DEFAULT_WORKER_START_DELAY,
       elementsPerWorker: 'auto',
-      elementStartDelay: DEFAULT_ELEMENT_START_DELAY,
+      elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY,
       poolMinSize: DEFAULT_POOL_MIN_SIZE,
       poolMaxSize: DEFAULT_POOL_MAX_SIZE
     }
+
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerProcess') && {
         processType: Configuration.getConfigurationData()?.workerProcess
@@ -290,8 +290,11 @@ export class Configuration {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'chargingStationsPerWorker') && {
         elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker
       }),
-      ...(hasOwnProp(Configuration.getConfigurationData(), 'elementStartDelay') && {
-        elementStartDelay: Configuration.getConfigurationData()?.elementStartDelay
+      ...(hasOwnProp(Configuration.getConfigurationData(), 'elementAddDelay') && {
+        elementAddDelay: Configuration.getConfigurationData()?.elementAddDelay
+      }),
+      ...(hasOwnProp(Configuration.getConfigurationData()?.worker, 'elementStartDelay') && {
+        elementAddDelay: Configuration.getConfigurationData()?.worker?.elementStartDelay
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMinSize') && {
         poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize
@@ -397,9 +400,9 @@ export class Configuration {
       `Use '${ConfigurationSection.worker}' section to define the number of element(s) per worker instead`
     )
     Configuration.warnDeprecatedConfigurationKey(
-      'elementStartDelay',
+      'elementAddDelay',
       undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker's element start delay instead`
+      `Use '${ConfigurationSection.worker}' section to define the worker's element add delay instead`
     )
     Configuration.warnDeprecatedConfigurationKey(
       'workerPoolMinSize',
@@ -425,6 +428,11 @@ export class Configuration {
       'poolStrategy',
       ConfigurationSection.worker,
       'Not publicly exposed to end users'
+    )
+    Configuration.warnDeprecatedConfigurationKey(
+      'elementStartDelay',
+      ConfigurationSection.worker,
+      "Use 'elementAddDelay' instead"
     )
     if (
       Configuration.getConfigurationData()?.worker?.processType ===
@@ -505,22 +513,22 @@ export class Configuration {
 
   private static warnDeprecatedConfigurationKey (
     key: string,
-    sectionName?: string,
+    configurationSection?: ConfigurationSection,
     logMsgToAppend = ''
   ): void {
     if (
-      sectionName != null &&
-      Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] != null &&
+      configurationSection != null &&
+      Configuration.getConfigurationData()?.[configurationSection as keyof ConfigurationData] !=
+        null &&
       (
-        Configuration.getConfigurationData()?.[sectionName as keyof ConfigurationData] as Record<
-        string,
-        unknown
-        >
+        Configuration.getConfigurationData()?.[
+          configurationSection as keyof ConfigurationData
+        ] as Record<string, unknown>
       )[key] != null
     ) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
-          `Deprecated configuration key '${key}' usage in section '${sectionName}'${
+          `Deprecated configuration key '${key}' usage in section '${configurationSection}'${
             logMsgToAppend.trim().length > 0 ? `. ${logMsgToAppend}` : ''
           }`
         )}`
@@ -536,7 +544,7 @@ export class Configuration {
     }
   }
 
-  private static getConfigurationData (): ConfigurationData | undefined {
+  public static getConfigurationData (): ConfigurationData | undefined {
     if (Configuration.configurationData == null) {
       try {
         Configuration.configurationData = JSON.parse(
@@ -567,7 +575,7 @@ export class Configuration {
           event === 'change'
         ) {
           Configuration.configurationFileReloading = true
-          const consoleWarnOnce = once(console.warn, this)
+          const consoleWarnOnce = once(console.warn)
           consoleWarnOnce(
             `${chalk.green(logPrefix())} ${chalk.yellow(
               `${FileType.Configuration} ${this.configurationFile} file have changed, reload`
@@ -577,7 +585,7 @@ export class Configuration {
           Configuration.configurationSectionCache.clear()
           if (Configuration.configurationChangeCallback != null) {
             Configuration.configurationChangeCallback()
-              .catch(error => {
+              .catch((error: unknown) => {
                 throw typeof error === 'string' ? new Error(error) : error
               })
               .finally(() => {

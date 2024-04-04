@@ -5,7 +5,7 @@ import type { PoolInfo } from 'poolifier'
 
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js'
 
-export abstract class WorkerAbstract<T extends WorkerData> {
+export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData> {
   protected readonly workerScript: string
   protected readonly workerOptions: WorkerOptions
   public abstract readonly info: PoolInfo | SetInfo
@@ -39,7 +39,7 @@ export abstract class WorkerAbstract<T extends WorkerData> {
   /**
    * Starts the worker pool/set.
    */
-  public abstract start (): Promise<void>
+  public abstract start (): void | Promise<void>
   /**
    * Stops the worker pool/set.
    */
@@ -49,5 +49,5 @@ export abstract class WorkerAbstract<T extends WorkerData> {
    *
    * @param elementData -
    */
-  public abstract addElement (elementData: T): Promise<void>
+  public abstract addElement (elementData: D): Promise<R>
 }

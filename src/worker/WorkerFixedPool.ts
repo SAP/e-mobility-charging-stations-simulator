@@ -6,8 +6,11 @@ import { WorkerAbstract } from './WorkerAbstract.js'
 import type { WorkerData, WorkerOptions } from './WorkerTypes.js'
 import { randomizeDelay, sleep } from './WorkerUtils.js'
 
-export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
-  private readonly pool: FixedThreadPool<WorkerData>
+export class WorkerFixedPool<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<
+D,
+R
+> {
+  private readonly pool: FixedThreadPool<D, R>
 
   /**
    * Creates a new `WorkerFixedPool`.
@@ -17,7 +20,7 @@ export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
    */
   constructor (workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions)
-    this.pool = new FixedThreadPool(
+    this.pool = new FixedThreadPool<D, R>(
       this.workerOptions.poolMaxSize,
       this.workerScript,
       this.workerOptions.poolOptions
@@ -41,8 +44,8 @@ export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
   }
 
   /** @inheritDoc */
-  public async start (): Promise<void> {
-    // This is intentional
+  public start (): void {
+    this.pool.start()
   }
 
   /** @inheritDoc */
@@ -51,12 +54,13 @@ export class WorkerFixedPool extends WorkerAbstract<WorkerData> {
   }
 
   /** @inheritDoc */
-  public async addElement (elementData: WorkerData): Promise<void> {
-    await this.pool.execute(elementData)
+  public async addElement (elementData: D): Promise<R> {
+    const response = await this.pool.execute(elementData)
     // Start element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.workerOptions.elementStartDelay! > 0 &&
+    this.workerOptions.elementAddDelay! > 0 &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (await sleep(randomizeDelay(this.workerOptions.elementStartDelay!)))
+      (await sleep(randomizeDelay(this.workerOptions.elementAddDelay!)))
+    return response
   }
 }

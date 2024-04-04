@@ -1,16 +1,14 @@
 import { type IncomingMessage, Server, type ServerResponse } from 'node:http'
-import { type Http2Server, createServer } from 'node:http2'
+import { createServer, type Http2Server } from 'node:http2'
 
 import type { WebSocket } from 'ws'
 
-import type { AbstractUIService } from './ui-services/AbstractUIService.js'
-import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
-import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
   AuthenticationType,
   type ChargingStationData,
+  ConfigurationSection,
   type ProcedureName,
   type ProtocolRequest,
   type ProtocolResponse,
@@ -20,6 +18,9 @@ import {
   type UIServerConfiguration
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
+import type { AbstractUIService } from './ui-services/AbstractUIService.js'
+import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
+import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
 const moduleName = 'AbstractUIServer'
 
@@ -27,7 +28,11 @@ export abstract class AbstractUIServer {
   public readonly chargingStations: Map<string, ChargingStationData>
   public readonly chargingStationTemplates: Set<string>
   protected readonly httpServer: Server | Http2Server
-  protected readonly responseHandlers: Map<string, ServerResponse | WebSocket>
+  protected readonly responseHandlers: Map<
+    `${string}-${string}-${string}-${string}-${string}`,
+  ServerResponse | WebSocket
+  >
+
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
@@ -42,23 +47,29 @@ export abstract class AbstractUIServer {
         break
       default:
         throw new BaseError(
-          `Unsupported application protocol version ${this.uiServerConfiguration.version}`
+          `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
-    this.responseHandlers = new Map<string, ServerResponse | WebSocket>()
+    this.responseHandlers = new Map<
+      `${string}-${string}-${string}-${string}-${string}`,
+    ServerResponse | WebSocket
+    >()
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
 
   public buildProtocolRequest (
-    id: string,
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
     procedureName: ProcedureName,
     requestPayload: RequestPayload
   ): ProtocolRequest {
-    return [id, procedureName, requestPayload]
+    return [uuid, procedureName, requestPayload]
   }
 
-  public buildProtocolResponse (id: string, responsePayload: ResponsePayload): ProtocolResponse {
-    return [id, responsePayload]
+  public buildProtocolResponse (
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    responsePayload: ResponsePayload
+  ): ProtocolResponse {
+    return [uuid, responsePayload]
   }
 
   public stop (): void {
@@ -82,8 +93,8 @@ export abstract class AbstractUIServer {
       ?.requestHandler(request) as Promise<ProtocolResponse>)
   }
 
-  public hasResponseHandler (id: string): boolean {
-    return this.responseHandlers.has(id)
+  public hasResponseHandler (uuid: `${string}-${string}-${string}-${string}-${string}`): boolean {
+    return this.responseHandlers.has(uuid)
   }
 
   protected startHttpServer (): void {

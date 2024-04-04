@@ -1,4 +1,4 @@
-import { getRandomValues, randomBytes, randomInt, randomUUID } from 'node:crypto'
+import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
 import { env, nextTick } from 'node:process'
 
 import {
@@ -12,11 +12,11 @@ import {
   minutesToSeconds,
   secondsToMilliseconds
 } from 'date-fns'
+import { is } from 'rambda'
 
-import { Constants } from './Constants.js'
 import {
-  type EmptyObject,
-  type ProtocolResponse,
+  type JsonType,
+  MapStringifyFormat,
   type TimestampedData,
   WebSocketCloseEventStatusString
 } from '../types/index.js'
@@ -25,11 +25,13 @@ export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
 }
 
-export const generateUUID = (): string => {
+export const generateUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
   return randomUUID()
 }
 
-export const validateUUID = (uuid: string): boolean => {
+export const validateUUID = (
+  uuid: `${string}-${string}-${string}-${string}-${string}`
+): uuid is `${string}-${string}-${string}-${string}-${string}` => {
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid)
 }
 
@@ -89,7 +91,7 @@ export const convertToDate = (
   if (isDate(value)) {
     return value
   }
-  if (isString(value) || typeof value === 'number') {
+  if (typeof value === 'string' || typeof value === 'number') {
     const valueToDate = new Date(value)
     if (isNaN(valueToDate.getTime())) {
       throw new Error(`Cannot convert to date: '${value}'`)
@@ -109,7 +111,7 @@ export const convertToInt = (value: unknown): number => {
     return Math.trunc(value)
   }
   let changedValue: number = value as number
-  if (isString(value)) {
+  if (typeof value === 'string') {
     changedValue = parseInt(value)
   }
   if (isNaN(changedValue)) {
@@ -123,7 +125,7 @@ export const convertToFloat = (value: unknown): number => {
     return 0
   }
   let changedValue: number = value as number
-  if (isString(value)) {
+  if (typeof value === 'string') {
     changedValue = parseFloat(value)
   }
   if (isNaN(changedValue)) {
@@ -138,7 +140,7 @@ export const convertToBoolean = (value: unknown): boolean => {
     // Check the type
     if (typeof value === 'boolean') {
       return value
-    } else if (isString(value) && (value.toLowerCase() === 'true' || value === '1')) {
+    } else if (typeof value === 'string' && (value.toLowerCase() === 'true' || value === '1')) {
       result = true
     } else if (typeof value === 'number' && value === 1) {
       result = true
@@ -155,15 +157,6 @@ export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
     throw new RangeError('Invalid interval')
   }
   return (randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min
-}
-
-export const getRandomInteger = (max = Constants.MAX_RANDOM_INTEGER, min = 0): number => {
-  max = Math.floor(max)
-  if (min !== 0) {
-    min = Math.ceil(min)
-    return Math.floor(randomInt(min, max + 1))
-  }
-  return Math.floor(randomInt(max + 1))
 }
 
 /**
@@ -223,24 +216,11 @@ export const clone = <T>(object: T): T => {
  * @internal
  */
 export const isAsyncFunction = (fn: unknown): fn is (...args: unknown[]) => Promise<unknown> => {
-  return typeof fn === 'function' && fn.constructor.name === 'AsyncFunction'
+  return is(Function, fn) && fn.constructor.name === 'AsyncFunction'
 }
 
 export const isObject = (value: unknown): value is object => {
-  return value != null && typeof value === 'object' && !Array.isArray(value)
-}
-
-export const isEmptyObject = (object: object): object is EmptyObject => {
-  if (object.constructor !== Object) {
-    return false
-  }
-  // Iterates over the keys of an object, if
-  // any exist, return false.
-  // eslint-disable-next-line no-unreachable-loop
-  for (const _ in object) {
-    return false
-  }
-  return true
+  return value != null && !Array.isArray(value) && is(Object, value)
 }
 
 export const hasOwnProp = (value: unknown, property: PropertyKey): boolean => {
@@ -251,20 +231,8 @@ export const isCFEnvironment = (): boolean => {
   return env.VCAP_APPLICATION != null
 }
 
-const isString = (value: unknown): value is string => {
-  return typeof value === 'string'
-}
-
-export const isEmptyString = (value: unknown): value is '' | undefined | null => {
-  return value == null || (isString(value) && value.trim().length === 0)
-}
-
 export const isNotEmptyString = (value: unknown): value is string => {
-  return isString(value) && value.trim().length > 0
-}
-
-export const isEmptyArray = (value: unknown): value is never[] => {
-  return Array.isArray(value) && value.length === 0
+  return typeof value === 'string' && value.trim().length > 0
 }
 
 export const isNotEmptyArray = (value: unknown): value is unknown[] => {
@@ -296,22 +264,30 @@ export const secureRandom = (): number => {
   return getRandomValues(new Uint32Array(1))[0] / 0x100000000
 }
 
-export const JSONStringifyWithMapSupport = (
-  object:
-  | Record<string, unknown>
+export const JSONStringify = <
+  T extends
+  | JsonType
   | Array<Record<string, unknown>>
-  | Map<unknown, unknown>
-  | ProtocolResponse,
-  space?: string | number
-): string => {
+  | Set<Record<string, unknown>>
+  | Map<string, Record<string, unknown>>
+>(
+    object: T,
+    space?: string | number,
+    mapFormat?: MapStringifyFormat
+  ): string => {
   return JSON.stringify(
     object,
     (_, value: Record<string, unknown>) => {
-      if (value instanceof Map) {
-        return {
-          dataType: 'Map',
-          value: [...value]
+      if (is(Map, value)) {
+        switch (mapFormat) {
+          case MapStringifyFormat.object:
+            return { ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries()) }
+          case MapStringifyFormat.array:
+          default:
+            return [...value]
         }
+      } else if (is(Set, value)) {
+        return [...value] as JsonType[]
       }
       return value
     },
@@ -356,28 +332,6 @@ export const isArraySorted = <T>(array: T[], compareFn: (a: T, b: T) => number):
   }
   return true
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const once = <T, A extends any[], R>(
-  fn: (...args: A) => R,
-  context: T
-): ((...args: A) => R) => {
-  let result: R
-  return (...args: A) => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (fn != null) {
-      result = fn.apply<T, A, R>(context, args)
-      ;(fn as unknown as undefined) = (context as unknown as undefined) = undefined
-    }
-    return result
-  }
-}
-
-export const min = (...args: number[]): number =>
-  args.reduce((minimum, num) => (minimum < num ? minimum : num), Infinity)
-
-export const max = (...args: number[]): number =>
-  args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity)
 
 export const throwErrorInNextTick = (error: Error): void => {
   nextTick(() => {

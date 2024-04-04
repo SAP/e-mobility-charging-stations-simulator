@@ -6,8 +6,11 @@ import { WorkerAbstract } from './WorkerAbstract.js'
 import type { WorkerData, WorkerOptions } from './WorkerTypes.js'
 import { randomizeDelay, sleep } from './WorkerUtils.js'
 
-export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
-  private readonly pool: DynamicThreadPool<WorkerData>
+export class WorkerDynamicPool<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<
+D,
+R
+> {
+  private readonly pool: DynamicThreadPool<D, R>
 
   /**
    * Creates a new `WorkerDynamicPool`.
@@ -17,7 +20,7 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
    */
   constructor (workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions)
-    this.pool = new DynamicThreadPool<WorkerData>(
+    this.pool = new DynamicThreadPool<D, R>(
       this.workerOptions.poolMinSize,
       this.workerOptions.poolMaxSize,
       this.workerScript,
@@ -42,8 +45,8 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   }
 
   /** @inheritDoc */
-  public async start (): Promise<void> {
-    // This is intentional
+  public start (): void {
+    this.pool.start()
   }
 
   /** @inheritDoc */
@@ -52,12 +55,13 @@ export class WorkerDynamicPool extends WorkerAbstract<WorkerData> {
   }
 
   /** @inheritDoc */
-  public async addElement (elementData: WorkerData): Promise<void> {
-    await this.pool.execute(elementData)
+  public async addElement (elementData: D): Promise<R> {
+    const response = await this.pool.execute(elementData)
     // Start element sequentially to optimize memory at startup
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.workerOptions.elementStartDelay! > 0 &&
+    this.workerOptions.elementAddDelay! > 0 &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (await sleep(randomizeDelay(this.workerOptions.elementStartDelay!)))
+      (await sleep(randomizeDelay(this.workerOptions.elementAddDelay!)))
+    return response
   }
 }

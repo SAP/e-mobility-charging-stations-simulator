@@ -19,16 +19,24 @@ export enum ProtocolVersion {
   '0.0.1' = '0.0.1'
 }
 
-export type ProtocolRequest = [string, ProcedureName, RequestPayload]
-export type ProtocolResponse = [string, ResponsePayload]
+export type ProtocolRequest = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ProcedureName,
+  RequestPayload
+]
+export type ProtocolResponse = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ResponsePayload
+]
 
 export type ProtocolRequestHandler = (
-  uuid?: string,
+  uuid?: `${string}-${string}-${string}-${string}-${string}`,
   procedureName?: ProcedureName,
   payload?: RequestPayload
 ) => undefined | Promise<undefined> | ResponsePayload | Promise<ResponsePayload>
 
 export enum ProcedureName {
+  SIMULATOR_STATE = 'simulatorState',
   START_SIMULATOR = 'startSimulator',
   STOP_SIMULATOR = 'stopSimulator',
   LIST_TEMPLATES = 'listTemplates',

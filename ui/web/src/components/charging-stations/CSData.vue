@@ -1,40 +1,54 @@
 <template>
   <tr class="cs-table__row">
     <td class="cs-table__column">
-      {{ props.chargingStation.stationInfo.chargingStationId }}
+      {{ chargingStation.stationInfo.chargingStationId }}
     </td>
-    <td class="cs-table__column">{{ props.chargingStation.started === true ? 'Yes' : 'No' }}</td>
+    <td class="cs-table__column">{{ chargingStation.started === true ? 'Yes' : 'No' }}</td>
     <td class="cs-table__column">
       {{ getSupervisionUrl() }}
     </td>
     <td class="cs-table__column">{{ getWSState() }}</td>
     <td class="cs-table__column">
-      {{ props.chargingStation?.bootNotificationResponse?.status ?? 'Ø' }}
+      {{ chargingStation.bootNotificationResponse?.status ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
-      {{ props.chargingStation.stationInfo.templateName }}
+      {{ chargingStation.stationInfo.templateName }}
     </td>
-    <td class="cs-table__column">{{ props.chargingStation.stationInfo.chargePointVendor }}</td>
-    <td class="cs-table__column">{{ props.chargingStation.stationInfo.chargePointModel }}</td>
+    <td class="cs-table__column">{{ chargingStation.stationInfo.chargePointVendor }}</td>
+    <td class="cs-table__column">{{ chargingStation.stationInfo.chargePointModel }}</td>
     <td class="cs-table__column">
-      {{ props.chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
+      {{ chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
       <Button @click="startChargingStation()">Start Charging Station</Button>
       <Button @click="stopChargingStation()">Stop Charging Station</Button>
-      <Button
-        @click="
-          $router.push({
-            name: 'set-supervision-url',
-            params: {
-              hashId: props.chargingStation.stationInfo.hashId,
-              chargingStationId: props.chargingStation.stationInfo.chargingStationId
-            }
-          })
+      <ToggleButton
+        :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
+        :shared="true"
+        :on="
+          () => {
+            $router.push({
+              name: 'set-supervision-url',
+              params: {
+                hashId: chargingStation.stationInfo.hashId,
+                chargingStationId: chargingStation.stationInfo.chargingStationId
+              }
+            })
+          }
+        "
+        :off="
+          () => {
+            $router.push({ name: 'charging-stations' })
+          }
+        "
+        @clicked="
+          () => {
+            $emit('need-refresh')
+          }
         "
       >
         Set Supervision Url
-      </Button>
+      </ToggleButton>
       <Button @click="openConnection()">Open Connection</Button>
       <Button @click="closeConnection()">Close Connection</Button>
       <Button @click="deleteChargingStation()">Delete Charging Station</Button>
@@ -52,14 +66,15 @@
           </tr>
         </thead>
         <tbody id="connectors-table__body">
-          <!-- eslint-disable-next-line vue/valid-v-for -->
           <CSConnector
             v-for="(connector, index) in getConnectorStatuses()"
-            :hash-id="props.chargingStation.stationInfo.hashId"
-            :charging-station-id="props.chargingStation.stationInfo.chargingStationId"
+            :key="index + 1"
+            :hash-id="chargingStation.stationInfo.hashId"
+            :charging-station-id="chargingStation.stationInfo.chargingStationId"
             :connector-id="index + 1"
             :connector="connector"
             :atg-status="getATGStatus(index + 1)"
+            @need-refresh="$emit('need-refresh')"
           />
         </tbody>
       </table>
@@ -68,15 +83,19 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance } from 'vue'
 import { useToast } from 'vue-toast-notification'
-import CSConnector from '@/components/charging-stations/CSConnector.vue'
+
 import Button from '@/components/buttons/Button.vue'
+import ToggleButton from '@/components/buttons/ToggleButton.vue'
+import CSConnector from '@/components/charging-stations/CSConnector.vue'
+import { useUIClient } from '@/composables'
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
+
+const $emit = defineEmits(['need-refresh'])
 
 const getConnectorStatuses = (): ConnectorStatus[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
@@ -115,7 +134,7 @@ const getWSState = (): string => {
   }
 }
 
-const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
+const uiClient = useUIClient()
 
 const $toast = useToast()
 
@@ -127,7 +146,7 @@ const startChargingStation = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at starting charging station')
-      console.error('Error at starting charging station', error)
+      console.error('Error at starting charging station:', error)
     })
 }
 const stopChargingStation = (): void => {
@@ -138,7 +157,7 @@ const stopChargingStation = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at stopping charging station')
-      console.error('Error at stopping charging station', error)
+      console.error('Error at stopping charging station:', error)
     })
 }
 const openConnection = (): void => {
@@ -149,7 +168,7 @@ const openConnection = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at opening connection')
-      console.error('Error at opening connection', error)
+      console.error('Error at opening connection:', error)
     })
 }
 const closeConnection = (): void => {
@@ -160,7 +179,7 @@ const closeConnection = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at closing connection')
-      console.error('Error at closing connection', error)
+      console.error('Error at closing connection:', error)
     })
 }
 const deleteChargingStation = (): void => {
@@ -171,7 +190,7 @@ const deleteChargingStation = (): void => {
     })
     .catch((error: Error) => {
       $toast.error('Error at deleting charging station')
-      console.error('Error at deleting charging station', error)
+      console.error('Error at deleting charging station:', error)
     })
 }
 </script>
@@ -209,6 +228,8 @@ const deleteChargingStation = (): void => {
 
 .connectors-table__column {
   width: calc(100% / 5);
+  display: flex;
+  flex-direction: column;
   text-align: center;
 }
 </style>

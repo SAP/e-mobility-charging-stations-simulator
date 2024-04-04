@@ -1,3 +1,5 @@
+import { UIClient } from './UIClient'
+
 export const convertToBoolean = (value: unknown): boolean => {
   let result = false
   if (value != null) {
@@ -33,11 +35,33 @@ export const convertToInt = (value: unknown): number => {
   return changedValue
 }
 
+export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
+  const item = localStorage.getItem(key)
+  return item != null ? (JSON.parse(item) as T) : defaultValue
+}
+
 export const setToLocalStorage = <T>(key: string, value: T): void => {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
-export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
-  const item = localStorage.getItem(key)
-  return item != null ? (JSON.parse(item) as T) : defaultValue
+export const deleteFromLocalStorage = (key: string): void => {
+  localStorage.removeItem(key)
+}
+
+export const getLocalStorage = (): Storage => {
+  return localStorage
+}
+
+export const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
+  return crypto.randomUUID()
+}
+
+export const validateUUID = (
+  uuid: `${string}-${string}-${string}-${string}-${string}`
+): uuid is `${string}-${string}-${string}-${string}-${string}` => {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid)
+}
+
+export const useUIClient = (): UIClient => {
+  return UIClient.getInstance()
 }

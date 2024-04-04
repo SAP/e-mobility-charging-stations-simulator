@@ -36,7 +36,7 @@ export type WorkerEvents = PoolEvent | WorkerSetEvents
 
 export interface WorkerOptions {
   workerStartDelay?: number
-  elementStartDelay?: number
+  elementAddDelay?: number
   poolMaxSize: number
   poolMinSize: number
   elementsPerWorker?: number
@@ -45,12 +45,20 @@ export interface WorkerOptions {
 
 export type WorkerData = Record<string, unknown>
 
+export interface WorkerDataError extends WorkerData {
+  event: WorkerMessageEvents
+  name: string
+  message: string
+  stack?: string
+}
+
 export interface WorkerSetElement {
   worker: Worker
   numberOfWorkerElements: number
 }
 
 export interface WorkerMessage<T extends WorkerData> {
+  uuid: `${string}-${string}-${string}-${string}`
   event: WorkerMessageEvents
   data: T
 }

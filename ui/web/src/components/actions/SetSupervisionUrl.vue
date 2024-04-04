@@ -1,7 +1,6 @@
 <template>
-  <h1 id="action">Action</h1>
-  <h2>Set Supervision Url</h2>
-  <h3>Charging Station {{ chargingStationId }}</h3>
+  <h1 id="action">Set Supervision Url</h1>
+  <h2>{{ chargingStationId }}</h2>
   <p>Supervision Url:</p>
   <input
     id="supervision-url"
@@ -15,8 +14,8 @@
     id="action-button"
     @click="
       () => {
-        uiClient
-          .setSupervisionUrl(props.hashId, state.supervisionUrl)
+        $uiClient
+          .setSupervisionUrl(hashId, state.supervisionUrl)
           .then(() => {
             $toast.success('Supervision url successfully set')
           })
@@ -32,23 +31,21 @@
   >
     Set Supervision Url
   </Button>
-  <Button id="action-button" @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref } from 'vue'
+import { ref } from 'vue'
+
 import Button from '@/components/buttons/Button.vue'
 
-const props = defineProps<{
+defineProps<{
   hashId: string
   chargingStationId: string
 }>()
 
-const state = ref({
+const state = ref<{ supervisionUrl: string }>({
   supervisionUrl: ''
 })
-
-const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 </script>
 
 <style>

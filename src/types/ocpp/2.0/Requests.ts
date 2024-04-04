@@ -1,11 +1,11 @@
+import type { EmptyObject } from '../../EmptyObject.js'
+import type { JsonObject } from '../../JsonType.js'
 import type {
   BootReasonEnumType,
   InstallCertificateUseEnumType,
   OCPP20ConnectorStatusEnumType
 } from './Common.js'
 import type { OCPP20SetVariableDataType } from './Variables.js'
-import type { EmptyObject } from '../../EmptyObject.js'
-import type { JsonObject } from '../../JsonType.js'
 
 export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
@@ -19,40 +19,40 @@ export enum OCPP20IncomingRequestCommand {
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction'
 }
 
-type ModemType = {
+interface ModemType extends JsonObject {
   iccid?: string
   imsi?: string
-} & JsonObject
+}
 
-type ChargingStationType = {
+interface ChargingStationType extends JsonObject {
   serialNumber?: string
   model: string
   vendorName: string
   firmwareVersion?: string
   modem?: ModemType
-} & JsonObject
+}
 
-export type OCPP20BootNotificationRequest = {
+export interface OCPP20BootNotificationRequest extends JsonObject {
   reason: BootReasonEnumType
   chargingStation: ChargingStationType
-} & JsonObject
+}
 
 export type OCPP20HeartbeatRequest = EmptyObject
 
 export type OCPP20ClearCacheRequest = EmptyObject
 
-export type OCPP20StatusNotificationRequest = {
+export interface OCPP20StatusNotificationRequest extends JsonObject {
   timestamp: Date
   connectorStatus: OCPP20ConnectorStatusEnumType
   evseId: number
   connectorId: number
-} & JsonObject
+}
 
-export type OCPP20SetVariablesRequest = {
+export interface OCPP20SetVariablesRequest extends JsonObject {
   setVariableData: OCPP20SetVariableDataType[]
-} & JsonObject
+}
 
-export type OCPP20InstallCertificateRequest = {
+export interface OCPP20InstallCertificateRequest extends JsonObject {
   certificateType: InstallCertificateUseEnumType
   certificate: string
-} & JsonObject
+}

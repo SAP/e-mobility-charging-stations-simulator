@@ -1,37 +1,10 @@
-/**
- * Computes the average of the given data set.
- *
- * @param dataSet - Data set.
- * @returns The average of the given data set.
- * @internal
- */
-export const average = (dataSet: number[]): number => {
-  if (Array.isArray(dataSet) && dataSet.length === 0) {
-    return 0
-  } else if (Array.isArray(dataSet) && dataSet.length === 1) {
-    return dataSet[0]
-  }
-  return dataSet.reduce((accumulator, nb) => accumulator + nb, 0) / dataSet.length
-}
+import { mean } from 'rambda'
 
-/**
- * Computes the median of the given data set.
- *
- * @param dataSet - Data set.
- * @returns The median of the given data set.
- * @internal
- */
-export const median = (dataSet: number[]): number => {
-  if (Array.isArray(dataSet) && dataSet.length === 0) {
-    return 0
-  } else if (Array.isArray(dataSet) && dataSet.length === 1) {
-    return dataSet[0]
-  }
-  const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
-  return (
-    (sortedDataSet[(sortedDataSet.length - 1) >> 1] + sortedDataSet[sortedDataSet.length >> 1]) / 2
-  )
-}
+export const min = (...args: number[]): number =>
+  args.reduce((minimum, num) => (minimum < num ? minimum : num), Infinity)
+
+export const max = (...args: number[]): number =>
+  args.reduce((maximum, num) => (maximum > num ? maximum : num), -Infinity)
 
 // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
 export const nthPercentile = (dataSet: number[], percentile: number): number => {
@@ -70,10 +43,7 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
  * @see https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
  * @internal
  */
-export const stdDeviation = (
-  dataSet: number[],
-  dataSetAverage: number = average(dataSet)
-): number => {
+export const stdDeviation = (dataSet: number[], dataSetAverage: number = mean(dataSet)): number => {
   if (Array.isArray(dataSet) && (dataSet.length === 0 || dataSet.length === 1)) {
     return 0
   }

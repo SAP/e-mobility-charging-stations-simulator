@@ -1,11 +1,9 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
+import { randomInt } from 'node:crypto'
+
 import { hoursToMilliseconds, secondsToMilliseconds } from 'date-fns'
 
-import type { ChargingStation } from './ChargingStation.js'
-import { checkChargingStation } from './Helpers.js'
-import { IdTagsCache } from './IdTagsCache.js'
-import { isIdTagAuthorized } from './ocpp/index.js'
 import { BaseError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
@@ -18,17 +16,20 @@ import {
   type StopTransactionResponse
 } from '../types/index.js'
 import {
-  Constants,
   clone,
+  Constants,
   convertToDate,
   formatDurationMilliSeconds,
-  getRandomInteger,
   isValidDate,
-  logPrefix,
   logger,
+  logPrefix,
   secureRandom,
   sleep
 } from '../utils/index.js'
+import type { ChargingStation } from './ChargingStation.js'
+import { checkChargingStation } from './Helpers.js'
+import { IdTagsCache } from './IdTagsCache.js'
+import { isIdTagAuthorized } from './ocpp/index.js'
 
 export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
@@ -199,11 +200,11 @@ export class AutomaticTransactionGenerator {
         break
       }
       const wait = secondsToMilliseconds(
-        getRandomInteger(
+        randomInt(
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.maxDelayBetweenTwoTransactions,
+            ?.minDelayBetweenTwoTransactions,
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.minDelayBetweenTwoTransactions
+            ?.maxDelayBetweenTwoTransactions
         )
       )
       logger.info(`${this.logPrefix(connectorId)} waiting for ${formatDurationMilliSeconds(wait)}`)
@@ -221,9 +222,9 @@ export class AutomaticTransactionGenerator {
         if (startResponse?.idTagInfo.status === AuthorizationStatus.ACCEPTED) {
           // Wait until end of transaction
           const waitTrxEnd = secondsToMilliseconds(
-            getRandomInteger(
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.maxDuration,
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration
+            randomInt(
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration,
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.maxDuration
             )
           )
           logger.info(

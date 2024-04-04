@@ -1,7 +1,7 @@
 // Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import { Storage } from './Storage.js'
 import type { Statistics } from '../../types/index.js'
+import { Storage } from './Storage.js'
 
 export class None extends Storage {
   constructor () {
@@ -13,7 +13,7 @@ export class None extends Storage {
   }
 
   public open (): void {
-    /** Intentionally empty   */
+    /** Intentionally empty */
   }
 
   public close (): void {

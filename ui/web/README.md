@@ -1,16 +1,28 @@
+<div align="center">
+
 # Web UI
+
+</div>
 
 The Web UI code and configuration is in the repository directory [ui/web](./../../ui/web/). Commands execution is relative to that directory.
 
+## Table of contents
+
+- [Project setup](#project-setup)
+  - [Configuration](#configuration)
+    - [Simulator UI Server Configuration](#simulator-ui-server-configuration)
+    - [Web UI configuration](#web-ui-configuration)
+      - [Unique UI server](#unique-ui-server)
+      - [Multiple UI servers](#multiple-ui-servers)
+  - [Run](#run)
+    - [Compiles and run for production](#compiles-and-run-for-production)
+    - [Preview locally](#preview-locally)
+  - [Development](#development)
+    - [Compiles and run for development](#compiles-and-run-for-development)
+    - [Formats files](#formats-files)
+    - [Lints and fixes files](#lints-and-fixes-files)
+
 ## Project setup
-
-### Dependencies
-
-```shell
-corepack enable
-corepack prepare pnpm@latest --activate
-pnpm install
-```
 
 ### Configuration
 
@@ -37,7 +49,7 @@ See [here](./../../README.md#charging-stations-simulator-configuration) for more
 
 Copy the configuration template [src/assets/config-template.json](./src/assets/config-template.json) to `public/config.json`.
 
-##### Unique UI server:
+##### Unique UI server
 
 ```json
 {
@@ -56,7 +68,7 @@ Copy the configuration template [src/assets/config-template.json](./src/assets/c
 }
 ```
 
-##### Multiple UI servers:
+##### Multiple UI servers
 
 ```json
 {
@@ -92,13 +104,13 @@ Copy the configuration template [src/assets/config-template.json](./src/assets/c
 
 ### Run
 
-#### Compiles for production and preview locally
+#### Compiles and run for production
 
 ```shell
 pnpm preview
 ```
 
-#### Try it out
+#### Preview locally
 
 You can now follow the link displayed in the terminal. The Web UI looks like the following:
 

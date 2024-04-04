@@ -31,7 +31,8 @@
     },
     {
       "file": "keba.station-template.json",
-      "numberOfStations": 2
+      "numberOfStations": 2,
+      "provisionedNumberOfStations": 2
     },
     {
       "file": "abb.station-template.json",

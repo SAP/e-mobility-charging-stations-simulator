@@ -18,23 +18,40 @@ body:
       options:
         - label: I've searched for any related issues and avoided creating a duplicate issue.
           required: true
+  - type: dropdown
+    attributes:
+      label: Component
+      description: The component of the simulator that the bug is related to.
+      options:
+        - Simulator
+        - Web UI
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Description
       description: Description of the bug.
       placeholder: |
         - Please include error outputs in the 'Actual result' input field from 'pnpm start:dev', if any
+    validations:
+      required: true
   - type: input
     attributes:
-      label: e-mobility-charging-stations-simulator version
+      label: Version
+    validations:
+      required: true
   - type: input
     attributes:
       label: Node.js version
       description: Output of `node -v`.
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: System
       description: Output of `npx --yes envinfo --system`.
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Expected result

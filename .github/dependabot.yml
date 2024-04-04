@@ -16,18 +16,6 @@ updates:
       interval: 'daily'
     labels:
       - 'dependencies'
-      - 'simulator'
-    reviewers:
-      - 'jerome-benoit'
-      - 'olivierbagot'
-    versioning-strategy: increase
-  - package-ecosystem: 'npm'
-    directory: '/ui/web'
-    schedule:
-      interval: 'daily'
-    labels:
-      - 'dependencies'
-      - 'webui'
     reviewers:
       - 'jerome-benoit'
       - 'olivierbagot'

@@ -1,5 +1,6 @@
-import { expect, test } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
+import { expect, test } from 'vitest'
+
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import type { ChargingStationData } from '@/types'
 

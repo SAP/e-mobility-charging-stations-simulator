@@ -1,3 +1,4 @@
+import type { JsonObject } from '../JsonType.js'
 import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
@@ -8,7 +9,6 @@ import {
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName
 } from './2.0/Variables.js'
-import type { JsonObject } from '../JsonType.js'
 
 export const StandardParametersKey = {
   ...OCPP16StandardParametersKey,
@@ -44,8 +44,8 @@ export enum ConnectorPhaseRotation {
 
 export type ConfigurationKeyType = string | StandardParametersKey | VendorParametersKey
 
-export type OCPPConfigurationKey = {
+export interface OCPPConfigurationKey extends JsonObject {
   key: ConfigurationKeyType
   readonly: boolean
   value?: string
-} & JsonObject
+}

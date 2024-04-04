@@ -1,18 +1,18 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { EventEmitter } from 'node:events'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 import chalk from 'chalk'
 import {
-  type Interval,
   addDays,
   addSeconds,
   addWeeks,
   differenceInDays,
   differenceInSeconds,
   differenceInWeeks,
+  type Interval,
   isAfter,
   isBefore,
   isDate,
@@ -21,9 +21,8 @@ import {
   toDate
 } from 'date-fns'
 import { maxTime } from 'date-fns/constants'
+import { isEmpty } from 'rambda'
 
-import type { ChargingStation } from './ChargingStation.js'
-import { getConfigurationKey } from './ConfigurationKeyUtils.js'
 import { BaseError } from '../exception/index.js'
 import {
   AmpereUnits,
@@ -56,22 +55,33 @@ import {
 } from '../types/index.js'
 import {
   ACElectricUtils,
-  Constants,
-  DCElectricUtils,
   clone,
+  Constants,
   convertToDate,
   convertToInt,
+  DCElectricUtils,
   isArraySorted,
-  isEmptyObject,
-  isEmptyString,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,
   logger,
   secureRandom
 } from '../utils/index.js'
+import type { ChargingStation } from './ChargingStation.js'
+import { getConfigurationKey } from './ConfigurationKeyUtils.js'
 
 const moduleName = 'Helpers'
+
+export const buildTemplateName = (templateFile: string): string => {
+  if (isAbsolute(templateFile)) {
+    templateFile = relative(
+      resolve(join(dirname(fileURLToPath(import.meta.url)), 'assets', 'station-templates')),
+      templateFile
+    )
+  }
+  const templateFileParsedPath = parse(templateFile)
+  return join(templateFileParsedPath.dir, templateFileParsedPath.name)
+}
 
 export const getChargingStationId = (
   index: number,
@@ -243,12 +253,12 @@ export const checkTemplate = (
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  if (isEmptyObject(stationTemplate)) {
+  if (isEmpty(stationTemplate)) {
     const errorMsg = `Empty charging station information from template file ${templateFile}`
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  if (stationTemplate.idTagsFile == null || isEmptyString(stationTemplate.idTagsFile)) {
+  if (stationTemplate.idTagsFile == null || isEmpty(stationTemplate.idTagsFile)) {
     logger.warn(
       `${logPrefix} Missing id tags file in template file ${templateFile}. That can lead to issues with the Automatic Transaction Generator`
     )
@@ -265,7 +275,7 @@ export const checkConfiguration = (
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
   }
-  if (isEmptyObject(stationConfiguration)) {
+  if (isEmpty(stationConfiguration)) {
     const errorMsg = `Empty charging station configuration from file ${configurationFile}`
     logger.error(`${logPrefix} ${errorMsg}`)
     throw new BaseError(errorMsg)
@@ -964,7 +974,7 @@ export const prepareChargingProfileKind = (
       if (connectorStatus?.transactionStarted === true) {
         chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
       }
-      // FIXME: Handle relative charging profile duration
+      // FIXME: handle relative charging profile duration
       break
   }
   return true

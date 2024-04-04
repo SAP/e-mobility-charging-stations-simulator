@@ -1,5 +1,5 @@
-import type { EVSEType, StatusInfoType } from './Common.js'
 import type { JsonObject } from '../../JsonType.js'
+import type { EVSEType, StatusInfoType } from './Common.js'
 
 enum OCPP20ComponentName {
   AlignedDataCtrlr = 'AlignedDataCtrlr',
@@ -69,11 +69,11 @@ enum AttributeEnumType {
   MaxSet = 'MaxSet'
 }
 
-type ComponentType = {
+interface ComponentType extends JsonObject {
   name: string | OCPP20ComponentName
   instance?: string
   evse?: EVSEType
-} & JsonObject
+}
 
 type VariableName =
   | string
@@ -81,17 +81,17 @@ type VariableName =
   | OCPP20OptionalVariableName
   | OCPP20VendorVariableName
 
-type VariableType = {
+interface VariableType extends JsonObject {
   name: VariableName
   instance?: string
-} & JsonObject
+}
 
-export type OCPP20SetVariableDataType = {
+export interface OCPP20SetVariableDataType extends JsonObject {
   attributeType?: AttributeEnumType
   attributeValue: string
   component: ComponentType
   variable: VariableType
-} & JsonObject
+}
 
 enum SetVariableStatusEnumType {
   Accepted = 'Accepted',
@@ -102,15 +102,15 @@ enum SetVariableStatusEnumType {
   RebootRequired = 'RebootRequired'
 }
 
-export type OCPP20SetVariableResultType = {
+export interface OCPP20SetVariableResultType extends JsonObject {
   attributeType?: AttributeEnumType
   attributeStatus: SetVariableStatusEnumType
   component: ComponentType
   variable: VariableType
   attributeStatusInfo?: StatusInfoType
-} & JsonObject
+}
 
-export type OCPP20ComponentVariableType = {
+export interface OCPP20ComponentVariableType extends JsonObject {
   component: ComponentType
   variable?: VariableType
-} & JsonObject
+}

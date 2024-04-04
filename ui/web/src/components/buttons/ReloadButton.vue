@@ -1,11 +1,11 @@
 <template>
-  <FlatButton>
+  <Button>
     <span :class="{ spin: loading }"> &#8635; </span>
-  </FlatButton>
+  </Button>
 </template>
 
 <script setup lang="ts">
-import FlatButton from '@/components/buttons/FlatButton.vue'
+import Button from '@/components/buttons/Button.vue'
 
 defineProps<{
   loading: boolean
@@ -23,9 +23,6 @@ defineProps<{
 }
 
 .spin {
-  animation-name: rotation;
-  animation-duration: 2s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
+  animation: rotation 2s linear infinite;
 }
 </style>

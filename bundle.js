@@ -22,6 +22,7 @@ await build({
     'basic-ftp',
     'chalk',
     'date-fns',
+    'date-fns/*',
     'http-status-codes',
     'logform',
     'mnemonist',
@@ -35,6 +36,7 @@ await build({
     'winston-daily-rotate-file',
     'ws'
   ],
+  treeShaking: true,
   minify: true,
   sourcemap,
   entryNames: '[name]',
@@ -47,7 +49,8 @@ await build({
         './dist/assets/*.json',
         './dist/assets/json-schemas',
         './dist/assets/station-templates',
-        './dist/assets/ui-protocol'
+        './dist/assets/ui-protocol',
+        './dist/assets/configs-docker'
       ]
     }),
     copy({
@@ -67,6 +70,10 @@ await build({
         {
           from: ['./src/assets/station-templates/**/*.json'],
           to: ['./assets/station-templates']
+        },
+        {
+          from: ['./src/assets/configs-docker/*.json'],
+          to: ['./assets/configs-docker']
         }
       ]
     })

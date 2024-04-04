@@ -1,4 +1,3 @@
-import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 import {
   type BroadcastChannelResponse,
   type BroadcastChannelResponsePayload,
@@ -8,6 +7,7 @@ import {
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
 import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIService.js'
+import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'UIServiceWorkerBroadcastChannel'
 

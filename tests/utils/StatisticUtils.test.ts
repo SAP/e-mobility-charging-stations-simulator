@@ -2,21 +2,23 @@ import { describe, it } from 'node:test'
 
 import { expect } from 'expect'
 
-import { average, median, nthPercentile, stdDeviation } from '../../src/utils/StatisticUtils.js'
+import { max, min, nthPercentile, stdDeviation } from '../../src/utils/StatisticUtils.js'
 
 await describe('StatisticUtils test suite', async () => {
-  await it('Verify average()', () => {
-    expect(average([])).toBe(0)
-    expect(average([0.08])).toBe(0.08)
-    expect(average([0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03])).toBe(3.1642857142857146)
-    expect(average([0.25, 4.75, 3.05, 6.04, 1.01, 2.02])).toBe(2.8533333333333335)
+  await it('Verify min()', () => {
+    expect(min()).toBe(Infinity)
+    expect(min(0, 1)).toBe(0)
+    expect(min(1, 0)).toBe(0)
+    expect(min(0, -1)).toBe(-1)
+    expect(min(-1, 0)).toBe(-1)
   })
 
-  await it('Verify median()', () => {
-    expect(median([])).toBe(0)
-    expect(median([0.08])).toBe(0.08)
-    expect(median([0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03])).toBe(3.05)
-    expect(median([0.25, 4.75, 3.05, 6.04, 1.01, 2.02])).toBe(2.535)
+  await it('Verify max()', () => {
+    expect(max()).toBe(-Infinity)
+    expect(max(0, 1)).toBe(1)
+    expect(max(1, 0)).toBe(1)
+    expect(max(0, -1)).toBe(0)
+    expect(max(-1, 0)).toBe(0)
   })
 
   await it('Verify nthPercentile()', () => {

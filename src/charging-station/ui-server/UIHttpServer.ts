@@ -2,11 +2,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { StatusCodes } from 'http-status-codes'
 
-import { AbstractUIServer } from './AbstractUIServer.js'
-import { isProtocolAndVersionSupported } from './UIServerUtils.js'
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocolVersion,
+  MapStringifyFormat,
   type ProcedureName,
   type Protocol,
   type ProtocolRequest,
@@ -18,12 +17,14 @@ import {
 } from '../../types/index.js'
 import {
   Constants,
-  JSONStringifyWithMapSupport,
   generateUUID,
   isNotEmptyString,
-  logPrefix,
-  logger
+  JSONStringify,
+  logger,
+  logPrefix
 } from '../../utils/index.js'
+import { AbstractUIServer } from './AbstractUIServer.js'
+import { isProtocolAndVersionSupported } from './UIServerUtils.js'
 
 const moduleName = 'UIHttpServer'
 
@@ -61,7 +62,7 @@ export class UIHttpServer extends AbstractUIServer {
           .writeHead(this.responseStatusToStatusCode(payload.status), {
             'Content-Type': 'application/json'
           })
-          .end(JSONStringifyWithMapSupport(payload))
+          .end(JSONStringify(payload, undefined, MapStringifyFormat.object))
       } else {
         logger.error(
           `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`

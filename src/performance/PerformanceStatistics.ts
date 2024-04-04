@@ -1,16 +1,18 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import { type PerformanceEntry, PerformanceObserver, performance } from 'node:perf_hooks'
+import { performance, type PerformanceEntry, PerformanceObserver } from 'node:perf_hooks'
 import type { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
 import { secondsToMilliseconds } from 'date-fns'
+import { is, mean, median } from 'rambda'
 
 import { BaseError } from '../exception/index.js'
 import {
   ConfigurationSection,
   type IncomingRequestCommand,
   type LogConfiguration,
+  MapStringifyFormat,
   MessageType,
   type RequestCommand,
   type Statistics,
@@ -19,19 +21,17 @@ import {
   type TimestampedData
 } from '../types/index.js'
 import {
+  buildPerformanceStatisticsMessage,
   CircularArray,
   Configuration,
   Constants,
-  JSONStringifyWithMapSupport,
-  average,
-  buildPerformanceStatisticsMessage,
   extractTimeSeriesValues,
   formatDurationSeconds,
   generateUUID,
-  logPrefix,
+  JSONStringify,
   logger,
+  logPrefix,
   max,
-  median,
   min,
   nthPercentile,
   stdDeviation
@@ -107,7 +107,7 @@ export class PerformanceStatistics {
     try {
       performance.measure(name, markId)
     } catch (error) {
-      if (error instanceof Error && error.message.includes('performance mark has not been set')) {
+      if (is(Error, error) && error.message.includes('performance mark has not been set')) {
         /* Ignore */
       } else {
         throw error
@@ -214,7 +214,7 @@ export class PerformanceStatistics {
     logger.info(this.logPrefix(), {
       ...this.statistics,
       statisticsData: JSON.parse(
-        JSONStringifyWithMapSupport(this.statistics.statisticsData)
+        JSONStringify(this.statistics.statisticsData, undefined, MapStringifyFormat.object)
       ) as Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
     })
   }
@@ -292,8 +292,7 @@ export class PerformanceStatistics {
       this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries!
     )
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement =
-      average(timeMeasurementValues)
+    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement = mean(timeMeasurementValues)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.medTimeMeasurement =
       median(timeMeasurementValues)

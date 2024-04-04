@@ -21,8 +21,9 @@
     <tbody id="cs-table__body">
       <CSData
         v-for="chargingStation in chargingStations"
-        :key="chargingStation.stationInfo?.chargingStationId"
+        :key="chargingStation.stationInfo.hashId"
         :charging-station="chargingStation"
+        @need-refresh="$emit('need-refresh')"
       />
     </tbody>
   </table>
@@ -35,6 +36,8 @@ import type { ChargingStationData } from '@/types'
 defineProps<{
   chargingStations: ChargingStationData[]
 }>()
+
+const $emit = defineEmits(['need-refresh'])
 </script>
 
 <style>
@@ -45,6 +48,7 @@ defineProps<{
   display: flex;
   flex-direction: column;
   overflow: auto hidden;
+  border: solid 0.25px black;
   border-collapse: collapse;
   empty-cells: show;
 }
@@ -57,7 +61,7 @@ defineProps<{
 }
 
 #cs-table__caption {
-  color: white;
+  color: ivory;
   background-color: black;
   font-size: 1.5rem;
   font-weight: bold;
@@ -71,7 +75,7 @@ defineProps<{
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  border: solid 0.5px black;
+  border: solid 0.25px black;
 }
 
 .cs-table__row:nth-of-type(even) {
@@ -80,7 +84,9 @@ defineProps<{
 
 .cs-table__column {
   height: fit-content;
-  width: calc(60% / 10);
+  width: calc((100% - calc(100% / 3)) / 10);
+  display: flex;
+  flex-direction: column;
   text-align: center;
 }
 
@@ -90,6 +96,8 @@ defineProps<{
 
 .cs-table__connectors-column {
   height: fit-content;
-  width: 40%;
+  width: calc(100% / 3);
+  display: flex;
+  flex-direction: column;
 }
 </style>

@@ -3,9 +3,9 @@
 import { MikroORM as MariaDbORM, type Options as MariaDbOptions } from '@mikro-orm/mariadb'
 import { MikroORM as SqliteORM, type Options as SqliteOptions } from '@mikro-orm/sqlite'
 
-import { Storage } from './Storage.js'
 import { type PerformanceRecord, type Statistics, StorageType } from '../../types/index.js'
 import { Constants } from '../../utils/index.js'
+import { Storage } from './Storage.js'
 
 export class MikroOrmStorage extends Storage {
   private readonly storageType: StorageType

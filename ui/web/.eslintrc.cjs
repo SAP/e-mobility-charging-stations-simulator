@@ -9,11 +9,12 @@ module.exports = defineConfig({
     node: true
   },
 
-  plugins: ['import'],
+  plugins: ['simple-import-sort'],
 
   extends: [
     'eslint:recommended',
     'plugin:import/recommended',
+    'plugin:import/typescript',
     'plugin:vue/vue3-recommended',
     '@vue/eslint-config-typescript/recommended',
     '@vue/eslint-config-prettier'
@@ -28,20 +29,15 @@ module.exports = defineConfig({
   },
 
   parserOptions: {
+    sourceType: 'module',
     ecmaVersion: 'latest'
   },
 
   rules: {
     'no-console': env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'vue/require-v-for-key': 'off',
-    'vue/multi-word-component-names': 'off',
-    'sort-imports': [
-      'error',
-      {
-        ignoreDeclarationSort: true
-      }
-    ],
-    'import/order': 'error'
+    'simple-import-sort/imports': 'error',
+    'simple-import-sort/exports': 'error',
+    'vue/multi-word-component-names': 'off'
   }
 })

@@ -94,33 +94,33 @@ export enum CertificateSigningUseEnumType {
 
 export type CertificateSignedStatusEnumType = GenericStatusEnumType
 
-export type CertificateHashDataType = {
+export interface CertificateHashDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
   issuerNameHash: string
   issuerKeyHash: string
   serialNumber: string
-} & JsonObject
+}
 
-export type CertificateHashDataChainType = {
+export interface CertificateHashDataChainType extends JsonObject {
   certificateType: GetCertificateIdUseEnumType
   certificateHashData: CertificateHashDataType
   childCertificateHashData?: CertificateHashDataType
-} & JsonObject
+}
 
-export type OCSPRequestDataType = {
+export interface OCSPRequestDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
   issuerNameHash: string
   issuerKeyHash: string
   serialNumber: string
   responderURL: string
-} & JsonObject
+}
 
-export type StatusInfoType = {
+export interface StatusInfoType extends JsonObject {
   reasonCode: string
   additionalInfo?: string
-} & JsonObject
+}
 
-export type EVSEType = {
+export interface EVSEType extends JsonObject {
   id: number
   connectorId?: string
-} & JsonObject
+}

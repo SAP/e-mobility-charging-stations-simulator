@@ -1,67 +1,16 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import { createHash } from 'node:crypto'
+import { createHash, randomInt } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { type FSWatcher, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join, parse } from 'node:path'
+import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
 import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
-import { mergeDeepRight } from 'rambda'
+import { mergeDeepRight, once } from 'rambda'
 import { type RawData, WebSocket } from 'ws'
 
-import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
-import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
-import {
-  addConfigurationKey,
-  deleteConfigurationKey,
-  getConfigurationKey,
-  setConfigurationKeyValue
-} from './ConfigurationKeyUtils.js'
-import {
-  buildConnectorsMap,
-  checkChargingStation,
-  checkConfiguration,
-  checkConnectorsConfiguration,
-  checkStationInfoConnectorStatus,
-  checkTemplate,
-  createBootNotificationRequest,
-  createSerialNumber,
-  getAmperageLimitationUnitDivider,
-  getBootConnectorStatus,
-  getChargingStationConnectorChargingProfilesPowerLimit,
-  getChargingStationId,
-  getDefaultVoltageOut,
-  getHashId,
-  getIdTagsFile,
-  getMaxNumberOfEvses,
-  getNumberOfReservableConnectors,
-  getPhaseRotationValue,
-  hasFeatureProfile,
-  hasReservationExpired,
-  initializeConnectorsMapStatus,
-  propagateSerialNumber,
-  setChargingStationOptions,
-  stationTemplateToStationInfo,
-  warnTemplateKeysDeprecation
-} from './Helpers.js'
-import { IdTagsCache } from './IdTagsCache.js'
-import {
-  OCPP16IncomingRequestService,
-  OCPP16RequestService,
-  OCPP16ResponseService,
-  OCPP20IncomingRequestService,
-  OCPP20RequestService,
-  OCPP20ResponseService,
-  type OCPPIncomingRequestService,
-  type OCPPRequestService,
-  buildMeterValue,
-  buildTransactionEndMeterValue,
-  getMessageTypeString,
-  sendAndSetConnectorStatus
-} from './ocpp/index.js'
-import { SharedLRUCache } from './SharedLRUCache.js'
 import { BaseError, OCPPError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
@@ -113,17 +62,14 @@ import {
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
   type Voltage,
-  type WSError,
   WebSocketCloseEventStatusCode,
+  type WSError,
   type WsOptions
 } from '../types/index.js'
 import {
   ACElectricUtils,
   AsyncLock,
   AsyncLockType,
-  Configuration,
-  Constants,
-  DCElectricUtils,
   buildAddedMessage,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
@@ -133,26 +79,79 @@ import {
   buildStoppedMessage,
   buildUpdatedMessage,
   clone,
+  Configuration,
+  Constants,
   convertToBoolean,
   convertToDate,
   convertToInt,
+  DCElectricUtils,
   exponentialDelay,
   formatDurationMilliSeconds,
   formatDurationSeconds,
-  getRandomInteger,
   getWebSocketCloseEventStatusString,
   handleFileException,
   isNotEmptyArray,
   isNotEmptyString,
-  logPrefix,
   logger,
+  logPrefix,
   min,
-  once,
   roundTo,
   secureRandom,
   sleep,
   watchJsonFile
 } from '../utils/index.js'
+import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
+import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
+import {
+  addConfigurationKey,
+  deleteConfigurationKey,
+  getConfigurationKey,
+  setConfigurationKeyValue
+} from './ConfigurationKeyUtils.js'
+import {
+  buildConnectorsMap,
+  buildTemplateName,
+  checkChargingStation,
+  checkConfiguration,
+  checkConnectorsConfiguration,
+  checkStationInfoConnectorStatus,
+  checkTemplate,
+  createBootNotificationRequest,
+  createSerialNumber,
+  getAmperageLimitationUnitDivider,
+  getBootConnectorStatus,
+  getChargingStationConnectorChargingProfilesPowerLimit,
+  getChargingStationId,
+  getDefaultVoltageOut,
+  getHashId,
+  getIdTagsFile,
+  getMaxNumberOfEvses,
+  getNumberOfReservableConnectors,
+  getPhaseRotationValue,
+  hasFeatureProfile,
+  hasReservationExpired,
+  initializeConnectorsMapStatus,
+  propagateSerialNumber,
+  setChargingStationOptions,
+  stationTemplateToStationInfo,
+  warnTemplateKeysDeprecation
+} from './Helpers.js'
+import { IdTagsCache } from './IdTagsCache.js'
+import {
+  buildMeterValue,
+  buildTransactionEndMeterValue,
+  getMessageTypeString,
+  OCPP16IncomingRequestService,
+  OCPP16RequestService,
+  OCPP16ResponseService,
+  OCPP20IncomingRequestService,
+  OCPP20RequestService,
+  OCPP20ResponseService,
+  type OCPPIncomingRequestService,
+  type OCPPRequestService,
+  sendAndSetConnectorStatus
+} from './ocpp/index.js'
+import { SharedLRUCache } from './SharedLRUCache.js'
 
 export class ChargingStation extends EventEmitter {
   public readonly index: number
@@ -229,7 +228,7 @@ export class ChargingStation extends EventEmitter {
         this.wsConnectionRetried
           ? true
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
-      ).catch(error => {
+      ).catch((error: unknown) => {
         logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
       })
       this.wsConnectionRetried = false
@@ -287,7 +286,7 @@ export class ChargingStation extends EventEmitter {
         readFileSync(this.templateFile, 'utf8')
       ) as ChargingStationTemplate
     } catch {
-      stationTemplate = undefined
+      // Ignore
     }
     return logPrefix(` ${getChargingStationId(this.index, stationTemplate)} |`)
   }
@@ -553,7 +552,7 @@ export class ChargingStation extends EventEmitter {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
-          .catch(error => {
+          .catch((error: unknown) => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
               error
@@ -638,7 +637,7 @@ export class ChargingStation extends EventEmitter {
             meterValue: [meterValue]
           }
         )
-          .catch(error => {
+          .catch((error: unknown) => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
               error
@@ -842,7 +841,7 @@ export class ChargingStation extends EventEmitter {
     this.wsConnection.on('close', this.onClose.bind(this))
     // Handle WebSocket open
     this.wsConnection.on('open', () => {
-      this.onOpen().catch(error =>
+      this.onOpen().catch((error: unknown) =>
         logger.error(`${this.logPrefix()} Error while opening WebSocket connection:`, error)
       )
     })
@@ -1155,7 +1154,7 @@ export class ChargingStation extends EventEmitter {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const stationTemplate = this.getTemplateFromFile()!
     checkTemplate(stationTemplate, this.logPrefix(), this.templateFile)
-    const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation, this)
+    const warnTemplateKeysDeprecationOnce = once(warnTemplateKeysDeprecation)
     warnTemplateKeysDeprecationOnce(stationTemplate, this.logPrefix(), this.templateFile)
     if (stationTemplate.Connectors != null) {
       checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile)
@@ -1163,7 +1162,7 @@ export class ChargingStation extends EventEmitter {
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
     stationInfo.templateIndex = this.index
-    stationInfo.templateName = parse(this.templateFile).name
+    stationInfo.templateName = buildTemplateName(this.templateFile)
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
@@ -1192,15 +1191,6 @@ export class ChargingStation extends EventEmitter {
         } does not match firmware version pattern '${stationInfo.firmwareVersionPattern}'`
       )
     }
-    stationInfo.firmwareUpgrade = mergeDeepRight(
-      {
-        versionUpgrade: {
-          step: 1
-        },
-        reset: true
-      },
-      stationTemplate.firmwareUpgrade ?? {}
-    )
     if (stationTemplate.resetTime != null) {
       stationInfo.resetTime = secondsToMilliseconds(stationTemplate.resetTime)
     }
@@ -1223,7 +1213,7 @@ export class ChargingStation extends EventEmitter {
         }
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (stationInfo.templateName == null) {
-          stationInfo.templateName = parse(this.templateFile).name
+          stationInfo.templateName = buildTemplateName(this.templateFile)
         }
       }
     }
@@ -1237,6 +1227,7 @@ export class ChargingStation extends EventEmitter {
     const stationInfoFromFile = this.getStationInfoFromFile(
       stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
+    let stationInfo: ChargingStationInfo
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
@@ -1244,19 +1235,14 @@ export class ChargingStation extends EventEmitter {
       stationInfoFromFile != null &&
       stationInfoFromFile.templateHash === stationInfoFromTemplate.templateHash
     ) {
-      return setChargingStationOptions(
-        { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromFile },
-        options
-      )
+      stationInfo = stationInfoFromFile
+    } else {
+      stationInfo = stationInfoFromTemplate
+      stationInfoFromFile != null &&
+        propagateSerialNumber(this.getTemplateFromFile(), stationInfoFromFile, stationInfo)
     }
-    stationInfoFromFile != null &&
-      propagateSerialNumber(
-        this.getTemplateFromFile(),
-        stationInfoFromFile,
-        stationInfoFromTemplate
-      )
     return setChargingStationOptions(
-      { ...Constants.DEFAULT_STATION_INFO, ...stationInfoFromTemplate },
+      mergeDeepRight(Constants.DEFAULT_STATION_INFO, stationInfo),
       options
     )
   }
@@ -1554,7 +1540,7 @@ export class ChargingStation extends EventEmitter {
             }
             const templateConnectorId =
               connectorId > 0 && stationTemplate.randomConnectors === true
-                ? getRandomInteger(templateMaxAvailableConnectors, 1)
+                ? randomInt(1, templateMaxAvailableConnectors)
                 : connectorId
             const connectorStatus = stationTemplate.Connectors[templateConnectorId]
             checkStationInfoConnectorStatus(
@@ -1767,7 +1753,7 @@ export class ChargingStation extends EventEmitter {
             this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
             this.sharedLRUCache.setChargingStationConfiguration(configurationData)
             this.configurationFileHash = configurationHash
-          }).catch(error => {
+          }).catch((error: unknown) => {
             handleFileException(
               this.configurationFile,
               FileType.ChargingStationConfiguration,
@@ -1911,7 +1897,9 @@ export class ChargingStation extends EventEmitter {
             .then(() => {
               this.emit(ChargingStationEvents.updated)
             })
-            .catch(error => logger.error(`${this.logPrefix()} Error while reconnecting:`, error))
+            .catch((error: unknown) =>
+              logger.error(`${this.logPrefix()} Error while reconnecting:`, error)
+            )
         break
     }
   }
@@ -2364,11 +2352,11 @@ export class ChargingStation extends EventEmitter {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             Configuration.getSupervisionUrlDistribution()!
           ) &&
-            logger.error(
+            logger.warn(
               // eslint-disable-next-line @typescript-eslint/no-base-to-string
-              `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' from values '${SupervisionUrlDistribution.toString()}', defaulting to ${
+              `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to '${
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
-              }`
+              }'`
             )
           configuredSupervisionUrlIndex = (this.index - 1) % supervisionUrls.length
           break

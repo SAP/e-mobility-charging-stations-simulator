@@ -1,7 +1,7 @@
 <template>
-  <h1 id="action">Action</h1>
-  <h2>Start Transaction</h2>
-  <h3>Connector {{ connectorId }} on {{ chargingStationId }}</h3>
+  <h1 id="action">Start Transaction</h1>
+  <h2>{{ chargingStationId }}</h2>
+  <h3>Connector {{ connectorId }}</h3>
   <p>Scan RFID tag:</p>
   <input id="idtag" v-model.trim="state.idTag" type="text" name="idtag" placeholder="RFID tag" />
   <br />
@@ -9,8 +9,8 @@
     id="action-button"
     @click="
       () => {
-        uiClient
-          .startTransaction(props.hashId, convertToInt(props.connectorId), state.idTag)
+        $uiClient
+          .startTransaction(hashId, convertToInt(connectorId), state.idTag)
           .then(() => {
             $toast.success('Transaction successfully started')
           })
@@ -26,25 +26,23 @@
   >
     Start Transaction
   </Button>
-  <Button id="action-button" @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref } from 'vue'
+import { ref } from 'vue'
+
 import Button from '@/components/buttons/Button.vue'
 import { convertToInt } from '@/composables'
 
-const props = defineProps<{
+defineProps<{
   hashId: string
   chargingStationId: string
   connectorId: string
 }>()
 
-const state = ref({
+const state = ref<{ idTag: string }>({
   idTag: ''
 })
-
-const uiClient = getCurrentInstance()?.appContext.config.globalProperties.$uiClient
 </script>
 
 <style>

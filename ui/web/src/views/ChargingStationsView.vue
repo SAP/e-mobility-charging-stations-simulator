@@ -1,168 +1,298 @@
 <template>
   <Container id="charging-stations-container">
-    <Container
-      v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
-      id="ui-server-container"
-    >
-      <select
-        id="ui-server-selector"
-        v-model="state.uiServerIndex"
-        @change="
-          () => {
-            if (
-              getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
-            ) {
-              app?.appContext.config.globalProperties.$uiClient.setConfiguration(
-                app?.appContext.config.globalProperties.$configuration.uiServer[state.uiServerIndex]
-              )
-              initializeWSEventListeners()
-              app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-                'open',
-                () => {
-                  setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
-                  $router.currentRoute.value.name !== 'charging-stations' &&
-                    $router.push({ name: 'charging-stations' })
-                },
-                { once: true }
-              )
-              app?.appContext.config.globalProperties.$uiClient.registerWSEventListener(
-                'error',
-                () => {
-                  state.uiServerIndex = getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
-                  app?.appContext.config.globalProperties.$uiClient.setConfiguration(
-                    app?.appContext.config.globalProperties.$configuration.uiServer[
-                      getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
-                    ]
-                  )
-                  initializeWSEventListeners()
-                },
-                { once: true }
-              )
+    <Container id="buttons-container">
+      <Container
+        v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
+        id="ui-server-container"
+      >
+        <select
+          id="ui-server-selector"
+          v-model="state.uiServerIndex"
+          @change="
+            () => {
+              if (
+                getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
+              ) {
+                $uiClient.setConfiguration(
+                  ($configuration.value.uiServer as UIServerConfigurationSection[])[
+                    state.uiServerIndex
+                  ]
+                )
+                registerWSEventListeners()
+                $uiClient.registerWSEventListener(
+                  'open',
+                  () => {
+                    setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
+                    clearToggleButtons()
+                    $route.name !== 'charging-stations' &&
+                      $router.push({ name: 'charging-stations' })
+                  },
+                  { once: true }
+                )
+                $uiClient.registerWSEventListener(
+                  'error',
+                  () => {
+                    state.uiServerIndex = getFromLocalStorage<number>(
+                      'uiServerConfigurationIndex',
+                      0
+                    )
+                    $uiClient.setConfiguration(
+                      ($configuration.value.uiServer as UIServerConfigurationSection[])[
+                        getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+                      ]
+                    )
+                    registerWSEventListeners()
+                  },
+                  { once: true }
+                )
+              }
             }
+          "
+        >
+          <option
+            v-for="uiServerConfiguration in uiServerConfigurations"
+            :key="uiServerConfiguration.index"
+            :value="uiServerConfiguration.index"
+          >
+            {{
+              uiServerConfiguration.configuration.name ?? uiServerConfiguration.configuration.host
+            }}
+          </option>
+        </select>
+      </Container>
+      <ToggleButton
+        :id="'simulator'"
+        :key="state.renderSimulator"
+        :status="simulatorState?.started"
+        :on="() => startSimulator()"
+        :off="() => stopSimulator()"
+        :class="simulatorButtonClass"
+      >
+        {{ simulatorButtonMessage }}
+      </ToggleButton>
+      <ToggleButton
+        :id="'add-charging-stations'"
+        :key="state.renderAddChargingStations"
+        :shared="true"
+        :on="
+          () => {
+            $router.push({ name: 'add-charging-stations' })
+          }
+        "
+        :off="
+          () => {
+            $router.push({ name: 'charging-stations' })
+          }
+        "
+        @clicked="
+          () => {
+            state.renderChargingStations = randomUUID()
           }
         "
       >
-        <option
-          v-for="uiServerConfiguration in uiServerConfigurations"
-          :value="uiServerConfiguration.index"
-        >
-          {{ uiServerConfiguration.configuration.name ?? uiServerConfiguration.configuration.host }}
-        </option>
-      </select>
-    </Container>
-    <Container id="buttons-container">
-      <Button @click="startSimulator()">Start Simulator</Button>
-      <Button @click="stopSimulator()">Stop Simulator</Button>
-      <Button @click="$router.push({ name: 'add-charging-stations' })">
         Add Charging Stations
-      </Button>
+      </ToggleButton>
       <ReloadButton
         id="reload-button"
-        :loading="state.loading"
-        @click="loadChargingStations(() => (state.renderChargingStationsList = randomUUID()))"
+        :loading="state.gettingChargingStations"
+        @click="getChargingStations()"
       />
     </Container>
     <CSTable
-      v-show="
-        Array.isArray(app?.appContext.config.globalProperties.$chargingStations) &&
-        app?.appContext.config.globalProperties.$chargingStations.length > 0
+      v-show="Array.isArray($chargingStations.value) && $chargingStations.value.length > 0"
+      :key="state.renderChargingStations"
+      :charging-stations="$chargingStations.value"
+      @need-refresh="
+        () => {
+          state.renderAddChargingStations = randomUUID()
+          state.renderChargingStations = randomUUID()
+        }
       "
-      :key="state.renderChargingStationsList"
-      :charging-stations="app?.appContext.config.globalProperties.$chargingStations"
     />
   </Container>
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, ref } from 'vue'
+import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useToast } from 'vue-toast-notification'
-import CSTable from '@/components/charging-stations/CSTable.vue'
-import type { ResponsePayload, UIServerConfigurationSection } from '@/types'
-import Container from '@/components/Container.vue'
-import ReloadButton from '@/components/buttons/ReloadButton.vue'
-import Button from '@/components/buttons/Button.vue'
-import { getFromLocalStorage, setToLocalStorage } from '@/composables'
 
-const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
-  return crypto.randomUUID()
+import ReloadButton from '@/components/buttons/ReloadButton.vue'
+import ToggleButton from '@/components/buttons/ToggleButton.vue'
+import CSTable from '@/components/charging-stations/CSTable.vue'
+import Container from '@/components/Container.vue'
+import {
+  deleteFromLocalStorage,
+  getFromLocalStorage,
+  getLocalStorage,
+  randomUUID,
+  setToLocalStorage,
+  useUIClient
+} from '@/composables'
+import type {
+  ChargingStationData,
+  ResponsePayload,
+  SimulatorState,
+  UIServerConfigurationSection
+} from '@/types'
+
+const simulatorState = ref<SimulatorState | undefined>(undefined)
+
+const simulatorButtonClass = computed<string>(() =>
+  simulatorState.value?.started === true ? 'simulator-stop-button' : 'simulator-start-button'
+)
+const simulatorButtonMessage = computed<string>(
+  () =>
+    `${simulatorState.value?.started === true ? 'Stop' : 'Start'} Simulator${simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''}`
+)
+
+const state = ref<{
+  renderSimulator: `${string}-${string}-${string}-${string}-${string}`
+  renderAddChargingStations: `${string}-${string}-${string}-${string}-${string}`
+  renderChargingStations: `${string}-${string}-${string}-${string}-${string}`
+  gettingSimulatorState: boolean
+  gettingTemplates: boolean
+  gettingChargingStations: boolean
+  uiServerIndex: number
+}>({
+  renderSimulator: randomUUID(),
+  renderAddChargingStations: randomUUID(),
+  renderChargingStations: randomUUID(),
+  gettingSimulatorState: false,
+  gettingTemplates: false,
+  gettingChargingStations: false,
+  uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+})
+
+const clearToggleButtons = (): void => {
+  for (const key in getLocalStorage()) {
+    if (key.includes('toggle-button')) {
+      deleteFromLocalStorage(key)
+    }
+  }
+  state.value.renderChargingStations = randomUUID()
+  state.value.renderAddChargingStations = randomUUID()
 }
 
 const app = getCurrentInstance()
 
-const initializeWSEventListeners = () => {
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('open', () => {
+watch(app!.appContext.config.globalProperties.$chargingStations, () => {
+  state.value.renderChargingStations = randomUUID()
+})
+
+watch(simulatorState, () => {
+  state.value.renderSimulator = randomUUID()
+})
+
+const clearTemplates = (): void => {
+  if (app != null) {
+    app.appContext.config.globalProperties.$templates.value = []
+  }
+}
+
+const clearChargingStations = (): void => {
+  if (app != null) {
+    app.appContext.config.globalProperties.$chargingStations.value = []
+  }
+}
+
+const uiClient = useUIClient()
+
+const $toast = useToast()
+
+const getSimulatorState = (): void => {
+  if (state.value.gettingSimulatorState === false) {
+    state.value.gettingSimulatorState = true
+    uiClient
+      .simulatorState()
+      .then((response: ResponsePayload) => {
+        simulatorState.value = response.state as SimulatorState
+      })
+      .catch((error: Error) => {
+        $toast.error('Error at fetching simulator state')
+        console.error('Error at fetching simulator state:', error)
+      })
+      .finally(() => {
+        state.value.gettingSimulatorState = false
+      })
+  }
+}
+
+const getTemplates = (): void => {
+  if (state.value.gettingTemplates === false) {
+    state.value.gettingTemplates = true
     uiClient
       .listTemplates()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$templates = response.templates
+          app.appContext.config.globalProperties.$templates.value = response.templates as string[]
         }
       })
       .catch((error: Error) => {
-        if (app != null) {
-          app.appContext.config.globalProperties.$templates = []
-        }
+        clearTemplates()
         $toast.error('Error at fetching charging station templates')
         console.error('Error at fetching charging station templates:', error)
       })
-    loadChargingStations(() => (state.value.renderChargingStationsList = randomUUID()))
-  })
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('error', () => {
-    app.appContext.config.globalProperties.$chargingStations = []
-    state.value.renderChargingStationsList = randomUUID()
-  })
-  app?.appContext.config.globalProperties.$uiClient.registerWSEventListener('close', () => {
-    app.appContext.config.globalProperties.$chargingStations = []
-    state.value.renderChargingStationsList = randomUUID()
-  })
+      .finally(() => {
+        state.value.gettingTemplates = false
+      })
+  }
 }
 
-onMounted(() => {
-  initializeWSEventListeners()
-})
-
-const state = ref({
-  renderChargingStationsList: randomUUID(),
-  loading: false,
-  uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
-})
-
-const uiClient = app?.appContext.config.globalProperties.$uiClient
-const uiServerConfigurations: { configuration: UIServerConfigurationSection; index: number }[] =
-  app?.appContext.config.globalProperties.$configuration.uiServer.map(
-    (configuration: UIServerConfigurationSection, index: number) => ({
-      configuration,
-      index
-    })
-  )
-
-const $toast = useToast()
-
-const loadChargingStations = (renderCallback?: () => void): void => {
-  if (state.value.loading === false) {
-    state.value.loading = true
+const getChargingStations = (): void => {
+  if (state.value.gettingChargingStations === false) {
+    state.value.gettingChargingStations = true
     uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$chargingStations = response.chargingStations
+          app.appContext.config.globalProperties.$chargingStations.value =
+            response.chargingStations as ChargingStationData[]
         }
       })
       .catch((error: Error) => {
-        if (app != null) {
-          app.appContext.config.globalProperties.$chargingStations = []
-        }
+        clearChargingStations()
         $toast.error('Error at fetching charging stations')
         console.error('Error at fetching charging stations:', error)
       })
       .finally(() => {
-        if (renderCallback != null) {
-          renderCallback()
-        }
-        state.value.loading = false
+        state.value.gettingChargingStations = false
       })
   }
 }
+
+const getData = (): void => {
+  getSimulatorState()
+  getTemplates()
+  getChargingStations()
+}
+
+const registerWSEventListeners = () => {
+  uiClient.registerWSEventListener('open', getData)
+  uiClient.registerWSEventListener('error', clearChargingStations)
+  uiClient.registerWSEventListener('close', clearChargingStations)
+}
+
+const unregisterWSEventListeners = () => {
+  uiClient.unregisterWSEventListener('open', getData)
+  uiClient.unregisterWSEventListener('error', clearChargingStations)
+  uiClient.unregisterWSEventListener('close', clearChargingStations)
+}
+
+onMounted(() => {
+  registerWSEventListeners()
+})
+
+onUnmounted(() => {
+  unregisterWSEventListeners()
+})
+
+const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] = (
+  app?.appContext.config.globalProperties.$configuration.value
+    .uiServer as UIServerConfigurationSection[]
+).map((configuration: UIServerConfigurationSection, index: number) => ({
+  index,
+  configuration
+}))
 
 const startSimulator = (): void => {
   uiClient
@@ -174,19 +304,23 @@ const startSimulator = (): void => {
       $toast.error('Error at starting simulator')
       console.error('Error at starting simulator:', error)
     })
+    .finally(() => {
+      getSimulatorState()
+    })
 }
 const stopSimulator = (): void => {
   uiClient
     .stopSimulator()
     .then(() => {
-      if (app != null) {
-        app.appContext.config.globalProperties.$chargingStations = []
-      }
+      clearChargingStations()
       $toast.success('Simulator successfully stopped')
     })
     .catch((error: Error) => {
       $toast.error('Error at stopping simulator')
       console.error('Error at stopping simulator:', error)
+    })
+    .finally(() => {
+      getSimulatorState()
     })
 }
 </script>
@@ -201,17 +335,44 @@ const stopSimulator = (): void => {
 
 #ui-server-container {
   display: flex;
-  flex-direction: row;
+  justify-content: center;
+  border-style: outset;
 }
 
 #ui-server-selector {
   width: 100%;
+  background-color: rgb(239, 239, 239);
+  font: small-caption;
   text-align: center;
+}
+
+#ui-server-selector:hover {
+  background-color: rgb(229, 229, 229);
 }
 
 #buttons-container {
   display: flex;
   flex-direction: row;
+  position: sticky;
+  top: 0;
+}
+
+.simulator-start-button {
+  color: ivory;
+  background-color: green;
+}
+
+.simulator-start-button:hover {
+  background-color: rgb(0, 98, 0);
+}
+
+.simulator-stop-button {
+  color: ivory;
+  background-color: red;
+}
+
+.simulator-stop-button:hover {
+  background-color: rgb(225, 0, 0);
 }
 
 #action-button {
@@ -219,13 +380,9 @@ const stopSimulator = (): void => {
 }
 
 #reload-button {
-  flex: auto;
-  color: white;
+  color: ivory;
   background-color: blue;
   font-size: 1.5rem;
-  font-weight: bold;
-  align-items: center;
-  justify-content: center;
 }
 
 #reload-button:hover {
@@ -233,12 +390,13 @@ const stopSimulator = (): void => {
 }
 
 #reload-button:active {
-  background-color: red;
+  background-color: darkblue;
 }
 
 #action {
-  color: white;
+  min-width: max-content;
+  color: ivory;
   background-color: black;
-  padding: 1%;
+  padding: 0.8%;
 }
 </style>

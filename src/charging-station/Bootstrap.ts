@@ -1,33 +1,32 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { EventEmitter } from 'node:events'
-import { dirname, extname, join, parse } from 'node:path'
+import { dirname, extname, join } from 'node:path'
 import process, { exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { isMainThread } from 'node:worker_threads'
-import type { Worker } from 'worker_threads'
 
 import chalk from 'chalk'
-import { type MessageHandler, availableParallelism } from 'poolifier'
+import { availableParallelism, type MessageHandler } from 'poolifier'
+import type { Worker } from 'worker_threads'
 
-import { waitChargingStationEvents } from './Helpers.js'
-import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
-import { UIServerFactory } from './ui-server/UIServerFactory.js'
 import { version } from '../../package.json'
 import { BaseError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
   type ChargingStationData,
+  type ChargingStationInfo,
   type ChargingStationOptions,
   type ChargingStationWorkerData,
-  type ChargingStationWorkerEventError,
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
   ConfigurationSection,
   ProcedureName,
+  type SimulatorState,
   type Statistics,
   type StorageConfiguration,
+  type TemplateStatistics,
   type UIServerConfiguration,
   type WorkerConfiguration
 } from '../types/index.js'
@@ -40,10 +39,13 @@ import {
   handleUnhandledRejection,
   isAsyncFunction,
   isNotEmptyArray,
-  logPrefix,
-  logger
+  logger,
+  logPrefix
 } from '../utils/index.js'
-import { type WorkerAbstract, WorkerFactory } from '../worker/index.js'
+import { DEFAULT_ELEMENTS_PER_WORKER, type WorkerAbstract, WorkerFactory } from '../worker/index.js'
+import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
+import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
+import { UIServerFactory } from './ui-server/UIServerFactory.js'
 
 const moduleName = 'Bootstrap'
 
@@ -55,21 +57,13 @@ enum exitCodes {
   gracefulShutdownError = 4
 }
 
-interface TemplateChargingStations {
-  configured: number
-  added: number
-  started: number
-  indexes: Set<number>
-}
-
 export class Bootstrap extends EventEmitter {
   private static instance: Bootstrap | null = null
-  private workerImplementation?: WorkerAbstract<ChargingStationWorkerData>
+  private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
   private readonly uiServer: AbstractUIServer
   private storage?: Storage
-  private readonly templatesChargingStations: Map<string, TemplateChargingStations>
+  private readonly templateStatistics: Map<string, TemplateStatistics>
   private readonly version: string = version
-  private initializedCounters: boolean
   private started: boolean
   private starting: boolean
   private stopping: boolean
@@ -87,12 +81,14 @@ export class Bootstrap extends EventEmitter {
     this.starting = false
     this.stopping = false
     this.uiServerStarted = false
+    this.templateStatistics = new Map<string, TemplateStatistics>()
     this.uiServer = UIServerFactory.getUIServerImplementation(
       Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
     )
-    this.templatesChargingStations = new Map<string, TemplateChargingStations>()
-    this.initializedCounters = false
     this.initializeCounters()
+    this.initializeWorkerImplementation(
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+    )
     Configuration.configurationChangeCallback = async () => {
       if (isMainThread) {
         await Bootstrap.getInstance().restart()
@@ -108,19 +104,35 @@ export class Bootstrap extends EventEmitter {
   }
 
   public get numberOfChargingStationTemplates (): number {
-    return this.templatesChargingStations.size
+    return this.templateStatistics.size
   }
 
   public get numberOfConfiguredChargingStations (): number {
-    return [...this.templatesChargingStations.values()].reduce(
+    return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.configured,
       0
     )
   }
 
+  public get numberOfProvisionedChargingStations (): number {
+    return [...this.templateStatistics.values()].reduce(
+      (accumulator, value) => accumulator + value.provisioned,
+      0
+    )
+  }
+
+  public getState (): SimulatorState {
+    return {
+      version: this.version,
+      configuration: Configuration.getConfigurationData(),
+      started: this.started,
+      templateStatistics: this.templateStatistics
+    }
+  }
+
   public getLastIndex (templateName: string): number {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const indexes = [...this.templatesChargingStations.get(templateName)!.indexes]
+    const indexes = [...this.templateStatistics.get(templateName)!.indexes]
       .concat(0)
       .sort((a, b) => a - b)
     for (let i = 0; i < indexes.length - 1; i++) {
@@ -136,14 +148,14 @@ export class Bootstrap extends EventEmitter {
   }
 
   private get numberOfAddedChargingStations (): number {
-    return [...this.templatesChargingStations.values()].reduce(
+    return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.added,
       0
     )
   }
 
   private get numberOfStartedChargingStations (): number {
-    return [...this.templatesChargingStations.values()].reduce(
+    return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.started,
       0
     )
@@ -162,21 +174,12 @@ export class Bootstrap extends EventEmitter {
           ChargingStationWorkerMessageEvents.performanceStatistics,
           this.workerEventPerformanceStatistics
         )
-        this.on(
-          ChargingStationWorkerMessageEvents.workerElementError,
-          (eventError: ChargingStationWorkerEventError) => {
-            logger.error(
-              `${this.logPrefix()} ${moduleName}.start: Error occurred while handling '${eventError.event}' event on worker:`,
-              eventError
-            )
-          }
-        )
-        this.initializeCounters()
-        const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
-          ConfigurationSection.worker
-        )
-        this.initializeWorkerImplementation(workerConfiguration)
-        await this.workerImplementation?.start()
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        if (isAsyncFunction(this.workerImplementation?.start)) {
+          await this.workerImplementation.start()
+        } else {
+          (this.workerImplementation?.start as () => void)()
+        }
         const performanceStorageConfiguration =
           Configuration.getConfigurationSection<StorageConfiguration>(
             ConfigurationSection.performanceStorage
@@ -204,9 +207,7 @@ export class Bootstrap extends EventEmitter {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
-            const nbStations =
-              this.templatesChargingStations.get(parse(stationTemplateUrl.file).name)?.configured ??
-              stationTemplateUrl.numberOfStations
+            const nbStations = stationTemplateUrl.numberOfStations
             for (let index = 1; index <= nbStations; index++) {
               await this.addChargingStation(index, stationTemplateUrl.file)
             }
@@ -219,11 +220,14 @@ export class Bootstrap extends EventEmitter {
             )
           }
         }
+        const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
+          ConfigurationSection.worker
+        )
         console.info(
           chalk.green(
             `Charging stations simulator ${
               this.version
-            } started with ${this.numberOfConfiguredChargingStations} configured charging station(s) from ${this.numberOfChargingStationTemplates} charging station template(s) and ${
+            } started with ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s) from ${this.numberOfChargingStationTemplates} charging station template(s) and ${
               Configuration.workerDynamicPoolInUse() ? `${workerConfiguration.poolMinSize}/` : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse() ? `/${workerConfiguration.poolMaxSize}` : ''
@@ -268,10 +272,8 @@ export class Bootstrap extends EventEmitter {
           console.error(chalk.red('Error while waiting for charging stations to stop: '), error)
         }
         await this.workerImplementation?.stop()
-        delete this.workerImplementation
         this.removeAllListeners()
         this.uiServer.clearCaches()
-        this.initializedCounters = false
         await this.storage?.close()
         delete this.storage
         this.started = false
@@ -294,11 +296,16 @@ export class Bootstrap extends EventEmitter {
       this.uiServer.stop()
       this.uiServerStarted = false
     }
+    this.initializeCounters()
+    // FIXME: initialize worker implementation only if the worker section has changed
+    this.initializeWorkerImplementation(
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+    )
     await this.start()
   }
 
   private async waitChargingStationsStopped (): Promise<string> {
-    return await new Promise<string>((resolve, reject) => {
+    return await new Promise<string>((resolve, reject: (reason?: unknown) => void) => {
       const waitTimeout = setTimeout(() => {
         const timeoutMessage = `Timeout ${formatDurationMilliSeconds(
           Constants.STOP_CHARGING_STATIONS_TIMEOUT
@@ -328,17 +335,27 @@ export class Bootstrap extends EventEmitter {
     let elementsPerWorker: number
     switch (workerConfiguration.elementsPerWorker) {
       case 'all':
-        elementsPerWorker = this.numberOfConfiguredChargingStations
+        elementsPerWorker =
+          this.numberOfConfiguredChargingStations + this.numberOfProvisionedChargingStations
         break
       case 'auto':
-      default:
         elementsPerWorker =
-          this.numberOfConfiguredChargingStations > availableParallelism()
-            ? Math.round(this.numberOfConfiguredChargingStations / (availableParallelism() * 1.5))
+          this.numberOfConfiguredChargingStations + this.numberOfProvisionedChargingStations >
+          availableParallelism()
+            ? Math.round(
+              (this.numberOfConfiguredChargingStations +
+                  this.numberOfProvisionedChargingStations) /
+                  (availableParallelism() * 1.5)
+            )
             : 1
         break
+      default:
+        elementsPerWorker = workerConfiguration.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER
     }
-    this.workerImplementation = WorkerFactory.getWorkerImplementation<ChargingStationWorkerData>(
+    this.workerImplementation = WorkerFactory.getWorkerImplementation<
+    ChargingStationWorkerData,
+    ChargingStationInfo
+    >(
       join(
         dirname(fileURLToPath(import.meta.url)),
         `ChargingStationWorker${extname(fileURLToPath(import.meta.url))}`
@@ -347,7 +364,7 @@ export class Bootstrap extends EventEmitter {
       workerConfiguration.processType!,
       {
         workerStartDelay: workerConfiguration.startDelay,
-        elementStartDelay: workerConfiguration.elementStartDelay,
+        elementAddDelay: workerConfiguration.elementAddDelay,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         poolMaxSize: workerConfiguration.poolMaxSize!,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -355,7 +372,9 @@ export class Bootstrap extends EventEmitter {
         elementsPerWorker,
         poolOptions: {
           messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
-          workerOptions: { resourceLimits: workerConfiguration.resourceLimits }
+          ...(workerConfiguration.resourceLimits != null && {
+            workerOptions: { resourceLimits: workerConfiguration.resourceLimits }
+          })
         }
       }
     )
@@ -365,50 +384,46 @@ export class Bootstrap extends EventEmitter {
     msg: ChargingStationWorkerMessage<ChargingStationWorkerMessageData>
   ): void {
     // logger.debug(
-    //   `${this.logPrefix()} ${moduleName}.messageHandler: Worker channel message received: ${JSON.stringify(
+    //   `${this.logPrefix()} ${moduleName}.messageHandler: Charging station worker message received: ${JSON.stringify(
     //     msg,
     //     undefined,
     //     2
     //   )}`
     // )
+    // Skip worker message events processing
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    if (msg['uuid'] != null) {
+      return
+    }
+    const { event, data } = msg
     try {
-      switch (msg.event) {
+      switch (event) {
         case ChargingStationWorkerMessageEvents.added:
-          this.emit(ChargingStationWorkerMessageEvents.added, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.added, data)
           break
         case ChargingStationWorkerMessageEvents.deleted:
-          this.emit(ChargingStationWorkerMessageEvents.deleted, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.deleted, data)
           break
         case ChargingStationWorkerMessageEvents.started:
-          this.emit(ChargingStationWorkerMessageEvents.started, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.started, data)
           break
         case ChargingStationWorkerMessageEvents.stopped:
-          this.emit(ChargingStationWorkerMessageEvents.stopped, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.stopped, data)
           break
         case ChargingStationWorkerMessageEvents.updated:
-          this.emit(ChargingStationWorkerMessageEvents.updated, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.updated, data)
           break
         case ChargingStationWorkerMessageEvents.performanceStatistics:
-          this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, msg.data)
-          break
-        case ChargingStationWorkerMessageEvents.addedWorkerElement:
-          this.emit(ChargingStationWorkerMessageEvents.addWorkerElement, msg.data)
-          break
-        case ChargingStationWorkerMessageEvents.workerElementError:
-          this.emit(ChargingStationWorkerMessageEvents.workerElementError, msg.data)
+          this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, data)
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker event: '${
-              msg.event
-            }' received with data: ${JSON.stringify(msg.data, undefined, 2)}`
+            `Unknown charging station worker message event: '${event}' received with data: ${JSON.stringify(data, undefined, 2)}`
           )
       }
     } catch (error) {
       logger.error(
-        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling '${
-          msg.event
-        }' event:`,
+        `${this.logPrefix()} ${moduleName}.messageHandler: Error occurred while handling charging station worker message event '${event}':`,
         error
       )
     }
@@ -421,31 +436,29 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) added (${
         this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+      } added from ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s))`
     )
   }
 
   private readonly workerEventDeleted = (data: ChargingStationData): void => {
     this.uiServer.chargingStations.delete(data.stationInfo.hashId)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const templateChargingStations = this.templatesChargingStations.get(
-      data.stationInfo.templateName
-    )!
-    --templateChargingStations.added
-    templateChargingStations.indexes.delete(data.stationInfo.templateIndex)
+    const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)!
+    --templateStatistics.added
+    templateStatistics.indexes.delete(data.stationInfo.templateIndex)
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventDeleted: Charging station ${
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) deleted (${
         this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured charging station(s))`
+      } added from ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s))`
     )
   }
 
   private readonly workerEventStarted = (data: ChargingStationData): void => {
     this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ++this.templatesChargingStations.get(data.stationInfo.templateName)!.started
+    ++this.templateStatistics.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station ${
         data.stationInfo.chargingStationId
@@ -458,7 +471,7 @@ export class Bootstrap extends EventEmitter {
   private readonly workerEventStopped = (data: ChargingStationData): void => {
     this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    --this.templatesChargingStations.get(data.stationInfo.templateName)!.started
+    --this.templateStatistics.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station ${
         data.stationInfo.chargingStationId
@@ -488,71 +501,73 @@ export class Bootstrap extends EventEmitter {
   }
 
   private initializeCounters (): void {
-    if (!this.initializedCounters) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const stationTemplateUrls = Configuration.getStationTemplateUrls()!
-      if (isNotEmptyArray(stationTemplateUrls)) {
-        for (const stationTemplateUrl of stationTemplateUrls) {
-          const templateName = parse(stationTemplateUrl.file).name
-          this.templatesChargingStations.set(templateName, {
-            configured: stationTemplateUrl.numberOfStations,
-            added: 0,
-            started: 0,
-            indexes: new Set<number>()
-          })
-          this.uiServer.chargingStationTemplates.add(templateName)
-        }
-        if (this.templatesChargingStations.size !== stationTemplateUrls.length) {
-          console.error(
-            chalk.red(
-              "'stationTemplateUrls' contains duplicate entries, please check your configuration"
-            )
-          )
-          exit(exitCodes.duplicateChargingStationTemplateUrls)
-        }
-      } else {
-        console.error(
-          chalk.red("'stationTemplateUrls' not defined or empty, please check your configuration")
-        )
-        exit(exitCodes.missingChargingStationsConfiguration)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const stationTemplateUrls = Configuration.getStationTemplateUrls()!
+    if (isNotEmptyArray(stationTemplateUrls)) {
+      for (const stationTemplateUrl of stationTemplateUrls) {
+        const templateName = buildTemplateName(stationTemplateUrl.file)
+        this.templateStatistics.set(templateName, {
+          configured: stationTemplateUrl.numberOfStations,
+          provisioned: stationTemplateUrl.provisionedNumberOfStations ?? 0,
+          added: 0,
+          started: 0,
+          indexes: new Set<number>()
+        })
+        this.uiServer.chargingStationTemplates.add(templateName)
       }
-      if (
-        this.numberOfConfiguredChargingStations === 0 &&
-        Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
-          .enabled !== true
-      ) {
+      if (this.templateStatistics.size !== stationTemplateUrls.length) {
         console.error(
           chalk.red(
-            "'stationTemplateUrls' has no charging station enabled and UI server is disabled, please check your configuration"
+            "'stationTemplateUrls' contains duplicate entries, please check your configuration"
           )
         )
-        exit(exitCodes.noChargingStationTemplates)
+        exit(exitCodes.duplicateChargingStationTemplateUrls)
       }
-      this.initializedCounters = true
+    } else {
+      console.error(
+        chalk.red("'stationTemplateUrls' not defined or empty, please check your configuration")
+      )
+      exit(exitCodes.missingChargingStationsConfiguration)
+    }
+    if (
+      this.numberOfConfiguredChargingStations === 0 &&
+      Configuration.getConfigurationSection<UIServerConfiguration>(ConfigurationSection.uiServer)
+        .enabled !== true
+    ) {
+      console.error(
+        chalk.red(
+          "'stationTemplateUrls' has no charging station enabled and UI server is disabled, please check your configuration"
+        )
+      )
+      exit(exitCodes.noChargingStationTemplates)
     }
   }
 
   public async addChargingStation (
     index: number,
-    stationTemplateFile: string,
+    templateFile: string,
     options?: ChargingStationOptions
-  ): Promise<void> {
-    await this.workerImplementation?.addElement({
+  ): Promise<ChargingStationInfo | undefined> {
+    if (!this.started && !this.starting) {
+      throw new BaseError(
+        'Cannot add charging station while the charging stations simulator is not started'
+      )
+    }
+    const stationInfo = await this.workerImplementation?.addElement({
       index,
       templateFile: join(
         dirname(fileURLToPath(import.meta.url)),
         'assets',
         'station-templates',
-        stationTemplateFile
+        templateFile
       ),
       options
     })
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const templateChargingStations = this.templatesChargingStations.get(
-      parse(stationTemplateFile).name
-    )!
-    ++templateChargingStations.added
-    templateChargingStations.indexes.add(index)
+    const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))!
+    ++templateStatistics.added
+    templateStatistics.indexes.add(index)
+    return stationInfo
   }
 
   private gracefulShutdown (): void {
@@ -569,7 +584,7 @@ export class Bootstrap extends EventEmitter {
             exit(exitCodes.gracefulShutdownError)
           })
       })
-      .catch(error => {
+      .catch((error: unknown) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error)
         exit(exitCodes.gracefulShutdownError)
       })

@@ -18,6 +18,15 @@ body:
       options:
         - label: I've searched for any related issues and avoided creating a duplicate issue.
           required: true
+  - type: dropdown
+    attributes:
+      label: Component
+      description: The component of the simulator that the feature is related to.
+      options:
+        - Simulator
+        - Web UI
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Description
@@ -25,6 +34,8 @@ body:
       placeholder: |
         - If your feature request is related to a problem, please describe it
         - If you have solutions in mind, please describe them
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Attachments

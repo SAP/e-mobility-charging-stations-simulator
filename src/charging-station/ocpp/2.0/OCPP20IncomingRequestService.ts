@@ -2,7 +2,6 @@
 
 import type { ValidateFunction } from 'ajv'
 
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import type { ChargingStation } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -15,6 +14,7 @@ import {
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
+import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
 
@@ -109,7 +109,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
+          `'${commandName}' is not implemented to handle request PDU ${JSON.stringify(
             commandPayload,
             undefined,
             2

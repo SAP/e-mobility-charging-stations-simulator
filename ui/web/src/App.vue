@@ -1,6 +1,9 @@
 <template>
   <router-view />
-  <Container v-show="$route.path !== '/'" id="action-container">
+  <Container
+    v-show="$route.name !== 'charging-stations' && $route.name !== 'not-found'"
+    id="action-container"
+  >
     <router-view name="action" />
   </Container>
 </template>
@@ -12,8 +15,8 @@ import Container from '@/components/Container.vue'
 <style>
 #app {
   height: fit-content;
-  width: fit-content;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  width: 100%;
+  font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: flex;
@@ -24,17 +27,22 @@ import Container from '@/components/Container.vue'
 
 #action-container {
   min-width: max-content;
+  height: fit-content;
   display: flex;
+  position: sticky;
+  top: 0.008%;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  margin: 0.1%;
-  padding: 0.1%;
-  border: solid black;
+  align-items: center;
+  text-align: center;
+  margin-right: 0.2%;
+  margin-left: 0.2%;
+  padding: 0.4%;
+  border: solid 0.25px black;
 }
 
 body {
-  margin: 0.005%;
-  padding: 0.005%;
+  margin: 0.008%;
+  padding: 0.008%;
 }
 </style>

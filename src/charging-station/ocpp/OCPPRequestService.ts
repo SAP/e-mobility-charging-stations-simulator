@@ -1,9 +1,6 @@
 import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 
-import { OCPPConstants } from './OCPPConstants.js'
-import type { OCPPResponseService } from './OCPPResponseService.js'
-import { OCPPServiceUtils } from './OCPPServiceUtils.js'
 import type { ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import { PerformanceStatistics } from '../../performance/index.js'
@@ -29,6 +26,9 @@ import {
   handleSendMessageError,
   logger
 } from '../../utils/index.js'
+import { OCPPConstants } from './OCPPConstants.js'
+import type { OCPPResponseService } from './OCPPResponseService.js'
+import { OCPPServiceUtils } from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -245,7 +245,7 @@ export abstract class OCPPRequestService {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this
       // Send a message through wsConnection
-      return await new Promise<ResponseType>((resolve, reject) => {
+      return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         /**
          * Function that will receive the request's response
          *
@@ -303,7 +303,7 @@ export abstract class OCPPRequestService {
         }
 
         const handleSendError = (ocppError: OCPPError): void => {
-          if (params?.skipBufferingOnError === false) {
+          if (params.skipBufferingOnError === false) {
             // Buffer
             chargingStation.bufferMessage(messageToSend)
             if (messageType === MessageType.CALL_MESSAGE) {
@@ -317,7 +317,7 @@ export abstract class OCPPRequestService {
               )
             }
           } else if (
-            params?.skipBufferingOnError === true &&
+            params.skipBufferingOnError === true &&
             messageType === MessageType.CALL_MESSAGE
           ) {
             // Remove request from the cache
@@ -346,7 +346,7 @@ export abstract class OCPPRequestService {
                 `Timeout ${formatDurationMilliSeconds(
                   OCPPConstants.OCPP_WEBSOCKET_TIMEOUT
                 )} reached for ${
-                  params?.skipBufferingOnError === false ? '' : 'non '
+                  params.skipBufferingOnError === false ? '' : 'non '
                 }buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
                 (messagePayload as OCPPError).details
@@ -380,7 +380,7 @@ export abstract class OCPPRequestService {
                 new OCPPError(
                   ErrorType.GENERIC_ERROR,
                   `WebSocket errored for ${
-                    params?.skipBufferingOnError === false ? '' : 'non '
+                    params.skipBufferingOnError === false ? '' : 'non '
                   }buffered message id '${messageId}' with content '${messageToSend}'`,
                   commandName,
                   { name: error.name, message: error.message, stack: error.stack }
@@ -393,7 +393,7 @@ export abstract class OCPPRequestService {
             new OCPPError(
               ErrorType.GENERIC_ERROR,
               `WebSocket closed for ${
-                params?.skipBufferingOnError === false ? '' : 'non '
+                params.skipBufferingOnError === false ? '' : 'non '
               }buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
               (messagePayload as OCPPError).details

@@ -1,16 +1,13 @@
 <template>
-  <h1 id="action">Action</h1>
-  <h2>Add Charging Stations</h2>
+  <h1 id="action">Add Charging Stations</h1>
   <p>Template:</p>
-  <select
-    v-show="
-      Array.isArray(app?.appContext.config.globalProperties.$templates) &&
-      app?.appContext.config.globalProperties.$templates.length > 0
-    "
-    v-model="state.template"
-  >
+  <select :key="state.renderTemplates" v-model="state.template">
     <option disabled value="">Please select a template</option>
-    <option v-for="template in app?.appContext.config.globalProperties.$templates">
+    <option
+      v-for="template in $templates.value"
+      v-show="Array.isArray($templates.value) && $templates.value.length > 0"
+      :key="template"
+    >
       {{ template }}
     </option>
   </select>
@@ -24,7 +21,7 @@
     placeholder="number of stations"
   />
   <p>Template options overrides:</p>
-  <ul>
+  <ul id="template-options">
     <li>
       Supervision url:
       <input
@@ -72,7 +69,7 @@
     id="action-button"
     @click="
       () => {
-        uiClient
+        $uiClient
           .addChargingStations(state.template, state.numberOfStations, {
             supervisionUrls: state.supervisionUrl.length > 0 ? state.supervisionUrl : undefined,
             autoStart: convertToBoolean(state.autoStart),
@@ -95,16 +92,25 @@
   >
     Add Charging Stations
   </Button>
-  <Button id="action-button" @click="$router.push({ name: 'charging-stations' })">Cancel</Button>
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref } from 'vue'
-import { useToast } from 'vue-toast-notification'
-import Button from '@/components/buttons/Button.vue'
-import { convertToBoolean } from '@/composables'
+import { getCurrentInstance, ref, watch } from 'vue'
 
-const state = ref({
+import Button from '@/components/buttons/Button.vue'
+import { convertToBoolean, randomUUID } from '@/composables'
+
+const state = ref<{
+  renderTemplates: `${string}-${string}-${string}-${string}-${string}`
+  template: string
+  numberOfStations: number
+  supervisionUrl: string
+  autoStart: boolean
+  persistentConfiguration: boolean
+  ocppStrictCompliance: boolean
+  enableStatistics: boolean
+}>({
+  renderTemplates: randomUUID(),
   template: '',
   numberOfStations: 1,
   supervisionUrl: '',
@@ -114,10 +120,9 @@ const state = ref({
   enableStatistics: false
 })
 
-const app = getCurrentInstance()
-const uiClient = app?.appContext.config.globalProperties.$uiClient
-
-const $toast = useToast()
+watch(getCurrentInstance()!.appContext.config.globalProperties.$templates, () => {
+  state.value.renderTemplates = randomUUID()
+})
 </script>
 
 <style>
@@ -128,6 +133,11 @@ const $toast = useToast()
 
 #supervision-url {
   width: 90%;
+  text-align: left;
+}
+
+#template-options {
+  list-style: circle inside;
   text-align: left;
 }
 </style>

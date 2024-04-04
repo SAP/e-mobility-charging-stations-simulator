@@ -1,4 +1,5 @@
 import { useToast } from 'vue-toast-notification'
+
 import {
   ApplicationProtocol,
   AuthenticationType,
@@ -11,6 +12,8 @@ import {
   type UIServerConfigurationSection
 } from '@/types'
 
+import { randomUUID, validateUUID } from './Utils'
+
 type ResponseHandler = {
   procedureName: ProcedureName
   resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void
@@ -21,15 +24,24 @@ export class UIClient {
   private static instance: UIClient | null = null
 
   private ws?: WebSocket
-  private responseHandlers: Map<string, ResponseHandler>
+  private responseHandlers: Map<
+    `${string}-${string}-${string}-${string}-${string}`,
+    ResponseHandler
+  >
 
   private constructor(private uiServerConfiguration: UIServerConfigurationSection) {
     this.openWS()
-    this.responseHandlers = new Map<string, ResponseHandler>()
+    this.responseHandlers = new Map<
+      `${string}-${string}-${string}-${string}-${string}`,
+      ResponseHandler
+    >()
   }
 
-  public static getInstance(uiServerConfiguration: UIServerConfigurationSection): UIClient {
+  public static getInstance(uiServerConfiguration?: UIServerConfigurationSection): UIClient {
     if (UIClient.instance === null) {
+      if (uiServerConfiguration == null) {
+        throw new Error('Cannot initialize UIClient if no configuration is provided')
+      }
       UIClient.instance = new UIClient(uiServerConfiguration)
     }
     return UIClient.instance
@@ -50,6 +62,18 @@ export class UIClient {
     options?: boolean | AddEventListenerOptions
   ) {
     this.ws?.addEventListener(event, listener, options)
+  }
+
+  public unregisterWSEventListener<K extends keyof WebSocketEventMap>(
+    event: K,
+    listener: (event: WebSocketEventMap[K]) => void,
+    options?: boolean | AddEventListenerOptions
+  ) {
+    this.ws?.removeEventListener(event, listener, options)
+  }
+
+  public async simulatorState(): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.SIMULATOR_STATE, {})
   }
 
   public async startSimulator(): Promise<ResponsePayload> {
@@ -190,7 +214,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return new Promise<ResponsePayload>((resolve, reject) => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        const uuid = crypto.randomUUID()
+        const uuid = randomUUID()
         const msg = JSON.stringify([uuid, procedureName, payload])
         const sendTimeout = setTimeout(() => {
           this.responseHandlers.delete(uuid)
@@ -212,15 +236,30 @@ export class UIClient {
   }
 
   private responseHandler(messageEvent: MessageEvent<string>): void {
-    const response = JSON.parse(messageEvent.data) as ProtocolResponse
+    let response: ProtocolResponse
+    try {
+      response = JSON.parse(messageEvent.data)
+    } catch (error) {
+      useToast().error('Invalid response JSON format')
+      console.error('Invalid response JSON format', error)
+      return
+    }
 
-    if (Array.isArray(response) === false) {
-      throw new Error(`Response not an array: ${JSON.stringify(response, undefined, 2)}`)
+    if (!Array.isArray(response)) {
+      useToast().error('Response not an array')
+      console.error('Response not an array:', response)
+      return
     }
 
     const [uuid, responsePayload] = response
 
-    if (this.responseHandlers.has(uuid) === true) {
+    if (!validateUUID(uuid)) {
+      useToast().error('Response UUID field is invalid')
+      console.error('Response UUID field is invalid:', response)
+      return
+    }
+
+    if (this.responseHandlers.has(uuid)) {
       const { procedureName, resolve, reject } = this.responseHandlers.get(uuid)!
       switch (responsePayload.status) {
         case ResponseStatus.SUCCESS:
