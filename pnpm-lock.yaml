@@ -101,8 +101,8 @@ importers:
         specifier: ^7.5.8
         version: 7.5.8
       '@types/tar':
-        specifier: ^6.1.11
-        version: 6.1.11
+        specifier: ^6.1.12
+        version: 6.1.12
       '@types/ws':
         specifier: ^8.5.10
         version: 8.5.10
@@ -2169,8 +2169,8 @@ packages:
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
     dev: true
 
-  /@types/tar@6.1.11:
-    resolution: {integrity: sha512-ThA1WD8aDdVU4VLuyq5NEqriwXErF5gEIJeyT6gHBWU7JtSmW2a5qjNv3/vR82O20mW+1vhmeZJfBQPT3HCugg==}
+  /@types/tar@6.1.12:
+    resolution: {integrity: sha512-FwbJPi9YuovB6ilnHrz8Y4pb0Fh6N7guFkbnlCl39ua893Qi5gkXui7LSDpTQMJCmA4z5f6SeSrTPQEWLdtFVw==}
     dependencies:
       '@types/node': 20.12.3
       minipass: 4.2.8
