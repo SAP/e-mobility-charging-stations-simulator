@@ -1,6 +1,11 @@
 {
+  "deno.enable": false,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
+  },
+  "sonarlint.connectedMode.project": {
+    "connectionId": "sap-1",
+    "projectKey": "e-mobility-charging-stations-simulator"
   },
   "cSpell.words": [
     "backoff",
@@ -53,9 +58,5 @@
     "VCAP",
     "webui",
     "workerset"
-  ],
-  "sonarlint.connectedMode.project": {
-    "connectionId": "sap-1",
-    "projectKey": "e-mobility-charging-stations-simulator"
-  }
+  ]
 }
