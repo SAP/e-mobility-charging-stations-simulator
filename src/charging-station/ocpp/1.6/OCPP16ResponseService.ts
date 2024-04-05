@@ -603,13 +603,16 @@ export class OCPP16ResponseService extends OCPPResponseService {
     requestPayload: OCPP16StartTransactionRequest
   ): Promise<void> {
     const { connectorId } = requestPayload
+
     if (connectorId === 0 || !chargingStation.hasConnector(connectorId)) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to start a transaction on a non existing connector id ${connectorId}`
       )
       return
     }
+
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+
     if (
       connectorStatus?.transactionRemoteStarted === true &&
       chargingStation.getAuthorizeRemoteTxRequests() &&
@@ -625,6 +628,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
     }
+
     if (
       connectorStatus?.transactionRemoteStarted === true &&
       chargingStation.getAuthorizeRemoteTxRequests() &&
@@ -640,6 +644,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
     }
+
     if (
       connectorStatus?.idTagAuthorized === true &&
       connectorStatus.authorizeIdTag !== requestPayload.idTag
@@ -654,6 +659,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
     }
+
     if (
       connectorStatus?.idTagLocalAuthorized === true &&
       connectorStatus.localAuthorizeIdTag !== requestPayload.idTag
@@ -668,6 +674,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
       return
     }
+
     if (connectorStatus?.transactionStarted === true) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to start a transaction on an already used connector id ${connectorId} by idTag ${
@@ -676,6 +683,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
       return
     }
+
     if (chargingStation.hasEvses) {
       for (const [evseId, evseStatus] of chargingStation.evses) {
         if (evseStatus.connectors.size > 1) {
@@ -693,15 +701,19 @@ export class OCPP16ResponseService extends OCPPResponseService {
         }
       }
     }
+
     if (
       connectorStatus?.status !== OCPP16ChargePointStatus.Available &&
-      connectorStatus?.status !== OCPP16ChargePointStatus.Preparing
+      connectorStatus?.status !== OCPP16ChargePointStatus.Preparing &&
+      connectorStatus?.status !== OCPP16ChargePointStatus.Reserved
     ) {
       logger.error(
         `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId} with status ${connectorStatus?.status}`
       )
+
       return
     }
+
     if (!Number.isSafeInteger(payload.transactionId)) {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId} with a non integer transaction id ${
@@ -723,6 +735,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           connectorId,
           requestPayload.meterStart
         )
+
       if (requestPayload.reservationId != null) {
         const reservation = chargingStation.getReservationBy(
           'reservationId',
@@ -730,13 +743,15 @@ export class OCPP16ResponseService extends OCPPResponseService {
         )
         if (reservation != null) {
           if (reservation.idTag !== requestPayload.idTag) {
-            logger.warn(
+            logger.error(
               `${chargingStation.logPrefix()} Reserved transaction ${
                 payload.transactionId
               } started with a different idTag ${requestPayload.idTag} than the reservation one ${
                 reservation.idTag
               }`
             )
+
+            return
           }
           if (hasReservationExpired(reservation)) {
             logger.warn(
@@ -759,6 +774,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         }
       }
+
       chargingStation.stationInfo?.beginEndMeterValues === true &&
         (await chargingStation.ocppRequestService.requestHandler<
         OCPP16MeterValuesRequest,
@@ -808,6 +824,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
             : ''
         }`
       )
+
       await this.resetConnectorOnStartTransactionError(chargingStation, connectorId)
     }
   }
