@@ -121,7 +121,7 @@
     "@commitlint/config-conventional": "^19.1.0",
     "@mikro-orm/cli": "^6.1.12",
     "@release-it/bumper": "^6.0.1",
-    "@types/node": "^20.12.4",
+    "@types/node": "^20.12.5",
     "@types/semver": "^7.5.8",
     "@types/tar": "^6.1.12",
     "@types/ws": "^8.5.10",
