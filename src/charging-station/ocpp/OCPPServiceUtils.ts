@@ -200,7 +200,10 @@ export const restoreConnectorStatus = async (
   connectorId: number,
   connectorStatus: ConnectorStatus | undefined
 ): Promise<void> => {
-  if (connectorStatus?.reservation != null) {
+  if (
+    connectorStatus?.reservation != null &&
+    connectorStatus.status !== ConnectorStatusEnum.Reserved
+  ) {
     await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Reserved)
   } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
     await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
