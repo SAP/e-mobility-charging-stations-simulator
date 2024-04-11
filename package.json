@@ -7,7 +7,7 @@
     "pnpm": ">=8.6.0"
   },
   "volta": {
-    "node": "20.12.1",
+    "node": "20.12.2",
     "pnpm": "8.15.6"
   },
   "packageManager": "pnpm@8.15.6",
@@ -107,7 +107,7 @@
     "mongodb": "^6.5.0",
     "poolifier": "^3.1.29",
     "rambda": "^9.2.0",
-    "tar": "^6.2.1",
+    "tar": "^7.0.0",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.16.0"
