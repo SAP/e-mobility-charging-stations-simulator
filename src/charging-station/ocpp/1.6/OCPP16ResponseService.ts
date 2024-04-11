@@ -816,22 +816,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {
+    chargingStation.stopMeterValues(connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     resetConnectorStatus(connectorStatus)
-    chargingStation.stopMeterValues(connectorId)
-    if (chargingStation.getReservationBy('connectorId', connectorId) != null) {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
-        connectorId,
-        OCPP16ChargePointStatus.Reserved
-      )
-    } else if (connectorStatus?.status !== OCPP16ChargePointStatus.Available) {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
-        connectorId,
-        OCPP16ChargePointStatus.Available
-      )
-    }
+    await OCPP16ServiceUtils.restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 
   private async handleResponseStopTransaction (

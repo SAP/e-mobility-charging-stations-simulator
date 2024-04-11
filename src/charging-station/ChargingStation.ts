@@ -2221,21 +2221,28 @@ export class ChargingStation extends EventEmitter {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            const connectorBootStatus = getBootConnectorStatus(this, connectorId, connectorStatus)
-            await sendAndSetConnectorStatus(this, connectorId, connectorBootStatus, evseId)
+            await sendAndSetConnectorStatus(
+              this,
+              connectorId,
+              getBootConnectorStatus(this, connectorId, connectorStatus),
+              evseId
+            )
           }
         }
       }
     } else {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0) {
-          const connectorBootStatus = getBootConnectorStatus(
+          await sendAndSetConnectorStatus(
             this,
             connectorId,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.getConnectorStatus(connectorId)!
+            getBootConnectorStatus(
+              this,
+              connectorId,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              this.getConnectorStatus(connectorId)!
+            )
           )
-          await sendAndSetConnectorStatus(this, connectorId, connectorBootStatus)
         }
       }
     }

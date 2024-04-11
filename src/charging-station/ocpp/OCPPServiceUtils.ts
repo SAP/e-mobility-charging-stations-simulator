@@ -18,7 +18,8 @@ import {
   type AuthorizeResponse,
   ChargePointErrorCode,
   ChargingStationEvents,
-  type ConnectorStatusEnum,
+  type ConnectorStatus,
+  ConnectorStatusEnum,
   CurrentType,
   ErrorType,
   FileType,
@@ -192,6 +193,18 @@ export const sendAndSetConnectorStatus = async (
     connectorId,
     ...chargingStation.getConnectorStatus(connectorId)
   })
+}
+
+export const restoreConnectorStatus = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  connectorStatus: ConnectorStatus | undefined
+): Promise<void> => {
+  if (connectorStatus?.reservation != null) {
+    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Reserved)
+  } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
+    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+  }
 }
 
 const checkConnectorStatusTransition = (
@@ -1228,6 +1241,7 @@ const getMeasurandDefaultLocation = (
 export class OCPPServiceUtils {
   public static readonly getMessageTypeString = getMessageTypeString
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
+  public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly isIdTagAuthorized = isIdTagAuthorized
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
   protected static getSampledValueTemplate = getSampledValueTemplate

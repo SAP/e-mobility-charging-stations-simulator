@@ -481,8 +481,7 @@ export abstract class OCPPRequestService {
   public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
-    // FIXME: should be ReqType
-    commandParams?: JsonType,
+    commandParams?: ReqType,
     params?: RequestParams
   ): Promise<ResType>
 }

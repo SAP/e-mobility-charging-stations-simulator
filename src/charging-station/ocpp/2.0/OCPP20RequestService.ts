@@ -75,11 +75,12 @@ export class OCPP20RequestService extends OCPPRequestService {
   public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
-    commandParams?: JsonType,
+    commandParams?: RequestType,
     params?: RequestParams
   ): Promise<ResponseType> {
     // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP20ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
+      // TODO: post request actions hook
       return (await this.sendMessage(
         chargingStation,
         generateUUID(),
