@@ -11,7 +11,7 @@
     "node": "20.12.2",
     "pnpm": "8.15.7"
   },
-  "packageManager": "pnpm@8.15.6",
+  "packageManager": "pnpm@8.15.7",
   "type": "module",
   "scripts": {
     "build": "vite build",
