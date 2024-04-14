@@ -475,7 +475,7 @@ export class AutomaticTransactionGenerator {
           logger.info(startTransactionLogMsg)
           // Start transaction
           startResponse = await this.chargingStation.ocppRequestService.requestHandler<
-          StartTransactionRequest,
+          Partial<StartTransactionRequest>,
           StartTransactionResponse
           >(this.chargingStation, RequestCommand.START_TRANSACTION, {
             connectorId,
@@ -493,7 +493,7 @@ export class AutomaticTransactionGenerator {
       logger.info(startTransactionLogMsg)
       // Start transaction
       startResponse = await this.chargingStation.ocppRequestService.requestHandler<
-      StartTransactionRequest,
+      Partial<StartTransactionRequest>,
       StartTransactionResponse
       >(this.chargingStation, RequestCommand.START_TRANSACTION, {
         connectorId,
@@ -505,7 +505,7 @@ export class AutomaticTransactionGenerator {
     }
     logger.info(`${this.logPrefix(connectorId)} start transaction without an idTag`)
     startResponse = await this.chargingStation.ocppRequestService.requestHandler<
-    StartTransactionRequest,
+    Partial<StartTransactionRequest>,
     StartTransactionResponse
     >(this.chargingStation, RequestCommand.START_TRANSACTION, { connectorId })
     this.handleStartTransactionResponse(connectorId, startResponse)

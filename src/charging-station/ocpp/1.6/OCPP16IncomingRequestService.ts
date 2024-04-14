@@ -422,7 +422,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           chargingStation.getConnectorStatus(connectorId)!.transactionRemoteStarted = true
           chargingStation.ocppRequestService
-            .requestHandler<OCPP16StartTransactionRequest, OCPP16StartTransactionResponse>(
+            .requestHandler<Partial<OCPP16StartTransactionRequest>, OCPP16StartTransactionResponse>(
             chargingStation,
             OCPP16RequestCommand.START_TRANSACTION,
             {
@@ -505,7 +505,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<OCPP16BootNotificationRequest, OCPP16BootNotificationResponse>(
               chargingStation,
               OCPP16RequestCommand.BOOT_NOTIFICATION,
-              chargingStation.bootNotificationRequest,
+              chargingStation.bootNotificationRequest as OCPP16BootNotificationRequest,
               { skipBufferingOnError: true, triggerMessage: true }
             )
               .then(response => {
@@ -534,7 +534,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 {
                   connectorId,
                   errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                  status: chargingStation.getConnectorStatus(connectorId)?.status
+                  status: chargingStation.getConnectorStatus(connectorId)
+                    ?.status as OCPP16ChargePointStatus
                 },
                 {
                   triggerMessage: true
@@ -554,7 +555,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     {
                       connectorId: id,
                       errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                      status: connectorStatus.status
+                      status: connectorStatus.status as OCPP16ChargePointStatus
                     },
                     {
                       triggerMessage: true
@@ -575,7 +576,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   {
                     connectorId: id,
                     errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                    status: connectorStatus.status
+                    status: connectorStatus.status as OCPP16ChargePointStatus
                   },
                   {
                     triggerMessage: true

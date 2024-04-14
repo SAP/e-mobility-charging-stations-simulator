@@ -943,7 +943,7 @@ export class ChargingStation extends EventEmitter {
       )
     }
     return await this.ocppRequestService.requestHandler<
-    StopTransactionRequest,
+    Partial<StopTransactionRequest>,
     StopTransactionResponse
     >(this, RequestCommand.STOP_TRANSACTION, {
       transactionId,

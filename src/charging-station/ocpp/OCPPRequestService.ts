@@ -477,7 +477,6 @@ export abstract class OCPPRequestService {
     ])
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
