@@ -44,7 +44,7 @@ jobs:
         uses: actions/dependency-review-action@v4
       - uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 9
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v4
         with:
@@ -97,7 +97,7 @@ jobs:
         uses: actions/dependency-review-action@v4
       - uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 9
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v4
         with:
