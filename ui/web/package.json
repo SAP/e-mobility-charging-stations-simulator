@@ -30,7 +30,7 @@
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
     "vue": "^3.4.23",
-    "vue-router": "^4.3.0",
+    "vue-router": "^4.3.2",
     "vue-toast-notification": "^3.1.2"
   },
   "devDependencies": {
