@@ -232,10 +232,10 @@ importers:
         version: 7.7.0(eslint@8.57.0)(typescript@5.4.5)
       '@vitejs/plugin-vue':
         specifier: ^5.0.4
-        version: 5.0.4(vite@5.2.9(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))
+        version: 5.0.4(vite@5.2.10(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))
       '@vitejs/plugin-vue-jsx':
         specifier: ^3.1.0
-        version: 3.1.0(vite@5.2.9(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))
+        version: 3.1.0(vite@5.2.10(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))
       '@vitest/coverage-v8':
         specifier: ^1.5.0
         version: 1.5.0(vitest@1.5.0(@types/node@20.12.7)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3))(terser@4.8.1))
@@ -285,8 +285,8 @@ importers:
         specifier: ~5.4.5
         version: 5.4.5
       vite:
-        specifier: ^5.2.9
-        version: 5.2.9(@types/node@20.12.7)(terser@4.8.1)
+        specifier: ^5.2.10
+        version: 5.2.10(@types/node@20.12.7)(terser@4.8.1)
       vitest:
         specifier: ^1.5.0
         version: 1.5.0(@types/node@20.12.7)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3))(terser@4.8.1)
@@ -4581,8 +4581,8 @@ packages:
     resolution: {integrity: sha512-4jbtZXNAsfZbAHiiqjLPBiCl16dES1zI4Hpzzxw61Tk+loF+sBDBKx1ICKKKwIqQ7M0mFn1TmkN7euSncWgHiQ==}
     engines: {node: '>=0.10.0'}
 
-  nwsapi@2.2.7:
-    resolution: {integrity: sha512-ub5E4+FBPKwAZx0UwIQOjYWGHTEq5sPqHQNRN8Z9e4A7u3Tj1weLJsL59yH9vmvqEtBHaOmT6cYQKIZOxp35FQ==}
+  nwsapi@2.2.8:
+    resolution: {integrity: sha512-GU/I3lTEFQ9mkEm07Q7HvdRajss8E1wVMGOk3/lHl60QPseG+B3BIQY+JUjYWw7gF8cCeoQCXd4N7DB7avw0Rg==}
 
   oauth-sign@0.9.0:
     resolution: {integrity: sha512-fexhUFFPTGV8ybAtSIGbV6gOkSv8UtRbDBnAyLQw4QPKkgNlsH2ByPGtMUqdWkos6YCRmAqViwgZrJc/mRDzZQ==}
@@ -5998,8 +5998,8 @@ packages:
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
 
-  vite@5.2.9:
-    resolution: {integrity: sha512-uOQWfuZBlc6Y3W/DTuQ1Sr+oIXWvqljLvS881SVmAj00d5RdgShLcuXWxseWPd4HXwiYBFW/vXHfKFeqj9uQnw==}
+  vite@5.2.10:
+    resolution: {integrity: sha512-PAzgUZbP7msvQvqdSD+ErD5qGnSFiGOoWmV5yAKUEI0kdhjbH6nMWVyZQC/hSc4aXwc0oJ9aEdIiF9Oje0JFCw==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
@@ -7494,19 +7494,19 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@vitejs/plugin-vue-jsx@3.1.0(vite@5.2.9(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))':
+  '@vitejs/plugin-vue-jsx@3.1.0(vite@5.2.10(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))':
     dependencies:
       '@babel/core': 7.24.4
       '@babel/plugin-transform-typescript': 7.24.4(@babel/core@7.24.4)
       '@vue/babel-plugin-jsx': 1.2.2(@babel/core@7.24.4)
-      vite: 5.2.9(@types/node@20.12.7)(terser@4.8.1)
+      vite: 5.2.10(@types/node@20.12.7)(terser@4.8.1)
       vue: 3.4.23(typescript@5.4.5)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.0.4(vite@5.2.9(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))':
+  '@vitejs/plugin-vue@5.0.4(vite@5.2.10(@types/node@20.12.7)(terser@4.8.1))(vue@3.4.23(typescript@5.4.5))':
     dependencies:
-      vite: 5.2.9(@types/node@20.12.7)(terser@4.8.1)
+      vite: 5.2.10(@types/node@20.12.7)(terser@4.8.1)
       vue: 3.4.23(typescript@5.4.5)
 
   '@vitest/coverage-v8@1.5.0(vitest@1.5.0(@types/node@20.12.7)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3))(terser@4.8.1))':
@@ -10549,7 +10549,7 @@ snapshots:
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.4
       is-potential-custom-element-name: 1.0.1
-      nwsapi: 2.2.7
+      nwsapi: 2.2.8
       parse5: 7.1.2
       rrweb-cssom: 0.6.0
       saxes: 6.0.0
@@ -11273,7 +11273,7 @@ snapshots:
 
   number-is-nan@1.0.1: {}
 
-  nwsapi@2.2.7: {}
+  nwsapi@2.2.8: {}
 
   oauth-sign@0.9.0: {}
 
@@ -12907,7 +12907,7 @@ snapshots:
       debug: 4.3.4
       pathe: 1.1.2
       picocolors: 1.0.0
-      vite: 5.2.9(@types/node@20.12.7)(terser@4.8.1)
+      vite: 5.2.10(@types/node@20.12.7)(terser@4.8.1)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -12918,7 +12918,7 @@ snapshots:
       - supports-color
       - terser
 
-  vite@5.2.9(@types/node@20.12.7)(terser@4.8.1):
+  vite@5.2.10(@types/node@20.12.7)(terser@4.8.1):
     dependencies:
       esbuild: 0.20.2
       postcss: 8.4.38
@@ -12947,7 +12947,7 @@ snapshots:
       strip-literal: 2.1.0
       tinybench: 2.7.0
       tinypool: 0.8.4
-      vite: 5.2.9(@types/node@20.12.7)(terser@4.8.1)
+      vite: 5.2.10(@types/node@20.12.7)(terser@4.8.1)
       vite-node: 1.5.0(@types/node@20.12.7)(terser@4.8.1)
       why-is-node-running: 2.2.2
     optionalDependencies:
