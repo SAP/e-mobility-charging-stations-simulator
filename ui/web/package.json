@@ -9,9 +9,9 @@
   },
   "volta": {
     "node": "20.12.2",
-    "pnpm": "9.0.5"
+    "pnpm": "9.0.6"
   },
-  "packageManager": "pnpm@9.0.5",
+  "packageManager": "pnpm@9.0.6",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -29,7 +29,7 @@
   "dependencies": {
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.4.24",
+    "vue": "^3.4.25",
     "vue-router": "^4.3.2",
     "vue-toast-notification": "^3.1.2"
   },
@@ -42,7 +42,7 @@
     "@typescript-eslint/parser": "^7.7.1",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
-    "@vitest/coverage-v8": "^1.5.0",
+    "@vitest/coverage-v8": "^1.5.1",
     "@vue/eslint-config-prettier": "^9.0.0",
     "@vue/eslint-config-typescript": "^13.0.0",
     "@vue/test-utils": "^2.4.5",
@@ -59,7 +59,7 @@
     "rimraf": "^5.0.5",
     "typescript": "~5.4.5",
     "vite": "^5.2.10",
-    "vitest": "^1.5.0"
+    "vitest": "^1.5.1"
   },
   "_id": "webui@0.3.0"
 }
