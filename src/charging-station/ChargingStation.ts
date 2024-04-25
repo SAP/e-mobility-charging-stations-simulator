@@ -261,14 +261,15 @@ export class ChargingStation extends EventEmitter {
   }
 
   public get wsConnectionUrl (): URL {
+    const wsConnectionBaseUrlStr = `${
+      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
+      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
+      isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
+        ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value
+        : this.configuredSupervisionUrl.href
+    }`
     return new URL(
-      `${
-        this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-        isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-        isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
-          ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value
-          : this.configuredSupervisionUrl.href
-      }/${this.stationInfo?.chargingStationId}`
+      `${wsConnectionBaseUrlStr}${!wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''}${this.stationInfo?.chargingStationId}`
     )
   }
 
