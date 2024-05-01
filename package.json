@@ -105,7 +105,7 @@
     "logform": "^2.6.0",
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.5.0",
-    "poolifier": "^3.1.30",
+    "poolifier": "^4.0.0",
     "rambda": "^9.2.0",
     "tar": "^7.0.1",
     "winston": "^3.13.0",
@@ -152,7 +152,7 @@
     "rimraf": "^5.0.5",
     "semver": "^7.6.0",
     "ts-node": "^10.9.2",
-    "tsx": "^4.7.3",
+    "tsx": "^4.8.2",
     "typescript": "~5.4.5"
   }
 }
