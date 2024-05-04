@@ -104,10 +104,10 @@
     "http-status-codes": "^2.3.0",
     "logform": "^2.6.0",
     "mnemonist": "0.40.0-rc1",
-    "mongodb": "^6.5.0",
+    "mongodb": "^6.6.0",
     "poolifier": "^4.0.1",
     "rambda": "^9.2.0",
-    "tar": "^7.0.1",
+    "tar": "^7.1.0",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.17.0"
