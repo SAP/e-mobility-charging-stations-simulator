@@ -42,7 +42,7 @@ jobs:
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         uses: actions/dependency-review-action@v4
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v4
         with:
@@ -93,7 +93,7 @@ jobs:
       - name: Pull Request Dependency Review
         if: ${{ github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         uses: actions/dependency-review-action@v4
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
       - name: Setup node ${{ matrix.node }}
         uses: actions/setup-node@v4
         with:
