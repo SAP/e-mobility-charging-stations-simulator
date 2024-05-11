@@ -57,8 +57,8 @@ importers:
         specifier: ^6.6.1
         version: 6.6.1(socks@2.8.3)
       poolifier:
-        specifier: ^4.0.5
-        version: 4.0.5
+        specifier: ^4.0.6
+        version: 4.0.6
       rambda:
         specifier: ^9.2.0
         version: 9.2.0
@@ -73,14 +73,14 @@ importers:
         version: 5.0.0(winston@3.13.0)
       ws:
         specifier: ^8.17.0
-        version: 8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+        version: 8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
     optionalDependencies:
       bufferutil:
         specifier: ^4.0.8
         version: 4.0.8
       utf-8-validate:
-        specifier: ^6.0.3
-        version: 6.0.3
+        specifier: ^6.0.4
+        version: 6.0.4
     devDependencies:
       '@commitlint/cli':
         specifier: ^19.3.0
@@ -179,8 +179,8 @@ importers:
         specifier: ^17.2.1
         version: 17.2.1(typescript@5.4.5)
       rimraf:
-        specifier: ^5.0.5
-        version: 5.0.5
+        specifier: ^5.0.6
+        version: 5.0.6
       semver:
         specifier: ^7.5.3
         version: 7.6.2
@@ -188,8 +188,8 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.12.11)(typescript@5.4.5)
       tsx:
-        specifier: ^4.9.3
-        version: 4.9.3
+        specifier: ^4.9.4
+        version: 4.9.4
       typescript:
         specifier: ~5.4.5
         version: 5.4.5
@@ -238,7 +238,7 @@ importers:
         version: 3.1.0(vite@5.2.11(@types/node@20.12.11))(vue@3.4.27(typescript@5.4.5))
       '@vitest/coverage-v8':
         specifier: ^1.6.0
-        version: 1.6.0(vitest@1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)))
+        version: 1.6.0(vitest@1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)))
       '@vue/eslint-config-prettier':
         specifier: ^9.0.0
         version: 9.0.0(@types/eslint@8.56.10)(eslint@8.57.0)(prettier@3.2.5)
@@ -274,13 +274,13 @@ importers:
         version: 9.26.0(eslint@8.57.0)
       jsdom:
         specifier: ^24.0.0
-        version: 24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+        version: 24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
       prettier:
         specifier: ^3.2.5
         version: 3.2.5
       rimraf:
-        specifier: ^5.0.5
-        version: 5.0.5
+        specifier: ^5.0.6
+        version: 5.0.6
       typescript:
         specifier: ~5.4.5
         version: 5.4.5
@@ -289,7 +289,7 @@ importers:
         version: 5.2.11(@types/node@20.12.11)
       vitest:
         specifier: ^1.6.0
-        version: 1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3))
+        version: 1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4))
 
 packages:
 
@@ -966,8 +966,8 @@ packages:
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mongodb-js/saslprep@1.1.6':
-    resolution: {integrity: sha512-jqTTXQ46H8cAxmXBu8wm1HTSIMBMrIcoVrsjdQkKdMBj3il/fSCgWyya4P2I1xjPBl69mw+nRphrPlcIqBd20Q==}
+  '@mongodb-js/saslprep@1.1.7':
+    resolution: {integrity: sha512-dCHW/oEX0KJ4NjDULBo3JiOaK5+6axtpBbS+ao2ZInoAL9/YRQLhXzSNAFz7hP4nzLkIqsfYAK/PDE3+XHny0Q==}
 
   '@nearform/heap-profiler@2.0.0':
     resolution: {integrity: sha512-846CWyq3Ky5rzcl8Z3S+VT3z6GQSlYD1G/dqbtANu29NUHoCO+W7tOZRK6eA6FjLHnNX0DvP1Mrt2oFBPnkxLw==}
@@ -2548,8 +2548,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electron-to-chromium@1.4.762:
-    resolution: {integrity: sha512-rrFvGweLxPwwSwJOjIopy3Vr+J3cIPtZzuc74bmlvmBIgQO3VYJDvVrlj94iKZ3ukXUH64Ex31hSfRTLqvjYJQ==}
+  electron-to-chromium@1.4.763:
+    resolution: {integrity: sha512-k4J8NrtJ9QrvHLRo8Q18OncqBCB7tIUyqxRcJnlonQ0ioHKYB988GcDFF3ZePmnb8eHEopDs/wPHR/iGAFgoUQ==}
 
   elliptic@6.5.5:
     resolution: {integrity: sha512-7EjbcmUm17NQFu4Pmgmq2olYMj8nwMnpcddByChSUjArp8F5DQWcIcpriwO4ZToLNAJig0yiyjswfyGNje/ixw==}
@@ -4369,8 +4369,8 @@ packages:
   moment@2.30.1:
     resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
 
-  mongodb-connection-string-url@3.0.0:
-    resolution: {integrity: sha512-t1Vf+m1I5hC2M5RJx/7AtxgABy1cZmIPQRMXw+gEIPn/cZNF3Oiy+l0UIypUwVB5trcWHq3crg2g3uAR9aAwsQ==}
+  mongodb-connection-string-url@3.0.1:
+    resolution: {integrity: sha512-XqMGwRX0Lgn05TDB4PyG2h2kKO/FfWJyCzYQbIhXUxz7ETt0I/FqHjUeqj37irJ+Dl1ZtU82uYyj14u2XsZKfg==}
 
   mongodb@6.6.1:
     resolution: {integrity: sha512-FvA9ocQzRzzvhin1HHLrZDEm0gWvnksbiciYrU/0GmET/t/DdDiMJroA7rfDrHM3AInwGVYw2fwAU2oNYUyUEw==}
@@ -4866,8 +4866,8 @@ packages:
     resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
     engines: {node: '>=8'}
 
-  poolifier@4.0.5:
-    resolution: {integrity: sha512-kCmN8XPkmloDX6zEu2HPihne+sbSrp+DFKnmHMypqDq3TF0epIRkhlccewOcZiYEjTzNL9frzamDjDcSSHcC9Q==}
+  poolifier@4.0.6:
+    resolution: {integrity: sha512-ucTp2aa4I52bpH3SkHirxG11gRYLJo6rBNC5l59Q3AASOTz2MlfzGKxImBlG1lsoDTy+pTI37w3Bo99+ZoaTxg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   possible-typed-array-names@1.0.0:
@@ -5185,8 +5185,8 @@ packages:
     resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
     hasBin: true
 
-  rimraf@5.0.5:
-    resolution: {integrity: sha512-CqDakW+hMe/Bz202FPEymy68P+G50RfMQK+Qo5YUqc9SPipvbGjCGKd0RSKEelbsfQuw3g5NZDSrlZZAJurH1A==}
+  rimraf@5.0.6:
+    resolution: {integrity: sha512-X72SgyOf+1lFnGM6gYcmZ4+jMOwuT4E4SajKQzUIlI7EoR5eFHMhS/wf8Ll0mN+w2bxcIVldrJQ6xT7HFQywjg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -5780,8 +5780,8 @@ packages:
   tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
-  tsx@4.9.3:
-    resolution: {integrity: sha512-czVbetlILiyJZI5zGlj2kw9vFiSeyra9liPD4nG+Thh4pKTi0AmMEQ8zdV/L2xbIVKrIqif4sUNrsMAOksx9Zg==}
+  tsx@4.9.4:
+    resolution: {integrity: sha512-TlSJTVn2taGGDgdV3jAqCj7WQ/CafCB5p4SbG7W2Bl/0AJWH1ShJlBbc0y2lOFTjQEVAAULSTlmehw/Mwv3S/Q==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -5952,8 +5952,8 @@ packages:
   url@0.11.3:
     resolution: {integrity: sha512-6hxOLGfZASQK/cijlZnZJTq8OXAkt/3YGfQX45vvMYXpZoo8NdWZcY73K108Jf759lS1Bv/8wXnHDTSz17dSRw==}
 
-  utf-8-validate@6.0.3:
-    resolution: {integrity: sha512-uIuGf9TWQ/y+0Lp+KGZCMuJWc3N9BHA+l/UmHd/oUHwJJDeysyTRxNQVkbzsIWfGFbRe3OcgML/i0mvVRPOyDA==}
+  utf-8-validate@6.0.4:
+    resolution: {integrity: sha512-xu9GQDeFp+eZ6LnCywXN/zBancWvOpUMzgjLPSjy4BRHSmTelvn2E0DG0o1sTiw5hkCKBHo8rwSKncfRfv2EEQ==}
     engines: {node: '>=6.14.2'}
 
   util-deprecate@1.0.2:
@@ -7109,7 +7109,7 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mongodb-js/saslprep@1.1.6':
+  '@mongodb-js/saslprep@1.1.7':
     dependencies:
       sparse-bitfield: 3.0.3
 
@@ -7516,7 +7516,7 @@ snapshots:
       vite: 5.2.11(@types/node@20.12.11)
       vue: 3.4.27(typescript@5.4.5)
 
-  '@vitest/coverage-v8@1.6.0(vitest@1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)))':
+  '@vitest/coverage-v8@1.6.0(vitest@1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -7531,7 +7531,7 @@ snapshots:
       std-env: 3.7.0
       strip-literal: 2.1.0
       test-exclude: 6.0.0
-      vitest: 1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3))
+      vitest: 1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4))
     transitivePeerDependencies:
       - supports-color
 
@@ -8152,7 +8152,7 @@ snapshots:
   browserslist@4.23.0:
     dependencies:
       caniuse-lite: 1.0.30001617
-      electron-to-chromium: 1.4.762
+      electron-to-chromium: 1.4.763
       node-releases: 2.0.14
       update-browserslist-db: 1.0.15(browserslist@4.23.0)
 
@@ -8966,7 +8966,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.4.762: {}
+  electron-to-chromium@1.4.763: {}
 
   elliptic@6.5.5:
     dependencies:
@@ -10544,7 +10544,7 @@ snapshots:
 
   jsdoc-type-pratt-parser@4.0.0: {}
 
-  jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4):
     dependencies:
       cssstyle: 4.0.1
       data-urls: 5.0.0
@@ -10565,7 +10565,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.0.0
-      ws: 8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      ws: 8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -10996,7 +10996,7 @@ snapshots:
   minizlib@3.0.1:
     dependencies:
       minipass: 7.1.1
-      rimraf: 5.0.5
+      rimraf: 5.0.6
 
   mkdirp-classic@0.5.3: {}
 
@@ -11073,16 +11073,16 @@ snapshots:
 
   moment@2.30.1: {}
 
-  mongodb-connection-string-url@3.0.0:
+  mongodb-connection-string-url@3.0.1:
     dependencies:
       '@types/whatwg-url': 11.0.4
       whatwg-url: 13.0.0
 
   mongodb@6.6.1(socks@2.8.3):
     dependencies:
-      '@mongodb-js/saslprep': 1.1.6
+      '@mongodb-js/saslprep': 1.1.7
       bson: 6.7.0
-      mongodb-connection-string-url: 3.0.0
+      mongodb-connection-string-url: 3.0.1
     optionalDependencies:
       socks: 2.8.3
 
@@ -11588,7 +11588,7 @@ snapshots:
     dependencies:
       find-up: 3.0.0
 
-  poolifier@4.0.5: {}
+  poolifier@4.0.6: {}
 
   possible-typed-array-names@1.0.0: {}
 
@@ -11965,7 +11965,7 @@ snapshots:
     dependencies:
       glob: 7.2.3
 
-  rimraf@5.0.5:
+  rimraf@5.0.6:
     dependencies:
       glob: 10.3.14
 
@@ -12661,7 +12661,7 @@ snapshots:
 
   tslib@2.6.2: {}
 
-  tsx@4.9.3:
+  tsx@4.9.4:
     dependencies:
       esbuild: 0.20.2
       get-tsconfig: 4.7.5
@@ -12862,7 +12862,7 @@ snapshots:
       punycode: 1.4.1
       qs: 6.12.1
 
-  utf-8-validate@6.0.3:
+  utf-8-validate@6.0.4:
     dependencies:
       node-gyp-build: 4.8.1
     optional: true
@@ -12931,7 +12931,7 @@ snapshots:
       '@types/node': 20.12.11
       fsevents: 2.3.3
 
-  vitest@1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)):
+  vitest@1.6.0(@types/node@20.12.11)(jsdom@24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)):
     dependencies:
       '@vitest/expect': 1.6.0
       '@vitest/runner': 1.6.0
@@ -12955,7 +12955,7 @@ snapshots:
       why-is-node-running: 2.2.2
     optionalDependencies:
       '@types/node': 20.12.11
-      jsdom: 24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      jsdom: 24.0.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
     transitivePeerDependencies:
       - less
       - lightningcss
@@ -13159,10 +13159,10 @@ snapshots:
       signal-exit: 3.0.7
       typedarray-to-buffer: 3.1.5
 
-  ws@8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  ws@8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.4):
     optionalDependencies:
       bufferutil: 4.0.8
-      utf-8-validate: 6.0.3
+      utf-8-validate: 6.0.4
 
   xdg-basedir@4.0.0: {}
 
