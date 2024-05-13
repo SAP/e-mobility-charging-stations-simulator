@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "22.1.0",
-    "pnpm": "9.1.0"
+    "pnpm": "9.1.1"
   },
-  "packageManager": "pnpm@9.1.0",
+  "packageManager": "pnpm@9.1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -124,13 +124,13 @@
     "@types/node": "^20.12.11",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^7.8.0",
-    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.9.0",
+    "@typescript-eslint/parser": "^7.9.0",
     "auto-changelog": "^2.4.0",
     "c8": "^9.1.0",
     "clinic": "^13.0.0",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.21.1",
+    "esbuild": "^0.21.2",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^8.57.0",
@@ -144,15 +144,15 @@
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-tsdoc": "^0.2.17",
     "expect": "^29.7.0",
-    "glob": "^10.3.14",
+    "glob": "^10.3.15",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
     "release-it": "^17.2.1",
-    "rimraf": "^5.0.6",
+    "rimraf": "^5.0.7",
     "semver": "^7.6.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.9.4",
+    "tsx": "^4.10.2",
     "typescript": "~5.4.5"
   }
 }
