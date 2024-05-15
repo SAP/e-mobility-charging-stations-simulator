@@ -1,7 +1,9 @@
-import chalk from 'chalk'
-import { satisfies } from 'semver'
-import { version, exit } from 'node:process'
 import { readFileSync } from 'node:fs'
+import { exit, version } from 'node:process'
+
+import chalk from 'chalk'
+// eslint-disable-next-line n/no-unpublished-import
+import { satisfies } from 'semver'
 
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 

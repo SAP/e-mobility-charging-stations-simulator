@@ -1,4 +1,2 @@
 dist/
 ui/web/
-# FIXME: ESM import parse error
-build-requirements.js
